@@ -18,13 +18,15 @@ export default function Home() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* Brand Header */}
-      <section className="flex flex-col items-center justify-center py-6 text-center space-y-3">
-        <div className="h-32 w-32 overflow-hidden rounded-xl bg-primary p-2 shadow-xl border-4 border-white/10">
+      {/* Brand Header - Green Banner Style */}
+      <section className="bg-primary -mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg mb-6">
+        <div className="h-32 w-56 overflow-hidden rounded-xl bg-white/5 p-2 shadow-2xl border border-white/20 flex items-center justify-center">
           <img src={logoImg} alt="VeteranCare" className="h-full w-full object-contain" />
         </div>
-        <h1 className="text-4xl font-heading font-extrabold text-primary tracking-tight uppercase">VeteranCare</h1>
-        <p className="text-muted-foreground font-medium max-w-xs">Your trusted guide to benefits, health, and local resources.</p>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-heading font-extrabold text-white tracking-tight uppercase drop-shadow-md">VeteranCare</h1>
+          <p className="text-primary-foreground/90 font-medium max-w-xs mx-auto text-sm">Your trusted guide to benefits, health, and local resources.</p>
+        </div>
       </section>
 
       {/* Welcome / Quick Prompt */}
