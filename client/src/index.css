@@ -56,105 +56,105 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-/* Light Mode (Default) - Clean, High Contrast, Military Inspired */
+/* Light Mode (Default) - Camouflage/Military Inspired */
 :root {
-  /* Base */
-  --background: 210 20% 98%; /* Soft cool grey/white */
-  --foreground: 215 40% 15%; /* Deep navy/charcoal for text */
+  /* Base - Clean off-white/light sage */
+  --background: 120 10% 97%; 
+  --foreground: 120 20% 15%; /* Dark Army Green for text */
 
-  /* Primary: Military Navy */
-  --primary: 215 60% 25%;
+  /* Primary: Deep Camo Green / Olive Drab */
+  --primary: 90 40% 25%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: Military Green */
-  --secondary: 95 38% 35%;
-  --secondary-foreground: 0 0% 100%;
+  /* Secondary: Earthy Tan / Khaki */
+  --secondary: 40 30% 85%;
+  --secondary-foreground: 90 40% 20%;
 
-  /* Accent: Gold/Brass */
-  --accent: 45 90% 50%;
-  --accent-foreground: 215 60% 15%;
+  /* Accent: Brass/Subdued Gold */
+  --accent: 45 60% 45%;
+  --accent-foreground: 0 0% 100%;
 
   /* UI Elements */
   --card: 0 0% 100%;
-  --card-foreground: 215 40% 15%;
+  --card-foreground: 120 20% 15%;
   
   --popover: 0 0% 100%;
-  --popover-foreground: 215 40% 15%;
+  --popover-foreground: 120 20% 15%;
 
-  --muted: 210 20% 92%;
-  --muted-foreground: 215 20% 40%;
+  --muted: 90 15% 92%;
+  --muted-foreground: 90 15% 40%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 75% 45%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 215 20% 85%;
-  --input: 215 20% 85%;
-  --ring: 215 60% 25%; /* Ring matches primary */
+  --border: 90 15% 85%;
+  --input: 90 15% 85%;
+  --ring: 90 40% 30%;
 
   --radius: 0.75rem;
 
-  /* Chart Colors (if needed) */
-  --chart-1: 215 60% 25%; /* Navy */
-  --chart-2: 95 38% 35%;  /* Green */
-  --chart-3: 45 90% 50%;  /* Gold */
-  --chart-4: 0 0% 30%;    /* Grey */
-  --chart-5: 0 70% 50%;   /* Red */
+  /* Chart Colors (Updated for military theme) */
+  --chart-1: 90 40% 30%;  /* Green */
+  --chart-2: 40 40% 40%;  /* Brown */
+  --chart-3: 45 60% 45%;  /* Brass */
+  --chart-4: 0 0% 35%;    /* Grey */
+  --chart-5: 0 60% 45%;   /* Red */
 
   /* Sidebar */
-  --sidebar: 210 20% 98%;
-  --sidebar-foreground: 215 40% 15%;
-  --sidebar-primary: 215 60% 25%;
+  --sidebar: 120 10% 97%;
+  --sidebar-foreground: 120 20% 15%;
+  --sidebar-primary: 90 40% 25%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 210 20% 92%;
-  --sidebar-accent-foreground: 215 60% 25%;
-  --sidebar-border: 215 20% 85%;
-  --sidebar-ring: 215 60% 25%;
+  --sidebar-accent: 90 15% 92%;
+  --sidebar-accent-foreground: 90 40% 25%;
+  --sidebar-border: 90 15% 85%;
+  --sidebar-ring: 90 40% 30%;
 }
 
 .dark {
-  /* Dark Mode - Tactical/Night Vision feel */
-  --background: 215 40% 10%;
-  --foreground: 210 20% 90%;
+  /* Dark Mode - Night Ops / Tactical */
+  --background: 120 20% 8%;
+  --foreground: 120 10% 90%;
 
-  --primary: 215 50% 40%; /* Lighter navy */
+  --primary: 90 30% 40%; /* Lighter olive for dark mode visibility */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 95 30% 45%; /* Lighter green */
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 90 20% 20%;
+  --secondary-foreground: 120 10% 90%;
 
-  --accent: 45 80% 50%;
-  --accent-foreground: 215 60% 15%;
+  --accent: 45 60% 50%;
+  --accent-foreground: 0 0% 0%;
 
-  --card: 215 40% 13%;
-  --card-foreground: 210 20% 90%;
+  --card: 120 20% 10%;
+  --card-foreground: 120 10% 90%;
 
-  --popover: 215 40% 13%;
-  --popover-foreground: 210 20% 90%;
+  --popover: 120 20% 10%;
+  --popover-foreground: 120 10% 90%;
 
-  --muted: 215 30% 20%;
-  --muted-foreground: 215 20% 60%;
+  --muted: 120 15% 15%;
+  --muted-foreground: 120 10% 60%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 65% 40%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 215 30% 20%;
-  --input: 215 30% 20%;
-  --ring: 215 50% 40%;
+  --border: 120 15% 20%;
+  --input: 120 15% 20%;
+  --ring: 90 30% 40%;
 
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --chart-1: 90 40% 45%;
+  --chart-2: 40 40% 50%;
+  --chart-3: 45 60% 55%;
+  --chart-4: 0 0% 50%;
+  --chart-5: 0 60% 55%;
 
-  --sidebar: 215 40% 10%;
-  --sidebar-foreground: 210 20% 90%;
-  --sidebar-primary: 215 50% 40%;
+  --sidebar: 120 20% 8%;
+  --sidebar-foreground: 120 10% 90%;
+  --sidebar-primary: 90 30% 40%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 215 30% 20%;
-  --sidebar-accent-foreground: 210 20% 90%;
-  --sidebar-border: 215 30% 20%;
-  --sidebar-ring: 215 50% 40%;
+  --sidebar-accent: 120 15% 15%;
+  --sidebar-accent-foreground: 120 10% 90%;
+  --sidebar-border: 120 15% 20%;
+  --sidebar-ring: 90 30% 40%;
 }
 
 @layer base {

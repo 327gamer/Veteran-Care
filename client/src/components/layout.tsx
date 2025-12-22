@@ -34,7 +34,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Left: Logo */}
           <Link href="/">
             <a className="flex items-center gap-2 group shrink-0">
-              <div className="h-10 w-10 overflow-hidden rounded-md bg-white/10 p-0.5 group-hover:bg-white/20 transition-colors shadow-sm">
+              <div className="h-12 w-12 overflow-hidden rounded-md p-0.5 transition-opacity hover:opacity-90">
                  <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover rounded-sm" />
               </div>
               <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">VeteranCare</span>
