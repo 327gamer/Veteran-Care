@@ -20,8 +20,8 @@ export default function Home() {
       
       {/* Brand Header */}
       <section className="flex flex-col items-center justify-center py-6 text-center space-y-3">
-        <div className="h-32 w-32 overflow-hidden rounded-xl">
-          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover" />
+        <div className="h-32 w-32 overflow-hidden rounded-xl bg-primary p-2 shadow-xl border-4 border-white/10">
+          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-contain" />
         </div>
         <h1 className="text-4xl font-heading font-extrabold text-primary tracking-tight uppercase">VeteranCare</h1>
         <p className="text-muted-foreground font-medium max-w-xs">Your trusted guide to benefits, health, and local resources.</p>
