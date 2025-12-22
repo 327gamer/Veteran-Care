@@ -12,7 +12,7 @@ import {
   MapPin
 } from "lucide-react";
 import { Link } from "wouter";
-import logoImg from "@assets/IMG_9104_1766377226249.jpeg";
+import logoImg from "@assets/IMG_4925_1766381417086.png";
 
 export default function Home() {
   return (

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AiGuide from "./ai-guide";
-import logoImg from "@assets/IMG_9104_1766377226249.jpeg";
+import logoImg from "@assets/IMG_4925_1766381417086.png";
 
 interface LayoutProps {
   children: React.ReactNode;
