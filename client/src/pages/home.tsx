@@ -12,15 +12,25 @@ import {
   MapPin
 } from "lucide-react";
 import { Link } from "wouter";
+import logoImg from "@assets/IMG_9104_1766377226249.jpeg";
 
 export default function Home() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
+      {/* Brand Header */}
+      <section className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+        <div className="h-24 w-24 overflow-hidden rounded-xl shadow-lg border-2 border-primary/10">
+          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover" />
+        </div>
+        <h1 className="text-3xl font-heading font-extrabold text-primary tracking-tight">VeteranCare</h1>
+        <p className="text-muted-foreground font-medium max-w-xs">Your trusted guide to benefits, health, and local resources.</p>
+      </section>
+
       {/* Welcome / Quick Prompt */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">Good Morning, Soldier</h1>
+          <h2 className="text-xl font-bold text-primary">Good Morning, Soldier</h2>
           <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5">
             <MapPin className="mr-1 h-3 w-3" />
             Austin, TX

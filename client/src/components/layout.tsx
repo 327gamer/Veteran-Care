@@ -30,43 +30,39 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background pb-20 md:pb-0 font-sans">
       {/* Top Bar - Persistent */}
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4">
-          <div className="flex items-center gap-4 flex-1">
-            <Link href="/">
-              <a className="flex items-center gap-3 group shrink-0">
-                {/* Logo Placeholder */}
-                <div className="h-14 w-14 overflow-hidden rounded-lg bg-white/10 p-0.5 group-hover:bg-white/20 transition-colors shadow-sm">
-                   <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover rounded-md" />
-                </div>
-                <span className="font-heading text-2xl font-bold tracking-tight hidden sm:block">VeteranCare</span>
-              </a>
-            </Link>
-
-            {/* AI Guide / Chatbot Box */}
-            <button 
-              onClick={() => setIsAiOpen(true)}
-              className="flex-1 max-w-sm flex items-center gap-3 bg-white/10 hover:bg-white/15 transition-colors border border-white/10 rounded-full px-4 py-2.5 text-left group"
-            >
-              <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center shrink-0 shadow-sm">
-                 <Bot className="h-5 w-5 text-primary-foreground" />
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          {/* Left: Logo */}
+          <Link href="/">
+            <a className="flex items-center gap-2 group shrink-0">
+              <div className="h-10 w-10 overflow-hidden rounded-md bg-white/10 p-0.5 group-hover:bg-white/20 transition-colors shadow-sm">
+                 <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover rounded-sm" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white/90 truncate">Ask the AI Guide...</p>
-              </div>
-            </button>
-          </div>
+              <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">VeteranCare</span>
+            </a>
+          </Link>
 
-          <div className="flex items-center gap-1 shrink-0 ml-2">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full sm:hidden">
-              <Search className="h-6 w-6" />
-            </Button>
-
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full hidden sm:inline-flex">
-              <User className="h-6 w-6" />
+          {/* Right: Icons (Search, AI, Profile, Settings) */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+              <Search className="h-5 w-5" />
             </Button>
             
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full hidden sm:inline-flex">
-              <Settings className="h-6 w-6" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-primary-foreground hover:bg-white/10 rounded-full relative"
+              onClick={() => setIsAiOpen(true)}
+            >
+              <Bot className="h-5 w-5" />
+              <span className="absolute top-2 right-2 h-2 w-2 bg-accent rounded-full animate-pulse"></span>
+            </Button>
+
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+              <User className="h-5 w-5" />
+            </Button>
+            
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+              <Settings className="h-5 w-5" />
             </Button>
           </div>
         </div>
