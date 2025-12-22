@@ -1,0 +1,324 @@
+🇺🇸 REPLIT MASTER BUILD SPEC — VETERANCARE.COM
+
+Project Name: VeteranCare
+Domain: VeteranCare.com
+Platform: Mobile-first web app (future iOS/Android)
+Audience:
+	•	Veterans, families, caregivers (100% free)
+	•	Verified organizations & partners (paid access)
+
+⸻
+
+1) PURPOSE & VISION
+
+Build a state-of-the-art, location-based veteran resource app that serves as a one-stop, easy-to-navigate alternative to existing veteran and VA websites.
+
+VeteranCare must:
+	•	Be free for all veterans
+	•	Be simple, fast, and human-guided
+	•	Use an AI Guide avatar to direct veterans to the right help quickly
+	•	Be location-aware (GPS + manual selection)
+	•	Keep veterans inside the platform with clear explanations, steps, and checklists
+	•	Allow verified organizations to contribute resources through a portal and simple API
+
+The app should feel like a trusted veteran advocate, not a government website.
+
+⸻
+
+2) GLOBAL NAVIGATION & LAYOUT (NON-NEGOTIABLE)
+
+🔝 TOP BAR (Persistent on Every Screen)
+
+Top bar icons must always be visible.
+
+Left → Right:
+	•	🔍 Search
+	•	🤖 AI Guide
+	•	👤 Profile
+	•	⚙️ Settings
+
+Top Bar Behavior
+	•	Search: global search across resources, organizations, saved items, and guides (location-aware)
+	•	AI Guide: full-screen or modal, always one tap away
+	•	Profile: user dashboard (favorites, saved items, org access)
+	•	Settings: preferences, location controls, notifications, privacy, accessibility, logout
+
+These actions must NOT appear in the bottom navigation.
+
+⸻
+
+⬇️ BOTTOM NAVIGATION (Primary App Flow)
+	1.	🏠 Home
+	2.	📚 Resources
+	3.	💬 Community
+	4.	🛍 Shop & Savings
+	5.	📍 Near Me
+
+⸻
+
+3) LOCATION-BASED FUNCTIONALITY (CRITICAL)
+
+First-Time Location Prompt
+
+On first use, prompt the user:
+
+“Help us show resources near you”
+
+Options:
+	1.	✅ Enable Location Services (GPS – recommended)
+	2.	🗺 Choose Location Manually
+
+Manual Location Selection
+	•	State (required)
+	•	City (required)
+	•	Zip code (optional)
+
+Data Stored
+	•	locationMode: gps | manual
+	•	state, city, zip
+	•	lat, lng (GPS only)
+
+App Behavior
+	•	“Near Me” uses GPS radius or state/city fallback
+	•	Local resources, orgs, and events are filtered by location
+	•	National resources always remain visible
+	•	Location can be changed anytime in Settings or Profile
+
+⸻
+
+4) PROFILE SETUP WIZARD (ONBOARDING)
+
+Step 1: Location
+	•	Enable GPS OR manually choose State + City
+
+Step 2: Military Info (Optional)
+	•	Branch
+	•	Service era
+	•	“Prefer not to say” option
+
+Step 3: What Are You Looking For? (Interests)
+
+Multi-select personalization options:
+	•	Benefits & VA Claims
+	•	Healthcare
+	•	Mental Health (PTSD / TBI / Substance)
+	•	Housing
+	•	Employment & Training
+	•	Education / GI Bill
+	•	Legal / Records / DD214
+	•	Family & Caregivers
+	•	Transition & Reintegration
+	•	Local veteran organizations & events
+
+Stored as: userInterests[]
+
+Step 4: Favorites Setup (Folders)
+
+Create a Favorites system:
+
+Default folders:
+	•	My Benefits
+	•	Health & Mental Health
+	•	Jobs & Training
+	•	Housing
+	•	Important Numbers
+
+Users can:
+	•	Create custom folders
+	•	Save resources, organizations, or events
+	•	Pin favorites to Home
+	•	Add notes to saved items
+
+⸻
+
+5) HOME SCREEN REQUIREMENTS
+
+Home must be personalized immediately.
+
+Sections:
+	•	“What do you need help with today?” (quick action cards)
+	•	“Recommended for You” (based on interests + AI use)
+	•	“Near You” (location-based)
+	•	“Your Favorites” (folders or pinned)
+	•	“Continue Where You Left Off” (AI checklist or saved guide)
+
+⸻
+
+6) RESOURCE LIBRARY
+
+Categories (MVP)
+	•	Benefits & VA Claims
+	•	Healthcare
+	•	Crisis Help
+	•	Mental Health
+	•	Housing & Homeless Support
+	•	Employment & Training
+	•	Education & GI Bill
+	•	Legal & Financial
+	•	Family & Caregivers
+	•	Military Records (DD214, upgrades)
+	•	Transition & Reintegration
+
+Each Resource Page MUST Include
+	•	Plain-English explanation
+	•	Eligibility
+	•	Required documents checklist
+	•	Step-by-step instructions
+	•	Links & phone numbers
+	•	Source citation
+	•	“Last reviewed” date
+	•	Button: Talk to AI Guide about this
+
+⸻
+
+7) 🤖 AI GUIDE AVATAR (CORE FEATURE)
+
+Purpose
+
+Acts as a virtual veteran advocate.
+
+Behavior Rules
+	•	Must retrieve answers from the VeteranCare resource database (RAG-based)
+	•	Must ask clarifying questions:
+	•	Location
+	•	Urgency
+	•	Goal
+	•	Must return:
+	•	Top 2–3 relevant resources
+	•	Clear action plan
+	•	Step-by-step checklist
+	•	Must offer follow-up help:
+	•	“Want me to walk you through step 1?”
+
+Crisis Handling
+
+If crisis/self-harm language is detected:
+	•	Immediate full-screen crisis routing
+	•	Emergency resources
+	•	Encourage off-platform help
+	•	Stop normal chat flow
+
+⸻
+
+8) 💬 COMMUNITY
+
+Community must support:
+	•	Groups by state/city
+	•	Topic-based groups (PTSD, transition, job search, caregivers)
+	•	Posting, comments, reactions
+	•	Reporting & moderation tools
+
+Design so it can later be replaced or integrated with a third-party community platform without redesign.
+
+⸻
+
+9) 🛍 SHOP & SAVINGS
+
+Veteran-focused savings hub:
+	•	Work gear & boots
+	•	Tools
+	•	Travel
+	•	Phone & internet
+	•	Insurance
+	•	Wellness & training discounts
+
+Each listing:
+	•	Vendor
+	•	Discount description
+	•	Affiliate link
+	•	“Verified veteran discount” badge
+	•	Click tracking
+
+⸻
+
+10) ORGANIZATION PARTNER SYSTEM (PAID)
+
+Organization Capabilities
+
+Verified organizations can:
+	•	Create/manage profile
+	•	Add services, resources, events
+	•	Upload documents
+	•	Manage locations
+	•	View basic analytics
+
+Access Rules
+	•	Veterans: always free
+	•	Organizations: subscription-based publishing access
+	•	Admin approval required before public visibility
+
+⸻
+
+11) SIMPLE PARTNER API (MVP)
+
+Lightweight REST API for verified organizations.
+
+Auth
+	•	API key per organization
+	•	Rate-limited
+	•	Org can modify only its own data
+
+Endpoints
+	•	POST /api/orgs/{orgId}/resources
+	•	PUT /api/orgs/{orgId}/resources/{resourceId}
+	•	POST /api/orgs/{orgId}/events
+	•	PUT /api/orgs/{orgId}/events/{eventId}
+	•	GET /api/orgs/{orgId}/status
+
+All API submissions default to pending_review unless admin enables auto-publish.
+
+⸻
+
+12) DATA MODELS (MVP)
+
+Users
+	•	id, email, role
+	•	locationMode, state, city, zip, lat, lng
+	•	userInterests[]
+	•	favoriteFolders[]
+	•	favorites[]
+	•	pinnedFavorites[]
+
+Organizations
+	•	id, name, type
+	•	locations[]
+	•	verificationStatus
+	•	planTier
+	•	apiKey
+
+Resources
+	•	id, title, category
+	•	summary, eligibility
+	•	stepsChecklist[]
+	•	documentsNeeded[]
+	•	links[]
+	•	statesAvailable[]
+	•	citations[]
+	•	lastReviewedDate
+	•	status
+
+(Events, Community, Savings follow standard CRUD)
+
+⸻
+
+13) BRANDING & UI
+	•	Use VeteranCare.com military-style logo
+	•	Extract color palette from logo automatically
+	•	Fallback palette:
+	•	Navy / military green / gold accent
+	•	Clean, high-contrast, accessible typography
+	•	Large buttons, simple layouts
+	•	Absolutely not government-style clutter
+
+⸻
+
+14) CORE PRINCIPLES (DO NOT BREAK)
+	•	Veterans never pay
+	•	Location-based personalization is mandatory
+	•	AI Guide is always one tap away
+	•	Plain English only — no bureaucracy
+	•	Must scale nationally without redesign
+
+⸻
+
+END OF REPLIT MASTER SPEC
