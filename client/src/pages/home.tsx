@@ -20,8 +20,8 @@ export default function Home() {
       
       {/* Brand Header - Green Banner Style */}
       <section className="bg-primary -mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg mb-6">
-        <div className="h-32 w-56 overflow-hidden rounded-xl bg-white/5 p-2 shadow-2xl border border-white/20 flex items-center justify-center">
-          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-contain" />
+        <div className="h-32 w-56 overflow-hidden rounded-xl bg-primary shadow-2xl border border-white/20 flex items-center justify-center">
+          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover" />
         </div>
         <div className="space-y-1">
           <h1 className="text-4xl font-heading font-extrabold text-white tracking-tight uppercase drop-shadow-md">VeteranCare</h1>

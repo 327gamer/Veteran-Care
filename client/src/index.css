@@ -62,8 +62,8 @@
   --background: 120 10% 97%; 
   --foreground: 120 20% 15%; /* Dark Army Green for text */
 
-  /* Primary: Deep Camo Green / Olive Drab */
-  --primary: 90 40% 25%;
+  /* Primary: Deep Camo Green / Olive Drab - Adjusted to match logo background */
+  --primary: 85 35% 24%;
   --primary-foreground: 0 0% 100%;
 
   /* Secondary: Earthy Tan / Khaki */
