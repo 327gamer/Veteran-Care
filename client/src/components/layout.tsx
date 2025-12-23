@@ -100,7 +100,7 @@ export default function Layout({ children }: LayoutProps) {
           <Link href="/resources">
             <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
               <BookOpen className={`h-5 w-5 ${isActive('/resources') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Resources</span>
+              <span className="text-[10px] font-medium">My Resources</span>
             </a>
           </Link>
 
