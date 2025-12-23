@@ -1,0 +1,206 @@
+1) Replit Prompt Version (SHORT) — Copy/Paste
+
+Build VeteranCare.com as a mobile-first app with a location-first experience. On first launch, require the user to either (A) enable GPS location or (B) manually select State → City/Town (dropdowns), with optional zip. Save locationMode, state, city, zip, and lat/lng (if GPS). The bottom tab “Near Me” must display the existing category tiles (Benefits & VA Claims, Healthcare, Crisis Help, Mental Health, Housing Support, Employment, Education & GI Bill, Legal & Financial, Family & Caregivers, Military Records, Transition). When a user taps Near Me, show the category tiles filtered to their location; tapping a category lists resources for that category filtered by city/state or GPS radius.
+
+Implement in stages to control cost:
+Stage 1: location setup + Near Me filtering (no scraping).
+Stage 2: seed a South Carolina-only resource database (starter set).
+Stage 3: add Favorites + “My Resources” tab with folders and pinned items.
+Stage 4: add controlled ingestion for South Carolina from approved government domains only using a Source Registry + hard crawl limits; ingestion outputs drafts requiring admin approval.
+Stage 5: expand state-by-state nationwide via queued ingestion jobs (never one nationwide run).
+
+AI Guide must use the same resource database (RAG-style retrieval) and default to SC-local results when the user location is in South Carolina.
+
+⸻
+
+2) South Carolina Starter Seed List (MVP) — Structured + Easy to Import
+
+How to use this seed list
+	•	Create a Resources table/collection with these minimum fields:
+title, category, descriptionPlainEnglish, stepsChecklist[], websiteUrl, sourceName, sourceUrl, state, city, status
+	•	For now set: state = "SC" and city = "Statewide" for statewide items.
+	•	Later you can duplicate records per city (Charleston, Columbia, Greenville, etc.) as you ingest or curate.
+
+Tip: This seed list is intentionally “safe” on details (no phone/address) and points to official directories you can trust and expand later.
+
+⸻
+
+A) Benefits & VA Claims (SC starter set: 12)
+	1.	File a VA disability claim (overview + steps) — VA.gov claim hub (Statewide)
+	2.	Check claim status / upload evidence — VA.gov claim status hub (Statewide)
+	3.	Intent to File (protect effective date) — VA.gov intent-to-file info (Statewide)
+	4.	Appeals process overview (HLR / Supplemental / Board) — VA.gov appeals hub (Statewide)
+	5.	Find an accredited VSO / representative — VA.gov accredited rep directory (Statewide)
+	6.	SC Department of Veterans’ Affairs — benefits assistance entry point — SCDVA official site (Statewide)
+	7.	County Veteran Service Officer directory (SC) — SCDVA county services page (Statewide)
+	8.	VA benefits letters & records (online access overview) — VA.gov records/letters info (Statewide)
+	9.	Compensation rates & special monthly compensation overview — VA.gov compensation info (Statewide)
+	10.	Pension benefits overview — VA.gov pension hub (Statewide)
+	11.	Dependency claims (add spouse/children) — VA.gov dependency info (Statewide)
+	12.	Burial & memorial benefits overview — VA.gov burial benefits hub (Statewide)
+
+⸻
+
+B) Healthcare (SC starter set: 12)
+	1.	VA Health Care enrollment (apply + eligibility) — VA.gov health care apply (Statewide)
+	2.	Find VA locations in South Carolina — VA facility locator (SC filtered)
+	3.	Community Care overview (getting non-VA care) — VA.gov community care hub
+	4.	Urgent care benefit (where to go + rules) — VA.gov urgent care benefit hub
+	5.	Schedule appointments / manage care online — VA.gov sign-in health tools hub
+	6.	Women Veterans health services — VA women’s health hub
+	7.	Caregiver Support Program overview — VA caregiver support hub
+	8.	Pharmacy refills + prescriptions management — VA pharmacy hub
+	9.	Travel reimbursement (beneficiary travel) — VA travel pay info
+	10.	Telehealth overview — VA telehealth hub
+	11.	PACT Act / toxic exposure screening info — VA toxic exposure hub
+	12.	SC Department of Health & Human Services (Medicaid info, if needed) — SCDHHS official site
+
+⸻
+
+C) Crisis Help (SC starter set: 10)
+	1.	Veterans Crisis Line (how to reach help 24/7) — VA Crisis Line hub
+	2.	Emergency: when to call 911 (safety guidance page) — VA crisis safety guidance
+	3.	Suicide prevention resources (VA overview) — VA prevention hub
+	4.	Homeless crisis support (VA overview + next steps) — VA homeless programs hub
+	5.	Substance use crisis / SUD immediate help — VA SUD hub
+	6.	Domestic violence resources — VA IPV assistance hub
+	7.	Sexual assault support (VA MST resources) — VA MST hub
+	8.	SC statewide 211 directory — SC 211 official site
+	9.	SC Dept. of Mental Health crisis services entry — SCDMH official site
+	10.	National Disaster Distress support — official distress helpline info
+
+⸻
+
+D) Mental Health (SC starter set: 12)
+	1.	VA mental health services overview — VA mental health hub
+	2.	PTSD treatment overview — VA PTSD hub
+	3.	TBI information and care overview — VA TBI hub
+	4.	SUD treatment overview — VA SUD hub
+	5.	Grief counseling overview — VA grief/bereavement hub
+	6.	Couples/family counseling overview — VA family counseling hub
+	7.	Whole Health overview — VA Whole Health hub
+	8.	Peer support overview — VA peer support hub
+	9.	Find mental health care in SC (locator) — VA facility locator (SC filtered)
+	10.	SC Dept. of Mental Health services entry point — SCDMH official site
+	11.	NAMI South Carolina resources — NAMI SC official site
+	12.	Vet Centers overview (readjustment counseling) — VA Vet Center directory
+
+⸻
+
+E) Housing Support (SC starter set: 12)
+	1.	VA homelessness programs overview — VA homeless hub
+	2.	HUD-VASH overview — HUD-VASH official info
+	3.	SSVF (rapid rehousing / prevention) overview — VA SSVF hub
+	4.	Find homeless resources in SC (directory approach) — VA homeless locator/info hub
+	5.	VA home loan program overview — VA home loan hub
+	6.	Home loan COE (certificate of eligibility) overview — VA COE hub
+	7.	SC Housing (statewide resources) — SC Housing official site
+	8.	SC 211 housing assistance directory — SC 211 official site
+	9.	Transitional housing overview (VA programs) — VA housing program info
+	10.	Utility assistance (directory approach) — SC 211 utilities category
+	11.	Foreclosure avoidance / housing counseling — HUD housing counseling directory
+	12.	Support for justice-involved/hard-to-house (directory approach) — VA reentry/housing related hub
+
+⸻
+
+F) Employment (SC starter set: 12)
+	1.	Veterans employment overview (VA + DOL connections) — VA employment hub
+	2.	American Job Centers / SC Works locator — SC Works official site
+	3.	Veterans priority of service (explain what it is) — DOL priority of service info
+	4.	Apprenticeships overview — Apprenticeship.gov hub
+	5.	Federal jobs for vets (USAJOBS veteran resources) — USAJOBS veterans page
+	6.	SkillBridge overview (transition to civilian work) — DoD SkillBridge official site
+	7.	Resume & interview prep (VeteranCare internal feature page) — internal guide stub
+	8.	CareerOneStop Veteran Job Search — CareerOneStop veterans portal
+	9.	Small business / entrepreneurship (SBA veteran resources) — SBA veterans portal
+	10.	Vocational Rehabilitation & Employment info (VR&E) — VA VR&E hub
+	11.	SC Vocational Rehabilitation Department — SCVRD official site
+	12.	LinkedIn for Veterans (program overview) — LinkedIn veterans resources page
+
+⸻
+
+G) Education & GI Bill (SC starter set: 12)
+	1.	GI Bill overview — VA GI Bill hub
+	2.	Apply for GI Bill benefits — VA apply GI Bill hub
+	3.	Compare schools & programs (GI Bill Comparison Tool) — VA comparison tool
+	4.	Yellow Ribbon Program overview — VA Yellow Ribbon hub
+	5.	VR&E education/training benefits — VA VR&E hub
+	6.	Tuition Assistance overview (active/guard/reserve) — DoD TA info hub
+	7.	Scholarships for veterans (directory approach) — VA education resources hub
+	8.	SC Commission on Higher Education (state education info) — SC CHE official site
+	9.	SC technical college system overview — SC technical colleges official site
+	10.	Apprenticeships + GI Bill usage overview — Apprenticeship + GI Bill info
+	11.	Credentialing & licensing reimbursement info — VA licensing/certification hub
+	12.	Student veteran support (campus resources directory approach) — SV campus support info hub
+
+⸻
+
+H) Legal & Financial (SC starter set: 12)
+	1.	Discharge upgrade overview — official discharge upgrade hub
+	2.	VA debt management overview — VA debt management hub
+	3.	Benefits overpayment and repayment options — VA repayment info
+	4.	Credit counseling (trusted directory approach) — CFPB credit counseling hub
+	5.	Consumer finance protections — CFPB official site
+	6.	Legal aid directory (SC) — SC legal aid official site
+	7.	Military legal assistance overview — DoD legal assistance locator
+	8.	Identity theft (what to do) — FTC identity theft hub
+	9.	Tax info for veterans (IRS overview) — IRS veterans tax info
+	10.	SC Department of Consumer Affairs — SCDCA official site
+	11.	Child support/Family court basics (SC) — SC Judicial official info
+	12.	Estate planning basics (directory approach) — trusted public legal info hub
+
+⸻
+
+I) Family & Caregivers (SC starter set: 12)
+	1.	VA Caregiver Support Program — VA caregiver hub
+	2.	Survivor benefits overview (DIC, etc.) — VA survivor benefits hub
+	3.	Dependent education assistance overview — VA DEA hub
+	4.	CHAMPVA overview — VA CHAMPVA hub
+	5.	Family counseling resources — VA counseling hub
+	6.	Spouse employment support (DOL/military spouse) — spouse employment hub
+	7.	Childcare resources directory approach — SC 211 childcare category
+	8.	Family readiness / transition support — official transition family info hub
+	9.	Special needs resources directory approach — SC 211 disability resources
+	10.	Caregiver local supports (SC) — SCDMH / SC 211 caregiver resources
+	11.	VA life insurance overview — VA life insurance hub
+	12.	Burial benefits for survivors — VA burial survivor info hub
+
+⸻
+
+J) Military Records (SC starter set: 10)
+	1.	Request DD214 / military records overview — National Archives records hub
+	2.	Correct military records (boards for correction) overview — official corrections hub
+	3.	Replace medals/awards overview — National Archives medals request hub
+	4.	VA records access & benefits letters overview — VA records hub
+	5.	Medical records request overview — VA/DoD medical records hub
+	6.	Discharge upgrade (again, cross-link) — discharge upgrade hub
+	7.	State-level veteran ID/card info (SC) — SCDVA official info
+	8.	Voter/ID documentation help (directory approach) — SC DMV / SC 211
+	9.	Service verification (general guide) — internal guide stub
+	10.	Record storage checklist (what to keep) — internal guide stub
+
+⸻
+
+K) Transition (SC starter set: 12)
+	1.	TAP overview (Transition Assistance Program) — DoD TAP official hub
+	2.	SkillBridge overview — DoD SkillBridge hub
+	3.	VA pre-discharge claims overview (BDD) — VA BDD hub
+	4.	Moving/relocation resources — official relocation hub
+	5.	Healthcare enrollment after separation — VA health care apply hub
+	6.	Education path selection guide — internal guide stub
+	7.	Employment path selection guide — internal guide stub
+	8.	Financial checklist for transition — internal guide stub
+	9.	Mental health transition support — VA mental health hub
+	10.	State benefits overview (SC veteran benefits entry) — SCDVA official site
+	11.	SC Works veteran services — SC Works official site
+	12.	Local community & peer groups (Vet Centers) — VA Vet Center directory
+
+⸻
+
+Suggested “Seed Import” Format (simple CSV columns)
+
+If Replit supports CSV import, use:
+
+title,category,descriptionPlainEnglish,stepsChecklist,websiteUrl,sourceName,sourceUrl,state,city,status
+
+Where stepsChecklist can be a JSON-like string (e.g. ["Step 1","Step 2"]) or a pipe-delimited string depending on your setup.

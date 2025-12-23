@@ -1,0 +1,175 @@
+Replit Technical Brief — VeteranCare Location-First + South Carolina MVP + Controlled Data Ingestion
+
+Objective
+
+Implement a location-first VeteranCare app experience where veterans can either:
+	1.	Enable GPS location, or
+	2.	Manually select State → City/Town (dropdowns)
+
+Then, when the user taps Near Me (bottom-right tab), the app shows the same category tiles (Benefits & VA Claims, Healthcare, etc.) but filtered to the user’s selected location. Tapping a category lists local resources for that category (starting with South Carolina only).
+
+This implementation must be done in stages to control cost, complexity, and accuracy.
+
+⸻
+
+Stage 1 — Location & Near Me Filtering (NO web scraping yet)
+
+Requirements
+	1.	On first launch / first login, show a Location Setup modal:
+
+	•	Primary CTA: Enable Location Services (GPS)
+	•	Secondary CTA: Choose Manually
+	•	Dropdown 1: State
+	•	Dropdown 2: City/Town (populated based on selected state)
+	•	Optional input: zip code
+
+	2.	Save the following user fields:
+
+	•	locationMode: "gps" or "manual"
+	•	state, city, zip
+	•	lat, lng (only if GPS enabled)
+
+	3.	Near Me tab behavior
+
+	•	If locationMode="gps": query resources by distance radius (start with 25 miles)
+	•	If locationMode="manual": query resources by state + city
+	•	If location not set: prompt location setup again
+
+	4.	Near Me UI
+
+	•	Show the existing category tiles.
+	•	On tap of a category, show a list of resources filtered for the user’s location.
+
+⸻
+
+Stage 2 — South Carolina Resource Database (Seeded Data Only)
+
+Requirements
+
+Create a resource database with location-aware fields. Do not scrape yet. Seed with a small, curated starter set for South Carolina to validate the flow.
+
+Data Model (Minimum Fields)
+
+Resource
+	•	id
+	•	title
+	•	category (one of the 11 categories already created)
+	•	descriptionPlainEnglish
+	•	eligibilitySummary (optional)
+	•	stepsChecklist (array of strings)
+	•	contactPhone (optional)
+	•	contactEmail (optional)
+	•	websiteUrl (optional)
+	•	address (optional)
+	•	city
+	•	state
+	•	zip (optional)
+	•	lat, lng (optional but preferred for map/radius searches)
+	•	sourceName (e.g., “VA.gov”, “SC Dept. of Veterans’ Affairs”)
+	•	sourceUrl
+	•	lastReviewedDate
+	•	status: draft | published
+
+Filtering Rules
+	•	Resources must be retrievable by:
+	•	category + state + city
+	•	category + GPS radius (if lat/lng exists)
+
+⸻
+
+Stage 3 — Favorites & “My Resources” (User Personalization)
+
+Requirements
+	1.	Allow veterans to tap “⭐ Save” on any resource and store it.
+	2.	Add a bottom tab called My Resources (or “Saved”) that contains saved items.
+	3.	Favorites must support folders:
+
+	•	Default folders: My Benefits, Health, Jobs, Housing, Important Numbers
+	•	Allow custom folders
+
+Data Model
+
+FavoriteFolder
+	•	id, userId, name, createdAt
+
+FavoriteItem
+	•	id, userId, folderId
+	•	itemType: resource | org | event
+	•	itemId
+	•	notes (optional)
+	•	createdAt
+
+⸻
+
+Stage 4 — South Carolina Controlled Web Ingestion (NOT “scrape everything”)
+
+Key Principle
+
+Do NOT scrape the entire VA website. Instead implement a controlled, source-limited ingestion pipeline for South Carolina. The goal is accuracy, cost control, and repeatability.
+
+Approach
+	1.	Build a Source Registry table listing approved sources and patterns:
+
+	•	sourceId, sourceName, baseUrl, allowedDomains, stateScope, categoriesCovered, ingestionMode
+
+	2.	South Carolina sources to start with (examples):
+
+	•	VA facility directories / official VA pages relevant to SC
+	•	South Carolina Department of Veterans’ Affairs
+	•	County VSO pages (where reliable)
+
+	3.	Implement ingestion in 2 steps:
+
+	•	Step A: Discover pages (limited crawling within approved domains and SC scope)
+	•	Step B: Extract structured resource records into the Resource table
+
+Guardrails (Cost & Safety)
+	•	Only crawl approved domains from the Source Registry.
+	•	Hard limits:
+	•	max pages per run (e.g., 50)
+	•	max depth (e.g., 2)
+	•	max runtime (e.g., 5 minutes)
+	•	Cache fetched pages to avoid repeat costs.
+	•	Store raw HTML snapshots or extracted text for traceability.
+	•	Every created/updated resource must store:
+	•	sourceUrl
+	•	lastReviewedDate
+	•	ingestedBy = “pipeline”
+	•	status defaults to draft unless admin-approved
+
+Admin Review
+
+Create an Admin screen:
+	•	“Ingestion Runs”
+	•	“New/Updated Draft Resources”
+	•	Approve → publish
+
+⸻
+
+Stage 5 — Duplicate the Pipeline Nationwide (After SC Works)
+
+Once the South Carolina dataset and ingestion pipeline are stable:
+	1.	Expand state dropdown to all 50 states.
+	2.	Run ingestion state-by-state using the same Source Registry approach.
+	3.	Never run nationwide ingestion in one pass; do it as queued jobs:
+
+	•	“Ingest Georgia”
+	•	“Ingest North Carolina”
+	•	etc.
+
+⸻
+
+Success Criteria (MVP)
+	•	Location setup works (GPS + manual state/city)
+	•	Near Me shows category tiles and returns local resources for South Carolina
+	•	Users can save resources into Favorites folders
+	•	Controlled ingestion creates draft SC resources from approved government sources without runaway crawling/cost
+	•	Admin can approve drafts and publish
+
+⸻
+
+Implementation Notes
+	•	Build the State → City dropdown dataset:
+	•	Start with South Carolina cities/towns first
+	•	Then expand to nationwide once pipeline scales
+	•	The AI Guide should reference the same Resource database (RAG) and start with South Carolina-local answers when the user is in SC.
