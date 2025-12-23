@@ -10,7 +10,9 @@ import {
   MessageSquare, 
   ShoppingBag, 
   MapPin,
-  Bot
+  Bot,
+  Bell,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AiGuide from "./ai-guide";
@@ -41,27 +43,36 @@ export default function Layout({ children }: LayoutProps) {
             </a>
           </Link>
 
-          {/* Right: Icons (Search, AI, Profile, Settings) */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+          {/* Right: Icons (Search, AI, Notifications, Profile, Settings) */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Search */}
+            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
               <Search className="h-5 w-5" />
             </Button>
             
+            {/* Chatbot */}
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-primary-foreground hover:bg-white/10 rounded-full relative"
+              className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
               onClick={() => setIsAiOpen(true)}
             >
-              <Bot className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-accent rounded-full animate-pulse"></span>
+              <Sparkles className="h-5 w-5" />
             </Button>
 
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
-              <User className="h-5 w-5" />
+            {/* Notifications */}
+            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 bg-orange-500 rounded-full border-2 border-primary"></span>
+            </Button>
+
+            {/* Profile */}
+            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 font-bold text-sm">
+              JD
             </Button>
             
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 rounded-full">
+            {/* Settings */}
+            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
               <Settings className="h-5 w-5" />
             </Button>
           </div>
