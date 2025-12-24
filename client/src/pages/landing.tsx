@@ -11,21 +11,21 @@ export default function Landing() {
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-black/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-700">
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-2 animate-in fade-in zoom-in duration-700">
         
         {/* Logo Section */}
         <div className="w-full flex justify-center transform hover:scale-105 transition-transform duration-500">
-          <div className="h-32 w-full max-w-[200px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Text Section */}
-        <div className="space-y-2 text-white">
-          <h1 className="text-2xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
+        <div className="space-y-1 text-white">
+          <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
             Welcome to Veteran Care
           </h1>
-          <p className="text-primary-foreground/90 text-[10px] leading-relaxed font-medium px-1 text-justify">
+          <p className="text-primary-foreground/90 text-[10px] leading-tight font-medium px-1 text-justify">
             Welcome to Veteran Care, a state-of-the-art, easy-to-navigate resource center built for veterans from all branches of the U.S. Military. Veteran Care brings essential services together in one place, including Benefits & VA Claims, Healthcare, Crisis Help, Mental Health, Housing Support, Employment, Education & GI Bill, Legal & Financial Assistance, Family & Caregivers Support, Military Records, and Transition Resources. The app also features an AI Guide you can talk to and ask questions, designed to help you quickly find the right resources based on your needs and location. Any information you share is private and confidential and is used only to make navigating the system easier. Veterans can save important resources for later and connect with one another through a powerful community where they can create or join groups centered around support, shared interests, experiences, organizations, or causes. Veteran Care simplifies finding help—so you can focus on what’s next.
           </p>
         </div>
