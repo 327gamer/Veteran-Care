@@ -44,7 +44,7 @@ export default function Resources() {
   const [location, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
-  const { isSaved, toggleSave } = useSavedResources();
+  const { isSaved, toggleSave, userLocation } = useSavedResources();
 
   // Read query param for category if present
   useEffect(() => {
@@ -55,7 +55,14 @@ export default function Resources() {
     }
   }, [location]);
 
-  const activeResources = selectedCategory ? resourcesData[selectedCategory] : [];
+  const activeResources = selectedCategory ? resourcesData[selectedCategory].filter(r => {
+    // If resource is specific to a state, only show if user matches that state
+    if (r.state) {
+      return r.state === userLocation.state;
+    }
+    // If not state-specific, show it (national resources)
+    return true;
+  }) : [];
 
   const handleToggleSave = (e: React.MouseEvent, resource: ResourceItem) => {
     e.stopPropagation(); // Prevent opening detail
@@ -118,9 +125,9 @@ export default function Resources() {
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
-                        {resource.isScLocal && (
+                        {resource.isLocal && (
                           <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
-                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> SC
+                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> {resource.state === "South Carolina" ? "SC" : resource.state === "Texas" ? "TX" : "Local"}
                           </Badge>
                         )}
                       </div>

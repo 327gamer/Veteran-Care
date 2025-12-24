@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useSavedResources } from "@/lib/store";
 import { 
   HeartPulse, 
   Briefcase, 
@@ -123,9 +124,16 @@ const CITIES_BY_STATE: Record<string, string[]> = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [selectedState, setSelectedState] = useState<string>("Texas");
-  const [selectedCity, setSelectedCity] = useState<string>("Austin");
+  const { userLocation, setLocation: setStoreLocation } = useSavedResources();
+  const [selectedState, setSelectedState] = useState<string>(userLocation.state || "Texas");
+  const [selectedCity, setSelectedCity] = useState<string>(userLocation.city || "Austin");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
+
+  useEffect(() => {
+    // Sync state with store if store updates externally
+    setSelectedState(userLocation.state);
+    setSelectedCity(userLocation.city);
+  }, [userLocation]);
 
   const handleCategoryClick = (category: string) => {
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
@@ -139,9 +147,8 @@ export default function Home() {
   };
 
   const saveLocation = () => {
+    setStoreLocation(selectedState, selectedCity);
     setIsLocationOpen(false);
-    // In a real app, this would update the context/store to filter resources
-    console.log(`Location set to: ${selectedCity}, ${selectedState}`);
   };
 
   const getCities = (state: string) => {
@@ -171,7 +178,7 @@ export default function Home() {
             <DialogTrigger asChild>
               <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors py-1.5 px-3">
                 <MapPin className="mr-1 h-3.5 w-3.5" />
-                {selectedCity}, {selectedState === "Texas" ? "TX" : selectedState === "South Carolina" ? "SC" : selectedState}
+                {userLocation.city}, {userLocation.state === "Texas" ? "TX" : userLocation.state === "South Carolina" ? "SC" : userLocation.state}
                 <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
               </Badge>
             </DialogTrigger>
