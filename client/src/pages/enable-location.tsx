@@ -25,26 +25,26 @@ export default function EnableLocation() {
         
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
-          <div className="h-72 w-full max-w-[320px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-56 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Map Pin Icon with Circle Background */}
         <div className="relative flex items-center justify-center -mt-4">
-          <div className="h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-               <MapPin className="h-7 w-7 text-primary fill-primary" />
+          <div className="h-16 w-16 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+               <MapPin className="h-5 w-5 text-primary fill-primary" />
             </div>
           </div>
         </div>
 
         {/* Text Section */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-heading font-extrabold tracking-tight uppercase text-primary">
+        <div className="space-y-1">
+          <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
             ENABLE LOCATION
           </h1>
-          <p className="text-muted-foreground text-sm leading-relaxed px-4">
+          <p className="text-muted-foreground text-xs leading-relaxed px-4">
             Help us show resources near you.
             <br /><br />
             Enabling location allows VeteranCare to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
