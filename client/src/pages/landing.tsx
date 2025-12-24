@@ -15,37 +15,37 @@ export default function Landing() {
         
         {/* Logo Section */}
         <div className="mb-4 w-full flex justify-center transform hover:scale-105 transition-transform duration-500">
-          <div className="h-56 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Text Section */}
-        <div className="space-y-3 text-white">
-          <h1 className="text-3xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
+        <div className="space-y-2 text-white">
+          <h1 className="text-2xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
             VeteranCare
           </h1>
-          <p className="text-primary-foreground/90 text-sm leading-relaxed font-medium">
+          <p className="text-primary-foreground/90 text-xs leading-relaxed font-medium px-2">
             VeteranCare is a comprehensive, easy-to-use resource center for veterans from all branches of the U.S. Military. Find benefits, healthcare, housing, employment, education, and support services in one place—quickly and clearly. VeteranCare helps veterans navigate the resources they’ve earned, without confusion or wasted time.
           </p>
         </div>
 
         {/* Buttons Section */}
-        <div className="w-full space-y-3 pt-2">
+        <div className="w-full space-y-2 pt-2">
           <Link href="/enable-location">
-            <Button className="w-full h-12 text-lg font-bold bg-white text-primary hover:bg-white/90 rounded-full shadow-lg transition-all hover:scale-[1.02]">
+            <Button className="w-full h-10 text-base font-bold bg-white text-primary hover:bg-white/90 rounded-full shadow-lg transition-all hover:scale-[1.02]">
               Get Started
             </Button>
           </Link>
 
           <Link href="/home">
-            <Button variant="outline" className="w-full h-12 text-lg font-bold border-2 border-white text-white hover:bg-white/10 bg-transparent rounded-full transition-all hover:scale-[1.02]">
+            <Button variant="outline" className="w-full h-10 text-base font-bold border-2 border-white text-white hover:bg-white/10 bg-transparent rounded-full transition-all hover:scale-[1.02]">
               I already have an account
             </Button>
           </Link>
           
           <Link href="/enable-location">
-             <Button className="w-full h-12 text-lg font-bold bg-accent hover:bg-accent/90 text-white rounded-full shadow-lg mt-1 transition-all hover:scale-[1.02]">
+             <Button className="w-full h-10 text-base font-bold bg-accent hover:bg-accent/90 text-white rounded-full shadow-lg mt-1 transition-all hover:scale-[1.02]">
                Try Demo - See Full Experience
              </Button>
           </Link>
