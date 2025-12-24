@@ -92,7 +92,7 @@ export default function Onboarding() {
                   </p>
                </div>
                
-               <div className="w-full grid grid-cols-1 gap-1.5 mb-4">
+               <div className="w-full grid grid-cols-2 gap-2 mb-4">
                  {[
                    "Benefits & VA Claims", 
                    "Healthcare", 
@@ -106,9 +106,9 @@ export default function Onboarding() {
                    "Military Records", 
                    "Transition"
                  ].map((item) => (
-                   <div key={item} className="flex items-center space-x-2 border p-2 rounded-md hover:bg-muted/50 transition-colors">
-                     <Checkbox id={item} className="h-3.5 w-3.5" />
-                     <Label htmlFor={item} className="flex-1 cursor-pointer font-medium text-xs">{item}</Label>
+                   <div key={item} className="flex items-center space-x-2 border p-2 rounded-md hover:bg-muted/50 transition-colors h-full">
+                     <Checkbox id={item} className="h-3.5 w-3.5 shrink-0" />
+                     <Label htmlFor={item} className="cursor-pointer font-medium text-[10px] leading-tight">{item}</Label>
                    </div>
                  ))}
                </div>
