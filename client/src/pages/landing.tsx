@@ -5,7 +5,7 @@ import logoImg from "@assets/IMG_9105_1766382279761.png";
 
 export default function Landing() {
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-start pt-12 p-4 relative overflow-hidden bg-primary">
+    <div className="h-screen w-full flex flex-col items-center justify-start pt-4 p-4 relative overflow-hidden bg-primary">
       {/* Background Effects */}
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-black/10 rounded-full blur-[100px] pointer-events-none" />
