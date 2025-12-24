@@ -41,10 +41,10 @@ export default function EnableLocation() {
 
         {/* Text Section */}
         <div className="space-y-1">
-          <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
+          <h1 className="text-3xl font-heading font-extrabold tracking-tight uppercase text-primary">
             ENABLE LOCATION
           </h1>
-          <p className="text-muted-foreground text-[10px] leading-relaxed px-4">
+          <p className="text-muted-foreground text-xs leading-relaxed px-4">
             Help us show resources near you.
             <br /><br />
             Enabling location allows Veteran Care to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
