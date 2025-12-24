@@ -46,6 +46,13 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Right: Icons (Search, AI, Notifications, Profile, Settings) */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Near Me (Top Bar) */}
+            <Link href="/near-me">
+              <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
+                <MapPin className="h-5 w-5" />
+              </Button>
+            </Link>
+
             {/* Search */}
             <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
               <Search className="h-5 w-5" />
@@ -119,10 +126,10 @@ export default function Layout({ children }: LayoutProps) {
             </a>
           </Link>
 
-          <Link href="/near-me">
-            <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/near-me') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-              <MapPin className={`h-5 w-5 ${isActive('/near-me') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Near Me</span>
+          <Link href="/shop">
+            <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/shop') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+              <ShoppingBag className={`h-5 w-5 ${isActive('/shop') ? 'fill-current' : ''}`} />
+              <span className="text-[10px] font-medium">Shop</span>
             </a>
           </Link>
         </div>
