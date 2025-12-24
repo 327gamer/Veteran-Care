@@ -92,7 +92,7 @@ export default function Onboarding() {
 
                <div className="space-y-1 mb-4 text-center">
                   <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
-                    WHAT ARE YOU LOOKING FOR?
+                    HOW CAN VETERAN CARE SUPPORT YOU?
                   </h1>
                   <p className="text-muted-foreground text-[10px] leading-relaxed px-4">
                     Select all that apply.
