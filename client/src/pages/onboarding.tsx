@@ -120,15 +120,24 @@ export default function Onboarding() {
           )}
 
           {step === 3 && (
-             <div className="w-full flex flex-col items-center justify-center space-y-6">
-               <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
-                 <Check className="h-10 w-10 text-green-600" />
+             <div className="w-full flex flex-col items-center justify-center space-y-4">
+               {/* Logo Section */}
+               <div className="w-full flex justify-center mb-2">
+                 <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+                    <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
+                 </div>
                </div>
+
+               <div className="mx-auto bg-green-100 p-3 rounded-full w-fit">
+                 <Check className="h-8 w-8 text-green-600" />
+               </div>
+               
                <div className="text-center space-y-1">
                  <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">YOU'RE ALL SET!</h1>
                  <p className="text-muted-foreground text-sm">Your profile has been created.</p>
                </div>
-               <div className="w-full pt-4">
+               
+               <div className="w-full pt-2">
                  <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={finish}>Go to Home</Button>
                </div>
              </div>
