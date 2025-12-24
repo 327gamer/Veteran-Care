@@ -19,8 +19,9 @@ import {
   MapPin
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { resourcesData } from "@/lib/resources-data";
+import { resourcesData, ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
+import ResourceDetail from "@/components/resource-detail";
 
 const categories = [
   { title: "Benefits & VA Claims", icon: FileText, desc: "Compensation, pension, and appeals" },
@@ -38,11 +39,20 @@ const categories = [
 
 export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
 
   const activeResources = selectedCategory ? resourcesData[selectedCategory] : [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+      
+      {/* Detail View Modal */}
+      <ResourceDetail 
+        resource={selectedResource} 
+        open={!!selectedResource} 
+        onOpenChange={(open) => !open && setSelectedResource(null)} 
+      />
+
       <div>
         <div className="flex items-center gap-2 mb-2">
           {selectedCategory && (
@@ -97,7 +107,11 @@ export default function Resources() {
           {selectedCategory ? (
             <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                {activeResources?.map((resource, i) => (
-                 <Card key={i} className="group hover:border-primary/50 transition-colors">
+                 <Card 
+                    key={i} 
+                    className="group hover:border-primary/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedResource(resource)}
+                 >
                    <CardContent className="p-4">
                      <div className="flex justify-between items-start gap-3">
                        <div className="space-y-1">
