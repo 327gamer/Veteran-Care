@@ -82,7 +82,14 @@ export default function Onboarding() {
           )}
 
           {step === 2 && (
-            <div className="w-full flex flex-col items-center">
+            <div className="w-full flex flex-col items-center h-full">
+               {/* Logo Section */}
+               <div className="w-full flex justify-center mb-0">
+                 <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+                    <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
+                 </div>
+               </div>
+
                <div className="space-y-1 mb-4 text-center">
                   <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
                     WHAT ARE YOU LOOKING FOR?
@@ -113,7 +120,7 @@ export default function Onboarding() {
                  ))}
                </div>
                
-               <div className="w-full pt-1">
+               <div className="w-full pt-1 mt-auto">
                   <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={nextStep}>Continue</Button>
                </div>
             </div>
