@@ -14,7 +14,7 @@ export default function Onboarding() {
   const [, setLocation] = useLocation();
 
   const nextStep = () => setStep(s => s + 1);
-  const finish = () => setLocation("/");
+  const finish = () => setLocation("/home");
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4">
@@ -31,57 +31,13 @@ export default function Onboarding() {
         
         {/* Progress Indicator */}
         <div className="flex justify-between px-2">
-           {[1, 2, 3, 4].map(i => (
+           {[1, 2, 3].map(i => (
              <div key={i} className={`h-1.5 flex-1 mx-1 rounded-full transition-all duration-300 ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
            ))}
         </div>
 
         <Card className="border-t-4 border-t-primary shadow-xl">
           {step === 1 && (
-            <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-              <CardHeader className="text-center">
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
-                  <MapPin className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-heading">Location Setup</CardTitle>
-                <CardDescription>Help us show resources near you.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full py-6 text-base" variant="outline" onClick={nextStep}>
-                  <MapPin className="mr-2 h-5 w-5" /> Enable Location Services
-                </Button>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or enter manually</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>City</Label>
-                    <Input placeholder="Austin" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>State</Label>
-                    <Select>
-                      <SelectTrigger><SelectValue placeholder="TX" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tx">Texas</SelectItem>
-                        <SelectItem value="ca">California</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" onClick={nextStep}>Continue <ArrowRight className="ml-2 h-4 w-4" /></Button>
-              </CardFooter>
-            </div>
-          )}
-
-          {step === 2 && (
              <div className="animate-in fade-in slide-in-from-right-8 duration-300">
               <CardHeader className="text-center">
                 <div className="mx-auto bg-secondary/10 p-4 rounded-full w-fit mb-2">
@@ -126,7 +82,7 @@ export default function Onboarding() {
              </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                <CardHeader className="text-center">
                   <CardTitle className="font-heading">What are you looking for?</CardTitle>
@@ -148,7 +104,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
              <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                <CardHeader className="text-center">
                  <div className="mx-auto bg-green-100 p-4 rounded-full w-fit mb-4">

@@ -32,7 +32,7 @@ export default function Landing() {
 
         {/* Buttons Section */}
         <div className="w-full space-y-4 pt-4">
-          <Link href="/onboarding">
+          <Link href="/enable-location">
             <Button className="w-full h-14 text-lg font-bold bg-white text-primary hover:bg-white/90 rounded-full shadow-lg transition-all hover:scale-[1.02]">
               Get Started
             </Button>

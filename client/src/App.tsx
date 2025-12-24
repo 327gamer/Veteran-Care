@@ -15,6 +15,7 @@ import SavedResources from "@/pages/saved-resources";
 import Layout from "@/components/layout";
 
 import Landing from "@/pages/landing";
+import EnableLocation from "@/pages/enable-location";
 
 // Mock auth/onboarding state wrapper for prototype
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/enable-location" component={EnableLocation} />
 
       <Route path="/onboarding" component={Onboarding} />
       
