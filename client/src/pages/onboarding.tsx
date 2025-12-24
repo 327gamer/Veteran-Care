@@ -83,7 +83,7 @@ export default function Onboarding() {
 
           {step === 2 && (
             <div className="w-full flex flex-col items-center">
-               <div className="space-y-1 mb-6 text-center">
+               <div className="space-y-1 mb-4 text-center">
                   <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
                     WHAT ARE YOU LOOKING FOR?
                   </h1>
@@ -92,7 +92,7 @@ export default function Onboarding() {
                   </p>
                </div>
                
-               <div className="w-full grid grid-cols-1 gap-2 mb-6">
+               <div className="w-full grid grid-cols-1 gap-1.5 mb-4">
                  {[
                    "Benefits & VA Claims", 
                    "Healthcare", 
@@ -106,14 +106,14 @@ export default function Onboarding() {
                    "Military Records", 
                    "Transition"
                  ].map((item) => (
-                   <div key={item} className="flex items-center space-x-2 border p-2.5 rounded-md hover:bg-muted/50 transition-colors">
-                     <Checkbox id={item} />
-                     <Label htmlFor={item} className="flex-1 cursor-pointer font-medium text-sm">{item}</Label>
+                   <div key={item} className="flex items-center space-x-2 border p-2 rounded-md hover:bg-muted/50 transition-colors">
+                     <Checkbox id={item} className="h-3.5 w-3.5" />
+                     <Label htmlFor={item} className="flex-1 cursor-pointer font-medium text-xs">{item}</Label>
                    </div>
                  ))}
                </div>
                
-               <div className="w-full">
+               <div className="w-full pt-1">
                   <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={nextStep}>Continue</Button>
                </div>
             </div>
