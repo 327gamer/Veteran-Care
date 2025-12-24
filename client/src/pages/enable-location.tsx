@@ -25,29 +25,29 @@ export default function EnableLocation() {
         
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
-          <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Map Pin Icon with Circle Background */}
-        <div className="relative flex items-center justify-center -mt-4">
-          <div className="h-12 w-12 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-               <MapPin className="h-4 w-4 text-primary fill-primary" />
+        <div className="relative flex items-center justify-center -mt-6">
+          <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+               <MapPin className="h-5 w-5 text-primary fill-primary" />
             </div>
           </div>
         </div>
 
         {/* Text Section */}
         <div className="space-y-1">
-          <h1 className="text-lg font-heading font-extrabold tracking-tight uppercase text-primary">
+          <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
             ENABLE LOCATION
           </h1>
           <p className="text-muted-foreground text-[10px] leading-relaxed px-4">
             Help us show resources near you.
             <br /><br />
-            Enabling location allows VeteranCare to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
+            Enabling location allows Veteran Care to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
           </p>
         </div>
 
