@@ -14,6 +14,8 @@ import Onboarding from "@/pages/onboarding";
 import SavedResources from "@/pages/saved-resources";
 import Layout from "@/components/layout";
 
+import Landing from "@/pages/landing";
+
 // Mock auth/onboarding state wrapper for prototype
 function Router() {
   // In a real app, we'd check if onboarding is complete
@@ -21,9 +23,11 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/" component={Landing} />
+
       <Route path="/onboarding" component={Onboarding} />
       
-      <Route path="/">
+      <Route path="/home">
         <Layout>
           <Home />
         </Layout>
