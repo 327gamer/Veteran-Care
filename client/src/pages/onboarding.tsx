@@ -93,7 +93,19 @@ export default function Onboarding() {
                </div>
                
                <div className="w-full grid grid-cols-1 gap-2 mb-6">
-                 {["Benefits & Claims", "Healthcare", "Mental Health", "Employment", "Housing", "Education"].map((item) => (
+                 {[
+                   "Benefits & VA Claims", 
+                   "Healthcare", 
+                   "Crisis Help", 
+                   "Mental Health", 
+                   "Housing Support", 
+                   "Employment", 
+                   "Education & GI Bill", 
+                   "Legal & Financial", 
+                   "Family & Caregivers", 
+                   "Military Records", 
+                   "Transition"
+                 ].map((item) => (
                    <div key={item} className="flex items-center space-x-2 border p-2.5 rounded-md hover:bg-muted/50 transition-colors">
                      <Checkbox id={item} />
                      <Label htmlFor={item} className="flex-1 cursor-pointer font-medium text-sm">{item}</Label>
