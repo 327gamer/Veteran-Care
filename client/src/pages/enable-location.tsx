@@ -21,7 +21,7 @@ export default function EnableLocation() {
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
       
       {/* Content Container */}
-      <div className="w-full max-w-md flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
+      <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500">
         
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
@@ -31,7 +31,7 @@ export default function EnableLocation() {
         </div>
 
         {/* Map Pin Icon with Circle Background */}
-        <div className="relative flex items-center justify-center -mt-6">
+        <div className="relative flex items-center justify-center">
           <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                <MapPin className="h-5 w-5 text-primary fill-primary" />
