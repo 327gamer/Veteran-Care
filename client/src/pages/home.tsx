@@ -41,9 +41,9 @@ import {
 import { Label } from "@/components/ui/label";
 
 const quickActions = [
+  { label: "Crisis Help", icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-50" },
   { label: "Benefits & VA Claims", icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
   { label: "Healthcare", icon: HeartPulse, color: "text-red-600", bg: "bg-red-50" },
-  { label: "Crisis Help", icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-50" },
   { label: "Mental Health", icon: Brain, color: "text-purple-600", bg: "bg-purple-50" },
   { label: "Housing Support", icon: HomeIcon, color: "text-orange-600", bg: "bg-orange-50" },
   { label: "Employment", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },

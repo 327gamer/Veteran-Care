@@ -27,9 +27,9 @@ import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
 
 const categories = [
+  { title: "Crisis Help", icon: ShieldAlert, desc: "Emergency support and suicide prevention", variant: "destructive" },
   { title: "Benefits & VA Claims", icon: FileText, desc: "Compensation, pension, and appeals" },
   { title: "Healthcare", icon: HeartPulse, desc: "VA health, TRICARE, and community care" },
-  { title: "Crisis Help", icon: ShieldAlert, desc: "Emergency support and suicide prevention", variant: "destructive" },
   { title: "Mental Health", icon: Brain, desc: "PTSD, TBI, and counseling support" },
   { title: "Housing Support", icon: Home, desc: "Loans, homelessness, and grants" },
   { title: "Employment", icon: Briefcase, desc: "Job search, resume help, and training" },
