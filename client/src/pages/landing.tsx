@@ -44,7 +44,7 @@ export default function Landing() {
             </Button>
           </Link>
           
-          <Link href="/home">
+          <Link href="/enable-location">
              <Button className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-white rounded-full shadow-lg mt-2 transition-all hover:scale-[1.02]">
                Try Demo - See Full Experience
              </Button>
