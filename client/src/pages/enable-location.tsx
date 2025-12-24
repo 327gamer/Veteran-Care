@@ -25,16 +25,16 @@ export default function EnableLocation() {
         
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
-          <div className="h-64 w-full max-w-[320px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-72 w-full max-w-[320px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Map Pin Icon with Circle Background */}
-        <div className="relative flex items-center justify-center">
-          <div className="h-24 w-24 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-               <MapPin className="h-8 w-8 text-primary fill-primary" />
+        <div className="relative flex items-center justify-center -mt-4">
+          <div className="h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+               <MapPin className="h-7 w-7 text-primary fill-primary" />
             </div>
           </div>
         </div>
