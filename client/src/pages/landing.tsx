@@ -5,33 +5,33 @@ import logoImg from "@assets/IMG_9105_1766382279761.png";
 
 export default function Landing() {
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden bg-primary">
+    <div className="h-screen w-full flex flex-col items-center justify-start pt-12 p-4 relative overflow-hidden bg-primary">
       {/* Background Effects */}
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-black/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-1 animate-in fade-in zoom-in duration-700">
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-3 animate-in fade-in zoom-in duration-700">
         
         {/* Logo Section */}
         <div className="w-full flex justify-center transform hover:scale-105 transition-transform duration-500">
-          <div className="h-32 w-full max-w-[200px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-28 w-full max-w-[200px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Text Section */}
-        <div className="space-y-1 text-white">
-          <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md leading-tight">
+        <div className="space-y-2 text-white">
+          <h1 className="text-2xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md leading-tight">
             Welcome to<br/>Veteran Care
           </h1>
-          <p className="text-primary-foreground/90 text-[10px] leading-tight font-medium px-1 text-justify">
+          <p className="text-primary-foreground/90 text-[11px] leading-snug font-medium px-1 text-justify">
             Welcome to Veteran Care, a state-of-the-art, easy-to-navigate resource center built for veterans from all branches of the U.S. Military. Veteran Care brings essential services together in one place, including Benefits & VA Claims, Healthcare, Crisis Help, Mental Health, Housing Support, Employment, Education & GI Bill, Legal & Financial Assistance, Family & Caregivers Support, Military Records, and Transition Resources. The app also features an AI Guide you can talk to and ask questions, designed to help you quickly find the right resources based on your needs and location. Any information you share is private and confidential and is used only to make navigating the system easier. Veterans can save important resources for later and connect with one another through a powerful community where they can create or join groups centered around support, shared interests, experiences, organizations, or causes. Veteran Care simplifies finding help—so you can focus on what’s next.
           </p>
         </div>
 
         {/* Buttons Section */}
-        <div className="w-full space-y-1.5 pt-1">
+        <div className="w-full space-y-2 pt-2">
           <Link href="/enable-location">
             <Button className="w-full h-10 text-sm font-bold bg-white text-primary hover:bg-white/90 rounded-full shadow-lg transition-all hover:scale-[1.02]">
               Get Started
