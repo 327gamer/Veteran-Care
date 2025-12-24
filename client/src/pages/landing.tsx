@@ -14,8 +14,8 @@ export default function Landing() {
       <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-8 animate-in fade-in zoom-in duration-700">
         
         {/* Logo Section */}
-        <div className="bg-white p-6 rounded-3xl shadow-2xl mb-4 transform hover:scale-105 transition-transform duration-500">
-          <div className="h-24 w-40 flex items-center justify-center">
+        <div className="mb-6 transform hover:scale-105 transition-transform duration-500">
+          <div className="h-48 w-64 flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
