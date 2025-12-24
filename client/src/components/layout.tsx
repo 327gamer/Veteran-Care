@@ -12,7 +12,8 @@ import {
   MapPin,
   Bot,
   Bell,
-  Sparkles
+  Sparkles,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AiGuide from "./ai-guide";
@@ -100,7 +101,14 @@ export default function Layout({ children }: LayoutProps) {
           <Link href="/resources">
             <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
               <BookOpen className={`h-5 w-5 ${isActive('/resources') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">My Resources</span>
+              <span className="text-[10px] font-medium">Resources</span>
+            </a>
+          </Link>
+
+          <Link href="/saved-resources">
+            <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/saved-resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+              <Heart className={`h-5 w-5 ${isActive('/saved-resources') ? 'fill-current' : ''}`} />
+              <span className="text-[10px] font-medium text-center leading-tight">My Saved</span>
             </a>
           </Link>
 
@@ -108,13 +116,6 @@ export default function Layout({ children }: LayoutProps) {
             <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
               <MessageSquare className={`h-5 w-5 ${isActive('/community') ? 'fill-current' : ''}`} />
               <span className="text-[10px] font-medium">Community</span>
-            </a>
-          </Link>
-
-          <Link href="/shop">
-            <a className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/shop') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-              <ShoppingBag className={`h-5 w-5 ${isActive('/shop') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Shop</span>
             </a>
           </Link>
 

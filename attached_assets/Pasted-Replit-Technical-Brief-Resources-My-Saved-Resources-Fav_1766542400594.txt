@@ -1,0 +1,172 @@
+Replit Technical Brief — Resources + My Saved Resources + Favorite (Heart) System + Full Category Tiles on Home
+
+Goal
+
+Improve VeteranCare UX by adding a Favorites/Saved Resources system that lets veterans save individual resource items from any category using a heart icon. Saved items appear in a dedicated bottom tab My Saved Resources.
+
+Also update the Home screen so all resource categories appear as scrollable tiles (not just a few).
+
+⸻
+
+1) Bottom Navigation Update (Taskbar)
+
+Required Bottom Tabs (left → right)
+	1.	🏠 Home
+	2.	📚 Resources
+	3.	❤️ My Saved Resources
+	4.	💬 Community
+	5.	📍 Near Me
+(Shop can remain if needed, but Resources + My Saved Resources must be adjacent and always visible.)
+
+Important: “My Saved Resources” must be a distinct screen that lists the user’s saved resource items.
+
+⸻
+
+2) Resources Screen Behavior (No change to category structure)
+
+Resources Tab
+	•	Continue showing all resource categories as currently implemented:
+	•	Benefits & VA Claims
+	•	Healthcare
+	•	Crisis Help
+	•	Mental Health
+	•	Housing Support
+	•	Employment
+	•	Education & GI Bill
+	•	Legal & Financial
+	•	Family & Caregivers
+	•	Military Records
+	•	Transition
+
+Category Drilldown
+	•	When user taps a category, show a list of resource items within that category (current behavior)
+	•	Each resource item row/card MUST include a heart icon on the right.
+
+⸻
+
+3) Favorite (Heart) UI + Interaction Requirements
+
+Heart Icon Rules
+	•	Default state: empty/outline heart = not saved
+	•	Saved state: filled heart = saved
+
+Interaction
+	•	User taps empty heart → immediately save resource to favorites → heart becomes filled
+	•	User taps filled heart → remove from favorites → heart returns to outline
+
+Required List Placement
+	•	Heart must appear on:
+	•	category drilldown list rows
+	•	search result rows (if resources appear in search)
+	•	Near Me results list rows (same list component)
+
+Optional Nice-to-have UX (recommended)
+	•	Show a subtle toast/snackbar:
+	•	“Saved to My Saved Resources”
+	•	“Removed from My Saved Resources”
+
+⸻
+
+4) My Saved Resources Screen Requirements
+
+Data Display
+	•	Show a list of all saved items for the logged-in user
+	•	Grouping options:
+	•	Default: grouped by category
+	•	Secondary: sort by recently saved
+	•	Each saved item should display:
+	•	title
+	•	category label
+	•	location tag (Statewide / City)
+	•	quick actions: “Open”, and a filled heart to remove
+
+Empty State
+
+If no saved items:
+	•	Show empty state message:
+	•	“No saved resources yet”
+	•	“Tap the heart next to any resource to save it here.”
+
+⸻
+
+5) Data Model & Persistence (Must Persist Per User)
+
+Required Tables/Collections
+
+Resources (already exists)
+	•	id
+	•	category
+	•	title
+	•	descriptionPlainEnglish (optional)
+	•	websiteUrl (optional)
+	•	location fields (state/city) if applicable
+
+UserSavedResources (new)
+	•	id
+	•	userId
+	•	resourceId
+	•	createdAt
+
+Constraints
+	•	Unique composite key: (userId, resourceId) so duplicates can’t happen
+	•	Must persist across sessions (database storage, not local only)
+
+⸻
+
+6) API / Functions Needed (Internal)
+
+Implement these actions:
+	•	GET /saved-resources?userId=...
+Returns saved resource list (join resources table)
+	•	POST /saved-resources
+Body: { userId, resourceId }
+Creates saved record
+	•	DELETE /saved-resources/{id} OR DELETE /saved-resources?userId=&resourceId=
+Removes saved record
+
+Performance note: Cache saved IDs for user during session to quickly render hearts.
+
+⸻
+
+7) UI Rendering Logic (Critical to avoid bugs)
+
+In any resource list (category drilldown, Near Me, search):
+	•	Fetch user saved resource IDs once (e.g., on app load or on screen enter)
+	•	For each resource item:
+	•	isSaved = savedResourceIds.includes(resource.id)
+	•	Render heart filled if saved, outline if not
+
+After toggle:
+	•	Update UI immediately (optimistic update)
+	•	Then sync to DB
+	•	If DB fails, revert heart state
+
+⸻
+
+8) Home Screen — Show ALL Resource Category Tiles
+
+Current Home screen has “Quick Actions” with only a few tiles. Update so it shows ALL categories as tiles/cards, scrollable.
+
+Home Layout Requirements
+	•	Section: Quick Actions
+	•	Render tiles for every resource category (the full 11 categories)
+	•	Tiles should be clickable and route to the same category drilldown as the Resources tab
+
+Consistency rule: Home category tiles and Resources category tiles must route to the exact same screen and data.
+
+⸻
+
+9) Near Me Integration (Must Work With Saved Hearts)
+
+When user is in Near Me:
+	•	Show the category tiles filtered for their location (as already planned)
+	•	Within each category list, each resource row must still show the heart icon and save to My Saved Resources
+
+⸻
+
+Acceptance Criteria (MVP)
+	1.	Bottom bar includes Resources and My Saved Resources adjacent
+	2.	Every resource item row includes a heart icon that toggles save/unsave
+	3.	Saved resources persist per user and appear in My Saved Resources tab
+	4.	Home Quick Actions lists all categories, not a limited set
+	5.	Heart state is consistent across Home, Resources, Near Me, and Search

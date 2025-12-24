@@ -11,6 +11,7 @@ import Community from "@/pages/community";
 import Shop from "@/pages/shop";
 import NearMe from "@/pages/near-me";
 import Onboarding from "@/pages/onboarding";
+import SavedResources from "@/pages/saved-resources";
 import Layout from "@/components/layout";
 
 // Mock auth/onboarding state wrapper for prototype
@@ -31,6 +32,12 @@ function Router() {
       <Route path="/resources">
         <Layout>
           <Resources />
+        </Layout>
+      </Route>
+
+      <Route path="/saved-resources">
+        <Layout>
+          <SavedResources />
         </Layout>
       </Route>
 
