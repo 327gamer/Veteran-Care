@@ -15,18 +15,18 @@ export default function Landing() {
         
         {/* Logo Section */}
         <div className="mb-4 w-full flex justify-center transform hover:scale-105 transition-transform duration-500">
-          <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
+          <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
              <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 
         {/* Text Section */}
         <div className="space-y-2 text-white">
-          <h1 className="text-2xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
-            VeteranCare
+          <h1 className="text-3xl font-heading font-extrabold tracking-tight uppercase drop-shadow-md">
+            Veteran Care
           </h1>
           <p className="text-primary-foreground/90 text-xs leading-relaxed font-medium px-2">
-            VeteranCare is a comprehensive, easy-to-use resource center for veterans from all branches of the U.S. Military. Find benefits, healthcare, housing, employment, education, and support services in one place—quickly and clearly. VeteranCare helps veterans navigate the resources they’ve earned, without confusion or wasted time.
+            Veteran Care is a comprehensive, easy-to-use resource center for veterans from all branches of the U.S. Military. Find benefits, healthcare, housing, employment, education, and support services in one place—quickly and clearly. Veteran Care helps veterans navigate the resources they’ve earned, without confusion or wasted time.
           </p>
         </div>
 
