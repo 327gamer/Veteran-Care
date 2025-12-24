@@ -17,40 +17,34 @@ export default function Onboarding() {
   const finish = () => setLocation("/home");
 
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
       
-      {/* Brand Header */}
-      <div className="mb-8 flex flex-col items-center">
-        <div className="h-16 w-16 overflow-hidden rounded-lg shadow-md mb-3">
-          <img src={logoImg} alt="VeteranCare" className="h-full w-full object-cover" />
-        </div>
-        <h1 className="text-2xl font-bold font-heading text-primary">VeteranCare</h1>
-      </div>
-
-      <div className="w-full max-w-md space-y-4">
+      {/* Content Container */}
+      <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500">
         
-        {/* Progress Indicator */}
-        <div className="flex justify-between px-2">
-           {[1, 2, 3].map(i => (
-             <div key={i} className={`h-1.5 flex-1 mx-1 rounded-full transition-all duration-300 ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
-           ))}
-        </div>
-
-        <Card className="border-t-4 border-t-primary shadow-xl">
-          {step === 1 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-              <CardHeader className="text-center">
-                <div className="mx-auto bg-secondary/10 p-4 rounded-full w-fit mb-2">
-                  <Shield className="h-8 w-8 text-secondary" />
+        {step === 1 && (
+             <div className="w-full flex flex-col items-center">
+              {/* Logo Section */}
+              <div className="w-full flex justify-center mb-0">
+                <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+                   <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
                 </div>
-                <CardTitle className="font-heading">Service Information</CardTitle>
-                <CardDescription>Optional. Helps us personalize your benefits.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                    <Label>Branch</Label>
+              </div>
+
+              <div className="space-y-1 mb-6 text-center">
+                <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
+                  SERVICE INFORMATION
+                </h1>
+                <p className="text-muted-foreground text-[10px] leading-relaxed px-4">
+                  Optional. Helps us personalize your benefits.
+                </p>
+              </div>
+
+              <div className="w-full space-y-3">
+                 <div className="space-y-1 text-left">
+                    <Label className="text-xs">Branch</Label>
                     <Select>
-                      <SelectTrigger><SelectValue placeholder="Select Branch" /></SelectTrigger>
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Select Branch" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="army">Army</SelectItem>
                         <SelectItem value="navy">Navy</SelectItem>
@@ -61,10 +55,10 @@ export default function Onboarding() {
                       </SelectContent>
                     </Select>
                  </div>
-                 <div className="space-y-2">
-                    <Label>Service Era</Label>
+                 <div className="space-y-1 text-left">
+                    <Label className="text-xs">Service Era</Label>
                     <Select>
-                      <SelectTrigger><SelectValue placeholder="Select Era" /></SelectTrigger>
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Select Era" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="post911">Post-9/11</SelectItem>
                         <SelectItem value="gulfwar">Gulf War</SelectItem>
@@ -74,51 +68,59 @@ export default function Onboarding() {
                       </SelectContent>
                     </Select>
                  </div>
-              </CardContent>
-              <CardFooter className="flex-col gap-2">
-                <Button className="w-full" onClick={nextStep}>Continue</Button>
-                <Button variant="ghost" className="w-full" onClick={nextStep}>Skip</Button>
-              </CardFooter>
+              </div>
+              
+              <div className="w-full space-y-2 pt-6">
+                <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={nextStep}>
+                  Continue
+                </Button>
+                <Button variant="ghost" className="w-full text-sm font-medium text-muted-foreground h-8" onClick={nextStep}>
+                  Skip
+                </Button>
+              </div>
              </div>
           )}
 
           {step === 2 && (
-            <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-               <CardHeader className="text-center">
-                  <CardTitle className="font-heading">What are you looking for?</CardTitle>
-                  <CardDescription>Select all that apply.</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <div className="grid grid-cols-1 gap-3">
-                   {["Benefits & Claims", "Healthcare", "Mental Health", "Employment", "Housing", "Education"].map((item) => (
-                     <div key={item} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors">
-                       <Checkbox id={item} />
-                       <Label htmlFor={item} className="flex-1 cursor-pointer font-medium">{item}</Label>
-                     </div>
-                   ))}
-                 </div>
-               </CardContent>
-               <CardFooter>
-                  <Button className="w-full" onClick={nextStep}>Continue</Button>
-               </CardFooter>
+            <div className="w-full flex flex-col items-center">
+               <div className="space-y-1 mb-6 text-center">
+                  <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">
+                    WHAT ARE YOU LOOKING FOR?
+                  </h1>
+                  <p className="text-muted-foreground text-[10px] leading-relaxed px-4">
+                    Select all that apply.
+                  </p>
+               </div>
+               
+               <div className="w-full grid grid-cols-1 gap-2 mb-6">
+                 {["Benefits & Claims", "Healthcare", "Mental Health", "Employment", "Housing", "Education"].map((item) => (
+                   <div key={item} className="flex items-center space-x-2 border p-2.5 rounded-md hover:bg-muted/50 transition-colors">
+                     <Checkbox id={item} />
+                     <Label htmlFor={item} className="flex-1 cursor-pointer font-medium text-sm">{item}</Label>
+                   </div>
+                 ))}
+               </div>
+               
+               <div className="w-full">
+                  <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={nextStep}>Continue</Button>
+               </div>
             </div>
           )}
 
           {step === 3 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-               <CardHeader className="text-center">
-                 <div className="mx-auto bg-green-100 p-4 rounded-full w-fit mb-4">
-                   <Check className="h-10 w-10 text-green-600" />
-                 </div>
-                 <CardTitle className="font-heading">You're All Set!</CardTitle>
-                 <CardDescription>Your profile has been created.</CardDescription>
-               </CardHeader>
-               <CardFooter>
-                 <Button className="w-full" size="lg" onClick={finish}>Go to Home</Button>
-               </CardFooter>
+             <div className="w-full flex flex-col items-center justify-center space-y-6">
+               <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
+                 <Check className="h-10 w-10 text-green-600" />
+               </div>
+               <div className="text-center space-y-1">
+                 <h1 className="text-xl font-heading font-extrabold tracking-tight uppercase text-primary">YOU'RE ALL SET!</h1>
+                 <p className="text-muted-foreground text-sm">Your profile has been created.</p>
+               </div>
+               <div className="w-full pt-4">
+                 <Button className="w-full h-10 text-base font-bold rounded-full shadow-lg" onClick={finish}>Go to Home</Button>
+               </div>
              </div>
           )}
-        </Card>
       </div>
     </div>
   );
