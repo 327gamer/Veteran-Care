@@ -7,7 +7,9 @@ import {
   ChevronLeft,
   ExternalLink,
   MapPin,
-  Heart
+  Heart,
+  Globe,
+  MapPinned
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,34 @@ import { useSavedResources } from "@/lib/store";
 import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+
+const US_STATES = [
+  { label: "Alabama", value: "AL" }, { label: "Alaska", value: "AK" }, { label: "Arizona", value: "AZ" },
+  { label: "Arkansas", value: "AR" }, { label: "California", value: "CA" }, { label: "Colorado", value: "CO" },
+  { label: "Connecticut", value: "CT" }, { label: "Delaware", value: "DE" }, { label: "Florida", value: "FL" },
+  { label: "Georgia", value: "GA" }, { label: "Hawaii", value: "HI" }, { label: "Idaho", value: "ID" },
+  { label: "Illinois", value: "IL" }, { label: "Indiana", value: "IN" }, { label: "Iowa", value: "IA" },
+  { label: "Kansas", value: "KS" }, { label: "Kentucky", value: "KY" }, { label: "Louisiana", value: "LA" },
+  { label: "Maine", value: "ME" }, { label: "Maryland", value: "MD" }, { label: "Massachusetts", value: "MA" },
+  { label: "Michigan", value: "MI" }, { label: "Minnesota", value: "MN" }, { label: "Mississippi", value: "MS" },
+  { label: "Missouri", value: "MO" }, { label: "Montana", value: "MT" }, { label: "Nebraska", value: "NE" },
+  { label: "Nevada", value: "NV" }, { label: "New Hampshire", value: "NH" }, { label: "New Jersey", value: "NJ" },
+  { label: "New Mexico", value: "NM" }, { label: "New York", value: "NY" }, { label: "North Carolina", value: "NC" },
+  { label: "North Dakota", value: "ND" }, { label: "Ohio", value: "OH" }, { label: "Oklahoma", value: "OK" },
+  { label: "Oregon", value: "OR" }, { label: "Pennsylvania", value: "PA" }, { label: "Rhode Island", value: "RI" },
+  { label: "South Carolina", value: "SC" }, { label: "South Dakota", value: "SD" }, { label: "Tennessee", value: "TN" },
+  { label: "Texas", value: "TX" }, { label: "Utah", value: "UT" }, { label: "Vermont", value: "VT" },
+  { label: "Virginia", value: "VA" }, { label: "Washington", value: "WA" }, { label: "West Virginia", value: "WV" },
+  { label: "Wisconsin", value: "WI" }, { label: "Wyoming", value: "WY" },
+];
 
 interface SupabaseResource {
   id: string;
@@ -57,19 +87,26 @@ export default function Resources() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
-  const { isSaved, toggleSave, userLocation } = useSavedResources();
+  const { isSaved, toggleSave } = useSavedResources();
+
+  const [locationMode, setLocationMode] = useState<"national" | "state">("national");
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [cityPlaceholder, setCityPlaceholder] = useState<string>("");
+  const [zipPlaceholder, setZipPlaceholder] = useState<string>("");
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(r => r.json()),
   });
 
+  const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
+
   const { data: apiResources = [], isLoading: resourcesLoading } = useQuery<SupabaseResource[]>({
-    queryKey: ["/api/resources", selectedSlug, userLocation.state],
+    queryKey: ["/api/resources", selectedSlug, stateParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
-      if (userLocation.state) params.set("state", userLocation.state);
+      if (stateParam) params.set("state", stateParam);
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
     enabled: !!selectedSlug,
@@ -145,6 +182,67 @@ export default function Resources() {
 
       {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Location:</span>
+                <div className="flex rounded-full border bg-background overflow-hidden">
+                  <button
+                    data-testid="toggle-national"
+                    onClick={() => { setLocationMode("national"); setSelectedState(""); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Globe className="h-3 w-3" />
+                    National
+                  </button>
+                  <button
+                    data-testid="toggle-by-state"
+                    onClick={() => setLocationMode("state")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "state" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <MapPinned className="h-3 w-3" />
+                    By State
+                  </button>
+                </div>
+              </div>
+
+              {locationMode === "state" && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={selectedState} onValueChange={setSelectedState}>
+                    <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
+                      <SelectValue placeholder="Select a state" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {US_STATES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    data-testid="input-city"
+                    placeholder="City (coming soon)"
+                    disabled
+                    className="h-9 text-xs flex-1 opacity-50"
+                    value={cityPlaceholder}
+                    onChange={(e) => setCityPlaceholder(e.target.value)}
+                  />
+                  <Input
+                    data-testid="input-zip"
+                    placeholder="ZIP (coming soon)"
+                    disabled
+                    className="h-9 text-xs w-28 opacity-50"
+                    value={zipPlaceholder}
+                    onChange={(e) => setZipPlaceholder(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {locationMode === "state" && selectedState && (
+                <p className="text-[10px] text-muted-foreground">
+                  Showing national resources + {US_STATES.find(s => s.value === selectedState)?.label} state resources
+                </p>
+              )}
+            </div>
+
             {resourcesLoading && (
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
             )}
