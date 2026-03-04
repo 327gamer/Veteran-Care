@@ -11,6 +11,8 @@ import {
   FileArchive,
   Flag,
   Car,
+  Heart,
+  HandHeart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +38,8 @@ const configBySlug: Record<string, CategoryDisplayConfig> = {
   "military-records": { icon: FileArchive, color: "text-amber-600", bg: "bg-amber-50", desc: "DD214, corrections, and medals" },
   "transition": { icon: Flag, color: "text-cyan-600", bg: "bg-cyan-50", desc: "Returning to civilian life" },
   "transportation": { icon: Car, color: "text-teal-600", bg: "bg-teal-50", desc: "Travel assistance and vehicle grants" },
+  "substance-recovery": { icon: Heart, color: "text-rose-600", bg: "bg-rose-50", desc: "Addiction treatment, recovery housing, and sober support" },
+  "community-support": { icon: HandHeart, color: "text-violet-600", bg: "bg-violet-50", desc: "Veteran organizations, volunteer groups, and peer networks" },
 };
 
 const defaultConfig: CategoryDisplayConfig = {
