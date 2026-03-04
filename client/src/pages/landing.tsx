@@ -1,7 +1,7 @@
 
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import logoImg from "@assets/IMG_9105_1766382279761.png";
+import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 
 export default function Landing() {
   return (

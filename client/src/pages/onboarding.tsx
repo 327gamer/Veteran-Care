@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Shield, Check, ArrowRight } from "lucide-react";
-import logoImg from "@assets/IMG_9104_1766377226249.jpeg";
+import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);

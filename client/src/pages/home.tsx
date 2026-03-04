@@ -24,7 +24,7 @@ import {
   MoreHorizontal
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import logoImg from "@assets/IMG_9105_1766382279761.png";
+import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import {
   Select,
   SelectContent,
