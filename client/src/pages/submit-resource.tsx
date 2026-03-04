@@ -130,7 +130,7 @@ export default function SubmitResource() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
-            <Select value={form.category_slug} onValueChange={(v) => updateField("category_slug", v)}>
+            <Select value={form.category_slug || undefined} onValueChange={(v) => updateField("category_slug", v)}>
               <SelectTrigger data-testid="select-category" id="category">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -182,7 +182,7 @@ export default function SubmitResource() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="state">State</Label>
-              <Select value={form.state} onValueChange={(v) => updateField("state", v)}>
+              <Select value={form.state || undefined} onValueChange={(v) => updateField("state", v)}>
                 <SelectTrigger data-testid="select-state" id="state">
                   <SelectValue placeholder="State" />
                 </SelectTrigger>
