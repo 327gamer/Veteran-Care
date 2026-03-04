@@ -1,0 +1,66 @@
+STEP 06 – Build “Submit a Resource” + Admin Review workflow
+
+GOAL:
+Let users submit local resources (by category + location), store them as PENDING, and give admins a clean review page to approve/edit/publish.
+
+A) DATABASE (Supabase)
+1) Add these columns to public.resources if missing:
+- status text default 'pending' (values: pending, approved, rejected)
+- submitted_by_email text
+- submitted_by_name text
+- notes_internal text
+- last_verified_at timestamp
+- zip text
+- county text
+- is_featured boolean default false
+- featured_rank int default 0
+
+2) Ensure national resources remain state=NULL and city=NULL (already working).
+
+B) BACKEND (API)
+Create/confirm these endpoints:
+
+1) POST /api/submit-resource
+- Accepts: category_slug, title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name
+- Sets: status='pending', last_verified_at=NULL
+- Returns success + created resource id
+
+2) GET /api/admin/resources?status=pending|approved|rejected&q=&state=
+- Returns resource list for admin
+
+3) PATCH /api/admin/resources/:id
+- Allows admin to edit fields + set status (approve/reject)
+- Allows admin to set last_verified_at when approved
+
+Security:
+- Admin endpoints require a simple admin key check using an environment variable ADMIN_KEY
+  (Store ADMIN_KEY in Replit Secrets, do not hardcode)
+- Public GET /api/resources should only return status='approved'
+
+C) FRONTEND (UI)
+1) Add a “Submit a Resource” button on Resources page (top right).
+2) Create a form page/modal:
+- Category dropdown (from /api/categories)
+- Title
+- Short description
+- Website URL
+- Phone
+- City / State / ZIP
+- Eligibility
+- Submitter name + email
+- Submit button -> POST /api/submit-resource
+Show confirmation message after submit.
+
+3) Add an Admin page at /admin/resources
+- Tabs or filter buttons: Pending / Approved / Rejected
+- Table or card list with search and state filter
+- Click a resource -> edit drawer or detail view
+- Approve / Reject buttons
+- Save changes (PATCH)
+
+Do not change the existing style/theme. Keep UI clean and consistent.
+
+D) TESTS
+- Submit a resource -> appears in Pending list
+- Approve it -> it becomes visible in the public Resources listings
+- Reject it -> hidden from public
