@@ -6,18 +6,20 @@ interface SavedResourcesState {
   savedIds: string[];
   userLocation: {
     state: string;
+    stateCode: string;
     city: string;
+    zip: string;
   };
   toggleSave: (id: string) => void;
   isSaved: (id: string) => boolean;
-  setLocation: (state: string, city: string) => void;
+  setLocation: (stateCode: string, state: string, city: string, zip: string) => void;
 }
 
 export const useSavedResources = create<SavedResourcesState>()(
   persist(
     (set, get) => ({
       savedIds: [],
-      userLocation: { state: "Texas", city: "Austin" },
+      userLocation: { state: "", stateCode: "", city: "", zip: "" },
       toggleSave: (id: string) => set((state: SavedResourcesState) => {
         const isAlreadySaved = state.savedIds.includes(id);
         if (isAlreadySaved) {
@@ -27,7 +29,9 @@ export const useSavedResources = create<SavedResourcesState>()(
         }
       }),
       isSaved: (id: string) => get().savedIds.includes(id),
-      setLocation: (state: string, city: string) => set(() => ({ userLocation: { state, city } })),
+      setLocation: (stateCode: string, state: string, city: string, zip: string) => set(() => ({
+        userLocation: { stateCode, state, city, zip }
+      })),
     }),
     {
       name: 'veteran-care-saved-resources',

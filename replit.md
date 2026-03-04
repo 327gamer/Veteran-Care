@@ -26,6 +26,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
 - `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>` - Returns approved resources filtered by category slug, state, city, ZIP, and/or search query
 - `GET /api/resources/:id` - Returns a single resource by UUID
+- `GET /api/locations/cities?state=<code>&category=<slug>` - Returns distinct city names from approved resources
+- `GET /api/locations/zips?state=<code>&city=<name>&category=<slug>` - Returns distinct ZIP codes from approved resources
 - `POST /api/submit-resource` - Creates a new resource with status=pending
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
@@ -58,7 +60,9 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - Green color scheme throughout
 - Mobile-first, single-screen layouts for onboarding
 - Crisis Help always shown first in resource lists
-- Location filtering via Zustand store (state → city)
+- Location filtering via Zustand store (stateCode, state, city, zip)
+- Auto-geolocation via browser + OpenStreetMap Nominatim reverse geocoding (cached 1hr in localStorage)
+- City/ZIP autocomplete suggestions from approved resource data
 - veterancare.com (Duda) acts as marketing front door; this Replit app is the functional product
 - Admin page uses standalone layout (no bottom nav) with its own header
 - Resource submissions default to status=pending; only approved resources show publicly

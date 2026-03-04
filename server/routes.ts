@@ -95,6 +95,64 @@ export async function registerRoutes(
     return res.json(data);
   });
 
+  app.get("/api/locations/cities", async (req, res) => {
+    const { state, category } = req.query;
+
+    let query = supabase
+      .from("resources")
+      .select("city, categories!inner(slug)")
+      .eq("status", "approved")
+      .not("city", "is", null);
+
+    if (state) {
+      query = query.eq("state", state as string);
+    }
+
+    if (category) {
+      query = query.eq("categories.slug", category as string);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    const cities = [...new Set((data || []).map((r: any) => r.city as string))].sort();
+    return res.json(cities);
+  });
+
+  app.get("/api/locations/zips", async (req, res) => {
+    const { state, city, category } = req.query;
+
+    let query = supabase
+      .from("resources")
+      .select("zip, categories!inner(slug)")
+      .eq("status", "approved")
+      .not("zip", "is", null);
+
+    if (state) {
+      query = query.eq("state", state as string);
+    }
+
+    if (city) {
+      query = query.eq("city", city as string);
+    }
+
+    if (category) {
+      query = query.eq("categories.slug", category as string);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    const zips = [...new Set((data || []).map((r: any) => r.zip as string))].sort();
+    return res.json(zips);
+  });
+
   app.get("/api/resources/:id", async (req, res) => {
     const { id } = req.params;
 

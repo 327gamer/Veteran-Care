@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,10 @@ import {
   Heart,
   Globe,
   MapPinned,
-  Plus
+  Plus,
+  Locate,
+  Loader2,
+  X
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useGeolocation } from "@/lib/use-geolocation";
 
 const US_STATES = [
   { label: "Alabama", value: "AL" }, { label: "Alaska", value: "AK" }, { label: "Arizona", value: "AZ" },
@@ -86,17 +90,107 @@ function toResourceItem(r: SupabaseResource): ResourceItem & { city?: string; zi
   };
 }
 
+function AutocompleteInput({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  testId,
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  suggestions: string[];
+  placeholder: string;
+  testId: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = value
+    ? suggestions.filter((s) => s.toLowerCase().includes(value.toLowerCase()))
+    : suggestions;
+
+  const showDropdown = focused && open && filtered.length > 0;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className={`relative ${className || ""}`}>
+      <div className="relative">
+        <Input
+          data-testid={testId}
+          placeholder={placeholder}
+          className="h-9 text-xs pr-7"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => {
+            setFocused(true);
+            setOpen(true);
+          }}
+        />
+        {value && (
+          <button
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            tabIndex={-1}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      {showDropdown && (
+        <div className="absolute z-50 top-full mt-1 w-full bg-background border rounded-md shadow-lg max-h-[160px] overflow-y-auto">
+          {filtered.map((item) => (
+            <button
+              key={item}
+              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(item);
+                setOpen(false);
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Resources() {
   const [location, setLocation] = useLocation();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
-  const { isSaved, toggleSave } = useSavedResources();
+  const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
 
   const [locationMode, setLocationMode] = useState<"national" | "state">("national");
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
   const [zipFilter, setZipFilter] = useState<string>("");
+  const [geoApplied, setGeoApplied] = useState(false);
+
+  const geo = useGeolocation();
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
@@ -120,7 +214,53 @@ export default function Resources() {
     enabled: !!selectedSlug,
   });
 
+  const { data: citySuggestions = [] } = useQuery<string[]>({
+    queryKey: ["/api/locations/cities", stateParam, selectedSlug],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (stateParam) params.set("state", stateParam);
+      if (selectedSlug) params.set("category", selectedSlug);
+      return fetch(`/api/locations/cities?${params}`).then(r => r.json());
+    },
+    enabled: locationMode === "state" && !!stateParam,
+  });
+
+  const { data: zipSuggestions = [] } = useQuery<string[]>({
+    queryKey: ["/api/locations/zips", stateParam, cityParam, selectedSlug],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (stateParam) params.set("state", stateParam);
+      if (cityParam) params.set("city", cityParam);
+      if (selectedSlug) params.set("category", selectedSlug);
+      return fetch(`/api/locations/zips?${params}`).then(r => r.json());
+    },
+    enabled: locationMode === "state" && !!stateParam,
+  });
+
   const activeResources = apiResources.map(toResourceItem);
+
+  useEffect(() => {
+    if (geo.location && !geoApplied) {
+      setGeoApplied(true);
+      setLocationMode("state");
+      if (geo.location.stateCode) setSelectedState(geo.location.stateCode);
+      if (geo.location.city) setCityFilter(geo.location.city);
+      if (geo.location.zip) setZipFilter(geo.location.zip);
+      setStoreLocation(
+        geo.location.stateCode,
+        geo.location.state,
+        geo.location.city,
+        geo.location.zip
+      );
+    }
+  }, [geo.location, geoApplied, setStoreLocation]);
+
+  useEffect(() => {
+    if (locationMode === "state") {
+      const stateName = US_STATES.find(s => s.value === selectedState)?.label || "";
+      setStoreLocation(selectedState, stateName, cityFilter, zipFilter);
+    }
+  }, [selectedState, cityFilter, zipFilter, locationMode, setStoreLocation]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -154,6 +294,22 @@ export default function Resources() {
     setSelectedSlug(null);
     setSelectedName(null);
     setLocation("/resources");
+  };
+
+  const handleUseMyLocation = () => {
+    geo.requestLocation();
+    setGeoApplied(false);
+  };
+
+  const locationSummary = () => {
+    const parts: string[] = [];
+    if (selectedState) {
+      const name = US_STATES.find(s => s.value === selectedState)?.label;
+      parts.push(`Showing national + ${name || selectedState} resources`);
+    }
+    if (cityFilter) parts.push(`in ${cityFilter}`);
+    if (zipFilter) parts.push(`(ZIP: ${zipFilter})`);
+    return parts.join(" ");
   };
 
   return (
@@ -208,14 +364,30 @@ export default function Resources() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "state" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <MapPinned className="h-3 w-3" />
-                    By State
+                    By Location
                   </button>
                 </div>
+
+                <Button
+                  data-testid="button-use-location"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary ml-auto"
+                  onClick={handleUseMyLocation}
+                  disabled={geo.loading}
+                >
+                  {geo.loading ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Locate className="h-3 w-3 mr-1" />
+                  )}
+                  Use My Location
+                </Button>
               </div>
 
               {locationMode === "state" && (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Select value={selectedState || undefined} onValueChange={setSelectedState}>
+                  <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
                     <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
                       <SelectValue placeholder="Select a state" />
                     </SelectTrigger>
@@ -225,31 +397,33 @@ export default function Resources() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input
-                    data-testid="input-city-filter"
-                    placeholder="City"
-                    className="h-9 text-xs flex-1"
+                  <AutocompleteInput
                     value={cityFilter}
-                    onChange={(e) => setCityFilter(e.target.value)}
+                    onChange={(v) => { setCityFilter(v); setZipFilter(""); }}
+                    suggestions={citySuggestions}
+                    placeholder="City"
+                    testId="input-city-filter"
+                    className="flex-1"
                   />
-                  <Input
-                    data-testid="input-zip-filter"
-                    placeholder="ZIP Code"
-                    className="h-9 text-xs w-28"
+                  <AutocompleteInput
                     value={zipFilter}
-                    onChange={(e) => setZipFilter(e.target.value)}
+                    onChange={setZipFilter}
+                    suggestions={zipSuggestions}
+                    placeholder="ZIP Code"
+                    testId="input-zip-filter"
+                    className="w-28 sm:w-32"
                   />
                 </div>
               )}
 
               {locationMode === "state" && (selectedState || cityFilter || zipFilter) && (
-                <p className="text-[10px] text-muted-foreground">
-                  {selectedState 
-                    ? `Showing national resources + ${US_STATES.find(s => s.value === selectedState)?.label} state resources`
-                    : "Select a state to see state-specific resources"}
-                  {cityFilter && ` in ${cityFilter}`}
-                  {zipFilter && ` (ZIP: ${zipFilter})`}
+                <p data-testid="text-location-summary" className="text-[10px] text-muted-foreground">
+                  {locationSummary()}
                 </p>
+              )}
+
+              {geo.error && (
+                <p className="text-[10px] text-destructive">{geo.error}</p>
               )}
             </div>
 
@@ -259,6 +433,7 @@ export default function Resources() {
             {activeResources?.map((resource) => (
               <Card 
                 key={resource.id} 
+                data-testid={`card-resource-${resource.id}`}
                 className="group hover:border-primary/50 transition-colors cursor-pointer"
                 onClick={() => setSelectedResource(resource)}
               >
@@ -286,6 +461,7 @@ export default function Resources() {
                     
                     <div className="flex flex-col gap-1">
                       <Button 
+                        data-testid={`button-save-${resource.id}`}
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -293,7 +469,7 @@ export default function Resources() {
                       >
                         <Heart className={`h-5 w-5 ${isSaved(resource.id) ? 'fill-destructive text-destructive' : ''}`} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                      <Button data-testid={`button-detail-${resource.id}`} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>
@@ -302,7 +478,7 @@ export default function Resources() {
               </Card>
             ))}
             {!resourcesLoading && (!activeResources || activeResources.length === 0) && (
-              <p className="text-center text-muted-foreground py-8">No resources found for this category yet.</p>
+              <p data-testid="text-no-resources" className="text-center text-muted-foreground py-8">No resources found for this category yet.</p>
             )}
         </div>
       ) : (
@@ -312,7 +488,8 @@ export default function Resources() {
             const Icon = config.icon;
             return (
               <Card 
-                key={cat.id} 
+                key={cat.id}
+                data-testid={`card-category-${cat.slug}`}
                 className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
                 onClick={() => selectCategory(cat)}
               >
