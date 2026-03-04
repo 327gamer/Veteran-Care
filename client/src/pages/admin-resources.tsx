@@ -32,10 +32,31 @@ import {
   Lock,
   ShieldCheck,
   BarChart3,
+  Users,
+  Phone,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
 import { useLocation } from "wouter";
+
+interface NavigatorRequest {
+  id: string;
+  resource_id: string | null;
+  resource_title: string | null;
+  veteran_name: string;
+  veteran_phone: string | null;
+  veteran_email: string | null;
+  message: string | null;
+  preferred_contact: string;
+  user_state: string | null;
+  user_city: string | null;
+  user_zip: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+}
 
 interface AdminResource {
   id: string;
@@ -67,11 +88,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 export default function AdminResources() {
   const [adminKey, setAdminKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState<"resources" | "leads">("resources");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [, setLocation] = useLocation();
+  const [leadStatusFilter, setLeadStatusFilter] = useState("new");
 
   const queryClient = useQueryClient();
 
@@ -94,7 +117,38 @@ export default function AdminResources() {
         return r.json();
       });
     },
-    enabled: authenticated,
+    enabled: authenticated && activeTab === "resources",
+  });
+
+  const { data: navRequests = [], isLoading: navLoading } = useQuery<NavigatorRequest[]>({
+    queryKey: ["/api/admin/navigator-requests", leadStatusFilter, adminKey],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (leadStatusFilter) params.set("status", leadStatusFilter);
+      return fetch(`/api/admin/navigator-requests?${params}`, {
+        headers: { "x-admin-key": adminKey },
+      }).then(r => {
+        if (!r.ok) throw new Error("Unauthorized");
+        return r.json();
+      });
+    },
+    enabled: authenticated && activeTab === "leads",
+  });
+
+  const navPatchMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
+      const res = await fetch(`/api/admin/navigator-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
+      toast({ description: "Lead updated" });
+    },
   });
 
   const patchMutation = useMutation({
@@ -235,6 +289,136 @@ export default function AdminResources() {
       </header>
 
       <main className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
+        <div className="flex gap-2 border-b pb-3">
+          <Button
+            data-testid="tab-resources"
+            variant={activeTab === "resources" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setActiveTab("resources")}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Resources
+          </Button>
+          <Button
+            data-testid="tab-leads"
+            variant={activeTab === "leads" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setActiveTab("leads")}
+          >
+            <Users className="h-3.5 w-3.5 mr-1.5" /> Navigator Leads
+          </Button>
+        </div>
+
+        {activeTab === "leads" && (
+          <>
+            <div className="flex gap-2">
+              {(["new", "contacted", "completed", "cancelled"] as const).map((s) => (
+                <Button
+                  key={s}
+                  data-testid={`lead-filter-${s}`}
+                  variant={leadStatusFilter === s ? "default" : "outline"}
+                  size="sm"
+                  className="h-9 text-xs capitalize"
+                  onClick={() => setLeadStatusFilter(s)}
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+
+            {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
+
+            <div className="space-y-3">
+              {navRequests.map((req) => (
+                <Card key={req.id} data-testid={`nav-lead-${req.id}`} className="border">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <h3 data-testid={`text-lead-name-${req.id}`} className="font-semibold text-sm">{req.veteran_name}</h3>
+                        <p data-testid={`text-lead-date-${req.id}`} className="text-xs text-muted-foreground">
+                          {new Date(req.created_at).toLocaleString()}
+                          {req.user_state && ` • ${[req.user_city, req.user_state].filter(Boolean).join(", ")}`}
+                        </p>
+                      </div>
+                      <Badge data-testid={`badge-lead-status-${req.id}`} variant="outline" className="text-[10px] capitalize shrink-0">
+                        {req.status}
+                      </Badge>
+                    </div>
+
+                    {req.resource_title && (
+                      <p data-testid={`text-lead-resource-${req.id}`} className="text-xs bg-muted/50 rounded px-2 py-1">
+                        Re: <strong>{req.resource_title}</strong>
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {req.veteran_phone && (
+                        <a data-testid={`link-lead-phone-${req.id}`} href={`tel:${req.veteran_phone}`} className="flex items-center gap-1 text-primary hover:underline">
+                          <Phone className="h-3 w-3" /> {req.veteran_phone}
+                        </a>
+                      )}
+                      {req.veteran_email && (
+                        <a data-testid={`link-lead-email-${req.id}`} href={`mailto:${req.veteran_email}`} className="flex items-center gap-1 text-primary hover:underline">
+                          <Mail className="h-3 w-3" /> {req.veteran_email}
+                        </a>
+                      )}
+                      <span data-testid={`text-lead-contact-pref-${req.id}`} className="text-muted-foreground flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" /> Prefers: {req.preferred_contact}
+                      </span>
+                    </div>
+
+                    {req.message && (
+                      <p data-testid={`text-lead-message-${req.id}`} className="text-xs text-muted-foreground bg-muted/30 rounded p-2 italic">"{req.message}"</p>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                      {req.status === "new" && (
+                        <Button
+                          data-testid={`lead-contacted-${req.id}`}
+                          size="sm"
+                          className="h-7 text-xs flex-1"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted" } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Mark Contacted
+                        </Button>
+                      )}
+                      {req.status === "contacted" && (
+                        <Button
+                          data-testid={`lead-complete-${req.id}`}
+                          size="sm"
+                          className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "completed" } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Mark Completed
+                        </Button>
+                      )}
+                      {(req.status === "new" || req.status === "contacted") && (
+                        <Button
+                          data-testid={`lead-cancel-${req.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "cancelled" } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {!navLoading && navRequests.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No {leadStatusFilter} navigator requests.</p>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === "resources" && (<>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex gap-2">
             {(["pending", "approved", "rejected"] as const).map((s) => {
@@ -306,6 +490,7 @@ export default function AdminResources() {
             <p className="text-center text-muted-foreground py-8">No {statusFilter} resources found.</p>
           )}
         </div>
+        </>)}
       </main>
 
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>

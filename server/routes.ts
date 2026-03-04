@@ -326,7 +326,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "resource_id and click_type are required" });
     }
 
-    const validTypes = ["website_click", "call_click", "directions_click", "guide_click", "save_click", "share_click", "report_click", "apply_click"];
+    const validTypes = ["website_click", "call_click", "directions_click", "guide_click", "save_click", "share_click", "report_click", "apply_click", "navigator_click"];
     if (!validTypes.includes(click_type)) {
       return res.status(400).json({ error: "Invalid click_type" });
     }
@@ -454,6 +454,111 @@ export async function registerRoutes(
       .eq("id", resource_id);
 
     return res.json({ ok: true, message: "Report submitted for admin review" });
+  });
+
+  app.post("/api/navigator-request", async (req, res) => {
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkSubmitRate(ip)) {
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
+    }
+
+    const {
+      resource_id,
+      resource_title,
+      veteran_name,
+      veteran_phone,
+      veteran_email,
+      message,
+      preferred_contact,
+      user_state,
+      user_city,
+      user_zip,
+    } = req.body;
+
+    if (!veteran_name || typeof veteran_name !== "string" || veteran_name.trim().length < 2) {
+      return res.status(400).json({ error: "Name is required (minimum 2 characters)" });
+    }
+    if (!veteran_phone && !veteran_email) {
+      return res.status(400).json({ error: "Please provide a phone number or email so we can reach you" });
+    }
+    if (veteran_email && typeof veteran_email === "string" && !veteran_email.includes("@")) {
+      return res.status(400).json({ error: "Please provide a valid email address" });
+    }
+
+    const validContact = ["phone", "email", "either"];
+    const contact = validContact.includes(preferred_contact) ? preferred_contact : "phone";
+
+    const { data, error } = await supabase
+      .from("navigator_requests")
+      .insert({
+        resource_id: resource_id || null,
+        resource_title: resource_title?.trim() || null,
+        veteran_name: veteran_name.trim(),
+        veteran_phone: veteran_phone?.trim() || null,
+        veteran_email: veteran_email?.trim() || null,
+        message: message?.trim() || null,
+        preferred_contact: contact,
+        user_state: user_state || null,
+        user_city: user_city || null,
+        user_zip: user_zip || null,
+        status: "new",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Navigator request error:", error.message);
+      return res.status(500).json({ error: "Failed to submit request. Please try again." });
+    }
+
+    return res.status(201).json({ id: data.id, message: "Your request has been submitted. A navigator will reach out to you soon." });
+  });
+
+  app.get("/api/admin/navigator-requests", requireAdmin, async (req, res) => {
+    const { status } = req.query;
+
+    let query = supabase
+      .from("navigator_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (status) {
+      query = query.eq("status", status as string);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json(data || []);
+  });
+
+  app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { status, admin_notes } = req.body;
+
+    const updates: Record<string, any> = {};
+    if (status) updates.status = status;
+    if (admin_notes !== undefined) updates.admin_notes = admin_notes;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
+    const { data, error } = await supabase
+      .from("navigator_requests")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json(data);
   });
 
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {

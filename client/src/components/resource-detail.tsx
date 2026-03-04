@@ -27,7 +27,17 @@ import {
 import { ResourceItem } from "@/lib/resources-data";
 import { useSavedResources } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ResourceDetailProps {
   resource: ResourceItem | null;
@@ -54,6 +64,24 @@ function trackClick(
 export default function ResourceDetail({ resource, open, onOpenChange }: ResourceDetailProps) {
   const { isSaved, toggleSave, userLocation } = useSavedResources();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [navSubmitted, setNavSubmitted] = useState(false);
+  const [navSubmitting, setNavSubmitting] = useState(false);
+  const [navError, setNavError] = useState("");
+  const [navForm, setNavForm] = useState({
+    veteran_name: "",
+    veteran_phone: "",
+    veteran_email: "",
+    message: "",
+    preferred_contact: "phone",
+  });
+
+  useEffect(() => {
+    setNavOpen(false);
+    setNavSubmitted(false);
+    setNavError("");
+    setNavForm({ veteran_name: "", veteran_phone: "", veteran_email: "", message: "", preferred_contact: "phone" });
+  }, [resource?.id]);
 
   if (!resource) return null;
 
@@ -398,18 +426,171 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
               </div>
             </section>
 
-            <section data-testid="section-navigator-placeholder" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="h-5 w-5 text-primary" />
+            <section data-testid="section-navigator" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
+              {navSubmitted ? (
+                <div className="flex items-center gap-3 animate-in fade-in duration-300">
+                  <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-sm text-green-700">Request Submitted</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      A Veteran Care Navigator will reach out to you soon.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-sm text-primary">Need personal help?</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    A Veteran Care Navigator can help you apply and follow up. Coming soon.
+              ) : !navOpen ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-sm text-primary">Need personal help?</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      A Veteran Care Navigator can help you apply and follow up — for free.
+                    </p>
+                  </div>
+                  <Button
+                    data-testid="button-request-navigator"
+                    size="sm"
+                    className="h-8 text-xs bg-primary shrink-0"
+                    onClick={() => {
+                      setNavOpen(true);
+                      trackClick(resource.id, "navigator_click", fb);
+                    }}
+                  >
+                    Request Help
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-primary flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Request a Navigator
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-muted-foreground"
+                      onClick={() => setNavOpen(false)}
+                      data-testid="button-close-navigator"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A navigator will contact you to help with <strong>{resource.title}</strong>.
                   </p>
+
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Your Name *</Label>
+                      <Input
+                        data-testid="input-nav-name"
+                        className="h-8 text-xs"
+                        placeholder="Full name"
+                        value={navForm.veteran_name}
+                        onChange={(e) => setNavForm(p => ({ ...p, veteran_name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Phone</Label>
+                        <Input
+                          data-testid="input-nav-phone"
+                          className="h-8 text-xs"
+                          placeholder="(555) 123-4567"
+                          value={navForm.veteran_phone}
+                          onChange={(e) => setNavForm(p => ({ ...p, veteran_phone: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Email</Label>
+                        <Input
+                          data-testid="input-nav-email"
+                          className="h-8 text-xs"
+                          type="email"
+                          placeholder="you@email.com"
+                          value={navForm.veteran_email}
+                          onChange={(e) => setNavForm(p => ({ ...p, veteran_email: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Phone or email required so a navigator can reach you.</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs">How should we contact you?</Label>
+                      <Select
+                        value={navForm.preferred_contact}
+                        onValueChange={(v) => setNavForm(p => ({ ...p, preferred_contact: v }))}
+                      >
+                        <SelectTrigger data-testid="select-nav-contact" className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="phone">Phone call</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="either">Either is fine</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">What do you need help with? (optional)</Label>
+                      <Textarea
+                        data-testid="input-nav-message"
+                        className="text-xs min-h-[60px]"
+                        placeholder="Tell us how we can help..."
+                        rows={2}
+                        value={navForm.message}
+                        onChange={(e) => setNavForm(p => ({ ...p, message: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  {navError && (
+                    <p className="text-xs text-destructive">{navError}</p>
+                  )}
+
+                  <Button
+                    data-testid="button-submit-navigator"
+                    className="w-full h-9 text-xs"
+                    disabled={navSubmitting || !navForm.veteran_name.trim() || (!navForm.veteran_phone.trim() && !navForm.veteran_email.trim())}
+                    onClick={async () => {
+                      setNavError("");
+                      setNavSubmitting(true);
+                      try {
+                        const loc = useSavedResources.getState().userLocation;
+                        const res = await fetch("/api/navigator-request", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            resource_id: resource.id,
+                            resource_title: resource.title,
+                            veteran_name: navForm.veteran_name,
+                            veteran_phone: navForm.veteran_phone || null,
+                            veteran_email: navForm.veteran_email || null,
+                            message: navForm.message || null,
+                            preferred_contact: navForm.preferred_contact,
+                            user_state: loc.stateCode || fb.state || null,
+                            user_city: loc.city || fb.city || null,
+                            user_zip: loc.zip || fb.zip || null,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || "Failed to submit");
+                        setNavSubmitted(true);
+                        toast({ description: "Request submitted! A navigator will contact you soon.", duration: 4000 });
+                      } catch (err: any) {
+                        setNavError(err.message);
+                      } finally {
+                        setNavSubmitting(false);
+                      }
+                    }}
+                  >
+                    {navSubmitting ? "Submitting..." : "Submit Request"}
+                  </Button>
                 </div>
-              </div>
+              )}
             </section>
 
           </div>

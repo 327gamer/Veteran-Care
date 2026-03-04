@@ -33,14 +33,18 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `POST /api/submit-resource` - Creates a new resource with status=pending; includes duplicate detection (website_url, phone, title+city+state), rate limiting (5/hr/IP), and input validation
 - `POST /api/track-click` - Logs user interactions with location context (user_state, user_city fallback from resource if store empty)
 - `POST /api/report-resource` - Creates a pending admin review item with report note in notes_internal; sets resource status back to pending
+- `POST /api/navigator-request` - Veteran submits request for navigator help (rate-limited 5/hr/IP, requires name + phone or email)
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
+- `GET /api/admin/navigator-requests?status=<status>` - Admin: list navigator leads filtered by status (new/contacted/completed/cancelled)
+- `PATCH /api/admin/navigator-requests/:id` - Admin: update lead status/notes
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources)
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
 - `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), status (text: pending/approved/rejected), submitted_by_name, submitted_by_email, notes_internal, is_featured (bool), featured_rank (int), last_verified_at, created_at
-- `resource_clicks` - id (uuid), resource_id (fk→resources), click_type (text), user_state, user_city, created_at (SQL in `supabase/create_resource_clicks.sql`)
+- `resource_clicks` - id (uuid), resource_id (fk→resources), click_type (text), user_state, user_city, user_zip (text), created_at (SQL in `supabase/create_resource_clicks.sql`)
+- `navigator_requests` - id (uuid), resource_id, resource_title, veteran_name, veteran_phone, veteran_email, message, preferred_contact, user_state, user_city, user_zip, status (new/contacted/completed/cancelled), admin_notes, created_at (SQL in `supabase/create_navigator_requests.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
