@@ -9,7 +9,8 @@ import {
   MapPin,
   Heart,
   Globe,
-  MapPinned
+  MapPinned,
+  Plus
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -323,6 +324,17 @@ export default function Resources() {
           })}
         </div>
       )}
+
+      <div className="pt-2 pb-4">
+        <Button
+          data-testid="button-submit-resource"
+          variant="outline"
+          className="w-full h-11 border-dashed border-primary/40 text-primary hover:bg-primary/5"
+          onClick={() => setLocation("/submit-resource")}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Submit a Resource
+        </Button>
+      </div>
     </div>
   );
 }

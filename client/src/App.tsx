@@ -12,6 +12,8 @@ import Shop from "@/pages/shop";
 import NearMe from "@/pages/near-me";
 import Onboarding from "@/pages/onboarding";
 import SavedResources from "@/pages/saved-resources";
+import SubmitResource from "@/pages/submit-resource";
+import AdminResources from "@/pages/admin-resources";
 import Layout from "@/components/layout";
 
 import Landing from "@/pages/landing";
@@ -46,6 +48,14 @@ function Router() {
           <SavedResources />
         </Layout>
       </Route>
+
+      <Route path="/submit-resource">
+        <Layout>
+          <SubmitResource />
+        </Layout>
+      </Route>
+
+      <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">
         <Layout>
