@@ -18,9 +18,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `client/src/pages/submit-resource.tsx` - Community resource submission form
 - `client/src/pages/admin-resources.tsx` - Admin review dashboard (key-protected)
 - `client/src/lib/store.ts` - Zustand store (saved resources, user location)
-- `client/src/lib/resources-data.ts` - Static resource data (keyed by category name)
+- `client/src/lib/resources-data.ts` - Static resource data + ResourceItem interface
 - `client/src/lib/category-config.ts` - Maps Supabase category slugs to icons, colors, and descriptions
-- `client/src/components/layout.tsx` - App shell with top bar and bottom nav
+- `client/src/components/layout.tsx` - App shell with top bar, bottom nav, and AI guide listener
+- `client/src/components/resource-detail.tsx` - Rich resource detail sheet with click tracking
+- `supabase/create_resource_clicks.sql` - SQL to create click tracking table in Supabase
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
@@ -29,12 +31,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `GET /api/locations/cities?state=<code>&category=<slug>` - Returns distinct city names from approved resources
 - `GET /api/locations/zips?state=<code>&city=<name>&category=<slug>` - Returns distinct ZIP codes from approved resources
 - `POST /api/submit-resource` - Creates a new resource with status=pending
+- `POST /api/track-click` - Logs user interactions (website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click) to `resource_clicks` table
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
 - `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), status (text: pending/approved/rejected), submitted_by_name, submitted_by_email, notes_internal, is_featured (bool), featured_rank (int), last_verified_at, created_at
+- `resource_clicks` - id (uuid), resource_id (fk→resources), click_type (text), user_state, user_city, created_at (SQL in `supabase/create_resource_clicks.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -63,6 +67,24 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - Location filtering via Zustand store (stateCode, state, city, zip)
 - Auto-geolocation via browser + OpenStreetMap Nominatim reverse geocoding (cached 1hr in localStorage)
 - City/ZIP autocomplete suggestions from approved resource data
+- National fallback: when location filter returns 0 results, shows national resources with amber notice
+- "Local only" toggle (default OFF): when ON, no fallback, shows clean empty state
 - veterancare.com (Duda) acts as marketing front door; this Replit app is the functional product
 - Admin page uses standalone layout (no bottom nav) with its own header
 - Resource submissions default to status=pending; only approved resources show publicly
+
+## Resource Detail View
+- Rich sheet modal with sections: Overview, Eligibility, Contact, Preparation checklist, Local Assistance, Help (Ask Guide), Actions
+- Primary actions: Call, Directions, Apply/Get Help
+- Secondary actions: Official Website, Save/Favorite, Share, Report
+- Website clicks are secondary (keep users on-platform)
+- Sponsored resources display amber "Sponsored" badge in list and detail views
+- "Ask Guide" dispatches custom event to open AI Guide modal from Layout
+- Click tracking logs all interactions via POST /api/track-click
+- Navigator lead capture section prepared as placeholder ("Coming soon")
+
+## Click Tracking
+- All key actions tracked: website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click
+- Tracks resource_id, click_type, user_state, user_city, timestamp
+- Gracefully handles errors (returns ok even if table doesn't exist)
+- Table creation SQL provided in `supabase/create_resource_clicks.sql`

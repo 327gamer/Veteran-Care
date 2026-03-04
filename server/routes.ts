@@ -235,6 +235,33 @@ export async function registerRoutes(
     return res.status(201).json({ id: data.id, message: "Resource submitted for review" });
   });
 
+  app.post("/api/track-click", async (req, res) => {
+    const { resource_id, click_type, user_state, user_city } = req.body;
+
+    if (!resource_id || !click_type) {
+      return res.status(400).json({ error: "resource_id and click_type are required" });
+    }
+
+    const validTypes = ["website_click", "call_click", "directions_click", "guide_click", "save_click", "share_click", "report_click", "apply_click"];
+    if (!validTypes.includes(click_type)) {
+      return res.status(400).json({ error: "Invalid click_type" });
+    }
+
+    const { error } = await supabase.from("resource_clicks").insert({
+      resource_id,
+      click_type,
+      user_state: user_state || null,
+      user_city: user_city || null,
+    });
+
+    if (error) {
+      console.error("Click tracking error:", error.message);
+      return res.json({ ok: true });
+    }
+
+    return res.json({ ok: true });
+  });
+
   app.get("/api/admin/resources", requireAdmin, async (req, res) => {
     const { status, q, state: stateFilter } = req.query;
 

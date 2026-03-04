@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Search, 
@@ -26,6 +26,12 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsAiOpen(true);
+    window.addEventListener("open-ai-guide", handler);
+    return () => window.removeEventListener("open-ai-guide", handler);
+  }, []);
 
   const isActive = (path: string) => location === path;
 

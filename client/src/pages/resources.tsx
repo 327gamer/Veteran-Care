@@ -76,7 +76,7 @@ interface SupabaseResource {
   categories: { id: string; name: string; slug: string };
 }
 
-function toResourceItem(r: SupabaseResource): ResourceItem & { city?: string; zip?: string } {
+function toResourceItem(r: SupabaseResource): ResourceItem {
   return {
     id: r.id,
     title: r.title,
@@ -88,6 +88,14 @@ function toResourceItem(r: SupabaseResource): ResourceItem & { city?: string; zi
     state: r.state || undefined,
     city: r.city || undefined,
     zip: r.zip || undefined,
+    website_url: r.website_url || undefined,
+    phone: r.phone || undefined,
+    email: r.email || undefined,
+    address: r.address || undefined,
+    eligibility: r.eligibility || undefined,
+    sponsored: r.sponsored || false,
+    affiliate_url: r.affiliate_url || undefined,
+    monetization_type: r.monetization_type || undefined,
   };
 }
 
@@ -525,6 +533,11 @@ export default function Resources() {
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
+                        {resource.sponsored && (
+                          <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
+                            Sponsored
+                          </Badge>
+                        )}
                         {resource.isLocal && (
                           <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
                             <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}

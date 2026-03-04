@@ -8,6 +8,16 @@ export interface ResourceItem {
   type: "guide" | "service" | "link" | "program" | "tool" | "offer";
   isLocal?: boolean;
   state?: string;
+  city?: string;
+  zip?: string;
+  website_url?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  eligibility?: string;
+  sponsored?: boolean;
+  affiliate_url?: string;
+  monetization_type?: string;
 }
 
 export const resourcesData: Record<string, ResourceItem[]> = {
@@ -17,7 +27,7 @@ export const resourcesData: Record<string, ResourceItem[]> = {
     { id: "b3", title: "Intent to File", category: "Benefits", description: "Learn how to submit an Intent to File to protect your effective date.", source: "VA.gov", type: "guide" },
     { id: "b4", title: "Appeals process overview", category: "Benefits", description: "Understanding HLR, Supplemental Claims, and Board Appeals.", source: "VA.gov", type: "guide" },
     { id: "b5", title: "Find an accredited VSO", category: "Benefits", description: "Directory of accredited representatives to help with your claim.", source: "VA.gov", type: "service" },
-    { id: "b6", title: "SC Department of Veterans’ Affairs", category: "Benefits", description: "State-specific benefits assistance for South Carolina veterans.", source: "SCDVA", type: "service", isLocal: true, state: "South Carolina" },
+    { id: "b6", title: "SC Department of Veterans' Affairs", category: "Benefits", description: "State-specific benefits assistance for South Carolina veterans.", source: "SCDVA", type: "service", isLocal: true, state: "South Carolina" },
     { id: "b7", title: "County Veteran Service Officer directory", category: "Benefits", description: "Find your local County VSO in South Carolina.", source: "SCDVA", type: "service", isLocal: true, state: "South Carolina" },
     { id: "b8", title: "Texas Veterans Commission", category: "Benefits", description: "State-specific benefits assistance for Texas veterans.", source: "TVC", type: "service", isLocal: true, state: "Texas" },
     { id: "b9", title: "Find a TVC Claims Counselor", category: "Benefits", description: "Locate a Texas Veterans Commission counselor near you.", source: "TVC", type: "service", isLocal: true, state: "Texas" },

@@ -63,9 +63,9 @@ export default function SavedResources() {
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
-                      {resource.isScLocal && (
+                      {resource.isLocal && (
                         <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
-                          <MapPin className="h-2.5 w-2.5 mr-0.5" /> SC
+                          <MapPin className="h-2.5 w-2.5 mr-0.5" /> {resource.state || "Local"}
                         </Badge>
                       )}
                     </div>
