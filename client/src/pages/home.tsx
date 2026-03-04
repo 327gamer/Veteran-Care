@@ -1,23 +1,13 @@
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSavedResources } from "@/lib/store";
 import { 
-  HeartPulse, 
-  Briefcase, 
-  Home as HomeIcon, 
-  FileText, 
   ChevronRight,
   MapPin,
-  ShieldAlert,
-  Brain,
-  GraduationCap,
-  Scale,
-  Users,
-  FileArchive,
-  Flag,
   MessageSquare,
   ThumbsUp,
   Share2,
@@ -25,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 import {
   Select,
   SelectContent,
@@ -40,20 +31,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-
-const quickActions = [
-  { label: "Crisis Help", icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-50" },
-  { label: "Benefits & VA Claims", icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
-  { label: "Healthcare", icon: HeartPulse, color: "text-red-600", bg: "bg-red-50" },
-  { label: "Mental Health", icon: Brain, color: "text-purple-600", bg: "bg-purple-50" },
-  { label: "Housing Support", icon: HomeIcon, color: "text-orange-600", bg: "bg-orange-50" },
-  { label: "Employment", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { label: "Education & GI Bill", icon: GraduationCap, color: "text-indigo-600", bg: "bg-indigo-50" },
-  { label: "Legal & Financial", icon: Scale, color: "text-slate-600", bg: "bg-slate-50" },
-  { label: "Family & Caregivers", icon: Users, color: "text-pink-600", bg: "bg-pink-50" },
-  { label: "Military Records", icon: FileArchive, color: "text-amber-600", bg: "bg-amber-50" },
-  { label: "Transition", icon: Flag, color: "text-cyan-600", bg: "bg-cyan-50" },
-];
 
 const feedItems = [
   { 
@@ -129,8 +106,12 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<string>(userLocation.city || "Austin");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
 
+  const { data: categories = [] } = useQuery<SupabaseCategory[]>({
+    queryKey: ["/api/categories"],
+    queryFn: () => fetch("/api/categories").then(r => r.json()),
+  });
+
   useEffect(() => {
-    // Sync state with store if store updates externally
     setSelectedState(userLocation.state);
     setSelectedCity(userLocation.city);
   }, [userLocation]);
@@ -244,22 +225,26 @@ export default function Home() {
           <h2 className="text-lg font-heading font-semibold">Resources</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {quickActions.map((item, i) => (
-            <Card 
-              key={i} 
-              className="hover:border-primary/50 transition-colors cursor-pointer h-full group"
-              onClick={() => handleCategoryClick(item.label)}
-            >
-              <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-                <div className={`h-10 w-10 rounded-full ${item.bg} flex items-center justify-center ${item.color}`}>
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                  {item.label}
-                </span>
-              </CardContent>
-            </Card>
-          ))}
+          {categories.map((cat) => {
+            const config = getCategoryConfig(cat.slug);
+            const Icon = config.icon;
+            return (
+              <Card 
+                key={cat.id} 
+                className="hover:border-primary/50 transition-colors cursor-pointer h-full group"
+                onClick={() => handleCategoryClick(cat.name)}
+              >
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
+                  <div className={`h-10 w-10 rounded-full ${config.bg} flex items-center justify-center ${config.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    {cat.name}
+                  </span>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 

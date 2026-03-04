@@ -16,7 +16,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `shared/schema.ts` - Drizzle schema definitions
 - `client/src/pages/` - Page components (landing, onboarding, home, resources, etc.)
 - `client/src/lib/store.ts` - Zustand store (saved resources, user location)
-- `client/src/lib/resources-data.ts` - Static resource data
+- `client/src/lib/resources-data.ts` - Static resource data (keyed by category name)
+- `client/src/lib/category-config.ts` - Maps Supabase category slugs to icons, colors, and descriptions
 - `client/src/components/layout.tsx` - App shell with top bar and bottom nav
 
 ## API Endpoints

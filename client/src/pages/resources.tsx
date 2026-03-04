@@ -1,19 +1,9 @@
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  FileText, 
-  HeartPulse, 
-  ShieldAlert, 
-  Brain, 
-  Home, 
-  Briefcase, 
-  GraduationCap, 
-  Scale, 
-  Users, 
-  FileArchive, 
-  Flag,
   ChevronLeft,
   ExternalLink,
   MapPin,
@@ -25,26 +15,18 @@ import ResourceDetail from "@/components/resource-detail";
 import { useSavedResources } from "@/lib/store";
 import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
-
-const categories = [
-  { title: "Crisis Help", icon: ShieldAlert, desc: "Emergency support and suicide prevention", variant: "destructive" },
-  { title: "Benefits & VA Claims", icon: FileText, desc: "Compensation, pension, and appeals" },
-  { title: "Healthcare", icon: HeartPulse, desc: "VA health, TRICARE, and community care" },
-  { title: "Mental Health", icon: Brain, desc: "PTSD, TBI, and counseling support" },
-  { title: "Housing Support", icon: Home, desc: "Loans, homelessness, and grants" },
-  { title: "Employment", icon: Briefcase, desc: "Job search, resume help, and training" },
-  { title: "Education & GI Bill", icon: GraduationCap, desc: "College, trade school, and VET TEC" },
-  { title: "Legal & Financial", icon: Scale, desc: "Legal aid, tax relief, and advice" },
-  { title: "Family & Caregivers", icon: Users, desc: "Support for spouses and dependents" },
-  { title: "Military Records", icon: FileArchive, desc: "DD214, corrections, and medals" },
-  { title: "Transition", icon: Flag, desc: "Returning to civilian life" },
-];
+import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 
 export default function Resources() {
   const [location, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, userLocation } = useSavedResources();
+
+  const { data: categories = [] } = useQuery<SupabaseCategory[]>({
+    queryKey: ["/api/categories"],
+    queryFn: () => fetch("/api/categories").then(r => r.json()),
+  });
 
   // Read query param for category if present
   useEffect(() => {
@@ -55,7 +37,7 @@ export default function Resources() {
     }
   }, [location]);
 
-  const activeResources = selectedCategory ? resourcesData[selectedCategory].filter(r => {
+  const activeResources = selectedCategory ? (resourcesData[selectedCategory] || []).filter(r => {
     // If resource is specific to a state, only show if user matches that state
     if (r.state) {
       return r.state === userLocation.state;
@@ -165,26 +147,30 @@ export default function Resources() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {categories.map((cat, i) => (
-            <Card 
-              key={i} 
-              className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
-              onClick={() => setSelectedCategory(cat.title)}
-            >
-              <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                <div className={`p-2.5 rounded-lg transition-colors ${cat.variant === 'destructive' ? 'bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground' : 'bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground'}`}>
-                  <cat.icon className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">{cat.title}</CardTitle>
-                  {cat.variant === 'destructive' && <Badge variant="destructive" className="mt-1 text-[10px] h-5">Urgent</Badge>}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground leading-snug">{cat.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
+          {categories.map((cat) => {
+            const config = getCategoryConfig(cat.slug);
+            const Icon = config.icon;
+            return (
+              <Card 
+                key={cat.id} 
+                className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
+                onClick={() => setSelectedCategory(cat.name)}
+              >
+                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                  <div className={`p-2.5 rounded-lg transition-colors ${config.variant === 'destructive' ? 'bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground' : 'bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground'}`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">{cat.name}</CardTitle>
+                    {config.variant === 'destructive' && <Badge variant="destructive" className="mt-1 text-[10px] h-5">Urgent</Badge>}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground leading-snug">{config.desc}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
