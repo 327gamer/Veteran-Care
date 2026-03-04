@@ -31,9 +31,11 @@ import {
   ExternalLink,
   Lock,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
+import { useLocation } from "wouter";
 
 interface AdminResource {
   id: string;
@@ -69,6 +71,7 @@ export default function AdminResources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [, setLocation] = useLocation();
 
   const queryClient = useQueryClient();
 
@@ -214,9 +217,20 @@ export default function AdminResources() {
             <ShieldCheck className="h-5 w-5" />
             <span className="font-heading font-bold">Admin — Resource Review</span>
           </div>
-          <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); }}>
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              data-testid="button-analytics"
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => setLocation("/admin/analytics")}
+            >
+              <BarChart3 className="h-4 w-4 mr-1.5" /> Analytics
+            </Button>
+            <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); }}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

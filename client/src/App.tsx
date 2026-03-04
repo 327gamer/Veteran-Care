@@ -14,6 +14,7 @@ import Onboarding from "@/pages/onboarding";
 import SavedResources from "@/pages/saved-resources";
 import SubmitResource from "@/pages/submit-resource";
 import AdminResources from "@/pages/admin-resources";
+import AdminAnalytics from "@/pages/admin-analytics";
 import Layout from "@/components/layout";
 
 import Landing from "@/pages/landing";
@@ -56,6 +57,7 @@ function Router() {
       </Route>
 
       <Route path="/admin" component={AdminResources} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
 
       <Route path="/community">
         <Layout>

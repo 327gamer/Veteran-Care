@@ -35,16 +35,18 @@ interface ResourceDetailProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function trackClick(resource_id: string, click_type: string) {
+function trackClick(resource_id: string, click_type: string, resourceState?: string, resourceCity?: string) {
   const store = useSavedResources.getState();
+  const userState = store.userLocation.stateCode || resourceState || null;
+  const userCity = store.userLocation.city || resourceCity || null;
   fetch("/api/track-click", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       resource_id,
       click_type,
-      user_state: store.userLocation.stateCode || null,
-      user_city: store.userLocation.city || null,
+      user_state: userState,
+      user_city: userCity,
     }),
   }).catch(() => {});
 }
@@ -57,21 +59,24 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   const locationLabel = [userLocation.city, userLocation.stateCode].filter(Boolean).join(", ") || "your area";
 
+  const rState = resource.state || undefined;
+  const rCity = resource.city || undefined;
+
   const handleWebsiteClick = () => {
     const url = resource.affiliate_url || resource.website_url;
     if (!url) return;
-    trackClick(resource.id, "website_click");
+    trackClick(resource.id, "website_click", rState, rCity);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCallClick = () => {
     if (!resource.phone) return;
-    trackClick(resource.id, "call_click");
+    trackClick(resource.id, "call_click", rState, rCity);
     window.location.href = `tel:${resource.phone}`;
   };
 
   const handleDirectionsClick = () => {
-    trackClick(resource.id, "directions_click");
+    trackClick(resource.id, "directions_click", rState, rCity);
     const q = resource.address || [resource.city, resource.state].filter(Boolean).join(", ");
     if (q) {
       window.open(`https://maps.google.com/maps?q=${encodeURIComponent(q)}`, "_blank");
@@ -79,13 +84,13 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleGuideClick = () => {
-    trackClick(resource.id, "guide_click");
+    trackClick(resource.id, "guide_click", rState, rCity);
     onOpenChange(false);
     setTimeout(() => window.dispatchEvent(new CustomEvent("open-ai-guide")), 300);
   };
 
   const handleSaveClick = () => {
-    trackClick(resource.id, "save_click");
+    trackClick(resource.id, "save_click", rState, rCity);
     const wasSaved = isSaved(resource.id);
     toggleSave(resource.id);
     toast({
@@ -95,7 +100,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleShareClick = async () => {
-    trackClick(resource.id, "share_click");
+    trackClick(resource.id, "share_click", rState, rCity);
     const shareUrl = `${window.location.origin}/resources?id=${resource.id}`;
     const shareData = { title: resource.title, text: resource.description, url: shareUrl };
     if (navigator.share) {
@@ -109,12 +114,17 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleReportClick = () => {
-    trackClick(resource.id, "report_click");
+    trackClick(resource.id, "report_click", rState, rCity);
+    fetch("/api/report-resource", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resource_id: resource.id, reason: "incorrect_info" }),
+    }).catch(() => {});
     toast({ description: "Thank you for reporting. We'll review this resource.", duration: 3000 });
   };
 
   const handleApplyClick = () => {
-    trackClick(resource.id, "apply_click");
+    trackClick(resource.id, "apply_click", rState, rCity);
     const url = resource.affiliate_url || resource.website_url;
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");

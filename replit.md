@@ -30,10 +30,12 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `GET /api/resources/:id` - Returns a single resource by UUID
 - `GET /api/locations/cities?state=<code>&category=<slug>` - Returns distinct city names from approved resources
 - `GET /api/locations/zips?state=<code>&city=<name>&category=<slug>` - Returns distinct ZIP codes from approved resources
-- `POST /api/submit-resource` - Creates a new resource with status=pending
-- `POST /api/track-click` - Logs user interactions (website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click) to `resource_clicks` table
+- `POST /api/submit-resource` - Creates a new resource with status=pending; includes duplicate detection (website_url, phone, title+city+state), rate limiting (5/hr/IP), and input validation
+- `POST /api/track-click` - Logs user interactions with location context (user_state, user_city fallback from resource if store empty)
+- `POST /api/report-resource` - Creates a pending admin review item with report note in notes_internal; sets resource status back to pending
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
+- `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources)
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
@@ -54,6 +56,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `/saved-resources` - Saved/bookmarked resources
 - `/submit-resource` - Community resource submission form
 - `/admin` - Admin resource review dashboard (key-protected, standalone layout)
+- `/admin/analytics` - Admin analytics dashboard (clicks, categories, states, cities, top resources, reports)
 - `/community` - Community feed
 - `/shop` - Shop page
 - `/near-me` - Location-based nearby resources
@@ -86,5 +89,16 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 ## Click Tracking
 - All key actions tracked: website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click
 - Tracks resource_id, click_type, user_state, user_city, timestamp
+- Location context: uses store's userLocation (geo or filter), falls back to resource's state/city if store empty
 - Gracefully handles errors (returns ok even if table doesn't exist)
 - Table creation SQL provided in `supabase/create_resource_clicks.sql`
+
+## Anti-Spam & Duplicate Detection
+- Rate limiting: 5 submissions per hour per IP on /api/submit-resource
+- Duplicate detection: blocks same website_url, same phone (normalized digits), or same title+city+state
+- Input validation: title min 3 chars, category required, URL format check, phone digit length check
+- Report system: POST /api/report-resource appends report note to notes_internal and sets status to pending for admin review
+- Admin analytics: GET /api/admin/analytics aggregates clicks by category/state/city, top 20 resources, affiliate vs non-affiliate splits, reported resource list
+
+## Key Files (Step 12)
+- `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats
