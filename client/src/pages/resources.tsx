@@ -9,7 +9,7 @@ import {
   MapPin,
   Heart
 } from "lucide-react";
-import { resourcesData, ResourceItem } from "@/lib/resources-data";
+import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
 import { useSavedResources } from "@/lib/store";
@@ -17,9 +17,45 @@ import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 
+interface SupabaseResource {
+  id: string;
+  category_id: string;
+  title: string;
+  short_description: string | null;
+  website_url: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  eligibility: string | null;
+  source_name: string | null;
+  source_type: string | null;
+  last_verified: string | null;
+  monetization_type: string | null;
+  affiliate_url: string | null;
+  sponsored: boolean;
+  created_at: string;
+  categories: { id: string; name: string; slug: string };
+}
+
+function toResourceItem(r: SupabaseResource): ResourceItem {
+  return {
+    id: r.id,
+    title: r.title,
+    category: r.categories?.name || "",
+    description: r.short_description || "",
+    source: r.source_name || "",
+    type: (r.source_type as ResourceItem["type"]) || "guide",
+    isLocal: !!r.state,
+    state: r.state || undefined,
+  };
+}
+
 export default function Resources() {
   const [location, setLocation] = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, userLocation } = useSavedResources();
 
@@ -28,26 +64,33 @@ export default function Resources() {
     queryFn: () => fetch("/api/categories").then(r => r.json()),
   });
 
-  // Read query param for category if present
+  const { data: apiResources = [], isLoading: resourcesLoading } = useQuery<SupabaseResource[]>({
+    queryKey: ["/api/resources", selectedSlug, userLocation.state],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (selectedSlug) params.set("category", selectedSlug);
+      if (userLocation.state) params.set("state", userLocation.state);
+      return fetch(`/api/resources?${params}`).then(r => r.json());
+    },
+    enabled: !!selectedSlug,
+  });
+
+  const activeResources = apiResources.map(toResourceItem);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const category = params.get("category");
-    if (category) {
-      setSelectedCategory(decodeURIComponent(category));
+    const categoryParam = params.get("category");
+    if (categoryParam && categories.length > 0) {
+      const cat = categories.find(c => c.name === decodeURIComponent(categoryParam) || c.slug === decodeURIComponent(categoryParam));
+      if (cat) {
+        setSelectedSlug(cat.slug);
+        setSelectedName(cat.name);
+      }
     }
-  }, [location]);
-
-  const activeResources = selectedCategory ? (resourcesData[selectedCategory] || []).filter(r => {
-    // If resource is specific to a state, only show if user matches that state
-    if (r.state) {
-      return r.state === userLocation.state;
-    }
-    // If not state-specific, show it (national resources)
-    return true;
-  }) : [];
+  }, [location, categories]);
 
   const handleToggleSave = (e: React.MouseEvent, resource: ResourceItem) => {
-    e.stopPropagation(); // Prevent opening detail
+    e.stopPropagation();
     toggleSave(resource.id);
     const saved = isSaved(resource.id);
     toast({
@@ -56,15 +99,21 @@ export default function Resources() {
     });
   };
 
+  const selectCategory = (cat: SupabaseCategory) => {
+    setSelectedSlug(cat.slug);
+    setSelectedName(cat.name);
+    setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
+  };
+
   const clearCategory = () => {
-    setSelectedCategory(null);
-    setLocation("/resources"); // Clear query param
+    setSelectedSlug(null);
+    setSelectedName(null);
+    setLocation("/resources");
   };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
       
-      {/* Detail View Modal */}
       <ResourceDetail 
         resource={selectedResource} 
         open={!!selectedResource} 
@@ -73,7 +122,7 @@ export default function Resources() {
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          {selectedCategory && (
+          {selectedSlug && (
             <Button 
               variant="ghost" 
               size="icon" 
@@ -84,21 +133,24 @@ export default function Resources() {
             </Button>
           )}
           <h1 className="text-2xl font-bold text-primary font-heading">
-            {selectedCategory ? selectedCategory : "Resources"}
+            {selectedName ? selectedName : "Resources"}
           </h1>
         </div>
         <p className="text-muted-foreground">
-          {selectedCategory 
-            ? `Browse available resources for ${selectedCategory}.`
+          {selectedName 
+            ? `Browse available resources for ${selectedName}.`
             : "Browse the full resource library by category."}
         </p>
       </div>
 
-      {selectedCategory ? (
+      {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeResources?.map((resource, i) => (
+            {resourcesLoading && (
+              <p className="text-center text-muted-foreground py-8">Loading resources...</p>
+            )}
+            {activeResources?.map((resource) => (
               <Card 
-                key={i} 
+                key={resource.id} 
                 className="group hover:border-primary/50 transition-colors cursor-pointer"
                 onClick={() => setSelectedResource(resource)}
               >
@@ -141,7 +193,7 @@ export default function Resources() {
                 </CardContent>
               </Card>
             ))}
-            {(!activeResources || activeResources.length === 0) && (
+            {!resourcesLoading && (!activeResources || activeResources.length === 0) && (
               <p className="text-center text-muted-foreground py-8">No resources found for this category yet.</p>
             )}
         </div>
@@ -154,7 +206,7 @@ export default function Resources() {
               <Card 
                 key={cat.id} 
                 className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
-                onClick={() => setSelectedCategory(cat.name)}
+                onClick={() => selectCategory(cat)}
               >
                 <CardHeader className="flex flex-row items-center gap-4 pb-2">
                   <div className={`p-2.5 rounded-lg transition-colors ${config.variant === 'destructive' ? 'bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground' : 'bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground'}`}>

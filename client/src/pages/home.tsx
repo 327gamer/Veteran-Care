@@ -232,7 +232,7 @@ export default function Home() {
               <Card 
                 key={cat.id} 
                 className="hover:border-primary/50 transition-colors cursor-pointer h-full group"
-                onClick={() => handleCategoryClick(cat.name)}
+                onClick={() => handleCategoryClick(cat.slug)}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
                   <div className={`h-10 w-10 rounded-full ${config.bg} flex items-center justify-center ${config.color}`}>

@@ -22,6 +22,13 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
+- `GET /api/resources?category=<slug>&state=<state>&q=<search>` - Returns resources filtered by category slug, state, and/or search query
+- `GET /api/resources/:id` - Returns a single resource by UUID
+- `POST /api/submit-resource` - Creates a new resource (sponsored=false by default)
+
+## Supabase Tables
+- `categories` - id (uuid), name, slug
+- `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), created_at
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
