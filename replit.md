@@ -88,10 +88,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## Click Tracking
 - All key actions tracked: website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click
-- Tracks resource_id, click_type, user_state, user_city, timestamp
-- Location context: uses store's userLocation (geo or filter), falls back to resource's state/city if store empty
-- Gracefully handles errors (returns ok even if table doesn't exist)
+- Tracks resource_id, click_type, user_state, user_city, user_zip, timestamp
+- Location priority: (A) store userLocation from geo/filter → (B) resource's own state/city/zip → (C) NULL
+- Server gracefully falls back if user_zip column doesn't exist yet
 - Table creation SQL provided in `supabase/create_resource_clicks.sql`
+- To add user_zip column to existing table: `ALTER TABLE resource_clicks ADD COLUMN IF NOT EXISTS user_zip text;`
 
 ## Anti-Spam & Duplicate Detection
 - Rate limiting: 5 submissions per hour per IP on /api/submit-resource

@@ -320,7 +320,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/track-click", async (req, res) => {
-    const { resource_id, click_type, user_state, user_city } = req.body;
+    const { resource_id, click_type, user_state, user_city, user_zip } = req.body;
 
     if (!resource_id || !click_type) {
       return res.status(400).json({ error: "resource_id and click_type are required" });
@@ -331,16 +331,25 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Invalid click_type" });
     }
 
-    const { error } = await supabase.from("resource_clicks").insert({
+    const row: Record<string, any> = {
       resource_id,
       click_type,
       user_state: user_state || null,
       user_city: user_city || null,
-    });
+    };
+
+    const { error } = await supabase.from("resource_clicks").insert({ ...row, user_zip: user_zip || null });
+
+    if (error && error.message.includes("user_zip")) {
+      const { error: fallbackErr } = await supabase.from("resource_clicks").insert(row);
+      if (fallbackErr) {
+        console.error("Click tracking error:", fallbackErr.message);
+      }
+      return res.json({ ok: true });
+    }
 
     if (error) {
       console.error("Click tracking error:", error.message);
-      return res.json({ ok: true });
     }
 
     return res.json({ ok: true });
@@ -448,9 +457,17 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
-    const { data: clicks, error: clicksErr } = await supabase
+    let { data: clicks, error: clicksErr } = await supabase
       .from("resource_clicks")
-      .select("id, resource_id, click_type, user_state, user_city, created_at");
+      .select("id, resource_id, click_type, user_state, user_city, user_zip, created_at");
+
+    if (clicksErr && clicksErr.message.includes("user_zip")) {
+      const fallback = await supabase
+        .from("resource_clicks")
+        .select("id, resource_id, click_type, user_state, user_city, created_at");
+      clicks = fallback.data;
+      clicksErr = fallback.error;
+    }
 
     const safeClicks = clicksErr ? [] : (clicks || []);
 

@@ -35,19 +35,19 @@ interface ResourceDetailProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function trackClick(resource_id: string, click_type: string, resourceState?: string, resourceCity?: string) {
-  const store = useSavedResources.getState();
-  const userState = store.userLocation.stateCode || resourceState || null;
-  const userCity = store.userLocation.city || resourceCity || null;
+function trackClick(
+  resource_id: string,
+  click_type: string,
+  fallback: { state?: string; city?: string; zip?: string } = {}
+) {
+  const loc = useSavedResources.getState().userLocation;
+  const user_state = loc.stateCode || fallback.state || null;
+  const user_city = loc.city || fallback.city || null;
+  const user_zip = loc.zip || fallback.zip || null;
   fetch("/api/track-click", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      resource_id,
-      click_type,
-      user_state: userState,
-      user_city: userCity,
-    }),
+    body: JSON.stringify({ resource_id, click_type, user_state, user_city, user_zip }),
   }).catch(() => {});
 }
 
@@ -59,24 +59,27 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   const locationLabel = [userLocation.city, userLocation.stateCode].filter(Boolean).join(", ") || "your area";
 
-  const rState = resource.state || undefined;
-  const rCity = resource.city || undefined;
+  const fb = {
+    state: resource.state || undefined,
+    city: resource.city || undefined,
+    zip: resource.zip || undefined,
+  };
 
   const handleWebsiteClick = () => {
     const url = resource.affiliate_url || resource.website_url;
     if (!url) return;
-    trackClick(resource.id, "website_click", rState, rCity);
+    trackClick(resource.id, "website_click", fb);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCallClick = () => {
     if (!resource.phone) return;
-    trackClick(resource.id, "call_click", rState, rCity);
+    trackClick(resource.id, "call_click", fb);
     window.location.href = `tel:${resource.phone}`;
   };
 
   const handleDirectionsClick = () => {
-    trackClick(resource.id, "directions_click", rState, rCity);
+    trackClick(resource.id, "directions_click", fb);
     const q = resource.address || [resource.city, resource.state].filter(Boolean).join(", ");
     if (q) {
       window.open(`https://maps.google.com/maps?q=${encodeURIComponent(q)}`, "_blank");
@@ -84,13 +87,13 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleGuideClick = () => {
-    trackClick(resource.id, "guide_click", rState, rCity);
+    trackClick(resource.id, "guide_click", fb);
     onOpenChange(false);
     setTimeout(() => window.dispatchEvent(new CustomEvent("open-ai-guide")), 300);
   };
 
   const handleSaveClick = () => {
-    trackClick(resource.id, "save_click", rState, rCity);
+    trackClick(resource.id, "save_click", fb);
     const wasSaved = isSaved(resource.id);
     toggleSave(resource.id);
     toast({
@@ -100,7 +103,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleShareClick = async () => {
-    trackClick(resource.id, "share_click", rState, rCity);
+    trackClick(resource.id, "share_click", fb);
     const shareUrl = `${window.location.origin}/resources?id=${resource.id}`;
     const shareData = { title: resource.title, text: resource.description, url: shareUrl };
     if (navigator.share) {
@@ -114,7 +117,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleReportClick = () => {
-    trackClick(resource.id, "report_click", rState, rCity);
+    trackClick(resource.id, "report_click", fb);
     fetch("/api/report-resource", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,7 +127,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   };
 
   const handleApplyClick = () => {
-    trackClick(resource.id, "apply_click", rState, rCity);
+    trackClick(resource.id, "apply_click", fb);
     const url = resource.affiliate_url || resource.website_url;
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");
