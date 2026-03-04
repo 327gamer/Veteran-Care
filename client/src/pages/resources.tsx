@@ -13,7 +13,8 @@ import {
   Plus,
   Locate,
   Loader2,
-  X
+  X,
+  Info
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -188,7 +189,20 @@ export default function Resources() {
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
   const [zipFilter, setZipFilter] = useState<string>("");
+  const [localOnly, setLocalOnly] = useState(false);
   const [geoApplied, setGeoApplied] = useState(false);
+  const [debouncedCity, setDebouncedCity] = useState("");
+  const [debouncedZip, setDebouncedZip] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
+    return () => clearTimeout(t);
+  }, [cityFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedZip(zipFilter), 300);
+    return () => clearTimeout(t);
+  }, [zipFilter]);
 
   const geo = useGeolocation();
 
@@ -198,10 +212,12 @@ export default function Resources() {
   });
 
   const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
-  const cityParam = locationMode === "state" && cityFilter.trim() ? cityFilter.trim() : undefined;
-  const zipParam = locationMode === "state" && zipFilter.trim() ? zipFilter.trim() : undefined;
+  const cityParam = locationMode === "state" && debouncedCity.trim() ? debouncedCity.trim() : undefined;
+  const zipParam = locationMode === "state" && debouncedZip.trim() ? debouncedZip.trim() : undefined;
+  const hasLocationFilters = !!(stateParam || cityParam || zipParam);
+  const hasAnyLocationInput = locationMode === "state" && !!(selectedState || cityFilter.trim() || zipFilter.trim());
 
-  const { data: apiResources = [], isLoading: resourcesLoading } = useQuery<SupabaseResource[]>({
+  const { data: apiResources = [], isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[]>({
     queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -212,6 +228,18 @@ export default function Resources() {
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
     enabled: !!selectedSlug,
+  });
+
+  const needsFallback = resourcesFetched && apiResources.length === 0 && hasLocationFilters && locationMode === "state" && !localOnly;
+
+  const { data: fallbackResources = [], isLoading: fallbackLoading } = useQuery<SupabaseResource[]>({
+    queryKey: ["/api/resources", selectedSlug, "national-fallback"],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (selectedSlug) params.set("category", selectedSlug);
+      return fetch(`/api/resources?${params}`).then(r => r.json());
+    },
+    enabled: needsFallback,
   });
 
   const { data: citySuggestions = [] } = useQuery<string[]>({
@@ -237,7 +265,20 @@ export default function Resources() {
     enabled: locationMode === "state" && !!stateParam,
   });
 
-  const activeResources = apiResources.map(toResourceItem);
+  const isFallingBack = needsFallback && fallbackResources.length > 0;
+  const displayResources = isFallingBack ? fallbackResources : apiResources;
+  const activeResources = displayResources.map(toResourceItem);
+  const isLoading = resourcesLoading || (needsFallback && fallbackLoading);
+
+  const showLocalOnlyEmpty = resourcesFetched && apiResources.length === 0 && hasLocationFilters && locationMode === "state" && localOnly;
+
+  const locationLabel = () => {
+    const parts: string[] = [];
+    if (selectedState) parts.push(selectedState);
+    if (debouncedCity) parts.push(debouncedCity);
+    if (debouncedZip) parts.push(debouncedZip);
+    return parts.join(" / ");
+  };
 
   useEffect(() => {
     if (geo.location && !geoApplied) {
@@ -347,12 +388,12 @@ export default function Resources() {
       {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground">Location:</span>
                 <div className="flex rounded-full border bg-background overflow-hidden">
                   <button
                     data-testid="toggle-national"
-                    onClick={() => { setLocationMode("national"); setSelectedState(""); setCityFilter(""); setZipFilter(""); }}
+                    onClick={() => { setLocationMode("national"); setSelectedState(""); setCityFilter(""); setZipFilter(""); setLocalOnly(false); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Globe className="h-3 w-3" />
@@ -386,37 +427,58 @@ export default function Resources() {
               </div>
 
               {locationMode === "state" && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
-                    <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
-                      <SelectValue placeholder="Select a state" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
-                      {US_STATES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <AutocompleteInput
-                    value={cityFilter}
-                    onChange={(v) => { setCityFilter(v); setZipFilter(""); }}
-                    suggestions={citySuggestions}
-                    placeholder="City"
-                    testId="input-city-filter"
-                    className="flex-1"
-                  />
-                  <AutocompleteInput
-                    value={zipFilter}
-                    onChange={setZipFilter}
-                    suggestions={zipSuggestions}
-                    placeholder="ZIP Code"
-                    testId="input-zip-filter"
-                    className="w-28 sm:w-32"
-                  />
-                </div>
+                <>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
+                      <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
+                        <SelectValue placeholder="Select a state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px]">
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <AutocompleteInput
+                      value={cityFilter}
+                      onChange={(v) => { setCityFilter(v); setZipFilter(""); }}
+                      suggestions={citySuggestions}
+                      placeholder="City"
+                      testId="input-city-filter"
+                      className="flex-1"
+                    />
+                    <AutocompleteInput
+                      value={zipFilter}
+                      onChange={setZipFilter}
+                      suggestions={zipSuggestions}
+                      placeholder="ZIP Code"
+                      testId="input-zip-filter"
+                      className="w-28 sm:w-32"
+                    />
+                  </div>
+
+                  {hasAnyLocationInput && (
+                    <div className="flex items-center justify-between">
+                      <label
+                        data-testid="toggle-local-only"
+                        className="flex items-center gap-2 cursor-pointer select-none"
+                      >
+                        <div
+                          role="switch"
+                          aria-checked={localOnly}
+                          onClick={() => setLocalOnly(!localOnly)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ${localOnly ? "bg-primary" : "bg-muted-foreground/30"}`}
+                        >
+                          <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform ${localOnly ? "translate-x-4" : "translate-x-0"}`} />
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">Local only</span>
+                      </label>
+                    </div>
+                  )}
+                </>
               )}
 
-              {locationMode === "state" && (selectedState || cityFilter || zipFilter) && (
+              {locationMode === "state" && (selectedState || cityFilter || zipFilter) && !isFallingBack && !showLocalOnlyEmpty && (
                 <p data-testid="text-location-summary" className="text-[10px] text-muted-foreground">
                   {locationSummary()}
                 </p>
@@ -427,10 +489,31 @@ export default function Resources() {
               )}
             </div>
 
-            {resourcesLoading && (
+            {isFallingBack && (
+              <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800">
+                  No local resources found yet for {locationLabel()} — showing national resources.
+                </p>
+              </div>
+            )}
+
+            {showLocalOnlyEmpty && (
+              <div data-testid="text-local-only-empty" className="flex flex-col items-center gap-2 py-10 text-center">
+                <MapPin className="h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">
+                  No local resources found for {locationLabel()}.
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Turn off "Local only" to see national resources, or submit a resource to help grow coverage.
+                </p>
+              </div>
+            )}
+
+            {isLoading && (
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
             )}
-            {activeResources?.map((resource) => (
+            {!showLocalOnlyEmpty && activeResources?.map((resource) => (
               <Card 
                 key={resource.id} 
                 data-testid={`card-resource-${resource.id}`}
@@ -477,7 +560,7 @@ export default function Resources() {
                 </CardContent>
               </Card>
             ))}
-            {!resourcesLoading && (!activeResources || activeResources.length === 0) && (
+            {!isLoading && !showLocalOnlyEmpty && (!activeResources || activeResources.length === 0) && (
               <p data-testid="text-no-resources" className="text-center text-muted-foreground py-8">No resources found for this category yet.</p>
             )}
         </div>
