@@ -60,7 +60,20 @@ export async function registerRoutes(
       query = query.eq("categories.slug", category as string);
     }
 
-    if (state) {
+    const city = req.query.city as string | undefined;
+    const zip = req.query.zip as string | undefined;
+
+    if (city || zip) {
+      if (state) {
+        query = query.or(`state.eq.${state},state.is.null`);
+      }
+      if (city) {
+        query = query.ilike("city", `%${city}%`);
+      }
+      if (zip) {
+        query = query.eq("zip", zip);
+      }
+    } else if (state) {
       query = query.or(`state.eq.${state},state.is.null`);
     } else {
       query = query.is("state", null);

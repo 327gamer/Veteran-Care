@@ -59,6 +59,7 @@ interface SupabaseResource {
   address: string | null;
   city: string | null;
   state: string | null;
+  zip: string | null;
   eligibility: string | null;
   source_name: string | null;
   source_type: string | null;
@@ -70,7 +71,7 @@ interface SupabaseResource {
   categories: { id: string; name: string; slug: string };
 }
 
-function toResourceItem(r: SupabaseResource): ResourceItem {
+function toResourceItem(r: SupabaseResource): ResourceItem & { city?: string; zip?: string } {
   return {
     id: r.id,
     title: r.title,
@@ -78,8 +79,10 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
     description: r.short_description || "",
     source: r.source_name || "",
     type: (r.source_type as ResourceItem["type"]) || "guide",
-    isLocal: !!r.state,
+    isLocal: !!r.state || !!r.city,
     state: r.state || undefined,
+    city: r.city || undefined,
+    zip: r.zip || undefined,
   };
 }
 
@@ -92,8 +95,8 @@ export default function Resources() {
 
   const [locationMode, setLocationMode] = useState<"national" | "state">("national");
   const [selectedState, setSelectedState] = useState<string>("");
-  const [cityPlaceholder, setCityPlaceholder] = useState<string>("");
-  const [zipPlaceholder, setZipPlaceholder] = useState<string>("");
+  const [cityFilter, setCityFilter] = useState<string>("");
+  const [zipFilter, setZipFilter] = useState<string>("");
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
@@ -101,13 +104,17 @@ export default function Resources() {
   });
 
   const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
+  const cityParam = locationMode === "state" && cityFilter.trim() ? cityFilter.trim() : undefined;
+  const zipParam = locationMode === "state" && zipFilter.trim() ? zipFilter.trim() : undefined;
 
   const { data: apiResources = [], isLoading: resourcesLoading } = useQuery<SupabaseResource[]>({
-    queryKey: ["/api/resources", selectedSlug, stateParam],
+    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
       if (stateParam) params.set("state", stateParam);
+      if (cityParam) params.set("city", cityParam);
+      if (zipParam) params.set("zip", zipParam);
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
     enabled: !!selectedSlug,
@@ -189,7 +196,7 @@ export default function Resources() {
                 <div className="flex rounded-full border bg-background overflow-hidden">
                   <button
                     data-testid="toggle-national"
-                    onClick={() => { setLocationMode("national"); setSelectedState(""); }}
+                    onClick={() => { setLocationMode("national"); setSelectedState(""); setCityFilter(""); setZipFilter(""); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Globe className="h-3 w-3" />
@@ -208,7 +215,7 @@ export default function Resources() {
 
               {locationMode === "state" && (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Select value={selectedState} onValueChange={setSelectedState}>
+                  <Select value={selectedState || undefined} onValueChange={setSelectedState}>
                     <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
                       <SelectValue placeholder="Select a state" />
                     </SelectTrigger>
@@ -219,27 +226,29 @@ export default function Resources() {
                     </SelectContent>
                   </Select>
                   <Input
-                    data-testid="input-city"
-                    placeholder="City (coming soon)"
-                    disabled
-                    className="h-9 text-xs flex-1 opacity-50"
-                    value={cityPlaceholder}
-                    onChange={(e) => setCityPlaceholder(e.target.value)}
+                    data-testid="input-city-filter"
+                    placeholder="City"
+                    className="h-9 text-xs flex-1"
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
                   />
                   <Input
-                    data-testid="input-zip"
-                    placeholder="ZIP (coming soon)"
-                    disabled
-                    className="h-9 text-xs w-28 opacity-50"
-                    value={zipPlaceholder}
-                    onChange={(e) => setZipPlaceholder(e.target.value)}
+                    data-testid="input-zip-filter"
+                    placeholder="ZIP Code"
+                    className="h-9 text-xs w-28"
+                    value={zipFilter}
+                    onChange={(e) => setZipFilter(e.target.value)}
                   />
                 </div>
               )}
 
-              {locationMode === "state" && selectedState && (
+              {locationMode === "state" && (selectedState || cityFilter || zipFilter) && (
                 <p className="text-[10px] text-muted-foreground">
-                  Showing national resources + {US_STATES.find(s => s.value === selectedState)?.label} state resources
+                  {selectedState 
+                    ? `Showing national resources + ${US_STATES.find(s => s.value === selectedState)?.label} state resources`
+                    : "Select a state to see state-specific resources"}
+                  {cityFilter && ` in ${cityFilter}`}
+                  {zipFilter && ` (ZIP: ${zipFilter})`}
                 </p>
               )}
             </div>
@@ -260,7 +269,7 @@ export default function Resources() {
                         <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
                         {resource.isLocal && (
                           <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
-                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> {resource.state === "South Carolina" ? "SC" : resource.state === "Texas" ? "TX" : "Local"}
+                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}
                           </Badge>
                         )}
                       </div>

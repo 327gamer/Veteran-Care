@@ -24,7 +24,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
-- `GET /api/resources?category=<slug>&state=<state>&q=<search>` - Returns approved resources filtered by category slug, state, and/or search query
+- `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>` - Returns approved resources filtered by category slug, state, city, ZIP, and/or search query
 - `GET /api/resources/:id` - Returns a single resource by UUID
 - `POST /api/submit-resource` - Creates a new resource with status=pending
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
