@@ -242,13 +242,15 @@ export default function AdminResources() {
       sponsored: false,
       monetization_type: "",
       affiliate_url: "",
+      latitude: null,
+      longitude: null,
     });
   };
 
   const CSV_TEMPLATE_HEADERS = [
     "title","category","short_description","website_url","phone","email",
     "address","city","state","zip","eligibility","source_name","source_type",
-    "monetization_type","affiliate_url","sponsored","status"
+    "monetization_type","affiliate_url","sponsored","status","latitude","longitude"
   ];
 
   const CSV_TEMPLATE_ROWS = [
@@ -269,7 +271,9 @@ export default function AdminResources() {
       "",
       "",
       "false",
-      "approved"
+      "approved",
+      "",
+      ""
     ],
     [
       "Atlanta VA Health Care System",
@@ -288,7 +292,9 @@ export default function AdminResources() {
       "",
       "",
       "false",
-      "approved"
+      "approved",
+      "33.7748",
+      "-84.2963"
     ],
   ];
 
@@ -468,6 +474,8 @@ export default function AdminResources() {
       sponsored: (resource as any).sponsored || false,
       monetization_type: (resource as any).monetization_type || "",
       affiliate_url: (resource as any).affiliate_url || "",
+      latitude: (resource as any).latitude ?? null,
+      longitude: (resource as any).longitude ?? null,
     });
   };
 
@@ -859,6 +867,17 @@ export default function AdminResources() {
                 <Input className="h-9 text-xs" value={editForm.eligibility || ""} onChange={(e) => setEditForm(p => ({ ...p, eligibility: e.target.value }))} />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Latitude</Label>
+                  <Input className="h-9 text-xs" type="number" step="any" value={editForm.latitude ?? ""} onChange={(e) => setEditForm(p => ({ ...p, latitude: e.target.value ? parseFloat(e.target.value) : null }))} placeholder="Auto-geocoded" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Longitude</Label>
+                  <Input className="h-9 text-xs" type="number" step="any" value={editForm.longitude ?? ""} onChange={(e) => setEditForm(p => ({ ...p, longitude: e.target.value ? parseFloat(e.target.value) : null }))} placeholder="Auto-geocoded" />
+                </div>
+              </div>
+
               <Separator />
 
               <div className="flex items-center justify-between">
@@ -1004,10 +1023,10 @@ export default function AdminResources() {
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
                   <p className="text-xs font-medium">Supported CSV columns:</p>
                   <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
-                    title*, category, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, monetization_type, affiliate_url, sponsored, status
+                    title*, category, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, monetization_type, affiliate_url, sponsored, status, latitude, longitude
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    * Title is required (min 3 chars). Category matches by name or slug (e.g. "Housing Assistance" or "housing"). Status defaults to "approved". Sponsored defaults to "false".
+                    * Title is required (min 3 chars). Category matches by name or slug. Status defaults to "approved". Lat/lng are auto-geocoded from address if omitted.
                   </p>
                 </div>
               </>

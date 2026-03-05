@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabase } from "./supabase";
+import { geocodeAddress, haversineDistance } from "./geocode";
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const key = req.headers["x-admin-key"] as string;
@@ -52,6 +53,12 @@ export async function registerRoutes(
   app.get("/api/resources", async (req, res) => {
     const { category, state, q } = req.query;
 
+    const userLat = req.query.user_lat ? parseFloat(req.query.user_lat as string) : undefined;
+    const userLng = req.query.user_lng ? parseFloat(req.query.user_lng as string) : undefined;
+    const radiusMiles = req.query.radius_miles ? parseFloat(req.query.radius_miles as string) : undefined;
+    const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined
+      && !isNaN(userLat) && !isNaN(userLng) && !isNaN(radiusMiles);
+
     let query = supabase.from("resources").select(`
       id,
       category_id,
@@ -71,6 +78,8 @@ export async function registerRoutes(
       monetization_type,
       affiliate_url,
       sponsored,
+      latitude,
+      longitude,
       status,
       created_at,
       categories!inner(id, name, slug)
@@ -82,21 +91,31 @@ export async function registerRoutes(
       query = query.eq("categories.slug", category as string);
     }
 
-    const city = req.query.city as string | undefined;
-    const zip = req.query.zip as string | undefined;
+    if (nearMeMode) {
+      const latDelta = radiusMiles! / 69.0;
+      const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
+      query = query
+        .gte("latitude", userLat! - latDelta)
+        .lte("latitude", userLat! + latDelta)
+        .gte("longitude", userLng! - lngDelta)
+        .lte("longitude", userLng! + lngDelta);
+    } else {
+      const city = req.query.city as string | undefined;
+      const zip = req.query.zip as string | undefined;
 
-    if (city || zip) {
-      if (state) {
+      if (city || zip) {
+        if (state) {
+          query = query.or(`state.eq.${state},state.is.null`);
+        }
+        if (city) {
+          query = query.ilike("city", `%${city}%`);
+        }
+        if (zip) {
+          query = query.eq("zip", zip);
+        }
+      } else if (state) {
         query = query.or(`state.eq.${state},state.is.null`);
       }
-      if (city) {
-        query = query.ilike("city", `%${city}%`);
-      }
-      if (zip) {
-        query = query.eq("zip", zip);
-      }
-    } else if (state) {
-      query = query.or(`state.eq.${state},state.is.null`);
     }
 
     if (q) {
@@ -104,12 +123,47 @@ export async function registerRoutes(
       query = query.or(`title.ilike.${search},short_description.ilike.${search}`);
     }
 
-    query = query.order("sponsored", { ascending: false }).order("title");
+    if (!nearMeMode) {
+      query = query.order("sponsored", { ascending: false }).order("title");
+    }
 
     const { data, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });
+    }
+
+    if (nearMeMode && data) {
+      const localResults = data
+        .map((r: any) => {
+          if (r.latitude != null && r.longitude != null) {
+            const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
+            return { ...r, distance_miles: Math.round(dist * 10) / 10 };
+          }
+          return { ...r, distance_miles: null };
+        })
+        .filter((r: any) => r.distance_miles !== null && r.distance_miles <= radiusMiles!)
+        .sort((a: any, b: any) => a.distance_miles - b.distance_miles);
+
+      let nationalQuery = supabase.from("resources").select(`
+        id, category_id, title, short_description, website_url, phone, email,
+        address, city, state, zip, eligibility, source_name, source_type,
+        last_verified, monetization_type, affiliate_url, sponsored,
+        latitude, longitude, status, created_at,
+        categories!inner(id, name, slug)
+      `).eq("status", "approved").is("state", null);
+      if (category) {
+        nationalQuery = nationalQuery.eq("categories.slug", category as string);
+      }
+      nationalQuery = nationalQuery.order("sponsored", { ascending: false }).order("title");
+      const { data: nationalData } = await nationalQuery;
+
+      const localIds = new Set(localResults.map((r: any) => r.id));
+      const nationalResults = (nationalData || [])
+        .filter((r: any) => !localIds.has(r.id))
+        .map((r: any) => ({ ...r, distance_miles: null, is_national: true }));
+
+      return res.json([...localResults, ...nationalResults]);
     }
 
     return res.json(data);
@@ -205,7 +259,7 @@ export async function registerRoutes(
       .select(`
         id, category_id, title, short_description, website_url, phone, email,
         address, city, state, zip, eligibility, source_name, source_type,
-        last_verified, monetization_type, affiliate_url, sponsored, created_at,
+        last_verified, monetization_type, affiliate_url, sponsored, latitude, longitude, created_at,
         categories!inner(id, name, slug)
       `)
       .in("id", safeIds)
@@ -418,6 +472,19 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Title is required (minimum 3 characters)" });
     }
 
+    let latitude = req.body.latitude != null ? parseFloat(req.body.latitude) : null;
+    let longitude = req.body.longitude != null ? parseFloat(req.body.longitude) : null;
+    let geo_source = req.body.geo_source || null;
+
+    if ((latitude == null || longitude == null) && (address || city || state || zip)) {
+      const geo = await geocodeAddress(address, city, state, zip);
+      if (geo) {
+        latitude = geo.latitude;
+        longitude = geo.longitude;
+        geo_source = geo.geo_source;
+      }
+    }
+
     const { data, error } = await supabase
       .from("resources")
       .insert({
@@ -438,6 +505,10 @@ export async function registerRoutes(
         sponsored: !!sponsored,
         monetization_type: monetization_type || null,
         affiliate_url: affiliate_url?.trim() || null,
+        latitude: isNaN(latitude as number) ? null : latitude,
+        longitude: isNaN(longitude as number) ? null : longitude,
+        geo_source,
+        geocoded_at: latitude != null ? new Date().toISOString() : null,
       })
       .select(`*, categories(id, name, slug)`)
       .single();
@@ -482,6 +553,20 @@ export async function registerRoutes(
       }
 
       try {
+        let lat = row.latitude ? parseFloat(row.latitude) : null;
+        let lng = row.longitude ? parseFloat(row.longitude) : null;
+        let geoSrc = row.geo_source?.trim() || null;
+
+        if ((lat == null || lng == null || isNaN(lat) || isNaN(lng)) &&
+            (row.address?.trim() || row.city?.trim() || row.state?.trim() || row.zip?.trim())) {
+          const geo = await geocodeAddress(row.address?.trim(), row.city?.trim(), row.state?.trim(), row.zip?.trim());
+          if (geo) {
+            lat = geo.latitude;
+            lng = geo.longitude;
+            geoSrc = geo.geo_source;
+          }
+        }
+
         const { error } = await supabase
           .from("resources")
           .insert({
@@ -503,6 +588,10 @@ export async function registerRoutes(
             sponsored: row.sponsored === "true" || row.sponsored === true,
             monetization_type: row.monetization_type?.trim() || null,
             affiliate_url: row.affiliate_url?.trim() || null,
+            latitude: (lat != null && !isNaN(lat)) ? lat : null,
+            longitude: (lng != null && !isNaN(lng)) ? lng : null,
+            geo_source: geoSrc,
+            geocoded_at: (lat != null && !isNaN(lat)) ? new Date().toISOString() : null,
           });
 
         if (error) {
@@ -530,6 +619,7 @@ export async function registerRoutes(
       "source_type", "status", "notes_internal", "category_id",
       "is_featured", "featured_rank", "last_verified_at",
       "sponsored", "monetization_type", "affiliate_url",
+      "latitude", "longitude", "geo_source",
     ];
 
     const updates: Record<string, any> = {};
@@ -541,6 +631,22 @@ export async function registerRoutes(
 
     if (updates.status === "approved" && !updates.last_verified_at) {
       updates.last_verified_at = new Date().toISOString();
+    }
+
+    const addressChanged = updates.address !== undefined || updates.city !== undefined ||
+      updates.state !== undefined || updates.zip !== undefined;
+    if (addressChanged && updates.latitude === undefined && updates.longitude === undefined) {
+      const addr = updates.address ?? req.body._current_address;
+      const ct = updates.city ?? req.body._current_city;
+      const st = updates.state ?? req.body._current_state;
+      const zp = updates.zip ?? req.body._current_zip;
+      const geo = await geocodeAddress(addr, ct, st, zp);
+      if (geo) {
+        updates.latitude = geo.latitude;
+        updates.longitude = geo.longitude;
+        updates.geo_source = geo.geo_source;
+        updates.geocoded_at = new Date().toISOString();
+      }
     }
 
     if (Object.keys(updates).length === 0) {

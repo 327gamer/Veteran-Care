@@ -1,0 +1,49 @@
+NEXT IMPLEMENTATION: “Near Me” radius-based resources (distance, not just state/city)
+
+Please implement Step 17–18 as follows:
+
+STEP 17 — Add geo fields to resources (Supabase)
+1) Add columns to resources table:
+- latitude (double precision or numeric)
+- longitude (double precision or numeric)
+- geocoded_at (timestamptz, nullable)
+- geo_source (text, nullable; e.g. "mapbox", "google", "manual")
+
+2) Create an index for faster geo queries (if using PostGIS, use geography index; if not, at least index lat/lng):
+- index on (latitude, longitude)
+
+3) Update admin resource editor + CSV import to accept latitude/longitude columns.
+- CSV template should include: latitude, longitude (optional)
+- If not provided, geocode from address + city + state + zip when possible.
+
+4) Server: when creating/updating a resource (admin create/edit OR CSV import):
+- If latitude/longitude missing AND address/state exist, attempt geocode and save lat/lng
+- If geocode fails, still save resource (lat/lng remain null)
+
+STEP 18 — Implement “Near Me” query and UI
+1) Frontend (Resources page):
+- Add a “Near Me” mode (or toggle) next to National / By Location
+- Radius dropdown: 10 / 25 / 50 / 100 miles
+- When enabled, use user’s browser geolocation (already used) to obtain user lat/lng
+- If user denies location: fall back to By Location (state) or show prompt
+
+2) Backend (GET /api/resources):
+Add support for query params:
+- user_lat
+- user_lng
+- radius_miles
+
+When radius_miles is provided:
+- Return only resources within radius (AND approved AND category filter still applies)
+- Sort results by distance ASC (nearest first)
+- Still include “national” resources (state null) AFTER local results, OR keep them separate section “National resources” (your choice)
+
+3) UI results:
+- Show distance badge on each resource card (e.g., “3.2 mi”)
+- If 0 results in radius: show fallback to state + national (like current fallback behavior)
+
+Deliverables:
+- Updated Supabase SQL for Step 17
+- Updated CSV template including lat/lng
+- Updated Resources UI with Near Me + radius + distance badges
+- No regressions to current National/By Location behavior

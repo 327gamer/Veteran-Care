@@ -44,7 +44,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
-- `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), status (text: pending/approved/rejected), submitted_by_name, submitted_by_email, notes_internal, is_featured (bool), featured_rank (int), last_verified_at, created_at
+- `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), status (text: pending/approved/rejected), submitted_by_name, submitted_by_email, notes_internal, is_featured (bool), featured_rank (int), last_verified_at, latitude (float8), longitude (float8), geo_source (text), geocoded_at (timestamptz), created_at
 - `resource_clicks` - id (uuid), resource_id (fk→resources), click_type (text), user_state, user_city, user_zip (text), created_at (SQL in `supabase/create_resource_clicks.sql`)
 - `navigator_requests` - id (uuid), resource_id, resource_title, veteran_name, veteran_phone, veteran_email, message, preferred_contact, user_state, user_city, user_zip, status (new/contacted/completed/cancelled), admin_notes, created_at (SQL in `supabase/create_navigator_requests.sql`)
 
@@ -77,6 +77,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - City/ZIP autocomplete suggestions from approved resource data
 - National fallback: when location filter returns 0 results, shows national resources with amber notice
 - "Local only" toggle (default OFF): when ON, no fallback, shows clean empty state
+- Near Me: server-side Nominatim geocoding (`server/geocode.ts`) + Haversine distance; bounding box pre-filter, exact distance sort; includes national resources after local results; radius options: 10/25/50/100 mi (default 25)
+- Location toggle: All (national) / Near Me (geo-based) / By State (manual state/city/zip); "Use My Location" button in By State mode
 - veterancare.com (Duda) acts as marketing front door; this Replit app is the functional product
 - Admin page uses standalone layout (no bottom nav) with its own header
 - Resource submissions default to status=pending; only approved resources show publicly

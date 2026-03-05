@@ -10,6 +10,7 @@ import {
   Heart,
   Globe,
   MapPinned,
+  Radar,
   Plus,
   Locate,
   Loader2,
@@ -72,6 +73,9 @@ interface SupabaseResource {
   monetization_type: string | null;
   affiliate_url: string | null;
   sponsored: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  distance_miles?: number | null;
   created_at: string;
   categories: { id: string; name: string; slug: string };
 }
@@ -96,6 +100,7 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
     sponsored: r.sponsored || false,
     affiliate_url: r.affiliate_url || undefined,
     monetization_type: r.monetization_type || undefined,
+    distance_miles: r.distance_miles ?? undefined,
   };
 }
 
@@ -193,7 +198,7 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
 
-  const [locationMode, setLocationMode] = useState<"national" | "state">("national");
+  const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme">("national");
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
   const [zipFilter, setZipFilter] = useState<string>("");
@@ -201,6 +206,7 @@ export default function Resources() {
   const [geoApplied, setGeoApplied] = useState(false);
   const [debouncedCity, setDebouncedCity] = useState("");
   const [debouncedZip, setDebouncedZip] = useState("");
+  const [nearMeRadius, setNearMeRadius] = useState(25);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
@@ -225,20 +231,31 @@ export default function Resources() {
   const hasLocationFilters = !!(stateParam || cityParam || zipParam);
   const hasAnyLocationInput = locationMode === "state" && !!(selectedState || cityFilter.trim() || zipFilter.trim());
 
+  const nearMeLat = locationMode === "nearme" && geo.location ? geo.location.lat : undefined;
+  const nearMeLng = locationMode === "nearme" && geo.location ? geo.location.lng : undefined;
+
   const { data: apiResources = [], isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[]>({
-    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam],
+    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
-      if (stateParam) params.set("state", stateParam);
-      if (cityParam) params.set("city", cityParam);
-      if (zipParam) params.set("zip", zipParam);
+      if (locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined) {
+        params.set("user_lat", String(nearMeLat));
+        params.set("user_lng", String(nearMeLng));
+        params.set("radius_miles", String(nearMeRadius));
+      } else {
+        if (stateParam) params.set("state", stateParam);
+        if (cityParam) params.set("city", cityParam);
+        if (zipParam) params.set("zip", zipParam);
+      }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: !!selectedSlug,
+    enabled: !!selectedSlug && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
   });
 
-  const needsFallback = resourcesFetched && apiResources.length === 0 && hasLocationFilters && locationMode === "state" && !localOnly;
+  const needsFallback = resourcesFetched && apiResources.length === 0 &&
+    ((hasLocationFilters && locationMode === "state" && !localOnly) ||
+     (locationMode === "nearme" && nearMeLat !== undefined));
 
   const { data: fallbackResources = [], isLoading: fallbackLoading } = useQuery<SupabaseResource[]>({
     queryKey: ["/api/resources", selectedSlug, "national-fallback"],
@@ -289,7 +306,7 @@ export default function Resources() {
   };
 
   useEffect(() => {
-    if (geo.location && !geoApplied) {
+    if (geo.location && !geoApplied && locationMode !== "nearme") {
       setGeoApplied(true);
       setLocationMode("state");
       if (geo.location.stateCode) setSelectedState(geo.location.stateCode);
@@ -302,7 +319,7 @@ export default function Resources() {
         geo.location.zip
       );
     }
-  }, [geo.location, geoApplied, setStoreLocation]);
+  }, [geo.location, geoApplied, setStoreLocation, locationMode]);
 
   useEffect(() => {
     if (locationMode === "state") {
@@ -405,7 +422,18 @@ export default function Resources() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Globe className="h-3 w-3" />
-                    National
+                    All
+                  </button>
+                  <button
+                    data-testid="toggle-near-me"
+                    onClick={() => {
+                      setLocationMode("nearme");
+                      if (!geo.location) geo.requestLocation();
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Radar className="h-3 w-3" />
+                    Near Me
                   </button>
                   <button
                     data-testid="toggle-by-state"
@@ -413,26 +441,58 @@ export default function Resources() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "state" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <MapPinned className="h-3 w-3" />
-                    By Location
+                    By State
                   </button>
                 </div>
-
-                <Button
-                  data-testid="button-use-location"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary ml-auto"
-                  onClick={handleUseMyLocation}
-                  disabled={geo.loading}
-                >
-                  {geo.loading ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <Locate className="h-3 w-3 mr-1" />
-                  )}
-                  Use My Location
-                </Button>
               </div>
+
+              {locationMode === "state" && (
+                <div className="flex justify-end -mt-1 mb-1">
+                  <Button
+                    data-testid="button-use-location"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
+                    onClick={handleUseMyLocation}
+                    disabled={geo.loading}
+                  >
+                    {geo.loading ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Locate className="h-3 w-3 mr-1" />
+                    )}
+                    Use My Location
+                  </Button>
+                </div>
+              )}
+
+              {locationMode === "nearme" && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Radius:</span>
+                  <div className="flex rounded-full border bg-background overflow-hidden">
+                    {[10, 25, 50, 100].map((r) => (
+                      <button
+                        key={r}
+                        data-testid={`radius-${r}`}
+                        onClick={() => setNearMeRadius(r)}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${nearMeRadius === r ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        {r} mi
+                      </button>
+                    ))}
+                  </div>
+                  {geo.loading && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Getting location...
+                    </span>
+                  )}
+                  {geo.location && !geo.loading && (
+                    <span className="text-[10px] text-muted-foreground">
+                      Near {geo.location.city || geo.location.stateCode}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {locationMode === "state" && (
                 <>
@@ -492,7 +552,17 @@ export default function Resources() {
                 </p>
               )}
 
-              {geo.error && (
+              {locationMode === "nearme" && !geo.location && !geo.loading && geo.error && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-amber-800">{geo.error}</p>
+                    <p className="text-[10px] text-amber-700 mt-1">Try "By State" mode instead, or allow location access in your browser.</p>
+                  </div>
+                </div>
+              )}
+
+              {geo.error && locationMode !== "nearme" && (
                 <p className="text-[10px] text-destructive">{geo.error}</p>
               )}
             </div>
@@ -501,7 +571,10 @@ export default function Resources() {
               <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800">
-                  No local resources found yet for {locationLabel()} — showing national resources.
+                  {locationMode === "nearme"
+                    ? `No resources found within ${nearMeRadius} miles — showing all resources.`
+                    : `No local resources found yet for ${locationLabel()} — showing national resources.`
+                  }
                 </p>
               </div>
             )}
@@ -541,6 +614,11 @@ export default function Resources() {
                         {resource.isLocal && (
                           <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
                             <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}
+                          </Badge>
+                        )}
+                        {resource.distance_miles != null && (
+                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-blue-300 text-blue-600 bg-blue-50 shrink-0">
+                            <Radar className="h-2.5 w-2.5 mr-0.5" /> {resource.distance_miles} mi
                           </Badge>
                         )}
                       </div>

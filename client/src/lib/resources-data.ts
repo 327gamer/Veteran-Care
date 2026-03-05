@@ -18,6 +18,7 @@ export interface ResourceItem {
   sponsored?: boolean;
   affiliate_url?: string;
   monetization_type?: string;
+  distance_miles?: number;
 }
 
 export const resourcesData: Record<string, ResourceItem[]> = {
