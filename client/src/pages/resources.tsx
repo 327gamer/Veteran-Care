@@ -15,7 +15,8 @@ import {
   Locate,
   Loader2,
   X,
-  Info
+  Info,
+  Search
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -207,6 +208,8 @@ export default function Resources() {
   const [debouncedCity, setDebouncedCity] = useState("");
   const [debouncedZip, setDebouncedZip] = useState("");
   const [nearMeRadius, setNearMeRadius] = useState(25);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
@@ -217,6 +220,11 @@ export default function Resources() {
     const t = setTimeout(() => setDebouncedZip(zipFilter), 300);
     return () => clearTimeout(t);
   }, [zipFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   const geo = useGeolocation();
 
@@ -234,11 +242,14 @@ export default function Resources() {
   const nearMeLat = locationMode === "nearme" && geo.location ? geo.location.lat : undefined;
   const nearMeLng = locationMode === "nearme" && geo.location ? geo.location.lng : undefined;
 
+  const searchParam = debouncedSearch.trim() || undefined;
+
   const { data: apiResources = [], isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[]>({
-    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode],
+    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode, searchParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
+      if (searchParam) params.set("q", searchParam);
       if (locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined) {
         params.set("user_lat", String(nearMeLat));
         params.set("user_lng", String(nearMeLng));
@@ -253,7 +264,7 @@ export default function Resources() {
     enabled: !!selectedSlug && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
   });
 
-  const needsFallback = resourcesFetched && apiResources.length === 0 &&
+  const needsFallback = resourcesFetched && apiResources.length === 0 && !searchParam &&
     ((hasLocationFilters && locationMode === "state" && !localOnly) ||
      (locationMode === "nearme" && nearMeLat !== undefined));
 
@@ -359,6 +370,7 @@ export default function Resources() {
   const clearCategory = () => {
     setSelectedSlug(null);
     setSelectedName(null);
+    setSearchQuery("");
     setLocation("/resources");
   };
 
@@ -412,6 +424,27 @@ export default function Resources() {
 
       {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                data-testid="input-search-resources"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search resources (housing, VA benefits, food assistance...)"
+                className="w-full h-10 pl-9 pr-9 rounded-lg border bg-background text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              {searchQuery && (
+                <button
+                  data-testid="button-clear-search"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground">Location:</span>
@@ -652,7 +685,9 @@ export default function Resources() {
               </Card>
             ))}
             {!isLoading && !showLocalOnlyEmpty && (!activeResources || activeResources.length === 0) && (
-              <p data-testid="text-no-resources" className="text-center text-muted-foreground py-8">No resources found for this category yet.</p>
+              <p data-testid="text-no-resources" className="text-center text-muted-foreground py-8">
+                {searchParam ? "No resources found. Try another search or category." : "No resources found for this category yet."}
+              </p>
             )}
         </div>
       ) : (

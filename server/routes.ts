@@ -120,7 +120,7 @@ export async function registerRoutes(
 
     if (q) {
       const search = `%${q}%`;
-      query = query.or(`title.ilike.${search},short_description.ilike.${search}`);
+      query = query.or(`title.ilike.${search},short_description.ilike.${search},city.ilike.${search},state.ilike.${search},eligibility.ilike.${search},source_name.ilike.${search}`);
     }
 
     if (!nearMeMode) {
