@@ -16,7 +16,8 @@ import {
   Loader2,
   X,
   Info,
-  Search
+  Search,
+  FilterX
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -374,6 +375,39 @@ export default function Resources() {
     setLocation("/resources");
   };
 
+  const clearAllFilters = () => {
+    setLocationMode("national");
+    setSelectedState("");
+    setCityFilter("");
+    setZipFilter("");
+    setSearchQuery("");
+    setLocalOnly(false);
+    setNearMeRadius(25);
+  };
+
+  const hasActiveFilters = locationMode !== "national" || searchQuery.trim() !== "" || localOnly;
+
+  const filterChips: { label: string; onRemove: () => void }[] = [];
+  if (selectedState) {
+    const stateName = US_STATES.find(s => s.value === selectedState)?.label || selectedState;
+    filterChips.push({ label: stateName, onRemove: () => { setSelectedState(""); setCityFilter(""); setZipFilter(""); if (!cityFilter && !zipFilter) setLocationMode("national"); } });
+  }
+  if (cityFilter.trim()) {
+    filterChips.push({ label: cityFilter.trim(), onRemove: () => { setCityFilter(""); setZipFilter(""); } });
+  }
+  if (zipFilter.trim()) {
+    filterChips.push({ label: `ZIP: ${zipFilter.trim()}`, onRemove: () => setZipFilter("") });
+  }
+  if (searchQuery.trim()) {
+    filterChips.push({ label: `Search: ${searchQuery.trim()}`, onRemove: () => setSearchQuery("") });
+  }
+  if (locationMode === "nearme") {
+    filterChips.push({ label: `Near Me (${nearMeRadius} mi)`, onRemove: () => { setLocationMode("national"); } });
+  }
+  if (localOnly) {
+    filterChips.push({ label: "Local only", onRemove: () => setLocalOnly(false) });
+  }
+
   const handleUseMyLocation = () => {
     geo.requestLocation();
     setGeoApplied(false);
@@ -424,6 +458,7 @@ export default function Resources() {
 
       {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -599,6 +634,45 @@ export default function Resources() {
                 <p className="text-[10px] text-destructive">{geo.error}</p>
               )}
             </div>
+          </div>
+
+            {!isLoading && !showLocalOnlyEmpty && activeResources && activeResources.length > 0 && (
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span data-testid="text-results-count" className="text-xs text-muted-foreground">
+                  Showing {activeResources.length} resource{activeResources.length !== 1 ? "s" : ""}
+                </span>
+                {hasActiveFilters && (
+                  <button
+                    data-testid="button-clear-filters"
+                    onClick={clearAllFilters}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <FilterX className="h-3 w-3" />
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            )}
+
+            {filterChips.length > 0 && (
+              <div data-testid="filter-chips" className="flex items-center gap-1.5 flex-wrap">
+                {filterChips.map((chip) => (
+                  <span
+                    key={chip.label}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium"
+                  >
+                    {chip.label}
+                    <button
+                      data-testid={`chip-remove-${chip.label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                      onClick={chip.onRemove}
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             {isFallingBack && (
               <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
