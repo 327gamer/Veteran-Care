@@ -79,16 +79,23 @@ interface AdminResource {
   website_url: string | null;
   phone: string | null;
   email: string | null;
+  address: string | null;
   city: string | null;
   state: string | null;
   zip: string | null;
   status: string;
   source_name: string | null;
+  source_type: string | null;
   submitted_by_name: string | null;
   submitted_by_email: string | null;
   notes_internal: string | null;
   category_id: string | null;
   eligibility: string | null;
+  sponsored: boolean;
+  monetization_type: string | null;
+  affiliate_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   categories: { id: string; name: string; slug: string } | null;
 }
@@ -232,13 +239,16 @@ export default function AdminResources() {
       website_url: "",
       phone: "",
       email: "",
+      address: "",
       city: "",
       state: "",
       zip: "",
       eligibility: "",
       source_name: "",
+      source_type: "",
       notes_internal: "",
       category_id: "",
+      status: "approved",
       sponsored: false,
       monetization_type: "",
       affiliate_url: "",
@@ -464,18 +474,21 @@ export default function AdminResources() {
       website_url: resource.website_url || "",
       phone: resource.phone || "",
       email: resource.email || "",
+      address: resource.address || "",
       city: resource.city || "",
       state: resource.state || "",
       zip: resource.zip || "",
       eligibility: resource.eligibility || "",
       source_name: resource.source_name || "",
+      source_type: resource.source_type || "",
       notes_internal: resource.notes_internal || "",
       category_id: resource.category_id || "",
-      sponsored: (resource as any).sponsored || false,
-      monetization_type: (resource as any).monetization_type || "",
-      affiliate_url: (resource as any).affiliate_url || "",
-      latitude: (resource as any).latitude ?? null,
-      longitude: (resource as any).longitude ?? null,
+      status: resource.status || "pending",
+      sponsored: resource.sponsored || false,
+      monetization_type: resource.monetization_type || "",
+      affiliate_url: resource.affiliate_url || "",
+      latitude: resource.latitude ?? null,
+      longitude: resource.longitude ?? null,
     });
   };
 
@@ -842,6 +855,11 @@ export default function AdminResources() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-xs">Address</Label>
+                <Input data-testid="input-admin-address" className="h-9 text-xs" value={editForm.address || ""} onChange={(e) => setEditForm(p => ({ ...p, address: e.target.value }))} placeholder="Street address" />
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label className="text-xs">City</Label>
@@ -857,14 +875,44 @@ export default function AdminResources() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs">Source Name</Label>
-                <Input className="h-9 text-xs" value={editForm.source_name || ""} onChange={(e) => setEditForm(p => ({ ...p, source_name: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Source Name</Label>
+                  <Input className="h-9 text-xs" value={editForm.source_name || ""} onChange={(e) => setEditForm(p => ({ ...p, source_name: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Source Type</Label>
+                  <Select value={editForm.source_type || undefined} onValueChange={(v) => setEditForm(p => ({ ...p, source_type: v }))}>
+                    <SelectTrigger data-testid="select-admin-source-type" className="h-9 text-xs">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="government">Government</SelectItem>
+                      <SelectItem value="nonprofit">Nonprofit</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                      <SelectItem value="community">Community</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs">Eligibility</Label>
                 <Input className="h-9 text-xs" value={editForm.eligibility || ""} onChange={(e) => setEditForm(p => ({ ...p, eligibility: e.target.value }))} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Status</Label>
+                <Select value={editForm.status || "approved"} onValueChange={(v) => setEditForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger data-testid="select-admin-status" className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
