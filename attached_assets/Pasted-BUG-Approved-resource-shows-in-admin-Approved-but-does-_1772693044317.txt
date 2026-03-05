@@ -1,0 +1,39 @@
+BUG: Approved resource shows in /admin (Approved) but does NOT show on public Resources list under the same category.
+
+Repro:
+1) /admin → Approved tab → open the test resource
+2) Confirm: status = 'approved'
+3) Confirm: category = 'Housing Assistance' (or whatever the UI shows)
+4) Confirm: state + city (and zip) are filled in
+5) Go to /resources → choose the same category (Housing Assistance) → the resource is missing
+
+Expected:
+Approved resources should appear on /resources when their category matches and when location filters are compatible.
+
+Please debug + fix (likely one of these):
+A) Category mismatch:
+- Admin saves category as category string/name, but public query filters by category_id or slug (or different category table join).
+- Ensure the public query uses the SAME field that admin writes (prefer category_id everywhere).
+- In API response, verify each resource includes category/category_id consistently.
+
+B) Status filter mismatch:
+- Public endpoint may be filtering status='approved' but admin wrote 'Approved' or 'APPROVED' (case mismatch).
+- Normalize status values on write + filter (lowercase, enum-style).
+
+C) Location filter logic bug:
+- Public endpoint may require (state IS NULL for national) or incorrectly applies state filter even when user is in National mode.
+- Confirm logic: if locationMode = national → include state IS NULL (and/or also allow state='SC' only when in By Location).
+- If By Location = SC → include state='SC' AND (city ILIKE … if set) AND (zip = … if set).
+
+D) Frontend filtering bug:
+- Client might be doing an extra filter after API returns results (e.g., filtering by category label) that excludes the item.
+- Add console log to compare: API results count vs rendered count.
+
+How to confirm fix quickly:
+- Add temporary “debug count” on /resources showing:
+  - total returned from /api/resources
+  - total after frontend filters
+- Add a simple search (admin-only ok) or allow query param ?debug=1 to show IDs + category_id + status.
+
+Please fix so:
+- Any resource saved from admin with status='approved' + category_id for Housing Assistance shows on /resources under Housing Assistance immediately after refresh.

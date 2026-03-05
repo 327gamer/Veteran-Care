@@ -97,8 +97,6 @@ export async function registerRoutes(
       }
     } else if (state) {
       query = query.or(`state.eq.${state},state.is.null`);
-    } else {
-      query = query.is("state", null);
     }
 
     if (q) {
