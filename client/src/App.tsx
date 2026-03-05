@@ -16,21 +16,14 @@ import SubmitResource from "@/pages/submit-resource";
 import AdminResources from "@/pages/admin-resources";
 import AdminAnalytics from "@/pages/admin-analytics";
 import Layout from "@/components/layout";
-
 import Landing from "@/pages/landing";
-import EnableLocation from "@/pages/enable-location";
 
-// Mock auth/onboarding state wrapper for prototype
 function Router() {
-  // In a real app, we'd check if onboarding is complete
-  const showOnboarding = false; 
-
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/enable-location" component={EnableLocation} />
-
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/enable-location" component={Onboarding} />
       
       <Route path="/home">
         <Layout>

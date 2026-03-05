@@ -52,10 +52,9 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `ADMIN_KEY` - Secret key for admin resource review access
 
 ## Routes (Frontend)
-- `/` - Landing page
-- `/enable-location` - Location permission flow
-- `/onboarding` - Onboarding screens
-- `/home` - Main dashboard
+- `/` - Landing (auto-redirects to /onboarding or /home based on state)
+- `/onboarding` - 3-step onboarding: Welcome → Location → Interests
+- `/home` - Main dashboard (with first-time welcome message, service profile prompt, nav tutorial)
 - `/resources` - Resource library with category browsing and location filter
 - `/saved-resources` - Saved/bookmarked resources
 - `/submit-resource` - Community resource submission form
@@ -88,7 +87,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - Sponsored resources display amber "Sponsored" badge in list and detail views
 - "Ask Guide" dispatches custom event to open AI Guide modal from Layout
 - Click tracking logs all interactions via POST /api/track-click
-- Navigator lead capture section prepared as placeholder ("Coming soon")
+- Navigator lead capture form (name, phone/email, message, preferred contact) — always visible on every resource
+- Admin "Navigator Leads" tab for managing submitted requests (new/contacted/completed/cancelled)
 
 ## Click Tracking
 - All key actions tracked: website_click, call_click, directions_click, guide_click, save_click, share_click, report_click, apply_click
@@ -104,6 +104,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - Input validation: title min 3 chars, category required, URL format check, phone digit length check
 - Report system: POST /api/report-resource appends report note to notes_internal and sets status to pending for admin review
 - Admin analytics: GET /api/admin/analytics aggregates clicks by category/state/city, top 20 resources, affiliate vs non-affiliate splits, reported resource list
+
+## Onboarding & User State (Zustand persisted)
+- `onboardingComplete` - set true after completing onboarding or clicking "I Already Have an Account" / "Try Demo"
+- `interests` - array of selected interest categories from onboarding step 3
+- `serviceProfile` - { branch, era, rank, mos } — populated via Service Profile dialog on home page
+- `hasSeenWelcome` - dismisses the AI Guide welcome message on home page
+- `hasSeenTutorial` - dismisses the first-time navigation tutorial overlay
+- Chat system centralized: all "Ask Guide" buttons dispatch `CustomEvent("open-ai-guide")`, Layout listens and opens AiGuide modal
 
 ## Key Files (Step 12)
 - `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats
