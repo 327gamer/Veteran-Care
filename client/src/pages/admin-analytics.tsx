@@ -26,6 +26,13 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
+interface NavigatorStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byCategory: { category: string; count: number }[];
+  byState: { state: string; count: number }[];
+}
+
 interface AnalyticsData {
   totalClicks: number;
   totalResources: number;
@@ -39,6 +46,7 @@ interface AnalyticsData {
   byCity: { city: string; clicks: number }[];
   topResources: { id: string; title: string; clicks: number; category: string; sponsored: boolean }[];
   reports: { id: string; title: string; state: string; city: string; notes: string }[];
+  navigatorStats?: NavigatorStats;
 }
 
 const CLICK_TYPE_LABELS: Record<string, string> = {
@@ -350,6 +358,95 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
         </div>
+
+        {data.navigatorStats && data.navigatorStats.total > 0 && (
+          <>
+            <Separator />
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Navigator Requests
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold" data-testid="stat-nav-total">{data.navigatorStats.total}</p>
+                  <p className="text-xs text-muted-foreground">Total Requests</p>
+                </CardContent>
+              </Card>
+              {Object.entries(data.navigatorStats.byStatus)
+                .sort((a, b) => b[1] - a[1])
+                .map(([status, count]) => {
+                  const colors: Record<string, string> = {
+                    new: "text-blue-600",
+                    contacted: "text-amber-600",
+                    completed: "text-green-600",
+                    cancelled: "text-muted-foreground",
+                  };
+                  return (
+                    <Card key={status}>
+                      <CardContent className="p-4 text-center">
+                        <p className={`text-2xl font-bold ${colors[status] || ""}`} data-testid={`stat-nav-${status}`}>{count}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{status}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.navigatorStats.byCategory.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Layers className="h-4 w-4" />
+                      Requests by Category
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {data.navigatorStats.byCategory.map((item) => {
+                        const pct = data.navigatorStats!.total > 0
+                          ? Math.round((item.count / data.navigatorStats!.total) * 100)
+                          : 0;
+                        return (
+                          <div key={item.category} className="flex items-center gap-2" data-testid={`nav-cat-${item.category}`}>
+                            <span className="text-xs w-36 truncate">{item.category}</span>
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-xs font-mono w-8 text-right">{item.count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {data.navigatorStats.byState.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Requests by State
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {data.navigatorStats.byState.slice(0, 10).map((item) => (
+                        <div key={item.state} className="flex items-center justify-between text-sm" data-testid={`nav-state-${item.state}`}>
+                          <span className="text-xs">{item.state}</span>
+                          <Badge variant="outline" className="text-xs font-mono">{item.count}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        )}
 
         {data.reports.length > 0 && (
           <Card className="border-red-200">

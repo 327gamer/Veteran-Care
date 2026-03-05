@@ -684,6 +684,26 @@ export async function registerRoutes(
       .eq("status", "pending")
       .ilike("notes_internal", "%[REPORT%");
 
+    let navRequests: any[] = [];
+    try {
+      const { data: navData, error: navErr } = await supabase
+        .from("navigator_requests")
+        .select("id, status, category, subcategory, resource_title, user_state, user_city, created_at");
+      if (navErr) console.warn("Navigator stats unavailable:", navErr.message);
+      navRequests = navData || [];
+    } catch (e: any) {
+      console.warn("Navigator stats fetch failed:", e?.message);
+    }
+
+    const navByStatus: Record<string, number> = {};
+    const navByCategory: Record<string, number> = {};
+    const navByState: Record<string, number> = {};
+    navRequests.forEach((nr: any) => {
+      navByStatus[nr.status || "unknown"] = (navByStatus[nr.status || "unknown"] || 0) + 1;
+      if (nr.category) navByCategory[nr.category] = (navByCategory[nr.category] || 0) + 1;
+      if (nr.user_state) navByState[nr.user_state] = (navByState[nr.user_state] || 0) + 1;
+    });
+
     return res.json({
       totalClicks,
       totalResources: totalResources || 0,
@@ -703,6 +723,16 @@ export async function registerRoutes(
         city: r.city,
         notes: r.notes_internal,
       })),
+      navigatorStats: {
+        total: navRequests.length,
+        byStatus: navByStatus,
+        byCategory: Object.entries(navByCategory)
+          .sort((a, b) => b[1] - a[1])
+          .map(([category, count]) => ({ category, count })),
+        byState: Object.entries(navByState)
+          .sort((a, b) => b[1] - a[1])
+          .map(([state, count]) => ({ state, count })),
+      },
     });
   });
 
