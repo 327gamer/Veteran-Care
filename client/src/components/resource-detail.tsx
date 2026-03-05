@@ -320,112 +320,6 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
               )}
             </section>
 
-            <section data-testid="section-help" className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg border border-accent/20">
-              <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                <Bot className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm truncate">Need help with this?</h4>
-                <p className="text-xs text-muted-foreground truncate">
-                  Ask our AI guide about eligibility, forms, or next steps.
-                </p>
-              </div>
-              <Button
-                data-testid="button-ask-guide"
-                size="sm"
-                variant="secondary"
-                className="h-7 text-xs bg-white shadow-sm border shrink-0"
-                onClick={handleGuideClick}
-              >
-                Ask Guide
-              </Button>
-            </section>
-
-            <section data-testid="section-actions" className="space-y-3">
-              <h3 className="font-bold text-base flex items-center gap-2 text-primary">
-                <ArrowRight className="h-4 w-4" />
-                Actions
-              </h3>
-
-              <div className="grid grid-cols-1 gap-2">
-                {resource.phone && (
-                  <Button
-                    data-testid="button-call"
-                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white gap-2"
-                    onClick={handleCallClick}
-                  >
-                    <Phone className="h-4 w-4" /> Call {resource.phone}
-                  </Button>
-                )}
-
-                {hasAddress && (
-                  <Button
-                    data-testid="button-directions"
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                    onClick={handleDirectionsClick}
-                  >
-                    <Navigation className="h-4 w-4" /> Get Directions
-                  </Button>
-                )}
-
-                {(resource.website_url || resource.affiliate_url) && (
-                  <Button
-                    data-testid="button-apply"
-                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white gap-2"
-                    onClick={handleApplyClick}
-                  >
-                    <ArrowRight className="h-4 w-4" /> Apply / Get Help
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {resource.website_url && (
-                  <Button
-                    data-testid="button-website"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs gap-1.5"
-                    onClick={handleWebsiteClick}
-                  >
-                    <Globe className="h-3.5 w-3.5" /> Official Website
-                  </Button>
-                )}
-
-                <Button
-                  data-testid="button-save-detail"
-                  variant="outline"
-                  size="sm"
-                  className={`h-8 text-xs gap-1.5 ${isSaved(resource.id) ? "border-destructive text-destructive" : ""}`}
-                  onClick={handleSaveClick}
-                >
-                  <Heart className={`h-3.5 w-3.5 ${isSaved(resource.id) ? "fill-destructive" : ""}`} />
-                  {isSaved(resource.id) ? "Saved" : "Save"}
-                </Button>
-
-                <Button
-                  data-testid="button-share"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs gap-1.5"
-                  onClick={handleShareClick}
-                >
-                  {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
-                  Share
-                </Button>
-
-                <Button
-                  data-testid="button-report"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs gap-1.5 text-muted-foreground"
-                  onClick={handleReportClick}
-                >
-                  <Flag className="h-3.5 w-3.5" /> Report
-                </Button>
-              </div>
-            </section>
-
             <section data-testid="section-navigator" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
               {navSubmitted ? (
                 <div className="flex items-center gap-3 animate-in fade-in duration-300">
@@ -581,7 +475,10 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                         setNavSubmitted(true);
                         toast({ description: "Request submitted! A navigator will contact you soon.", duration: 4000 });
                       } catch (err: any) {
-                        setNavError(err.message);
+                        const msg = err.message?.toLowerCase().includes("relation") || err.message?.toLowerCase().includes("does not exist")
+                          ? "Navigator system is being enabled — please try again shortly."
+                          : err.message;
+                        setNavError(msg);
                       } finally {
                         setNavSubmitting(false);
                       }
@@ -591,6 +488,112 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                   </Button>
                 </div>
               )}
+            </section>
+
+            <section data-testid="section-help" className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg border border-accent/20">
+              <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <Bot className="h-5 w-5 text-accent-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm truncate">Need help with this?</h4>
+                <p className="text-xs text-muted-foreground truncate">
+                  Ask our AI guide about eligibility, forms, or next steps.
+                </p>
+              </div>
+              <Button
+                data-testid="button-ask-guide"
+                size="sm"
+                variant="secondary"
+                className="h-7 text-xs bg-white shadow-sm border shrink-0"
+                onClick={handleGuideClick}
+              >
+                Ask Guide
+              </Button>
+            </section>
+
+            <section data-testid="section-actions" className="space-y-3">
+              <h3 className="font-bold text-base flex items-center gap-2 text-primary">
+                <ArrowRight className="h-4 w-4" />
+                Actions
+              </h3>
+
+              <div className="grid grid-cols-1 gap-2">
+                {resource.phone && (
+                  <Button
+                    data-testid="button-call"
+                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white gap-2"
+                    onClick={handleCallClick}
+                  >
+                    <Phone className="h-4 w-4" /> Call {resource.phone}
+                  </Button>
+                )}
+
+                {hasAddress && (
+                  <Button
+                    data-testid="button-directions"
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                    onClick={handleDirectionsClick}
+                  >
+                    <Navigation className="h-4 w-4" /> Get Directions
+                  </Button>
+                )}
+
+                {(resource.website_url || resource.affiliate_url) && (
+                  <Button
+                    data-testid="button-apply"
+                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white gap-2"
+                    onClick={handleApplyClick}
+                  >
+                    <ArrowRight className="h-4 w-4" /> Apply / Get Help
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {resource.website_url && (
+                  <Button
+                    data-testid="button-website"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={handleWebsiteClick}
+                  >
+                    <Globe className="h-3.5 w-3.5" /> Official Website
+                  </Button>
+                )}
+
+                <Button
+                  data-testid="button-save-detail"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 text-xs gap-1.5 ${isSaved(resource.id) ? "border-destructive text-destructive" : ""}`}
+                  onClick={handleSaveClick}
+                >
+                  <Heart className={`h-3.5 w-3.5 ${isSaved(resource.id) ? "fill-destructive" : ""}`} />
+                  {isSaved(resource.id) ? "Saved" : "Save"}
+                </Button>
+
+                <Button
+                  data-testid="button-share"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={handleShareClick}
+                >
+                  {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+                  Share
+                </Button>
+
+                <Button
+                  data-testid="button-report"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 text-muted-foreground"
+                  onClick={handleReportClick}
+                >
+                  <Flag className="h-3.5 w-3.5" /> Report
+                </Button>
+              </div>
             </section>
 
           </div>

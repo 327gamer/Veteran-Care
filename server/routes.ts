@@ -508,7 +508,10 @@ export async function registerRoutes(
 
     if (error) {
       console.error("Navigator request error:", error.message);
-      return res.status(500).json({ error: "Failed to submit request. Please try again." });
+      const msg = error.message?.includes("navigator_requests")
+        ? "Navigator system is being enabled — please try again shortly."
+        : "Failed to submit request. Please try again.";
+      return res.status(500).json({ error: msg });
     }
 
     return res.status(201).json({ id: data.id, message: "Your request has been submitted. A navigator will reach out to you soon." });
