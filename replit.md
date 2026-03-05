@@ -109,9 +109,12 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `onboardingComplete` - set true after completing onboarding or clicking "I Already Have an Account" / "Try Demo"
 - `interests` - array of selected interest categories from onboarding step 3
 - `serviceProfile` - { branch, era, rank, mos } — populated via Service Profile dialog on home page
-- `hasSeenWelcome` - dismisses the AI Guide welcome message on home page
+- `hasSeenWelcome` - legacy flag (no longer used in UI, kept for store compat)
 - `hasSeenTutorial` - dismisses the first-time navigation tutorial overlay
+- `chatHistory` - persisted array of { role, content, timestamp } for AI Guide conversation history
 - Chat system centralized: all "Ask Guide" buttons dispatch `CustomEvent("open-ai-guide")`, Layout listens and opens AiGuide modal
+- Tutorial system: "Learn How the App Works" dispatches `CustomEvent("open-tutorial")`, Layout listens and shows tutorial overlay
+- Home welcome panel: always-visible AI Guide card with 4 action buttons (Ask Guide, Browse Resources, Request Navigator, How It Works)
 
 ## Key Files (Step 12)
 - `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats

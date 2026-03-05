@@ -9,6 +9,12 @@ interface ServiceProfile {
   mos: string;
 }
 
+interface ChatMessage {
+  role: 'assistant' | 'user';
+  content: string;
+  timestamp: number;
+}
+
 interface SavedResourcesState {
   savedIds: string[];
   userLocation: {
@@ -22,6 +28,7 @@ interface SavedResourcesState {
   serviceProfile: ServiceProfile;
   hasSeenWelcome: boolean;
   hasSeenTutorial: boolean;
+  chatHistory: ChatMessage[];
   toggleSave: (id: string) => void;
   isSaved: (id: string) => boolean;
   setLocation: (stateCode: string, state: string, city: string, zip: string) => void;
@@ -30,6 +37,9 @@ interface SavedResourcesState {
   setServiceProfile: (profile: Partial<ServiceProfile>) => void;
   markWelcomeSeen: () => void;
   markTutorialSeen: () => void;
+  resetTutorialSeen: () => void;
+  addChatMessage: (msg: Omit<ChatMessage, 'timestamp'>) => void;
+  clearChatHistory: () => void;
 }
 
 export const useSavedResources = create<SavedResourcesState>()(
@@ -42,6 +52,7 @@ export const useSavedResources = create<SavedResourcesState>()(
       serviceProfile: { branch: "", era: "", rank: "", mos: "" },
       hasSeenWelcome: false,
       hasSeenTutorial: false,
+      chatHistory: [],
       toggleSave: (id: string) => set((state: SavedResourcesState) => {
         const isAlreadySaved = state.savedIds.includes(id);
         if (isAlreadySaved) {
@@ -61,6 +72,11 @@ export const useSavedResources = create<SavedResourcesState>()(
       })),
       markWelcomeSeen: () => set({ hasSeenWelcome: true }),
       markTutorialSeen: () => set({ hasSeenTutorial: true }),
+      resetTutorialSeen: () => set({ hasSeenTutorial: false }),
+      addChatMessage: (msg) => set((state) => ({
+        chatHistory: [...state.chatHistory, { ...msg, timestamp: Date.now() }]
+      })),
+      clearChatHistory: () => set({ chatHistory: [] }),
     }),
     {
       name: 'veteran-care-saved-resources',

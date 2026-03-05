@@ -12,11 +12,14 @@ import {
   MessageSquare,
   ThumbsUp,
   Share2,
-  MoreHorizontal,
   Sparkles,
   User,
   X,
   Shield,
+  BookOpen,
+  Phone,
+  HelpCircle,
+  Bot,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -51,20 +54,21 @@ const feedItems = [
   },
   { 
     id: 2,
-    type: 'ad', 
-    title: 'USAA Insurance', 
-    content: 'Exclusive rates for military members and veterans. Switch today and save an average of $700.', 
-    cta: 'Get a Quote'
+    type: 'post', 
+    user: 'VetTech_22', 
+    avatar: 'VT',
+    time: '3h ago', 
+    content: 'Just completed my free coding bootcamp through VET TEC. Highly recommend for anyone looking to transition into tech careers.', 
+    likes: 45, 
+    comments: 12,
+    group: 'Career & Education'
   },
   { 
     id: 3,
-    type: 'post', 
-    user: 'Navy Vet 88', 
-    avatar: 'NV',
-    time: '4h ago', 
-    content: 'Just wanted to share that the local VFW is hosting a job fair next Tuesday. Great opportunity for anyone looking for work in the tech sector! Bring your resume.', 
-    likes: 45, 
-    comments: 12,
+    type: 'ad', 
+    title: 'USAA Auto Insurance', 
+    content: 'Exclusive rates for veterans and military families. Save up to 30%.', 
+    cta: 'Get a Quote',
     group: 'Job Opportunities'
   },
   { 
@@ -108,17 +112,15 @@ const CITIES_BY_STATE: Record<string, string[]> = {
   "South Carolina": ["Charleston", "Columbia", "Greenville", "Myrtle Beach", "Spartanburg"],
   "California": ["Los Angeles", "San Diego", "San Francisco", "Sacramento", "San Jose"],
   "Florida": ["Jacksonville", "Miami", "Tampa", "Orlando", "St. Petersburg"],
-  // Default for others
   "default": ["City 1", "City 2", "City 3"] 
 };
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userLocation, setLocation: setStoreLocation, hasSeenWelcome, markWelcomeSeen, serviceProfile, setServiceProfile } = useSavedResources();
+  const { userLocation, setLocation: setStoreLocation, serviceProfile, setServiceProfile } = useSavedResources();
   const [selectedState, setSelectedState] = useState<string>(userLocation.state || "Texas");
   const [selectedCity, setSelectedCity] = useState<string>(userLocation.city || "Austin");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(!hasSeenWelcome);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [profileForm, setProfileForm] = useState({
     branch: serviceProfile.branch || "",
@@ -126,11 +128,6 @@ export default function Home() {
     rank: serviceProfile.rank || "",
     mos: serviceProfile.mos || "",
   });
-
-  const dismissWelcome = () => {
-    setShowWelcome(false);
-    markWelcomeSeen();
-  };
 
   const saveProfile = () => {
     setServiceProfile(profileForm);
@@ -153,7 +150,6 @@ export default function Home() {
 
   const handleStateChange = (state: string) => {
     setSelectedState(state);
-    // Reset city when state changes
     const cities = CITIES_BY_STATE[state] || CITIES_BY_STATE["default"];
     setSelectedCity(cities[0]);
   };
@@ -166,6 +162,14 @@ export default function Home() {
 
   const getCities = (state: string) => {
     return CITIES_BY_STATE[state] || CITIES_BY_STATE["default"];
+  };
+
+  const openTutorial = () => {
+    window.dispatchEvent(new CustomEvent("open-tutorial"));
+  };
+
+  const openGuide = () => {
+    window.dispatchEvent(new CustomEvent("open-ai-guide"));
   };
 
   return (
@@ -182,121 +186,145 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Welcome / Quick Prompt */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-primary">Good Morning, Soldier</h2>
-          
-          <Dialog open={isLocationOpen} onOpenChange={setIsLocationOpen}>
-            <DialogTrigger asChild>
-              <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors py-1.5 px-3">
-                <MapPin className="mr-1 h-3.5 w-3.5" />
-                {userLocation.city}, {userLocation.state === "Texas" ? "TX" : userLocation.state === "South Carolina" ? "SC" : userLocation.state}
-                <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
-              </Badge>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Set Your Location</DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  We'll show you resources relevant to your area.
-                </p>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Select value={selectedState} onValueChange={handleStateChange}>
-                    <SelectTrigger id="state">
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
-                      {US_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>{state}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Select value={selectedCity} onValueChange={setSelectedCity}>
-                    <SelectTrigger id="city">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCities(selectedState).map((city) => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button onClick={saveLocation} className="w-full">Save Location</Button>
-            </DialogContent>
-          </Dialog>
-        </div>
+      {/* Location Badge */}
+      <section className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-primary">Good Morning, Soldier</h2>
         
+        <Dialog open={isLocationOpen} onOpenChange={setIsLocationOpen}>
+          <DialogTrigger asChild>
+            <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors py-1.5 px-3">
+              <MapPin className="mr-1 h-3.5 w-3.5" />
+              {userLocation.city && userLocation.stateCode
+                ? `${userLocation.city}, ${userLocation.stateCode}`
+                : userLocation.city || userLocation.state || "Set Location"}
+              <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
+            </Badge>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Set Your Location</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                We'll show you resources relevant to your area.
+              </p>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Select value={selectedState} onValueChange={handleStateChange}>
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>{state}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                  <SelectTrigger id="city">
+                    <SelectValue placeholder="Select city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCities(selectedState).map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button onClick={saveLocation} className="w-full">Save Location</Button>
+          </DialogContent>
+        </Dialog>
+      </section>
+
+      {/* AI Guide Welcome Panel */}
+      <section data-testid="section-guide-welcome">
         <Card className="bg-gradient-to-br from-primary to-primary/90 text-white border-none shadow-lg overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-32 w-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
-          <CardHeader>
-            <CardTitle className="text-xl">How can we help today?</CardTitle>
-            <p className="text-primary-foreground/80 text-sm">
-              Our AI Guide is ready to assist you with benefits, health, and more.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Button
-              data-testid="button-ask-guide-home"
-              variant="secondary"
-              className="w-full text-primary font-semibold shadow-md"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-ai-guide"))}
-            >
-              Ask the Guide
-            </Button>
+          <div className="absolute right-0 top-0 h-40 w-40 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+          <div className="absolute left-0 bottom-0 h-24 w-24 bg-white/5 rounded-full blur-2xl -ml-8 -mb-8"></div>
+          <CardContent className="p-5 space-y-4 relative">
+            <div className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-full bg-white/15 flex items-center justify-center border border-white/20 shrink-0">
+                <Bot className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="font-heading font-bold text-base">How can I help you today?</p>
+                <p className="text-primary-foreground/85 text-sm leading-relaxed">
+                  I'm your Veteran Care Guide. I can help you find benefits, healthcare, housing, and local veteran resources.
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                data-testid="button-ask-guide-home"
+                variant="secondary"
+                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                onClick={openGuide}
+              >
+                <Sparkles className="mr-1.5 h-4 w-4" />
+                Ask the Guide
+              </Button>
+              <Button
+                data-testid="button-browse-resources-home"
+                variant="secondary"
+                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                onClick={() => setLocation("/resources")}
+              >
+                <BookOpen className="mr-1.5 h-4 w-4" />
+                Browse Resources
+              </Button>
+              <Button
+                data-testid="button-navigator-home"
+                variant="secondary"
+                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                onClick={() => setLocation("/resources")}
+              >
+                <Phone className="mr-1.5 h-4 w-4" />
+                Request Navigator
+              </Button>
+              <Button
+                data-testid="button-learn-app-home"
+                variant="secondary"
+                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                onClick={openTutorial}
+              >
+                <HelpCircle className="mr-1.5 h-4 w-4" />
+                How It Works
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </section>
 
-      {showWelcome && (
-        <section data-testid="section-welcome-message" className="animate-in fade-in slide-in-from-top-4 duration-500">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-md">
-            <CardContent className="p-4 space-y-3">
+      {/* Service Profile Prompt */}
+      {!serviceProfile.branch && (
+        <section data-testid="section-profile-prompt" className="animate-in fade-in slide-in-from-top-4 duration-500">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm">
+            <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Shield className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-primary mb-1">AI Guide</h4>
+                <div className="flex-1 min-w-0 space-y-2">
                   <p className="text-sm text-foreground leading-relaxed">
-                    Good morning, Soldier. Welcome to Veteran Care. I can help you find benefits, healthcare, housing, and local support. You can ask me questions or browse resources below.
-                  </p>
-                </div>
-                <Button
-                  data-testid="button-dismiss-welcome"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground shrink-0"
-                  onClick={dismissWelcome}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              {!serviceProfile.branch && (
-                <div className="flex items-center gap-2 pt-1 border-t border-primary/10">
-                  <Shield className="h-4 w-4 text-primary/60 shrink-0" />
-                  <p className="text-xs text-muted-foreground flex-1">
-                    For a more personalized experience, you can add your service information.
+                    For a more personalized experience you can add your service information such as branch and service era. Your information is private and confidential.
                   </p>
                   <Button
                     data-testid="button-add-profile"
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs shrink-0 border-primary/30 text-primary"
-                    onClick={() => { setShowProfileDialog(true); dismissWelcome(); }}
+                    className="h-8 text-xs border-primary/30 text-primary"
+                    onClick={() => setShowProfileDialog(true)}
                   >
-                    Add Profile
+                    <Shield className="mr-1.5 h-3 w-3" />
+                    Complete Your Profile
                   </Button>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </section>
@@ -310,7 +338,7 @@ export default function Home() {
               Service Profile
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Optional. Helps us personalize your experience.
+              Optional. Helps us personalize your experience. Your information is private and confidential.
             </p>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -366,7 +394,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Resources Grid (formerly Quick Actions) */}
+      {/* Resources Grid */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-heading font-semibold">Resources</h2>

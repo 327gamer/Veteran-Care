@@ -24,11 +24,11 @@ import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources } from "@/lib/store";
 
 const TUTORIAL_ITEMS = [
-  { icon: Home, label: "Home", desc: "Your dashboard with resources, guide, and community feed." },
-  { icon: BookOpen, label: "Resources", desc: "Browse all veteran benefit categories and services." },
-  { icon: Heart, label: "Saved", desc: "Quickly access resources you've bookmarked." },
-  { icon: MessageSquare, label: "Community", desc: "Connect with fellow veterans, share experiences." },
-  { icon: ShoppingBag, label: "Shop", desc: "Veteran-owned businesses and exclusive deals." },
+  { icon: Home, label: "Home", desc: "Ask questions and find help." },
+  { icon: BookOpen, label: "Resources", desc: "Browse veteran programs and services." },
+  { icon: Heart, label: "Saved", desc: "Resources you mark as favorites." },
+  { icon: MessageSquare, label: "Community", desc: "Connect with other veterans." },
+  { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
 ];
 
 interface LayoutProps {
@@ -57,6 +57,14 @@ export default function Layout({ children }: LayoutProps) {
     const handler = () => setIsAiOpen(true);
     window.addEventListener("open-ai-guide", handler);
     return () => window.removeEventListener("open-ai-guide", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setShowTutorial(true);
+    };
+    window.addEventListener("open-tutorial", handler);
+    return () => window.removeEventListener("open-tutorial", handler);
   }, []);
 
   const isActive = (path: string) => location === path;
