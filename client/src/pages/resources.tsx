@@ -262,7 +262,7 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: !!selectedSlug && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
+    enabled: (!!selectedSlug || !!searchParam) && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
   });
 
   const needsFallback = resourcesFetched && apiResources.length === 0 && !searchParam &&
@@ -456,29 +456,31 @@ export default function Resources() {
         </p>
       </div>
 
+      {/* Search Bar - Always visible */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          data-testid="input-search-resources"
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={selectedSlug ? "Search resources..." : "Search all resources (housing, VA benefits, food assistance...)"}
+          className="w-full h-10 pl-9 pr-9 rounded-lg border bg-background text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+        />
+        {searchQuery && (
+          <button
+            data-testid="button-clear-search"
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       {selectedSlug ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                data-testid="input-search-resources"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search resources (housing, VA benefits, food assistance...)"
-                className="w-full h-10 pl-9 pr-9 rounded-lg border bg-background text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-              {searchQuery && (
-                <button
-                  data-testid="button-clear-search"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
 
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
               <div className="flex items-center gap-2 flex-wrap">
@@ -763,6 +765,61 @@ export default function Resources() {
                 {searchParam ? "No resources found. Try another search or category." : "No resources found for this category yet."}
               </p>
             )}
+        </div>
+      ) : searchParam ? (
+        <div className="space-y-3 animate-in fade-in duration-300">
+          <p className="text-sm text-muted-foreground">
+            {resourcesLoading ? "Searching..." : `Showing ${activeResources.length} result${activeResources.length !== 1 ? "s" : ""} for "${searchParam}"`}
+          </p>
+          {resourcesLoading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+          {!resourcesLoading && activeResources.length === 0 && (
+            <p data-testid="text-no-results" className="text-center text-muted-foreground py-8">
+              No resources found. Try a different search term.
+            </p>
+          )}
+          {activeResources.map((resource) => (
+            <Card
+              key={resource.id}
+              data-testid={`card-resource-${resource.id}`}
+              className="group hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setSelectedResource(resource)}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0">{resource.category}</Badge>
+                      {resource.sponsored && (
+                        <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">Sponsored</Badge>
+                      )}
+                      {resource.isLocal && (
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
+                          <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{resource.description}</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      data-testid={`button-save-${resource.id}`}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => handleToggleSave(e, resource)}
+                    >
+                      <Heart className={`h-5 w-5 ${isSaved(resource.id) ? 'fill-destructive text-destructive' : ''}`} />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

@@ -4,6 +4,25 @@ import { storage } from "./storage";
 import { supabase } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 
+let hasGeoColumns = true;
+
+async function checkGeoColumns() {
+  const { error } = await supabase.from("resources").select("latitude").limit(1);
+  if (error && error.message.includes("does not exist")) {
+    hasGeoColumns = false;
+    console.log("[geo] latitude/longitude columns not found — Near Me feature disabled until columns are added");
+  } else {
+    hasGeoColumns = true;
+  }
+}
+
+const RESOURCE_BASE_FIELDS = `id, category_id, title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored, status, created_at, categories!inner(id, name, slug)`;
+const RESOURCE_GEO_FIELDS = `id, category_id, title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored, latitude, longitude, status, created_at, categories!inner(id, name, slug)`;
+
+function resourceSelectFields() {
+  return hasGeoColumns ? RESOURCE_GEO_FIELDS : RESOURCE_BASE_FIELDS;
+}
+
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const key = req.headers["x-admin-key"] as string;
   if (!key || key !== process.env.ADMIN_KEY) {
@@ -38,6 +57,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  await checkGeoColumns();
+
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
       .from("categories")
@@ -59,31 +80,7 @@ export async function registerRoutes(
     const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined
       && !isNaN(userLat) && !isNaN(userLng) && !isNaN(radiusMiles);
 
-    let query = supabase.from("resources").select(`
-      id,
-      category_id,
-      title,
-      short_description,
-      website_url,
-      phone,
-      email,
-      address,
-      city,
-      state,
-      zip,
-      eligibility,
-      source_name,
-      source_type,
-      last_verified,
-      monetization_type,
-      affiliate_url,
-      sponsored,
-      latitude,
-      longitude,
-      status,
-      created_at,
-      categories!inner(id, name, slug)
-    `);
+    let query = supabase.from("resources").select(resourceSelectFields());
 
     query = query.eq("status", "approved");
 
@@ -91,7 +88,7 @@ export async function registerRoutes(
       query = query.eq("categories.slug", category as string);
     }
 
-    if (nearMeMode) {
+    if (nearMeMode && hasGeoColumns) {
       const latDelta = radiusMiles! / 69.0;
       const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
       query = query
@@ -133,7 +130,7 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
 
-    if (nearMeMode && data) {
+    if (nearMeMode && hasGeoColumns && data) {
       const localResults = data
         .map((r: any) => {
           if (r.latitude != null && r.longitude != null) {
@@ -145,13 +142,8 @@ export async function registerRoutes(
         .filter((r: any) => r.distance_miles !== null && r.distance_miles <= radiusMiles!)
         .sort((a: any, b: any) => a.distance_miles - b.distance_miles);
 
-      let nationalQuery = supabase.from("resources").select(`
-        id, category_id, title, short_description, website_url, phone, email,
-        address, city, state, zip, eligibility, source_name, source_type,
-        last_verified, monetization_type, affiliate_url, sponsored,
-        latitude, longitude, status, created_at,
-        categories!inner(id, name, slug)
-      `).eq("status", "approved").is("state", null);
+      let nationalQuery = supabase.from("resources").select(resourceSelectFields())
+        .eq("status", "approved").is("state", null);
       if (category) {
         nationalQuery = nationalQuery.eq("categories.slug", category as string);
       }
@@ -256,12 +248,7 @@ export async function registerRoutes(
 
     const { data, error } = await supabase
       .from("resources")
-      .select(`
-        id, category_id, title, short_description, website_url, phone, email,
-        address, city, state, zip, eligibility, source_name, source_type,
-        last_verified, monetization_type, affiliate_url, sponsored, latitude, longitude, created_at,
-        categories!inner(id, name, slug)
-      `)
+      .select(resourceSelectFields())
       .in("id", safeIds)
       .eq("status", "approved");
 
@@ -584,7 +571,7 @@ export async function registerRoutes(
     let longitude = req.body.longitude != null ? parseFloat(req.body.longitude) : null;
     let geo_source = req.body.geo_source || null;
 
-    if ((latitude == null || longitude == null) && (address || city || state || zip)) {
+    if (hasGeoColumns && (latitude == null || longitude == null) && (address || city || state || zip)) {
       const geo = await geocodeAddress(address, city, state, zip);
       if (geo) {
         latitude = geo.latitude;
@@ -593,31 +580,36 @@ export async function registerRoutes(
       }
     }
 
+    const insertData: Record<string, any> = {
+      title: title.trim(),
+      category_id: category_id || null,
+      short_description: short_description?.trim() || null,
+      website_url: website_url?.trim() || null,
+      phone: phone?.trim() || null,
+      email: email?.trim() || null,
+      address: address?.trim() || null,
+      city: city?.trim() || null,
+      state: state || null,
+      zip: zip?.trim() || null,
+      eligibility: eligibility?.trim() || null,
+      source_name: source_name?.trim() || null,
+      notes_internal: notes_internal?.trim() || null,
+      status: status || "approved",
+      sponsored: !!sponsored,
+      monetization_type: monetization_type || null,
+      affiliate_url: affiliate_url?.trim() || null,
+    };
+
+    if (hasGeoColumns) {
+      insertData.latitude = isNaN(latitude as number) ? null : latitude;
+      insertData.longitude = isNaN(longitude as number) ? null : longitude;
+      insertData.geo_source = geo_source;
+      insertData.geocoded_at = latitude != null ? new Date().toISOString() : null;
+    }
+
     const { data, error } = await supabase
       .from("resources")
-      .insert({
-        title: title.trim(),
-        category_id: category_id || null,
-        short_description: short_description?.trim() || null,
-        website_url: website_url?.trim() || null,
-        phone: phone?.trim() || null,
-        email: email?.trim() || null,
-        address: address?.trim() || null,
-        city: city?.trim() || null,
-        state: state || null,
-        zip: zip?.trim() || null,
-        eligibility: eligibility?.trim() || null,
-        source_name: source_name?.trim() || null,
-        notes_internal: notes_internal?.trim() || null,
-        status: status || "approved",
-        sponsored: !!sponsored,
-        monetization_type: monetization_type || null,
-        affiliate_url: affiliate_url?.trim() || null,
-        latitude: isNaN(latitude as number) ? null : latitude,
-        longitude: isNaN(longitude as number) ? null : longitude,
-        geo_source,
-        geocoded_at: latitude != null ? new Date().toISOString() : null,
-      })
+      .insert(insertData)
       .select(`*, categories(id, name, slug)`)
       .single();
 
@@ -665,7 +657,7 @@ export async function registerRoutes(
         let lng = row.longitude ? parseFloat(row.longitude) : null;
         let geoSrc = row.geo_source?.trim() || null;
 
-        if ((lat == null || lng == null || isNaN(lat) || isNaN(lng)) &&
+        if (hasGeoColumns && (lat == null || lng == null || isNaN(lat) || isNaN(lng)) &&
             (row.address?.trim() || row.city?.trim() || row.state?.trim() || row.zip?.trim())) {
           const geo = await geocodeAddress(row.address?.trim(), row.city?.trim(), row.state?.trim(), row.zip?.trim());
           if (geo) {
@@ -675,9 +667,7 @@ export async function registerRoutes(
           }
         }
 
-        const { error } = await supabase
-          .from("resources")
-          .insert({
+        const csvInsert: Record<string, any> = {
             title,
             category_id,
             short_description: row.short_description?.trim() || row.description?.trim() || null,
@@ -696,11 +686,18 @@ export async function registerRoutes(
             sponsored: row.sponsored === "true" || row.sponsored === true,
             monetization_type: row.monetization_type?.trim() || null,
             affiliate_url: row.affiliate_url?.trim() || null,
-            latitude: (lat != null && !isNaN(lat)) ? lat : null,
-            longitude: (lng != null && !isNaN(lng)) ? lng : null,
-            geo_source: geoSrc,
-            geocoded_at: (lat != null && !isNaN(lat)) ? new Date().toISOString() : null,
-          });
+        };
+
+        if (hasGeoColumns) {
+            csvInsert.latitude = (lat != null && !isNaN(lat)) ? lat : null;
+            csvInsert.longitude = (lng != null && !isNaN(lng)) ? lng : null;
+            csvInsert.geo_source = geoSrc;
+            csvInsert.geocoded_at = (lat != null && !isNaN(lat)) ? new Date().toISOString() : null;
+        }
+
+        const { error } = await supabase
+          .from("resources")
+          .insert(csvInsert);
 
         if (error) {
           results.push({ row: i + 1, status: "error", title, reason: error.message });
@@ -727,7 +724,7 @@ export async function registerRoutes(
       "source_type", "status", "notes_internal", "category_id",
       "is_featured", "featured_rank", "last_verified_at",
       "sponsored", "monetization_type", "affiliate_url",
-      "latitude", "longitude", "geo_source",
+      ...(hasGeoColumns ? ["latitude", "longitude", "geo_source"] : []),
     ];
 
     const updates: Record<string, any> = {};
@@ -743,7 +740,7 @@ export async function registerRoutes(
 
     const addressChanged = updates.address !== undefined || updates.city !== undefined ||
       updates.state !== undefined || updates.zip !== undefined;
-    if (addressChanged && updates.latitude === undefined && updates.longitude === undefined) {
+    if (hasGeoColumns && addressChanged && updates.latitude === undefined && updates.longitude === undefined) {
       const addr = updates.address ?? req.body._current_address;
       const ct = updates.city ?? req.body._current_city;
       const st = updates.state ?? req.body._current_state;
