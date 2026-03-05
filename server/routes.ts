@@ -195,6 +195,30 @@ export async function registerRoutes(
     return res.json(data);
   });
 
+  app.post("/api/resources/by-ids", async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.json([]);
+    }
+    const safeIds = ids.slice(0, 100);
+
+    const { data, error } = await supabase
+      .from("resources")
+      .select(`
+        id, category_id, title, short_description, website_url, phone, email,
+        address, city, state, zip, eligibility, source_name, source_type,
+        last_verified, monetization_type, affiliate_url, sponsored, created_at,
+        categories!inner(id, name, slug)
+      `)
+      .in("id", safeIds)
+      .eq("status", "approved");
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data || []);
+  });
+
   app.post("/api/submit-resource", async (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown";
     if (!checkSubmitRate(ip)) {
