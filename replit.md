@@ -137,3 +137,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Logged-out users**: Keep current localStorage-only behavior unchanged
 - **Saved page**: Shows "Synced to your account" when logged in, "Saved on this device only" when logged out
 - **Vite config**: Exposes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to frontend via `define` block
+
+## Geo/Near Me
+- **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
+- **Startup check**: `checkGeoColumns()` probes for `latitude` column at boot; if missing, `hasGeoColumns=false` disables geo queries/writes gracefully
+- **Dynamic select**: `resourceSelectFields()` returns field list with or without geo columns based on `hasGeoColumns`
+- **Geocode module**: `server/geocode.ts` — Nominatim (OpenStreetMap), 1 req/sec rate limit, US-only
+- **Auto-geocode on edit**: Admin PATCH auto-geocodes when address/city/state/zip changes (if `hasGeoColumns`)
+- **Bulk geocode**: `POST /api/admin/resources/geocode-missing` — SSE endpoint; processes resources with null lat/lng but valid address info; streams progress events; UI button "Geocode Missing" in admin-resources page with progress bar, summary badges, and expandable failure log

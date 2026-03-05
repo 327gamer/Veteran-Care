@@ -50,6 +50,8 @@ import {
   AlertTriangle,
   CheckCircle,
   SkipForward,
+  MapPinned,
+  Loader2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -123,6 +125,14 @@ export default function AdminResources() {
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResults, setCsvResults] = useState<{ created: number; skipped: number; errors: number; results: any[] } | null>(null);
   const [csvPreview, setCsvPreview] = useState<{ valid: any[]; issues: { row: number; title: string; reason: string; type: "skip" | "warn" }[] } | null>(null);
+  const [geocodeRunning, setGeocodeRunning] = useState(false);
+  const [geocodeProgress, setGeocodeProgress] = useState<{
+    current: number; total: number; geocoded: number; failed: number; lastTitle?: string;
+  } | null>(null);
+  const [geocodeResult, setGeocodeResult] = useState<{
+    geocoded: number; failed: number; total: number; skippedNoAddress: number;
+    failures: { id: string; title: string; reason: string }[];
+  } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -427,6 +437,63 @@ export default function AdminResources() {
       setCsvPreview(validateCsvRows(rows));
     };
     reader.readAsText(file);
+  };
+
+  const handleGeocodeMissing = async () => {
+    setGeocodeRunning(true);
+    setGeocodeProgress(null);
+    setGeocodeResult(null);
+
+    try {
+      const res = await fetch("/api/admin/resources/geocode-missing", {
+        method: "POST",
+        headers: { "x-admin-key": adminKey },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Request failed" }));
+        toast({ title: "Geocode Error", description: err.error || "Unauthorized or server error", variant: "destructive" });
+        setGeocodeRunning(false);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            const msg = JSON.parse(json);
+            if (msg.type === "start") {
+              setGeocodeProgress({ current: 0, total: msg.total, geocoded: 0, failed: 0 });
+            } else if (msg.type === "progress") {
+              setGeocodeProgress(msg);
+            } else if (msg.type === "done") {
+              setGeocodeResult(msg);
+              queryClient.invalidateQueries({ queryKey: ["/api/admin/resources"] });
+            } else if (msg.type === "error") {
+              toast({ title: "Geocode Error", description: msg.message, variant: "destructive" });
+            }
+          } catch {}
+        }
+      }
+    } catch (e: any) {
+      toast({ title: "Geocode Error", description: e?.message || "Failed", variant: "destructive" });
+    }
+    setGeocodeRunning(false);
   };
 
   const handleCsvImport = async () => {
@@ -743,6 +810,17 @@ export default function AdminResources() {
             >
               <Upload className="h-3.5 w-3.5 mr-1.5" /> CSV Import
             </Button>
+            <Button
+              data-testid="button-geocode-missing"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={handleGeocodeMissing}
+              disabled={geocodeRunning}
+            >
+              {geocodeRunning ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <MapPinned className="h-3.5 w-3.5 mr-1.5" />}
+              {geocodeRunning ? "Geocoding..." : "Geocode Missing"}
+            </Button>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -755,6 +833,62 @@ export default function AdminResources() {
             />
           </div>
         </div>
+
+        {(geocodeRunning || geocodeResult) && (
+          <Card className="border-primary/30">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <MapPinned className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">Geocode Missing Resources</span>
+              </div>
+              {geocodeProgress && (
+                <div className="space-y-2">
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${Math.round((geocodeProgress.current / geocodeProgress.total) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {geocodeProgress.current} / {geocodeProgress.total} processed — {geocodeProgress.geocoded} geocoded, {geocodeProgress.failed} failed
+                    {geocodeProgress.lastTitle && <span className="block truncate mt-0.5">Last: {geocodeProgress.lastTitle}</span>}
+                  </p>
+                </div>
+              )}
+              {geocodeResult && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <Badge className="bg-green-100 text-green-800 border-green-200">{geocodeResult.geocoded} geocoded</Badge>
+                    <Badge className="bg-red-100 text-red-800 border-red-200">{geocodeResult.failed} failed</Badge>
+                    <Badge className="bg-gray-100 text-gray-700 border-gray-200">{geocodeResult.skippedNoAddress} skipped (no address)</Badge>
+                  </div>
+                  {geocodeResult.failures.length > 0 && (
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                        View {geocodeResult.failures.length} failure{geocodeResult.failures.length > 1 ? "s" : ""}
+                      </summary>
+                      <div className="mt-2 max-h-40 overflow-y-auto space-y-1 bg-muted/50 rounded p-2">
+                        {geocodeResult.failures.map((f) => (
+                          <p key={f.id} className="text-[11px]">
+                            <span className="font-medium">{f.title}</span>: {f.reason}
+                          </p>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setGeocodeResult(null); setGeocodeProgress(null); }}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {isLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 

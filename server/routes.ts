@@ -716,6 +716,104 @@ export async function registerRoutes(
     return res.json({ created, skipped, errors, total: rows.length, results });
   });
 
+  app.post("/api/admin/resources/geocode-missing", requireAdmin, async (req, res) => {
+    if (!hasGeoColumns) {
+      return res.status(400).json({ error: "Geo columns not found in resources table" });
+    }
+
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    });
+
+    const send = (data: any) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const { data: missing, error: fetchErr } = await supabase
+        .from("resources")
+        .select("id, title, address, city, state, zip")
+        .or("latitude.is.null,longitude.is.null")
+        .not("state", "is", null)
+        .eq("status", "approved")
+        .order("title");
+
+      if (fetchErr || !missing) {
+        send({ type: "error", message: fetchErr?.message || "Failed to fetch resources" });
+        res.end();
+        return;
+      }
+
+      const candidates = missing.filter((r: any) => {
+        const parts = [r.address, r.city, r.state, r.zip].filter(Boolean);
+        return parts.length >= 2;
+      });
+
+      send({ type: "start", total: candidates.length, skippedNoAddress: missing.length - candidates.length });
+
+      let geocoded = 0;
+      let failed = 0;
+      const failures: { id: string; title: string; reason: string }[] = [];
+
+      for (let i = 0; i < candidates.length; i++) {
+        const r = candidates[i];
+
+        try {
+          const geo = await geocodeAddress(r.address, r.city, r.state, r.zip);
+
+          if (geo) {
+            const { error: updateErr } = await supabase
+              .from("resources")
+              .update({
+                latitude: geo.latitude,
+                longitude: geo.longitude,
+                geo_source: geo.geo_source,
+                geocoded_at: new Date().toISOString(),
+              })
+              .eq("id", r.id);
+
+            if (updateErr) {
+              failed++;
+              failures.push({ id: r.id, title: r.title, reason: updateErr.message });
+            } else {
+              geocoded++;
+            }
+          } else {
+            failed++;
+            failures.push({ id: r.id, title: r.title, reason: "Geocoder returned no results" });
+          }
+        } catch (e: any) {
+          failed++;
+          failures.push({ id: r.id, title: r.title, reason: e?.message || "Unknown error" });
+        }
+
+        send({
+          type: "progress",
+          current: i + 1,
+          total: candidates.length,
+          geocoded,
+          failed,
+          lastTitle: r.title,
+        });
+      }
+
+      send({
+        type: "done",
+        geocoded,
+        failed,
+        total: candidates.length,
+        skippedNoAddress: missing.length - candidates.length,
+        failures,
+      });
+    } catch (e: any) {
+      send({ type: "error", message: e?.message || "Unknown error" });
+    }
+
+    res.end();
+  });
+
   app.patch("/api/admin/resources/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const allowedFields = [
