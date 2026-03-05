@@ -38,7 +38,9 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
 - `GET /api/admin/navigator-requests?status=<status>` - Admin: list navigator leads filtered by status (new/contacted/completed/cancelled)
 - `PATCH /api/admin/navigator-requests/:id` - Admin: update lead status/notes
-- `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources)
+- `POST /api/admin/resources` - Admin: create a new resource directly (bypasses community submission; defaults to status=approved)
+- `POST /api/admin/resources/csv-import` - Admin: bulk import resources from CSV (max 500 rows; category matched by name or slug; returns created/skipped/error counts)
+- `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
@@ -121,3 +123,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## Key Files (Step 12)
 - `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats
+
+## Future: User Accounts + Saved Resources Sync
+Currently, saved resources are stored in browser localStorage via Zustand persist. This works well for single-device use but does not sync across devices. When user accounts are added:
+
+- **Supabase table `user_saved_resources`**: columns `user_id` (fk→users), `resource_id` (fk→resources), `saved_at` (timestamptz)
+- **One-time device migration on first login**: push any existing localStorage `savedIds` to the user's Supabase record, deduplicating against server-side data
+- **After login**: read/write saves to Supabase as the source of truth; localStorage serves as an optional fast cache layer
+- **Logged-out users**: keep current localStorage-only behavior so the app works without an account

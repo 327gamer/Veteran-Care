@@ -387,6 +387,115 @@ export async function registerRoutes(
     return res.json(data);
   });
 
+  app.post("/api/admin/resources", requireAdmin, async (req, res) => {
+    const { category_id, title, short_description, website_url, phone, email,
+      address, city, state, zip, eligibility, source_name, status,
+      sponsored, monetization_type, affiliate_url, notes_internal } = req.body;
+
+    if (!title || typeof title !== "string" || title.trim().length < 3) {
+      return res.status(400).json({ error: "Title is required (minimum 3 characters)" });
+    }
+
+    const { data, error } = await supabase
+      .from("resources")
+      .insert({
+        title: title.trim(),
+        category_id: category_id || null,
+        short_description: short_description?.trim() || null,
+        website_url: website_url?.trim() || null,
+        phone: phone?.trim() || null,
+        email: email?.trim() || null,
+        address: address?.trim() || null,
+        city: city?.trim() || null,
+        state: state || null,
+        zip: zip?.trim() || null,
+        eligibility: eligibility?.trim() || null,
+        source_name: source_name?.trim() || null,
+        notes_internal: notes_internal?.trim() || null,
+        status: status || "approved",
+        sponsored: !!sponsored,
+        monetization_type: monetization_type || null,
+        affiliate_url: affiliate_url?.trim() || null,
+      })
+      .select(`*, categories(id, name, slug)`)
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.status(201).json(data);
+  });
+
+  app.post("/api/admin/resources/csv-import", requireAdmin, async (req, res) => {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: "No rows provided" });
+    }
+    if (rows.length > 500) {
+      return res.status(400).json({ error: "Maximum 500 rows per import" });
+    }
+
+    const { data: cats } = await supabase.from("categories").select("id, name, slug");
+    const catMap = new Map<string, string>();
+    (cats || []).forEach((c: any) => {
+      catMap.set(c.slug.toLowerCase(), c.id);
+      catMap.set(c.name.toLowerCase(), c.id);
+    });
+
+    const results: { row: number; status: "created" | "skipped" | "error"; title: string; reason?: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const title = row.title?.trim();
+      if (!title || title.length < 3) {
+        results.push({ row: i + 1, status: "skipped", title: title || "(empty)", reason: "Title too short or missing" });
+        continue;
+      }
+
+      const catKey = (row.category || row.category_slug || "").toLowerCase().trim();
+      const category_id = catMap.get(catKey) || null;
+
+      try {
+        const { error } = await supabase
+          .from("resources")
+          .insert({
+            title,
+            category_id,
+            short_description: row.short_description?.trim() || row.description?.trim() || null,
+            website_url: row.website_url?.trim() || row.website?.trim() || row.url?.trim() || null,
+            phone: row.phone?.trim() || null,
+            email: row.email?.trim() || null,
+            address: row.address?.trim() || null,
+            city: row.city?.trim() || null,
+            state: row.state?.trim() || null,
+            zip: row.zip?.trim() || null,
+            eligibility: row.eligibility?.trim() || null,
+            source_name: row.source_name?.trim() || row.source?.trim() || null,
+            notes_internal: row.notes_internal?.trim() || null,
+            status: ["approved", "pending", "rejected"].includes(row.status) ? row.status : "approved",
+            sponsored: row.sponsored === "true" || row.sponsored === true,
+            monetization_type: row.monetization_type?.trim() || null,
+            affiliate_url: row.affiliate_url?.trim() || null,
+          });
+
+        if (error) {
+          results.push({ row: i + 1, status: "error", title, reason: error.message });
+        } else {
+          results.push({ row: i + 1, status: "created", title });
+        }
+      } catch (e: any) {
+        results.push({ row: i + 1, status: "error", title, reason: e?.message || "Unknown error" });
+      }
+    }
+
+    const created = results.filter(r => r.status === "created").length;
+    const skipped = results.filter(r => r.status === "skipped").length;
+    const errors = results.filter(r => r.status === "error").length;
+
+    return res.json({ created, skipped, errors, total: rows.length, results });
+  });
+
   app.patch("/api/admin/resources/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const allowedFields = [
@@ -394,6 +503,7 @@ export async function registerRoutes(
       "address", "city", "state", "zip", "eligibility", "source_name",
       "source_type", "status", "notes_internal", "category_id",
       "is_featured", "featured_rank", "last_verified_at",
+      "sponsored", "monetization_type", "affiliate_url",
     ];
 
     const updates: Record<string, any> = {};

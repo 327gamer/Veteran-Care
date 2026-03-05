@@ -24,6 +24,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import {
   CheckCircle2,
   XCircle,
   Clock,
@@ -36,6 +43,12 @@ import {
   Phone,
   Mail,
   MessageSquare,
+  Plus,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckCircle,
+  SkipForward,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -95,6 +108,12 @@ export default function AdminResources() {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [, setLocation] = useLocation();
   const [leadStatusFilter, setLeadStatusFilter] = useState("new");
+  const [createMode, setCreateMode] = useState(false);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [csvRows, setCsvRows] = useState<Record<string, any>[]>([]);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResults, setCsvResults] = useState<{ created: number; skipped: number; errors: number; results: any[] } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -174,6 +193,134 @@ export default function AdminResources() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (resource: Record<string, any>) => {
+      const res = await fetch("/api/admin/resources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify(resource),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resources"] });
+      setSelectedResource(null);
+      setCreateMode(false);
+      toast({ description: "Resource created successfully" });
+    },
+    onError: (err: Error) => {
+      toast({ description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreate = () => {
+    createMutation.mutate(editForm);
+  };
+
+  const openCreateForm = () => {
+    setCreateMode(true);
+    setSelectedResource({ id: "__new__" } as any);
+    setEditForm({
+      title: "",
+      short_description: "",
+      website_url: "",
+      phone: "",
+      email: "",
+      city: "",
+      state: "",
+      zip: "",
+      eligibility: "",
+      source_name: "",
+      notes_internal: "",
+      category_id: "",
+      sponsored: false,
+      monetization_type: "",
+      affiliate_url: "",
+    });
+  };
+
+  const parseCsvFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) {
+        toast({ description: "CSV file needs a header row and at least one data row", variant: "destructive" });
+        return;
+      }
+
+      const parseRow = (line: string): string[] => {
+        const result: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (ch === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = "";
+          } else {
+            current += ch;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, "_"));
+      const rows: Record<string, any>[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseRow(lines[i]);
+        const row: Record<string, any> = {};
+        headers.forEach((h, idx) => {
+          row[h] = values[idx] || "";
+        });
+        if (row.title?.trim()) {
+          rows.push(row);
+        }
+      }
+
+      setCsvHeaders(headers);
+      setCsvRows(rows);
+      setCsvResults(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCsvImport = async () => {
+    setCsvImporting(true);
+    try {
+      const res = await fetch("/api/admin/resources/csv-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ rows: csvRows }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Import failed");
+      }
+      const data = await res.json();
+      setCsvResults(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/resources"] });
+      toast({ description: `Imported ${data.created} resources` });
+    } catch (e: any) {
+      toast({ description: e.message, variant: "destructive" });
+    } finally {
+      setCsvImporting(false);
+    }
+  };
+
   const handleLogin = () => {
     fetch("/api/admin/resources?status=pending", {
       headers: { "x-admin-key": adminKey },
@@ -187,6 +334,7 @@ export default function AdminResources() {
   };
 
   const openResource = (resource: AdminResource) => {
+    setCreateMode(false);
     setSelectedResource(resource);
     setEditForm({
       title: resource.title || "",
@@ -201,6 +349,9 @@ export default function AdminResources() {
       source_name: resource.source_name || "",
       notes_internal: resource.notes_internal || "",
       category_id: resource.category_id || "",
+      sponsored: (resource as any).sponsored || false,
+      monetization_type: (resource as any).monetization_type || "",
+      affiliate_url: (resource as any).affiliate_url || "",
     });
   };
 
@@ -419,8 +570,8 @@ export default function AdminResources() {
         )}
 
         {activeTab === "resources" && (<>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {(["pending", "approved", "rejected"] as const).map((s) => {
               const cfg = STATUS_CONFIG[s];
               return (
@@ -437,8 +588,26 @@ export default function AdminResources() {
                 </Button>
               );
             })}
+            <div className="flex-1" />
+            <Button
+              data-testid="button-add-resource"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={openCreateForm}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Resource
+            </Button>
+            <Button
+              data-testid="button-csv-import"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={() => { setCsvDialogOpen(true); setCsvRows([]); setCsvHeaders([]); setCsvResults(null); }}
+            >
+              <Upload className="h-3.5 w-3.5 mr-1.5" /> CSV Import
+            </Button>
           </div>
-          <div className="relative flex-1">
+          <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               data-testid="input-admin-search"
@@ -493,11 +662,13 @@ export default function AdminResources() {
         </>)}
       </main>
 
-      <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
+      <Sheet open={!!selectedResource} onOpenChange={(open) => { if (!open) { setSelectedResource(null); setCreateMode(false); } }}>
         <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col h-[100dvh]">
           <SheetHeader className="bg-primary px-5 py-4 text-primary-foreground shrink-0">
-            <SheetTitle className="text-lg font-heading text-white">{editForm.title || "Edit Resource"}</SheetTitle>
-            {selectedResource && (
+            <SheetTitle className="text-lg font-heading text-white">
+              {createMode ? "Add New Resource" : (editForm.title || "Edit Resource")}
+            </SheetTitle>
+            {selectedResource && !createMode && (
               <div className="flex items-center gap-2 text-xs text-primary-foreground/70">
                 <span>Status: {selectedResource.status}</span>
                 {selectedResource.submitted_by_email && <span>• {selectedResource.submitted_by_email}</span>}
@@ -509,7 +680,7 @@ export default function AdminResources() {
             <div className="p-4 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs">Category</Label>
-                <Select value={editForm.category_id || ""} onValueChange={(v) => setEditForm(p => ({ ...p, category_id: v }))}>
+                <Select value={editForm.category_id || undefined} onValueChange={(v) => setEditForm(p => ({ ...p, category_id: v }))}>
                   <SelectTrigger data-testid="select-admin-category" className="h-9 text-xs">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -522,7 +693,7 @@ export default function AdminResources() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs">Title</Label>
+                <Label className="text-xs">Title *</Label>
                 <Input data-testid="input-admin-title" className="h-9 text-xs" value={editForm.title || ""} onChange={(e) => setEditForm(p => ({ ...p, title: e.target.value }))} />
               </div>
 
@@ -574,6 +745,39 @@ export default function AdminResources() {
 
               <Separator />
 
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Sponsored Resource</Label>
+                <Switch
+                  data-testid="switch-sponsored"
+                  checked={!!editForm.sponsored}
+                  onCheckedChange={(v) => setEditForm(p => ({ ...p, sponsored: v }))}
+                />
+              </div>
+
+              {editForm.sponsored && (
+                <div className="space-y-3 pl-2 border-l-2 border-amber-300">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Monetization Type</Label>
+                    <Select value={editForm.monetization_type || undefined} onValueChange={(v) => setEditForm(p => ({ ...p, monetization_type: v }))}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="affiliate">Affiliate</SelectItem>
+                        <SelectItem value="sponsored_listing">Sponsored Listing</SelectItem>
+                        <SelectItem value="ad">Ad</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Affiliate URL</Label>
+                    <Input data-testid="input-affiliate-url" className="h-9 text-xs" value={editForm.affiliate_url || ""} onChange={(e) => setEditForm(p => ({ ...p, affiliate_url: e.target.value }))} placeholder="https://..." />
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
               <div className="space-y-2">
                 <Label className="text-xs">Internal Notes (admin only)</Label>
                 <Textarea data-testid="input-admin-notes" className="text-xs" rows={2} value={editForm.notes_internal || ""} onChange={(e) => setEditForm(p => ({ ...p, notes_internal: e.target.value }))} placeholder="Private notes for the admin team..." />
@@ -582,40 +786,233 @@ export default function AdminResources() {
           </ScrollArea>
 
           <SheetFooter className="p-3 border-t bg-muted/10 shrink-0">
-            <div className="flex gap-2 w-full">
-              <Button
-                data-testid="button-reject"
-                variant="destructive"
-                size="sm"
-                className="flex-1 h-9 text-xs"
-                onClick={handleReject}
-                disabled={patchMutation.isPending}
-              >
-                <XCircle className="h-3.5 w-3.5 mr-1.5" /> Reject
-              </Button>
-              <Button
-                data-testid="button-save-changes"
-                variant="outline"
-                size="sm"
-                className="flex-1 h-9 text-xs"
-                onClick={handleSave}
-                disabled={patchMutation.isPending}
-              >
-                Save Changes
-              </Button>
-              <Button
-                data-testid="button-approve"
-                size="sm"
-                className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700"
-                onClick={handleApprove}
-                disabled={patchMutation.isPending}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
-              </Button>
-            </div>
+            {createMode ? (
+              <div className="flex gap-2 w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-9 text-xs"
+                  onClick={() => { setSelectedResource(null); setCreateMode(false); }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  data-testid="button-create-resource"
+                  size="sm"
+                  className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700"
+                  onClick={handleCreate}
+                  disabled={createMutation.isPending}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> {createMutation.isPending ? "Creating..." : "Create Resource"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2 w-full">
+                <Button
+                  data-testid="button-reject"
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1 h-9 text-xs"
+                  onClick={handleReject}
+                  disabled={patchMutation.isPending}
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Reject
+                </Button>
+                <Button
+                  data-testid="button-save-changes"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-9 text-xs"
+                  onClick={handleSave}
+                  disabled={patchMutation.isPending}
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  data-testid="button-approve"
+                  size="sm"
+                  className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700"
+                  onClick={handleApprove}
+                  disabled={patchMutation.isPending}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
+                </Button>
+              </div>
+            )}
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              CSV Import
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 overflow-y-auto flex-1">
+            {!csvResults && (
+              <>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <input
+                    data-testid="input-csv-file"
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    id="csv-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) parseCsvFile(file);
+                    }}
+                  />
+                  <label htmlFor="csv-upload" className="cursor-pointer space-y-2 block">
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm font-medium">Click to upload CSV file</p>
+                    <p className="text-xs text-muted-foreground">Max 500 rows per import</p>
+                  </label>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="text-xs font-medium">Expected CSV columns:</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">
+                    title*, category, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, status
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    * Required. Category can be name or slug (e.g. "Housing Assistance" or "housing"). Status defaults to "approved".
+                  </p>
+                </div>
+              </>
+            )}
+
+            {csvRows.length > 0 && !csvResults && (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{csvRows.length} rows ready to import</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => { setCsvRows([]); setCsvHeaders([]); }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      data-testid="button-import-csv"
+                      size="sm"
+                      className="h-8 text-xs bg-green-600 hover:bg-green-700"
+                      onClick={handleCsvImport}
+                      disabled={csvImporting}
+                    >
+                      {csvImporting ? "Importing..." : `Import ${csvRows.length} Resources`}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto max-h-60">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="px-2 py-1.5 text-left font-medium">#</th>
+                          {csvHeaders.slice(0, 6).map((h) => (
+                            <th key={h} className="px-2 py-1.5 text-left font-medium capitalize">{h.replace(/_/g, " ")}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvRows.slice(0, 10).map((row, i) => (
+                          <tr key={i} className="border-t">
+                            <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                            {csvHeaders.slice(0, 6).map((h) => (
+                              <td key={h} className="px-2 py-1 truncate max-w-[150px]">{row[h] || ""}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {csvRows.length > 10 && (
+                    <p className="text-xs text-muted-foreground text-center py-1 border-t bg-muted/30">
+                      ...and {csvRows.length - 10} more rows
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {csvResults && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <Card>
+                    <CardContent className="p-3 text-center">
+                      <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-green-600">{csvResults.created}</p>
+                      <p className="text-[10px] text-muted-foreground">Created</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3 text-center">
+                      <SkipForward className="h-5 w-5 text-amber-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-amber-600">{csvResults.skipped}</p>
+                      <p className="text-[10px] text-muted-foreground">Skipped</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3 text-center">
+                      <AlertTriangle className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                      <p className="text-lg font-bold text-red-600">{csvResults.errors}</p>
+                      <p className="text-[10px] text-muted-foreground">Errors</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {csvResults.results.filter((r: any) => r.status !== "created").length > 0 && (
+                  <div className="border rounded-lg overflow-hidden max-h-40 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="px-2 py-1.5 text-left font-medium">Row</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Title</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvResults.results.filter((r: any) => r.status !== "created").map((r: any, i: number) => (
+                          <tr key={i} className="border-t">
+                            <td className="px-2 py-1">{r.row}</td>
+                            <td className="px-2 py-1 truncate max-w-[150px]">{r.title}</td>
+                            <td className="px-2 py-1">
+                              <Badge variant="outline" className={`text-[10px] ${r.status === "error" ? "text-red-600" : "text-amber-600"}`}>
+                                {r.status}
+                              </Badge>
+                            </td>
+                            <td className="px-2 py-1 text-muted-foreground truncate max-w-[200px]">{r.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setCsvDialogOpen(false)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

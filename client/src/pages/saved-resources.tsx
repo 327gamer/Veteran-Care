@@ -48,6 +48,9 @@ export default function SavedResources() {
         <p className="text-muted-foreground">
           Your collection of saved guides and benefits.
         </p>
+        <p className="text-xs text-muted-foreground/70 mt-1" data-testid="text-saved-device-note">
+          Saved on this device. Create an account later to sync across devices.
+        </p>
       </div>
 
       {savedItems.length > 0 ? (
