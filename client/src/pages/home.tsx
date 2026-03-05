@@ -286,7 +286,7 @@ export default function Home() {
                 onClick={() => setShowNavigator(true)}
               >
                 <Phone className="mr-1.5 h-4 w-4" />
-                Request Navigator
+                Get Help Now
               </Button>
               <Button
                 data-testid="button-learn-app-home"

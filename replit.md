@@ -114,7 +114,10 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `chatHistory` - persisted array of { role, content, timestamp } for AI Guide conversation history
 - Chat system centralized: all "Ask Guide" buttons dispatch `CustomEvent("open-ai-guide")`, Layout listens and opens AiGuide modal
 - Tutorial system: "Learn How the App Works" dispatches `CustomEvent("open-tutorial")`, Layout listens and shows tutorial overlay
-- Home welcome panel: always-visible AI Guide card with 4 action buttons (Ask Guide, Browse Resources, Request Navigator, How It Works)
+- Home welcome panel: always-visible AI Guide card with 4 action buttons (Ask Guide, Browse Resources, Get Help Now, How It Works)
+- NavigatorModal (`client/src/components/navigator-modal.tsx`): shared modal used by both home page and resource detail; accepts optional `context` prop with resource_id/resource_title/category/subcategory; 11 help categories with dynamic subcategories; category required from home, auto-filled from resource detail
+- Server route category/subcategory: tries inserting dedicated columns first; falls back to enriching `message` field with `Category: X | Subcategory: Y` prefix if columns don't exist in Supabase yet
+- NOTE: Add `category TEXT` and `subcategory TEXT` columns to Supabase `navigator_requests` table when possible for cleaner data
 
 ## Key Files (Step 12)
 - `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats

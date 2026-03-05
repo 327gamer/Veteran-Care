@@ -470,6 +470,8 @@ export async function registerRoutes(
       veteran_email,
       message,
       preferred_contact,
+      category,
+      subcategory,
       user_state,
       user_city,
       user_zip,
@@ -488,23 +490,50 @@ export async function registerRoutes(
     const validContact = ["phone", "email", "either"];
     const contact = validContact.includes(preferred_contact) ? preferred_contact : "phone";
 
-    const { data, error } = await supabase
+    const catStr = typeof category === "string" ? category.trim() : null;
+    const subStr = typeof subcategory === "string" ? subcategory.trim() : null;
+    const userMsg = message?.trim() || null;
+
+    const catParts: string[] = [];
+    if (catStr) catParts.push(`Category: ${catStr}`);
+    if (subStr) catParts.push(`Subcategory: ${subStr}`);
+
+    const baseRow: Record<string, any> = {
+      resource_id: resource_id || null,
+      resource_title: resource_title?.trim() || null,
+      veteran_name: veteran_name.trim(),
+      veteran_phone: veteran_phone?.trim() || null,
+      veteran_email: veteran_email?.trim() || null,
+      preferred_contact: contact,
+      user_state: user_state || null,
+      user_city: user_city || null,
+      user_zip: user_zip || null,
+      status: "new",
+    };
+
+    if (catStr) baseRow.category = catStr;
+    if (subStr) baseRow.subcategory = subStr;
+
+    let { data, error } = await supabase
       .from("navigator_requests")
-      .insert({
-        resource_id: resource_id || null,
-        resource_title: resource_title?.trim() || null,
-        veteran_name: veteran_name.trim(),
-        veteran_phone: veteran_phone?.trim() || null,
-        veteran_email: veteran_email?.trim() || null,
-        message: message?.trim() || null,
-        preferred_contact: contact,
-        user_state: user_state || null,
-        user_city: user_city || null,
-        user_zip: user_zip || null,
-        status: "new",
-      })
+      .insert({ ...baseRow, message: userMsg })
       .select()
       .single();
+
+    if (error && (error.message?.includes("category") || error.message?.includes("subcategory"))) {
+      delete baseRow.category;
+      delete baseRow.subcategory;
+      const enrichedMsg = catParts.length > 0
+        ? [catParts.join(" | "), userMsg].filter(Boolean).join("\n")
+        : userMsg;
+      const retry = await supabase
+        .from("navigator_requests")
+        .insert({ ...baseRow, message: enrichedMsg })
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Navigator request error:", error.message);
