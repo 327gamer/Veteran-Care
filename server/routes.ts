@@ -454,7 +454,10 @@ export async function registerRoutes(
       }
 
       const catKey = (row.category || row.category_slug || "").toLowerCase().trim();
-      const category_id = catMap.get(catKey) || null;
+      let category_id = catMap.get(catKey) || null;
+      if (!category_id && row.category_id?.trim()) {
+        category_id = row.category_id.trim();
+      }
 
       try {
         const { error } = await supabase
@@ -472,6 +475,7 @@ export async function registerRoutes(
             zip: row.zip?.trim() || null,
             eligibility: row.eligibility?.trim() || null,
             source_name: row.source_name?.trim() || row.source?.trim() || null,
+            source_type: row.source_type?.trim() || null,
             notes_internal: row.notes_internal?.trim() || null,
             status: ["approved", "pending", "rejected"].includes(row.status) ? row.status : "approved",
             sponsored: row.sponsored === "true" || row.sponsored === true,

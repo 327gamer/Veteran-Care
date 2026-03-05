@@ -45,6 +45,7 @@ import {
   MessageSquare,
   Plus,
   Upload,
+  Download,
   FileSpreadsheet,
   AlertTriangle,
   CheckCircle,
@@ -114,6 +115,7 @@ export default function AdminResources() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResults, setCsvResults] = useState<{ created: number; skipped: number; errors: number; results: any[] } | null>(null);
+  const [csvPreview, setCsvPreview] = useState<{ valid: any[]; issues: { row: number; title: string; reason: string; type: "skip" | "warn" }[] } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -243,6 +245,139 @@ export default function AdminResources() {
     });
   };
 
+  const CSV_TEMPLATE_HEADERS = [
+    "title","category","short_description","website_url","phone","email",
+    "address","city","state","zip","eligibility","source_name","source_type",
+    "monetization_type","affiliate_url","sponsored","status"
+  ];
+
+  const CSV_TEMPLATE_ROWS = [
+    [
+      "SC Veterans Affairs Regional Office",
+      "VA Benefits",
+      "Full-service VA regional office for claims, appeals, and benefits counseling",
+      "https://www.va.gov/columbia-va-regional-benefit-office/",
+      "1-800-827-1000",
+      "",
+      "6437 Garners Ferry Rd, Columbia, SC 29209",
+      "",
+      "SC",
+      "",
+      "All veterans, active duty, Guard/Reserve",
+      "U.S. Department of Veterans Affairs",
+      "government",
+      "",
+      "",
+      "false",
+      "approved"
+    ],
+    [
+      "Atlanta VA Health Care System",
+      "Healthcare",
+      "Comprehensive VA medical center providing primary care, mental health, and specialty services",
+      "https://www.va.gov/atlanta-health-care/",
+      "(404) 321-6111",
+      "",
+      "1670 Clairmont Rd, Decatur, GA 30033",
+      "Decatur",
+      "GA",
+      "30033",
+      "Enrolled veterans",
+      "U.S. Department of Veterans Affairs",
+      "government",
+      "",
+      "",
+      "false",
+      "approved"
+    ],
+  ];
+
+  const downloadCsvTemplate = () => {
+    const escape = (v: string) => v.includes(",") || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v;
+    const lines = [
+      CSV_TEMPLATE_HEADERS.join(","),
+      ...CSV_TEMPLATE_ROWS.map(row => row.map(escape).join(","))
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "veteran_care_resources_template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const parseCsvRow = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const validateCsvRows = (rows: Record<string, any>[]) => {
+    const catNames = new Set(categories.map(c => c.name.toLowerCase()));
+    const catSlugs = new Set(categories.map(c => c.slug.toLowerCase()));
+
+    const valid: any[] = [];
+    const issues: { row: number; title: string; reason: string; type: "skip" | "warn" }[] = [];
+
+    rows.forEach((row, i) => {
+      const rowNum = i + 1;
+      const title = row.title?.trim() || "";
+
+      if (!title || title.length < 3) {
+        issues.push({ row: rowNum, title: title || "(empty)", reason: "Title missing or too short (min 3 chars)", type: "skip" });
+        return;
+      }
+
+      const warnings: string[] = [];
+
+      const catVal = (row.category || row.category_slug || "").toLowerCase().trim();
+      if (catVal && !catNames.has(catVal) && !catSlugs.has(catVal)) {
+        warnings.push(`Category "${row.category || row.category_slug}" not found`);
+      }
+
+      if (!row.state?.trim()) {
+        warnings.push("No state specified");
+      }
+
+      if (row.website_url?.trim()) {
+        try { new URL(row.website_url.trim()); } catch {
+          warnings.push("Invalid website URL format");
+        }
+      }
+
+      if (row.status && !["approved", "pending", "rejected"].includes(row.status.trim())) {
+        warnings.push(`Invalid status "${row.status}" — will default to "approved"`);
+      }
+
+      if (warnings.length > 0) {
+        issues.push({ row: rowNum, title, reason: warnings.join("; "), type: "warn" });
+      }
+
+      valid.push(row);
+    });
+
+    return { valid, issues };
+  };
+
   const parseCsvFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -254,57 +389,38 @@ export default function AdminResources() {
         return;
       }
 
-      const parseRow = (line: string): string[] => {
-        const result: string[] = [];
-        let current = "";
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') {
-            if (inQuotes && line[i + 1] === '"') {
-              current += '"';
-              i++;
-            } else {
-              inQuotes = !inQuotes;
-            }
-          } else if (ch === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = "";
-          } else {
-            current += ch;
-          }
-        }
-        result.push(current.trim());
-        return result;
-      };
-
-      const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, "_"));
+      const headers = parseCsvRow(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, "_"));
       const rows: Record<string, any>[] = [];
       for (let i = 1; i < lines.length; i++) {
-        const values = parseRow(lines[i]);
+        const values = parseCsvRow(lines[i]);
         const row: Record<string, any> = {};
         headers.forEach((h, idx) => {
           row[h] = values[idx] || "";
         });
-        if (row.title?.trim()) {
-          rows.push(row);
-        }
+        rows.push(row);
+      }
+
+      if (rows.length > 500) {
+        toast({ description: `CSV has ${rows.length} rows — maximum is 500 per import. Please split the file.`, variant: "destructive" });
+        return;
       }
 
       setCsvHeaders(headers);
       setCsvRows(rows);
       setCsvResults(null);
+      setCsvPreview(validateCsvRows(rows));
     };
     reader.readAsText(file);
   };
 
   const handleCsvImport = async () => {
+    const rowsToImport = csvPreview?.valid || csvRows;
     setCsvImporting(true);
     try {
       const res = await fetch("/api/admin/resources/csv-import", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ rows: csvRows }),
+        body: JSON.stringify({ rows: rowsToImport }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -313,7 +429,7 @@ export default function AdminResources() {
       const data = await res.json();
       setCsvResults(data);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resources"] });
-      toast({ description: `Imported ${data.created} resources` });
+      toast({ description: `Imported ${data.created} resources successfully` });
     } catch (e: any) {
       toast({ description: e.message, variant: "destructive" });
     } finally {
@@ -602,7 +718,7 @@ export default function AdminResources() {
               variant="outline"
               size="sm"
               className="h-9 text-xs"
-              onClick={() => { setCsvDialogOpen(true); setCsvRows([]); setCsvHeaders([]); setCsvResults(null); }}
+              onClick={() => { setCsvDialogOpen(true); setCsvRows([]); setCsvHeaders([]); setCsvResults(null); setCsvPreview(null); }}
             >
               <Upload className="h-3.5 w-3.5 mr-1.5" /> CSV Import
             </Button>
@@ -853,7 +969,7 @@ export default function AdminResources() {
           </DialogHeader>
 
           <div className="space-y-4 overflow-y-auto flex-1">
-            {!csvResults && (
+            {!csvRows.length && !csvResults && (
               <>
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <input
@@ -865,6 +981,7 @@ export default function AdminResources() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) parseCsvFile(file);
+                      if (e.target) e.target.value = "";
                     }}
                   />
                   <label htmlFor="csv-upload" className="cursor-pointer space-y-2 block">
@@ -874,13 +991,23 @@ export default function AdminResources() {
                   </label>
                 </div>
 
-                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                  <p className="text-xs font-medium">Expected CSV columns:</p>
-                  <p className="text-[10px] text-muted-foreground font-mono">
-                    title*, category, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, status
+                <Button
+                  data-testid="button-download-template"
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-9 text-xs"
+                  onClick={downloadCsvTemplate}
+                >
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download CSV Template
+                </Button>
+
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
+                  <p className="text-xs font-medium">Supported CSV columns:</p>
+                  <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
+                    title*, category, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, monetization_type, affiliate_url, sponsored, status
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    * Required. Category can be name or slug (e.g. "Housing Assistance" or "housing"). Status defaults to "approved".
+                    * Title is required (min 3 chars). Category matches by name or slug (e.g. "Housing Assistance" or "housing"). Status defaults to "approved". Sponsored defaults to "false".
                   </p>
                 </div>
               </>
@@ -888,82 +1015,153 @@ export default function AdminResources() {
 
             {csvRows.length > 0 && !csvResults && (
               <>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{csvRows.length} rows ready to import</p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => { setCsvRows([]); setCsvHeaders([]); }}
-                    >
-                      Clear
-                    </Button>
-                    <Button
-                      data-testid="button-import-csv"
-                      size="sm"
-                      className="h-8 text-xs bg-green-600 hover:bg-green-700"
-                      onClick={handleCsvImport}
-                      disabled={csvImporting}
-                    >
-                      {csvImporting ? "Importing..." : `Import ${csvRows.length} Resources`}
-                    </Button>
+                {csvPreview && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <Card className="border-green-200">
+                      <CardContent className="p-3 text-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 mx-auto mb-1" />
+                        <p className="text-lg font-bold text-green-600">{csvPreview.valid.length}</p>
+                        <p className="text-[10px] text-muted-foreground">Ready to Create</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-amber-200">
+                      <CardContent className="p-3 text-center">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 mx-auto mb-1" />
+                        <p className="text-lg font-bold text-amber-600">{csvPreview.issues.filter(i => i.type === "warn").length}</p>
+                        <p className="text-[10px] text-muted-foreground">Warnings</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-red-200">
+                      <CardContent className="p-3 text-center">
+                        <SkipForward className="h-4 w-4 text-red-600 mx-auto mb-1" />
+                        <p className="text-lg font-bold text-red-600">{csvPreview.issues.filter(i => i.type === "skip").length}</p>
+                        <p className="text-[10px] text-muted-foreground">Will Skip</p>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
+                )}
 
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto max-h-60">
+                {csvPreview && csvPreview.issues.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden max-h-36 overflow-y-auto">
                     <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-muted/50">
-                          <th className="px-2 py-1.5 text-left font-medium">#</th>
-                          {csvHeaders.slice(0, 6).map((h) => (
-                            <th key={h} className="px-2 py-1.5 text-left font-medium capitalize">{h.replace(/_/g, " ")}</th>
-                          ))}
+                      <thead className="sticky top-0">
+                        <tr className="bg-muted/80">
+                          <th className="px-2 py-1.5 text-left font-medium w-12">Row</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Title</th>
+                          <th className="px-2 py-1.5 text-left font-medium w-16">Type</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Issue</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {csvRows.slice(0, 10).map((row, i) => (
+                        {csvPreview.issues.map((issue, i) => (
                           <tr key={i} className="border-t">
-                            <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
-                            {csvHeaders.slice(0, 6).map((h) => (
-                              <td key={h} className="px-2 py-1 truncate max-w-[150px]">{row[h] || ""}</td>
-                            ))}
+                            <td className="px-2 py-1 text-muted-foreground">{issue.row}</td>
+                            <td className="px-2 py-1 truncate max-w-[120px]">{issue.title}</td>
+                            <td className="px-2 py-1">
+                              <Badge variant="outline" className={`text-[10px] ${issue.type === "skip" ? "text-red-600 border-red-200" : "text-amber-600 border-amber-200"}`}>
+                                {issue.type === "skip" ? "Skip" : "Warn"}
+                              </Badge>
+                            </td>
+                            <td className="px-2 py-1 text-muted-foreground text-[11px]">{issue.reason}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  {csvRows.length > 10 && (
+                )}
+
+                <div className="border rounded-lg overflow-hidden">
+                  <p className="text-xs font-medium px-2 py-1.5 bg-muted/50 border-b">Data Preview</p>
+                  <div className="overflow-x-auto max-h-48">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0">
+                        <tr className="bg-muted/30">
+                          <th className="px-2 py-1.5 text-left font-medium">#</th>
+                          <th className="px-2 py-1.5 text-left font-medium w-12"></th>
+                          {csvHeaders.slice(0, 6).map((h) => (
+                            <th key={h} className="px-2 py-1.5 text-left font-medium capitalize whitespace-nowrap">{h.replace(/_/g, " ")}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvRows.slice(0, 15).map((row, i) => {
+                          const rowIssue = csvPreview?.issues.find(iss => iss.row === i + 1);
+                          const isSkipped = rowIssue?.type === "skip";
+                          return (
+                            <tr key={i} className={`border-t ${isSkipped ? "bg-red-50 opacity-60 line-through" : rowIssue ? "bg-amber-50/50" : ""}`}>
+                              <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                              <td className="px-2 py-1">
+                                {isSkipped && <Badge variant="outline" className="text-[9px] text-red-500 border-red-200 px-1">skip</Badge>}
+                                {rowIssue && !isSkipped && <Badge variant="outline" className="text-[9px] text-amber-500 border-amber-200 px-1">warn</Badge>}
+                              </td>
+                              {csvHeaders.slice(0, 6).map((h) => (
+                                <td key={h} className="px-2 py-1 truncate max-w-[130px]">{row[h] || ""}</td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {csvRows.length > 15 && (
                     <p className="text-xs text-muted-foreground text-center py-1 border-t bg-muted/30">
-                      ...and {csvRows.length - 10} more rows
+                      ...and {csvRows.length - 15} more rows
                     </p>
                   )}
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => { setCsvRows([]); setCsvHeaders([]); setCsvPreview(null); }}
+                  >
+                    Clear & Start Over
+                  </Button>
+                  <Button
+                    data-testid="button-import-csv"
+                    size="sm"
+                    className="h-9 text-xs bg-green-600 hover:bg-green-700 px-6"
+                    onClick={handleCsvImport}
+                    disabled={csvImporting || (csvPreview?.valid.length || 0) === 0}
+                  >
+                    {csvImporting ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Importing...
+                      </span>
+                    ) : (
+                      `Import ${csvPreview?.valid.length || csvRows.length} Resources`
+                    )}
+                  </Button>
                 </div>
               </>
             )}
 
             {csvResults && (
               <div className="space-y-4">
+                <div className="text-center py-2">
+                  <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-2" />
+                  <p className="text-lg font-bold">Import Complete</p>
+                </div>
+
                 <div className="grid grid-cols-3 gap-3">
                   <Card>
                     <CardContent className="p-3 text-center">
-                      <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-green-600">{csvResults.created}</p>
+                      <p className="text-2xl font-bold text-green-600">{csvResults.created}</p>
                       <p className="text-[10px] text-muted-foreground">Created</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-3 text-center">
-                      <SkipForward className="h-5 w-5 text-amber-600 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-amber-600">{csvResults.skipped}</p>
+                      <p className="text-2xl font-bold text-amber-600">{csvResults.skipped}</p>
                       <p className="text-[10px] text-muted-foreground">Skipped</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-3 text-center">
-                      <AlertTriangle className="h-5 w-5 text-red-600 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-red-600">{csvResults.errors}</p>
+                      <p className="text-2xl font-bold text-red-600">{csvResults.errors}</p>
                       <p className="text-[10px] text-muted-foreground">Errors</p>
                     </CardContent>
                   </Card>
@@ -972,8 +1170,8 @@ export default function AdminResources() {
                 {csvResults.results.filter((r: any) => r.status !== "created").length > 0 && (
                   <div className="border rounded-lg overflow-hidden max-h-40 overflow-y-auto">
                     <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-muted/50">
+                      <thead className="sticky top-0">
+                        <tr className="bg-muted/80">
                           <th className="px-2 py-1.5 text-left font-medium">Row</th>
                           <th className="px-2 py-1.5 text-left font-medium">Title</th>
                           <th className="px-2 py-1.5 text-left font-medium">Status</th>
@@ -1001,6 +1199,14 @@ export default function AdminResources() {
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => { setCsvRows([]); setCsvHeaders([]); setCsvPreview(null); setCsvResults(null); }}
+                  >
+                    Import More
+                  </Button>
+                  <Button
+                    data-testid="button-csv-done"
                     size="sm"
                     className="h-8 text-xs"
                     onClick={() => setCsvDialogOpen(false)}
