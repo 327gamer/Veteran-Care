@@ -27,6 +27,8 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [, setLocation] = useLocation();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [locLoading, setLocLoading] = useState(false);
+  const [locStatus, setLocStatus] = useState<string>("");
   const { setInterests, completeOnboarding, setLocation: setStoreLocation } = useSavedResources();
 
   const toggleInterest = (item: string) => {
@@ -36,32 +38,62 @@ export default function Onboarding() {
   };
 
   const handleAllowLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const res = await fetch(
-              `${REVERSE_GEOCODE_URL}?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-              { headers: { "Accept-Language": "en" } }
-            );
-            const data = await res.json();
-            const addr = data.address || {};
-            const stateCode = addr.state_code?.toUpperCase() || addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
-            const state = addr.state || "";
-            const city = addr.city || addr.town || addr.village || "";
-            const zip = addr.postcode || "";
-            if (stateCode || city) {
-              setStoreLocation(stateCode, state, city, zip);
-            }
-          } catch {}
-          setStep(3);
-        },
-        () => setStep(3),
-        { timeout: 8000 }
-      );
-    } else {
-      setStep(3);
+    if (!navigator.geolocation) {
+      setLocStatus("Location not supported by this browser.");
+      setTimeout(() => setStep(3), 1500);
+      return;
     }
+
+    setLocLoading(true);
+    setLocStatus("Requesting location access...");
+
+    const timeout = setTimeout(() => {
+      setLocLoading(false);
+      setLocStatus("Location request timed out.");
+      setTimeout(() => setStep(3), 1200);
+    }, 10000);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        clearTimeout(timeout);
+        setLocStatus("Finding your area...");
+        try {
+          const res = await fetch(
+            `${REVERSE_GEOCODE_URL}?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const stateCode = addr.state_code?.toUpperCase() || addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
+          const state = addr.state || "";
+          const city = addr.city || addr.town || addr.village || "";
+          const zip = addr.postcode || "";
+          if (stateCode || city) {
+            setStoreLocation(stateCode, state, city, zip);
+            setLocStatus(`Location set: ${city ? city + ", " : ""}${stateCode}`);
+          } else {
+            setLocStatus("Location found, but could not determine your area.");
+          }
+        } catch {
+          setLocStatus("Could not look up your area. You can set it later.");
+        }
+        setLocLoading(false);
+        setTimeout(() => setStep(3), 1200);
+      },
+      (err) => {
+        clearTimeout(timeout);
+        setLocLoading(false);
+        if (err.code === 1) {
+          setLocStatus("Location access denied. You can set your location later in the app.");
+        } else if (err.code === 2) {
+          setLocStatus("Could not determine location. You can set it later.");
+        } else {
+          setLocStatus("Location unavailable. You can set it later.");
+        }
+        setTimeout(() => setStep(3), 2000);
+      },
+      { timeout: 8000, enableHighAccuracy: false }
+    );
   };
 
   const finish = () => {
@@ -146,19 +178,34 @@ export default function Onboarding() {
               </p>
             </div>
 
+            {locStatus && (
+              <p className="text-xs text-muted-foreground animate-in fade-in duration-300 px-4" data-testid="text-loc-status">
+                {locStatus}
+              </p>
+            )}
+
             <div className="w-full space-y-2 pt-2">
               <Button
                 data-testid="button-allow-location"
                 className="w-full h-11 text-base font-bold rounded-full shadow-lg"
                 onClick={handleAllowLocation}
+                disabled={locLoading}
               >
-                Allow Location
+                {locLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Locating...
+                  </span>
+                ) : (
+                  "Allow Location"
+                )}
               </Button>
               <Button
                 data-testid="button-maybe-later"
                 variant="ghost"
                 className="w-full text-sm font-medium text-muted-foreground h-9"
                 onClick={() => setStep(3)}
+                disabled={locLoading}
               >
                 Maybe Later
               </Button>
