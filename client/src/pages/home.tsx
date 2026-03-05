@@ -39,6 +39,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import NavigatorModal from "@/components/navigator-modal";
 
 const feedItems = [
   { 
@@ -122,6 +123,7 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<string>(userLocation.city || "Austin");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showNavigator, setShowNavigator] = useState(false);
   const [profileForm, setProfileForm] = useState({
     branch: serviceProfile.branch || "",
     era: serviceProfile.era || "",
@@ -281,7 +283,7 @@ export default function Home() {
                 data-testid="button-navigator-home"
                 variant="secondary"
                 className="w-full text-primary font-semibold shadow-md h-10 text-sm"
-                onClick={() => setLocation("/resources")}
+                onClick={() => setShowNavigator(true)}
               >
                 <Phone className="mr-1.5 h-4 w-4" />
                 Request Navigator
@@ -329,6 +331,8 @@ export default function Home() {
           </Card>
         </section>
       )}
+
+      <NavigatorModal open={showNavigator} onOpenChange={setShowNavigator} />
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="sm:max-w-[400px]">
