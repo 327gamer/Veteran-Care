@@ -48,7 +48,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { hasSeenTutorial, markTutorialSeen, onboardingComplete, setAuthToken, setSavedIds, clearAuthState } = useSavedResources();
@@ -124,7 +124,13 @@ export default function Layout({ children }: LayoutProps) {
               </Button>
             </Link>
 
-            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
+              onClick={() => setLocation("/resources")}
+              data-testid="button-search-top"
+            >
               <Search className="h-5 w-5" />
             </Button>
             

@@ -20,6 +20,7 @@ import {
   Phone,
   HelpCircle,
   Bot,
+  Search,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -402,6 +403,16 @@ export default function Home() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-heading font-semibold">Resources</h2>
+        </div>
+        <div
+          data-testid="home-search-resources"
+          className="relative cursor-pointer"
+          onClick={() => setLocation("/resources")}
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="w-full h-10 pl-9 pr-4 rounded-lg border bg-background text-sm text-muted-foreground/60 flex items-center">
+            Search all resources (housing, VA benefits, food assistance...)
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {categories.map((cat) => {
