@@ -8,7 +8,9 @@ import {
   MapPin,
   ExternalLink,
   Search,
-  Loader2
+  Loader2,
+  Cloud,
+  Smartphone,
 } from "lucide-react";
 import { useSavedResources } from "@/lib/store";
 import { ResourceItem } from "@/lib/resources-data";
@@ -16,6 +18,7 @@ import ResourceDetail from "@/components/resource-detail";
 import { Link } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/use-auth";
 
 interface SupabaseResource {
   id: string;
@@ -66,6 +69,7 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
 export default function SavedResources() {
   const { savedIds, toggleSave } = useSavedResources();
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
+  const { user } = useAuth();
 
   const { data: savedItems = [], isLoading } = useQuery<ResourceItem[]>({
     queryKey: ["/api/resources/by-ids", savedIds],
@@ -106,8 +110,18 @@ export default function SavedResources() {
         <p className="text-muted-foreground">
           Your collection of saved guides and benefits.
         </p>
-        <p className="text-xs text-muted-foreground/70 mt-1" data-testid="text-saved-device-note">
-          Saved on this device. Create an account later to sync across devices.
+        <p className="text-xs text-muted-foreground/70 mt-1 flex items-center gap-1" data-testid="text-saved-device-note">
+          {user ? (
+            <>
+              <Cloud className="h-3 w-3" />
+              Synced to your account ({user.email}). Available on all your devices.
+            </>
+          ) : (
+            <>
+              <Smartphone className="h-3 w-3" />
+              Saved on this device only. Sign in to sync across devices.
+            </>
+          )}
         </p>
       </div>
 

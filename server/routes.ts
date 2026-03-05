@@ -271,6 +271,114 @@ export async function registerRoutes(
     return res.json(data || []);
   });
 
+  app.get("/api/saved-resources", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { data, error } = await supabase
+      .from("user_saved_resources")
+      .select("resource_id")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    const ids = (data || []).map((r: any) => r.resource_id);
+    return res.json({ ids });
+  });
+
+  app.post("/api/saved-resources/sync", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { localIds } = req.body;
+    if (!Array.isArray(localIds)) {
+      return res.status(400).json({ error: "localIds must be an array" });
+    }
+
+    if (localIds.length > 0) {
+      const rows = localIds.map((resource_id: string) => ({
+        user_id: user.id,
+        resource_id,
+      }));
+      await supabase.from("user_saved_resources").upsert(rows, {
+        onConflict: "user_id,resource_id",
+        ignoreDuplicates: true,
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("user_saved_resources")
+      .select("resource_id")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    const ids = (data || []).map((r: any) => r.resource_id);
+    return res.json({ ids });
+  });
+
+  app.post("/api/saved-resources/toggle", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { resource_id, action } = req.body;
+    if (!resource_id) {
+      return res.status(400).json({ error: "resource_id required" });
+    }
+
+    if (action === "unsave") {
+      await supabase
+        .from("user_saved_resources")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("resource_id", resource_id);
+    } else {
+      await supabase
+        .from("user_saved_resources")
+        .upsert(
+          { user_id: user.id, resource_id },
+          { onConflict: "user_id,resource_id", ignoreDuplicates: true }
+        );
+    }
+
+    const { data, error } = await supabase
+      .from("user_saved_resources")
+      .select("resource_id")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    const ids = (data || []).map((r: any) => r.resource_id);
+    return res.json({ ids });
+  });
+
   app.post("/api/submit-resource", async (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown";
     if (!checkSubmitRate(ip)) {

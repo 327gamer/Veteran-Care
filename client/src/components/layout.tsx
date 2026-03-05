@@ -17,11 +17,23 @@ import {
   X,
   ChevronRight,
   ArrowDown,
+  LogIn,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import AiGuide from "./ai-guide";
+import AuthModal from "./auth-modal";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
-import { useSavedResources } from "@/lib/store";
+import { useSavedResources, syncSavedOnLogin, fetchSavedFromServer } from "@/lib/store";
+import { useAuth } from "@/lib/use-auth";
 
 const TUTORIAL_ITEMS = [
   { icon: Home, label: "Home", desc: "Ask questions and find help." },
@@ -38,8 +50,21 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
-  const { hasSeenTutorial, markTutorialSeen, onboardingComplete } = useSavedResources();
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const { hasSeenTutorial, markTutorialSeen, onboardingComplete, setAuthToken, setSavedIds, clearAuthState } = useSavedResources();
   const [showTutorial, setShowTutorial] = useState(false);
+  const { user, session, loading: authLoading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (session?.access_token) {
+      setAuthToken(session.access_token);
+      syncSavedOnLogin(session.access_token).then((ids) => {
+        setSavedIds(ids);
+      });
+    } else if (!authLoading) {
+      clearAuthState();
+    }
+  }, [session?.access_token, authLoading, setAuthToken, setSavedIds, clearAuthState]);
 
   useEffect(() => {
     if (onboardingComplete && !hasSeenTutorial) {
@@ -69,6 +94,15 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = (path: string) => location === path;
 
+  const handleSignOut = async () => {
+    await signOut();
+    clearAuthState();
+  };
+
+  const userInitials = user?.email
+    ? user.email.substring(0, 2).toUpperCase()
+    : "JD";
+
   return (
     <div className="min-h-screen bg-background pb-20 font-sans">
       {/* Top Bar - Persistent */}
@@ -82,21 +116,18 @@ export default function Layout({ children }: LayoutProps) {
             <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">Veteran Care</span>
           </Link>
 
-          {/* Right: Icons (Search, AI, Notifications, Profile, Settings) */}
+          {/* Right: Icons */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Near Me (Top Bar) */}
             <Link href="/near-me">
               <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
                 <MapPin className="h-5 w-5" />
               </Button>
             </Link>
 
-            {/* Search */}
             <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
               <Search className="h-5 w-5" />
             </Button>
             
-            {/* Chatbot */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -106,18 +137,59 @@ export default function Layout({ children }: LayoutProps) {
               <Sparkles className="h-5 w-5" />
             </Button>
 
-            {/* Notifications */}
             <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 bg-orange-500 rounded-full border-2 border-primary"></span>
             </Button>
 
-            {/* Profile */}
-            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 font-bold text-sm">
-              JD
-            </Button>
+            {/* Profile / Auth Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  data-testid="button-profile"
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 font-bold text-sm"
+                >
+                  {user ? userInitials : <User className="h-5 w-5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {user ? (
+                  <>
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">Signed in</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      data-testid="button-sign-out"
+                      onClick={handleSignOut}
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-3 py-2">
+                      <p className="text-xs text-muted-foreground">Sign in to sync saved resources across devices</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      data-testid="button-sign-in"
+                      onClick={() => setIsAuthOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign In / Create Account
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
-            {/* Settings */}
             <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
               <Settings className="h-5 w-5" />
             </Button>
@@ -132,6 +204,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* AI Guide Modal */}
       <AiGuide open={isAiOpen} onOpenChange={setIsAiOpen} />
+
+      {/* Auth Modal */}
+      <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
 
       {/* Bottom Navigation - Mobile First */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] safe-area-bottom">

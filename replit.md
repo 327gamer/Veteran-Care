@@ -126,10 +126,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 ## Key Files (Step 12)
 - `client/src/pages/admin-analytics.tsx` - Admin analytics dashboard with charts and stats
 
-## Future: User Accounts + Saved Resources Sync
-Currently, saved resources are stored in browser localStorage via Zustand persist. This works well for single-device use but does not sync across devices. When user accounts are added:
-
-- **Supabase table `user_saved_resources`**: columns `user_id` (fk→users), `resource_id` (fk→resources), `saved_at` (timestamptz)
-- **One-time device migration on first login**: push any existing localStorage `savedIds` to the user's Supabase record, deduplicating against server-side data
-- **After login**: read/write saves to Supabase as the source of truth; localStorage serves as an optional fast cache layer
-- **Logged-out users**: keep current localStorage-only behavior so the app works without an account
+## User Accounts + Saved Resources Sync (Step 18)
+- **Auth**: Supabase Auth with email/password (client-side client in `client/src/lib/supabase.ts`)
+- **Auth hook**: `client/src/lib/use-auth.ts` — session management, signUp, signIn, signOut
+- **Auth UI**: `client/src/components/auth-modal.tsx` — login/signup modal with email+password
+- **Profile dropdown**: Layout top bar profile button → dropdown with sign in/out
+- **Supabase table `user_saved_resources`**: id, user_id (fk→auth.users), resource_id (fk→resources), saved_at; unique(user_id, resource_id); RLS policies for user-scoped access (SQL in `supabase/create_user_saved_resources.sql`)
+- **Server routes**: `GET /api/saved-resources` (auth'd, returns saved IDs), `POST /api/saved-resources/sync` (merges localStorage IDs on first login), `POST /api/saved-resources/toggle` (save/unsave with auth)
+- **Store sync**: On login, `syncSavedOnLogin()` merges localStorage savedIds into Supabase (one-time device migration via `deviceMigrated` flag), then Supabase becomes source of truth; `toggleSave()` optimistically updates localStorage and fires server toggle in background
+- **Logged-out users**: Keep current localStorage-only behavior unchanged
+- **Saved page**: Shows "Synced to your account" when logged in, "Saved on this device only" when logged out
+- **Vite config**: Exposes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to frontend via `define` block
