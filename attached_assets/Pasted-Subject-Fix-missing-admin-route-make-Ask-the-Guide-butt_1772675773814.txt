@@ -1,0 +1,71 @@
+Subject: Fix missing /admin route + make “Ask the Guide” button open chatbot everywhere
+
+Message:
+
+Please fix two items:
+
+1) /admin is “Page not found” — we need the Admin panel accessible
+
+Right now when I go to /admin it returns Page Not Found.
+
+Goal: Admin panel must be reachable and show:
+
+Resource moderation (existing)
+
+Analytics (click tracking)
+
+Navigator Leads tab (new lead capture requests)
+
+Implementation requirements:
+
+Add a route in the frontend router for /admin (or confirm the correct path if you already chose something like /admin/resources).
+
+If you split pages, that’s fine, but /admin must load an Admin landing page with tabs or links:
+
+Resources
+
+Analytics
+
+Navigator Leads
+
+If admin access is restricted, add a simple admin gate (even a temporary one using an ADMIN_EMAIL allowlist or ADMIN_KEY prompt) — but the page must load.
+
+Acceptance test:
+
+I can visit /admin and I see the admin view (not 404)
+
+I can click Navigator Leads and see submitted requests (status = new)
+
+2) Homepage “Ask the Guide” button doesn’t open the chatbot
+
+On /home, the big card (“Good Morning, Soldier” → “Ask the Guide”) does not open the guide/chat modal, but the top navbar chatbot icon does.
+
+Goal: Any “Ask Guide” button anywhere should open the same chatbot/modal.
+
+Implementation requirements:
+
+Use ONE shared method to open the guide (recommended):
+
+Dispatch a CustomEvent("open-ai-guide") from buttons
+
+In Layout (or wherever the chat modal is managed), listen for that event and open the chat
+
+Wire these triggers to that shared method:
+
+Top navbar chatbot icon ✅ (already works — keep it)
+
+Homepage “Ask the Guide” button ❌ (needs wiring)
+
+Resource detail “Ask Guide” button (should also use same event)
+
+Acceptance test:
+
+Clicking homepage “Ask the Guide” opens the same chatbot popup as the navbar icon.
+
+No duplicate chat systems. One guide UI, multiple entry points.
+
+3) Future note (don’t build now, but keep architecture ready)
+
+We eventually want a voice-capable “Good Morning, Soldier” guide with a military-style voice (push-to-talk + TTS), but for now:
+
+Make sure the chat system is centralized so we can upgrade it later without rewiring every page.

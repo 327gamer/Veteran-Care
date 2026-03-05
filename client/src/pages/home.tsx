@@ -212,7 +212,12 @@ export default function Home() {
             </p>
           </CardHeader>
           <CardContent>
-            <Button variant="secondary" className="w-full text-primary font-semibold shadow-md">
+            <Button
+              data-testid="button-ask-guide-home"
+              variant="secondary"
+              className="w-full text-primary font-semibold shadow-md"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-ai-guide"))}
+            >
               Ask the Guide
             </Button>
           </CardContent>

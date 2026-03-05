@@ -56,8 +56,8 @@ function Router() {
         </Layout>
       </Route>
 
-      <Route path="/admin" component={AdminResources} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">
         <Layout>
