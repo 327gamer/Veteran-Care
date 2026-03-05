@@ -325,10 +325,10 @@ export default function Resources() {
 
   const handleToggleSave = (e: React.MouseEvent, resource: ResourceItem) => {
     e.stopPropagation();
+    const wasSaved = isSaved(resource.id);
     toggleSave(resource.id);
-    const saved = isSaved(resource.id);
     toast({
-      description: saved ? "Removed from My Saved Resources" : "Saved to My Saved Resources",
+      description: wasSaved ? "Removed from My Saved Resources" : "Saved to My Saved Resources",
       duration: 2000,
     });
   };

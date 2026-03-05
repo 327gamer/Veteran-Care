@@ -70,7 +70,7 @@ export default function Layout({ children }: LayoutProps) {
   const isActive = (path: string) => location === path;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0 font-sans">
+    <div className="min-h-screen bg-background pb-20 font-sans">
       {/* Top Bar - Persistent */}
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -134,7 +134,7 @@ export default function Layout({ children }: LayoutProps) {
       <AiGuide open={isAiOpen} onOpenChange={setIsAiOpen} />
 
       {/* Bottom Navigation - Mobile First */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] md:hidden safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] safe-area-bottom">
         <div className="flex h-16 items-center justify-around px-2">
           <Link href="/home" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/home') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <Home className={`h-5 w-5 ${isActive('/home') ? 'fill-current' : ''}`} />
