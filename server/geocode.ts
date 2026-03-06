@@ -8,6 +8,31 @@ interface GeocodeResult {
 
 let lastCallTime = 0;
 
+async function rateLimitWait() {
+  const now = Date.now();
+  const elapsed = now - lastCallTime;
+  if (elapsed < 1100) {
+    await new Promise((r) => setTimeout(r, 1100 - elapsed));
+  }
+  lastCallTime = Date.now();
+}
+
+async function nominatimQuery(params: Record<string, string>): Promise<any[]> {
+  await rateLimitWait();
+  const searchParams = new URLSearchParams({ format: "json", countrycodes: "us", limit: "1", ...params });
+  const url = `${NOMINATIM_URL}?${searchParams.toString()}`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": "VeteranCareApp/1.0 (admin-geocode)" },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+function stripSuite(addr: string): string {
+  return addr.replace(/[,\s]+(suite|ste|unit|apt|room|rm|bldg|building|floor|fl|#)\s*[a-z0-9\-]+\s*$/i, "").trim();
+}
+
 export async function geocodeAddress(
   address?: string | null,
   city?: string | null,
@@ -17,31 +42,63 @@ export async function geocodeAddress(
   const parts = [address, city, state, zip].filter(Boolean);
   if (parts.length < 2) return null;
 
-  const now = Date.now();
-  const elapsed = now - lastCallTime;
-  if (elapsed < 1100) {
-    await new Promise((r) => setTimeout(r, 1100 - elapsed));
-  }
-  lastCallTime = Date.now();
+  const cleanStreet = address ? stripSuite(address) : null;
+  const hadSuite = cleanStreet !== address;
 
-  try {
-    const q = parts.join(", ");
-    const url = `${NOMINATIM_URL}?format=json&q=${encodeURIComponent(q)}&countrycodes=us&limit=1`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "VeteranCareApp/1.0 (admin-geocode)" },
+  const attempts: (() => Promise<any[]>)[] = [];
+
+  if (cleanStreet && city && state) {
+    attempts.push(() => {
+      const p: Record<string, string> = { street: cleanStreet, city, state };
+      if (zip) p.postalcode = zip;
+      return nominatimQuery(p);
     });
 
-    if (!res.ok) return null;
+    if (zip) {
+      attempts.push(() => nominatimQuery({ street: cleanStreet, city, state }));
+    }
 
-    const data = await res.json();
-    if (!data || data.length === 0) return null;
+    if (hadSuite) {
+      attempts.push(() => {
+        const p: Record<string, string> = { street: address!, city, state };
+        if (zip) p.postalcode = zip;
+        return nominatimQuery(p);
+      });
+    }
+  }
 
-    const lat = parseFloat(data[0].lat);
-    const lon = parseFloat(data[0].lon);
+  if (city && state) {
+    attempts.push(() => {
+      const p: Record<string, string> = { city, state };
+      if (zip) p.postalcode = zip;
+      return nominatimQuery(p);
+    });
 
-    if (isNaN(lat) || isNaN(lon)) return null;
+    if (zip) {
+      attempts.push(() => nominatimQuery({ city, state }));
+    }
+  }
 
-    return { latitude: lat, longitude: lon, geo_source: "nominatim" };
+  if (state && zip && !city) {
+    attempts.push(() => nominatimQuery({ state, postalcode: zip }));
+  }
+
+  if (attempts.length === 0 && parts.length >= 2) {
+    attempts.push(() => nominatimQuery({ q: parts.join(", ") }));
+  }
+
+  try {
+    for (const attempt of attempts) {
+      const data = await attempt();
+      if (data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          return { latitude: lat, longitude: lon, geo_source: "nominatim" };
+        }
+      }
+    }
+    return null;
   } catch {
     return null;
   }
