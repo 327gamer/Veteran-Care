@@ -19,6 +19,9 @@ export interface ResourceItem {
   affiliate_url?: string;
   monetization_type?: string;
   distance_miles?: number;
+  is_national?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const resourcesData: Record<string, ResourceItem[]> = {

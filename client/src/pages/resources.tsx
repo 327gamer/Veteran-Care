@@ -78,6 +78,7 @@ interface SupabaseResource {
   latitude: number | null;
   longitude: number | null;
   distance_miles?: number | null;
+  is_national?: boolean;
   created_at: string;
   categories: { id: string; name: string; slug: string };
 }
@@ -103,6 +104,9 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
     affiliate_url: r.affiliate_url || undefined,
     monetization_type: r.monetization_type || undefined,
     distance_miles: r.distance_miles ?? undefined,
+    is_national: r.is_national || false,
+    latitude: r.latitude,
+    longitude: r.longitude,
   };
 }
 
@@ -304,7 +308,34 @@ export default function Resources() {
 
   const isFallingBack = needsFallback && fallbackResources.length > 0;
   const displayResources = isFallingBack ? fallbackResources : apiResources;
-  const activeResources = displayResources.map(toResourceItem);
+  const isNearMeActive = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
+
+  const sortedResources = (() => {
+    const items = displayResources.map(toResourceItem);
+    if (!isNearMeActive) return items;
+
+    const withDistance: ResourceItem[] = [];
+    const localCity: ResourceItem[] = [];
+    const statewide: ResourceItem[] = [];
+    const national: ResourceItem[] = [];
+
+    for (const r of items) {
+      if (r.distance_miles != null) {
+        withDistance.push(r);
+      } else if (r.is_national || (!r.state && !r.city)) {
+        national.push(r);
+      } else if (r.state && !r.city) {
+        statewide.push(r);
+      } else {
+        localCity.push(r);
+      }
+    }
+
+    withDistance.sort((a, b) => (a.distance_miles ?? Infinity) - (b.distance_miles ?? Infinity));
+    return [...withDistance, ...localCity, ...statewide, ...national];
+  })();
+
+  const activeResources = sortedResources;
   const isLoading = resourcesLoading || (needsFallback && fallbackLoading);
 
   const showLocalOnlyEmpty = resourcesFetched && apiResources.length === 0 && hasLocationFilters && locationMode === "state" && localOnly;
@@ -641,7 +672,7 @@ export default function Resources() {
             {!isLoading && !showLocalOnlyEmpty && activeResources && activeResources.length > 0 && (
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span data-testid="text-results-count" className="text-xs text-muted-foreground">
-                  Showing {activeResources.length} resource{activeResources.length !== 1 ? "s" : ""}
+                  Showing {activeResources.length} resource{activeResources.length !== 1 ? "s" : ""}{isNearMeActive ? " \u2013 sorted by distance" : ""}
                 </span>
                 {hasActiveFilters && (
                   <button
@@ -720,14 +751,35 @@ export default function Resources() {
                             Sponsored
                           </Badge>
                         )}
-                        {resource.isLocal && (
-                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
-                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}
-                          </Badge>
-                        )}
                         {resource.distance_miles != null && (
                           <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-blue-300 text-blue-600 bg-blue-50 shrink-0">
                             <Radar className="h-2.5 w-2.5 mr-0.5" /> {resource.distance_miles} mi
+                          </Badge>
+                        )}
+                        {resource.distance_miles == null && isNearMeActive && (() => {
+                          const isNational = resource.is_national || (!resource.state && !resource.city);
+                          const isStatewide = !isNational && resource.state && !resource.city;
+                          const isLocalNoGeo = !isNational && !isStatewide;
+                          if (isNational) return (
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-slate-300 text-slate-500 bg-slate-50 shrink-0">
+                              <Globe className="h-2.5 w-2.5 mr-0.5" /> National
+                            </Badge>
+                          );
+                          if (isStatewide) return (
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-indigo-300 text-indigo-500 bg-indigo-50 shrink-0">
+                              <MapPinned className="h-2.5 w-2.5 mr-0.5" /> Statewide
+                            </Badge>
+                          );
+                          if (isLocalNoGeo) return (
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-amber-300 text-amber-600 bg-amber-50 shrink-0">
+                              <MapPin className="h-2.5 w-2.5 mr-0.5" /> Location unavailable
+                            </Badge>
+                          );
+                          return null;
+                        })()}
+                        {!isNearMeActive && resource.isLocal && (
+                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary bg-primary/5 shrink-0">
+                            <MapPin className="h-2.5 w-2.5 mr-0.5" /> {[resource.city, resource.state].filter(Boolean).join(", ") || "Local"}
                           </Badge>
                         )}
                       </div>
