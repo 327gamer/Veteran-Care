@@ -186,6 +186,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Service priorities: immediate (8), same_week (6), standard (4)
   - Cities: Columbia (4), Charleston (2), Greenville (2), Spartanburg (2), Conway (1), Lexington (1) + 6 national/statewide
   - Geocoded: 12/18 (6 national/statewide resources correctly without coordinates)
+- **Education batch**: 14 new resources imported
+  - Subcategories: Veteran Student Services (5), Technical Colleges (5), Tuition Assistance (1), GI Bill Assistance (1), Education Counseling (1), Continuing Education (1)
+  - Service priorities: standard (11), information (3)
+  - Cities: Columbia (3), Conway (2), Charleston (2), North Charleston (1), Greenville (1), Spartanburg (1), Clemson (1) + 3 national/statewide
+  - Geocoded: 11/14 (3 national/statewide resources correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
