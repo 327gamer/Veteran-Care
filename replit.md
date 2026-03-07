@@ -176,6 +176,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Service priorities: standard (9), same_week (9), information (4)
   - Cities: Columbia (5), North Charleston (3), Charleston (3), Greenville (2), Spartanburg (1), Conway (1) + 7 national/online
   - Geocoded: 15/22 (7 national/online resources correctly without coordinates)
+- **Legal Assistance batch**: 19 new resources imported
+  - Subcategories: Legal Aid Services (6), Disability Claims Assistance (3), Discharge Upgrade Assistance (2), Veterans Legal Clinics (2), Pro Bono Legal Services (2), Military Records Assistance (1), Family Law Support (1), Landlord / Tenant Issues (1), VA Benefits Appeals (1)
+  - Service priorities: standard (10), same_week (7), information (2)
+  - Cities: Columbia (6), North Charleston (1), Greenville (1), Spartanburg (1), Conway (1), Charleston (1), St. Louis (1) + 7 national/statewide
+  - Geocoded: 12/19 (7 national/statewide resources correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
