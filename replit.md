@@ -171,6 +171,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **VA Benefits batch**: 23 new resources imported
   - Subcategories: County Veterans Service Offices (7), Disability Claims Assistance (5), VA Enrollment Help (3), DD214 Help (2), PACT Act (2), Pension (2), Appeals (1), Survivor Benefits (1)
   - Cities: Columbia, North Charleston, Greenville, Spartanburg, Conway, Summerville, Moncks Corner, West Columbia, Charleston, Goose Creek, St. Louis + national
+- **Employment & Job Training batch**: 22 new resources imported
+  - Subcategories: Job Placement (7), Career Counseling (4), Entrepreneurship Support (4), Resume Assistance (2), Certification Programs (1), Apprenticeships (1), Skilled Trades Training (1), Federal Employment (1), State Employment (1)
+  - Service priorities: standard (9), same_week (9), information (4)
+  - Cities: Columbia (5), North Charleston (3), Charleston (3), Greenville (2), Spartanburg (1), Conway (1) + 7 national/online
+  - Geocoded: 15/22 (7 national/online resources correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
