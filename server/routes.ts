@@ -6,6 +6,7 @@ import { geocodeAddress, haversineDistance } from "./geocode";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
+let hasServicePriorityColumn = false;
 
 async function checkGeoColumns() {
   const { error } = await supabase.from("resources").select("latitude").limit(1);
@@ -27,6 +28,16 @@ async function checkSubcategoryColumn() {
   }
 }
 
+async function checkServicePriorityColumn() {
+  const { error } = await supabase.from("resources").select("service_priority").limit(1);
+  if (error && error.message.includes("does not exist")) {
+    hasServicePriorityColumn = false;
+    console.log("[schema] service_priority column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN service_priority TEXT;");
+  } else {
+    hasServicePriorityColumn = true;
+  }
+}
+
 function resourceSelectFields() {
   const base = [
     "id", "category_id", "title", "short_description", "website_url", "phone", "email",
@@ -34,6 +45,7 @@ function resourceSelectFields() {
     "last_verified", "monetization_type", "affiliate_url", "sponsored",
   ];
   if (hasSubcategoryColumn) base.push("subcategory");
+  if (hasServicePriorityColumn) base.push("service_priority");
   if (hasGeoColumns) base.push("latitude", "longitude");
   base.push("status", "created_at", "categories!inner(id, name, slug)");
   return base.join(", ");
@@ -75,6 +87,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   await checkGeoColumns();
   await checkSubcategoryColumn();
+  await checkServicePriorityColumn();
 
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
@@ -578,7 +591,8 @@ export async function registerRoutes(
   app.post("/api/admin/resources", requireAdmin, async (req, res) => {
     const { category_id, title, short_description, website_url, phone, email,
       address, city, state, zip, eligibility, source_name, status,
-      sponsored, monetization_type, affiliate_url, notes_internal, subcategory } = req.body;
+      sponsored, monetization_type, affiliate_url, notes_internal, subcategory,
+      service_priority } = req.body;
 
     if (!title || typeof title !== "string" || title.trim().length < 3) {
       return res.status(400).json({ error: "Title is required (minimum 3 characters)" });
@@ -619,6 +633,11 @@ export async function registerRoutes(
 
     if (hasSubcategoryColumn) {
       insertData.subcategory = subcategory?.trim() || null;
+    }
+
+    if (hasServicePriorityColumn) {
+      const validPriorities = ["immediate", "same_week", "standard", "information"];
+      insertData.service_priority = validPriorities.includes(service_priority) ? service_priority : null;
     }
 
     if (hasGeoColumns) {
@@ -711,6 +730,11 @@ export async function registerRoutes(
 
         if (hasSubcategoryColumn) {
             csvInsert.subcategory = row.subcategory?.trim() || null;
+        }
+
+        if (hasServicePriorityColumn) {
+            const validPriorities = ["immediate", "same_week", "standard", "information"];
+            csvInsert.service_priority = validPriorities.includes(row.service_priority) ? row.service_priority : null;
         }
 
         if (hasGeoColumns) {
@@ -848,6 +872,7 @@ export async function registerRoutes(
       "is_featured", "featured_rank", "last_verified_at",
       "sponsored", "monetization_type", "affiliate_url",
       ...(hasSubcategoryColumn ? ["subcategory"] : []),
+      ...(hasServicePriorityColumn ? ["service_priority"] : []),
       ...(hasGeoColumns ? ["latitude", "longitude", "geo_source"] : []),
     ];
 

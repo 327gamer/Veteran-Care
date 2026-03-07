@@ -76,6 +76,7 @@ interface SupabaseResource {
   affiliate_url: string | null;
   sponsored: boolean;
   subcategory: string | null;
+  service_priority: string | null;
   latitude: number | null;
   longitude: number | null;
   distance_miles?: number | null;
