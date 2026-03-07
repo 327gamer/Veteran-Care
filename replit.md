@@ -191,6 +191,12 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Service priorities: standard (11), information (3)
   - Cities: Columbia (3), Conway (2), Charleston (2), North Charleston (1), Greenville (1), Spartanburg (1), Clemson (1) + 3 national/statewide
   - Geocoded: 11/14 (3 national/statewide resources correctly without coordinates)
+- **Family Support batch**: 16 new resources imported
+  - Subcategories: Military Family Support (5), Family Counseling (2), Caregiver Support (2), Spouse Employment Assistance (2), Childcare Assistance (1), Youth Programs (1), Parenting Programs (1), Gold Star Family Support (1), Survivor Benefits Support (1)
+  - Service priorities: standard (7), same_week (5), immediate (2), information (2)
+  - Cities: North Charleston (1), Columbia (1), Greenville (1) + 13 national/statewide
+  - Geocoded: 3/16 (13 national/statewide resources correctly without coordinates)
+  - Note: CSV import category field must use DB category name (e.g. "Family Support" not "Family") or slug (e.g. "family-support")
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
