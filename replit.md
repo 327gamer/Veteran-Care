@@ -138,6 +138,15 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Saved page**: Shows "Synced to your account" when logged in, "Saved on this device only" when logged out
 - **Vite config**: Exposes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to frontend via `define` block
 
+## Subcategories
+- **Column**: `resources.subcategory` (TEXT, nullable) — added via Supabase SQL editor
+- **Server startup**: `checkSubcategoryColumn()` probes for the column; if missing, `hasSubcategoryColumn=false` and subcategory fields are omitted from queries/writes
+- **Dynamic select**: `resourceSelectFields()` conditionally includes `subcategory` based on `hasSubcategoryColumn`
+- **Admin editor**: Subcategory text input below Category dropdown
+- **CSV import**: `subcategory` column supported in template and import logic
+- **PATCH**: `subcategory` included in allowedFields when column exists
+- **POST**: `subcategory` included in insertData when column exists
+
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
 - **Startup check**: `checkGeoColumns()` probes for `latitude` column at boot; if missing, `hasGeoColumns=false` disables geo queries/writes gracefully

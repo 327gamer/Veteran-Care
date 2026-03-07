@@ -5,6 +5,7 @@ import { supabase } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 
 let hasGeoColumns = true;
+let hasSubcategoryColumn = false;
 
 async function checkGeoColumns() {
   const { error } = await supabase.from("resources").select("latitude").limit(1);
@@ -16,11 +17,26 @@ async function checkGeoColumns() {
   }
 }
 
-const RESOURCE_BASE_FIELDS = `id, category_id, title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored, status, created_at, categories!inner(id, name, slug)`;
-const RESOURCE_GEO_FIELDS = `id, category_id, title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored, latitude, longitude, status, created_at, categories!inner(id, name, slug)`;
+async function checkSubcategoryColumn() {
+  const { error } = await supabase.from("resources").select("subcategory").limit(1);
+  if (error && error.message.includes("does not exist")) {
+    hasSubcategoryColumn = false;
+    console.log("[schema] subcategory column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN subcategory TEXT;");
+  } else {
+    hasSubcategoryColumn = true;
+  }
+}
 
 function resourceSelectFields() {
-  return hasGeoColumns ? RESOURCE_GEO_FIELDS : RESOURCE_BASE_FIELDS;
+  const base = [
+    "id", "category_id", "title", "short_description", "website_url", "phone", "email",
+    "address", "city", "state", "zip", "eligibility", "source_name", "source_type",
+    "last_verified", "monetization_type", "affiliate_url", "sponsored",
+  ];
+  if (hasSubcategoryColumn) base.push("subcategory");
+  if (hasGeoColumns) base.push("latitude", "longitude");
+  base.push("status", "created_at", "categories!inner(id, name, slug)");
+  return base.join(", ");
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -58,6 +74,7 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await checkGeoColumns();
+  await checkSubcategoryColumn();
 
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
@@ -561,7 +578,7 @@ export async function registerRoutes(
   app.post("/api/admin/resources", requireAdmin, async (req, res) => {
     const { category_id, title, short_description, website_url, phone, email,
       address, city, state, zip, eligibility, source_name, status,
-      sponsored, monetization_type, affiliate_url, notes_internal } = req.body;
+      sponsored, monetization_type, affiliate_url, notes_internal, subcategory } = req.body;
 
     if (!title || typeof title !== "string" || title.trim().length < 3) {
       return res.status(400).json({ error: "Title is required (minimum 3 characters)" });
@@ -599,6 +616,10 @@ export async function registerRoutes(
       monetization_type: monetization_type || null,
       affiliate_url: affiliate_url?.trim() || null,
     };
+
+    if (hasSubcategoryColumn) {
+      insertData.subcategory = subcategory?.trim() || null;
+    }
 
     if (hasGeoColumns) {
       insertData.latitude = isNaN(latitude as number) ? null : latitude;
@@ -687,6 +708,10 @@ export async function registerRoutes(
             monetization_type: row.monetization_type?.trim() || null,
             affiliate_url: row.affiliate_url?.trim() || null,
         };
+
+        if (hasSubcategoryColumn) {
+            csvInsert.subcategory = row.subcategory?.trim() || null;
+        }
 
         if (hasGeoColumns) {
             csvInsert.latitude = (lat != null && !isNaN(lat)) ? lat : null;
@@ -822,6 +847,7 @@ export async function registerRoutes(
       "source_type", "status", "notes_internal", "category_id",
       "is_featured", "featured_rank", "last_verified_at",
       "sponsored", "monetization_type", "affiliate_url",
+      ...(hasSubcategoryColumn ? ["subcategory"] : []),
       ...(hasGeoColumns ? ["latitude", "longitude", "geo_source"] : []),
     ];
 

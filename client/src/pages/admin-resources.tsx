@@ -92,6 +92,7 @@ interface AdminResource {
   submitted_by_email: string | null;
   notes_internal: string | null;
   category_id: string | null;
+  subcategory: string | null;
   eligibility: string | null;
   sponsored: boolean;
   monetization_type: string | null;
@@ -258,6 +259,7 @@ export default function AdminResources() {
       source_type: "",
       notes_internal: "",
       category_id: "",
+      subcategory: "",
       status: "approved",
       sponsored: false,
       monetization_type: "",
@@ -268,7 +270,7 @@ export default function AdminResources() {
   };
 
   const CSV_TEMPLATE_HEADERS = [
-    "title","category","short_description","website_url","phone","email",
+    "title","category","subcategory","short_description","website_url","phone","email",
     "address","city","state","zip","eligibility","source_name","source_type",
     "monetization_type","affiliate_url","sponsored","status","latitude","longitude"
   ];
@@ -277,6 +279,7 @@ export default function AdminResources() {
     [
       "SC Veterans Affairs Regional Office",
       "VA Benefits",
+      "Claims Assistance",
       "Full-service VA regional office for claims, appeals, and benefits counseling",
       "https://www.va.gov/columbia-va-regional-benefit-office/",
       "1-800-827-1000",
@@ -298,6 +301,7 @@ export default function AdminResources() {
     [
       "Atlanta VA Health Care System",
       "Healthcare",
+      "VA Medical Centers",
       "Comprehensive VA medical center providing primary care, mental health, and specialty services",
       "https://www.va.gov/atlanta-health-care/",
       "(404) 321-6111",
@@ -550,6 +554,7 @@ export default function AdminResources() {
       source_type: resource.source_type || "",
       notes_internal: resource.notes_internal || "",
       category_id: resource.category_id || "",
+      subcategory: resource.subcategory || "",
       status: resource.status || "pending",
       sponsored: resource.sponsored || false,
       monetization_type: resource.monetization_type || "",
@@ -961,6 +966,11 @@ export default function AdminResources() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Subcategory</Label>
+                <Input data-testid="input-admin-subcategory" className="h-9 text-xs" placeholder="e.g. Emergency Shelter, Rental Assistance" value={editForm.subcategory || ""} onChange={(e) => setEditForm(p => ({ ...p, subcategory: e.target.value }))} />
               </div>
 
               <div className="space-y-2">
