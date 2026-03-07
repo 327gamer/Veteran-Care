@@ -157,6 +157,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **PATCH**: `subcategory` included in allowedFields when column exists
 - **POST**: `subcategory` included in insertData when column exists
 
+## Step 21 — SC Resource Expansion
+- **Housing Assistance batch 1**: 20 new SC resources imported
+- **Cities covered**: Charleston, North Charleston, Columbia, Greenville, Spartanburg, Myrtle Beach, Little River, Loris, Summerville + 1 national hotline
+- **Subcategories used**: Emergency Housing (2), Transitional Housing (5), Rent Assistance (4), Food Assistance (2), Homeless Veteran Services (7)
+- **Service priorities**: immediate (10), same_week (7), standard (3)
+- **Geocoded**: 19/20 (1 national hotline correctly excluded)
+- **All resources**: Real verified organizations with official websites and phone numbers
+
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
 - **Startup check**: `checkGeoColumns()` probes for `latitude` column at boot; if missing, `hasGeoColumns=false` disables geo queries/writes gracefully
