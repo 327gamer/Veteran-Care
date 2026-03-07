@@ -138,6 +138,16 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Saved page**: Shows "Synced to your account" when logged in, "Saved on this device only" when logged out
 - **Vite config**: Exposes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to frontend via `define` block
 
+## Service Priority
+- **Column**: `resources.service_priority` (TEXT, nullable)
+- **Valid values**: `immediate`, `same_week`, `standard`, `information` (validated on POST/CSV; null for invalid)
+- **Server startup**: `checkServicePriorityColumn()` probes for column; `hasServicePriorityColumn` flag guards reads/writes
+- **Dynamic select**: `resourceSelectFields()` conditionally includes `service_priority`
+- **Admin editor**: Select dropdown (None / Immediate / Same Week / Standard / Information)
+- **CSV import**: `service_priority` column supported in template and import logic
+- **PATCH/POST**: Included in allowedFields / insertData when column exists
+- **Purpose**: Urgency classification for future "Need Help Now" routing and smart recommendations
+
 ## Subcategories
 - **Column**: `resources.subcategory` (TEXT, nullable) — added via Supabase SQL editor
 - **Server startup**: `checkSubcategoryColumn()` probes for the column; if missing, `hasSubcategoryColumn=false` and subcategory fields are omitted from queries/writes
