@@ -202,6 +202,13 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Service priorities: information (7), same_week (6), standard (1)
   - Cities: North Charleston (2), Columbia (2), Charleston (1), Greenville (1), Spartanburg (1), Myrtle Beach (1), Moncks Corner (1) + 5 national/statewide
   - Geocoded: 9/14 (5 national/statewide resources correctly without coordinates)
+- **Substance Recovery batch**: 15 new resources imported
+  - Subcategories: Peer Recovery Groups (3), Outpatient Recovery (3), Detox Programs (3), Crisis Stabilization (2), Veteran Recovery Programs (2), Recovery Support Services (1), Medication Assisted Treatment (1)
+  - Service priorities: immediate (7), same_week (4), standard (4)
+  - Cities: Columbia (4), North Charleston (2), Charleston (2), Greenville (2), Spartanburg (1), Conway (1) + 3 national/statewide
+  - Geocoded: 12/15 (3 national/statewide resources correctly without coordinates)
+  - Key resources: VA STAR Charleston, VA Dorn Columbia, Palmetto Lowcountry Patriot Support, Phoenix Center (detox + MAT), LRADAC (detox + recovery support), Charleston Center, Forrester Center Spartanburg, Shoreline Conway, AA Tri-County & Columbia, NA Carolina Region, SAMHSA Helpline, SC Mobile Crisis
+- **Step 21 SC running total**: Housing (20), Healthcare/Mental Health (23), VA Benefits (23), Employment (22), Legal (19), Financial (18), Education (14), Family Support (16), Transportation (14), Substance Recovery (15) = 184 resources across 10 categories
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
