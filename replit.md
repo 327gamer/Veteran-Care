@@ -168,6 +168,9 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Healthcare (9): VA Medical Centers (2), VA Clinics (6), Telehealth (1)
   - Mental Health (14): Vet Centers (4), Peer Support (4), PTSD Counseling (2), Substance Abuse Treatment (2), Crisis Support (2)
   - Cities: Charleston, North Charleston, Mount Pleasant, Goose Creek, Columbia, Greenville, Spartanburg, Myrtle Beach + national hotlines
+- **VA Benefits batch**: 23 new resources imported
+  - Subcategories: County Veterans Service Offices (7), Disability Claims Assistance (5), VA Enrollment Help (3), DD214 Help (2), PACT Act (2), Pension (2), Appeals (1), Survivor Benefits (1)
+  - Cities: Columbia, North Charleston, Greenville, Spartanburg, Conway, Summerville, Moncks Corner, West Columbia, Charleston, Goose Creek, St. Louis + national
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
