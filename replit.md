@@ -214,7 +214,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Cities: Charleston (4), Columbia (3), Myrtle Beach (2), Greenville (2), North Charleston (1), Summerville (1) + 1 statewide
   - Geocoded: 13/14 (1 statewide resource correctly without coordinates)
   - Key resources: Lowcountry Food Bank (HQ + Myrtle Beach), Harvest Hope (Columbia + Greenville), Soldiers Angels veteran food distribution, One80 Place community kitchen, Community Kitchen Myrtle Beach, Salvation Army (Charleston + Columbia), Tricounty Family Ministries Summerville, SC DSS SNAP, Meals on Wheels (Charleston + Columbia + Greenville)
-- **Step 21 SC running total**: Housing (20), Healthcare/Mental Health (23), VA Benefits (23), Employment (22), Legal (19), Financial (18), Education (14), Family Support (16), Transportation (14), Substance Recovery (15), Food Assistance (14) = 198 resources across 11 categories
+- **Community Support batch**: 15 new resources imported
+  - Subcategories: VFW Posts (4), American Legion Posts (3), Veteran Nonprofit Organizations (3), Veteran Outreach Programs (2), Veteran Service Organizations (2), Veteran Social Groups (1)
+  - Service priorities: information (11), standard (4)
+  - Cities: Columbia (4), North Charleston (3), Charleston (2), Greenville (2), West Columbia (1), Spartanburg (1), Lexington (1) + 1 statewide
+  - Geocoded: 14/15 (1 statewide resource correctly without coordinates)
+  - Key resources: DAV SC HQ, SCDVA state office, Charleston County VA Office, VFW Posts (445 Charleston, 5091 N. Charleston, 4262 Columbia, 10330 Greenville), VFW SC HQ, American Legion Posts (147 Charleston, 6 Columbia, SC HQ), Palmetto Warrior Connection, Upstate Warrior Solution (Greenville + Spartanburg), Team RWB SC
+- **Step 21 FINAL SC total**: 328 total resources across 13 categories
+  - VA Benefits (39), Housing Assistance (37), Employment (36), Legal Help (32), Community Support (30), Mental Health (29), Education (28), Financial Help (23), Substance Recovery (20), Family Support (17), Transportation (14), Food Assistance (14), Healthcare (9)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
