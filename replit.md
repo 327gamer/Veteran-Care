@@ -197,6 +197,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Cities: North Charleston (1), Columbia (1), Greenville (1) + 13 national/statewide
   - Geocoded: 3/16 (13 national/statewide resources correctly without coordinates)
   - Note: CSV import category field must use DB category name (e.g. "Family Support" not "Family") or slug (e.g. "family-support")
+- **Transportation batch**: 14 new resources imported
+  - Subcategories: Public Transit Assistance (6), Non-Emergency Medical Transport (3), VA Medical Transport (2), Volunteer Driver Programs (1), Ride Assistance Programs (1), Veteran Transportation Programs (1)
+  - Service priorities: information (7), same_week (6), standard (1)
+  - Cities: North Charleston (2), Columbia (2), Charleston (1), Greenville (1), Spartanburg (1), Myrtle Beach (1), Moncks Corner (1) + 5 national/statewide
+  - Geocoded: 9/14 (5 national/statewide resources correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
