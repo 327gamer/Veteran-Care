@@ -181,6 +181,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Service priorities: standard (10), same_week (7), information (2)
   - Cities: Columbia (6), North Charleston (1), Greenville (1), Spartanburg (1), Conway (1), Charleston (1), St. Louis (1) + 7 national/statewide
   - Geocoded: 12/19 (7 national/statewide resources correctly without coordinates)
+- **Financial Assistance batch**: 18 new resources imported
+  - Subcategories: Emergency Financial Assistance (7), Utility Bill Assistance (5), Debt Counseling (2), Budgeting & Financial Planning (1), Nonprofit Financial Support (1), Benefits Counseling (1), Veteran Relief Funds (1)
+  - Service priorities: immediate (8), same_week (6), standard (4)
+  - Cities: Columbia (4), Charleston (2), Greenville (2), Spartanburg (2), Conway (1), Lexington (1) + 6 national/statewide
+  - Geocoded: 12/18 (6 national/statewide resources correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
