@@ -7,6 +7,7 @@ import { geocodeAddress, haversineDistance } from "./geocode";
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
+let hasNavLifecycleColumns = false;
 
 async function checkGeoColumns() {
   const { error } = await supabase.from("resources").select("latitude").limit(1);
@@ -35,6 +36,27 @@ async function checkServicePriorityColumn() {
     console.log("[schema] service_priority column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN service_priority TEXT;");
   } else {
     hasServicePriorityColumn = true;
+  }
+}
+
+async function checkNavLifecycleColumns() {
+  const { error } = await supabase.from("navigator_requests").select("source, urgency, outcome").limit(1);
+  if (error && error.message.includes("does not exist")) {
+    hasNavLifecycleColumns = false;
+    console.log("[schema] Navigator lifecycle columns not found. Please run in Supabase SQL editor:");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS source TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_source TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_medium TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_campaign TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS urgency TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS assigned_to TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS contacted_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS outcome TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS consent_followup BOOLEAN DEFAULT false;");
+  } else {
+    hasNavLifecycleColumns = true;
+    console.log("[schema] Navigator lifecycle columns detected");
   }
 }
 
@@ -88,6 +110,7 @@ export async function registerRoutes(
   await checkGeoColumns();
   await checkSubcategoryColumn();
   await checkServicePriorityColumn();
+  await checkNavLifecycleColumns();
 
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
@@ -971,6 +994,12 @@ export async function registerRoutes(
       user_state,
       user_city,
       user_zip,
+      source,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      urgency,
+      consent_followup,
     } = req.body;
 
     if (!veteran_name || typeof veteran_name !== "string" || veteran_name.trim().length < 2) {
@@ -1009,6 +1038,16 @@ export async function registerRoutes(
 
     if (catStr) baseRow.category = catStr;
     if (subStr) baseRow.subcategory = subStr;
+
+    if (hasNavLifecycleColumns) {
+      const validUrgency = ["immediate", "same_week", "standard", "information"];
+      if (source && typeof source === "string") baseRow.source = source.trim();
+      if (utm_source && typeof utm_source === "string") baseRow.utm_source = utm_source.trim();
+      if (utm_medium && typeof utm_medium === "string") baseRow.utm_medium = utm_medium.trim();
+      if (utm_campaign && typeof utm_campaign === "string") baseRow.utm_campaign = utm_campaign.trim();
+      if (urgency && validUrgency.includes(urgency)) baseRow.urgency = urgency;
+      if (consent_followup === true) baseRow.consent_followup = true;
+    }
 
     let { data, error } = await supabase
       .from("navigator_requests")
@@ -1065,11 +1104,21 @@ export async function registerRoutes(
 
   app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { status, admin_notes } = req.body;
+    const { status, admin_notes, assigned_to, outcome, contacted_at, resolved_at } = req.body;
 
     const updates: Record<string, any> = {};
     if (status) updates.status = status;
     if (admin_notes !== undefined) updates.admin_notes = admin_notes;
+
+    if (hasNavLifecycleColumns) {
+      if (assigned_to !== undefined) updates.assigned_to = assigned_to?.trim() || null;
+      if (outcome !== undefined) {
+        const validOutcomes = ["connected", "referred", "no_response", "not_eligible", "resolved"];
+        if (validOutcomes.includes(outcome)) updates.outcome = outcome;
+      }
+      if (contacted_at !== undefined) updates.contacted_at = contacted_at || null;
+      if (resolved_at !== undefined) updates.resolved_at = resolved_at || null;
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No fields to update" });

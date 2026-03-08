@@ -220,8 +220,18 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Cities: Columbia (4), North Charleston (3), Charleston (2), Greenville (2), West Columbia (1), Spartanburg (1), Lexington (1) + 1 statewide
   - Geocoded: 14/15 (1 statewide resource correctly without coordinates)
   - Key resources: DAV SC HQ, SCDVA state office, Charleston County VA Office, VFW Posts (445 Charleston, 5091 N. Charleston, 4262 Columbia, 10330 Greenville), VFW SC HQ, American Legion Posts (147 Charleston, 6 Columbia, SC HQ), Palmetto Warrior Connection, Upstate Warrior Solution (Greenville + Spartanburg), Team RWB SC
-- **Step 21 FINAL SC total**: 328 total resources across 13 categories
-  - VA Benefits (39), Housing Assistance (37), Employment (36), Legal Help (32), Community Support (30), Mental Health (29), Education (28), Financial Help (23), Substance Recovery (20), Family Support (17), Transportation (14), Food Assistance (14), Healthcare (9)
+- **Step 22 SC Optimization**:
+  - Navigator lifecycle columns added (graceful detection via `hasNavLifecycleColumns`): source, utm_source, utm_medium, utm_campaign, urgency, assigned_to, contacted_at, resolved_at, outcome, consent_followup
+  - SQL must be run in Supabase SQL editor (printed at startup if columns missing)
+  - POST /api/navigator-request accepts: source, utm_source, utm_medium, utm_campaign, urgency, consent_followup
+  - PATCH /api/admin/navigator-requests/:id accepts: assigned_to, outcome, contacted_at, resolved_at
+  - Data cleanup completed: 16 test/duplicate rows deleted, subcategory backfilled to 100%
+- **Step 22 FINAL SC total**: 315 total resources across 13 categories
+  - VA Benefits (39), Housing Assistance (35), Employment (33), Legal Help (32), Community Support (29), Mental Health (24), Education (28), Financial Help (23), Substance Recovery (19), Family Support (16), Transportation (14), Food Assistance (14), Healthcare (9)
+  - Subcategory coverage: 100% (315/315)
+  - Within-category duplicates: 0
+  - Test rows: 0
+  - Geocoded: 198/315 (117 national/statewide correctly without coordinates)
 
 ## Geo/Near Me
 - **Geo columns**: `resources` table has `latitude`, `longitude` (DOUBLE PRECISION), `geo_source` (TEXT), `geocoded_at` (TIMESTAMPTZ) — added via Supabase SQL
