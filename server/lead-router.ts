@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { sendLeadNotification } from "./lead-email";
 
 interface RoutingRule {
   id: string;
@@ -205,6 +206,11 @@ export async function routeLead(leadId: string): Promise<{
   }
 
   console.log(`[router] Lead ${leadId} routed to ${match.partnerName} (${match.partnerId})`);
+
+  sendLeadNotification(leadId, match.partnerId).catch((err) => {
+    console.log(`[router] Email notification failed for lead ${leadId}:`, err?.message);
+  });
+
   return { routed: true, partnerId: match.partnerId, partnerName: match.partnerName };
 }
 

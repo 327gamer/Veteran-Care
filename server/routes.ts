@@ -1378,6 +1378,13 @@ export async function registerRoutes(
         .eq("id", id);
 
       if (error) return res.status(500).json({ error: error.message });
+
+      import("./lead-email").then(({ sendLeadNotification }) => {
+        sendLeadNotification(id, partner.id).catch((err) => {
+          console.log(`[reroute] Email notification failed for lead ${id}:`, err?.message);
+        });
+      });
+
       return res.json({ success: true, partner_name: partner.name });
     }
 

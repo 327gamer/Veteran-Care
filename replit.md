@@ -63,6 +63,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous/public key
 - `ADMIN_KEY` - Secret key for admin resource review access
+- `RESEND_API_KEY` - Resend email service API key (for partner lead notifications)
+- `RESEND_FROM_EMAIL` - (optional) Override sender address; defaults to `Veteran Care <onboarding@resend.dev>`
 
 ## Routes (Frontend)
 - `/` - Landing (auto-redirects to /onboarding or /home based on state)
@@ -283,3 +285,13 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Admin UI**: Partners tab in admin panel; create/edit partners with routing rules; lead cards show routing status + delivery badges
 - **Manual re-route**: POST /api/admin/leads/:id/reroute (with optional partner_id for manual assignment)
 - **SQL setup**: Run `supabase/create_partner_organizations.sql` to create both tables + add routing columns to navigator_requests
+
+## Partner Email Notifications
+- **Key file**: `server/lead-email.ts`
+- **Service**: Resend (resend.com) — `RESEND_API_KEY` env var required
+- **From address**: Defaults to `Veteran Care <onboarding@resend.dev>`; override with `RESEND_FROM_EMAIL` env var (requires verified domain in Resend)
+- **Trigger**: Fires automatically after `routeLead()` succeeds (both auto-route and manual reroute)
+- **Email content**: Veteran name, phone, email, preferred contact, location, category/subcategory, urgency (color-coded badge), message, timestamp (ET)
+- **Urgent leads**: `immediate` urgency shows red alert banner at top of email with 15-min escalation warning
+- **Tracking**: `routing_history` entries updated with `email_sent`, `email_sent_at`, `email_id` after successful send
+- **Failure handling**: Email send failures are logged but do not block routing; lead is still routed even if email fails
