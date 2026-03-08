@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabase } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
+import { autoRouteNewLead } from "./lead-router";
+import { startEscalationTimer } from "./lead-escalation";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
@@ -40,6 +42,28 @@ async function checkServicePriorityColumn() {
 }
 
 let hasRoutingColumns = false;
+let hasPartnerTable = false;
+let hasRoutingRulesTable = false;
+
+async function checkPartnerTable() {
+  const { data, error } = await supabase.from("partner_organizations").select("id").limit(1);
+  if (error) {
+    hasPartnerTable = false;
+    console.log("[schema] partner_organizations table not found. Run supabase/create_partner_organizations.sql");
+  } else {
+    hasPartnerTable = true;
+    console.log("[schema] partner_organizations table detected");
+  }
+
+  const { data: rulesData, error: rulesErr } = await supabase.from("partner_routing_rules").select("id").limit(1);
+  if (rulesErr) {
+    hasRoutingRulesTable = false;
+    console.log("[schema] partner_routing_rules table not found. Run supabase/create_partner_organizations.sql");
+  } else {
+    hasRoutingRulesTable = true;
+    console.log("[schema] partner_routing_rules table detected");
+  }
+}
 
 async function checkNavLifecycleColumns() {
   const { error } = await supabase.from("navigator_requests").select("source, urgency, outcome").limit(1);
@@ -127,6 +151,11 @@ export async function registerRoutes(
   await checkSubcategoryColumn();
   await checkServicePriorityColumn();
   await checkNavLifecycleColumns();
+  await checkPartnerTable();
+
+  if (hasPartnerTable && hasRoutingColumns) {
+    startEscalationTimer(5 * 60 * 1000);
+  }
 
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
@@ -1094,6 +1123,10 @@ export async function registerRoutes(
       return res.status(500).json({ error: msg });
     }
 
+    if (hasPartnerTable && hasRoutingColumns) {
+      autoRouteNewLead(data.id).catch(() => {});
+    }
+
     const response: Record<string, any> = {
       id: data.id,
       status: data.status,
@@ -1190,6 +1223,170 @@ export async function registerRoutes(
     }
 
     return res.json(data);
+  });
+
+  app.get("/api/admin/partners", requireAdmin, async (_req, res) => {
+    if (!hasPartnerTable) return res.json([]);
+    const { data, error } = await supabase
+      .from("partner_organizations")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.post("/api/admin/partners", requireAdmin, async (req, res) => {
+    if (!hasPartnerTable) return res.status(503).json({ error: "Partner table not available. Run supabase/create_partner_organizations.sql" });
+    const { name, contact_name, contact_email, contact_phone, website_url, state, cities, is_lead_enabled, notes } = req.body;
+    if (!name || typeof name !== "string" || name.trim().length < 2) {
+      return res.status(400).json({ error: "Partner name is required" });
+    }
+    const row: Record<string, any> = {
+      name: name.trim(),
+      contact_name: contact_name?.trim() || null,
+      contact_email: contact_email?.trim() || null,
+      contact_phone: contact_phone?.trim() || null,
+      website_url: website_url?.trim() || null,
+      state: state?.trim()?.toUpperCase() || null,
+      cities: Array.isArray(cities) ? cities : null,
+      is_lead_enabled: is_lead_enabled === true,
+      notes: notes?.trim() || null,
+    };
+    const { data, error } = await supabase.from("partner_organizations").insert(row).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(201).json(data);
+  });
+
+  app.patch("/api/admin/partners/:id", requireAdmin, async (req, res) => {
+    if (!hasPartnerTable) return res.status(503).json({ error: "Partner table not available" });
+    const { id } = req.params;
+    const { name, contact_name, contact_email, contact_phone, website_url, state, cities, is_active, is_lead_enabled, notes } = req.body;
+    const updates: Record<string, any> = {};
+    if (name !== undefined) updates.name = name?.trim() || null;
+    if (contact_name !== undefined) updates.contact_name = contact_name?.trim() || null;
+    if (contact_email !== undefined) updates.contact_email = contact_email?.trim() || null;
+    if (contact_phone !== undefined) updates.contact_phone = contact_phone?.trim() || null;
+    if (website_url !== undefined) updates.website_url = website_url?.trim() || null;
+    if (state !== undefined) updates.state = state?.trim()?.toUpperCase() || null;
+    if (cities !== undefined) updates.cities = Array.isArray(cities) ? cities : null;
+    if (is_active !== undefined) updates.is_active = is_active === true;
+    if (is_lead_enabled !== undefined) updates.is_lead_enabled = is_lead_enabled === true;
+    if (notes !== undefined) updates.notes = notes?.trim() || null;
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
+    const { data, error } = await supabase.from("partner_organizations").update(updates).eq("id", id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.delete("/api/admin/partners/:id", requireAdmin, async (req, res) => {
+    if (!hasPartnerTable) return res.status(503).json({ error: "Partner table not available" });
+    const { id } = req.params;
+    const { error } = await supabase.from("partner_organizations").update({ is_active: false }).eq("id", id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ success: true });
+  });
+
+  app.get("/api/admin/partners/:id/rules", requireAdmin, async (req, res) => {
+    if (!hasRoutingRulesTable) return res.json([]);
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("partner_routing_rules")
+      .select("*")
+      .eq("partner_id", id)
+      .order("priority", { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.post("/api/admin/partners/:id/rules", requireAdmin, async (req, res) => {
+    if (!hasRoutingRulesTable) return res.status(503).json({ error: "Routing rules table not available" });
+    const partnerId = req.params.id;
+    const { category_slug, subcategory, urgency, state, city, priority, max_leads_per_day } = req.body;
+    const validUrgency = ["immediate", "same_week", "standard", "information"];
+    const row: Record<string, any> = {
+      partner_id: partnerId,
+      category_slug: category_slug?.trim() || null,
+      subcategory: subcategory?.trim() || null,
+      urgency: urgency && validUrgency.includes(urgency) ? urgency : null,
+      state: state?.trim()?.toUpperCase() || null,
+      city: city?.trim() || null,
+      priority: typeof priority === "number" ? priority : 100,
+      max_leads_per_day: typeof max_leads_per_day === "number" ? max_leads_per_day : null,
+    };
+    const { data, error } = await supabase.from("partner_routing_rules").insert(row).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(201).json(data);
+  });
+
+  app.patch("/api/admin/partner-rules/:id", requireAdmin, async (req, res) => {
+    if (!hasRoutingRulesTable) return res.status(503).json({ error: "Routing rules table not available" });
+    const { id } = req.params;
+    const { category_slug, subcategory, urgency, state, city, priority, max_leads_per_day, is_active } = req.body;
+    const validUrgency = ["immediate", "same_week", "standard", "information"];
+    const updates: Record<string, any> = {};
+    if (category_slug !== undefined) updates.category_slug = category_slug?.trim() || null;
+    if (subcategory !== undefined) updates.subcategory = subcategory?.trim() || null;
+    if (urgency !== undefined) updates.urgency = urgency && validUrgency.includes(urgency) ? urgency : null;
+    if (state !== undefined) updates.state = state?.trim()?.toUpperCase() || null;
+    if (city !== undefined) updates.city = city?.trim() || null;
+    if (priority !== undefined) updates.priority = typeof priority === "number" ? priority : 100;
+    if (max_leads_per_day !== undefined) updates.max_leads_per_day = typeof max_leads_per_day === "number" ? max_leads_per_day : null;
+    if (is_active !== undefined) updates.is_active = is_active === true;
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
+    const { data, error } = await supabase.from("partner_routing_rules").update(updates).eq("id", id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.delete("/api/admin/partner-rules/:id", requireAdmin, async (req, res) => {
+    if (!hasRoutingRulesTable) return res.status(503).json({ error: "Routing rules table not available" });
+    const { id } = req.params;
+    const { error } = await supabase.from("partner_routing_rules").update({ is_active: false }).eq("id", id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ success: true });
+  });
+
+  app.post("/api/admin/leads/:id/reroute", requireAdmin, async (req, res) => {
+    if (!hasPartnerTable || !hasRoutingColumns) {
+      return res.status(503).json({ error: "Routing not available" });
+    }
+    const { id } = req.params;
+    const { partner_id } = req.body;
+
+    if (partner_id) {
+      const { data: partner } = await supabase.from("partner_organizations").select("id, name").eq("id", partner_id).single();
+      if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+      const { data: lead } = await supabase.from("navigator_requests").select("routing_history").eq("id", id).single();
+      const history = Array.isArray(lead?.routing_history) ? lead.routing_history : [];
+      history.push({
+        partner_id: partner.id,
+        partner_name: partner.name,
+        routed_at: new Date().toISOString(),
+        delivery_status: "pending",
+        manual: true,
+      });
+
+      const { error } = await supabase
+        .from("navigator_requests")
+        .update({
+          routed_to_partner_id: partner.id,
+          routed_at: new Date().toISOString(),
+          delivery_status: "pending",
+          routing_history: history,
+        })
+        .eq("id", id);
+
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ success: true, partner_name: partner.name });
+    }
+
+    const { routeLead } = await import("./lead-router");
+    const result = await routeLead(id);
+    if (!result.routed) {
+      return res.json({ success: true, rerouted: false, message: "No matching partner found" });
+    }
+    return res.json({ success: true, rerouted: true, partner_name: result.partnerName });
   });
 
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {

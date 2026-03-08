@@ -52,6 +52,11 @@ import {
   SkipForward,
   MapPinned,
   Loader2,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  ArrowRightLeft,
+  Trash2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -127,7 +132,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 export default function AdminResources() {
   const [adminKey, setAdminKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<"resources" | "leads">("resources");
+  const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners">("resources");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
@@ -149,6 +154,9 @@ export default function AdminResources() {
     geocoded: number; failed: number; total: number; skippedNoAddress: number;
     failures: { id: string; title: string; reason: string }[];
   } | null>(null);
+  const [partnerForm, setPartnerForm] = useState<Record<string, any> | null>(null);
+  const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
+  const [ruleForm, setRuleForm] = useState<Record<string, any> | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -202,6 +210,72 @@ export default function AdminResources() {
     onSuccess: () => {
       queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
       toast({ description: "Lead updated" });
+    },
+  });
+
+  const rerouteMutation = useMutation({
+    mutationFn: async ({ id, partner_id }: { id: string; partner_id?: string }) => {
+      const res = await fetch(`/api/admin/leads/${id}/reroute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify(partner_id ? { partner_id } : {}),
+      });
+      if (!res.ok) throw new Error("Failed to reroute");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
+      if (data.rerouted === false) {
+        toast({ description: "No matching partner found", variant: "destructive" });
+      } else {
+        toast({ description: `Rerouted to ${data.partner_name || "partner"}` });
+      }
+    },
+  });
+
+  const { data: partners = [], isLoading: partnersLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/partners", adminKey],
+    queryFn: () => fetch("/api/admin/partners", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    enabled: authenticated && activeTab === "partners",
+  });
+
+  const partnerMutation = useMutation({
+    mutationFn: async ({ method, url, body }: { method: string; url: string; body?: any }) => {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/partner") });
+      toast({ description: "Partner updated" });
+      setPartnerForm(null);
+    },
+  });
+
+  const { data: partnerRules = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/partners", expandedPartner, "rules", adminKey],
+    queryFn: () => fetch(`/api/admin/partners/${expandedPartner}/rules`, { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    enabled: authenticated && !!expandedPartner,
+  });
+
+  const ruleMutation = useMutation({
+    mutationFn: async ({ method, url, body }: { method: string; url: string; body?: any }) => {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/partner") });
+      toast({ description: "Routing rule updated" });
+      setRuleForm(null);
     },
   });
 
@@ -687,6 +761,15 @@ export default function AdminResources() {
           >
             <Users className="h-3.5 w-3.5 mr-1.5" /> Navigator Leads
           </Button>
+          <Button
+            data-testid="tab-partners"
+            variant={activeTab === "partners" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setActiveTab("partners")}
+          >
+            <Building2 className="h-3.5 w-3.5 mr-1.5" /> Partners
+          </Button>
         </div>
 
         {activeTab === "leads" && (
@@ -819,6 +902,33 @@ export default function AdminResources() {
                       </div>
                     )}
 
+                    {req.routed_to_partner_id && (
+                      <div className="text-[10px] bg-blue-50 text-blue-800 rounded p-2 border border-blue-200 space-y-0.5">
+                        <p className="flex items-center gap-1">
+                          <ArrowRightLeft className="h-3 w-3" />
+                          Routed to partner
+                          {req.delivery_status && (
+                            <Badge variant="outline" className={`text-[9px] ml-1 ${
+                              req.delivery_status === "pending" ? "bg-amber-100 text-amber-800" :
+                              req.delivery_status === "escalated" ? "bg-red-100 text-red-700" :
+                              req.delivery_status === "fallback_manual" ? "bg-slate-100 text-slate-700" :
+                              ""
+                            }`}>
+                              {req.delivery_status === "fallback_manual" ? "Manual Fallback" : req.delivery_status}
+                            </Badge>
+                          )}
+                        </p>
+                        {req.routed_at && <p className="text-muted-foreground">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
+                      </div>
+                    )}
+
+                    {req.delivery_status === "fallback_manual" && !req.routed_to_partner_id && (
+                      <div className="text-[10px] bg-amber-50 text-amber-800 rounded p-2 border border-amber-200">
+                        <AlertTriangle className="h-3 w-3 inline mr-1" />
+                        No partner matched — manual handling required
+                      </div>
+                    )}
+
                     {req.status === "resolved" && outcomeInfo && (
                       <div data-testid={`outcome-summary-${req.id}`} className={`text-xs font-medium rounded px-3 py-1.5 ${outcomeInfo.className}`}>
                         Result: {outcomeInfo.label}
@@ -934,6 +1044,19 @@ export default function AdminResources() {
                           Cancel
                         </Button>
                       )}
+                      {(req.status === "new" || req.status === "in_progress") && (
+                        <Button
+                          data-testid={`lead-reroute-${req.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs text-blue-700 border-blue-300"
+                          onClick={() => rerouteMutation.mutate({ id: req.id })}
+                          disabled={rerouteMutation.isPending}
+                        >
+                          <ArrowRightLeft className="h-3 w-3 mr-1" />
+                          {req.routed_to_partner_id ? "Re-route" : "Route"}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -944,6 +1067,265 @@ export default function AdminResources() {
               )}
             </div>
           </>
+        )}
+
+        {activeTab === "partners" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-sm font-semibold">Partner Organizations</h2>
+              <Button
+                data-testid="button-add-partner"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => setPartnerForm({ name: "", contact_name: "", contact_email: "", contact_phone: "", website_url: "", state: "SC", cities: "", is_lead_enabled: false, notes: "" })}
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add Partner
+              </Button>
+            </div>
+
+            {partnerForm && (
+              <Card className="border-primary/30">
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="text-sm font-semibold">{partnerForm.id ? "Edit Partner" : "New Partner"}</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label className="text-xs">Organization Name *</Label>
+                      <Input data-testid="input-partner-name" className="h-8 text-xs" value={partnerForm.name || ""} onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Contact Name</Label>
+                      <Input className="h-8 text-xs" value={partnerForm.contact_name || ""} onChange={(e) => setPartnerForm({ ...partnerForm, contact_name: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Contact Email</Label>
+                      <Input className="h-8 text-xs" value={partnerForm.contact_email || ""} onChange={(e) => setPartnerForm({ ...partnerForm, contact_email: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Contact Phone</Label>
+                      <Input className="h-8 text-xs" value={partnerForm.contact_phone || ""} onChange={(e) => setPartnerForm({ ...partnerForm, contact_phone: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Website</Label>
+                      <Input className="h-8 text-xs" value={partnerForm.website_url || ""} onChange={(e) => setPartnerForm({ ...partnerForm, website_url: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">State</Label>
+                      <Input className="h-8 text-xs" placeholder="SC" value={partnerForm.state || ""} onChange={(e) => setPartnerForm({ ...partnerForm, state: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Cities (comma-separated, blank = statewide)</Label>
+                      <Input className="h-8 text-xs" placeholder="Charleston, Columbia, Greenville" value={partnerForm.cities || ""} onChange={(e) => setPartnerForm({ ...partnerForm, cities: e.target.value })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Notes</Label>
+                      <Textarea className="text-xs min-h-[60px]" value={partnerForm.notes || ""} onChange={(e) => setPartnerForm({ ...partnerForm, notes: e.target.value })} />
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2">
+                      <Switch checked={partnerForm.is_lead_enabled || false} onCheckedChange={(v) => setPartnerForm({ ...partnerForm, is_lead_enabled: v })} />
+                      <Label className="text-xs">Lead-Enabled (receives auto-routed leads)</Label>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      data-testid="button-save-partner"
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={partnerMutation.isPending}
+                      onClick={() => {
+                        const citiesArr = partnerForm.cities ? partnerForm.cities.split(",").map((c: string) => c.trim()).filter(Boolean) : null;
+                        const body = { ...partnerForm, cities: citiesArr };
+                        delete body.id;
+                        if (partnerForm.id) {
+                          partnerMutation.mutate({ method: "PATCH", url: `/api/admin/partners/${partnerForm.id}`, body });
+                        } else {
+                          partnerMutation.mutate({ method: "POST", url: "/api/admin/partners", body });
+                        }
+                      }}
+                    >
+                      {partnerForm.id ? "Update" : "Create"} Partner
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPartnerForm(null)}>Cancel</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {partnersLoading && <p className="text-center text-muted-foreground py-8">Loading partners...</p>}
+
+            {Array.isArray(partners) && partners.map((p: any) => (
+              <Card key={p.id} data-testid={`partner-card-${p.id}`} className={`border ${!p.is_active ? "opacity-50" : ""}`}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm flex items-center gap-2">
+                        {p.name}
+                        {p.is_lead_enabled && <Badge className="text-[9px] bg-green-100 text-green-800">Lead-Enabled</Badge>}
+                        {!p.is_active && <Badge variant="outline" className="text-[9px] text-red-600">Inactive</Badge>}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {p.state || "Any state"} {p.cities ? `• ${p.cities.join(", ")}` : "• Statewide"}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setPartnerForm({
+                            ...p,
+                            cities: Array.isArray(p.cities) ? p.cities.join(", ") : "",
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => setExpandedPartner(expandedPartner === p.id ? null : p.id)}
+                      >
+                        {expandedPartner === p.id ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                        Rules
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {p.contact_name && <span>{p.contact_name}</span>}
+                    {p.contact_email && <a href={`mailto:${p.contact_email}`} className="text-primary hover:underline">{p.contact_email}</a>}
+                    {p.contact_phone && <a href={`tel:${p.contact_phone}`} className="text-primary hover:underline">{p.contact_phone}</a>}
+                  </div>
+
+                  {expandedPartner === p.id && (
+                    <div className="mt-3 pt-3 border-t space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-xs font-semibold">Routing Rules</h4>
+                        <Button
+                          data-testid={`button-add-rule-${p.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[10px]"
+                          onClick={() => setRuleForm({ partner_id: p.id, category_slug: "", subcategory: "", urgency: "", state: "SC", city: "", priority: 100, max_leads_per_day: "" })}
+                        >
+                          <Plus className="h-2.5 w-2.5 mr-1" /> Add Rule
+                        </Button>
+                      </div>
+
+                      {ruleForm && ruleForm.partner_id === p.id && (
+                        <Card className="border-dashed">
+                          <CardContent className="p-3 space-y-2">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-[10px]">Category</Label>
+                                <Select value={ruleForm.category_slug || "any"} onValueChange={(v) => setRuleForm({ ...ruleForm, category_slug: v === "any" ? "" : v })}>
+                                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="any">Any Category</SelectItem>
+                                    {categories.map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">Subcategory</Label>
+                                <Input className="h-7 text-[10px]" placeholder="Any" value={ruleForm.subcategory || ""} onChange={(e) => setRuleForm({ ...ruleForm, subcategory: e.target.value })} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">Urgency</Label>
+                                <Select value={ruleForm.urgency || "any"} onValueChange={(v) => setRuleForm({ ...ruleForm, urgency: v === "any" ? "" : v })}>
+                                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="any">Any</SelectItem>
+                                    <SelectItem value="immediate">Immediate</SelectItem>
+                                    <SelectItem value="same_week">Same Week</SelectItem>
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="information">Information</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">State</Label>
+                                <Input className="h-7 text-[10px]" placeholder="SC" value={ruleForm.state || ""} onChange={(e) => setRuleForm({ ...ruleForm, state: e.target.value })} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">City</Label>
+                                <Input className="h-7 text-[10px]" placeholder="Any" value={ruleForm.city || ""} onChange={(e) => setRuleForm({ ...ruleForm, city: e.target.value })} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">Priority (lower = higher)</Label>
+                                <Input className="h-7 text-[10px]" type="number" value={ruleForm.priority ?? 100} onChange={(e) => setRuleForm({ ...ruleForm, priority: parseInt(e.target.value) || 100 })} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px]">Max Leads/Day</Label>
+                                <Input className="h-7 text-[10px]" type="number" placeholder="Unlimited" value={ruleForm.max_leads_per_day || ""} onChange={(e) => setRuleForm({ ...ruleForm, max_leads_per_day: e.target.value ? parseInt(e.target.value) : "" })} />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="h-6 text-[10px]"
+                                disabled={ruleMutation.isPending}
+                                onClick={() => {
+                                  const body: Record<string, any> = {
+                                    category_slug: ruleForm.category_slug || null,
+                                    subcategory: ruleForm.subcategory || null,
+                                    urgency: ruleForm.urgency || null,
+                                    state: ruleForm.state || null,
+                                    city: ruleForm.city || null,
+                                    priority: ruleForm.priority || 100,
+                                    max_leads_per_day: ruleForm.max_leads_per_day || null,
+                                  };
+                                  if (ruleForm.id) {
+                                    ruleMutation.mutate({ method: "PATCH", url: `/api/admin/partner-rules/${ruleForm.id}`, body });
+                                  } else {
+                                    ruleMutation.mutate({ method: "POST", url: `/api/admin/partners/${p.id}/rules`, body });
+                                  }
+                                }}
+                              >
+                                {ruleForm.id ? "Update" : "Create"} Rule
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setRuleForm(null)}>Cancel</Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {partnerRules.length === 0 && <p className="text-[10px] text-muted-foreground py-2">No routing rules configured yet.</p>}
+
+                      {partnerRules.map((rule: any) => (
+                        <div key={rule.id} className={`flex items-center justify-between text-[10px] px-2 py-1.5 rounded border ${!rule.is_active ? "opacity-50 bg-muted/30" : "bg-muted/10"}`}>
+                          <div className="flex flex-wrap gap-1">
+                            {rule.category_slug ? <Badge variant="secondary" className="text-[9px]">{rule.category_slug}</Badge> : <Badge variant="outline" className="text-[9px]">Any cat.</Badge>}
+                            {rule.subcategory && <Badge variant="secondary" className="text-[9px]">{rule.subcategory}</Badge>}
+                            {rule.urgency && <Badge variant="outline" className="text-[9px]">{rule.urgency}</Badge>}
+                            {rule.state && <Badge variant="outline" className="text-[9px]">{rule.state}</Badge>}
+                            {rule.city && <Badge variant="outline" className="text-[9px]">{rule.city}</Badge>}
+                            <span className="text-muted-foreground">P{rule.priority}</span>
+                            {rule.max_leads_per_day && <span className="text-muted-foreground">max {rule.max_leads_per_day}/day</span>}
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button size="sm" variant="ghost" className="h-5 text-[9px] px-1"
+                              onClick={() => setRuleForm({ ...rule, partner_id: p.id })}>
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-5 text-[9px] px-1 text-red-600"
+                              onClick={() => ruleMutation.mutate({ method: "DELETE", url: `/api/admin/partner-rules/${rule.id}` })}>
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+            {!partnersLoading && Array.isArray(partners) && partners.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">No partners yet. Add your first partner organization to enable lead routing.</p>
+            )}
+          </div>
         )}
 
         {activeTab === "resources" && (<>

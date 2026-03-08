@@ -36,8 +36,17 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `POST /api/navigator-request` - Veteran submits request for navigator help (rate-limited 5/hr/IP, requires name + phone or email)
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
-- `GET /api/admin/navigator-requests?status=<status>` - Admin: list navigator leads filtered by status (new/contacted/completed/cancelled)
-- `PATCH /api/admin/navigator-requests/:id` - Admin: update lead status/notes
+- `GET /api/admin/navigator-requests?status=<status>` - Admin: list navigator leads filtered by status (new/in_progress/resolved/cancelled)
+- `PATCH /api/admin/navigator-requests/:id` - Admin: update lead status/outcome/routing (validates status+outcome pairing)
+- `POST /api/admin/leads/:id/reroute` - Admin: manually re-route a lead (optionally specify partner_id)
+- `GET /api/admin/partners` - Admin: list all partner organizations
+- `POST /api/admin/partners` - Admin: create partner organization
+- `PATCH /api/admin/partners/:id` - Admin: update partner
+- `DELETE /api/admin/partners/:id` - Admin: soft-delete partner (sets is_active=false)
+- `GET /api/admin/partners/:id/rules` - Admin: list routing rules for a partner
+- `POST /api/admin/partners/:id/rules` - Admin: create routing rule
+- `PATCH /api/admin/partner-rules/:id` - Admin: update routing rule
+- `DELETE /api/admin/partner-rules/:id` - Admin: deactivate routing rule
 - `POST /api/admin/resources` - Admin: create a new resource directly (bypasses community submission; defaults to status=approved)
 - `POST /api/admin/resources/csv-import` - Admin: bulk import resources from CSV (max 500 rows; category matched by name or slug; returns created/skipped/error counts)
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
@@ -46,7 +55,9 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `categories` - id (uuid), name, slug
 - `resources` - id (uuid), category_id (fk→categories), title, short_description, website_url, phone, email, address, city, state, zip, eligibility, source_name, source_type, last_verified, monetization_type, affiliate_url, sponsored (bool), status (text: pending/approved/rejected), submitted_by_name, submitted_by_email, notes_internal, is_featured (bool), featured_rank (int), last_verified_at, latitude (float8), longitude (float8), geo_source (text), geocoded_at (timestamptz), created_at
 - `resource_clicks` - id (uuid), resource_id (fk→resources), click_type (text), user_state, user_city, user_zip (text), created_at (SQL in `supabase/create_resource_clicks.sql`)
-- `navigator_requests` - id (uuid), resource_id, resource_title, veteran_name, veteran_phone, veteran_email, message, preferred_contact, user_state, user_city, user_zip, status (new/contacted/completed/cancelled), admin_notes, created_at (SQL in `supabase/create_navigator_requests.sql`)
+- `navigator_requests` - id (uuid), resource_id, resource_title, veteran_name, veteran_phone, veteran_email, message, preferred_contact, user_state, user_city, user_zip, status (new/in_progress/resolved/cancelled), admin_notes, created_at, urgency, source, utm_source/medium/campaign, assigned_to, contacted_at, resolved_at, outcome, consent_followup, routed_to_partner_id (fk→partner_organizations), routed_at, delivery_status, partner_outcome, closed_at, escalation_count, routing_history (jsonb) (SQL in `supabase/create_navigator_requests.sql`)
+- `partner_organizations` - id (uuid), name, contact_name, contact_email, contact_phone, website_url, state, cities (text[]), is_active, is_lead_enabled, notes, created_at (SQL in `supabase/create_partner_organizations.sql`)
+- `partner_routing_rules` - id (uuid), partner_id (fk→partner_organizations), category_slug, subcategory, urgency, state, city, priority (int), max_leads_per_day (int), is_active, created_at (SQL in `supabase/create_partner_organizations.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -253,3 +264,22 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Geocode module**: `server/geocode.ts` — Nominatim (OpenStreetMap), 1 req/sec rate limit, US-only
 - **Auto-geocode on edit**: Admin PATCH auto-geocodes when address/city/state/zip changes (if `hasGeoColumns`)
 - **Bulk geocode**: `POST /api/admin/resources/geocode-missing` — SSE endpoint; processes resources with null lat/lng but valid address info; streams progress events; UI button "Geocode Missing" in admin-resources page with progress bar, summary badges, and expandable failure log
+
+## Lead Routing & Escalation System
+- **Key files**: `server/lead-router.ts` (routing engine), `server/lead-escalation.ts` (escalation timer), `supabase/create_partner_organizations.sql` (SQL for both tables + routing columns)
+- **Partner table detection**: `checkPartnerTable()` at startup; `hasPartnerTable` and `hasRoutingRulesTable` flags
+- **Routing column detection**: `hasRoutingColumns` flag checks navigator_requests for routing fields
+- **Auto-routing**: On POST /api/navigator-request, if partner+routing tables exist, `autoRouteNewLead()` fires async
+- **Routing engine** (`server/lead-router.ts`):
+  - `findBestPartner(lead, excludePartnerIds)`: Matches rules by category_slug, subcategory, urgency, state, city; filters by is_active + is_lead_enabled; respects max_leads_per_day; sorts by priority (lower=better) then specificity (more specific wins)
+  - `routeLead(leadId)`: Sets routed_to_partner_id, routed_at, delivery_status='pending'; appends to routing_history jsonb
+  - `autoRouteNewLead(leadId)`: Called after new lead creation; unmatched leads stay in manual queue
+- **Escalation engine** (`server/lead-escalation.ts`):
+  - Runs every 5 minutes via `startEscalationTimer()` (started at boot when partner+routing tables exist)
+  - Escalation windows: immediate=15min, same_week=48hr, standard=7d, information=14d
+  - `checkEscalations()`: Finds stale routed leads (pending past window) → re-routes to next partner (excluding previous) or sets delivery_status='fallback_manual'
+  - Also catches unrouted leads past their urgency window → flags as fallback_manual
+  - Increments escalation_count and appends to routing_history on each re-route
+- **Admin UI**: Partners tab in admin panel; create/edit partners with routing rules; lead cards show routing status + delivery badges
+- **Manual re-route**: POST /api/admin/leads/:id/reroute (with optional partner_id for manual assignment)
+- **SQL setup**: Run `supabase/create_partner_organizations.sql` to create both tables + add routing columns to navigator_requests
