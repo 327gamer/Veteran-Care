@@ -1078,7 +1078,20 @@ export async function registerRoutes(
       return res.status(500).json({ error: msg });
     }
 
-    return res.status(201).json({ id: data.id, message: "Your request has been submitted. A navigator will reach out to you soon." });
+    const response: Record<string, any> = {
+      id: data.id,
+      status: data.status,
+      message: "Your request has been submitted. A navigator will reach out to you soon.",
+    };
+    if (hasNavLifecycleColumns) {
+      response.source = data.source ?? null;
+      response.utm_source = data.utm_source ?? null;
+      response.utm_medium = data.utm_medium ?? null;
+      response.utm_campaign = data.utm_campaign ?? null;
+      response.urgency = data.urgency ?? null;
+      response.consent_followup = data.consent_followup ?? false;
+    }
+    return res.status(201).json(response);
   });
 
   app.get("/api/admin/navigator-requests", requireAdmin, async (req, res) => {
