@@ -228,11 +228,16 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Crisis banner shown for immediate urgency: 988 Lifeline + Veterans Crisis Line (1-800-273-8255 Press 1)
   - Resources page: urgency banner dismissable, near-me mode preserves distance sort within urgency-sorted buckets
   - NavigatorModal: urgency selection cards always visible, source prop conditional (guided_help | resource_page | null)
-- **Step 22 SC Optimization**:
-  - Navigator lifecycle columns added (graceful detection via `hasNavLifecycleColumns`): source, utm_source, utm_medium, utm_campaign, urgency, assigned_to, contacted_at, resolved_at, outcome, consent_followup
-  - SQL must be run in Supabase SQL editor (printed at startup if columns missing)
+- **Step 22 Lead Lifecycle (Two-Layer Model)**:
+  - **Workflow statuses** (Layer 1): `new`, `in_progress`, `resolved`, `cancelled`
+  - **Outcomes** (Layer 2): `connected`, `referred`, `completed`, `no_response`, `not_eligible`, `declined`, `unable_to_contact`
+  - Navigator lifecycle columns (graceful detection via `hasNavLifecycleColumns`): source, utm_source, utm_medium, utm_campaign, urgency, assigned_to, contacted_at, resolved_at, outcome, consent_followup
+  - Future routing columns (graceful detection via `hasRoutingColumns`): routed_to_partner_id, routed_at, delivery_status, partner_outcome, closed_at
+  - SQL for routing columns in `supabase/add_routing_columns.sql` — requires `partner_organizations` table first
   - POST /api/navigator-request accepts: source, utm_source, utm_medium, utm_campaign, urgency, consent_followup
-  - PATCH /api/admin/navigator-requests/:id accepts: assigned_to, outcome, contacted_at, resolved_at
+  - PATCH /api/admin/navigator-requests/:id accepts: status, admin_notes, assigned_to, outcome, contacted_at, resolved_at, closed_at, routed_to_partner_id, routed_at, delivery_status, partner_outcome
+  - Admin UI workflow: New → Start Working (in_progress) → Record Contact (sets contacted_at) → Resolve with outcome → outcome badge shown on resolved cards
+  - Immediate urgency leads sort to top with red highlighting; all leads show urgency + status + source badges
   - Data cleanup completed: 16 test/duplicate rows deleted, subcategory backfilled to 100%
 - **Step 22 FINAL SC total**: 315 total resources across 13 categories
   - VA Benefits (39), Housing Assistance (35), Employment (33), Legal Help (32), Community Support (29), Mental Health (24), Education (28), Financial Help (23), Substance Recovery (19), Family Support (16), Transportation (14), Food Assistance (14), Healthcare (9)

@@ -39,6 +39,8 @@ async function checkServicePriorityColumn() {
   }
 }
 
+let hasRoutingColumns = false;
+
 async function checkNavLifecycleColumns() {
   const { error } = await supabase.from("navigator_requests").select("source, urgency, outcome").limit(1);
   if (error && error.message.includes("does not exist")) {
@@ -57,6 +59,20 @@ async function checkNavLifecycleColumns() {
   } else {
     hasNavLifecycleColumns = true;
     console.log("[schema] Navigator lifecycle columns detected");
+  }
+
+  const { error: routeErr } = await supabase.from("navigator_requests").select("routed_to_partner_id, routed_at, delivery_status, partner_outcome, closed_at").limit(1);
+  if (routeErr && routeErr.message.includes("does not exist")) {
+    hasRoutingColumns = false;
+    console.log("[schema] Routing columns not found. Run in Supabase SQL editor:");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS routed_to_partner_id UUID REFERENCES partner_organizations(id);");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS routed_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS delivery_status TEXT DEFAULT 'pending';");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS partner_outcome TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;");
+  } else {
+    hasRoutingColumns = true;
+    console.log("[schema] Routing columns detected");
   }
 }
 
@@ -1117,20 +1133,45 @@ export async function registerRoutes(
 
   app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { status, admin_notes, assigned_to, outcome, contacted_at, resolved_at } = req.body;
+    const { status, admin_notes, assigned_to, outcome, contacted_at, resolved_at, closed_at,
+            routed_to_partner_id, routed_at, delivery_status, partner_outcome } = req.body;
+
+    const validStatuses = ["new", "in_progress", "resolved", "cancelled"];
+    const validOutcomes = ["connected", "referred", "completed", "no_response", "not_eligible", "declined", "unable_to_contact"];
 
     const updates: Record<string, any> = {};
-    if (status) updates.status = status;
+    if (status && validStatuses.includes(status)) updates.status = status;
     if (admin_notes !== undefined) updates.admin_notes = admin_notes;
+
+    if (status === "resolved" && !outcome) {
+      return res.status(400).json({ error: "Resolving a lead requires an outcome" });
+    }
+    if (outcome && status && status !== "resolved") {
+      return res.status(400).json({ error: "Outcome can only be set when status is resolved" });
+    }
 
     if (hasNavLifecycleColumns) {
       if (assigned_to !== undefined) updates.assigned_to = assigned_to?.trim() || null;
       if (outcome !== undefined) {
-        const validOutcomes = ["connected", "referred", "no_response", "not_eligible", "resolved"];
-        if (validOutcomes.includes(outcome)) updates.outcome = outcome;
+        if (validOutcomes.includes(outcome)) {
+          updates.outcome = outcome;
+        } else {
+          return res.status(400).json({ error: `Invalid outcome. Valid values: ${validOutcomes.join(", ")}` });
+        }
       }
       if (contacted_at !== undefined) updates.contacted_at = contacted_at || null;
       if (resolved_at !== undefined) updates.resolved_at = resolved_at || null;
+      if (status === "resolved" && !resolved_at) {
+        updates.resolved_at = new Date().toISOString();
+      }
+    }
+
+    if (hasRoutingColumns) {
+      if (routed_to_partner_id !== undefined) updates.routed_to_partner_id = routed_to_partner_id || null;
+      if (routed_at !== undefined) updates.routed_at = routed_at || null;
+      if (delivery_status !== undefined) updates.delivery_status = delivery_status || null;
+      if (partner_outcome !== undefined) updates.partner_outcome = partner_outcome || null;
+      if (closed_at !== undefined) updates.closed_at = closed_at || null;
     }
 
     if (Object.keys(updates).length === 0) {

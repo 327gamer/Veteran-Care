@@ -78,9 +78,14 @@ interface NavigatorRequest {
   outcome: string | null;
   contacted_at: string | null;
   resolved_at: string | null;
+  closed_at: string | null;
   consent_followup: boolean | null;
   category: string | null;
   subcategory: string | null;
+  routed_to_partner_id: string | null;
+  routed_at: string | null;
+  delivery_status: string | null;
+  partner_outcome: string | null;
 }
 
 interface AdminResource {
@@ -687,7 +692,7 @@ export default function AdminResources() {
         {activeTab === "leads" && (
           <>
             <div className="flex gap-2 flex-wrap">
-              {(["new", "in_progress", "contacted", "resolved", "completed", "cancelled"] as const).map((s) => (
+              {(["new", "in_progress", "resolved", "cancelled"] as const).map((s) => (
                 <Button
                   key={s}
                   data-testid={`lead-filter-${s}`}
@@ -718,7 +723,24 @@ export default function AdminResources() {
                   standard: { label: "Standard", className: "bg-blue-100 text-blue-800 border-blue-300" },
                   information: { label: "Info Only", className: "bg-slate-100 text-slate-700 border-slate-300" },
                 };
+                const outcomeConfig: Record<string, { label: string; className: string }> = {
+                  connected: { label: "Connected", className: "bg-green-100 text-green-800" },
+                  referred: { label: "Referred", className: "bg-blue-100 text-blue-800" },
+                  completed: { label: "Completed", className: "bg-green-100 text-green-800" },
+                  no_response: { label: "No Response", className: "bg-amber-100 text-amber-800" },
+                  not_eligible: { label: "Not Eligible", className: "bg-slate-100 text-slate-700" },
+                  declined: { label: "Declined", className: "bg-slate-100 text-slate-700" },
+                  unable_to_contact: { label: "Unable to Contact", className: "bg-red-100 text-red-700" },
+                };
+                const statusConfig: Record<string, { label: string; className: string }> = {
+                  new: { label: "New", className: "bg-blue-100 text-blue-800" },
+                  in_progress: { label: "In Progress", className: "bg-amber-100 text-amber-800" },
+                  resolved: { label: "Resolved", className: "bg-green-100 text-green-800" },
+                  cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-600" },
+                };
                 const urg = req.urgency ? urgencyConfig[req.urgency] : null;
+                const outcomeInfo = req.outcome ? outcomeConfig[req.outcome] : null;
+                const statusInfo = statusConfig[req.status] || { label: req.status, className: "" };
                 const isImmediate = req.urgency === "immediate";
 
                 return (
@@ -738,8 +760,8 @@ export default function AdminResources() {
                             {urg.label}
                           </Badge>
                         )}
-                        <Badge data-testid={`badge-lead-status-${req.id}`} variant="outline" className="text-[10px] capitalize">
-                          {req.status.replace("_", " ")}
+                        <Badge data-testid={`badge-lead-status-${req.id}`} variant="outline" className={`text-[10px] ${statusInfo.className}`}>
+                          {statusInfo.label}
                         </Badge>
                       </div>
                     </div>
@@ -777,7 +799,7 @@ export default function AdminResources() {
                         <MessageSquare className="h-3 w-3" /> Prefers: {req.preferred_contact}
                       </span>
                       {req.consent_followup && (
-                        <span className="text-green-700 text-[10px] font-medium">✓ Follow-up OK</span>
+                        <span className="text-green-700 text-[10px] font-medium">Follow-up OK</span>
                       )}
                     </div>
 
@@ -785,60 +807,58 @@ export default function AdminResources() {
                       <p data-testid={`text-lead-message-${req.id}`} className="text-xs text-muted-foreground bg-muted/30 rounded p-2 italic">"{req.message}"</p>
                     )}
 
-                    {(req.assigned_to || req.outcome || req.contacted_at || req.resolved_at) && (
+                    {(req.assigned_to || req.outcome || req.contacted_at || req.resolved_at || req.closed_at) && (
                       <div className="text-[10px] text-muted-foreground bg-muted/20 rounded p-2 space-y-0.5 border border-muted">
                         {req.assigned_to && <p>Assigned to: <strong>{req.assigned_to}</strong></p>}
-                        {req.outcome && <p>Outcome: <strong className="capitalize">{req.outcome.replace("_", " ")}</strong></p>}
+                        {outcomeInfo && (
+                          <p>Outcome: <Badge variant="outline" className={`text-[9px] ml-1 ${outcomeInfo.className}`}>{outcomeInfo.label}</Badge></p>
+                        )}
                         {req.contacted_at && <p>Contacted: {new Date(req.contacted_at).toLocaleString()}</p>}
                         {req.resolved_at && <p>Resolved: {new Date(req.resolved_at).toLocaleString()}</p>}
+                        {req.closed_at && <p>Closed: {new Date(req.closed_at).toLocaleString()}</p>}
+                      </div>
+                    )}
+
+                    {req.status === "resolved" && outcomeInfo && (
+                      <div data-testid={`outcome-summary-${req.id}`} className={`text-xs font-medium rounded px-3 py-1.5 ${outcomeInfo.className}`}>
+                        Result: {outcomeInfo.label}
                       </div>
                     )}
 
                     <div className="flex gap-2 pt-1 flex-wrap">
                       {req.status === "new" && (
-                        <>
-                          <Button
-                            data-testid={`lead-in-progress-${req.id}`}
-                            size="sm"
-                            className="h-7 text-xs flex-1"
-                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "in_progress" } })}
-                            disabled={navPatchMutation.isPending}
-                          >
-                            Start Working
-                          </Button>
-                          <Button
-                            data-testid={`lead-contacted-${req.id}`}
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted", contacted_at: new Date().toISOString() } })}
-                            disabled={navPatchMutation.isPending}
-                          >
-                            Mark Contacted
-                          </Button>
-                        </>
-                      )}
-                      {req.status === "in_progress" && (
                         <Button
-                          data-testid={`lead-mark-contacted-${req.id}`}
+                          data-testid={`lead-in-progress-${req.id}`}
                           size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted", contacted_at: new Date().toISOString() } })}
+                          className="h-7 text-xs flex-1"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "in_progress" } })}
                           disabled={navPatchMutation.isPending}
                         >
-                          Mark Contacted
+                          Start Working
                         </Button>
                       )}
-                      {(req.status === "in_progress" || req.status === "contacted") && (
+                      {req.status === "in_progress" && !req.contacted_at && (
+                        <Button
+                          data-testid={`lead-record-contact-${req.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { contacted_at: new Date().toISOString() } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Record Contact
+                        </Button>
+                      )}
+                      {req.status === "in_progress" && (
                         <>
                           <Button
                             data-testid={`lead-resolve-connected-${req.id}`}
                             size="sm"
-                            className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700"
+                            className="h-7 text-xs bg-green-600 hover:bg-green-700"
                             onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "connected", resolved_at: new Date().toISOString() } })}
                             disabled={navPatchMutation.isPending}
                           >
-                            Resolved — Connected
+                            Connected
                           </Button>
                           <Button
                             data-testid={`lead-resolve-referred-${req.id}`}
@@ -851,6 +871,16 @@ export default function AdminResources() {
                             Referred
                           </Button>
                           <Button
+                            data-testid={`lead-resolve-completed-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "completed", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Completed
+                          </Button>
+                          <Button
                             data-testid={`lead-resolve-no-response-${req.id}`}
                             size="sm"
                             variant="outline"
@@ -860,9 +890,39 @@ export default function AdminResources() {
                           >
                             No Response
                           </Button>
+                          <Button
+                            data-testid={`lead-resolve-unable-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-amber-700"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "unable_to_contact", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Unable to Contact
+                          </Button>
+                          <Button
+                            data-testid={`lead-resolve-not-eligible-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-muted-foreground"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "not_eligible", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Not Eligible
+                          </Button>
+                          <Button
+                            data-testid={`lead-resolve-declined-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-muted-foreground"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "declined", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Declined
+                          </Button>
                         </>
                       )}
-                      {(req.status === "new" || req.status === "in_progress" || req.status === "contacted") && (
+                      {(req.status === "new" || req.status === "in_progress") && (
                         <Button
                           data-testid={`lead-cancel-${req.id}`}
                           size="sm"
