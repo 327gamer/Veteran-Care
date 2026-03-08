@@ -17,7 +17,10 @@ import {
   X,
   Info,
   Search,
-  FilterX
+  FilterX,
+  AlertTriangle,
+  Phone as PhoneIcon,
+  Zap,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -109,6 +112,7 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
     is_national: r.is_national || false,
     latitude: r.latitude,
     longitude: r.longitude,
+    service_priority: r.service_priority || undefined,
   };
 }
 
@@ -217,6 +221,7 @@ export default function Resources() {
   const [nearMeRadius, setNearMeRadius] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
@@ -312,9 +317,33 @@ export default function Resources() {
   const displayResources = isFallingBack ? fallbackResources : apiResources;
   const isNearMeActive = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
 
+  const PRIORITY_ORDER: Record<string, number> = {
+    immediate: 0,
+    same_week: 1,
+    standard: 2,
+    information: 3,
+  };
+
   const sortedResources = (() => {
     const items = displayResources.map(toResourceItem);
-    if (!isNearMeActive) return items;
+
+    const prioritySort = (a: ResourceItem, b: ResourceItem) => {
+      if (!urgencyFilter) return 0;
+      const matchTarget = urgencyFilter;
+      const aMatch = a.service_priority === matchTarget ? 0 : 1;
+      const bMatch = b.service_priority === matchTarget ? 0 : 1;
+      if (aMatch !== bMatch) return aMatch - bMatch;
+      const aRank = PRIORITY_ORDER[a.service_priority || "information"] ?? 4;
+      const bRank = PRIORITY_ORDER[b.service_priority || "information"] ?? 4;
+      return aRank - bRank;
+    };
+
+    if (!isNearMeActive) {
+      if (urgencyFilter) {
+        return [...items].sort(prioritySort);
+      }
+      return items;
+    }
 
     const withDistance: ResourceItem[] = [];
     const localCity: ResourceItem[] = [];
@@ -334,6 +363,11 @@ export default function Resources() {
     }
 
     withDistance.sort((a, b) => (a.distance_miles ?? Infinity) - (b.distance_miles ?? Infinity));
+    if (urgencyFilter) {
+      localCity.sort(prioritySort);
+      statewide.sort(prioritySort);
+      national.sort(prioritySort);
+    }
     return [...withDistance, ...localCity, ...statewide, ...national];
   })();
 
@@ -382,6 +416,10 @@ export default function Resources() {
         setSelectedSlug(cat.slug);
         setSelectedName(cat.name);
       }
+    }
+    const urg = params.get("urgency");
+    if (urg && ["immediate", "same_week", "standard", "information"].includes(urg)) {
+      setUrgencyFilter(urg);
     }
   }, [location, categories]);
 
@@ -706,6 +744,47 @@ export default function Resources() {
                     </button>
                   </span>
                 ))}
+              </div>
+            )}
+
+            {urgencyFilter === "immediate" && (
+              <div data-testid="banner-immediate-urgency" className="rounded-lg border border-red-300 bg-red-50 p-3 space-y-1.5 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Crisis Resources
+                  </p>
+                  <button
+                    data-testid="button-dismiss-urgency"
+                    onClick={() => setUrgencyFilter(null)}
+                    className="text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <a href="tel:988" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-3.5 w-3.5" /> 988 Suicide & Crisis Lifeline
+                </a>
+                <a href="tel:18002738255" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-3.5 w-3.5" /> Veterans Crisis Line: 1-800-273-8255 (Press 1)
+                </a>
+                <p className="text-[10px] text-red-600">Urgent resources are shown first below.</p>
+              </div>
+            )}
+
+            {urgencyFilter && urgencyFilter !== "immediate" && (
+              <div data-testid="banner-urgency-active" className="flex items-center justify-between p-2.5 rounded-lg border border-blue-200 bg-blue-50">
+                <span className="text-xs text-blue-800 flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5" />
+                  Sorted by {urgencyFilter === "same_week" ? "this week" : urgencyFilter} priority
+                </span>
+                <button
+                  data-testid="button-dismiss-urgency"
+                  onClick={() => setUrgencyFilter(null)}
+                  className="text-blue-400 hover:text-blue-600 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             )}
 

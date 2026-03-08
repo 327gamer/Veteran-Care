@@ -21,6 +21,12 @@ import {
   HelpCircle,
   Bot,
   Search,
+  AlertTriangle,
+  Clock,
+  CalendarDays,
+  Info,
+  ArrowRight,
+  Compass,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -125,6 +131,9 @@ export default function Home() {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showNavigator, setShowNavigator] = useState(false);
+  const [showGuidedHelp, setShowGuidedHelp] = useState(false);
+  const [guidedCategory, setGuidedCategory] = useState<string | null>(null);
+  const [guidedUrgency, setGuidedUrgency] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
     branch: serviceProfile.branch || "",
     era: serviceProfile.era || "",
@@ -173,6 +182,45 @@ export default function Home() {
 
   const openGuide = () => {
     window.dispatchEvent(new CustomEvent("open-ai-guide"));
+  };
+
+  const GUIDED_CATEGORIES = [
+    { slug: "va-benefits", label: "VA Benefits & Claims" },
+    { slug: "housing", label: "Housing" },
+    { slug: "employment", label: "Employment" },
+    { slug: "mental-health", label: "Mental Health" },
+    { slug: "education", label: "Education" },
+    { slug: "legal", label: "Legal Help" },
+    { slug: "financial", label: "Financial Help" },
+    { slug: "healthcare", label: "Healthcare" },
+    { slug: "family-support", label: "Family Support" },
+    { slug: "substance-recovery", label: "Substance Recovery" },
+    { slug: "food-assistance", label: "Food Assistance" },
+    { slug: "community-support", label: "Community Support" },
+    { slug: "transportation", label: "Transportation" },
+  ];
+
+  const URGENCY_OPTIONS = [
+    { value: "immediate", label: "I need help now", desc: "Crisis or emergency", icon: AlertTriangle, color: "border-red-300 bg-red-50 text-red-800 hover:border-red-400", selected: "border-red-500 bg-red-100 ring-2 ring-red-200" },
+    { value: "same_week", label: "This week", desc: "Urgent, not emergency", icon: Clock, color: "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400", selected: "border-amber-500 bg-amber-100 ring-2 ring-amber-200" },
+    { value: "standard", label: "When available", desc: "Can wait for the right help", icon: CalendarDays, color: "border-blue-300 bg-blue-50 text-blue-800 hover:border-blue-400", selected: "border-blue-500 bg-blue-100 ring-2 ring-blue-200" },
+    { value: "information", label: "Just exploring", desc: "Looking for information", icon: Info, color: "border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-400", selected: "border-slate-500 bg-slate-100 ring-2 ring-slate-200" },
+  ];
+
+  const handleGuidedContinue = () => {
+    if (!guidedCategory) return;
+    const params = new URLSearchParams();
+    params.set("category", guidedCategory);
+    if (guidedUrgency) params.set("urgency", guidedUrgency);
+    setShowGuidedHelp(false);
+    setGuidedCategory(null);
+    setGuidedUrgency(null);
+    setLocation(`/resources?${params.toString()}`);
+  };
+
+  const handleGuidedRequestNavigator = () => {
+    setShowGuidedHelp(false);
+    setShowNavigator(true);
   };
 
   return (
@@ -281,13 +329,13 @@ export default function Home() {
                 Browse Resources
               </Button>
               <Button
-                data-testid="button-navigator-home"
+                data-testid="button-guided-help-home"
                 variant="secondary"
                 className="w-full text-primary font-semibold shadow-md h-10 text-sm"
-                onClick={() => setShowNavigator(true)}
+                onClick={() => setShowGuidedHelp(true)}
               >
-                <Phone className="mr-1.5 h-4 w-4" />
-                Request Support
+                <Compass className="mr-1.5 h-4 w-4" />
+                Get Help
               </Button>
               <Button
                 data-testid="button-learn-app-home"
@@ -333,7 +381,111 @@ export default function Home() {
         </section>
       )}
 
-      <NavigatorModal open={showNavigator} onOpenChange={setShowNavigator} />
+      <NavigatorModal open={showNavigator} onOpenChange={setShowNavigator} initialUrgency={guidedUrgency || undefined} source={guidedUrgency ? "guided_help" : undefined} />
+
+      <Dialog open={showGuidedHelp} onOpenChange={(v) => { if (!v) { setGuidedCategory(null); setGuidedUrgency(null); } setShowGuidedHelp(v); }}>
+        <DialogContent className="sm:max-w-[440px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Compass className="h-5 w-5 text-primary" />
+              How can we help?
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Tell us what you need and we'll point you in the right direction.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">What do you need help with?</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {GUIDED_CATEGORIES.map((cat) => {
+                  const config = getCategoryConfig(cat.slug);
+                  const CatIcon = config.icon;
+                  const isSelected = guidedCategory === cat.slug;
+                  return (
+                    <button
+                      key={cat.slug}
+                      data-testid={`button-guided-category-${cat.slug}`}
+                      type="button"
+                      onClick={() => setGuidedCategory(cat.slug)}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
+                          : "border-border hover:border-primary/40 hover:bg-primary/5"
+                      }`}
+                    >
+                      <CatIcon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="leading-tight">{cat.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">How soon do you need help?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {URGENCY_OPTIONS.map((opt) => {
+                  const UrgIcon = opt.icon;
+                  const isSelected = guidedUrgency === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      data-testid={`button-guided-urgency-${opt.value}`}
+                      type="button"
+                      onClick={() => setGuidedUrgency(opt.value)}
+                      className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all ${isSelected ? opt.selected + " " + opt.color.split(" ").slice(1).join(" ") : opt.color}`}
+                    >
+                      <UrgIcon className="h-4 w-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold leading-tight">{opt.label}</p>
+                        <p className="text-[10px] opacity-75 leading-tight mt-0.5">{opt.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {guidedUrgency === "immediate" && (
+              <div data-testid="guided-crisis-banner" className="rounded-lg border border-red-300 bg-red-50 p-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  If you are in crisis right now:
+                </p>
+                <a href="tel:988" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <Phone className="h-3.5 w-3.5" /> Call 988 (Suicide & Crisis Lifeline)
+                </a>
+                <a href="tel:18002738255" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <Phone className="h-3.5 w-3.5" /> Veterans Crisis Line: 1-800-273-8255 (Press 1)
+                </a>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                data-testid="button-guided-find-resources"
+                className="flex-1 h-10"
+                disabled={!guidedCategory}
+                onClick={handleGuidedContinue}
+              >
+                Find Resources
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+              <Button
+                data-testid="button-guided-request-navigator"
+                variant="outline"
+                className="h-10 border-primary/30 text-primary"
+                onClick={handleGuidedRequestNavigator}
+              >
+                <Phone className="mr-1.5 h-4 w-4" />
+                Request Support
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="sm:max-w-[400px]">

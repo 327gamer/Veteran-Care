@@ -22,6 +22,7 @@ export interface ResourceItem {
   is_national?: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  service_priority?: string;
 }
 
 export const resourcesData: Record<string, ResourceItem[]> = {

@@ -18,9 +18,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, CheckCircle2 } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertTriangle, Clock, CalendarDays, Info, Phone as PhoneIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSavedResources } from "@/lib/store";
+
+const URGENCY_OPTIONS = [
+  {
+    value: "immediate",
+    label: "I need help now",
+    description: "Crisis or emergency situation",
+    icon: AlertTriangle,
+    color: "border-red-300 bg-red-50 text-red-800 hover:border-red-400",
+    selectedColor: "border-red-500 bg-red-100 text-red-900 ring-2 ring-red-200",
+  },
+  {
+    value: "same_week",
+    label: "This week",
+    description: "Urgent but not an emergency",
+    icon: Clock,
+    color: "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400",
+    selectedColor: "border-amber-500 bg-amber-100 text-amber-900 ring-2 ring-amber-200",
+  },
+  {
+    value: "standard",
+    label: "When available",
+    description: "I can wait for the right help",
+    icon: CalendarDays,
+    color: "border-blue-300 bg-blue-50 text-blue-800 hover:border-blue-400",
+    selectedColor: "border-blue-500 bg-blue-100 text-blue-900 ring-2 ring-blue-200",
+  },
+  {
+    value: "information",
+    label: "Just exploring",
+    description: "Looking for information only",
+    icon: Info,
+    color: "border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-400",
+    selectedColor: "border-slate-500 bg-slate-100 text-slate-800 ring-2 ring-slate-200",
+  },
+];
 
 const HELP_CATEGORIES = [
   { value: "benefits", label: "Benefits & VA Claims" },
@@ -127,9 +162,11 @@ interface NavigatorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context?: NavigatorContext;
+  initialUrgency?: string;
+  source?: string;
 }
 
-export default function NavigatorModal({ open, onOpenChange, context }: NavigatorModalProps) {
+export default function NavigatorModal({ open, onOpenChange, context, initialUrgency, source }: NavigatorModalProps) {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -142,26 +179,32 @@ export default function NavigatorModal({ open, onOpenChange, context }: Navigato
     preferred_contact: "either",
     category: "",
     subcategory: "",
+    urgency: "",
   });
 
   const hasResourceContext = !!(context?.resource_id);
 
   useEffect(() => {
-    if (open && context?.category) {
-      setForm(p => ({
-        ...p,
-        category: context.category || "",
-        subcategory: context.subcategory || "",
-      }));
+    if (open) {
+      if (context?.category) {
+        setForm(p => ({
+          ...p,
+          category: context.category || "",
+          subcategory: context.subcategory || "",
+        }));
+      }
+      if (initialUrgency) {
+        setForm(p => ({ ...p, urgency: initialUrgency }));
+      }
     }
-  }, [open, context?.category, context?.subcategory]);
+  }, [open, context?.category, context?.subcategory, initialUrgency]);
 
   const currentSubcategories = SUBCATEGORIES[form.category] || [];
 
   const resetForm = () => {
     setForm({
       veteran_name: "", veteran_phone: "", veteran_email: "", message: "",
-      preferred_contact: "either", category: "", subcategory: "",
+      preferred_contact: "either", category: "", subcategory: "", urgency: "",
     });
     setSubmitted(false);
     setError("");
@@ -201,6 +244,8 @@ export default function NavigatorModal({ open, onOpenChange, context }: Navigato
           user_state: loc.stateCode || null,
           user_city: loc.city || null,
           user_zip: loc.zip || null,
+          urgency: form.urgency || null,
+          source: source || (context?.resource_id ? "resource_page" : null),
         }),
       });
       const data = await res.json();
@@ -227,7 +272,7 @@ export default function NavigatorModal({ open, onOpenChange, context }: Navigato
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Request a Navigator
+            Request Support
           </DialogTitle>
           <DialogDescription>
             A Veteran Care Navigator can help you find benefits, apply for programs, and follow up — for free.
@@ -235,19 +280,73 @@ export default function NavigatorModal({ open, onOpenChange, context }: Navigato
         </DialogHeader>
 
         {submitted ? (
-          <div className="flex items-center gap-3 py-4 animate-in fade-in duration-300">
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
+          <div className="space-y-3 py-2 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-green-700">Request Submitted</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  A Veteran Care Navigator will reach out to you soon.
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-sm text-green-700">Request Submitted</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                A Veteran Care Navigator will reach out to you soon.
-              </p>
-            </div>
+            {form.urgency === "immediate" && (
+              <div data-testid="crisis-resources-post-submit" className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                <p className="text-xs font-semibold text-red-800">If you are in immediate danger, please call:</p>
+                <a href="tel:988" className="flex items-center gap-2 text-sm font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-4 w-4" /> 988 Suicide & Crisis Lifeline
+                </a>
+                <a href="tel:18002738255" className="flex items-center gap-2 text-sm font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-4 w-4" /> Veterans Crisis Line: 1-800-273-8255
+                </a>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3 py-1">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">How soon do you need help?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {URGENCY_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = form.urgency === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      data-testid={`button-urgency-${opt.value}`}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, urgency: opt.value }))}
+                      className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all ${isSelected ? opt.selectedColor : opt.color}`}
+                    >
+                      <Icon className="h-4 w-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold leading-tight">{opt.label}</p>
+                        <p className="text-[10px] opacity-75 leading-tight mt-0.5">{opt.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {form.urgency === "immediate" && (
+              <div data-testid="crisis-banner" className="rounded-lg border border-red-300 bg-red-50 p-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  If you are in crisis right now:
+                </p>
+                <a href="tel:988" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-3.5 w-3.5" /> Call 988 (Suicide & Crisis Lifeline)
+                </a>
+                <a href="tel:18002738255" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <PhoneIcon className="h-3.5 w-3.5" /> Veterans Crisis Line: 1-800-273-8255
+                </a>
+                <p className="text-[10px] text-red-600 mt-1">Press 1 for Veterans. Available 24/7.</p>
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label className="text-xs">Your Name *</Label>
               <Input
@@ -371,7 +470,7 @@ export default function NavigatorModal({ open, onOpenChange, context }: Navigato
               disabled={submitting || !isValid}
               onClick={handleSubmit}
             >
-              {submitting ? "Submitting..." : "Submit Request"}
+              {submitting ? "Submitting..." : "Request Support"}
             </Button>
           </div>
         )}

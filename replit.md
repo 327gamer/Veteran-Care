@@ -220,6 +220,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - Cities: Columbia (4), North Charleston (3), Charleston (2), Greenville (2), West Columbia (1), Spartanburg (1), Lexington (1) + 1 statewide
   - Geocoded: 14/15 (1 statewide resource correctly without coordinates)
   - Key resources: DAV SC HQ, SCDVA state office, Charleston County VA Office, VFW Posts (445 Charleston, 5091 N. Charleston, 4262 Columbia, 10330 Greenville), VFW SC HQ, American Legion Posts (147 Charleston, 6 Columbia, SC HQ), Palmetto Warrior Connection, Upstate Warrior Solution (Greenville + Spartanburg), Team RWB SC
+- **Step 22 Guided Help Flow**:
+  - Home page "Get Help" button opens guided help dialog with two-step flow: category selection + urgency selection
+  - Urgency values: `immediate`, `same_week`, `standard`, `information` — mapped to both navigator_requests.urgency and resource service_priority sorting
+  - "Find Resources" routes to `/resources?category=<slug>&urgency=<value>` — resources sorted by matching service_priority first
+  - "Request Support" from guided help opens NavigatorModal with urgency pre-filled and source="guided_help"
+  - Crisis banner shown for immediate urgency: 988 Lifeline + Veterans Crisis Line (1-800-273-8255 Press 1)
+  - Resources page: urgency banner dismissable, near-me mode preserves distance sort within urgency-sorted buckets
+  - NavigatorModal: urgency selection cards always visible, source prop conditional (guided_help | resource_page | null)
 - **Step 22 SC Optimization**:
   - Navigator lifecycle columns added (graceful detection via `hasNavLifecycleColumns`): source, utm_source, utm_medium, utm_campaign, urgency, assigned_to, contacted_at, resolved_at, outcome, consent_followup
   - SQL must be run in Supabase SQL editor (printed at startup if columns missing)
