@@ -72,6 +72,15 @@ interface NavigatorRequest {
   status: string;
   admin_notes: string | null;
   created_at: string;
+  urgency: string | null;
+  source: string | null;
+  assigned_to: string | null;
+  outcome: string | null;
+  contacted_at: string | null;
+  resolved_at: string | null;
+  consent_followup: boolean | null;
+  category: string | null;
+  subcategory: string | null;
 }
 
 interface AdminResource {
@@ -677,17 +686,17 @@ export default function AdminResources() {
 
         {activeTab === "leads" && (
           <>
-            <div className="flex gap-2">
-              {(["new", "contacted", "completed", "cancelled"] as const).map((s) => (
+            <div className="flex gap-2 flex-wrap">
+              {(["new", "in_progress", "contacted", "resolved", "completed", "cancelled"] as const).map((s) => (
                 <Button
                   key={s}
                   data-testid={`lead-filter-${s}`}
                   variant={leadStatusFilter === s ? "default" : "outline"}
                   size="sm"
-                  className="h-9 text-xs capitalize"
+                  className="h-8 text-xs capitalize"
                   onClick={() => setLeadStatusFilter(s)}
                 >
-                  {s}
+                  {s.replace("_", " ")}
                 </Button>
               ))}
             </div>
@@ -695,8 +704,25 @@ export default function AdminResources() {
             {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 
             <div className="space-y-3">
-              {navRequests.map((req) => (
-                <Card key={req.id} data-testid={`nav-lead-${req.id}`} className="border">
+              {[...navRequests]
+                .sort((a, b) => {
+                  const urgencyRank: Record<string, number> = { immediate: 0, same_week: 1, standard: 2, information: 3 };
+                  const aRank = urgencyRank[a.urgency || ""] ?? 4;
+                  const bRank = urgencyRank[b.urgency || ""] ?? 4;
+                  return aRank - bRank;
+                })
+                .map((req) => {
+                const urgencyConfig: Record<string, { label: string; className: string }> = {
+                  immediate: { label: "Immediate", className: "bg-red-100 text-red-800 border-red-300" },
+                  same_week: { label: "This Week", className: "bg-amber-100 text-amber-800 border-amber-300" },
+                  standard: { label: "Standard", className: "bg-blue-100 text-blue-800 border-blue-300" },
+                  information: { label: "Info Only", className: "bg-slate-100 text-slate-700 border-slate-300" },
+                };
+                const urg = req.urgency ? urgencyConfig[req.urgency] : null;
+                const isImmediate = req.urgency === "immediate";
+
+                return (
+                <Card key={req.id} data-testid={`nav-lead-${req.id}`} className={`border ${isImmediate ? "border-red-300 bg-red-50/30" : ""}`}>
                   <CardContent className="p-4 space-y-2">
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
@@ -706,9 +732,28 @@ export default function AdminResources() {
                           {req.user_state && ` • ${[req.user_city, req.user_state].filter(Boolean).join(", ")}`}
                         </p>
                       </div>
-                      <Badge data-testid={`badge-lead-status-${req.id}`} variant="outline" className="text-[10px] capitalize shrink-0">
-                        {req.status}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {urg && (
+                          <Badge data-testid={`badge-lead-urgency-${req.id}`} variant="outline" className={`text-[10px] ${urg.className}`}>
+                            {urg.label}
+                          </Badge>
+                        )}
+                        <Badge data-testid={`badge-lead-status-${req.id}`} variant="outline" className="text-[10px] capitalize">
+                          {req.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {req.category && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">{req.category}</Badge>
+                      )}
+                      {req.subcategory && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">{req.subcategory}</Badge>
+                      )}
+                      {req.source && (
+                        <Badge variant="secondary" className="text-[10px] font-normal bg-purple-50 text-purple-700">via {req.source}</Badge>
+                      )}
                     </div>
 
                     {req.resource_title && (
@@ -731,41 +776,98 @@ export default function AdminResources() {
                       <span data-testid={`text-lead-contact-pref-${req.id}`} className="text-muted-foreground flex items-center gap-1">
                         <MessageSquare className="h-3 w-3" /> Prefers: {req.preferred_contact}
                       </span>
+                      {req.consent_followup && (
+                        <span className="text-green-700 text-[10px] font-medium">✓ Follow-up OK</span>
+                      )}
                     </div>
 
                     {req.message && (
                       <p data-testid={`text-lead-message-${req.id}`} className="text-xs text-muted-foreground bg-muted/30 rounded p-2 italic">"{req.message}"</p>
                     )}
 
-                    <div className="flex gap-2 pt-1">
+                    {(req.assigned_to || req.outcome || req.contacted_at || req.resolved_at) && (
+                      <div className="text-[10px] text-muted-foreground bg-muted/20 rounded p-2 space-y-0.5 border border-muted">
+                        {req.assigned_to && <p>Assigned to: <strong>{req.assigned_to}</strong></p>}
+                        {req.outcome && <p>Outcome: <strong className="capitalize">{req.outcome.replace("_", " ")}</strong></p>}
+                        {req.contacted_at && <p>Contacted: {new Date(req.contacted_at).toLocaleString()}</p>}
+                        {req.resolved_at && <p>Resolved: {new Date(req.resolved_at).toLocaleString()}</p>}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-1 flex-wrap">
                       {req.status === "new" && (
+                        <>
+                          <Button
+                            data-testid={`lead-in-progress-${req.id}`}
+                            size="sm"
+                            className="h-7 text-xs flex-1"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "in_progress" } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Start Working
+                          </Button>
+                          <Button
+                            data-testid={`lead-contacted-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted", contacted_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Mark Contacted
+                          </Button>
+                        </>
+                      )}
+                      {req.status === "in_progress" && (
                         <Button
-                          data-testid={`lead-contacted-${req.id}`}
+                          data-testid={`lead-mark-contacted-${req.id}`}
                           size="sm"
-                          className="h-7 text-xs flex-1"
-                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted" } })}
+                          className="h-7 text-xs"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "contacted", contacted_at: new Date().toISOString() } })}
                           disabled={navPatchMutation.isPending}
                         >
                           Mark Contacted
                         </Button>
                       )}
-                      {req.status === "contacted" && (
-                        <Button
-                          data-testid={`lead-complete-${req.id}`}
-                          size="sm"
-                          className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700"
-                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "completed" } })}
-                          disabled={navPatchMutation.isPending}
-                        >
-                          Mark Completed
-                        </Button>
+                      {(req.status === "in_progress" || req.status === "contacted") && (
+                        <>
+                          <Button
+                            data-testid={`lead-resolve-connected-${req.id}`}
+                            size="sm"
+                            className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "connected", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Resolved — Connected
+                          </Button>
+                          <Button
+                            data-testid={`lead-resolve-referred-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "referred", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            Referred
+                          </Button>
+                          <Button
+                            data-testid={`lead-resolve-no-response-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-amber-700"
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved", outcome: "no_response", resolved_at: new Date().toISOString() } })}
+                            disabled={navPatchMutation.isPending}
+                          >
+                            No Response
+                          </Button>
+                        </>
                       )}
-                      {(req.status === "new" || req.status === "contacted") && (
+                      {(req.status === "new" || req.status === "in_progress" || req.status === "contacted") && (
                         <Button
                           data-testid={`lead-cancel-${req.id}`}
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs"
+                          className="h-7 text-xs text-muted-foreground"
                           onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "cancelled" } })}
                           disabled={navPatchMutation.isPending}
                         >
@@ -775,9 +877,10 @@ export default function AdminResources() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
               {!navLoading && navRequests.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No {leadStatusFilter} navigator requests.</p>
+                <p className="text-center text-muted-foreground py-8">No {leadStatusFilter.replace("_", " ")} navigator requests.</p>
               )}
             </div>
           </>
