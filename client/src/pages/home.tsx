@@ -226,20 +226,20 @@ export default function Home() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* Brand Header - Green Banner Style */}
-      <section className="bg-primary -mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-4 shadow-lg mb-6">
-        <div className="h-32 w-56 overflow-hidden rounded-xl bg-primary shadow-2xl border border-white/20 flex items-center justify-center">
-          <img src={logoImg} alt="Veteran Care" className="h-full w-full object-cover" />
+      {/* Brand Header */}
+      <section className="-mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-4 mb-6 bg-white">
+        <div className="h-40 w-full max-w-[260px] flex items-center justify-center drop-shadow-2xl">
+          <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
         </div>
-        <div className="space-y-1">
-          <h1 className="text-4xl font-heading font-extrabold text-white tracking-tight uppercase drop-shadow-md">Veteran Care</h1>
-          <p className="text-primary-foreground/90 font-medium max-w-xs mx-auto text-sm">Your trusted guide to benefits, health, and local resources.</p>
+        <div className="space-y-2 px-6">
+          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to VeteranCare</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Welcome to VeteranCare — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services. VeteranCare helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, and other local resources in one place.</p>
         </div>
       </section>
 
       {/* Location Badge */}
       <section className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-primary">Good Morning, Soldier</h2>
+        <h2 className="text-xl font-bold text-primary">Welcome to VeteranCare</h2>
         
         <Dialog open={isLocationOpen} onOpenChange={setIsLocationOpen}>
           <DialogTrigger asChild>
@@ -304,7 +304,7 @@ export default function Home() {
               <div className="flex-1 space-y-1">
                 <p className="font-heading font-bold text-base">How can I help you today?</p>
                 <p className="text-primary-foreground/85 text-sm leading-relaxed">
-                  I'm your Veteran Care Guide. I can help you find benefits, healthcare, housing, and local veteran resources.
+                  I'm your VeteranCare Guide. I can help you find benefits, healthcare services, housing support, employment opportunities, and trusted local resources for veterans and their families.
                 </p>
               </div>
             </div>
