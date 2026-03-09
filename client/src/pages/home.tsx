@@ -563,7 +563,7 @@ export default function Home() {
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <div className="w-full h-10 pl-9 pr-4 rounded-lg border bg-background text-sm text-muted-foreground/60 flex items-center">
-            Search all resources (housing, VA benefits, food assistance...)
+            Search resources (VA benefits, housing, jobs...)
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
