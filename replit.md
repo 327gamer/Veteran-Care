@@ -295,3 +295,14 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Urgent leads**: `immediate` urgency shows red alert banner at top of email with 15-min escalation warning
 - **Tracking**: `routing_history` entries updated with `email_sent`, `email_sent_at`, `email_id` after successful send
 - **Failure handling**: Email send failures are logged but do not block routing; lead is still routed even if email fails
+- **Security**: All user-controlled fields are HTML-escaped before email template interpolation; routing_history tracking uses deterministic partner_id matching
+
+## SC Housing Pilot (Step 22E — Active)
+- **Status**: Verified and live
+- **Partners** (3 active, all Colin@VeteranCare.com during pilot):
+  1. **Charleston Housing Pilot** — Charleston, North Charleston, Mount Pleasant, Summerville (urgent p5, general p20)
+  2. **Midlands Housing Pilot** — Columbia, West Columbia, Lexington, Irmo (urgent p5, general p20)
+  3. **SC Housing Statewide Pilot** — Statewide fallback (urgent p10, general p30)
+- **Routing verified**: City-based routing, urgency priority, statewide fallback, email delivery, routing history tracking
+- **Email note**: Resend API is in sandbox mode — only sends to account owner (colinmslaven@gmail.com). To send to Colin@VeteranCare.com or real partner emails, verify veterancare.com domain in Resend and set `RESEND_FROM_EMAIL` env var
+- **Rate limit**: Navigator requests limited to 5 per hour per IP (in-memory, resets on server restart)
