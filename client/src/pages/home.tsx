@@ -554,7 +554,7 @@ export default function Home() {
       {/* Resources Grid */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-heading font-semibold">Resources</h2>
+          <h2 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Resources</h2>
         </div>
         <div
           data-testid="home-search-resources"
