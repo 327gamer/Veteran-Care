@@ -53,7 +53,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `POST /api/admin/states/:code/refresh-counts` - Admin: recalculate resource/partner counts
 - `GET /api/states/active` - Public: list active states (code, name)
 - `POST /api/admin/resources` - Admin: create a new resource directly (bypasses community submission; defaults to status=approved)
-- `POST /api/admin/resources/csv-import` - Admin: bulk import resources from CSV (max 500 rows; category matched by name or slug; returns created/skipped/error counts)
+- `POST /api/admin/resources/csv-import` - Admin: bulk import resources from CSV (max 500 rows; supports options: skip_duplicates, default_state, default_category, dry_run; returns created/skipped/duplicate/error counts)
+- `GET /api/admin/resources/csv-template` - Admin: get CSV column definitions, valid categories, import options, and example row
+- `POST /api/admin/resources/duplicate-check` - Admin: find duplicate resources by title within a state (body: {state, category?})
+- `POST /api/admin/resources/cleanup-duplicates` - Admin: remove duplicate resources keeping oldest (body: {state, dry_run?})
+- `POST /api/admin/states/:code/clone-resources` - Admin: clone national resources from template state to new state (body: {source_state?, categories?, exclude_categories?})
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
 
 ## Supabase Tables

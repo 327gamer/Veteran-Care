@@ -753,7 +753,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/resources/csv-import", requireAdmin, async (req, res) => {
-    const { rows } = req.body;
+    const { rows, options } = req.body;
     if (!Array.isArray(rows) || rows.length === 0) {
       return res.status(400).json({ error: "No rows provided" });
     }
@@ -761,14 +761,43 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Maximum 500 rows per import" });
     }
 
+    const skipDuplicates = options?.skip_duplicates !== false;
+    const defaultState = options?.default_state?.trim()?.toUpperCase() || null;
+    const defaultCategory = options?.default_category?.trim()?.toLowerCase() || null;
+    const dryRun = options?.dry_run === true;
+
     const { data: cats } = await supabase.from("categories").select("id, name, slug");
     const catMap = new Map<string, string>();
+    const catNameById = new Map<string, string>();
     (cats || []).forEach((c: any) => {
       catMap.set(c.slug.toLowerCase(), c.id);
       catMap.set(c.name.toLowerCase(), c.id);
+      catNameById.set(c.id, c.slug);
     });
 
-    const results: { row: number; status: "created" | "skipped" | "error"; title: string; reason?: string }[] = [];
+    let existingTitles = new Set<string>();
+    if (skipDuplicates) {
+      const statesInImport = new Set<string>();
+      if (defaultState) statesInImport.add(defaultState);
+      rows.forEach((r: any) => {
+        const s = r.state?.trim()?.toUpperCase();
+        if (s) statesInImport.add(s);
+      });
+      const stateList = Array.from(statesInImport);
+
+      let q = supabase.from("resources").select("title, state");
+      if (stateList.length === 1) {
+        q = q.eq("state", stateList[0]);
+      } else if (stateList.length > 1) {
+        q = q.in("state", stateList);
+      }
+      const { data: existing } = await q;
+      (existing || []).forEach((r: any) => {
+        existingTitles.add(`${(r.title || "").toLowerCase().trim()}|${(r.state || "").toUpperCase()}`);
+      });
+    }
+
+    const results: { row: number; status: "created" | "skipped" | "duplicate" | "error"; title: string; reason?: string }[] = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -778,10 +807,28 @@ export async function registerRoutes(
         continue;
       }
 
-      const catKey = (row.category || row.category_slug || "").toLowerCase().trim();
+      const rowState = row.state?.trim()?.toUpperCase() || defaultState;
+
+      if (skipDuplicates) {
+        const dupKey = `${title.toLowerCase()}|${rowState || ""}`;
+        if (existingTitles.has(dupKey)) {
+          results.push({ row: i + 1, status: "duplicate", title, reason: `Duplicate in ${rowState || "unknown state"}` });
+          continue;
+        }
+      }
+
+      const catKey = (row.category || row.category_slug || defaultCategory || "").toLowerCase().trim();
       let category_id = catMap.get(catKey) || null;
       if (!category_id && row.category_id?.trim()) {
         category_id = row.category_id.trim();
+      }
+
+      if (dryRun) {
+        results.push({ row: i + 1, status: "created", title, reason: `Dry run — would create in ${rowState || "no state"} / ${catKey || "no category"}` });
+        if (skipDuplicates && rowState) {
+          existingTitles.add(`${title.toLowerCase()}|${rowState}`);
+        }
+        continue;
       }
 
       try {
@@ -790,8 +837,8 @@ export async function registerRoutes(
         let geoSrc = row.geo_source?.trim() || null;
 
         if (hasGeoColumns && (lat == null || lng == null || isNaN(lat) || isNaN(lng)) &&
-            (row.address?.trim() || row.city?.trim() || row.state?.trim() || row.zip?.trim())) {
-          const geo = await geocodeAddress(row.address?.trim(), row.city?.trim(), row.state?.trim(), row.zip?.trim());
+            (row.address?.trim() || row.city?.trim() || rowState || row.zip?.trim())) {
+          const geo = await geocodeAddress(row.address?.trim(), row.city?.trim(), rowState || undefined, row.zip?.trim());
           if (geo) {
             lat = geo.latitude;
             lng = geo.longitude;
@@ -808,7 +855,7 @@ export async function registerRoutes(
             email: row.email?.trim() || null,
             address: row.address?.trim() || null,
             city: row.city?.trim() || null,
-            state: row.state?.trim() || null,
+            state: rowState || null,
             zip: row.zip?.trim() || null,
             eligibility: row.eligibility?.trim() || null,
             source_name: row.source_name?.trim() || row.source?.trim() || null,
@@ -844,6 +891,9 @@ export async function registerRoutes(
           results.push({ row: i + 1, status: "error", title, reason: error.message });
         } else {
           results.push({ row: i + 1, status: "created", title });
+          if (skipDuplicates && rowState) {
+            existingTitles.add(`${title.toLowerCase()}|${rowState}`);
+          }
         }
       } catch (e: any) {
         results.push({ row: i + 1, status: "error", title, reason: e?.message || "Unknown error" });
@@ -852,9 +902,260 @@ export async function registerRoutes(
 
     const created = results.filter(r => r.status === "created").length;
     const skipped = results.filter(r => r.status === "skipped").length;
+    const duplicates = results.filter(r => r.status === "duplicate").length;
     const errors = results.filter(r => r.status === "error").length;
 
-    return res.json({ created, skipped, errors, total: rows.length, results });
+    return res.json({ created, skipped, duplicates, errors, total: rows.length, dry_run: dryRun, results });
+  });
+
+  app.get("/api/admin/resources/csv-template", requireAdmin, async (_req, res) => {
+    const { data: cats } = await supabase.from("categories").select("slug, name");
+    const categoryList = (cats || []).map((c: any) => c.slug).join(", ");
+
+    const template = {
+      columns: [
+        { name: "title", required: true, description: "Resource name (min 3 chars)" },
+        { name: "category", required: true, description: `Category slug or name. Valid: ${categoryList}` },
+        { name: "subcategory", required: false, description: "Subcategory within the category" },
+        { name: "short_description", required: false, description: "Brief description of the resource" },
+        { name: "website_url", required: false, description: "Website URL (aliases: website, url)" },
+        { name: "phone", required: false, description: "Phone number" },
+        { name: "email", required: false, description: "Contact email" },
+        { name: "address", required: false, description: "Street address" },
+        { name: "city", required: false, description: "City name" },
+        { name: "state", required: true, description: "2-letter state code (e.g. SC, GA, NC)" },
+        { name: "zip", required: false, description: "ZIP code" },
+        { name: "eligibility", required: false, description: "Eligibility requirements" },
+        { name: "service_priority", required: false, description: "Priority level: immediate, same_week, standard, information" },
+        { name: "source_name", required: false, description: "Data source name (alias: source)" },
+        { name: "source_type", required: false, description: "Source type" },
+        { name: "sponsored", required: false, description: "true/false" },
+        { name: "monetization_type", required: false, description: "Monetization type" },
+        { name: "affiliate_url", required: false, description: "Affiliate tracking URL" },
+        { name: "notes_internal", required: false, description: "Internal admin notes" },
+        { name: "status", required: false, description: "approved (default), pending, or rejected" },
+        { name: "latitude", required: false, description: "Latitude (auto-geocoded if missing)" },
+        { name: "longitude", required: false, description: "Longitude (auto-geocoded if missing)" },
+      ],
+      import_options: {
+        skip_duplicates: "true (default) — skip rows where title+state already exists",
+        default_state: "Apply this state code to all rows missing a state field",
+        default_category: "Apply this category slug to all rows missing a category field",
+        dry_run: "true — validate without inserting; returns what would happen",
+      },
+      example_row: {
+        title: "Lowcountry Veterans Center",
+        category: "housing",
+        subcategory: "Transitional Housing",
+        short_description: "Transitional housing for homeless veterans",
+        website_url: "https://example.org",
+        phone: "843-555-1234",
+        email: "info@example.org",
+        address: "123 Main St",
+        city: "Charleston",
+        state: "SC",
+        zip: "29401",
+        eligibility: "Veterans experiencing homelessness",
+        service_priority: "immediate",
+        source_name: "VA HCHV",
+        sponsored: "false",
+      },
+      categories: (cats || []).map((c: any) => ({ slug: c.slug, name: c.name })),
+    };
+
+    return res.json(template);
+  });
+
+  app.post("/api/admin/resources/duplicate-check", requireAdmin, async (req, res) => {
+    const { state, category } = req.body;
+    const stateCode = state?.trim()?.toUpperCase();
+    if (!stateCode) {
+      return res.status(400).json({ error: "State code required" });
+    }
+
+    let q = supabase.from("resources").select("id, title, city, state, category_id, status");
+    q = q.eq("state", stateCode);
+    if (category) {
+      const { data: cats } = await supabase.from("categories").select("id, slug, name");
+      const cat = (cats || []).find((c: any) => c.slug === category.toLowerCase() || c.name.toLowerCase() === category.toLowerCase());
+      if (cat) q = q.eq("category_id", cat.id);
+    }
+
+    const { data, error } = await q.order("title");
+    if (error) return res.status(500).json({ error: error.message });
+
+    const titleMap = new Map<string, any[]>();
+    (data || []).forEach((r: any) => {
+      const key = r.title.toLowerCase().trim();
+      if (!titleMap.has(key)) titleMap.set(key, []);
+      titleMap.get(key)!.push(r);
+    });
+
+    const duplicates = Array.from(titleMap.entries())
+      .filter(([_, items]) => items.length > 1)
+      .map(([title, items]) => ({ title: items[0].title, count: items.length, ids: items.map((i: any) => i.id), cities: items.map((i: any) => i.city) }));
+
+    return res.json({
+      state: stateCode,
+      total_resources: (data || []).length,
+      unique_titles: titleMap.size,
+      duplicate_groups: duplicates.length,
+      duplicates,
+    });
+  });
+
+  app.post("/api/admin/resources/cleanup-duplicates", requireAdmin, async (req, res) => {
+    const { state, dry_run } = req.body;
+    const stateCode = state?.trim()?.toUpperCase();
+    if (!stateCode) {
+      return res.status(400).json({ error: "State code required" });
+    }
+
+    const { data, error } = await supabase
+      .from("resources")
+      .select("id, title, city, state, created_at")
+      .eq("state", stateCode)
+      .order("title")
+      .order("created_at", { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const titleMap = new Map<string, any[]>();
+    (data || []).forEach((r: any) => {
+      const key = r.title.toLowerCase().trim();
+      if (!titleMap.has(key)) titleMap.set(key, []);
+      titleMap.get(key)!.push(r);
+    });
+
+    const toRemove: string[] = [];
+    const groups: any[] = [];
+    for (const [_, items] of titleMap.entries()) {
+      if (items.length > 1) {
+        const keep = items[0];
+        const remove = items.slice(1);
+        toRemove.push(...remove.map((r: any) => r.id));
+        groups.push({ keep: keep.id, remove: remove.map((r: any) => r.id), title: keep.title });
+      }
+    }
+
+    const isDryRun = dry_run !== false;
+
+    if (!isDryRun && toRemove.length > 0) {
+      const { error: delErr } = await supabase
+        .from("resources")
+        .delete()
+        .in("id", toRemove);
+      if (delErr) return res.status(500).json({ error: delErr.message });
+    }
+
+    return res.json({
+      state: stateCode,
+      dry_run: isDryRun,
+      duplicate_groups: groups.length,
+      removed_count: toRemove.length,
+      groups,
+    });
+  });
+
+  app.post("/api/admin/states/:code/clone-resources", requireAdmin, async (req, res) => {
+    const targetState = req.params.code.toUpperCase();
+    const { source_state, categories, exclude_categories } = req.body;
+    const sourceState = (source_state || "SC").toUpperCase();
+
+    if (!/^[A-Z]{2}$/.test(targetState) || !/^[A-Z]{2}$/.test(sourceState)) {
+      return res.status(400).json({ error: "State codes must be 2-letter uppercase (e.g. SC, GA)" });
+    }
+
+    if (targetState === sourceState) {
+      return res.status(400).json({ error: "Source and target states cannot be the same" });
+    }
+
+    const { data: cats, error: catErr } = await supabase.from("categories").select("id, slug, name");
+    if (catErr) return res.status(500).json({ error: "Failed to load categories: " + catErr.message });
+    const catMap = new Map<string, string>();
+    const catNameMap = new Map<string, string>();
+    (cats || []).forEach((c: any) => {
+      catMap.set(c.slug, c.id);
+      catNameMap.set(c.id, c.slug);
+    });
+
+    let q = supabase.from("resources")
+      .select("*")
+      .eq("state", sourceState)
+      .eq("status", "approved");
+
+    if (Array.isArray(categories) && categories.length > 0) {
+      const catIds = categories.map((c: string) => catMap.get(c.toLowerCase())).filter(Boolean);
+      if (catIds.length > 0) q = q.in("category_id", catIds);
+    }
+    if (Array.isArray(exclude_categories) && exclude_categories.length > 0) {
+      const exIds = exclude_categories.map((c: string) => catMap.get(c.toLowerCase())).filter(Boolean);
+      if (exIds.length > 0) q = q.not("category_id", "in", `(${exIds.join(",")})`);
+    }
+
+    const { data: sourceResources, error: srcErr } = await q;
+    if (srcErr) return res.status(500).json({ error: srcErr.message });
+    if (!sourceResources || sourceResources.length === 0) {
+      return res.json({ message: "No resources found in source state", created: 0, skipped: 0 });
+    }
+
+    const nationalResources = sourceResources.filter((r: any) => !r.city && !r.address);
+    const stateSpecific = sourceResources.filter((r: any) => r.city || r.address);
+
+    const { data: existingInTarget } = await supabase
+      .from("resources")
+      .select("title")
+      .eq("state", targetState);
+    const existingTitles = new Set((existingInTarget || []).map((r: any) => r.title.toLowerCase().trim()));
+
+    let created = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const resource of nationalResources) {
+      if (existingTitles.has(resource.title.toLowerCase().trim())) {
+        skipped++;
+        continue;
+      }
+
+      const clone: Record<string, any> = { ...resource };
+      delete clone.id;
+      delete clone.created_at;
+      clone.state = targetState;
+      clone.latitude = null;
+      clone.longitude = null;
+      clone.geo_source = null;
+      clone.geocoded_at = null;
+      clone.source_name = `Cloned from ${sourceState}`;
+
+      const { error } = await supabase.from("resources").insert(clone);
+      if (error) {
+        errors.push(`${resource.title}: ${error.message}`);
+      } else {
+        created++;
+        existingTitles.add(resource.title.toLowerCase().trim());
+      }
+    }
+
+    const catBreakdown: Record<string, number> = {};
+    for (const r of nationalResources) {
+      const slug = catNameMap.get(r.category_id) || "unknown";
+      catBreakdown[slug] = (catBreakdown[slug] || 0) + 1;
+    }
+
+    return res.json({
+      source_state: sourceState,
+      target_state: targetState,
+      source_total: sourceResources.length,
+      national_resources: nationalResources.length,
+      state_specific_excluded: stateSpecific.length,
+      created,
+      skipped,
+      errors: errors.length,
+      error_details: errors.slice(0, 10),
+      category_breakdown: catBreakdown,
+      note: "Only national/non-city-specific resources were cloned. State-specific resources with city/address were excluded — import those separately via CSV.",
+    });
   });
 
   app.post("/api/admin/resources/geocode-missing", requireAdmin, async (req, res) => {
