@@ -47,6 +47,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `POST /api/admin/partners/:id/rules` - Admin: create routing rule
 - `PATCH /api/admin/partner-rules/:id` - Admin: update routing rule
 - `DELETE /api/admin/partner-rules/:id` - Admin: deactivate routing rule
+- `GET /api/admin/states` - Admin: list all states
+- `POST /api/admin/states` - Admin: create new state (code + name required)
+- `PATCH /api/admin/states/:code` - Admin: update state (activate, config, etc.)
+- `POST /api/admin/states/:code/refresh-counts` - Admin: recalculate resource/partner counts
+- `GET /api/states/active` - Public: list active states (code, name)
 - `POST /api/admin/resources` - Admin: create a new resource directly (bypasses community submission; defaults to status=approved)
 - `POST /api/admin/resources/csv-import` - Admin: bulk import resources from CSV (max 500 rows; category matched by name or slug; returns created/skipped/error counts)
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
@@ -58,6 +63,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `navigator_requests` - id (uuid), resource_id, resource_title, veteran_name, veteran_phone, veteran_email, message, preferred_contact, user_state, user_city, user_zip, status (new/in_progress/resolved/cancelled), admin_notes, created_at, urgency, source, utm_source/medium/campaign, assigned_to, contacted_at, resolved_at, outcome, consent_followup, routed_to_partner_id (fk→partner_organizations), routed_at, delivery_status, partner_outcome, closed_at, escalation_count, routing_history (jsonb) (SQL in `supabase/create_navigator_requests.sql`)
 - `partner_organizations` - id (uuid), name, contact_name, contact_email, contact_phone, website_url, state, cities (text[]), is_active, is_lead_enabled, notes, created_at (SQL in `supabase/create_partner_organizations.sql`)
 - `partner_routing_rules` - id (uuid), partner_id (fk→partner_organizations), category_slug, subcategory, urgency, state, city, priority (int), max_leads_per_day (int), is_active, created_at (SQL in `supabase/create_partner_organizations.sql`)
+- `states` - code (TEXT UNIQUE), name (TEXT), active (BOOLEAN), created_at; full schema adds: id (UUID), is_active, is_template, launch_date, timezone, admin_contact_name, admin_contact_email, config (JSONB), resource_count, partner_count (SQL in `supabase/create_states.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -306,3 +312,19 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Routing verified**: City-based routing, urgency priority, statewide fallback, email delivery, routing history tracking
 - **Email note**: Resend API is in sandbox mode — only sends to account owner (colinmslaven@gmail.com). To send to Colin@VeteranCare.com or real partner emails, verify veterancare.com domain in Resend and set `RESEND_FROM_EMAIL` env var
 - **Rate limit**: Navigator requests limited to 5 per hour per IP (in-memory, resets on server restart)
+
+## Multi-State Architecture
+- **Key file**: `supabase/create_states.sql` (table creation), `supabase/alter_states.sql` (upgrade simplified schema to full)
+- **Design**: States management table works alongside existing text `state` columns — no FK migration required
+- **Current schema** (simplified): `code` (TEXT UNIQUE), `name`, `active` (BOOLEAN), `created_at`
+- **Full schema** (after running alter_states.sql): adds `id` (UUID), `is_active`, `is_template`, `launch_date`, `timezone`, `admin_contact_name`, `admin_contact_email`, `config` (JSONB), `resource_count`, `partner_count`
+- **Detection**: Server detects both simplified and full schema at startup; endpoints adapt automatically
+- **SC is template state**: `is_template=true` marks SC as the blueprint for cloning to new states
+- **Categories**: Global (not state-scoped); all 13 categories apply across all states
+- **State container isolation**: Resources, partners, routing rules, and leads are already filtered by text `state` column
+- **API endpoints**:
+  - `GET /api/states/active` — Public: returns active states (code, name)
+  - `GET /api/admin/states` — Admin: list all states with full details
+  - `POST /api/admin/states` — Admin: create new state (code, name required)
+  - `PATCH /api/admin/states/:code` — Admin: update state (activate/deactivate, config, etc.)
+  - `POST /api/admin/states/:code/refresh-counts` — Admin: recalculate resource_count and partner_count from live data

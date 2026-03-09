@@ -2,6 +2,8 @@
 -- STATES MANAGEMENT TABLE
 -- Run this in Supabase SQL Editor (one-time setup)
 -- Safe to re-run: uses IF NOT EXISTS / ON CONFLICT throughout
+-- Security: RLS allows anon read/write (consistent with other tables);
+--           actual admin access is enforced by Express x-admin-key middleware
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS states (
@@ -27,9 +29,9 @@ ALTER TABLE states ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'states' AND policyname = 'Allow public read of states'
+    SELECT 1 FROM pg_policies WHERE tablename = 'states' AND policyname = 'states_public_read'
   ) THEN
-    CREATE POLICY "Allow public read of states"
+    CREATE POLICY "states_public_read"
       ON states FOR SELECT
       USING (true);
   END IF;
@@ -37,10 +39,11 @@ END $$;
 
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'states' AND policyname = 'Allow all operations for authenticated'
+    SELECT 1 FROM pg_policies WHERE tablename = 'states' AND policyname = 'states_anon_write'
   ) THEN
-    CREATE POLICY "Allow all operations for authenticated"
+    CREATE POLICY "states_anon_write"
       ON states FOR ALL
+      TO anon, authenticated, service_role
       USING (true)
       WITH CHECK (true);
   END IF;
