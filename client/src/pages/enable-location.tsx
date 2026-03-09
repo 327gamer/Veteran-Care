@@ -26,7 +26,7 @@ export default function EnableLocation() {
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
           <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
-             <img src={logoImg} alt="VeteranCare Logo" className="h-full w-full object-contain" />
+             <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
           </div>
         </div>
 

@@ -232,14 +232,14 @@ export default function Home() {
           <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
         </div>
         <div className="space-y-2 px-6">
-          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to VeteranCare</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Welcome to VeteranCare — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services. VeteranCare helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, and other local resources in one place.</p>
+          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to Veteran Care</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Welcome to Veteran Care — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services. Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, and other local resources in one place.</p>
         </div>
       </section>
 
       {/* Location Badge */}
       <section className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-primary">Welcome to VeteranCare</h2>
+        <h2 className="text-xl font-bold text-primary">How can we help you today?</h2>
         
         <Dialog open={isLocationOpen} onOpenChange={setIsLocationOpen}>
           <DialogTrigger asChild>
@@ -304,7 +304,7 @@ export default function Home() {
               <div className="flex-1 space-y-1">
                 <p className="font-heading font-bold text-base">How can I help you today?</p>
                 <p className="text-primary-foreground/85 text-sm leading-relaxed">
-                  I'm your VeteranCare Guide. I can help you find benefits, healthcare services, housing support, employment opportunities, and trusted local resources for veterans and their families.
+                  I'm your Veteran Care Guide. I can help you find benefits, healthcare services, housing support, employment opportunities, and trusted local resources for veterans and their families.
                 </p>
               </div>
             </div>
