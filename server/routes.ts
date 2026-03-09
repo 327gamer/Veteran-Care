@@ -44,6 +44,18 @@ async function checkServicePriorityColumn() {
 let hasRoutingColumns = false;
 let hasPartnerTable = false;
 let hasRoutingRulesTable = false;
+let hasStatesTable = false;
+
+async function checkStatesTable() {
+  const { data, error } = await supabase.from("states").select("id").limit(1);
+  if (error) {
+    hasStatesTable = false;
+    console.log("[schema] states table not found. Run supabase/create_states.sql");
+  } else {
+    hasStatesTable = true;
+    console.log("[schema] states table detected");
+  }
+}
 
 async function checkPartnerTable() {
   const { data, error } = await supabase.from("partner_organizations").select("id").limit(1);
@@ -152,6 +164,7 @@ export async function registerRoutes(
   await checkServicePriorityColumn();
   await checkNavLifecycleColumns();
   await checkPartnerTable();
+  await checkStatesTable();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
@@ -1538,6 +1551,98 @@ export async function registerRoutes(
           .map(([state, count]) => ({ state, count })),
       },
     });
+  });
+
+  app.get("/api/admin/states", requireAdmin, async (_req, res) => {
+    if (!hasStatesTable) return res.json([]);
+    const { data, error } = await supabase
+      .from("states")
+      .select("*")
+      .order("is_template", { ascending: false })
+      .order("name", { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.post("/api/admin/states", requireAdmin, async (req, res) => {
+    if (!hasStatesTable) return res.status(503).json({ error: "States table not available. Run supabase/create_states.sql" });
+    const { code, name, timezone, admin_contact_name, admin_contact_email, config } = req.body;
+    if (!code || !name) return res.status(400).json({ error: "code and name are required" });
+    const upperCode = code.toUpperCase().trim();
+    if (upperCode.length !== 2) return res.status(400).json({ error: "State code must be 2 characters" });
+    const { data, error } = await supabase
+      .from("states")
+      .insert({
+        code: upperCode,
+        name: name.trim(),
+        timezone: timezone || "America/New_York",
+        admin_contact_name: admin_contact_name || null,
+        admin_contact_email: admin_contact_email || null,
+        config: config || {},
+        is_active: false,
+        is_template: false,
+      })
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(201).json(data);
+  });
+
+  app.patch("/api/admin/states/:id", requireAdmin, async (req, res) => {
+    if (!hasStatesTable) return res.status(503).json({ error: "States table not available" });
+    const { id } = req.params;
+    const allowed = ["name", "is_active", "is_template", "launch_date", "timezone", "admin_contact_name", "admin_contact_email", "config"];
+    const updates: Record<string, any> = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
+    const { data, error } = await supabase.from("states").update(updates).eq("id", id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.post("/api/admin/states/:id/refresh-counts", requireAdmin, async (req, res) => {
+    if (!hasStatesTable) return res.status(503).json({ error: "States table not available" });
+    const { id } = req.params;
+    const { data: state, error: stateErr } = await supabase.from("states").select("code").eq("id", id).single();
+    if (stateErr || !state) return res.status(404).json({ error: "State not found" });
+
+    const { count: resourceCount } = await supabase
+      .from("resources")
+      .select("id", { count: "exact", head: true })
+      .eq("state", state.code)
+      .eq("status", "approved");
+
+    let partnerCount = 0;
+    if (hasPartnerTable) {
+      const { count } = await supabase
+        .from("partner_organizations")
+        .select("id", { count: "exact", head: true })
+        .eq("state", state.code)
+        .eq("is_active", true);
+      partnerCount = count || 0;
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("states")
+      .update({ resource_count: resourceCount || 0, partner_count: partnerCount })
+      .eq("id", id)
+      .select()
+      .single();
+    if (updateErr) return res.status(500).json({ error: updateErr.message });
+    return res.json(updated);
+  });
+
+  app.get("/api/states/active", async (_req, res) => {
+    if (!hasStatesTable) return res.json([]);
+    const { data, error } = await supabase
+      .from("states")
+      .select("code, name, timezone")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
   });
 
   return httpServer;
