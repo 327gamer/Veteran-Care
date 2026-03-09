@@ -516,7 +516,7 @@ export default function Resources() {
               <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-primary font-heading">
+          <h1 className="text-3xl font-extrabold text-primary font-heading tracking-tight">
             {selectedName ? selectedName : "Resources"}
           </h1>
         </div>
