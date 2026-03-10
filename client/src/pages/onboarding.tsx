@@ -39,25 +39,39 @@ export default function Onboarding() {
     );
   };
 
+  const advanceFromLocation = () => {
+    setLocLoading(false);
+    setTimeout(() => setStep(4), 1200);
+  };
+
   const handleAllowLocation = () => {
     if (!navigator.geolocation) {
-      setLocStatus("Location not supported by this browser.");
-      setTimeout(() => setStep(4), 1500);
+      setLocStatus("Location not supported. You can set it later.");
+      advanceFromLocation();
       return;
     }
 
     setLocLoading(true);
     setLocStatus("Requesting location access...");
 
-    const timeout = setTimeout(() => {
-      setLocLoading(false);
-      setLocStatus("Location request timed out.");
-      setTimeout(() => setStep(4), 1200);
-    }, 10000);
+    let resolved = false;
+    const resolve = () => {
+      if (resolved) return;
+      resolved = true;
+    };
+
+    const safetyTimeout = setTimeout(() => {
+      if (!resolved) {
+        resolve();
+        setLocStatus("Location request timed out. You can set it later.");
+        advanceFromLocation();
+      }
+    }, 12000);
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        clearTimeout(timeout);
+        resolve();
+        clearTimeout(safetyTimeout);
         setLocStatus("Finding your area...");
         try {
           const res = await fetch(
@@ -74,25 +88,18 @@ export default function Onboarding() {
             setStoreLocation(stateCode, state, city, zip);
             setLocStatus(`Location set: ${city ? city + ", " : ""}${stateCode}`);
           } else {
-            setLocStatus("Location found, but could not determine your area.");
+            setLocStatus("Could not determine your area. You can set it later.");
           }
         } catch {
           setLocStatus("Could not look up your area. You can set it later.");
         }
-        setLocLoading(false);
-        setTimeout(() => setStep(4), 1200);
+        advanceFromLocation();
       },
-      (err) => {
-        clearTimeout(timeout);
-        setLocLoading(false);
-        if (err.code === 1) {
-          setLocStatus("Location access denied. You can set your location later in the app.");
-        } else if (err.code === 2) {
-          setLocStatus("Could not determine location. You can set it later.");
-        } else {
-          setLocStatus("Location unavailable. You can set it later.");
-        }
-        setTimeout(() => setStep(4), 2000);
+      () => {
+        resolve();
+        clearTimeout(safetyTimeout);
+        setLocStatus("No problem — you can set your location later in the app.");
+        advanceFromLocation();
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
