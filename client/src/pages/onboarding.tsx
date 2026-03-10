@@ -3,10 +3,19 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ArrowRight, Sparkles, UserPlus } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources } from "@/lib/store";
 import AuthModal from "@/components/auth-modal";
+
+const US_STATES: Record<string, string> = {
+  Alabama:"AL",Alaska:"AK",Arizona:"AZ",Arkansas:"AR",California:"CA",Colorado:"CO",Connecticut:"CT",Delaware:"DE",Florida:"FL",Georgia:"GA",
+  Hawaii:"HI",Idaho:"ID",Illinois:"IL",Indiana:"IN",Iowa:"IA",Kansas:"KS",Kentucky:"KY",Louisiana:"LA",Maine:"ME",Maryland:"MD",
+  Massachusetts:"MA",Michigan:"MI",Minnesota:"MN",Mississippi:"MS",Missouri:"MO",Montana:"MT",Nebraska:"NE",Nevada:"NV","New Hampshire":"NH","New Jersey":"NJ",
+  "New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND",Ohio:"OH",Oklahoma:"OK",Oregon:"OR",Pennsylvania:"PA","Rhode Island":"RI","South Carolina":"SC",
+  "South Dakota":"SD",Tennessee:"TN",Texas:"TX",Utah:"UT",Vermont:"VT",Virginia:"VA",Washington:"WA","West Virginia":"WV",Wisconsin:"WI",Wyoming:"WY"
+};
 
 
 const INTEREST_OPTIONS = [
@@ -29,6 +38,8 @@ export default function Onboarding() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [locLoading, setLocLoading] = useState(false);
   const [locStatus, setLocStatus] = useState<string>("");
+  const [showManualPicker, setShowManualPicker] = useState(false);
+  const [manualState, setManualState] = useState<string>("");
   const [showAuth, setShowAuth] = useState(false);
   const { setInterests, completeOnboarding, setLocation: setStoreLocation } = useSavedResources();
 
@@ -56,8 +67,9 @@ export default function Onboarding() {
     const safetyTimeout = setTimeout(() => {
       if (!resolved) {
         resolve();
-        setLocStatus("You can set your location anytime in the app.");
-        advanceFromLocation();
+        setLocLoading(false);
+        setLocStatus("Location request timed out. Select your state below:");
+        setShowManualPicker(true);
       }
     }, 12000);
 
@@ -87,8 +99,9 @@ export default function Onboarding() {
       () => {
         resolve();
         clearTimeout(safetyTimeout);
-        setLocStatus("You can set your location anytime in the app.");
-        advanceFromLocation();
+        setLocLoading(false);
+        setLocStatus("Automatic location unavailable. Select your state below:");
+        setShowManualPicker(true);
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
@@ -96,21 +109,30 @@ export default function Onboarding() {
 
   const handleAllowLocation = async () => {
     if (!navigator.geolocation) {
-      setLocStatus("You can set your location anytime in the app.");
-      advanceFromLocation();
+      setLocStatus("Select your state below:");
+      setShowManualPicker(true);
       return;
     }
 
     try {
       const perm = await navigator.permissions.query({ name: "geolocation" as PermissionName });
       if (perm.state === "denied") {
-        setLocStatus("You can set your location anytime in the app.");
-        advanceFromLocation();
+        setLocStatus("Location access is blocked in your browser. Select your state below:");
+        setShowManualPicker(true);
         return;
       }
     } catch {}
 
     requestGeolocation();
+  };
+
+  const handleManualStateSelect = () => {
+    if (manualState) {
+      const code = US_STATES[manualState] || "";
+      setStoreLocation(code, manualState, "", "");
+      setLocStatus(`State set: ${manualState}`);
+    }
+    setTimeout(() => setStep(4), 800);
   };
 
   const finish = () => {
@@ -230,32 +252,54 @@ export default function Onboarding() {
               </p>
             )}
 
-            <div className="w-full space-y-2 pt-2">
-              <Button
-                data-testid="button-allow-location"
-                className="w-full h-11 text-base font-bold rounded-full shadow-lg"
-                onClick={handleAllowLocation}
-                disabled={locLoading}
-              >
-                {locLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Locating...
-                  </span>
-                ) : (
-                  "Allow Location"
-                )}
-              </Button>
-              <Button
-                data-testid="button-maybe-later"
-                variant="ghost"
-                className="w-full text-sm font-medium text-muted-foreground h-9"
-                onClick={() => setStep(4)}
-                disabled={locLoading}
-              >
-                Maybe Later
-              </Button>
-            </div>
+            {showManualPicker ? (
+              <div className="w-full space-y-3 pt-2">
+                <Select value={manualState} onValueChange={setManualState}>
+                  <SelectTrigger data-testid="select-state" className="w-full">
+                    <SelectValue placeholder="Select your state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(US_STATES).map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  data-testid="button-confirm-state"
+                  className="w-full h-11 text-base font-bold rounded-full shadow-lg"
+                  onClick={handleManualStateSelect}
+                >
+                  {manualState ? "Continue" : "Skip"}
+                </Button>
+              </div>
+            ) : (
+              <div className="w-full space-y-2 pt-2">
+                <Button
+                  data-testid="button-allow-location"
+                  className="w-full h-11 text-base font-bold rounded-full shadow-lg"
+                  onClick={handleAllowLocation}
+                  disabled={locLoading}
+                >
+                  {locLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Locating...
+                    </span>
+                  ) : (
+                    "Allow Location"
+                  )}
+                </Button>
+                <Button
+                  data-testid="button-maybe-later"
+                  variant="ghost"
+                  className="w-full text-sm font-medium text-muted-foreground h-9"
+                  onClick={() => setStep(4)}
+                  disabled={locLoading}
+                >
+                  Maybe Later
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
