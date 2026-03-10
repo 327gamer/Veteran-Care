@@ -68,19 +68,23 @@ export default function Onboarding() {
         clearTimeout(safetyTimeout);
         setLocStatus("Finding your area...");
         try {
+          const controller = new AbortController();
+          const fetchTimeout = setTimeout(() => controller.abort(), 5000);
           const res = await fetch(
             `${REVERSE_GEOCODE_URL}?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-            { headers: { "Accept-Language": "en" } }
+            { headers: { "Accept-Language": "en" }, signal: controller.signal }
           );
+          clearTimeout(fetchTimeout);
           const data = await res.json();
           const addr = data.address || {};
           const stateCode = addr.state_code?.toUpperCase() || addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
           const state = addr.state || "";
-          const city = addr.city || addr.town || addr.village || "";
+          const city = addr.city || addr.town || addr.village || addr.county || "";
           const zip = addr.postcode || "";
-          if (stateCode || city) {
-            setStoreLocation(stateCode, state, city, zip);
-            setLocStatus(`Location set: ${city ? city + ", " : ""}${stateCode}`);
+          if (stateCode || state || city) {
+            setStoreLocation(stateCode || "", state, city, zip);
+            const display = [city, stateCode || state].filter(Boolean).join(", ");
+            setLocStatus(`Location set: ${display}`);
           } else {
             setLocStatus("You can set your location anytime in the app.");
           }
