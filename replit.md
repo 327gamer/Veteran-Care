@@ -161,6 +161,15 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Saved page**: Shows "Synced to your account" when logged in, "Saved on this device only" when logged out
 - **Vite config**: Exposes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to frontend via `define` block
 
+## Resource Email Notifications
+- **Column**: `resources.notify_email` (TEXT, nullable) — added via `supabase/add_notify_email.sql`
+- **Server startup**: `checkNotifyEmailColumn()` probes for column; `hasNotifyEmailColumn` flag guards reads/writes
+- **Fallback config**: `RESOURCE_NOTIFY_CONFIG` in `server/lead-email.ts` maps `source_name` → email (e.g. "Veteran Care" → info@veterancare.com); used when column doesn't exist or is null
+- **Trigger**: When a navigator request is submitted with a `resource_id`, `sendResourceNotification()` is called async
+- **Email template**: Branded "New Inquiry from Veteran Care" email with veteran contact info, category, urgency, message
+- **Admin PATCH/POST/CSV**: `notify_email` included in allowed fields when column exists
+- **File**: `server/lead-email.ts` — contains `sendResourceNotification()`, `buildResourceNotificationHtml()`, and `RESOURCE_NOTIFY_CONFIG`
+
 ## Service Priority
 - **Column**: `resources.service_priority` (TEXT, nullable)
 - **Valid values**: `immediate`, `same_week`, `standard`, `information` (validated on POST/CSV; null for invalid)

@@ -5,11 +5,13 @@ import { supabase } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
+import { sendResourceNotification } from "./lead-email";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
 let hasNavLifecycleColumns = false;
+let hasNotifyEmailColumn = false;
 
 async function checkGeoColumns() {
   const { error } = await supabase.from("resources").select("latitude").limit(1);
@@ -38,6 +40,16 @@ async function checkServicePriorityColumn() {
     console.log("[schema] service_priority column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN service_priority TEXT;");
   } else {
     hasServicePriorityColumn = true;
+  }
+}
+
+async function checkNotifyEmailColumn() {
+  const { error } = await supabase.from("resources").select("notify_email").limit(1);
+  if (error && error.message.includes("does not exist")) {
+    hasNotifyEmailColumn = false;
+    console.log("[schema] notify_email column not found. Run: ALTER TABLE resources ADD COLUMN notify_email TEXT;");
+  } else {
+    hasNotifyEmailColumn = true;
   }
 }
 
@@ -173,6 +185,7 @@ export async function registerRoutes(
   await checkGeoColumns();
   await checkSubcategoryColumn();
   await checkServicePriorityColumn();
+  await checkNotifyEmailColumn();
   await checkNavLifecycleColumns();
   await checkPartnerTable();
   await checkStatesTable();
@@ -732,6 +745,11 @@ export async function registerRoutes(
       insertData.service_priority = validPriorities.includes(service_priority) ? service_priority : null;
     }
 
+    if (hasNotifyEmailColumn) {
+      const ne = req.body.notify_email?.trim() || null;
+      insertData.notify_email = ne && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ne) ? ne : null;
+    }
+
     if (hasGeoColumns) {
       insertData.latitude = isNaN(latitude as number) ? null : latitude;
       insertData.longitude = isNaN(longitude as number) ? null : longitude;
@@ -874,6 +892,11 @@ export async function registerRoutes(
         if (hasServicePriorityColumn) {
             const validPriorities = ["immediate", "same_week", "standard", "information"];
             csvInsert.service_priority = validPriorities.includes(row.service_priority) ? row.service_priority : null;
+        }
+
+        if (hasNotifyEmailColumn) {
+            const ne = row.notify_email?.trim() || null;
+            csvInsert.notify_email = ne && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ne) ? ne : null;
         }
 
         if (hasGeoColumns) {
@@ -1266,6 +1289,7 @@ export async function registerRoutes(
       "sponsored", "monetization_type", "affiliate_url",
       ...(hasSubcategoryColumn ? ["subcategory"] : []),
       ...(hasServicePriorityColumn ? ["service_priority"] : []),
+      ...(hasNotifyEmailColumn ? ["notify_email"] : []),
       ...(hasGeoColumns ? ["latitude", "longitude", "geo_source"] : []),
     ];
 
@@ -1450,6 +1474,10 @@ export async function registerRoutes(
 
     if (hasPartnerTable && hasRoutingColumns) {
       autoRouteNewLead(data.id).catch(() => {});
+    }
+
+    if (data.resource_id) {
+      sendResourceNotification(data.id, data.resource_id).catch(() => {});
     }
 
     const response: Record<string, any> = {

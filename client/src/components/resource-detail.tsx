@@ -150,7 +150,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
     }
   };
 
-  const hasContactInfo = resource.phone || resource.email || resource.address;
+  const hasContactInfo = resource.phone || resource.email || resource.website_url || resource.address;
   const hasAddress = resource.address || (resource.city && resource.state);
 
   return (
@@ -233,6 +233,12 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <a href={`mailto:${resource.email}`} className="text-primary hover:underline">{resource.email}</a>
+                    </div>
+                  )}
+                  {resource.website_url && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <a href={resource.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{resource.website_url.replace(/^https?:\/\//, '')}</a>
                     </div>
                   )}
                   {hasAddress && (

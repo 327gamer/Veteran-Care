@@ -140,6 +140,183 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
 </html>`;
 }
 
+function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: string, notifyEmail: string): string {
+  const urgencyText = urgencyLabel(lead.urgency);
+  const urgencyBgColor = urgencyColor(lead.urgency);
+  const isImmediate = lead.urgency === "immediate";
+  const timestamp = new Date(lead.createdAt).toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+  
+  ${isImmediate ? `<div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
+    <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This veteran needs urgent help</strong>
+    <p style="color: #991B1B; margin: 4px 0 0 0; font-size: 13px;">Please respond as quickly as possible.</p>
+  </div>` : ""}
+
+  <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">New Inquiry from Veteran Care</h2>
+    <p style="margin: 0; color: #15803D; font-size: 13px;">Resource: ${escapeHtml(resourceTitle)}</p>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px; width: 140px;">Veteran Name</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.veteranName)}</td>
+    </tr>
+    ${lead.veteranPhone ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Phone</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="tel:${escapeHtml(lead.veteranPhone)}" style="color: #2563EB;">${escapeHtml(lead.veteranPhone)}</a></td>
+    </tr>` : ""}
+    ${lead.veteranEmail ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Email</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="mailto:${escapeHtml(lead.veteranEmail)}" style="color: #2563EB;">${escapeHtml(lead.veteranEmail)}</a></td>
+    </tr>` : ""}
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Preferred Contact</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(lead.preferredContact) || "Not specified"}</td>
+    </tr>
+    ${lead.userCity || lead.userState ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Location</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${[escapeHtml(lead.userCity), escapeHtml(lead.userState)].filter(Boolean).join(", ")}</td>
+    </tr>` : ""}
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Category</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(lead.category) || "General"}${lead.subcategory ? ` — ${escapeHtml(lead.subcategory)}` : ""}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Urgency</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">
+        <span style="background: ${urgencyBgColor}; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${urgencyText}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Submitted</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${timestamp} ET</td>
+    </tr>
+  </table>
+
+  ${lead.message ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Veteran's Message</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
+  </div>` : ""}
+
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0; font-size: 13px; color: #92400E;">
+      <strong>Next Steps:</strong> Please reach out to this veteran using their preferred contact method.
+    </p>
+  </div>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
+    <p>This inquiry was sent via Veteran Care — ${escapeHtml(resourceTitle)}</p>
+    <p>Lead ID: ${lead.leadId}</p>
+  </div>
+
+</body>
+</html>`;
+}
+
+const RESOURCE_NOTIFY_CONFIG: Record<string, string> = {
+  "Veteran Care": "info@veterancare.com",
+};
+
+export async function sendResourceNotification(
+  leadId: string,
+  resourceId: string
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const { data: resource, error: resErr } = await supabase
+      .from("resources")
+      .select("id, title, source_name, category_id")
+      .eq("id", resourceId)
+      .single();
+
+    if (resErr || !resource) {
+      return { sent: false, error: "Resource not found" };
+    }
+
+    let notifyEmail: string | null = null;
+
+    try {
+      const { data: withNotify } = await supabase
+        .from("resources")
+        .select("notify_email")
+        .eq("id", resourceId)
+        .single();
+      if (withNotify?.notify_email) {
+        notifyEmail = withNotify.notify_email;
+      }
+    } catch {}
+
+    if (!notifyEmail && resource.source_name && RESOURCE_NOTIFY_CONFIG[resource.source_name]) {
+      notifyEmail = RESOURCE_NOTIFY_CONFIG[resource.source_name];
+    }
+
+    if (!notifyEmail) {
+      return { sent: false, error: "Resource has no notification email configured" };
+    }
+
+    const { data: lead, error: leadErr } = await supabase
+      .from("navigator_requests")
+      .select("id, veteran_name, veteran_phone, veteran_email, category, subcategory, urgency, message, user_state, user_city, preferred_contact, created_at")
+      .eq("id", leadId)
+      .single();
+
+    if (leadErr || !lead) {
+      return { sent: false, error: "Lead not found" };
+    }
+
+    const leadData: LeadEmailData = {
+      leadId: lead.id,
+      veteranName: lead.veteran_name,
+      veteranPhone: lead.veteran_phone,
+      veteranEmail: lead.veteran_email,
+      category: lead.category,
+      subcategory: lead.subcategory,
+      urgency: lead.urgency,
+      message: lead.message,
+      userState: lead.user_state,
+      userCity: lead.user_city,
+      preferredContact: lead.preferred_contact,
+      createdAt: lead.created_at,
+    };
+
+    const catPart = lead.category || "General";
+    const subPart = lead.subcategory ? ` — ${lead.subcategory}` : "";
+    const isImmediate = lead.urgency === "immediate";
+    const subject = isImmediate
+      ? `[URGENT] New Veteran Inquiry: ${catPart}${subPart}`
+      : `New Veteran Inquiry: ${catPart}${subPart}`;
+
+    const html = buildResourceNotificationHtml(leadData, resource.title, notifyEmail);
+
+    const { data: emailResult, error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [notifyEmail],
+      subject,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Resource notification failed for ${notifyEmail}:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Resource notification sent to ${notifyEmail} for lead ${leadId} (${emailResult?.id})`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending resource notification for lead ${leadId}:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
 export async function sendLeadNotification(
   leadId: string,
   partnerId: string
