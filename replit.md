@@ -58,6 +58,10 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `POST /api/admin/resources/duplicate-check` - Admin: find duplicate resources by title within a state (body: {state, category?})
 - `POST /api/admin/resources/cleanup-duplicates` - Admin: remove duplicate resources keeping oldest (body: {state, dry_run?})
 - `POST /api/admin/states/:code/clone-resources` - Admin: clone national resources from template state to new state (body: {source_state?, categories?, exclude_categories?})
+- `GET /api/profile` - Auth'd: get current user's profile (returns `{profile: null}` if no profile yet)
+- `POST /api/profile` - Auth'd: create/upsert user profile (first_name, last_name, email, phone, user_type required; branch_of_service, interests, state, city, zip optional; sets profile_complete=true if enrichment data provided)
+- `PATCH /api/profile` - Auth'd: update profile fields
+- `GET /api/admin/user-profiles?user_type=&state=&profile_complete=&limit=` - Admin: list user profiles with filters
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
 
 ## Supabase Tables
@@ -68,6 +72,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `partner_organizations` - id (uuid), name, contact_name, contact_email, contact_phone, website_url, state, cities (text[]), is_active, is_lead_enabled, notes, created_at (SQL in `supabase/create_partner_organizations.sql`)
 - `partner_routing_rules` - id (uuid), partner_id (fk→partner_organizations), category_slug, subcategory, urgency, state, city, priority (int), max_leads_per_day (int), is_active, created_at (SQL in `supabase/create_partner_organizations.sql`)
 - `states` - code (TEXT UNIQUE), name (TEXT), active (BOOLEAN), created_at; full schema adds: id (UUID), is_active, is_template, launch_date, timezone, admin_contact_name, admin_contact_email, config (JSONB), resource_count, partner_count (SQL in `supabase/create_states.sql`)
+- `user_profiles` - id (UUID PK, fk→auth.users), first_name, last_name, email, phone, user_type (veteran/spouse_family/dependent/caregiver_advocate/other), consent_contact (bool), branch_of_service, interests (text[]), service_area, state, city, zip, profile_complete (bool), created_at, updated_at (SQL in `supabase/create_user_profiles.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -152,7 +157,19 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 ## User Accounts + Saved Resources Sync (Step 18)
 - **Auth**: Supabase Auth with email/password (client-side client in `client/src/lib/supabase.ts`)
 - **Auth hook**: `client/src/lib/use-auth.ts` — session management, signUp, signIn, signOut
-- **Auth UI**: `client/src/components/auth-modal.tsx` — login/signup modal with email+password
+- **Auth UI**: `client/src/components/auth-modal.tsx` — two-step signup modal:
+  - **Step 1**: First name, last name, email, phone, password, user type (all required), consent checkbox
+  - **Step 2**: Branch of service, interests, state/location (optional, skippable)
+  - **Login mode**: Email + password only
+- **User types**: veteran, spouse_family, dependent, caregiver_advocate, other
+- **Profile storage**: `user_profiles` table in Supabase (SQL in `supabase/create_user_profiles.sql`)
+- **Profile API**: GET /api/profile, POST /api/profile, PATCH /api/profile (auth'd); GET /api/admin/user-profiles (admin)
+- **Profile completion tracking**: `profile_complete` boolean — set to true when branch/interests/state provided
+- **Onboarding flow**: Welcome → Create Account prompt (or Continue as Guest) → Location → Interests → Home
+  - If user creates account, step 2 collects interests/location and goes to Home
+  - If user continues as guest, existing location/interests onboarding continues
+  - "I Already Have an Account" opens login modal
+- **Guest banner**: Home page shows "Create a free account" banner for non-authenticated users
 - **Profile dropdown**: Layout top bar profile button → dropdown with sign in/out
 - **Supabase table `user_saved_resources`**: id, user_id (fk→auth.users), resource_id (fk→resources), saved_at; unique(user_id, resource_id); RLS policies for user-scoped access (SQL in `supabase/create_user_saved_resources.sql`)
 - **Server routes**: `GET /api/saved-resources` (auth'd, returns saved IDs), `POST /api/saved-resources/sync` (merges localStorage IDs on first login), `POST /api/saved-resources/toggle` (save/unsave with auth)

@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import NavigatorModal from "@/components/navigator-modal";
+import AuthModal from "@/components/auth-modal";
+import { useAuth } from "@/lib/use-auth";
 
 const feedItems = [
   { 
@@ -131,6 +133,7 @@ export default function Home() {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showNavigator, setShowNavigator] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGuidedHelp, setShowGuidedHelp] = useState(false);
   const [guidedCategory, setGuidedCategory] = useState<string | null>(null);
   const [guidedUrgency, setGuidedUrgency] = useState<string | null>(null);
@@ -145,6 +148,8 @@ export default function Home() {
     setServiceProfile(profileForm);
     setShowProfileDialog(false);
   };
+
+  const { user } = useAuth();
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
@@ -236,6 +241,23 @@ export default function Home() {
           <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Welcome to Veteran Care — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services. Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, and other local resources in one place.</p>
         </div>
       </section>
+
+      {!user && (
+        <section data-testid="banner-guest-signup" className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-primary">Create a free account</p>
+            <p className="text-xs text-muted-foreground">Save your preferences and get personalized support.</p>
+          </div>
+          <Button
+            data-testid="button-home-signup"
+            size="sm"
+            className="shrink-0 rounded-full text-xs px-4"
+            onClick={() => setShowAuthModal(true)}
+          >
+            Sign Up
+          </Button>
+        </section>
+      )}
 
       {/* Location Badge */}
       <section className="flex items-center justify-between">
@@ -647,6 +669,12 @@ export default function Home() {
       
       {/* Spacer for bottom nav */}
       <div className="h-8"></div>
+
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        defaultMode="signup"
+      />
     </div>
   );
 }

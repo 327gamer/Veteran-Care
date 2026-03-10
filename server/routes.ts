@@ -501,6 +501,149 @@ export async function registerRoutes(
     return res.json({ ids });
   });
 
+  app.get("/api/profile", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (error && error.code === "PGRST116") {
+      return res.json({ profile: null });
+    }
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json({ profile: data });
+  });
+
+  app.post("/api/profile", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { first_name, last_name, email, phone, user_type, consent_contact,
+            branch_of_service, interests, service_area, state, city, zip } = req.body;
+
+    if (!first_name?.trim() || !last_name?.trim() || !email?.trim() || !phone?.trim()) {
+      return res.status(400).json({ error: "First name, last name, email, and phone are required" });
+    }
+
+    const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "other"];
+    const uType = validTypes.includes(user_type) ? user_type : "veteran";
+
+    const profileData: Record<string, any> = {
+      id: user.id,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      user_type: uType,
+      consent_contact: consent_contact === true,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (branch_of_service !== undefined) profileData.branch_of_service = branch_of_service?.trim() || null;
+    if (interests !== undefined) profileData.interests = Array.isArray(interests) ? interests : [];
+    if (service_area !== undefined) profileData.service_area = service_area?.trim() || null;
+    if (state !== undefined) profileData.state = state?.trim() || null;
+    if (city !== undefined) profileData.city = city?.trim() || null;
+    if (zip !== undefined) profileData.zip = zip?.trim() || null;
+
+    const hasEnrichment = profileData.branch_of_service || (profileData.interests && profileData.interests.length > 0)
+      || profileData.state || profileData.city;
+    if (hasEnrichment) profileData.profile_complete = true;
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .upsert(profileData, { onConflict: "id" })
+      .select()
+      .single();
+
+    if (error) {
+      console.log("[profile] Error saving profile:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ profile: data });
+  });
+
+  app.patch("/api/profile", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const allowedFields = [
+      "first_name", "last_name", "email", "phone", "user_type", "consent_contact",
+      "branch_of_service", "interests", "service_area", "state", "city", "zip", "profile_complete",
+    ];
+
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (updates.user_type) {
+      const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "other"];
+      if (!validTypes.includes(updates.user_type)) updates.user_type = "veteran";
+    }
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .update(updates)
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json({ profile: data });
+  });
+
+  app.get("/api/admin/user-profiles", requireAdmin, async (req, res) => {
+    const { user_type, state: stateFilter, profile_complete, limit: lim } = req.query;
+    let query = supabase.from("user_profiles")
+      .select("id, first_name, last_name, email, phone, user_type, consent_contact, branch_of_service, interests, state, city, profile_complete, created_at")
+      .order("created_at", { ascending: false });
+
+    if (user_type && typeof user_type === "string") query = query.eq("user_type", user_type);
+    if (stateFilter && typeof stateFilter === "string") query = query.eq("state", stateFilter.toUpperCase());
+    if (profile_complete === "true") query = query.eq("profile_complete", true);
+    if (profile_complete === "false") query = query.eq("profile_complete", false);
+
+    const pageLimit = Math.min(parseInt(lim as string) || 100, 500);
+    query = query.limit(pageLimit);
+
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ profiles: data, count: data?.length || 0 });
+  });
+
   app.post("/api/submit-resource", async (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown";
     if (!checkSubmitRate(ip)) {

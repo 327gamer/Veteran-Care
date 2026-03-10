@@ -3,9 +3,10 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { MapPin, ArrowRight, Sparkles } from "lucide-react";
+import { MapPin, ArrowRight, Sparkles, UserPlus } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources } from "@/lib/store";
+import AuthModal from "@/components/auth-modal";
 
 const REVERSE_GEOCODE_URL = "https://nominatim.openstreetmap.org/reverse";
 
@@ -29,6 +30,7 @@ export default function Onboarding() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [locLoading, setLocLoading] = useState(false);
   const [locStatus, setLocStatus] = useState<string>("");
+  const [showAuth, setShowAuth] = useState(false);
   const { setInterests, completeOnboarding, setLocation: setStoreLocation } = useSavedResources();
 
   const toggleInterest = (item: string) => {
@@ -40,7 +42,7 @@ export default function Onboarding() {
   const handleAllowLocation = () => {
     if (!navigator.geolocation) {
       setLocStatus("Location not supported by this browser.");
-      setTimeout(() => setStep(3), 1500);
+      setTimeout(() => setStep(4), 1500);
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Onboarding() {
     const timeout = setTimeout(() => {
       setLocLoading(false);
       setLocStatus("Location request timed out.");
-      setTimeout(() => setStep(3), 1200);
+      setTimeout(() => setStep(4), 1200);
     }, 10000);
 
     navigator.geolocation.getCurrentPosition(
@@ -78,7 +80,7 @@ export default function Onboarding() {
           setLocStatus("Could not look up your area. You can set it later.");
         }
         setLocLoading(false);
-        setTimeout(() => setStep(3), 1200);
+        setTimeout(() => setStep(4), 1200);
       },
       (err) => {
         clearTimeout(timeout);
@@ -90,7 +92,7 @@ export default function Onboarding() {
         } else {
           setLocStatus("Location unavailable. You can set it later.");
         }
-        setTimeout(() => setStep(3), 2000);
+        setTimeout(() => setStep(4), 2000);
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
@@ -98,6 +100,11 @@ export default function Onboarding() {
 
   const finish = () => {
     setInterests(selectedInterests);
+    completeOnboarding();
+    setLocation("/home");
+  };
+
+  const handleAuthSuccess = () => {
     completeOnboarding();
     setLocation("/home");
   };
@@ -134,28 +141,52 @@ export default function Onboarding() {
                 variant="outline"
                 className="w-full h-10 text-sm font-semibold rounded-full border-2"
                 onClick={() => {
-                  completeOnboarding();
-                  setLocation("/home");
+                  setShowAuth(true);
                 }}
               >
                 I Already Have an Account
-              </Button>
-              <Button
-                data-testid="button-try-demo"
-                variant="ghost"
-                className="w-full h-9 text-sm text-muted-foreground"
-                onClick={() => {
-                  completeOnboarding();
-                  setLocation("/home");
-                }}
-              >
-                Try Demo
               </Button>
             </div>
           </div>
         )}
 
         {step === 2 && (
+          <div className="w-full flex flex-col items-center space-y-6">
+            <div className="h-36 w-full max-w-[220px] flex items-center justify-center drop-shadow-2xl">
+              <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
+                Create Your Free Account
+              </h1>
+              <p className="text-muted-foreground text-sm leading-relaxed px-4">
+                Sign up for a personalized experience with saved resources, tailored recommendations, and direct support.
+              </p>
+            </div>
+
+            <div className="w-full space-y-2 pt-2">
+              <Button
+                data-testid="button-create-account"
+                className="w-full h-11 text-base font-bold rounded-full shadow-lg"
+                onClick={() => setShowAuth(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create Free Account
+              </Button>
+              <Button
+                data-testid="button-continue-guest"
+                variant="ghost"
+                className="w-full text-sm font-medium text-muted-foreground h-9"
+                onClick={() => setStep(3)}
+              >
+                Continue as Guest
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
           <div className="w-full flex flex-col items-center space-y-6">
             <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
               <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
@@ -204,7 +235,7 @@ export default function Onboarding() {
                 data-testid="button-maybe-later"
                 variant="ghost"
                 className="w-full text-sm font-medium text-muted-foreground h-9"
-                onClick={() => setStep(3)}
+                onClick={() => setStep(4)}
                 disabled={locLoading}
               >
                 Maybe Later
@@ -213,7 +244,7 @@ export default function Onboarding() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div className="w-full flex flex-col items-center">
             <div className="h-32 w-full max-w-[200px] flex items-center justify-center drop-shadow-2xl mb-2">
               <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
@@ -267,6 +298,13 @@ export default function Onboarding() {
           </div>
         )}
       </div>
+
+      <AuthModal
+        open={showAuth}
+        onOpenChange={setShowAuth}
+        onSuccess={handleAuthSuccess}
+        defaultMode={step === 1 ? "login" : "signup"}
+      />
     </div>
   );
 }
