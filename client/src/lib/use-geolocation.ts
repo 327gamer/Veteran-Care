@@ -56,22 +56,21 @@ function setCachedLocation(data: GeoLocation) {
 }
 
 async function reverseGeocode(lat: number, lng: number): Promise<GeoLocation> {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": "VeteranCareApp/1.0" },
-  });
-
-  if (!res.ok) throw new Error("Geocoding failed");
-
-  const data = await res.json();
-  const addr = data.address || {};
-
-  const stateName = addr.state || "";
-  const stateCode = STATE_NAME_TO_CODE[stateName] || "";
-  const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || "";
-  const zip = addr.postcode || "";
-
-  return { state: stateName, stateCode, city, zip, lat, lng };
+  try {
+    const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lng}`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        state: data.state || "",
+        stateCode: data.stateCode || "",
+        city: data.city || "",
+        zip: data.zip || "",
+        lat,
+        lng,
+      };
+    }
+  } catch {}
+  return { state: "", stateCode: "", city: "", zip: "", lat, lng };
 }
 
 export function useGeolocation(): UseGeolocationReturn {
