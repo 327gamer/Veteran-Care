@@ -144,56 +144,12 @@ export default function Home() {
     mos: serviceProfile.mos || "",
   });
 
-  const saveProfile = async () => {
+  const saveProfile = () => {
     setServiceProfile(profileForm);
     setShowProfileDialog(false);
-
-    if (user) {
-      try {
-        const { supabase: sb } = await import("@/lib/supabase");
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.access_token) {
-          const body: Record<string, any> = {};
-          if (profileForm.branch) body.branch_of_service = profileForm.branch;
-          const headers = {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-          };
-          let res = await fetch("/api/profile", { method: "PATCH", headers, body: JSON.stringify(body) });
-          if (!res.ok) {
-            res = await fetch("/api/profile", { method: "POST", headers, body: JSON.stringify(body) });
-          }
-          if (!res.ok) {
-            console.log("[profile] Sync failed:", await res.text());
-          }
-        }
-      } catch (err) {
-        console.log("[profile] Sync error:", err);
-      }
-    }
   };
 
   const { user } = useAuth();
-
-  useEffect(() => {
-    if (!user || serviceProfile.branch) return;
-    (async () => {
-      try {
-        const { supabase: sb } = await import("@/lib/supabase");
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session?.access_token) return;
-        const res = await fetch("/api/profile", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) return;
-        const { profile } = await res.json();
-        if (profile?.branch_of_service) {
-          setServiceProfile({ branch: profile.branch_of_service });
-          setProfileForm(p => ({ ...p, branch: profile.branch_of_service }));
-        }
-      } catch {}
-    })();
-  }, [user]);
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
@@ -417,8 +373,8 @@ export default function Home() {
         </Card>
       </section>
 
-      {/* Profile Completion Prompt — only for logged-in users with incomplete profile */}
-      {user && !serviceProfile.branch && (
+      {/* Service Profile Prompt */}
+      {!serviceProfile.branch && (
         <section data-testid="section-profile-prompt" className="animate-in fade-in slide-in-from-top-4 duration-500">
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm">
             <CardContent className="p-4">
@@ -428,7 +384,7 @@ export default function Home() {
                 </div>
                 <div className="flex-1 min-w-0 space-y-2">
                   <p className="text-sm text-foreground leading-relaxed">
-                    For a more personalized experience, please complete your profile. Your information is private and confidential.
+                    For a more personalized experience you can add your service information such as branch and service era. Your information is private and confidential.
                   </p>
                   <Button
                     data-testid="button-add-profile"
@@ -558,45 +514,24 @@ export default function Home() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Complete Your Profile
+              Service Profile
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              For a more personalized experience, please complete your profile. Your information is private and confidential.
+              Optional. Helps us personalize your experience. Your information is private and confidential.
             </p>
           </DialogHeader>
-
-          {(() => {
-            const filled = [profileForm.branch, profileForm.era, userLocation.state].filter(Boolean).length;
-            const total = 3;
-            const pct = Math.round((filled / total) * 100);
-            return (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Profile completion</span>
-                  <span className="font-medium">{pct}%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="grid gap-4 py-1">
+          <div className="grid gap-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs">Branch of Service</Label>
+              <Label className="text-xs">Branch</Label>
               <Select value={profileForm.branch || undefined} onValueChange={(v) => setProfileForm(p => ({ ...p, branch: v }))}>
                 <SelectTrigger data-testid="select-profile-branch"><SelectValue placeholder="Select Branch" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Army">Army</SelectItem>
-                  <SelectItem value="Navy">Navy</SelectItem>
-                  <SelectItem value="Marine Corps">Marine Corps</SelectItem>
-                  <SelectItem value="Air Force">Air Force</SelectItem>
-                  <SelectItem value="Coast Guard">Coast Guard</SelectItem>
-                  <SelectItem value="Space Force">Space Force</SelectItem>
-                  <SelectItem value="National Guard">National Guard</SelectItem>
-                  <SelectItem value="Reserves">Reserves</SelectItem>
-                  <SelectItem value="N/A">N/A</SelectItem>
+                  <SelectItem value="army">Army</SelectItem>
+                  <SelectItem value="navy">Navy</SelectItem>
+                  <SelectItem value="marines">Marine Corps</SelectItem>
+                  <SelectItem value="airforce">Air Force</SelectItem>
+                  <SelectItem value="coastguard">Coast Guard</SelectItem>
+                  <SelectItem value="spaceforce">Space Force</SelectItem>
                 </SelectContent>
               </Select>
             </div>
