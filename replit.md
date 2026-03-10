@@ -79,7 +79,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - `SUPABASE_ANON_KEY` - Supabase anonymous/public key
 - `ADMIN_KEY` - Secret key for admin resource review access
 - `RESEND_API_KEY` - Resend email service API key (for partner lead notifications)
-- `RESEND_FROM_EMAIL` - (optional) Override sender address; defaults to `Veteran Care <onboarding@resend.dev>`
+- `RESEND_FROM_EMAIL` - Sender address for outbound emails; set to `Veteran Care <noreply@veterancare.com>` (domain verified in Resend)
 
 ## Routes (Frontend)
 - `/` - Landing (auto-redirects to /onboarding or /home based on state)
@@ -325,7 +325,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 ## Partner Email Notifications
 - **Key file**: `server/lead-email.ts`
 - **Service**: Resend (resend.com) — `RESEND_API_KEY` env var required
-- **From address**: Defaults to `Veteran Care <onboarding@resend.dev>`; override with `RESEND_FROM_EMAIL` env var (requires verified domain in Resend)
+- **From address**: `Veteran Care <noreply@veterancare.com>` (veterancare.com domain verified in Resend)
 - **Trigger**: Fires automatically after `routeLead()` succeeds (both auto-route and manual reroute)
 - **Email content**: Veteran name, phone, email, preferred contact, location, category/subcategory, urgency (color-coded badge), message, timestamp (ET)
 - **Urgent leads**: `immediate` urgency shows red alert banner at top of email with 15-min escalation warning
@@ -340,7 +340,7 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   2. **Midlands Housing Pilot** — Columbia, West Columbia, Lexington, Irmo (urgent p5, general p20)
   3. **SC Housing Statewide Pilot** — Statewide fallback (urgent p10, general p30)
 - **Routing verified**: City-based routing, urgency priority, statewide fallback, email delivery, routing history tracking
-- **Email note**: Resend API is in sandbox mode — only sends to account owner (colinmslaven@gmail.com). To send to Colin@VeteranCare.com or real partner emails, verify veterancare.com domain in Resend and set `RESEND_FROM_EMAIL` env var
+- **Email status**: Production mode — emails send directly to partner/resource notification addresses via verified veterancare.com domain
 - **Rate limit**: Navigator requests limited to 5 per hour per IP (in-memory, resets on server restart)
 
 ## Multi-State Architecture

@@ -49,3 +49,8 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
+
+[userenv]
+
+[userenv.shared]
+RESEND_FROM_EMAIL = "Veteran Care <noreply@veterancare.com>"

@@ -227,12 +227,6 @@ const RESOURCE_NOTIFY_CONFIG: Record<string, string> = {
   "Veteran Care": "info@veterancare.com",
 };
 
-const RESEND_SANDBOX_RECIPIENT = "colinmslaven@gmail.com";
-
-function isSandboxMode(): boolean {
-  return !process.env.RESEND_FROM_EMAIL || FROM_EMAIL.includes("resend.dev");
-}
-
 export async function sendResourceNotification(
   leadId: string,
   resourceId: string
@@ -311,26 +305,21 @@ export async function sendResourceNotification(
 
     const html = buildResourceNotificationHtml(leadData, resource.title, notifyEmail);
 
-    const sandbox = isSandboxMode();
-    const actualRecipient = sandbox ? RESEND_SANDBOX_RECIPIENT : notifyEmail;
-
-    if (sandbox) {
-      console.log(`[email] Resend sandbox mode — redirecting from ${notifyEmail} to ${actualRecipient}`);
-    }
+    console.log(`[email] Sending resource notification to ${notifyEmail} from ${FROM_EMAIL}`);
 
     const { data: emailResult, error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: [actualRecipient],
-      subject: sandbox ? `[SANDBOX → ${notifyEmail}] ${subject}` : subject,
+      to: [notifyEmail],
+      subject,
       html,
     });
 
     if (emailErr) {
-      console.log(`[email] Resource notification failed for ${actualRecipient}:`, emailErr.message);
+      console.log(`[email] Resource notification failed for ${notifyEmail}:`, emailErr.message);
       return { sent: false, error: emailErr.message };
     }
 
-    console.log(`[email] Resource notification sent to ${actualRecipient} for lead ${leadId} (${emailResult?.id})`);
+    console.log(`[email] Resource notification sent to ${notifyEmail} for lead ${leadId} (${emailResult?.id})`);
     return { sent: true };
   } catch (err: any) {
     console.log(`[email] Error sending resource notification for lead ${leadId}:`, err?.message);
