@@ -44,13 +44,7 @@ export default function Onboarding() {
     setTimeout(() => setStep(4), 1200);
   };
 
-  const handleAllowLocation = () => {
-    if (!navigator.geolocation) {
-      setLocStatus("Location not supported. You can set it later.");
-      advanceFromLocation();
-      return;
-    }
-
+  const requestGeolocation = () => {
     setLocLoading(true);
     setLocStatus("Requesting location access...");
 
@@ -63,7 +57,7 @@ export default function Onboarding() {
     const safetyTimeout = setTimeout(() => {
       if (!resolved) {
         resolve();
-        setLocStatus("Location request timed out. You can set it later.");
+        setLocStatus("You can set your location anytime in the app.");
         advanceFromLocation();
       }
     }, 12000);
@@ -88,21 +82,40 @@ export default function Onboarding() {
             setStoreLocation(stateCode, state, city, zip);
             setLocStatus(`Location set: ${city ? city + ", " : ""}${stateCode}`);
           } else {
-            setLocStatus("Could not determine your area. You can set it later.");
+            setLocStatus("You can set your location anytime in the app.");
           }
         } catch {
-          setLocStatus("Could not look up your area. You can set it later.");
+          setLocStatus("You can set your location anytime in the app.");
         }
         advanceFromLocation();
       },
       () => {
         resolve();
         clearTimeout(safetyTimeout);
-        setLocStatus("No problem — you can set your location later in the app.");
+        setLocStatus("You can set your location anytime in the app.");
         advanceFromLocation();
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
+  };
+
+  const handleAllowLocation = async () => {
+    if (!navigator.geolocation) {
+      setLocStatus("You can set your location anytime in the app.");
+      advanceFromLocation();
+      return;
+    }
+
+    try {
+      const perm = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+      if (perm.state === "denied") {
+        setLocStatus("You can set your location anytime in the app.");
+        advanceFromLocation();
+        return;
+      }
+    } catch {}
+
+    requestGeolocation();
   };
 
   const finish = () => {
