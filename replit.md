@@ -180,12 +180,11 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 
 ## Resource Email Notifications
 - **Column**: `resources.notify_email` (TEXT, nullable) — added via `supabase/add_notify_email.sql`
-- **Server startup**: `checkNotifyEmailColumn()` probes for column; `hasNotifyEmailColumn` flag guards reads/writes
-- **Fallback config**: `RESOURCE_NOTIFY_CONFIG` in `server/lead-email.ts` maps `source_name` → email (e.g. "Veteran Care" → info@veterancare.com); used when column doesn't exist or is null
-- **Trigger**: When a navigator request is submitted with a `resource_id`, `sendResourceNotification()` is called async
+- **Default recipient**: `info@veterancare.com` (all navigator requests)
+- **Config map**: `RESOURCE_NOTIFY_CONFIG` in `server/lead-email.ts` maps `source_name` → email; future partners can have custom notification emails here
+- **Trigger**: `sendNavigatorNotification()` fires for EVERY navigator request (with or without resource_id)
 - **Email template**: Branded "New Inquiry from Veteran Care" email with veteran contact info, category, urgency, message
-- **Admin PATCH/POST/CSV**: `notify_email` included in allowed fields when column exists
-- **File**: `server/lead-email.ts` — contains `sendResourceNotification()`, `buildResourceNotificationHtml()`, and `RESOURCE_NOTIFY_CONFIG`
+- **File**: `server/lead-email.ts` — contains `sendNavigatorNotification()`, `sendLeadNotification()`, `buildResourceNotificationHtml()`, and `RESOURCE_NOTIFY_CONFIG`
 
 ## Service Priority
 - **Column**: `resources.service_priority` (TEXT, nullable)

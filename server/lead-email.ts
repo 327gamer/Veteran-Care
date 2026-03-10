@@ -223,51 +223,38 @@ function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: strin
 </html>`;
 }
 
+const DEFAULT_NOTIFY_EMAIL = "info@veterancare.com";
+
 const RESOURCE_NOTIFY_CONFIG: Record<string, string> = {
-  "Veteran Care": "info@veterancare.com",
+  "Veteran Care": DEFAULT_NOTIFY_EMAIL,
 };
 
-export async function sendResourceNotification(
+export async function sendNavigatorNotification(
   leadId: string,
-  resourceId: string
+  resourceId?: string | null
 ): Promise<{ sent: boolean; error?: string }> {
   try {
-    console.log(`[email] Resource notification triggered for lead ${leadId}, resource ${resourceId}`);
+    console.log(`[email] Notification triggered for lead ${leadId}${resourceId ? `, resource ${resourceId}` : " (no resource)"}`);
 
-    const { data: resource, error: resErr } = await supabase
-      .from("resources")
-      .select("id, title, source_name, category_id")
-      .eq("id", resourceId)
-      .single();
+    let resourceTitle = "General Help Request";
+    let notifyEmail = DEFAULT_NOTIFY_EMAIL;
 
-    if (resErr || !resource) {
-      console.log(`[email] Resource ${resourceId} not found:`, resErr?.message);
-      return { sent: false, error: "Resource not found" };
-    }
+    if (resourceId) {
+      const { data: resource, error: resErr } = await supabase
+        .from("resources")
+        .select("id, title, source_name")
+        .eq("id", resourceId)
+        .single();
 
-    let notifyEmail: string | null = null;
-
-    const { data: withNotify, error: notifyErr } = await supabase
-      .from("resources")
-      .select("notify_email")
-      .eq("id", resourceId)
-      .single();
-
-    if (notifyErr) {
-      console.log(`[email] notify_email column not available: ${notifyErr.message}`);
-    } else if (withNotify?.notify_email) {
-      notifyEmail = withNotify.notify_email;
-      console.log(`[email] Found notify_email column value: ${notifyEmail}`);
-    }
-
-    if (!notifyEmail && resource.source_name && RESOURCE_NOTIFY_CONFIG[resource.source_name]) {
-      notifyEmail = RESOURCE_NOTIFY_CONFIG[resource.source_name];
-      console.log(`[email] Using config map for source "${resource.source_name}": ${notifyEmail}`);
-    }
-
-    if (!notifyEmail) {
-      console.log(`[email] No notification email configured for resource "${resource.title}" (source: ${resource.source_name})`);
-      return { sent: false, error: "Resource has no notification email configured" };
+      if (resource) {
+        resourceTitle = resource.title || resourceTitle;
+        if (resource.source_name && RESOURCE_NOTIFY_CONFIG[resource.source_name]) {
+          notifyEmail = RESOURCE_NOTIFY_CONFIG[resource.source_name];
+          console.log(`[email] Using config for source "${resource.source_name}": ${notifyEmail}`);
+        }
+      } else {
+        console.log(`[email] Resource ${resourceId} not found: ${resErr?.message} — using default`);
+      }
     }
 
     const { data: lead, error: leadErr } = await supabase
@@ -303,9 +290,9 @@ export async function sendResourceNotification(
       ? `[URGENT] New Veteran Inquiry: ${catPart}${subPart}`
       : `New Veteran Inquiry: ${catPart}${subPart}`;
 
-    const html = buildResourceNotificationHtml(leadData, resource.title, notifyEmail);
+    const html = buildResourceNotificationHtml(leadData, resourceTitle, notifyEmail);
 
-    console.log(`[email] Sending resource notification to ${notifyEmail} from ${FROM_EMAIL}`);
+    console.log(`[email] Sending notification to ${notifyEmail} from ${FROM_EMAIL}`);
 
     const { data: emailResult, error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -315,14 +302,14 @@ export async function sendResourceNotification(
     });
 
     if (emailErr) {
-      console.log(`[email] Resource notification failed for ${notifyEmail}:`, emailErr.message);
+      console.log(`[email] Notification failed for ${notifyEmail}:`, emailErr.message);
       return { sent: false, error: emailErr.message };
     }
 
-    console.log(`[email] Resource notification sent to ${notifyEmail} for lead ${leadId} (${emailResult?.id})`);
+    console.log(`[email] Notification sent to ${notifyEmail} for lead ${leadId} (${emailResult?.id})`);
     return { sent: true };
   } catch (err: any) {
-    console.log(`[email] Error sending resource notification for lead ${leadId}:`, err?.message);
+    console.log(`[email] Error sending notification for lead ${leadId}:`, err?.message);
     return { sent: false, error: err?.message };
   }
 }

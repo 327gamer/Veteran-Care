@@ -5,7 +5,7 @@ import { supabase } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
-import { sendResourceNotification } from "./lead-email";
+import { sendNavigatorNotification } from "./lead-email";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
@@ -1619,15 +1619,13 @@ export async function registerRoutes(
       autoRouteNewLead(data.id).catch(() => {});
     }
 
-    if (data.resource_id) {
-      sendResourceNotification(data.id, data.resource_id).then(result => {
-        if (!result.sent) {
-          console.log(`[email] Resource notification not sent for lead ${data.id}: ${result.error}`);
-        }
-      }).catch(err => {
-        console.log(`[email] Resource notification error for lead ${data.id}:`, err?.message);
-      });
-    }
+    sendNavigatorNotification(data.id, data.resource_id || null).then(result => {
+      if (!result.sent) {
+        console.log(`[email] Notification not sent for lead ${data.id}: ${result.error}`);
+      }
+    }).catch(err => {
+      console.log(`[email] Notification error for lead ${data.id}:`, err?.message);
+    });
 
     const response: Record<string, any> = {
       id: data.id,
