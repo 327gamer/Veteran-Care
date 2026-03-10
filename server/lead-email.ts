@@ -227,11 +227,19 @@ const RESOURCE_NOTIFY_CONFIG: Record<string, string> = {
   "Veteran Care": "info@veterancare.com",
 };
 
+const RESEND_SANDBOX_RECIPIENT = "colinmslaven@gmail.com";
+
+function isSandboxMode(): boolean {
+  return !process.env.RESEND_FROM_EMAIL || FROM_EMAIL.includes("resend.dev");
+}
+
 export async function sendResourceNotification(
   leadId: string,
   resourceId: string
 ): Promise<{ sent: boolean; error?: string }> {
   try {
+    console.log(`[email] Resource notification triggered for lead ${leadId}, resource ${resourceId}`);
+
     const { data: resource, error: resErr } = await supabase
       .from("resources")
       .select("id, title, source_name, category_id")
@@ -239,27 +247,32 @@ export async function sendResourceNotification(
       .single();
 
     if (resErr || !resource) {
+      console.log(`[email] Resource ${resourceId} not found:`, resErr?.message);
       return { sent: false, error: "Resource not found" };
     }
 
     let notifyEmail: string | null = null;
 
-    try {
-      const { data: withNotify } = await supabase
-        .from("resources")
-        .select("notify_email")
-        .eq("id", resourceId)
-        .single();
-      if (withNotify?.notify_email) {
-        notifyEmail = withNotify.notify_email;
-      }
-    } catch {}
+    const { data: withNotify, error: notifyErr } = await supabase
+      .from("resources")
+      .select("notify_email")
+      .eq("id", resourceId)
+      .single();
+
+    if (notifyErr) {
+      console.log(`[email] notify_email column not available: ${notifyErr.message}`);
+    } else if (withNotify?.notify_email) {
+      notifyEmail = withNotify.notify_email;
+      console.log(`[email] Found notify_email column value: ${notifyEmail}`);
+    }
 
     if (!notifyEmail && resource.source_name && RESOURCE_NOTIFY_CONFIG[resource.source_name]) {
       notifyEmail = RESOURCE_NOTIFY_CONFIG[resource.source_name];
+      console.log(`[email] Using config map for source "${resource.source_name}": ${notifyEmail}`);
     }
 
     if (!notifyEmail) {
+      console.log(`[email] No notification email configured for resource "${resource.title}" (source: ${resource.source_name})`);
       return { sent: false, error: "Resource has no notification email configured" };
     }
 
@@ -270,6 +283,7 @@ export async function sendResourceNotification(
       .single();
 
     if (leadErr || !lead) {
+      console.log(`[email] Lead ${leadId} not found:`, leadErr?.message);
       return { sent: false, error: "Lead not found" };
     }
 
@@ -297,19 +311,26 @@ export async function sendResourceNotification(
 
     const html = buildResourceNotificationHtml(leadData, resource.title, notifyEmail);
 
+    const sandbox = isSandboxMode();
+    const actualRecipient = sandbox ? RESEND_SANDBOX_RECIPIENT : notifyEmail;
+
+    if (sandbox) {
+      console.log(`[email] Resend sandbox mode — redirecting from ${notifyEmail} to ${actualRecipient}`);
+    }
+
     const { data: emailResult, error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: [notifyEmail],
-      subject,
+      to: [actualRecipient],
+      subject: sandbox ? `[SANDBOX → ${notifyEmail}] ${subject}` : subject,
       html,
     });
 
     if (emailErr) {
-      console.log(`[email] Resource notification failed for ${notifyEmail}:`, emailErr.message);
+      console.log(`[email] Resource notification failed for ${actualRecipient}:`, emailErr.message);
       return { sent: false, error: emailErr.message };
     }
 
-    console.log(`[email] Resource notification sent to ${notifyEmail} for lead ${leadId} (${emailResult?.id})`);
+    console.log(`[email] Resource notification sent to ${actualRecipient} for lead ${leadId} (${emailResult?.id})`);
     return { sent: true };
   } catch (err: any) {
     console.log(`[email] Error sending resource notification for lead ${leadId}:`, err?.message);

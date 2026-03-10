@@ -1477,7 +1477,13 @@ export async function registerRoutes(
     }
 
     if (data.resource_id) {
-      sendResourceNotification(data.id, data.resource_id).catch(() => {});
+      sendResourceNotification(data.id, data.resource_id).then(result => {
+        if (!result.sent) {
+          console.log(`[email] Resource notification not sent for lead ${data.id}: ${result.error}`);
+        }
+      }).catch(err => {
+        console.log(`[email] Resource notification error for lead ${data.id}:`, err?.message);
+      });
     }
 
     const response: Record<string, any> = {
