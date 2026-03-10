@@ -105,12 +105,8 @@ export default function Onboarding() {
   };
 
   const handleAuthSuccess = () => {
-    if (step === 1) {
-      completeOnboarding();
-      setLocation("/home");
-    } else {
-      setStep(3);
-    }
+    completeOnboarding();
+    setLocation("/home");
   };
 
   return (
@@ -308,7 +304,6 @@ export default function Onboarding() {
         onOpenChange={setShowAuth}
         onSuccess={handleAuthSuccess}
         defaultMode={step === 1 ? "login" : "signup"}
-        skipProfileStep={step === 2}
       />
     </div>
   );

@@ -23,6 +23,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/enable-location" component={Onboarding} />
       
       <Route path="/home">
         <Layout>
