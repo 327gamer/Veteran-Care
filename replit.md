@@ -1,5 +1,20 @@
 # Veteran Care
 
+## Stable Restore Points
+- **veterancare-stable-onboarding** → commit `b6ce19e` (published as `e4ceeb2` on 2026-03-10)
+  - Working onboarding: Welcome → Account/Guest → Location → Interests → Home
+  - Two-step auth modal with profile fields
+  - Clean SVG favicon
+  - All 13 resource categories, email notifications, partner routing live
+  - Rollback command: restore all files to commit `b6ce19e`
+
+## Release Process
+1. One change at a time
+2. Test it
+3. Commit it
+4. Publish it
+Never bundle multiple onboarding/profile/navigation changes together.
+
 ## Overview
 A comprehensive mobile-first web app for U.S. Military veterans consolidating 11+ resource categories with AI-guided assistance, location-based filtering, community feed, and persistent resource saving.
 
