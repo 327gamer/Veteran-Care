@@ -194,6 +194,33 @@ export async function registerRoutes(
     startEscalationTimer(5 * 60 * 1000);
   }
 
+  app.get("/api/reverse-geocode", async (req, res) => {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) {
+      return res.status(400).json({ error: "lat and lon are required" });
+    }
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+      const response = await fetch(url, {
+        headers: {
+          "Accept-Language": "en",
+          "User-Agent": "VeteranCare/1.0 (veterancare.com)",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await response.json();
+      const addr = data.address || {};
+      const stateCode = addr.state_code?.toUpperCase?.() || addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
+      const state = addr.state || "";
+      const city = addr.city || addr.town || addr.village || addr.county || "";
+      const zip = addr.postcode || "";
+      return res.json({ stateCode, state, city, zip });
+    } catch (err: any) {
+      console.log("[geocode] Reverse geocode failed:", err?.message);
+      return res.status(502).json({ error: "Reverse geocode failed" });
+    }
+  });
+
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
       .from("categories")

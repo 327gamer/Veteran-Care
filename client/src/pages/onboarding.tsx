@@ -8,7 +8,6 @@ import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources } from "@/lib/store";
 import AuthModal from "@/components/auth-modal";
 
-const REVERSE_GEOCODE_URL = "https://nominatim.openstreetmap.org/reverse";
 
 const INTEREST_OPTIONS = [
   "Benefits & VA Claims",
@@ -68,21 +67,13 @@ export default function Onboarding() {
         clearTimeout(safetyTimeout);
         setLocStatus("Finding your area...");
         try {
-          const controller = new AbortController();
-          const fetchTimeout = setTimeout(() => controller.abort(), 5000);
           const res = await fetch(
-            `${REVERSE_GEOCODE_URL}?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-            { headers: { "Accept-Language": "en" }, signal: controller.signal }
+            `/api/reverse-geocode?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
           );
-          clearTimeout(fetchTimeout);
-          const data = await res.json();
-          const addr = data.address || {};
-          const stateCode = addr.state_code?.toUpperCase() || addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
-          const state = addr.state || "";
-          const city = addr.city || addr.town || addr.village || addr.county || "";
-          const zip = addr.postcode || "";
+          if (!res.ok) throw new Error("Geocode request failed");
+          const { stateCode, state, city, zip } = await res.json();
           if (stateCode || state || city) {
-            setStoreLocation(stateCode || "", state, city, zip);
+            setStoreLocation(stateCode || "", state || "", city || "", zip || "");
             const display = [city, stateCode || state].filter(Boolean).join(", ");
             setLocStatus(`Location set: ${display}`);
           } else {
