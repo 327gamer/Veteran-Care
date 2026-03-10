@@ -138,8 +138,8 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - Admin analytics: GET /api/admin/analytics aggregates clicks by category/state/city, top 20 resources, affiliate vs non-affiliate splits, reported resource list
 
 ## Onboarding & User State (Zustand persisted)
-- `onboardingComplete` - set true after completing onboarding or clicking "I Already Have an Account" / "Try Demo"
-- `interests` - array of selected interest categories from onboarding step 3
+- `onboardingComplete` - set true after completing onboarding step 4 ("Continue to App") or logging in via "I Already Have an Account"
+- `interests` - array of selected interest categories from onboarding step 4
 - `serviceProfile` - { branch, era, rank, mos } — populated via Service Profile dialog on home page
 - `hasSeenWelcome` - legacy flag (no longer used in UI, kept for store compat)
 - `hasSeenTutorial` - dismisses the first-time navigation tutorial overlay
@@ -165,10 +165,12 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
 - **Profile storage**: `user_profiles` table in Supabase (SQL in `supabase/create_user_profiles.sql`)
 - **Profile API**: GET /api/profile, POST /api/profile, PATCH /api/profile (auth'd); GET /api/admin/user-profiles (admin)
 - **Profile completion tracking**: `profile_complete` boolean — set to true when branch/interests/state provided
-- **Onboarding flow**: Welcome → Create Account prompt (or Continue as Guest) → Location → Interests → Home
-  - If user creates account, step 2 collects interests/location and goes to Home
-  - If user continues as guest, existing location/interests onboarding continues
-  - "I Already Have an Account" opens login modal
+- **Onboarding flow**: Welcome (step 1) → Create Account or Guest (step 2) → Location (step 3) → Interests (step 4) → Home
+  - Signup from onboarding uses `skipProfileStep=true` so auth modal skips its own step 2 (no duplicate location)
+  - After signup, user returns to onboarding step 3 (location, shown once only) → step 4 (interests) → Continue to App
+  - Guest flow: step 2 "Continue as Guest" → step 3 (location) → step 4 (interests) → Continue to App
+  - "I Already Have an Account" (step 1) opens login modal → completes onboarding → goes to Home
+  - Tutorial popup fires automatically 1.2s after `completeOnboarding()` (if `!hasSeenTutorial`)
 - **Guest banner**: Home page shows "Create a free account" banner for non-authenticated users
 - **Profile dropdown**: Layout top bar profile button → dropdown with sign in/out
 - **Supabase table `user_saved_resources`**: id, user_id (fk→auth.users), resource_id (fk→resources), saved_at; unique(user_id, resource_id); RLS policies for user-scoped access (SQL in `supabase/create_user_saved_resources.sql`)

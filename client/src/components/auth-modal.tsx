@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, ChevronRight, ArrowLeft, MapPin, Shield } from "lucide-react";
+import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, ChevronRight, MapPin } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useSavedResources } from "@/lib/store";
 
@@ -85,63 +85,6 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode, 
     setSelectedInterests(prev =>
       prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
     );
-  };
-
-  const saveProfile = async (step2Data?: { branch?: string; interests?: string[]; state?: string }) => {
-    const token = session?.access_token;
-    if (!token) return;
-
-    const body: Record<string, any> = {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      user_type: userType,
-      consent_contact: consentContact,
-    };
-
-    if (step2Data) {
-      if (step2Data.branch) body.branch_of_service = step2Data.branch;
-      if (step2Data.interests && step2Data.interests.length > 0) body.interests = step2Data.interests;
-      if (step2Data.state) body.state = step2Data.state;
-    }
-
-    try {
-      await fetch("/api/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-    } catch (err) {
-      console.log("Profile save error:", err);
-    }
-  };
-
-  const handleSignupStep1 = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    if (!firstName.trim()) { setError("First name is required"); setLoading(false); return; }
-    if (!lastName.trim()) { setError("Last name is required"); setLoading(false); return; }
-    if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
-    if (!phone.trim()) { setError("Phone number is required"); setLoading(false); return; }
-    if (!password.trim() || password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
-    if (!userType) { setError("Please select your user type"); setLoading(false); return; }
-    if (!consentContact) { setError("Please agree to the contact consent to continue"); setLoading(false); return; }
-
-    const { error: signUpError } = await signUp(email, password);
-    if (signUpError) {
-      setError(signUpError);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setSignupStep(2);
   };
 
   const handleSignupStep1AndWaitForSession = async (e: React.FormEvent) => {
