@@ -74,7 +74,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const { signIn, signUp, session } = useAuth();
-  const { setInterests, setLocation: setStoreLocation, completeOnboarding } = useSavedResources();
+  const { setInterests, setLocation: setStoreLocation, completeOnboarding, setServiceProfile } = useSavedResources();
 
   useEffect(() => {
     if (defaultMode) setMode(defaultMode);
@@ -221,6 +221,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
     if (userState) {
       setStoreLocation(userState, "", "", "");
+    }
+
+    if (branch) {
+      setServiceProfile({ branch });
     }
 
     const currentSession = (await import("@/lib/supabase")).supabase;
@@ -455,8 +459,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
         {mode === "signup" && signupStep === 2 && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl font-heading text-primary">Personalize Your Experience</DialogTitle>
-              <p className="text-sm text-muted-foreground">Help us connect you with the right resources. You can skip this and update later.</p>
+              <DialogTitle className="text-xl font-heading text-primary">Complete Your Profile</DialogTitle>
+              <p className="text-sm text-muted-foreground">For a more personalized experience, please complete your profile. Your information is private and confidential.</p>
             </DialogHeader>
 
             <div className="space-y-4 mt-2">
