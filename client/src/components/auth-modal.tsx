@@ -51,9 +51,10 @@ interface AuthModalProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
   defaultMode?: "login" | "signup";
+  skipProfileStep?: boolean;
 }
 
-export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }: AuthModalProps) {
+export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode, skipProfileStep }: AuthModalProps) {
   const [mode, setMode] = useState<"login" | "signup">(defaultMode || "login");
   const [signupStep, setSignupStep] = useState(1);
 
@@ -209,6 +210,13 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     }
 
     setLoading(false);
+
+    if (skipProfileStep) {
+      onOpenChange(false);
+      onSuccess?.();
+      return;
+    }
+
     setSignupStep(2);
   };
 
@@ -257,13 +265,11 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     }
 
     setLoading(false);
-    completeOnboarding();
     onOpenChange(false);
     onSuccess?.();
   };
 
   const handleStep2Skip = () => {
-    completeOnboarding();
     onOpenChange(false);
     onSuccess?.();
   };
