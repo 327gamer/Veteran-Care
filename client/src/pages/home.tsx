@@ -229,18 +229,18 @@ export default function Home() {
       </section>
 
       {!user && (
-        <section data-testid="banner-guest-signup" className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-primary">Create a free account</p>
-            <p className="text-xs text-muted-foreground">Save your preferences and get personalized support.</p>
+        <section data-testid="banner-guest-signup" className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-xl font-heading font-extrabold text-primary tracking-tight">Create Your Free Account</h2>
+            <p className="text-sm text-muted-foreground">Save your preferences and get personalized support.</p>
+            <p className="text-xs text-primary/60 font-medium">Your information is private and confidential.</p>
           </div>
           <Button
             data-testid="button-home-signup"
-            size="sm"
-            className="shrink-0 rounded-full text-xs px-4"
+            className="rounded-full px-6"
             onClick={() => setShowAuthModal(true)}
           >
-            Sign Up
+            Create Account
           </Button>
         </section>
       )}
