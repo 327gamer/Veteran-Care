@@ -494,7 +494,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                             }`}
                             onClick={() => toggleInterest(item)}
                           >
-                            <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0" onCheckedChange={() => toggleInterest(item)} />
+                            <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0 pointer-events-none" />
                             <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
                           </div>
                         );

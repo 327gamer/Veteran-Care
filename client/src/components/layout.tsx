@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AiGuide from "./ai-guide";
 import AuthModal from "./auth-modal";
+import ProfileModal from "./profile-modal";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources, syncSavedOnLogin, fetchSavedFromServer } from "@/lib/store";
 import { useAuth } from "@/lib/use-auth";
@@ -51,6 +52,7 @@ export default function Layout({ children }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { hasSeenTutorial, markTutorialSeen, onboardingComplete, setAuthToken, setSavedIds, clearAuthState } = useSavedResources();
   const [showTutorial, setShowTutorial] = useState(false);
   const { user, session, loading: authLoading, signOut } = useAuth();
@@ -169,6 +171,15 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      data-testid="button-my-profile"
+                      onClick={() => setIsProfileOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      <UserCircle className="h-4 w-4 mr-2" />
+                      My Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
                       data-testid="button-sign-out"
                       onClick={handleSignOut}
                       className="text-destructive focus:text-destructive cursor-pointer"
@@ -213,6 +224,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Auth Modal */}
       <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
+
+      {/* Profile Modal */}
+      <ProfileModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
 
       {/* Bottom Navigation - Mobile First */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] safe-area-bottom">
