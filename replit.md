@@ -374,3 +374,29 @@ A comprehensive mobile-first web app for U.S. Military veterans consolidating 11
   - `POST /api/admin/states` — Admin: create new state (code, name required)
   - `PATCH /api/admin/states/:code` — Admin: update state (activate/deactivate, config, etc.)
   - `POST /api/admin/states/:code/refresh-counts` — Admin: recalculate resource_count and partner_count from live data
+
+## Future Roadmap (Not Yet Implemented)
+
+### Partner / Case Manager Accounts
+In addition to individual users (veterans, spouses, dependents, caregivers), the platform will eventually support professional users:
+- VA case managers
+- Nonprofit organizations
+- Veteran advocates
+- Churches
+- Social workers
+- Government agencies
+- Veteran Service Officers (VSO)
+
+These users should be able to create accounts and use the platform to help veterans find resources.
+
+**Possible future capabilities for partner accounts:**
+- Search resources for veterans
+- Save resources and build recommended lists
+- Send resource links to veterans
+- Submit new resources to the platform
+- Suggest edits to existing resources
+- Report incorrect or outdated listings
+- Create partnerships with Veteran Care
+- Potentially manage or verify resources in their area
+
+All partner submissions (new resources, edits, reports) should go through moderation before being published publicly.
