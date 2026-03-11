@@ -62,6 +62,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState("");
   const [consentContact, setConsentContact] = useState(false);
 
@@ -129,6 +130,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
     if (!phone.trim()) { setError("Phone number is required"); setLoading(false); return; }
     if (!password.trim() || password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
     if (!userType) { setError("Please select your user type"); setLoading(false); return; }
     if (!consentContact) { setError("Please agree to the contact consent to continue"); setLoading(false); return; }
 
@@ -153,6 +155,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
     if (!phone.trim()) { setError("Phone number is required"); setLoading(false); return; }
     if (!password.trim() || password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
     if (!userType) { setError("Please select your user type"); setLoading(false); return; }
     if (!consentContact) { setError("Please agree to the contact consent to continue"); setLoading(false); return; }
 
@@ -172,6 +175,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
       setSuccessMsg("Account created! Please check your email to confirm, then sign in.");
       setMode("login");
       setPassword("");
+      setConfirmPassword("");
       setLoading(false);
       return;
     }
@@ -298,6 +302,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     setEmail("");
     setPhone("");
     setPassword("");
+    setConfirmPassword("");
     setUserType("");
     setConsentContact(false);
     setBranch("");
@@ -408,6 +413,14 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input data-testid="input-signup-password" id="signup-password" type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9" autoComplete="new-password" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="signup-confirm-password" className="text-xs">Confirm Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input data-testid="input-signup-confirm-password" id="signup-confirm-password" type="password" placeholder="Re-enter your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9" autoComplete="new-password" />
                 </div>
               </div>
 

@@ -38,7 +38,13 @@ export function useAuth(): AuthState {
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) return { error: "Auth not available" };
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: "https://veterancare.com",
+      },
+    });
     return { error: error?.message ?? null };
   }, []);
 
