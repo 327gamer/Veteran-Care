@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, MapPin, Shield } from "lucide-react";
+import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, Shield } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useSavedResources } from "@/lib/store";
 
@@ -30,22 +30,6 @@ const USER_TYPES = [
 
 const BRANCHES = [
   "Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force", "National Guard", "Reserves", "N/A",
-];
-
-const SERVICE_ERAS = [
-  "Post-9/11 (2001–present)",
-  "Gulf War (1990–2001)",
-  "Vietnam (1964–1975)",
-  "Korean War (1950–1953)",
-  "Peacetime",
-  "Other",
-];
-
-const CONTACT_METHODS = [
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
-  { value: "text", label: "Text Message" },
-  { value: "any", label: "Any Method" },
 ];
 
 const INTEREST_OPTIONS = [
@@ -88,14 +72,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
   const [consentContact, setConsentContact] = useState(false);
 
   const [branch, setBranch] = useState("");
-  const [serviceEra, setServiceEra] = useState("");
-  const [rank, setRank] = useState("");
-  const [mos, setMos] = useState("");
   const [userState, setUserState] = useState("");
   const [userCity, setUserCity] = useState("");
   const [userZip, setUserZip] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [preferredContact, setPreferredContact] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -165,14 +145,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
         };
 
         if (branch) body.branch_of_service = branch;
-        if (serviceEra) body.service_era = serviceEra;
-        if (rank.trim()) body.rank = rank.trim();
-        if (mos.trim()) body.mos = mos.trim();
         if (userState) body.state = userState;
         if (userCity.trim()) body.city = userCity.trim();
         if (userZip.trim()) body.zip = userZip.trim();
         if (selectedInterests.length > 0) body.interests = selectedInterests;
-        if (preferredContact) body.preferred_contact_method = preferredContact;
 
         try {
           await fetch("/api/profile", {
@@ -191,9 +167,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
     if (selectedInterests.length > 0) setInterests(selectedInterests);
     if (userState) setStoreLocation(userState, "", userCity.trim(), userZip.trim());
-    if (branch || serviceEra || rank.trim() || mos.trim()) {
-      setServiceProfile({ branch, era: serviceEra, rank: rank.trim(), mos: mos.trim() });
-    }
+    if (branch) setServiceProfile({ branch });
 
     setLoading(false);
     completeOnboarding();
@@ -235,14 +209,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     setUserType("");
     setConsentContact(false);
     setBranch("");
-    setServiceEra("");
-    setRank("");
-    setMos("");
     setSelectedInterests([]);
     setUserState("");
     setUserCity("");
     setUserZip("");
-    setPreferredContact("");
   };
 
   return (
@@ -388,44 +358,18 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 <p className="text-[10px] text-muted-foreground mb-3">Fill out as much or as little as you'd like. You can always update these later.</p>
 
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Branch of Service</Label>
-                      <Select value={branch} onValueChange={setBranch}>
-                        <SelectTrigger data-testid="select-signup-branch" className="w-full">
-                          <SelectValue placeholder="Select branch" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {BRANCHES.map(b => (
-                            <SelectItem key={b} value={b}>{b}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Service Era</Label>
-                      <Select value={serviceEra} onValueChange={setServiceEra}>
-                        <SelectTrigger data-testid="select-signup-era" className="w-full">
-                          <SelectValue placeholder="Select era" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SERVICE_ERAS.map(e => (
-                            <SelectItem key={e} value={e}>{e}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-rank" className="text-xs">Rank</Label>
-                      <Input data-testid="input-signup-rank" id="signup-rank" placeholder="e.g. SGT, CPL" value={rank} onChange={(e) => setRank(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-mos" className="text-xs">MOS / Specialty</Label>
-                      <Input data-testid="input-signup-mos" id="signup-mos" placeholder="e.g. 11B, 68W" value={mos} onChange={(e) => setMos(e.target.value)} />
-                    </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Branch of Service</Label>
+                    <Select value={branch} onValueChange={setBranch}>
+                      <SelectTrigger data-testid="select-signup-branch" className="w-full">
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BRANCHES.map(b => (
+                          <SelectItem key={b} value={b}>{b}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
@@ -450,20 +394,6 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                       <Label htmlFor="signup-zip" className="text-xs">ZIP</Label>
                       <Input data-testid="input-signup-zip" id="signup-zip" placeholder="ZIP" value={userZip} onChange={(e) => setUserZip(e.target.value)} />
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Preferred Contact Method</Label>
-                    <Select value={preferredContact} onValueChange={setPreferredContact}>
-                      <SelectTrigger data-testid="select-signup-contact-method" className="w-full">
-                        <SelectValue placeholder="How should we reach you?" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CONTACT_METHODS.map(m => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div className="space-y-2">
