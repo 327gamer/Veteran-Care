@@ -566,7 +566,8 @@ export async function registerRoutes(
     }
 
     const { first_name, last_name, email, phone, user_type, consent_contact,
-            branch_of_service, interests, service_area, state, city, zip } = req.body;
+            branch_of_service, interests, service_area, state, city, zip,
+            rank, mos, service_era, preferred_contact_method } = req.body;
 
     if (!first_name?.trim() || !last_name?.trim() || !email?.trim() || !phone?.trim()) {
       return res.status(400).json({ error: "First name, last name, email, and phone are required" });
@@ -589,6 +590,10 @@ export async function registerRoutes(
     if (branch_of_service !== undefined) profileData.branch_of_service = branch_of_service?.trim() || null;
     if (interests !== undefined) profileData.interests = Array.isArray(interests) ? interests : [];
     if (service_area !== undefined) profileData.service_area = service_area?.trim() || null;
+    if (rank !== undefined) profileData.rank = rank?.trim() || null;
+    if (mos !== undefined) profileData.mos = mos?.trim() || null;
+    if (service_era !== undefined) profileData.service_era = service_era?.trim() || null;
+    if (preferred_contact_method !== undefined) profileData.preferred_contact_method = preferred_contact_method?.trim() || null;
     if (state !== undefined) profileData.state = state?.trim() || null;
     if (city !== undefined) profileData.city = city?.trim() || null;
     if (zip !== undefined) profileData.zip = zip?.trim() || null;
@@ -624,7 +629,8 @@ export async function registerRoutes(
 
     const allowedFields = [
       "first_name", "last_name", "email", "phone", "user_type", "consent_contact",
-      "branch_of_service", "interests", "service_area", "state", "city", "zip", "profile_complete",
+      "branch_of_service", "interests", "service_area", "rank", "mos", "service_era",
+      "preferred_contact_method", "state", "city", "zip", "profile_complete",
     ];
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
