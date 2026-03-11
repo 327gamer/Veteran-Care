@@ -1,46 +1,27 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { MapPin, ArrowRight, Sparkles, UserPlus } from "lucide-react";
+import { MapPin, UserPlus } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources } from "@/lib/store";
 import AuthModal from "@/components/auth-modal";
 
-
-const INTEREST_OPTIONS = [
-  "Benefits & VA Claims",
-  "Healthcare",
-  "Mental Health",
-  "Housing Support",
-  "Employment",
-  "Education & GI Bill",
-  "Legal & Financial",
-  "Family & Caregivers",
-  "Military Records",
-  "Transition",
-  "Crisis Help",
-];
-
 export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [, setLocation] = useLocation();
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [locLoading, setLocLoading] = useState(false);
   const [locStatus, setLocStatus] = useState<string>("");
   const [showAuth, setShowAuth] = useState(false);
-  const { setInterests, completeOnboarding, setLocation: setStoreLocation } = useSavedResources();
+  const { completeOnboarding, setLocation: setStoreLocation } = useSavedResources();
 
-  const toggleInterest = (item: string) => {
-    setSelectedInterests(prev =>
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-    );
+  const enterApp = () => {
+    completeOnboarding();
+    setLocation("/home");
   };
 
   const advanceFromLocation = () => {
     setLocLoading(false);
-    setTimeout(() => setStep(4), 1200);
+    setTimeout(() => enterApp(), 1200);
   };
 
   const requestGeolocation = () => {
@@ -111,12 +92,6 @@ export default function Onboarding() {
     } catch {}
 
     requestGeolocation();
-  };
-
-  const finish = () => {
-    setInterests(selectedInterests);
-    completeOnboarding();
-    setLocation("/home");
   };
 
   const handleAuthSuccess = () => {
@@ -250,64 +225,10 @@ export default function Onboarding() {
                 data-testid="button-maybe-later"
                 variant="ghost"
                 className="w-full text-sm font-medium text-muted-foreground h-9"
-                onClick={() => setStep(4)}
+                onClick={enterApp}
                 disabled={locLoading}
               >
                 Maybe Later
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="w-full flex flex-col items-center">
-            <div className="h-32 w-full max-w-[200px] flex items-center justify-center drop-shadow-2xl mb-2">
-              <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
-            </div>
-
-            <div className="space-y-1 mb-4 text-center">
-              <h1 className="text-xl font-heading font-extrabold tracking-tight text-primary">
-                What do you need help with today?
-              </h1>
-              <p className="text-muted-foreground text-xs leading-relaxed px-4">
-                Select all that apply. You can change these later.
-              </p>
-            </div>
-
-            <div className="w-full grid grid-cols-2 gap-2 mb-4">
-              {INTEREST_OPTIONS.map((item) => {
-                const isSelected = selectedInterests.includes(item);
-                return (
-                  <div
-                    key={item}
-                    data-testid={`interest-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                    className={`flex items-center space-x-2 border p-2.5 rounded-lg cursor-pointer transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary/40 shadow-sm"
-                        : "hover:bg-muted/50"
-                    }`}
-                    onClick={() => toggleInterest(item)}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      className="h-4 w-4 shrink-0"
-                      onCheckedChange={() => toggleInterest(item)}
-                    />
-                    <Label className="cursor-pointer font-medium text-xs leading-tight">
-                      {item}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="w-full pt-1">
-              <Button
-                data-testid="button-continue-to-app"
-                className="w-full h-11 text-base font-bold rounded-full shadow-lg"
-                onClick={finish}
-              >
-                Continue to App <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
