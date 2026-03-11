@@ -284,7 +284,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 <div data-testid="profile-completion" className={`rounded-lg p-3 ${isComplete ? "bg-green-50 border border-green-200" : "bg-primary/5 border border-primary/10"}`}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-sm font-semibold ${isComplete ? "text-green-700" : "text-primary"}`}>
-                      Profile {pct}% Complete
+                      Profile Completion: {pct}%
                     </span>
                     <span className="text-xs text-muted-foreground">{completed}/{fields.length} fields</span>
                   </div>
