@@ -15,7 +15,6 @@ import {
   Sparkles,
   User,
   X,
-  Shield,
   BookOpen,
   Phone,
   HelpCircle,
@@ -127,28 +126,15 @@ const CITIES_BY_STATE: Record<string, string[]> = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userLocation, setLocation: setStoreLocation, serviceProfile, setServiceProfile } = useSavedResources();
+  const { userLocation, setLocation: setStoreLocation } = useSavedResources();
   const [selectedState, setSelectedState] = useState<string>(userLocation.state || "Texas");
   const [selectedCity, setSelectedCity] = useState<string>(userLocation.city || "Austin");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showNavigator, setShowNavigator] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGuidedHelp, setShowGuidedHelp] = useState(false);
   const [guidedCategory, setGuidedCategory] = useState<string | null>(null);
   const [guidedUrgency, setGuidedUrgency] = useState<string | null>(null);
-  const [profileForm, setProfileForm] = useState({
-    branch: serviceProfile.branch || "",
-    era: serviceProfile.era || "",
-    rank: serviceProfile.rank || "",
-    mos: serviceProfile.mos || "",
-  });
-
-  const saveProfile = () => {
-    setServiceProfile(profileForm);
-    setShowProfileDialog(false);
-  };
-
   const { user } = useAuth();
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
@@ -373,35 +359,6 @@ export default function Home() {
         </Card>
       </section>
 
-      {/* Service Profile Prompt */}
-      {!serviceProfile.branch && (
-        <section data-testid="section-profile-prompt" className="animate-in fade-in slide-in-from-top-4 duration-500">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Shield className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0 space-y-2">
-                  <p className="text-sm text-foreground leading-relaxed">
-                    For a more personalized experience you can add your service information such as branch and service era. Your information is private and confidential.
-                  </p>
-                  <Button
-                    data-testid="button-add-profile"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs border-primary/30 text-primary"
-                    onClick={() => setShowProfileDialog(true)}
-                  >
-                    <Shield className="mr-1.5 h-3 w-3" />
-                    Complete Your Profile
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      )}
 
       <NavigatorModal open={showNavigator} onOpenChange={setShowNavigator} initialUrgency={guidedUrgency || undefined} source={guidedUrgency ? "guided_help" : undefined} />
 
@@ -509,69 +466,6 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Service Profile
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Optional. Helps us personalize your experience. Your information is private and confidential.
-            </p>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs">Branch</Label>
-              <Select value={profileForm.branch || undefined} onValueChange={(v) => setProfileForm(p => ({ ...p, branch: v }))}>
-                <SelectTrigger data-testid="select-profile-branch"><SelectValue placeholder="Select Branch" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="army">Army</SelectItem>
-                  <SelectItem value="navy">Navy</SelectItem>
-                  <SelectItem value="marines">Marine Corps</SelectItem>
-                  <SelectItem value="airforce">Air Force</SelectItem>
-                  <SelectItem value="coastguard">Coast Guard</SelectItem>
-                  <SelectItem value="spaceforce">Space Force</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Service Era</Label>
-              <Select value={profileForm.era || undefined} onValueChange={(v) => setProfileForm(p => ({ ...p, era: v }))}>
-                <SelectTrigger data-testid="select-profile-era"><SelectValue placeholder="Select Era" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="post911">Post-9/11</SelectItem>
-                  <SelectItem value="gulfwar">Gulf War</SelectItem>
-                  <SelectItem value="vietnam">Vietnam</SelectItem>
-                  <SelectItem value="korea">Korean War</SelectItem>
-                  <SelectItem value="peacetime">Peacetime</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Rank (optional)</Label>
-              <Input
-                data-testid="input-profile-rank"
-                placeholder="e.g. SGT, CPL, PFC"
-                value={profileForm.rank}
-                onChange={(e) => setProfileForm(p => ({ ...p, rank: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">MOS / Specialty (optional)</Label>
-              <Input
-                data-testid="input-profile-mos"
-                placeholder="e.g. 11B, 68W"
-                value={profileForm.mos}
-                onChange={(e) => setProfileForm(p => ({ ...p, mos: e.target.value }))}
-              />
-            </div>
-          </div>
-          <Button data-testid="button-save-profile" className="w-full" onClick={saveProfile}>
-            Save Profile
-          </Button>
-        </DialogContent>
-      </Dialog>
 
       {/* Resources Grid */}
       <section className="space-y-3">

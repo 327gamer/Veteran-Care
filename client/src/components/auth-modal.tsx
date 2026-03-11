@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, ChevronRight, ArrowLeft, MapPin, Shield } from "lucide-react";
+import { Loader2, Mail, Lock, UserPlus, LogIn, Phone, User, MapPin, Shield } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useSavedResources } from "@/lib/store";
 
@@ -30,6 +30,22 @@ const USER_TYPES = [
 
 const BRANCHES = [
   "Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force", "National Guard", "Reserves", "N/A",
+];
+
+const SERVICE_ERAS = [
+  "Post-9/11 (2001–present)",
+  "Gulf War (1990–2001)",
+  "Vietnam (1964–1975)",
+  "Korean War (1950–1953)",
+  "Peacetime",
+  "Other",
+];
+
+const CONTACT_METHODS = [
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "text", label: "Text Message" },
+  { value: "any", label: "Any Method" },
 ];
 
 const INTEREST_OPTIONS = [
@@ -46,6 +62,12 @@ const INTEREST_OPTIONS = [
   "Food Assistance",
 ];
 
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
+];
+
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,7 +77,6 @@ interface AuthModalProps {
 
 export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }: AuthModalProps) {
   const [mode, setMode] = useState<"login" | "signup">(defaultMode || "login");
-  const [signupStep, setSignupStep] = useState(1);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -67,15 +88,21 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
   const [consentContact, setConsentContact] = useState(false);
 
   const [branch, setBranch] = useState("");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [serviceEra, setServiceEra] = useState("");
+  const [rank, setRank] = useState("");
+  const [mos, setMos] = useState("");
   const [userState, setUserState] = useState("");
+  const [userCity, setUserCity] = useState("");
+  const [userZip, setUserZip] = useState("");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [preferredContact, setPreferredContact] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const { signIn, signUp, session } = useAuth();
-  const { setInterests, setLocation: setStoreLocation, completeOnboarding } = useSavedResources();
+  const { setInterests, setLocation: setStoreLocation, completeOnboarding, setServiceProfile } = useSavedResources();
 
   useEffect(() => {
     if (defaultMode) setMode(defaultMode);
@@ -87,65 +114,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     );
   };
 
-  const saveProfile = async (step2Data?: { branch?: string; interests?: string[]; state?: string }) => {
-    const token = session?.access_token;
-    if (!token) return;
-
-    const body: Record<string, any> = {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      user_type: userType,
-      consent_contact: consentContact,
-    };
-
-    if (step2Data) {
-      if (step2Data.branch) body.branch_of_service = step2Data.branch;
-      if (step2Data.interests && step2Data.interests.length > 0) body.interests = step2Data.interests;
-      if (step2Data.state) body.state = step2Data.state;
-    }
-
-    try {
-      await fetch("/api/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-    } catch (err) {
-      console.log("Profile save error:", err);
-    }
-  };
-
-  const handleSignupStep1 = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    if (!firstName.trim()) { setError("First name is required"); setLoading(false); return; }
-    if (!lastName.trim()) { setError("Last name is required"); setLoading(false); return; }
-    if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
-    if (!phone.trim()) { setError("Phone number is required"); setLoading(false); return; }
-    if (!password.trim() || password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
-    if (!userType) { setError("Please select your user type"); setLoading(false); return; }
-    if (!consentContact) { setError("Please agree to the contact consent to continue"); setLoading(false); return; }
-
-    const { error: signUpError } = await signUp(email, password);
-    if (signUpError) {
-      setError(signUpError);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setSignupStep(2);
-  };
-
-  const handleSignupStep1AndWaitForSession = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -194,56 +163,19 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
           user_type: userType,
           consent_contact: consentContact,
         };
-        try {
-          const profileRes = await fetch("/api/profile", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${freshSession.access_token}`,
-            },
-            body: JSON.stringify(body),
-          });
-          if (!profileRes.ok) {
-            console.log("[profile] Step 1 save failed:", await profileRes.text());
-          }
-        } catch (err) {
-          console.log("[profile] Step 1 save error:", err);
-        }
-      }
-    }
 
-    setLoading(false);
-    setSignupStep(2);
-  };
-
-  const handleStep2Complete = async () => {
-    setLoading(true);
-
-    if (selectedInterests.length > 0) {
-      setInterests(selectedInterests);
-    }
-
-    if (userState) {
-      setStoreLocation(userState, "", "", "");
-    }
-
-    const currentSession = (await import("@/lib/supabase")).supabase;
-    if (currentSession) {
-      const { data: { session: freshSession } } = await currentSession.auth.getSession();
-      if (freshSession?.access_token) {
-        const body: Record<string, any> = {
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          user_type: userType,
-          consent_contact: consentContact,
-        };
         if (branch) body.branch_of_service = branch;
-        if (selectedInterests.length > 0) body.interests = selectedInterests;
+        if (serviceEra) body.service_era = serviceEra;
+        if (rank.trim()) body.rank = rank.trim();
+        if (mos.trim()) body.mos = mos.trim();
         if (userState) body.state = userState;
+        if (userCity.trim()) body.city = userCity.trim();
+        if (userZip.trim()) body.zip = userZip.trim();
+        if (selectedInterests.length > 0) body.interests = selectedInterests;
+        if (preferredContact) body.preferred_contact_method = preferredContact;
+
         try {
-          const profileRes = await fetch("/api/profile", {
+          await fetch("/api/profile", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -251,22 +183,19 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
             },
             body: JSON.stringify(body),
           });
-          if (!profileRes.ok) {
-            console.log("[profile] Step 2 save failed:", await profileRes.text());
-          }
         } catch (err) {
-          console.log("[profile] Step 2 save error:", err);
+          console.log("[profile] Save error:", err);
         }
       }
     }
 
-    setLoading(false);
-    completeOnboarding();
-    onOpenChange(false);
-    onSuccess?.();
-  };
+    if (selectedInterests.length > 0) setInterests(selectedInterests);
+    if (userState) setStoreLocation(userState, "", userCity.trim(), userZip.trim());
+    if (branch || serviceEra || rank.trim() || mos.trim()) {
+      setServiceProfile({ branch, era: serviceEra, rank: rank.trim(), mos: mos.trim() });
+    }
 
-  const handleStep2Skip = () => {
+    setLoading(false);
     completeOnboarding();
     onOpenChange(false);
     onSuccess?.();
@@ -306,16 +235,15 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
     setUserType("");
     setConsentContact(false);
     setBranch("");
+    setServiceEra("");
+    setRank("");
+    setMos("");
     setSelectedInterests([]);
     setUserState("");
-    setSignupStep(1);
+    setUserCity("");
+    setUserZip("");
+    setPreferredContact("");
   };
-
-  const US_STATES = [
-    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-    "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-    "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
-  ];
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetState(); }}>
@@ -358,7 +286,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
               </Button>
 
               <div className="text-center">
-                <button type="button" data-testid="button-auth-toggle" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("signup"); setSignupStep(1); setError(null); setSuccessMsg(null); }}>
+                <button type="button" data-testid="button-auth-toggle" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("signup"); setError(null); setSuccessMsg(null); }}>
                   Don't have an account? Create one
                 </button>
               </div>
@@ -366,14 +294,18 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
           </>
         )}
 
-        {mode === "signup" && signupStep === 1 && (
+        {mode === "signup" && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl font-heading text-primary">Create Your Free Account</DialogTitle>
-              <p className="text-sm text-muted-foreground">Join Veteran Care for a personalized experience.</p>
+              <DialogTitle className="text-xl font-heading text-primary">Create Your Profile</DialogTitle>
+              <p className="text-sm text-muted-foreground">Create your profile and preferences for more personalized support.</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <Shield className="h-3.5 w-3.5 text-primary/60" />
+                <p className="text-xs text-primary/60 font-medium">Your information is private and confidential.</p>
+              </div>
             </DialogHeader>
 
-            <form onSubmit={handleSignupStep1AndWaitForSession} className="space-y-3 mt-2">
+            <form onSubmit={handleSignup} className="space-y-3 mt-2">
               {error && (
                 <div data-testid="text-auth-error" className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>
               )}
@@ -451,6 +383,113 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </Label>
               </div>
 
+              <div className="border-t pt-3 mt-1">
+                <p className="text-xs font-semibold text-primary mb-0.5">Optional — Tell us more for better personalization</p>
+                <p className="text-[10px] text-muted-foreground mb-3">Fill out as much or as little as you'd like. You can always update these later.</p>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Branch of Service</Label>
+                      <Select value={branch} onValueChange={setBranch}>
+                        <SelectTrigger data-testid="select-signup-branch" className="w-full">
+                          <SelectValue placeholder="Select branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BRANCHES.map(b => (
+                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Service Era</Label>
+                      <Select value={serviceEra} onValueChange={setServiceEra}>
+                        <SelectTrigger data-testid="select-signup-era" className="w-full">
+                          <SelectValue placeholder="Select era" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SERVICE_ERAS.map(e => (
+                            <SelectItem key={e} value={e}>{e}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-rank" className="text-xs">Rank</Label>
+                      <Input data-testid="input-signup-rank" id="signup-rank" placeholder="e.g. SGT, CPL" value={rank} onChange={(e) => setRank(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-mos" className="text-xs">MOS / Specialty</Label>
+                      <Input data-testid="input-signup-mos" id="signup-mos" placeholder="e.g. 11B, 68W" value={mos} onChange={(e) => setMos(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">State</Label>
+                      <Select value={userState} onValueChange={setUserState}>
+                        <SelectTrigger data-testid="select-signup-state" className="w-full">
+                          <SelectValue placeholder="State" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-city" className="text-xs">City</Label>
+                      <Input data-testid="input-signup-city" id="signup-city" placeholder="City" value={userCity} onChange={(e) => setUserCity(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-zip" className="text-xs">ZIP</Label>
+                      <Input data-testid="input-signup-zip" id="signup-zip" placeholder="ZIP" value={userZip} onChange={(e) => setUserZip(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Preferred Contact Method</Label>
+                    <Select value={preferredContact} onValueChange={setPreferredContact}>
+                      <SelectTrigger data-testid="select-signup-contact-method" className="w-full">
+                        <SelectValue placeholder="How should we reach you?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTACT_METHODS.map(m => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Areas of Interest / Support Needs</Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {INTEREST_OPTIONS.map((item) => {
+                        const isSelected = selectedInterests.includes(item);
+                        return (
+                          <div
+                            key={item}
+                            data-testid={`interest-signup-${item.toLowerCase().replace(/\s+/g, '-')}`}
+                            className={`flex items-center space-x-2 border p-2 rounded-lg cursor-pointer transition-all ${
+                              isSelected ? "bg-primary/10 border-primary/40 shadow-sm" : "hover:bg-muted/50"
+                            }`}
+                            onClick={() => toggleInterest(item)}
+                          >
+                            <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0" onCheckedChange={() => toggleInterest(item)} />
+                            <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <Button data-testid="button-signup-submit" type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
                 {loading ? "Creating Account..." : "Create Free Account"}
@@ -462,80 +501,6 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </button>
               </div>
             </form>
-          </>
-        )}
-
-        {mode === "signup" && signupStep === 2 && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-xl font-heading text-primary">Personalize Your Experience</DialogTitle>
-              <p className="text-sm text-muted-foreground">Help us connect you with the right resources. You can skip this and update later.</p>
-            </DialogHeader>
-
-            <div className="space-y-4 mt-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Branch of Service</Label>
-                <Select value={branch} onValueChange={setBranch}>
-                  <SelectTrigger data-testid="select-signup-branch" className="w-full">
-                    <SelectValue placeholder="Select branch (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BRANCHES.map(b => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs">State / Location</Label>
-                <Select value={userState} onValueChange={setUserState}>
-                  <SelectTrigger data-testid="select-signup-state" className="w-full">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      <SelectValue placeholder="Select your state (optional)" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {US_STATES.map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">What support are you looking for?</Label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {INTEREST_OPTIONS.map((item) => {
-                    const isSelected = selectedInterests.includes(item);
-                    return (
-                      <div
-                        key={item}
-                        data-testid={`interest-signup-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                        className={`flex items-center space-x-2 border p-2 rounded-lg cursor-pointer transition-all ${
-                          isSelected ? "bg-primary/10 border-primary/40 shadow-sm" : "hover:bg-muted/50"
-                        }`}
-                        onClick={() => toggleInterest(item)}
-                      >
-                        <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0" onCheckedChange={() => toggleInterest(item)} />
-                        <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <Button data-testid="button-signup-complete" className="w-full" onClick={handleStep2Complete} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ChevronRight className="h-4 w-4 mr-2" />}
-                  {loading ? "Saving..." : "Continue to App"}
-                </Button>
-                <Button data-testid="button-signup-skip" variant="ghost" className="w-full text-sm text-muted-foreground" onClick={handleStep2Skip}>
-                  Skip for now
-                </Button>
-              </div>
-            </div>
           </>
         )}
 
