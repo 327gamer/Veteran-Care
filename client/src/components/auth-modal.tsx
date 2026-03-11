@@ -353,6 +353,12 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </Label>
               </div>
 
+              <div className="text-center">
+                <button type="button" data-testid="button-auth-toggle-top" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
+                  Already have an account? Sign in
+                </button>
+              </div>
+
               <div className="border-t pt-3 mt-1">
                 <p className="text-xs font-semibold text-primary mb-0.5">Optional — Tell us more for better personalization</p>
                 <p className="text-[10px] text-muted-foreground mb-3">Fill out as much or as little as you'd like. You can always update these later.</p>

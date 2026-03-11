@@ -132,6 +132,7 @@ export default function Home() {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [showNavigator, setShowNavigator] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "signup">("signup");
   const [showGuidedHelp, setShowGuidedHelp] = useState(false);
   const [guidedCategory, setGuidedCategory] = useState<string | null>(null);
   const [guidedUrgency, setGuidedUrgency] = useState<string | null>(null);
@@ -238,10 +239,18 @@ export default function Home() {
           <Button
             data-testid="button-home-signup"
             className="rounded-full px-6"
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => { setAuthModalMode("signup"); setShowAuthModal(true); }}
           >
             Create Account
           </Button>
+          <button
+            type="button"
+            data-testid="button-home-signin"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+            onClick={() => { setAuthModalMode("login"); setShowAuthModal(true); }}
+          >
+            Already have an account? Sign in
+          </button>
         </section>
       )}
 
@@ -567,7 +576,7 @@ export default function Home() {
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
-        defaultMode="signup"
+        defaultMode={authModalMode}
       />
     </div>
   );
