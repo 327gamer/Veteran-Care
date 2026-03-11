@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
 import { Loader2, Shield, Save, UserCircle, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useSavedResources } from "@/lib/store";
@@ -256,6 +257,47 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
           </div>
         ) : (
           <div className="space-y-3 mt-2">
+            {(() => {
+              const fields = [
+                { filled: !!firstName.trim(), required: true },
+                { filled: !!lastName.trim(), required: true },
+                { filled: !!email.trim(), required: true },
+                { filled: !!phone.trim(), required: true },
+                { filled: !!userType, required: true },
+                { filled: consentContact, required: true },
+                { filled: !!branch, required: false },
+                { filled: !!serviceEra, required: false },
+                { filled: !!rank.trim(), required: false },
+                { filled: !!mos.trim(), required: false },
+                { filled: !!deploymentBackground.trim(), required: false },
+                { filled: !!preferredContact, required: false },
+                { filled: !!userState, required: false },
+                { filled: !!userCity.trim(), required: false },
+                { filled: !!userZip.trim(), required: false },
+                { filled: selectedInterests.length > 0, required: false },
+              ];
+              const completed = fields.filter(f => f.filled).length;
+              const pct = Math.round((completed / fields.length) * 100);
+              const isComplete = pct === 100;
+
+              return (
+                <div data-testid="profile-completion" className={`rounded-lg p-3 ${isComplete ? "bg-green-50 border border-green-200" : "bg-primary/5 border border-primary/10"}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-sm font-semibold ${isComplete ? "text-green-700" : "text-primary"}`}>
+                      Profile {pct}% Complete
+                    </span>
+                    <span className="text-xs text-muted-foreground">{completed}/{fields.length} fields</span>
+                  </div>
+                  <Progress value={pct} className="h-2 mb-1.5" />
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {isComplete
+                      ? "Your profile is complete. You'll receive the most personalized recommendations and support."
+                      : "Complete your profile for better recommendations and personalized support."}
+                  </p>
+                </div>
+              );
+            })()}
+
             {error && (
               <div data-testid="text-profile-error" className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>
             )}
