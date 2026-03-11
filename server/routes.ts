@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
@@ -656,6 +656,50 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
     return res.json({ profile: data });
+  });
+
+  app.delete("/api/profile", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+
+    const { error: profileError } = await supabase
+      .from("user_profiles")
+      .delete()
+      .eq("id", user.id);
+
+    if (profileError) {
+      console.log("[delete-account] Profile delete error:", profileError.message);
+      return res.status(500).json({ error: "Failed to delete profile data" });
+    }
+
+    const { error: savedError } = await supabase
+      .from("saved_resources")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (savedError) {
+      console.log("[delete-account] Saved resources delete error:", savedError.message);
+    }
+
+    if (supabaseAdmin) {
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+      if (authDeleteError) {
+        console.log("[delete-account] Auth user delete error:", authDeleteError.message);
+        return res.status(500).json({ error: "Profile deleted but failed to remove auth account. Please contact support." });
+      }
+    } else {
+      console.log("[delete-account] No service role key — auth user not deleted for:", user.id);
+      return res.status(500).json({ error: "Account deletion is not fully configured. Please contact support." });
+    }
+
+    return res.json({ success: true });
   });
 
   app.get("/api/admin/user-profiles", requireAdmin, async (req, res) => {

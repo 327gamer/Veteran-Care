@@ -16,8 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Shield, Save, UserCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Shield, Save, UserCircle, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
+import { useSavedResources } from "@/lib/store";
 
 const USER_TYPES = [
   { value: "veteran", label: "Veteran" },
@@ -73,7 +85,8 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
+  const { clearAuthState } = useSavedResources();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -95,6 +108,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   const [fetchLoading, setFetchLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -194,6 +208,31 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
       setError(err.message || "Could not save profile. Please try again.");
     }
     setSaving(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!session?.access_token) return;
+    setDeleting(true);
+    setError(null);
+    setSaveMsg(null);
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Deletion failed");
+      }
+      await signOut();
+      clearAuthState();
+      onOpenChange(false);
+      window.location.href = "/";
+    } catch (err: any) {
+      setError(err.message || "Could not delete account. Please try again.");
+      setDeleting(false);
+    }
   };
 
   return (
@@ -384,10 +423,44 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
               </div>
             </div>
 
-            <Button data-testid="button-profile-save" className="w-full" onClick={handleSave} disabled={saving}>
+            <Button data-testid="button-profile-save" className="w-full" onClick={handleSave} disabled={saving || deleting}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               {saving ? "Saving..." : "Save Profile"}
             </Button>
+
+            <div className="border-t pt-4 mt-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    data-testid="button-delete-account"
+                    variant="outline"
+                    className="w-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                    disabled={deleting}
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    {deleting ? "Deleting Account..." : "Delete Account"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to delete your account?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. Your profile information, saved resources, and account access will be permanently removed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-delete-cancel">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      data-testid="button-delete-confirm"
+                      onClick={handleDeleteAccount}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Yes, Delete My Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         )}
       </DialogContent>
