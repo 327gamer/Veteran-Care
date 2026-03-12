@@ -70,6 +70,12 @@ async function main() {
     }
   }
 
+  const missingTitles = titlesToAdd.filter(t => !seen.has(t));
+  if (missingTitles.length > 0) {
+    console.warn(`\nWARNING: ${missingTitles.length} title(s) not found in source DB:`);
+    missingTitles.forEach(t => console.warn(`  ✗ ${t}`));
+  }
+
   const newRecords = uniqueSources.map(r => ({
     ...r,
     category_id: crisisHelpId,
