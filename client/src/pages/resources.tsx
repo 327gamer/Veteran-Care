@@ -432,6 +432,8 @@ export default function Resources() {
       setLocationMode("nearme");
       setGeoApplied(true);
       geo.requestLocation(true);
+    } else if (locationMode === "nearme") {
+      setLocationMode("national");
     }
   }, [location, categories]);
 
