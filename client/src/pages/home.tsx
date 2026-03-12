@@ -501,15 +501,15 @@ export default function Home() {
             <h3 className="font-heading font-bold text-sm">Veterans Crisis Line — 24/7 Support</h3>
           </div>
           <div className="grid grid-cols-3 gap-1.5 mb-2">
-            <a href="tel:988" data-testid="link-crisis-call" className="flex items-center justify-center gap-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <a href="tel:988" data-testid="link-crisis-call" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
               <Phone className="h-3.5 w-3.5 shrink-0" />
               <span className="text-[11px] font-semibold leading-tight">Call 988, Press 1</span>
             </a>
-            <a href="sms:838255" data-testid="link-crisis-text" className="flex items-center justify-center gap-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <a href="sms:838255" data-testid="link-crisis-text" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
               <MessageSquare className="h-3.5 w-3.5 shrink-0" />
               <span className="text-[11px] font-semibold leading-tight">Text 838255</span>
             </a>
-            <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-chat" className="flex items-center justify-center gap-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-chat" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
               <Globe className="h-3.5 w-3.5 shrink-0" />
               <span className="text-[11px] font-semibold leading-tight">Chat Online</span>
             </a>
