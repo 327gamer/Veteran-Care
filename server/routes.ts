@@ -573,7 +573,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "First name, last name, email, and phone are required" });
     }
 
-    const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "other"];
+    const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "case_manager", "social_worker", "nonprofit_rep", "vso_advocate", "government_staff", "church_ministry", "other"];
     const uType = validTypes.includes(user_type) ? user_type : "veteran";
 
     const profileData: Record<string, any> = {
@@ -641,7 +641,7 @@ export async function registerRoutes(
     }
 
     if (updates.user_type) {
-      const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "other"];
+      const validTypes = ["veteran", "spouse_family", "dependent", "caregiver_advocate", "case_manager", "social_worker", "nonprofit_rep", "vso_advocate", "government_staff", "church_ministry", "other"];
       if (!validTypes.includes(updates.user_type)) updates.user_type = "veteran";
     }
 
