@@ -275,7 +275,7 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery) && (locationMode !== "nearme" || isNearMeQuery),
+    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery || (locationMode === "state" && !!selectedState)) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
   const apiResources: SupabaseResource[] = rawApiResponse
@@ -435,9 +435,7 @@ export default function Resources() {
     if (modeParam === "nearme") {
       setLocationMode("nearme");
       setGeoApplied(true);
-      if (!geo.location && !geo.loading) {
-        geo.requestLocation(true);
-      }
+      geo.requestLocation(true);
     }
   }, [location, categories]);
 
@@ -524,18 +522,28 @@ export default function Resources() {
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          {(selectedSlug || locationMode === "nearme") && (
+          {(selectedSlug || locationMode !== "national") && (
             <Button 
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 -ml-2 rounded-full" 
-              onClick={() => { if (locationMode === "nearme" && !selectedSlug) { setLocationMode("national"); setLocation("/resources"); } else { clearCategory(); } }}
+              onClick={() => {
+                if (!selectedSlug) {
+                  setLocationMode("national");
+                  setSelectedState("");
+                  setCityFilter("");
+                  setZipFilter("");
+                  setLocation("/resources");
+                } else {
+                  clearCategory();
+                }
+              }}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
           <h1 className="text-3xl font-extrabold text-primary font-heading tracking-tight">
-            {selectedName ? selectedName : locationMode === "nearme" ? "Near You" : "Resources"}
+            {selectedName ? selectedName : locationMode === "nearme" ? "Near You" : locationMode === "state" && !selectedSlug ? "Resources by Location" : "Resources"}
           </h1>
         </div>
         <p className="text-muted-foreground">
@@ -543,7 +551,9 @@ export default function Resources() {
             ? `Browse available resources for ${selectedName}.`
             : locationMode === "nearme"
               ? (geo.location ? `Showing resources near ${geo.location.city || geo.location.stateCode || "your location"}.` : "Finding resources near you...")
-              : "Browse the full resource library by category."}
+              : locationMode === "state" && !selectedSlug
+                ? "Filter resources by state, city, or ZIP code."
+                : "Browse the full resource library by category."}
         </p>
       </div>
 
@@ -569,7 +579,7 @@ export default function Resources() {
         )}
       </div>
 
-      {(selectedSlug || locationMode === "nearme") ? (
+      {(selectedSlug || locationMode === "nearme" || locationMode === "state") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
 
@@ -589,7 +599,7 @@ export default function Resources() {
                     data-testid="toggle-near-me"
                     onClick={() => {
                       setLocationMode("nearme");
-                      if (!geo.location) geo.requestLocation(true);
+                      geo.requestLocation(true);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
