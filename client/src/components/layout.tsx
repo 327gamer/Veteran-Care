@@ -303,7 +303,10 @@ export default function Layout({ children }: LayoutProps) {
               <span>These tabs are at the bottom of your screen</span>
             </div>
             <div className="border-t pt-3 mt-1">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Top Header</p>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Top Header</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                <span>These icons are at the top of your screen</span>
+              </div>
               <div className="space-y-1.5">
                 {TOP_HEADER_ITEMS.map((item) => {
                   const Icon = item.icon;
