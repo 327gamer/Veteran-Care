@@ -20,7 +20,7 @@ interface Resource {
   phone?: string;
   address?: string;
   city?: string;
-  state: string;
+  state: string | null;
   zip?: string;
   eligibility?: string;
   source_name: string;
@@ -84,7 +84,7 @@ function buildResources(): Resource[] {
         "Free, confidential 24/7 crisis support for veterans, service members, and their families. Call 988 and press 1, text 838255, or chat online. Trained VA responders available day and night.",
       website_url: "https://www.veteranscrisisline.net",
       phone: "988",
-      state: "SC",
+      state: null,
       eligibility: "All veterans, service members, and their families",
       source_name: "VA",
       source_type: "service",
@@ -100,7 +100,7 @@ function buildResources(): Resource[] {
         "Free, confidential 24/7 crisis support for veterans, service members, and their families. Call 988 and press 1, text 838255, or chat online. Trained VA responders available day and night.",
       website_url: "https://www.veteranscrisisline.net",
       phone: "988",
-      state: "SC",
+      state: null,
       eligibility: "All veterans, service members, and their families",
       source_name: "VA",
       source_type: "service",
