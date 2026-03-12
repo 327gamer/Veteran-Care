@@ -26,6 +26,7 @@ import {
   Info,
   ArrowRight,
   Compass,
+  Globe,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -493,6 +494,31 @@ export default function Home() {
             Search resources (VA benefits, housing, jobs...)
           </div>
         </div>
+
+        <section data-testid="crisis-line-banner" className="rounded-xl bg-red-600 text-white p-4 shadow-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <Phone className="h-5 w-5 shrink-0" />
+            <h3 className="font-heading font-bold text-base">Veterans Crisis Line — 24/7 Support</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <a href="tel:988" data-testid="link-crisis-call" className="flex flex-col items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors p-2.5 text-center">
+              <Phone className="h-4 w-4" />
+              <span className="text-xs font-semibold leading-tight">Call 988<br />Press 1</span>
+            </a>
+            <a href="sms:838255" data-testid="link-crisis-text" className="flex flex-col items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors p-2.5 text-center">
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-xs font-semibold leading-tight">Text<br />838255</span>
+            </a>
+            <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-chat" className="flex flex-col items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors p-2.5 text-center">
+              <Globe className="h-4 w-4" />
+              <span className="text-xs font-semibold leading-tight">Chat with<br />Responder</span>
+            </a>
+          </div>
+          <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-website" className="block w-full text-center rounded-full bg-white text-red-600 font-bold text-sm py-2.5 hover:bg-white/90 transition-colors">
+            VeteransCrisisLine.net
+          </a>
+        </section>
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {categories.map((cat) => {
             const config = getCategoryConfig(cat.slug);
