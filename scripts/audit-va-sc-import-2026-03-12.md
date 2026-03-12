@@ -5,7 +5,7 @@
 
 ## Summary
 - **Total unique facilities:** 20
-- **Total database records:** 27 (includes cross-category duplicates)
+- **Total database records:** 27 (1 crisis-help + 15 healthcare + 7 mental-health + 4 community-support)
 - **All records:** status=approved, source_name=VA
 
 ## Records by Category
@@ -34,7 +34,7 @@
 | Myrtle Beach VA Clinic | Myrtle Beach | SC | 843-577-5011 | 33.6795 | -78.9286 |
 | North Charleston VA Clinic | North Charleston | SC | 843-577-5011 | 32.8990 | -80.0059 |
 
-### mental-health (9 records)
+### mental-health (7 records)
 | Title | City | State | Phone | Lat | Lng |
 |-------|------|-------|-------|-----|-----|
 | Veterans Crisis Line — 24/7 Suicide Prevention | — | SC | 988 | — | — |
@@ -61,6 +61,10 @@
 - https://www.va.gov/greenville-sc-vet-center/
 - https://www.va.gov/myrtle-beach-vet-center/
 - https://www.veteranscrisisline.net/
+
+## Notes
+- **service_priority:** The app's valid priority values are: `immediate`, `same_week`, `standard`, `information` (see server/routes.ts validPriorities). The crisis line uses `immediate` as the highest available priority level.
+- **Cross-category:** Resources appearing in multiple categories are stored as separate database records with different category_ids but identical facility data.
 
 ## Verification
 1. **Front-end:** All resources appear in correct categories via API (/api/resources?category=X&state=SC)
