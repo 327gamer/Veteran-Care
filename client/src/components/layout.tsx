@@ -36,12 +36,20 @@ import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { useSavedResources, syncSavedOnLogin, fetchSavedFromServer } from "@/lib/store";
 import { useAuth } from "@/lib/use-auth";
 
-const TUTORIAL_ITEMS = [
+const BOTTOM_NAV_ITEMS = [
   { icon: Home, label: "Home", desc: "Ask questions and find help." },
   { icon: BookOpen, label: "Resources", desc: "Browse veteran programs and services." },
-  { icon: Heart, label: "Saved", desc: "Resources you mark as favorites." },
+  { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
   { icon: MessageSquare, label: "Community", desc: "Connect with other veterans." },
   { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
+];
+
+const TOP_HEADER_ITEMS = [
+  { icon: Sparkles, label: "Get Help", desc: "Use the Veteran Care guide to request support or find the right resources." },
+  { icon: Search, label: "Search", desc: "Quickly search programs, benefits, and services." },
+  { icon: Bell, label: "Notifications", desc: "View updates about saved resources and responses." },
+  { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
+  { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },
 ];
 
 interface LayoutProps {
@@ -273,25 +281,45 @@ export default function Layout({ children }: LayoutProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-2">
-              {TUTORIAL_ITEMS.map((item) => {
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Bottom Navigation</p>
+            <div className="space-y-1.5">
+              {BOTTOM_NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <div key={item.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ArrowDown className="h-3.5 w-3.5 animate-bounce" />
               <span>These tabs are at the bottom of your screen</span>
+            </div>
+            <div className="border-t pt-3 mt-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Top Header</p>
+              <div className="space-y-1.5">
+                {TOP_HEADER_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{item.label}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <Button
               data-testid="button-got-it"
