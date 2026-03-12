@@ -54,3 +54,7 @@ mockupState = "FULLSTACK"
 
 [userenv.shared]
 RESEND_FROM_EMAIL = "Veteran Care <noreply@veterancare.com>"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
