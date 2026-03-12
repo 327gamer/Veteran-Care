@@ -256,13 +256,15 @@ export default function Resources() {
 
   const searchParam = debouncedSearch.trim() || undefined;
 
-  const { data: apiResources = [], isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[]>({
+  const isNearMeQuery = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
+
+  const { data: rawApiResponse, isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[] | { results: SupabaseResource[]; local_count: number }>({
     queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode, searchParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
       if (searchParam) params.set("q", searchParam);
-      if (locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined) {
+      if (isNearMeQuery) {
         params.set("user_lat", String(nearMeLat));
         params.set("user_lng", String(nearMeLng));
         params.set("radius_miles", String(nearMeRadius));
@@ -273,12 +275,20 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: (!!selectedSlug || !!searchParam || (locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined)) && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
+    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
+  const apiResources: SupabaseResource[] = rawApiResponse
+    ? (Array.isArray(rawApiResponse) ? rawApiResponse : rawApiResponse.results)
+    : [];
+  const nearMeLocalCount: number | null = rawApiResponse && !Array.isArray(rawApiResponse)
+    ? rawApiResponse.local_count
+    : null;
+
+  const hasNoLocalNearMe = resourcesFetched && isNearMeQuery && nearMeLocalCount === 0;
+
   const needsFallback = resourcesFetched && apiResources.length === 0 && !searchParam &&
-    ((hasLocationFilters && locationMode === "state" && !localOnly) ||
-     (locationMode === "nearme" && nearMeLat !== undefined));
+    ((hasLocationFilters && locationMode === "state" && !localOnly));
 
   const { data: fallbackResources = [], isLoading: fallbackLoading } = useQuery<SupabaseResource[]>({
     queryKey: ["/api/resources", selectedSlug, "national-fallback"],
@@ -315,7 +325,7 @@ export default function Resources() {
 
   const isFallingBack = needsFallback && fallbackResources.length > 0;
   const displayResources = isFallingBack ? fallbackResources : apiResources;
-  const isNearMeActive = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
+  const isNearMeActive = isNearMeQuery;
 
   const PRIORITY_ORDER: Record<string, number> = {
     immediate: 0,
@@ -818,17 +828,14 @@ export default function Resources() {
               </div>
             )}
 
-            {isFallingBack && (
-              <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            {hasNoLocalNearMe && (
+              <div data-testid="text-nearme-no-local" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-2">
                   <p className="text-xs text-amber-800">
-                    {locationMode === "nearme"
-                      ? `No resources found within ${nearMeRadius} miles — showing national resources.`
-                      : `No local resources found yet for ${locationLabel()} — showing national resources.`
-                    }
+                    No resources found within {nearMeRadius} miles — showing national resources below.
                   </p>
-                  {locationMode === "nearme" && nearMeRadius < 100 && (
+                  {nearMeRadius < 100 && (
                     <Button
                       data-testid="button-expand-radius"
                       variant="outline"
@@ -840,6 +847,15 @@ export default function Resources() {
                     </Button>
                   )}
                 </div>
+              </div>
+            )}
+
+            {isFallingBack && !hasNoLocalNearMe && (
+              <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800">
+                  No local resources found yet for {locationLabel()} — showing national resources.
+                </p>
               </div>
             )}
 

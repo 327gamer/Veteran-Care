@@ -317,7 +317,7 @@ export async function registerRoutes(
         .filter((r: any) => !localIds.has(r.id))
         .map((r: any) => ({ ...r, distance_miles: null, is_national: true }));
 
-      return res.json([...localResults, ...nationalResults]);
+      return res.json({ results: [...localResults, ...nationalResults], local_count: localResults.length });
     }
 
     return res.json(data);
