@@ -285,7 +285,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {showTutorial && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-300">
-          <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-sm mx-auto p-5 pb-8 md:mb-0 space-y-4 animate-in slide-in-from-bottom-4 duration-500 shadow-2xl">
+          <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-sm mx-auto p-4 pb-6 md:mb-0 space-y-2 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-500 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="font-heading font-bold text-lg text-primary">Quick Navigation Guide</h3>
               <Button
@@ -299,13 +299,13 @@ export default function Layout({ children }: LayoutProps) {
               </Button>
             </div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Bottom Navigation</p>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {BOTTOM_NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4 text-primary" />
+                  <div key={item.label} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-muted/40">
+                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">{item.label}</p>
@@ -319,18 +319,18 @@ export default function Layout({ children }: LayoutProps) {
               <ArrowDown className="h-3.5 w-3.5 animate-bounce" />
               <span>These tabs are at the bottom of your screen</span>
             </div>
-            <div className="border-t pt-3 mt-1">
+            <div className="border-t pt-2 mt-1">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Top Header</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                 <span>These icons are at the top of your screen</span>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {TOP_HEADER_ITEMS.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Icon className="h-4 w-4 text-primary" />
+                    <div key={item.label} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-muted/40">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="h-3.5 w-3.5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm">{item.label}</p>
