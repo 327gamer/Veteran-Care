@@ -11,7 +11,7 @@ export default function NearMe() {
         <h1 className="text-2xl font-bold text-primary">Near You</h1>
         <p className="text-muted-foreground text-sm">Showing resources within 25 miles of Austin, TX</p>
         <Link href="/resources">
-          <Button data-testid="button-browse-resources" className="mt-3 bg-green-600 hover:bg-green-700 text-white">
+          <Button data-testid="button-browse-resources" className="mt-3 rounded-full px-5">
             Browse Resources
           </Button>
         </Link>
