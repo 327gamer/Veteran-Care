@@ -275,7 +275,7 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery || (locationMode === "state" && !!selectedState)) && (locationMode !== "nearme" || isNearMeQuery),
+    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
   const apiResources: SupabaseResource[] = rawApiResponse
@@ -395,12 +395,8 @@ export default function Resources() {
   };
 
   useEffect(() => {
-    if (geo.location && !geoApplied && locationMode === "national") {
+    if (geo.location && !geoApplied) {
       setGeoApplied(true);
-      setLocationMode("state");
-      if (geo.location.stateCode) setSelectedState(geo.location.stateCode);
-      if (geo.location.city) setCityFilter(geo.location.city);
-      if (geo.location.zip) setZipFilter(geo.location.zip);
       setStoreLocation(
         geo.location.stateCode,
         geo.location.state,
@@ -408,7 +404,7 @@ export default function Resources() {
         geo.location.zip
       );
     }
-  }, [geo.location, geoApplied, setStoreLocation, locationMode]);
+  }, [geo.location, geoApplied, setStoreLocation]);
 
   useEffect(() => {
     if (locationMode === "state") {
@@ -522,17 +518,14 @@ export default function Resources() {
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          {(selectedSlug || locationMode !== "national") && (
+          {(selectedSlug || locationMode === "nearme") && (
             <Button 
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 -ml-2 rounded-full" 
               onClick={() => {
-                if (!selectedSlug) {
+                if (locationMode === "nearme" && !selectedSlug) {
                   setLocationMode("national");
-                  setSelectedState("");
-                  setCityFilter("");
-                  setZipFilter("");
                   setLocation("/resources");
                 } else {
                   clearCategory();
@@ -543,7 +536,7 @@ export default function Resources() {
             </Button>
           )}
           <h1 className="text-3xl font-extrabold text-primary font-heading tracking-tight">
-            {selectedName ? selectedName : locationMode === "nearme" ? "Near You" : locationMode === "state" && !selectedSlug ? "Resources by Location" : "Resources"}
+            {selectedName ? selectedName : locationMode === "nearme" ? "Near You" : "Resources"}
           </h1>
         </div>
         <p className="text-muted-foreground">
@@ -551,9 +544,7 @@ export default function Resources() {
             ? `Browse available resources for ${selectedName}.`
             : locationMode === "nearme"
               ? (geo.location ? `Showing resources near ${geo.location.city || geo.location.stateCode || "your location"}.` : "Finding resources near you...")
-              : locationMode === "state" && !selectedSlug
-                ? "Filter resources by state, city, or ZIP code."
-                : "Browse the full resource library by category."}
+              : "Browse the full resource library by category."}
         </p>
       </div>
 
@@ -579,7 +570,7 @@ export default function Resources() {
         )}
       </div>
 
-      {(selectedSlug || locationMode === "nearme" || locationMode === "state") ? (
+      {(selectedSlug || locationMode === "nearme") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
 
