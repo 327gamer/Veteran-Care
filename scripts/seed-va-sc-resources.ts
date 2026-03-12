@@ -5,11 +5,11 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY!
 );
 
-const CATEGORIES = {
-  crisisHelp: "", // will be looked up or created
-  healthcare: "0c8fafaa-3847-4045-8d92-e8857d880fa8",
-  mentalHealth: "19a1421f-fc22-486b-9730-b1c54339a123",
-  communitySupport: "728dcbf9-8941-4f9c-8953-0abf385409a2",
+const CATEGORIES: Record<string, string> = {
+  crisisHelp: "",
+  healthcare: "",
+  mentalHealth: "",
+  communitySupport: "",
 };
 
 interface Resource {
@@ -33,32 +33,48 @@ interface Resource {
   service_priority?: string;
 }
 
-async function ensureCrisisHelpCategory(): Promise<string> {
-  const { data: existing } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("slug", "crisis-help")
-    .single();
+async function lookupCategories(): Promise<void> {
+  const slugMap: Record<string, keyof typeof CATEGORIES> = {
+    "crisis-help": "crisisHelp",
+    "healthcare": "healthcare",
+    "mental-health": "mentalHealth",
+    "community-support": "communitySupport",
+  };
 
-  if (existing) {
-    console.log("crisis-help category already exists:", existing.id);
-    return existing.id;
+  const { data: rows, error } = await supabase
+    .from("categories")
+    .select("id, slug")
+    .in("slug", Object.keys(slugMap));
+
+  if (error) throw new Error(`Failed to look up categories: ${error.message}`);
+
+  for (const row of rows || []) {
+    const key = slugMap[row.slug];
+    if (key) {
+      CATEGORIES[key] = row.id;
+      console.log(`Category ${row.slug} => ${row.id}`);
+    }
   }
 
-  const { data: created, error } = await supabase
-    .from("categories")
-    .insert({ name: "Crisis Help", slug: "crisis-help" })
-    .select("id")
-    .single();
+  if (!CATEGORIES.crisisHelp) {
+    const { data: created, error: createErr } = await supabase
+      .from("categories")
+      .insert({ name: "Crisis Help", slug: "crisis-help" })
+      .select("id")
+      .single();
 
-  if (error) throw new Error(`Failed to create crisis-help category: ${error.message}`);
-  console.log("Created crisis-help category:", created.id);
-  return created.id;
+    if (createErr) throw new Error(`Failed to create crisis-help category: ${createErr.message}`);
+    CATEGORIES.crisisHelp = created.id;
+    console.log(`Created crisis-help category => ${created.id}`);
+  }
+
+  const missing = Object.entries(CATEGORIES).filter(([, v]) => !v);
+  if (missing.length > 0) {
+    throw new Error(`Missing categories: ${missing.map(([k]) => k).join(", ")}`);
+  }
 }
 
-function buildResources(crisisHelpId: string): Resource[] {
-  CATEGORIES.crisisHelp = crisisHelpId;
-
+function buildResources(): Resource[] {
   return [
     // ===== VETERANS CRISIS LINE (National, high priority) =====
     {
@@ -74,7 +90,7 @@ function buildResources(crisisHelpId: string): Resource[] {
       source_type: "service",
       status: "approved",
       sponsored: false,
-      service_priority: "high",
+      service_priority: "immediate",
     },
     // Duplicate for mental-health category
     {
@@ -90,7 +106,7 @@ function buildResources(crisisHelpId: string): Resource[] {
       source_type: "service",
       status: "approved",
       sponsored: false,
-      service_priority: "high",
+      service_priority: "immediate",
     },
 
     // ===== VA MEDICAL CENTERS (2) =====
@@ -618,11 +634,9 @@ function buildResources(crisisHelpId: string): Resource[] {
 async function main() {
   console.log("=== SC VA Resource Import ===\n");
 
-  // Step 1: Ensure crisis-help category exists
-  const crisisHelpId = await ensureCrisisHelpCategory();
+  await lookupCategories();
 
-  // Step 2: Build resources
-  const resources = buildResources(crisisHelpId);
+  const resources = buildResources();
   console.log(`\nPrepared ${resources.length} resource records to insert.\n`);
 
   // Step 3: Insert in batches
@@ -642,7 +656,9 @@ async function main() {
       errors += batch.length;
     } else {
       inserted += data.length;
-      data.forEach((r: any) => console.log(`  ✓ ${r.title} (${r.city || "statewide"}) — ${r.id}`));
+      for (const r of data) {
+        console.log(`  ✓ ${r.title} (${r.city || "statewide"}) — ${r.id}`);
+      }
     }
   }
 
