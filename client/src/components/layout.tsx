@@ -46,7 +46,7 @@ const BOTTOM_NAV_ITEMS = [
 
 const TOP_HEADER_ITEMS = [
   { icon: Sparkles, label: "Get Help", desc: "Use the Veteran Care guide to request support or find the right resources." },
-  { icon: Search, label: "Search", desc: "Quickly search programs, benefits, and services." },
+  { icon: Search, label: "Search", desc: "Find resources near you." },
   { icon: Bell, label: "Notifications", desc: "View updates about saved resources and responses." },
   { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
   { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },

@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, Phone } from "lucide-react";
+import { Link } from "wouter";
 
 export default function NearMe() {
   return (
@@ -9,6 +10,11 @@ export default function NearMe() {
        <div className="flex-none mb-4">
         <h1 className="text-2xl font-bold text-primary">Near You</h1>
         <p className="text-muted-foreground text-sm">Showing resources within 25 miles of Austin, TX</p>
+        <Link href="/resources">
+          <Button data-testid="button-browse-resources" className="mt-3 bg-green-600 hover:bg-green-700 text-white">
+            Browse Resources
+          </Button>
+        </Link>
        </div>
 
        {/* Map Placeholder */}
