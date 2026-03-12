@@ -45,9 +45,10 @@ const BOTTOM_NAV_ITEMS = [
 ];
 
 const TOP_HEADER_ITEMS = [
+  { icon: MapPin, label: "Location", desc: "Find resources near you. (By Location)." },
+  { icon: Search, label: "Search", desc: "Browse resources." },
   { icon: Sparkles, label: "Get Help", desc: "Use the Veteran Care guide to request support or find the right resources." },
-  { icon: Search, label: "Search", desc: "Find resources near you." },
-  { icon: Bell, label: "Notifications", desc: "View updates about saved resources and responses." },
+  { icon: Bell, label: "Notifications", desc: "View updates about saved resources, messages and responses." },
   { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
   { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },
 ];
