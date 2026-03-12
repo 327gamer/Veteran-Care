@@ -25,11 +25,17 @@ const USER_TYPES = [
   { value: "spouse_family", label: "Spouse / Family Member" },
   { value: "dependent", label: "Dependent" },
   { value: "caregiver_advocate", label: "Caregiver / Advocate" },
+  { value: "case_manager", label: "Case Manager" },
+  { value: "social_worker", label: "Social Worker" },
+  { value: "nonprofit_rep", label: "Nonprofit / Organization Rep" },
+  { value: "vso_advocate", label: "VSO / Advocate" },
+  { value: "government_staff", label: "Government / Agency Staff" },
+  { value: "church_ministry", label: "Church / Ministry Rep" },
   { value: "other", label: "Other" },
 ];
 
 const BRANCHES = [
-  "Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force", "National Guard", "Reserves", "N/A",
+  "Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force", "National Guard", "Reserves", "N/A / Not Applicable",
 ];
 
 const SERVICE_ERAS = [
@@ -39,6 +45,7 @@ const SERVICE_ERAS = [
   "Korean War (1950–1953)",
   "Peacetime",
   "Other",
+  "N/A / Not Applicable",
 ];
 
 const CONTACT_METHODS = [
@@ -428,17 +435,26 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="signup-rank" className="text-xs">Rank</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signup-rank" className="text-xs">Rank</Label>
+                        <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setRank("N/A / Not Applicable")} data-testid="button-rank-na">N/A</button>
+                      </div>
                       <Input data-testid="input-signup-rank" id="signup-rank" placeholder="e.g. SGT, CPL" value={rank} onChange={(e) => setRank(e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="signup-mos" className="text-xs">MOS / Specialty</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signup-mos" className="text-xs">MOS / Specialty</Label>
+                        <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setMos("N/A / Not Applicable")} data-testid="button-mos-na">N/A</button>
+                      </div>
                       <Input data-testid="input-signup-mos" id="signup-mos" placeholder="e.g. 11B, 68W" value={mos} onChange={(e) => setMos(e.target.value)} />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="signup-deployment" className="text-xs">Deployment / Operational Background</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signup-deployment" className="text-xs">Deployment / Operational Background</Label>
+                      <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setDeploymentBackground("N/A / Not Applicable")} data-testid="button-deployment-na">N/A</button>
+                    </div>
                     <Input data-testid="input-signup-deployment" id="signup-deployment" placeholder="e.g. OEF, OIF, OND" value={deploymentBackground} onChange={(e) => setDeploymentBackground(e.target.value)} />
                   </div>
 
