@@ -128,7 +128,7 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/near-me">
+            <Link href="/resources?mode=nearme">
               <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
                 <MapPin className="h-5 w-5" />
               </Button>

@@ -13,7 +13,7 @@ interface UseGeolocationReturn {
   location: GeoLocation | null;
   loading: boolean;
   error: string | null;
-  requestLocation: () => void;
+  requestLocation: (force?: boolean) => void;
   hasPermission: boolean | null;
 }
 
@@ -49,6 +49,12 @@ function getCachedLocation(): GeoLocation | null {
   return null;
 }
 
+function clearCachedLocation() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {}
+}
+
 function setCachedLocation(data: GeoLocation) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
@@ -79,16 +85,20 @@ export function useGeolocation(): UseGeolocationReturn {
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-  const fetchLocation = useCallback(() => {
+  const fetchLocation = useCallback((force?: boolean) => {
     if (!navigator.geolocation) {
       setError("Geolocation is not supported");
       return;
     }
 
-    const cached = getCachedLocation();
-    if (cached) {
-      setLocation(cached);
-      return;
+    if (!force) {
+      const cached = getCachedLocation();
+      if (cached) {
+        setLocation(cached);
+        return;
+      }
+    } else {
+      clearCachedLocation();
     }
 
     setLoading(true);
@@ -116,7 +126,7 @@ export function useGeolocation(): UseGeolocationReturn {
         );
         setLoading(false);
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
   }, []);
 

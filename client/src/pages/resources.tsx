@@ -273,7 +273,7 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: (!!selectedSlug || !!searchParam) && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
+    enabled: (!!selectedSlug || !!searchParam || (locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined)) && (locationMode !== "nearme" || (nearMeLat !== undefined && nearMeLng !== undefined)),
   });
 
   const needsFallback = resourcesFetched && apiResources.length === 0 && !searchParam &&
@@ -385,7 +385,7 @@ export default function Resources() {
   };
 
   useEffect(() => {
-    if (geo.location && !geoApplied && locationMode !== "nearme") {
+    if (geo.location && !geoApplied && locationMode === "national") {
       setGeoApplied(true);
       setLocationMode("state");
       if (geo.location.stateCode) setSelectedState(geo.location.stateCode);
@@ -420,6 +420,14 @@ export default function Resources() {
     const urg = params.get("urgency");
     if (urg && ["immediate", "same_week", "standard", "information"].includes(urg)) {
       setUrgencyFilter(urg);
+    }
+    const modeParam = params.get("mode");
+    if (modeParam === "nearme") {
+      setLocationMode("nearme");
+      setGeoApplied(true);
+      if (!geo.location && !geo.loading) {
+        geo.requestLocation(true);
+      }
     }
   }, [location, categories]);
 
@@ -480,8 +488,8 @@ export default function Resources() {
   }
 
   const handleUseMyLocation = () => {
-    geo.requestLocation();
-    setGeoApplied(false);
+    setLocationMode("nearme");
+    geo.requestLocation(true);
   };
 
   const locationSummary = () => {
@@ -506,24 +514,26 @@ export default function Resources() {
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          {selectedSlug && (
+          {(selectedSlug || locationMode === "nearme") && (
             <Button 
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 -ml-2 rounded-full" 
-              onClick={clearCategory}
+              onClick={() => { if (locationMode === "nearme" && !selectedSlug) { setLocationMode("national"); setLocation("/resources"); } else { clearCategory(); } }}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
           <h1 className="text-3xl font-extrabold text-primary font-heading tracking-tight">
-            {selectedName ? selectedName : "Resources"}
+            {selectedName ? selectedName : locationMode === "nearme" ? "Near You" : "Resources"}
           </h1>
         </div>
         <p className="text-muted-foreground">
           {selectedName 
             ? `Browse available resources for ${selectedName}.`
-            : "Browse the full resource library by category."}
+            : locationMode === "nearme"
+              ? (geo.location ? `Showing resources near ${geo.location.city || geo.location.stateCode || "your location"}.` : "Finding resources near you...")
+              : "Browse the full resource library by category."}
         </p>
       </div>
 
@@ -549,7 +559,7 @@ export default function Resources() {
         )}
       </div>
 
-      {selectedSlug ? (
+      {(selectedSlug || locationMode === "nearme") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
 
@@ -569,7 +579,7 @@ export default function Resources() {
                     data-testid="toggle-near-me"
                     onClick={() => {
                       setLocationMode("nearme");
-                      if (!geo.location) geo.requestLocation();
+                      if (!geo.location) geo.requestLocation(true);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
@@ -696,9 +706,29 @@ export default function Resources() {
               {locationMode === "nearme" && !geo.location && !geo.loading && geo.error && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
+                  <div className="space-y-2">
                     <p className="text-xs text-amber-800">{geo.error}</p>
-                    <p className="text-[10px] text-amber-700 mt-1">Try "By State" mode instead, or allow location access in your browser.</p>
+                    <p className="text-[10px] text-amber-700">Allow location access in your browser settings, or filter manually by state and city.</p>
+                    <div className="flex gap-2">
+                      <Button
+                        data-testid="button-retry-location"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] px-2"
+                        onClick={() => geo.requestLocation(true)}
+                      >
+                        <Locate className="h-3 w-3 mr-1" /> Try Again
+                      </Button>
+                      <Button
+                        data-testid="button-switch-to-state"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] px-2"
+                        onClick={() => setLocationMode("state")}
+                      >
+                        <MapPinned className="h-3 w-3 mr-1" /> Filter by State
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -791,12 +821,25 @@ export default function Resources() {
             {isFallingBack && (
               <div data-testid="text-fallback-notice" className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800">
-                  {locationMode === "nearme"
-                    ? `No resources found within ${nearMeRadius} miles — showing all resources.`
-                    : `No local resources found yet for ${locationLabel()} — showing national resources.`
-                  }
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-amber-800">
+                    {locationMode === "nearme"
+                      ? `No resources found within ${nearMeRadius} miles — showing national resources.`
+                      : `No local resources found yet for ${locationLabel()} — showing national resources.`
+                    }
+                  </p>
+                  {locationMode === "nearme" && nearMeRadius < 100 && (
+                    <Button
+                      data-testid="button-expand-radius"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] px-2"
+                      onClick={() => setNearMeRadius(nearMeRadius <= 25 ? 50 : 100)}
+                    >
+                      <Radar className="h-3 w-3 mr-1" /> Try {nearMeRadius <= 25 ? 50 : 100} miles instead
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -812,7 +855,13 @@ export default function Resources() {
               </div>
             )}
 
-            {isLoading && (
+            {locationMode === "nearme" && geo.loading && (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Getting your location...</p>
+              </div>
+            )}
+            {isLoading && !geo.loading && (
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
             )}
             {!showLocalOnlyEmpty && activeResources?.map((resource) => (
@@ -827,6 +876,9 @@ export default function Resources() {
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
+                        {!selectedSlug && resource.category && (
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0">{resource.category}</Badge>
+                        )}
                         {resource.sponsored && (
                           <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
                             Sponsored
