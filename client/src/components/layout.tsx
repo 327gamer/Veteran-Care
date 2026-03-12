@@ -138,7 +138,13 @@ export default function Layout({ children }: LayoutProps) {
               variant="ghost"
               size="icon"
               className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
-              onClick={() => setLocation("/resources")}
+              onClick={() => {
+                if (window.location.pathname === "/resources") {
+                  window.location.href = "/resources";
+                } else {
+                  setLocation("/resources");
+                }
+              }}
               data-testid="button-search-top"
             >
               <Search className="h-5 w-5" />
