@@ -1,0 +1,58 @@
+Next development task: Plan the Veteran Guide AI integration for a launch-friendly, low-cost implementation.
+
+Current situation:
+We now have the Veteran Guide branding in place across the UI, but we need to plan the actual AI feature behind it.
+
+Goal:
+Launch South Carolina with an AI-powered Veteran Guide that is more useful than a basic website chatbot, but without the cost and complexity of building a full ChatGPT clone.
+
+What I want:
+1. Provide a clear development plan for a staged Veteran Guide AI system.
+2. The launch version should support:
+   - guest users asking questions
+   - logged-in users getting more personalized guidance
+   - recommendations based on location, profile data, saved resources, and recent activity where appropriate
+3. The AI should help users:
+   - find resources
+   - understand where to start
+   - navigate support categories
+   - escalate to a navigator when needed
+4. The plan should keep costs low and avoid overbuilding.
+5. Do not build a full “ChatGPT projects/memory clone” at this stage.
+6. Focus on a practical South Carolina launch version that can expand later.
+
+Please tell me clearly:
+
+A. Recommended architecture
+- what model/provider you recommend for launch
+- how the AI would connect to our resource database
+- how guest mode vs account mode would differ
+- what lightweight memory/personalization should be included now
+- what should wait until later
+
+B. Cost-conscious approach
+- how to keep usage affordable
+- how to avoid storing huge conversation histories
+- how to personalize responses without creating major token costs
+
+C. User experience flow
+- what happens when a guest clicks Veteran Guide
+- what happens when a logged-in user clicks Veteran Guide
+- how the AI should suggest resources
+- how it should hand off to the navigator request flow
+
+D. Data requirements
+- what Supabase tables or fields would be needed now
+- what existing data can already be used
+- what additional tables should be optional/later
+
+E. Launch recommendation
+- what the minimum viable AI version should be for South Carolina launch
+- what should be Phase 2
+- what should be Phase 3
+
+Important:
+Do not implement anything yet.
+Do not change homepage, navigation, resources, onboarding, or backend code in this step.
+This is a planning/documentation step only.
+I want the plan first so we can review it before building.
