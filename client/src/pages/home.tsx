@@ -275,42 +275,25 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-2 gap-2.5">
-              <Button
-                data-testid="button-ask-guide-home"
-                variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
-                onClick={openGuide}
-              >
-                <Sparkles className="h-5 w-5 shrink-0" />
-                Veteran Guide
-              </Button>
-              <Button
-                data-testid="button-browse-resources-home"
-                variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
-                onClick={() => setLocation("/resources")}
-              >
-                <BookOpen className="h-5 w-5 shrink-0" />
-                Browse Resources
-              </Button>
-              <Button
-                data-testid="button-guided-help-home"
-                variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
-                onClick={() => setShowGuidedHelp(true)}
-              >
-                <Compass className="h-5 w-5 shrink-0" />
-                Get Help
-              </Button>
-              <Button
-                data-testid="button-learn-app-home"
-                variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
-                onClick={openTutorial}
-              >
-                <HelpCircle className="h-5 w-5 shrink-0" />
-                How It Works
-              </Button>
+              {[
+                { id: "button-ask-guide-home", icon: Sparkles, label: "Veteran Guide", onClick: openGuide },
+                { id: "button-browse-resources-home", icon: BookOpen, label: "Browse Resources", onClick: () => setLocation("/resources") },
+                { id: "button-guided-help-home", icon: Compass, label: "Get Help", onClick: () => setShowGuidedHelp(true) },
+                { id: "button-learn-app-home", icon: HelpCircle, label: "How It Works", onClick: openTutorial },
+              ].map(({ id, icon: Icon, label, onClick }) => (
+                <Button
+                  key={id}
+                  data-testid={id}
+                  variant="secondary"
+                  className="w-full text-primary font-semibold shadow-md h-14 rounded-xl flex items-center justify-start pl-3 pr-2 whitespace-nowrap"
+                  onClick={onClick}
+                >
+                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mr-2.5">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </span>
+                  <span className="text-[12.5px] md:text-[13px]">{label}</span>
+                </Button>
+              ))}
             </div>
           </CardContent>
         </Card>
