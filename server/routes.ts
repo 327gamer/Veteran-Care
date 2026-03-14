@@ -882,7 +882,7 @@ export async function registerRoutes(
   app.get("/api/admin/resources", requireAdmin, async (req, res) => {
     const { status, q, state: stateFilter } = req.query;
 
-    let query = supabase.from("resources").select(`
+    let query = supabaseAdmin.from("resources").select(`
       *,
       categories(id, name, slug)
     `);
@@ -1021,7 +1021,7 @@ export async function registerRoutes(
       });
       const stateList = Array.from(statesInImport);
 
-      let q = supabase.from("resources").select("title, state");
+      let q = supabaseAdmin.from("resources").select("title, state");
       if (stateList.length === 1) {
         q = q.eq("state", stateList[0]);
       } else if (stateList.length > 1) {
@@ -1214,7 +1214,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "State code required" });
     }
 
-    let q = supabase.from("resources").select("id, title, city, state, category_id, status");
+    let q = supabaseAdmin.from("resources").select("id, title, city, state, category_id, status");
     q = q.eq("state", stateCode);
     if (category) {
       const { data: cats } = await supabase.from("categories").select("id, slug, name");
@@ -1252,7 +1252,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "State code required" });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("resources")
       .select("id, title, city, state, created_at")
       .eq("state", stateCode)
@@ -1320,7 +1320,7 @@ export async function registerRoutes(
       catNameMap.set(c.id, c.slug);
     });
 
-    let q = supabase.from("resources")
+    let q = supabaseAdmin.from("resources")
       .select("*")
       .eq("state", sourceState)
       .eq("status", "approved");

@@ -48,7 +48,7 @@ CREATE POLICY "public_read_categories" ON categories
 ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_read_resources" ON resources;
 CREATE POLICY "public_read_resources" ON resources
-  FOR SELECT USING (true);
+  FOR SELECT USING (status = 'approved' OR status IS NULL);
 
 ALTER TABLE states ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_read_states" ON states;
