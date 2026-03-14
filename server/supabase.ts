@@ -15,3 +15,11 @@ if (!supabaseServiceRoleKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+export function supabaseForUser(accessToken: string) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  });
+}

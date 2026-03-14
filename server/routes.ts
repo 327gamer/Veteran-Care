@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { supabase, supabaseAdmin } from "./supabase";
+import { supabase, supabaseAdmin, supabaseForUser } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
@@ -14,7 +14,7 @@ let hasNavLifecycleColumns = false;
 let hasNotifyEmailColumn = false;
 
 async function checkGeoColumns() {
-  const { error } = await supabase.from("resources").select("latitude").limit(1);
+  const { error } = await supabaseAdmin.from("resources").select("latitude").limit(1);
   if (error && error.message.includes("does not exist")) {
     hasGeoColumns = false;
     console.log("[geo] latitude/longitude columns not found — Near Me feature disabled until columns are added");
@@ -24,7 +24,7 @@ async function checkGeoColumns() {
 }
 
 async function checkSubcategoryColumn() {
-  const { error } = await supabase.from("resources").select("subcategory").limit(1);
+  const { error } = await supabaseAdmin.from("resources").select("subcategory").limit(1);
   if (error && error.message.includes("does not exist")) {
     hasSubcategoryColumn = false;
     console.log("[schema] subcategory column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN subcategory TEXT;");
@@ -34,7 +34,7 @@ async function checkSubcategoryColumn() {
 }
 
 async function checkServicePriorityColumn() {
-  const { error } = await supabase.from("resources").select("service_priority").limit(1);
+  const { error } = await supabaseAdmin.from("resources").select("service_priority").limit(1);
   if (error && error.message.includes("does not exist")) {
     hasServicePriorityColumn = false;
     console.log("[schema] service_priority column not found. Please run in Supabase SQL editor: ALTER TABLE resources ADD COLUMN service_priority TEXT;");
@@ -44,7 +44,7 @@ async function checkServicePriorityColumn() {
 }
 
 async function checkNotifyEmailColumn() {
-  const { error } = await supabase.from("resources").select("notify_email").limit(1);
+  const { error } = await supabaseAdmin.from("resources").select("notify_email").limit(1);
   if (error && error.message.includes("does not exist")) {
     hasNotifyEmailColumn = false;
     console.log("[schema] notify_email column not found. Run: ALTER TABLE resources ADD COLUMN notify_email TEXT;");
@@ -61,7 +61,7 @@ let hasStatesTable = false;
 let statesHasFullSchema = false;
 
 async function checkStatesTable() {
-  const { data, error } = await supabase.from("states").select("code").limit(1);
+  const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
   if (error) {
     hasStatesTable = false;
     console.log("[schema] states table not found. Run supabase/create_states.sql");
@@ -70,7 +70,7 @@ async function checkStatesTable() {
   hasStatesTable = true;
   console.log("[schema] states table detected");
 
-  const { error: fullErr } = await supabase.from("states").select("id, is_active, is_template, config").limit(1);
+  const { error: fullErr } = await supabaseAdmin.from("states").select("id, is_active, is_template, config").limit(1);
   if (fullErr) {
     statesHasFullSchema = false;
     console.log("[schema] states table has simplified schema. Run supabase/alter_states.sql for full multi-state support");
@@ -426,12 +426,13 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Not authenticated" });
     }
     const token = authHeader.replace("Bearer ", "");
+    const userClient = supabaseForUser(token);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return res.status(401).json({ error: "Invalid session" });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await userClient
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
@@ -450,6 +451,7 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Not authenticated" });
     }
     const token = authHeader.replace("Bearer ", "");
+    const userClient = supabaseForUser(token);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return res.status(401).json({ error: "Invalid session" });
@@ -465,13 +467,13 @@ export async function registerRoutes(
         user_id: user.id,
         resource_id,
       }));
-      await supabaseAdmin.from("user_saved_resources").upsert(rows, {
+      await userClient.from("user_saved_resources").upsert(rows, {
         onConflict: "user_id,resource_id",
         ignoreDuplicates: true,
       });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await userClient
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
@@ -490,6 +492,7 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Not authenticated" });
     }
     const token = authHeader.replace("Bearer ", "");
+    const userClient = supabaseForUser(token);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return res.status(401).json({ error: "Invalid session" });
@@ -501,13 +504,13 @@ export async function registerRoutes(
     }
 
     if (action === "unsave") {
-      await supabaseAdmin
+      await userClient
         .from("user_saved_resources")
         .delete()
         .eq("user_id", user.id)
         .eq("resource_id", resource_id);
     } else {
-      await supabaseAdmin
+      await userClient
         .from("user_saved_resources")
         .upsert(
           { user_id: user.id, resource_id },
@@ -515,7 +518,7 @@ export async function registerRoutes(
         );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await userClient
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
