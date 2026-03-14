@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { MapPin, UserPlus } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { platform } from "@shared/platform";
 import { useSavedResources } from "@/lib/store";
 import AuthModal from "@/components/auth-modal";
 
@@ -106,15 +107,15 @@ export default function Onboarding() {
         {step === 1 && (
           <div className="w-full flex flex-col items-center space-y-6">
             <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
-              <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
+              <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
             <div className="space-y-2">
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
-                Welcome to Veteran Care
+                Welcome to {platform.name}
               </h1>
               <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                Helping veterans find benefits, housing, healthcare, and local support.
+                {platform.onboardingSubtitle}
               </p>
             </div>
 
@@ -143,7 +144,7 @@ export default function Onboarding() {
         {step === 2 && (
           <div className="w-full flex flex-col items-center space-y-6">
             <div className="h-36 w-full max-w-[220px] flex items-center justify-center drop-shadow-2xl">
-              <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
+              <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
             <div className="space-y-2">
@@ -179,7 +180,7 @@ export default function Onboarding() {
         {step === 3 && (
           <div className="w-full flex flex-col items-center space-y-6">
             <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
-              <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
+              <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
             <div className="relative flex items-center justify-center">
@@ -195,7 +196,7 @@ export default function Onboarding() {
                 Enable Location
               </h1>
               <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                Allow location so we can show veteran resources and services near you.
+                Allow location so we can show resources and services near you.
               </p>
             </div>
 

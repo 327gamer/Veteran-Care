@@ -204,7 +204,7 @@ export async function registerRoutes(
       const response = await fetch(url, {
         headers: {
           "Accept-Language": "en",
-          "User-Agent": "VeteranCare/1.0 (veterancare.com)",
+          "User-Agent": "CareApp/1.0",
         },
         signal: AbortSignal.timeout(5000),
       });

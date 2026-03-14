@@ -1,4 +1,5 @@
 
+import { platform, t } from "@shared/platform";
 import { 
   Sheet, 
   SheetContent, 
@@ -322,7 +323,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-sm text-primary">Need personal help?</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A Veteran Care Navigator can help you apply and follow up — for free.
+                    {t(platform.navigatorApplyDescription)}
                   </p>
                 </div>
                 <Button
@@ -357,7 +358,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-sm truncate">Need help with this?</h4>
                 <p className="text-xs text-muted-foreground truncate">
-                  Ask the Veteran Guide about eligibility, forms, or next steps.
+                  {t(platform.ai.askPrompt)}
                 </p>
               </div>
               <Button
@@ -367,7 +368,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                 className="h-7 text-xs bg-white shadow-sm border shrink-0"
                 onClick={handleGuideClick}
               >
-                Veteran Guide
+                {platform.ai.assistantName}
               </Button>
             </section>
 

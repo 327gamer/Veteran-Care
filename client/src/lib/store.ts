@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { platform } from '@shared/platform';
 
 interface ServiceProfile {
   branch: string;
@@ -117,7 +118,7 @@ export const useSavedResources = create<SavedResourcesState>()(
       clearAuthState: () => set({ authToken: null, savedIds: [], deviceMigrated: false }),
     }),
     {
-      name: 'veteran-care-saved-resources',
+      name: platform.storageKey,
     }
   )
 );

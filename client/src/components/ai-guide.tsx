@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, User, Trash2, History } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
+import { platform, t } from "@shared/platform";
 
 interface AiGuideProps {
   open: boolean;
@@ -22,7 +23,7 @@ interface AiGuideProps {
 
 const INITIAL_MESSAGE = {
   role: 'assistant' as const,
-  content: "Hello! I'm your Veteran Care Guide. How can I help you today? I can assist with benefits, finding local resources, or just pointing you in the right direction."
+  content: t(platform.ai.welcomeMessage),
 };
 
 export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
@@ -76,9 +77,9 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                <Bot className="h-6 w-6 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-heading">Veteran Guide</DialogTitle>
+              <DialogTitle className="text-lg font-heading">{platform.ai.assistantName}</DialogTitle>
               <DialogDescription className="text-primary-foreground/80 text-xs">
-                Always here to help.
+                {t(platform.ai.subtitle)}
               </DialogDescription>
             </div>
             {chatHistory.length > 0 && (

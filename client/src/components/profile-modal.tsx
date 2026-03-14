@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { platform, t } from "@shared/platform";
 import {
   Dialog,
   DialogContent,
@@ -367,7 +368,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 className="mt-0.5"
               />
               <Label htmlFor="profile-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                I agree to be contacted by Veteran Care regarding services, support, resources, and opportunities.
+                {t(platform.consentText)}
               </Label>
             </div>
 

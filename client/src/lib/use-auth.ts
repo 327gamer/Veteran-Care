@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
+import { platform } from "@shared/platform";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthState {
@@ -42,7 +43,7 @@ export function useAuth(): AuthState {
       email,
       password,
       options: {
-        emailRedirectTo: "https://veterancare.com",
+        emailRedirectTo: `https://${platform.domain}`,
       },
     });
     return { error: error?.message ?? null };

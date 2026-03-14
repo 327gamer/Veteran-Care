@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { platform, t } from "@shared/platform";
 import { 
   Search, 
   User, 
@@ -38,16 +39,16 @@ import { useAuth } from "@/lib/use-auth";
 
 const BOTTOM_NAV_ITEMS = [
   { icon: Home, label: "Home", desc: "Ask questions and find help." },
-  { icon: BookOpen, label: "Resources", desc: "Browse veteran programs and services." },
+  { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
   { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
-  { icon: MessageSquare, label: "Community", desc: "Connect with other veterans." },
+  { icon: MessageSquare, label: "Community", desc: "Connect with others." },
   { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
 ];
 
 const TOP_HEADER_ITEMS = [
   { icon: MapPin, label: "Location", desc: "Find resources near you. (By Location)." },
   { icon: Search, label: "Search", desc: "Browse resources." },
-  { icon: Sparkles, label: "Veteran Guide", desc: "An AI-powered assistant that helps veterans find resources, get guidance, and navigate support services based on their needs and location." },
+  { icon: Sparkles, label: platform.ai.assistantName, desc: "An AI-powered assistant that helps find resources, get guidance, and navigate support services based on needs and location." },
   { icon: Bell, label: "Notifications", desc: "View updates about saved resources, messages and responses." },
   { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
   { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },
@@ -128,9 +129,9 @@ export default function Layout({ children }: LayoutProps) {
           {/* Left: Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="h-12 w-14 overflow-hidden rounded-md bg-white transition-opacity hover:opacity-90 shadow-sm border border-white/20 flex items-center justify-center p-1">
-               <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
+               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
-            <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">Veteran Care</span>
+            <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">{platform.name}</span>
           </Link>
 
           {/* Right: Icons */}
@@ -172,7 +173,7 @@ export default function Layout({ children }: LayoutProps) {
               size="icon" 
               className={`text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 transition-shadow duration-700 ${guideGlow ? 'guide-glow' : ''}`}
               onClick={() => { setIsAiOpen(true); setGuideGlow(false); }}
-              title="Ask the Veteran Guide"
+              title={`Ask the ${platform.ai.assistantName}`}
             >
               <Sparkles className="h-5 w-5" />
             </Button>

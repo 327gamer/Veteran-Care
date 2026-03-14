@@ -2,6 +2,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { platform, t } from "@shared/platform";
 import { MapPin } from "lucide-react";
 
 export default function EnableLocation() {
@@ -26,7 +27,7 @@ export default function EnableLocation() {
         {/* Logo Section */}
         <div className="w-full flex justify-center mb-0">
           <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
-             <img src={logoImg} alt="Veteran Care Logo" className="h-full w-full object-contain" />
+             <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
           </div>
         </div>
 
@@ -47,7 +48,7 @@ export default function EnableLocation() {
           <p className="text-muted-foreground text-xs leading-relaxed px-4">
             Help us show resources near you.
             <br /><br />
-            Enabling location allows Veteran Care to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
+            Enabling location allows {platform.name} to quickly direct you to local benefits, services, and support in your area—without you having to search or sort through unnecessary information.
           </p>
         </div>
 

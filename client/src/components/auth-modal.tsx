@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { platform, t } from "@shared/platform";
 import {
   Dialog,
   DialogContent,
@@ -278,7 +279,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
           <>
             <DialogHeader>
               <DialogTitle className="text-xl font-heading text-primary">Welcome Back</DialogTitle>
-              <p className="text-sm text-muted-foreground">Sign in to your Veteran Care account.</p>
+              <p className="text-sm text-muted-foreground">Sign in to your {platform.name} account.</p>
             </DialogHeader>
 
             <form onSubmit={handleLogin} className="space-y-4 mt-2">
@@ -419,7 +420,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                   className="mt-0.5"
                 />
                 <Label htmlFor="signup-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                  I agree to be contacted by Veteran Care regarding services, support, resources, and opportunities.
+                  {t(platform.consentText)}
                 </Label>
               </div>
 

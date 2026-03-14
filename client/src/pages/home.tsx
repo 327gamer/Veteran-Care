@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { platform, t } from "@shared/platform";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 import {
   Select,
@@ -167,11 +168,11 @@ export default function Home() {
       {/* Brand Header */}
       <section className="-mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-5 mb-6 bg-white">
         <div className="h-56 md:h-64 w-full max-w-[364px] md:max-w-[400px] flex items-center justify-center drop-shadow-2xl">
-          <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
+          <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
         </div>
         <div className="space-y-2 px-6">
-          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to Veteran Care</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Welcome to Veteran Care — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services. Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, and other local resources in one place.</p>
+          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to {platform.name}</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">{platform.longDescription}</p>
         </div>
       </section>
 
@@ -269,14 +270,14 @@ export default function Home() {
               <div className="flex-1 space-y-1">
                 <p className="font-heading font-bold text-base">How can I help you today?</p>
                 <p className="text-primary-foreground/85 text-sm leading-relaxed">
-                  I'm your Veteran Guide — an AI-powered assistant that helps veterans find resources, get guidance, and navigate support services based on your needs and location.
+                  {t(platform.ai.guideIntro)}
                 </p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-2.5">
               {[
-                { id: "button-ask-guide-home", icon: Sparkles, label: "Veteran Guide", onClick: openGuide },
+                { id: "button-ask-guide-home", icon: Sparkles, label: platform.ai.assistantName, onClick: openGuide },
                 { id: "button-browse-resources-home", icon: BookOpen, label: "Resources", onClick: () => setLocation("/resources") },
                 { id: "button-guided-help-home", icon: Compass, label: "Get Help", onClick: () => setShowGuidedHelp(true) },
                 { id: "button-learn-app-home", icon: HelpCircle, label: "How It Works", onClick: openTutorial },

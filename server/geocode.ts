@@ -22,7 +22,7 @@ async function nominatimQuery(params: Record<string, string>): Promise<any[]> {
   const searchParams = new URLSearchParams({ format: "json", countrycodes: "us", limit: "1", ...params });
   const url = `${NOMINATIM_URL}?${searchParams.toString()}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "VeteranCareApp/1.0 (admin-geocode)" },
+    headers: { "User-Agent": "CareApp/1.0 (admin-geocode)" },
   });
   if (!res.ok) return [];
   const data = await res.json();

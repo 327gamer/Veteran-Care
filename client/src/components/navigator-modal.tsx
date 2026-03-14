@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { platform, t } from "@shared/platform";
 import {
   Dialog,
   DialogContent,
@@ -275,7 +276,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
             Request Support
           </DialogTitle>
           <DialogDescription>
-            A Veteran Care Navigator can help you find benefits, apply for programs, and follow up — for free.
+            {t(platform.navigatorDescription)}
           </DialogDescription>
         </DialogHeader>
 
@@ -288,7 +289,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
               <div className="flex-1">
                 <h4 className="font-bold text-sm text-green-700">Request Submitted</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  A Veteran Care Navigator will reach out to you soon.
+                  {t(platform.navigatorConfirmation)}
                 </p>
               </div>
             </div>

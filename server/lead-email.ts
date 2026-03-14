@@ -1,9 +1,10 @@
 import { Resend } from "resend";
 import { supabase, supabaseAdmin } from "./supabase";
+import { platform, t } from "../shared/platform";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Veteran Care <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || `${platform.name} <onboarding@resend.dev>`;
 
 function escapeHtml(str: string | null | undefined): string {
   if (!str) return "";
@@ -73,13 +74,13 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
   
   ${isImmediate ? `<div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
-    <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This veteran needs urgent help</strong>
+    <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This ${platform.userNoun} needs urgent help</strong>
     <p style="color: #991B1B; margin: 4px 0 0 0; font-size: 13px;">Please respond as quickly as possible. Escalation occurs in 15 minutes if unacknowledged.</p>
   </div>` : ""}
 
   <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">New Veteran Lead Routed to You</h2>
-    <p style="margin: 0; color: #15803D; font-size: 13px;">via Veteran Care Navigator</p>
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">New ${platform.userNounCapital} Lead Routed to You</h2>
+    <p style="margin: 0; color: #15803D; font-size: 13px;">via ${platform.name} ${platform.navigatorTitle}</p>
   </div>
 
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -126,13 +127,13 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
-      <strong>Next Steps:</strong> Please reach out to this veteran using their preferred contact method. 
+      <strong>Next Steps:</strong> Please reach out to this ${platform.userNoun} using their preferred contact method. 
       If you are unable to assist, the lead will be automatically rerouted to another partner.
     </p>
   </div>
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
-    <p>This lead was routed to ${escapeHtml(partner.partnerName)} by Veteran Care Navigator.</p>
+    <p>This lead was routed to ${escapeHtml(partner.partnerName)} by ${platform.name} ${platform.navigatorTitle}.</p>
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
@@ -157,12 +158,12 @@ function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: strin
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
   
   ${isImmediate ? `<div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
-    <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This veteran needs urgent help</strong>
+    <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This ${platform.userNoun} needs urgent help</strong>
     <p style="color: #991B1B; margin: 4px 0 0 0; font-size: 13px;">Please respond as quickly as possible.</p>
   </div>` : ""}
 
   <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">New Inquiry from Veteran Care</h2>
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">New Inquiry from ${platform.name}</h2>
     <p style="margin: 0; color: #15803D; font-size: 13px;">Resource: ${escapeHtml(resourceTitle)}</p>
   </div>
 
@@ -210,12 +211,12 @@ function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: strin
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
-      <strong>Next Steps:</strong> Please reach out to this veteran using their preferred contact method.
+      <strong>Next Steps:</strong> Please reach out to this ${platform.userNoun} using their preferred contact method.
     </p>
   </div>
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
-    <p>This inquiry was sent via Veteran Care — ${escapeHtml(resourceTitle)}</p>
+    <p>This inquiry was sent via ${platform.name} — ${escapeHtml(resourceTitle)}</p>
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
@@ -223,10 +224,10 @@ function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: strin
 </html>`;
 }
 
-const DEFAULT_NOTIFY_EMAIL = "info@veterancare.com";
+const DEFAULT_NOTIFY_EMAIL = platform.email.defaultNotifyEmail;
 
 const RESOURCE_NOTIFY_CONFIG: Record<string, string> = {
-  "Veteran Care": DEFAULT_NOTIFY_EMAIL,
+  [platform.name]: DEFAULT_NOTIFY_EMAIL,
 };
 
 export async function sendNavigatorNotification(
@@ -287,8 +288,8 @@ export async function sendNavigatorNotification(
     const subPart = lead.subcategory ? ` — ${lead.subcategory}` : "";
     const isImmediate = lead.urgency === "immediate";
     const subject = isImmediate
-      ? `[URGENT] New Veteran Inquiry: ${catPart}${subPart}`
-      : `New Veteran Inquiry: ${catPart}${subPart}`;
+      ? `[URGENT] New ${platform.userNounCapital} Inquiry: ${catPart}${subPart}`
+      : `New ${platform.userNounCapital} Inquiry: ${catPart}${subPart}`;
 
     const html = buildResourceNotificationHtml(leadData, resourceTitle, notifyEmail);
 
@@ -364,8 +365,8 @@ export async function sendLeadNotification(
 
     const isImmediate = lead.urgency === "immediate";
     const subject = isImmediate
-      ? `[URGENT] New Veteran Lead — ${lead.category || "Help Request"}`
-      : `New Veteran Lead — ${lead.category || "Help Request"}`;
+      ? `[URGENT] New ${platform.userNounCapital} Lead — ${lead.category || "Help Request"}`
+      : `New ${platform.userNounCapital} Lead — ${lead.category || "Help Request"}`;
 
     const html = buildLeadEmailHtml(leadData, partnerData);
 
