@@ -6,6 +6,7 @@ import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification } from "./lead-email";
+import { handleAiChat } from "./ai/engine";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
@@ -878,6 +879,8 @@ export async function registerRoutes(
 
     return res.json({ ok: true });
   });
+
+  app.post("/api/ai/chat", (req, res) => handleAiChat(req, res));
 
   app.get("/api/admin/resources", requireAdmin, async (req, res) => {
     const { status, q, state: stateFilter } = req.query;

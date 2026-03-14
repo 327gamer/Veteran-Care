@@ -33,8 +33,16 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 
 ## Key Files
 - `shared/platform.ts` - Platform configuration (name, domain, user terminology, AI config, email, feature flags)
-- `server/supabase.ts` - Supabase client initialization
+- `server/supabase.ts` - Supabase client initialization (anon, admin, user-scoped)
 - `server/routes.ts` - API endpoints (prefixed with `/api`)
+- `server/ai/config.ts` - AI engine configuration (model, prompts, safety rules, category keywords, rate limits)
+- `server/ai/engine.ts` - AI orchestrator (safety → resource match → prompt build → stream → log)
+- `server/ai/resource-matcher.ts` - Hybrid keyword + text search across 5 resource fields
+- `server/ai/prompt-builder.ts` - Builds system prompt with user context + matched resources
+- `server/ai/safety.ts` - Crisis keyword detection, blocked topic filter
+- `server/ai/rate-limiter.ts` - Per-user/guest rate limiting (30/hr auth, 10/hr guest)
+- `server/ai/stream.ts` - OpenAI chat completions streaming wrapper
+- `server/ai/usage-logger.ts` - Logs AI usage to ai_usage_log table (graceful if missing)
 - `server/lead-email.ts` - Email templates using platform config for branding
 - `server/lead-router.ts` - Lead routing engine (platform-agnostic)
 - `server/lead-escalation.ts` - Escalation timer system (platform-agnostic)
@@ -61,6 +69,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `POST /api/track-click` - Logs user interactions with location context (user_state, user_city fallback from resource if store empty)
 - `POST /api/report-resource` - Creates a pending admin review item with report note in notes_internal; sets resource status back to pending
 - `POST /api/navigator-request` - User submits request for navigator help (rate-limited 5/hr/IP, requires name + phone or email)
+- `POST /api/ai/chat` - AI Guide streaming endpoint; accepts {messages[], userState?, userCity?, userZip?, interests?, branch?}; returns SSE stream with resource matches, text chunks, and done event; includes crisis detection, blocked topic filter, rate limiting (30/hr auth, 10/hr guest), and usage logging
 - `GET /api/admin/resources?status=<status>&q=<search>` - Admin: list resources by status (requires x-admin-key header)
 - `PATCH /api/admin/resources/:id` - Admin: update resource fields/status (requires x-admin-key header)
 - `GET /api/admin/navigator-requests?status=<status>` - Admin: list navigator leads filtered by status (new/in_progress/resolved/cancelled)
@@ -101,10 +110,13 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `states` - code (TEXT UNIQUE), name (TEXT), active (BOOLEAN), created_at; full schema adds: id (UUID), is_active, is_template, launch_date, timezone, admin_contact_name, admin_contact_email, config (JSONB), resource_count, partner_count
 - `user_profiles` - id (UUID PK, fk→auth.users), first_name, last_name, email, phone, user_type (veteran/spouse_family/dependent/caregiver_advocate/other), consent_contact (bool), branch_of_service, interests (text[]), service_area, state, city, zip, profile_complete (bool), created_at, updated_at
 - `user_saved_resources` - id, user_id (fk→auth.users), resource_id (fk→resources), saved_at; unique(user_id, resource_id)
+- `ai_usage_log` - id (uuid), user_id (fk→auth.users, nullable), is_guest (bool), detected_category (text), model (text), input_tokens (int), output_tokens (int), total_tokens (int), navigator_suggested (bool), created_at (SQL in `supabase/create_ai_usage_log.sql`)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous/public key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (required for RLS-protected tables)
+- `OPENAI_API_KEY` - OpenAI API key (powers Veteran Guide AI assistant)
 - `ADMIN_KEY` - Secret key for admin resource review access
 - `RESEND_API_KEY` - Resend email service API key (for partner lead notifications)
 - `RESEND_FROM_EMAIL` - Sender address for outbound emails

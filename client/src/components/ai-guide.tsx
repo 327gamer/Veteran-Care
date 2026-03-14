@@ -1,17 +1,16 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
   DialogDescription,
-  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Trash2, History } from "lucide-react";
+import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
@@ -27,49 +26,160 @@ const INITIAL_MESSAGE = {
 };
 
 export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
-  const { chatHistory, addChatMessage, clearChatHistory } = useSavedResources();
+  const { chatHistory, addChatMessage, clearChatHistory, userLocation, interests, serviceProfile, authToken } = useSavedResources();
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+  const [showNavigatorHint, setShowNavigatorHint] = useState(false);
+  const [isCrisis, setIsCrisis] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const displayMessages = chatHistory.length > 0 
     ? chatHistory 
     : [{ ...INITIAL_MESSAGE, timestamp: Date.now() }];
 
-  useEffect(() => {
-    if (open && scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-      }, 100);
-    }
-  }, [open, chatHistory.length]);
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
+  }, []);
 
-  const handleSend = () => {
+  useEffect(() => {
+    if (open) scrollToBottom();
+  }, [open, chatHistory.length, streamingText, scrollToBottom]);
+
+  const handleSend = async () => {
     if (!input.trim() || isTyping) return;
+    
+    const userMessage = input.trim();
     
     if (chatHistory.length === 0) {
       addChatMessage(INITIAL_MESSAGE);
     }
 
-    addChatMessage({ role: 'user', content: input });
+    addChatMessage({ role: 'user', content: userMessage });
     setInput("");
     setIsTyping(true);
-    
-    setTimeout(() => {
-      addChatMessage({ 
-        role: 'assistant', 
-        content: "I understand. Let me check the database for the best resources near you regarding that. Would you like me to look for VA facilities or community partners?" 
+    setStreamingText("");
+    setShowNavigatorHint(false);
+    setIsCrisis(false);
+
+    const allMessages = [
+      ...chatHistory
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: userMessage },
+    ];
+
+    try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          messages: allMessages,
+          userState: userLocation.stateCode || undefined,
+          userCity: userLocation.city || undefined,
+          userZip: userLocation.zip || undefined,
+          interests: interests.length > 0 ? interests : undefined,
+          branch: serviceProfile.branch || undefined,
+        }),
+        signal: controller.signal,
       });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Something went wrong" }));
+        throw new Error(err.error || "Something went wrong");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response stream");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const event = JSON.parse(jsonStr);
+
+            if (event.type === "chunk") {
+              accumulated += event.text;
+              setStreamingText(accumulated);
+            } else if (event.type === "done") {
+              if (event.navigatorSuggested) setShowNavigatorHint(true);
+              if (event.isCrisis) setIsCrisis(true);
+            } else if (event.type === "error") {
+              accumulated = event.message;
+              setStreamingText(accumulated);
+            }
+          } catch {}
+        }
+      }
+
+      if (accumulated) {
+        addChatMessage({ role: 'assistant', content: accumulated });
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const errorMsg = err.message || "I'm having trouble connecting. Please try again.";
+      addChatMessage({ role: 'assistant', content: errorMsg });
+    } finally {
       setIsTyping(false);
-    }, 1000);
+      setStreamingText("");
+      abortRef.current = null;
+    }
   };
 
   const handleClear = () => {
+    if (abortRef.current) abortRef.current.abort();
     clearChatHistory();
+    setStreamingText("");
+    setIsTyping(false);
+    setShowNavigatorHint(false);
+    setIsCrisis(false);
+  };
+
+  const handleNavigatorClick = () => {
+    onOpenChange(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("open-navigator"));
+    }, 300);
+  };
+
+  const renderContent = (content: string) => {
+    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => {
+      if (!v && abortRef.current) abortRef.current.abort();
+      onOpenChange(v);
+    }}>
       <DialogContent className="sm:max-w-[425px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20">
         <DialogHeader className="px-6 py-4 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
@@ -102,32 +212,45 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
             {displayMessages.map((msg, i) => (
               <div 
                 key={i} 
+                data-testid={`chat-msg-${msg.role}-${i}`}
                 className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
               >
                 {msg.role === 'assistant' ? (
-                   <Avatar className="h-8 w-8 border border-border">
+                   <Avatar className="h-8 w-8 border border-border flex-shrink-0">
                      <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
                    </Avatar>
                 ) : (
-                   <Avatar className="h-8 w-8 border border-border">
+                   <Avatar className="h-8 w-8 border border-border flex-shrink-0">
                      <AvatarFallback className="bg-muted text-foreground"><User size={14} /></AvatarFallback>
                    </Avatar>
                 )}
                 
                 <div 
-                  className={`rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                  className={`rounded-2xl px-4 py-2 text-sm shadow-sm whitespace-pre-wrap ${
                     msg.role === 'user' 
                       ? 'bg-primary text-primary-foreground rounded-tr-none' 
                       : 'bg-white text-foreground border border-border rounded-tl-none'
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
                 </div>
               </div>
             ))}
-            {isTyping && (
+
+            {isTyping && streamingText && (
               <div className="flex gap-3 max-w-[85%]">
-                <Avatar className="h-8 w-8 border border-border">
+                <Avatar className="h-8 w-8 border border-border flex-shrink-0">
+                  <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
+                </Avatar>
+                <div className="rounded-2xl px-4 py-2 text-sm shadow-sm bg-white text-foreground border border-border rounded-tl-none whitespace-pre-wrap">
+                  {renderContent(streamingText)}
+                </div>
+              </div>
+            )}
+
+            {isTyping && !streamingText && (
+              <div className="flex gap-3 max-w-[85%]">
+                <Avatar className="h-8 w-8 border border-border flex-shrink-0">
                   <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
                 </Avatar>
                 <div className="rounded-2xl px-4 py-3 text-sm shadow-sm bg-white text-foreground border border-border rounded-tl-none">
@@ -137,6 +260,31 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                     <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {isCrisis && (
+              <div className="mx-2 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2" data-testid="crisis-alert">
+                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-red-800">
+                  <p className="font-semibold">If you're in crisis, please reach out now.</p>
+                  <p className="mt-1">Veterans Crisis Line: <strong>988 (press 1)</strong></p>
+                </div>
+              </div>
+            )}
+
+            {showNavigatorHint && !isCrisis && (
+              <div className="mx-2">
+                <Button
+                  data-testid="button-navigator-from-chat"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={handleNavigatorClick}
+                >
+                  <Handshake className="h-4 w-4" />
+                  Request a {platform.navigatorTitle} for personalized help
+                </Button>
               </div>
             )}
           </div>
@@ -158,7 +306,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
               data-testid="input-chat-message"
               value={input} 
               onChange={(e) => setInput(e.target.value)} 
-              placeholder="Ask me anything..."
+              placeholder={t(platform.ai.askPrompt)}
               className="flex-1"
               disabled={isTyping}
             />
