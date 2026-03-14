@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { sendLeadNotification } from "./lead-email";
 
 interface RoutingRule {
@@ -55,7 +55,7 @@ async function getCategorySlugForLead(lead: LeadForRouting): Promise<string | nu
 async function countTodayLeadsForPartner(partnerId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const { count } = await supabase
+  const { count } = await supabaseAdmin
     .from("navigator_requests")
     .select("id", { count: "exact", head: true })
     .eq("routed_to_partner_id", partnerId)
@@ -69,7 +69,7 @@ export async function findBestPartner(
 ): Promise<{ partnerId: string; partnerName: string; ruleId: string } | null> {
   const categorySlug = await getCategorySlugForLead(lead);
 
-  const { data: rules, error } = await supabase
+  const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
     .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
     .eq("is_active", true);
@@ -136,7 +136,7 @@ export async function routeLead(leadId: string): Promise<{
   partnerId?: string;
   partnerName?: string;
 }> {
-  const { data: lead, error: leadErr } = await supabase
+  const { data: lead, error: leadErr } = await supabaseAdmin
     .from("navigator_requests")
     .select("id, category, subcategory, urgency, user_state, user_city, routed_to_partner_id")
     .eq("id", leadId)
@@ -151,7 +151,7 @@ export async function routeLead(leadId: string): Promise<{
   if (lead.routed_to_partner_id) excludeIds.push(lead.routed_to_partner_id);
 
   try {
-    const { data: current } = await supabase
+    const { data: current } = await supabaseAdmin
       .from("navigator_requests")
       .select("routing_history")
       .eq("id", leadId)
@@ -181,7 +181,7 @@ export async function routeLead(leadId: string): Promise<{
 
   let existingHistory: any[] = [];
   try {
-    const { data: hist } = await supabase
+    const { data: hist } = await supabaseAdmin
       .from("navigator_requests")
       .select("routing_history")
       .eq("id", leadId)
@@ -190,7 +190,7 @@ export async function routeLead(leadId: string): Promise<{
   } catch {}
   existingHistory.push(historyEntry);
 
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await supabaseAdmin
     .from("navigator_requests")
     .update({
       routed_to_partner_id: match.partnerId,

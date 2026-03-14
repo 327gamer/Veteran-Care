@@ -8,8 +8,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables");
 }
 
+if (!supabaseServiceRoleKey) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable (required for RLS-secured tables)");
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const supabaseAdmin = supabaseServiceRoleKey
-  ? createClient(supabaseUrl, supabaseServiceRoleKey)
-  : null;
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);

@@ -81,7 +81,7 @@ async function checkStatesTable() {
 }
 
 async function checkPartnerTable() {
-  const { data, error } = await supabase.from("partner_organizations").select("id").limit(1);
+  const { data, error } = await supabaseAdmin.from("partner_organizations").select("id").limit(1);
   if (error) {
     hasPartnerTable = false;
     console.log("[schema] partner_organizations table not found. Run supabase/create_partner_organizations.sql");
@@ -90,7 +90,7 @@ async function checkPartnerTable() {
     console.log("[schema] partner_organizations table detected");
   }
 
-  const { data: rulesData, error: rulesErr } = await supabase.from("partner_routing_rules").select("id").limit(1);
+  const { data: rulesData, error: rulesErr } = await supabaseAdmin.from("partner_routing_rules").select("id").limit(1);
   if (rulesErr) {
     hasRoutingRulesTable = false;
     console.log("[schema] partner_routing_rules table not found. Run supabase/create_partner_organizations.sql");
@@ -101,7 +101,7 @@ async function checkPartnerTable() {
 }
 
 async function checkNavLifecycleColumns() {
-  const { error } = await supabase.from("navigator_requests").select("source, urgency, outcome").limit(1);
+  const { error } = await supabaseAdmin.from("navigator_requests").select("source, urgency, outcome").limit(1);
   if (error && error.message.includes("does not exist")) {
     hasNavLifecycleColumns = false;
     console.log("[schema] Navigator lifecycle columns not found. Please run in Supabase SQL editor:");
@@ -120,7 +120,7 @@ async function checkNavLifecycleColumns() {
     console.log("[schema] Navigator lifecycle columns detected");
   }
 
-  const { error: routeErr } = await supabase.from("navigator_requests").select("routed_to_partner_id, routed_at, delivery_status, partner_outcome, closed_at").limit(1);
+  const { error: routeErr } = await supabaseAdmin.from("navigator_requests").select("routed_to_partner_id, routed_at, delivery_status, partner_outcome, closed_at").limit(1);
   if (routeErr && routeErr.message.includes("does not exist")) {
     hasRoutingColumns = false;
     console.log("[schema] Routing columns not found. Run in Supabase SQL editor:");
@@ -431,7 +431,7 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Invalid session" });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
@@ -465,13 +465,13 @@ export async function registerRoutes(
         user_id: user.id,
         resource_id,
       }));
-      await supabase.from("user_saved_resources").upsert(rows, {
+      await supabaseAdmin.from("user_saved_resources").upsert(rows, {
         onConflict: "user_id,resource_id",
         ignoreDuplicates: true,
       });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
@@ -501,13 +501,13 @@ export async function registerRoutes(
     }
 
     if (action === "unsave") {
-      await supabase
+      await supabaseAdmin
         .from("user_saved_resources")
         .delete()
         .eq("user_id", user.id)
         .eq("resource_id", resource_id);
     } else {
-      await supabase
+      await supabaseAdmin
         .from("user_saved_resources")
         .upsert(
           { user_id: user.id, resource_id },
@@ -515,7 +515,7 @@ export async function registerRoutes(
         );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_saved_resources")
       .select("resource_id")
       .eq("user_id", user.id)
@@ -539,7 +539,7 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Invalid session" });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_profiles")
       .select("*")
       .eq("id", user.id)
@@ -602,7 +602,7 @@ export async function registerRoutes(
       || profileData.state || profileData.city;
     if (hasEnrichment) profileData.profile_complete = true;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_profiles")
       .upsert(profileData, { onConflict: "id" })
       .select()
@@ -645,7 +645,7 @@ export async function registerRoutes(
       if (!validTypes.includes(updates.user_type)) updates.user_type = "veteran";
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("user_profiles")
       .update(updates)
       .eq("id", user.id)
@@ -669,7 +669,7 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Invalid session" });
     }
 
-    const { error: profileError } = await supabase
+    const { error: profileError } = await supabaseAdmin
       .from("user_profiles")
       .delete()
       .eq("id", user.id);
@@ -679,7 +679,7 @@ export async function registerRoutes(
       return res.status(500).json({ error: "Failed to delete profile data" });
     }
 
-    const { error: savedError } = await supabase
+    const { error: savedError } = await supabaseAdmin
       .from("saved_resources")
       .delete()
       .eq("user_id", user.id);
@@ -688,15 +688,10 @@ export async function registerRoutes(
       console.log("[delete-account] Saved resources delete error:", savedError.message);
     }
 
-    if (supabaseAdmin) {
-      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
-      if (authDeleteError) {
-        console.log("[delete-account] Auth user delete error:", authDeleteError.message);
-        return res.status(500).json({ error: "Profile deleted but failed to remove auth account. Please contact support." });
-      }
-    } else {
-      console.log("[delete-account] No service role key — auth user not deleted for:", user.id);
-      return res.status(500).json({ error: "Account deletion is not fully configured. Please contact support." });
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+    if (authDeleteError) {
+      console.log("[delete-account] Auth user delete error:", authDeleteError.message);
+      return res.status(500).json({ error: "Profile deleted but failed to remove auth account. Please contact support." });
     }
 
     return res.json({ success: true });
@@ -704,7 +699,7 @@ export async function registerRoutes(
 
   app.get("/api/admin/user-profiles", requireAdmin, async (req, res) => {
     const { user_type, state: stateFilter, profile_complete, limit: lim } = req.query;
-    let query = supabase.from("user_profiles")
+    let query = supabaseAdmin.from("user_profiles")
       .select("id, first_name, last_name, email, phone, user_type, consent_contact, branch_of_service, interests, state, city, profile_complete, created_at")
       .order("created_at", { ascending: false });
 
@@ -864,10 +859,10 @@ export async function registerRoutes(
       user_city: user_city || null,
     };
 
-    const { error } = await supabase.from("resource_clicks").insert({ ...row, user_zip: user_zip || null });
+    const { error } = await supabaseAdmin.from("resource_clicks").insert({ ...row, user_zip: user_zip || null });
 
     if (error && error.message.includes("user_zip")) {
-      const { error: fallbackErr } = await supabase.from("resource_clicks").insert(row);
+      const { error: fallbackErr } = await supabaseAdmin.from("resource_clicks").insert(row);
       if (fallbackErr) {
         console.error("Click tracking error:", fallbackErr.message);
       }
@@ -1371,7 +1366,7 @@ export async function registerRoutes(
       clone.geocoded_at = null;
       clone.source_name = `Cloned from ${sourceState}`;
 
-      const { error } = await supabase.from("resources").insert(clone);
+      const { error } = await supabaseAdmin.from("resources").insert(clone);
       if (error) {
         errors.push(`${resource.title}: ${error.message}`);
       } else {
@@ -1663,7 +1658,7 @@ export async function registerRoutes(
       if (consent_followup === true) baseRow.consent_followup = true;
     }
 
-    let { data, error } = await supabase
+    let { data, error } = await supabaseAdmin
       .from("navigator_requests")
       .insert({ ...baseRow, message: userMsg })
       .select()
@@ -1675,7 +1670,7 @@ export async function registerRoutes(
       const enrichedMsg = catParts.length > 0
         ? [catParts.join(" | "), userMsg].filter(Boolean).join("\n")
         : userMsg;
-      const retry = await supabase
+      const retry = await supabaseAdmin
         .from("navigator_requests")
         .insert({ ...baseRow, message: enrichedMsg })
         .select()
@@ -1804,7 +1799,7 @@ export async function registerRoutes(
 
   app.get("/api/admin/partners", requireAdmin, async (_req, res) => {
     if (!hasPartnerTable) return res.json([]);
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("partner_organizations")
       .select("*")
       .eq("is_active", true)
@@ -1830,7 +1825,7 @@ export async function registerRoutes(
       is_lead_enabled: is_lead_enabled === true,
       notes: notes?.trim() || null,
     };
-    const { data, error } = await supabase.from("partner_organizations").insert(row).select().single();
+    const { data, error } = await supabaseAdmin.from("partner_organizations").insert(row).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json(data);
   });
@@ -1851,7 +1846,7 @@ export async function registerRoutes(
     if (is_lead_enabled !== undefined) updates.is_lead_enabled = is_lead_enabled === true;
     if (notes !== undefined) updates.notes = notes?.trim() || null;
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
-    const { data, error } = await supabase.from("partner_organizations").update(updates).eq("id", id).select().single();
+    const { data, error } = await supabaseAdmin.from("partner_organizations").update(updates).eq("id", id).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   });
@@ -1859,7 +1854,7 @@ export async function registerRoutes(
   app.delete("/api/admin/partners/:id", requireAdmin, async (req, res) => {
     if (!hasPartnerTable) return res.status(503).json({ error: "Partner table not available" });
     const { id } = req.params;
-    const { error } = await supabase.from("partner_organizations").update({ is_active: false }).eq("id", id);
+    const { error } = await supabaseAdmin.from("partner_organizations").update({ is_active: false }).eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true });
   });
@@ -1867,7 +1862,7 @@ export async function registerRoutes(
   app.get("/api/admin/partners/:id/rules", requireAdmin, async (req, res) => {
     if (!hasRoutingRulesTable) return res.json([]);
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("partner_routing_rules")
       .select("*")
       .eq("partner_id", id)
@@ -1891,7 +1886,7 @@ export async function registerRoutes(
       priority: typeof priority === "number" ? priority : 100,
       max_leads_per_day: typeof max_leads_per_day === "number" ? max_leads_per_day : null,
     };
-    const { data, error } = await supabase.from("partner_routing_rules").insert(row).select().single();
+    const { data, error } = await supabaseAdmin.from("partner_routing_rules").insert(row).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json(data);
   });
@@ -1911,7 +1906,7 @@ export async function registerRoutes(
     if (max_leads_per_day !== undefined) updates.max_leads_per_day = typeof max_leads_per_day === "number" ? max_leads_per_day : null;
     if (is_active !== undefined) updates.is_active = is_active === true;
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
-    const { data, error } = await supabase.from("partner_routing_rules").update(updates).eq("id", id).select().single();
+    const { data, error } = await supabaseAdmin.from("partner_routing_rules").update(updates).eq("id", id).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   });
@@ -1919,7 +1914,7 @@ export async function registerRoutes(
   app.delete("/api/admin/partner-rules/:id", requireAdmin, async (req, res) => {
     if (!hasRoutingRulesTable) return res.status(503).json({ error: "Routing rules table not available" });
     const { id } = req.params;
-    const { error } = await supabase.from("partner_routing_rules").update({ is_active: false }).eq("id", id);
+    const { error } = await supabaseAdmin.from("partner_routing_rules").update({ is_active: false }).eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true });
   });
@@ -1932,10 +1927,10 @@ export async function registerRoutes(
     const { partner_id } = req.body;
 
     if (partner_id) {
-      const { data: partner } = await supabase.from("partner_organizations").select("id, name").eq("id", partner_id).single();
+      const { data: partner } = await supabaseAdmin.from("partner_organizations").select("id, name").eq("id", partner_id).single();
       if (!partner) return res.status(404).json({ error: "Partner not found" });
 
-      const { data: lead } = await supabase.from("navigator_requests").select("routing_history").eq("id", id).single();
+      const { data: lead } = await supabaseAdmin.from("navigator_requests").select("routing_history").eq("id", id).single();
       const history = Array.isArray(lead?.routing_history) ? lead.routing_history : [];
       history.push({
         partner_id: partner.id,
@@ -1975,12 +1970,12 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
-    let { data: clicks, error: clicksErr } = await supabase
+    let { data: clicks, error: clicksErr } = await supabaseAdmin
       .from("resource_clicks")
       .select("id, resource_id, click_type, user_state, user_city, user_zip, created_at");
 
     if (clicksErr && clicksErr.message.includes("user_zip")) {
-      const fallback = await supabase
+      const fallback = await supabaseAdmin
         .from("resource_clicks")
         .select("id, resource_id, click_type, user_state, user_city, created_at");
       clicks = fallback.data;
@@ -2178,7 +2173,7 @@ export async function registerRoutes(
       updates.active = req.body.is_active;
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
-    const { data, error } = await supabase.from("states").update(updates).eq("code", code.toUpperCase()).select().single();
+    const { data, error } = await supabaseAdmin.from("states").update(updates).eq("code", code.toUpperCase()).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   });
@@ -2186,7 +2181,7 @@ export async function registerRoutes(
   app.post("/api/admin/states/:code/refresh-counts", requireAdmin, async (req, res) => {
     if (!hasStatesTable) return res.status(503).json({ error: "States table not available" });
     const stateCode = req.params.code.toUpperCase();
-    const { data: state, error: stateErr } = await supabase.from("states").select("code").eq("code", stateCode).single();
+    const { data: state, error: stateErr } = await supabaseAdmin.from("states").select("code").eq("code", stateCode).single();
     if (stateErr || !state) return res.status(404).json({ error: "State not found" });
 
     const { count: resourceCount } = await supabase
@@ -2197,7 +2192,7 @@ export async function registerRoutes(
 
     let partnerCount = 0;
     if (hasPartnerTable) {
-      const { count } = await supabase
+      const { count } = await supabaseAdmin
         .from("partner_organizations")
         .select("id", { count: "exact", head: true })
         .eq("state", stateCode)
@@ -2210,7 +2205,7 @@ export async function registerRoutes(
       : {};
 
     if (Object.keys(updateFields).length > 0) {
-      await supabase.from("states").update(updateFields).eq("code", stateCode);
+      await supabaseAdmin.from("states").update(updateFields).eq("code", stateCode);
     }
 
     return res.json({

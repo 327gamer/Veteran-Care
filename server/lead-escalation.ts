@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { findBestPartner } from "./lead-router";
 
 const ESCALATION_WINDOWS: Record<string, number> = {
@@ -24,7 +24,7 @@ export async function checkEscalations(): Promise<{
   let fallback = 0;
 
   try {
-    const { data: routedLeads, error } = await supabase
+    const { data: routedLeads, error } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, urgency, routed_to_partner_id, routed_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city")
       .eq("status", "new")
@@ -80,7 +80,7 @@ export async function checkEscalations(): Promise<{
           delivery_status: "pending",
         });
 
-        await supabase
+        await supabaseAdmin
           .from("navigator_requests")
           .update({
             routed_to_partner_id: newMatch.partnerId,
@@ -94,7 +94,7 @@ export async function checkEscalations(): Promise<{
         rerouted++;
         console.log(`[escalation] Lead ${lead.id} re-routed to ${newMatch.partnerName}`);
       } else {
-        await supabase
+        await supabaseAdmin
           .from("navigator_requests")
           .update({
             delivery_status: "fallback_manual",
@@ -108,7 +108,7 @@ export async function checkEscalations(): Promise<{
       }
     }
 
-    const { data: unroutedLeads } = await supabase
+    const { data: unroutedLeads } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, urgency, created_at, delivery_status")
       .eq("status", "new")
@@ -121,7 +121,7 @@ export async function checkEscalations(): Promise<{
         const window = getEscalationWindow(lead.urgency);
 
         if (now - createdAt > window) {
-          await supabase
+          await supabaseAdmin
             .from("navigator_requests")
             .update({ delivery_status: "fallback_manual" })
             .eq("id", lead.id);

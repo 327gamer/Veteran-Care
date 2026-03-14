@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -257,7 +257,7 @@ export async function sendNavigatorNotification(
       }
     }
 
-    const { data: lead, error: leadErr } = await supabase
+    const { data: lead, error: leadErr } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, veteran_name, veteran_phone, veteran_email, category, subcategory, urgency, message, user_state, user_city, preferred_contact, created_at")
       .eq("id", leadId)
@@ -319,7 +319,7 @@ export async function sendLeadNotification(
   partnerId: string
 ): Promise<{ sent: boolean; error?: string }> {
   try {
-    const { data: lead, error: leadErr } = await supabase
+    const { data: lead, error: leadErr } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, veteran_name, veteran_phone, veteran_email, category, subcategory, urgency, message, user_state, user_city, preferred_contact, created_at")
       .eq("id", leadId)
@@ -330,7 +330,7 @@ export async function sendLeadNotification(
       return { sent: false, error: "Lead not found" };
     }
 
-    const { data: partner, error: partnerErr } = await supabase
+    const { data: partner, error: partnerErr } = await supabaseAdmin
       .from("partner_organizations")
       .select("id, name, contact_name, contact_email")
       .eq("id", partnerId)
@@ -384,7 +384,7 @@ export async function sendLeadNotification(
     console.log(`[email] Lead ${leadId} notification sent to ${partner.contact_email} (${emailResult?.id})`);
 
     try {
-      const { data: current } = await supabase
+      const { data: current } = await supabaseAdmin
         .from("navigator_requests")
         .select("routing_history")
         .eq("id", leadId)
@@ -397,7 +397,7 @@ export async function sendLeadNotification(
         matchEntry.email_sent = true;
         matchEntry.email_sent_at = new Date().toISOString();
         matchEntry.email_id = emailResult?.id;
-        await supabase
+        await supabaseAdmin
           .from("navigator_requests")
           .update({ routing_history: history })
           .eq("id", leadId);
