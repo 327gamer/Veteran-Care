@@ -1,20 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useSavedResources } from "@/lib/store";
 import { 
   ChevronRight,
   MapPin,
   MessageSquare,
-  ThumbsUp,
-  Share2,
   Sparkles,
-  User,
-  X,
   BookOpen,
   Phone,
   HelpCircle,
@@ -28,7 +23,7 @@ import {
   Compass,
   Globe,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 import {
@@ -50,56 +45,6 @@ import NavigatorModal from "@/components/navigator-modal";
 import AuthModal from "@/components/auth-modal";
 import { useAuth } from "@/lib/use-auth";
 
-const feedItems = [
-  { 
-    id: 1,
-    type: 'post', 
-    user: 'Sgt. Miller', 
-    avatar: 'SM',
-    time: '2h ago', 
-    content: 'Has anyone had success with the new PACT Act claims process? Looking for advice on gathering evidence specifically for burn pit exposure.', 
-    likes: 24, 
-    comments: 8,
-    group: 'Benefits Help'
-  },
-  { 
-    id: 2,
-    type: 'post', 
-    user: 'VetTech_22', 
-    avatar: 'VT',
-    time: '3h ago', 
-    content: 'Just completed my free coding bootcamp through VET TEC. Highly recommend for anyone looking to transition into tech careers.', 
-    likes: 45, 
-    comments: 12,
-    group: 'Career & Education'
-  },
-  { 
-    id: 3,
-    type: 'ad', 
-    title: 'USAA Auto Insurance', 
-    content: 'Exclusive rates for veterans and military families. Save up to 30%.', 
-    cta: 'Get a Quote',
-    group: 'Job Opportunities'
-  },
-  { 
-    id: 4,
-    type: 'post', 
-    user: 'Marine Mom', 
-    avatar: 'MM',
-    time: '5h ago', 
-    content: 'Looking for recommendations for mental health support groups in the Charleston area. Thanks in advance.', 
-    likes: 18, 
-    comments: 23,
-    group: 'Family Support'
-  },
-  { 
-    id: 5,
-    type: 'ad', 
-    title: 'Veterans United', 
-    content: 'Use your VA Loan benefit today. $0 Down. Low Rates. 24/7 Support.', 
-    cta: 'Apply Now'
-  },
-];
 
 const US_STATES = [
   "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", 
@@ -543,60 +488,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Community Feed with Ads */}
-      <section className="space-y-4 pt-4">
-        <h2 className="text-lg font-heading font-semibold">Community Feed</h2>
-        
-        <div className="space-y-4">
-          {feedItems.map((item) => (
-            <div key={item.id}>
-              {item.type === 'post' ? (
-                <Card className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-sm">
-                        {item.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-sm">{item.user}</p>
-                          <span className="text-xs text-muted-foreground">{item.time}</span>
-                        </div>
-                        <p className="text-xs text-primary font-medium">{item.group}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm mb-4 leading-relaxed">{item.content}</p>
-                    <div className="flex items-center justify-between pt-2 border-t text-muted-foreground">
-                      <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs">
-                        <ThumbsUp className="h-3.5 w-3.5" /> {item.likes}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs">
-                        <MessageSquare className="h-3.5 w-3.5" /> {item.comments}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs">
-                        <Share2 className="h-3.5 w-3.5" /> Share
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="overflow-hidden border-none bg-muted/30 shadow-sm relative">
-                  <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-background/80 rounded text-[9px] font-medium text-muted-foreground uppercase tracking-wider border">Sponsored</div>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col gap-2">
-                      <p className="font-bold text-base">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">{item.content}</p>
-                      <Button variant="outline" className="w-full mt-2 text-xs h-8 border-primary/20 text-primary hover:bg-primary/5">
-                        {item.cta} <ChevronRight className="ml-1 h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
       
       {/* Spacer for bottom nav */}
       <div className="h-8"></div>
