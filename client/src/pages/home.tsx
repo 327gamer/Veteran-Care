@@ -274,41 +274,41 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <Button
                 data-testid="button-ask-guide-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
                 onClick={openGuide}
               >
-                <Sparkles className="mr-1.5 h-4 w-4" />
+                <Sparkles className="h-5 w-5 shrink-0" />
                 Veteran Guide
               </Button>
               <Button
                 data-testid="button-browse-resources-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
                 onClick={() => setLocation("/resources")}
               >
-                <BookOpen className="mr-1.5 h-4 w-4" />
+                <BookOpen className="h-5 w-5 shrink-0" />
                 Browse Resources
               </Button>
               <Button
                 data-testid="button-guided-help-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
                 onClick={() => setShowGuidedHelp(true)}
               >
-                <Compass className="mr-1.5 h-4 w-4" />
+                <Compass className="h-5 w-5 shrink-0" />
                 Get Help
               </Button>
               <Button
                 data-testid="button-learn-app-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-10 text-sm"
+                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
                 onClick={openTutorial}
               >
-                <HelpCircle className="mr-1.5 h-4 w-4" />
+                <HelpCircle className="h-5 w-5 shrink-0" />
                 How It Works
               </Button>
             </div>
