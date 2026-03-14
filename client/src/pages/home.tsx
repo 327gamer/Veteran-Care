@@ -165,8 +165,8 @@ export default function Home() {
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* Brand Header */}
-      <section className="-mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-4 mb-6 bg-white">
-        <div className="h-40 w-full max-w-[260px] flex items-center justify-center drop-shadow-2xl">
+      <section className="-mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-5 mb-6 bg-white">
+        <div className="h-56 md:h-64 w-full max-w-[364px] md:max-w-[400px] flex items-center justify-center drop-shadow-2xl">
           <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
         </div>
         <div className="space-y-2 px-6">
