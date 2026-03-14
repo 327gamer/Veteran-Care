@@ -277,7 +277,7 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-2.5">
               {[
                 { id: "button-ask-guide-home", icon: Sparkles, label: "Veteran Guide", onClick: openGuide },
-                { id: "button-browse-resources-home", icon: BookOpen, label: "Browse Resources", onClick: () => setLocation("/resources") },
+                { id: "button-browse-resources-home", icon: BookOpen, label: "Resources", onClick: () => setLocation("/resources") },
                 { id: "button-guided-help-home", icon: Compass, label: "Get Help", onClick: () => setShowGuidedHelp(true) },
                 { id: "button-learn-app-home", icon: HelpCircle, label: "How It Works", onClick: openTutorial },
               ].map(({ id, icon: Icon, label, onClick }) => (
