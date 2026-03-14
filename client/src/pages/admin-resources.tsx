@@ -157,6 +157,8 @@ export default function AdminResources() {
   const [partnerForm, setPartnerForm] = useState<Record<string, any> | null>(null);
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
   const [ruleForm, setRuleForm] = useState<Record<string, any> | null>(null);
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [notesText, setNotesText] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -889,6 +891,68 @@ export default function AdminResources() {
                     {req.message && (
                       <p data-testid={`text-lead-message-${req.id}`} className="text-xs text-muted-foreground bg-muted/30 rounded p-2 italic">"{req.message}"</p>
                     )}
+
+                    <div data-testid={`notes-section-${req.id}`} className="space-y-1.5">
+                      {editingNotesId === req.id ? (
+                        <div className="space-y-1.5">
+                          <Textarea
+                            data-testid={`input-notes-${req.id}`}
+                            className="text-xs min-h-[60px] resize-none"
+                            placeholder="Add internal notes (only visible to staff)..."
+                            value={notesText}
+                            onChange={(e) => setNotesText(e.target.value)}
+                          />
+                          <div className="flex gap-1.5">
+                            <Button
+                              data-testid={`button-save-notes-${req.id}`}
+                              size="sm"
+                              className="h-6 text-[10px] px-2"
+                              disabled={navPatchMutation.isPending}
+                              onClick={() => {
+                                navPatchMutation.mutate(
+                                  { id: req.id, updates: { admin_notes: notesText.trim() || null } },
+                                  { onSuccess: () => setEditingNotesId(null) }
+                                );
+                              }}
+                            >
+                              Save Notes
+                            </Button>
+                            <Button
+                              data-testid={`button-cancel-notes-${req.id}`}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => setEditingNotesId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-1.5">
+                          {req.admin_notes ? (
+                            <div
+                              data-testid={`text-notes-${req.id}`}
+                              className="flex-1 text-[11px] bg-yellow-50 text-yellow-900 rounded p-2 border border-yellow-200 cursor-pointer hover:border-yellow-400 transition-colors"
+                              onClick={() => { setEditingNotesId(req.id); setNotesText(req.admin_notes || ""); }}
+                            >
+                              <span className="font-medium text-[10px] text-yellow-700 block mb-0.5">Staff Notes:</span>
+                              {req.admin_notes}
+                            </div>
+                          ) : (
+                            <Button
+                              data-testid={`button-add-notes-${req.id}`}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[10px] px-2 text-muted-foreground"
+                              onClick={() => { setEditingNotesId(req.id); setNotesText(""); }}
+                            >
+                              <MessageSquare className="h-3 w-3 mr-1" /> Add Notes
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {(req.assigned_to || req.outcome || req.contacted_at || req.resolved_at || req.closed_at) && (
                       <div className="text-[10px] text-muted-foreground bg-muted/20 rounded p-2 space-y-0.5 border border-muted">
