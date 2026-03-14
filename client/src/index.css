@@ -169,3 +169,12 @@
     @apply font-heading font-bold tracking-tight;
   }
 }
+
+@keyframes guide-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  50% { box-shadow: 0 0 12px 3px rgba(255, 255, 255, 0.35); }
+}
+
+.guide-glow {
+  animation: guide-pulse 2s ease-in-out 3;
+}

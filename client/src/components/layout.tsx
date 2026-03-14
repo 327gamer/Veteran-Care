@@ -64,7 +64,13 @@ export default function Layout({ children }: LayoutProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { hasSeenTutorial, markTutorialSeen, onboardingComplete, setAuthToken, setSavedIds, clearAuthState } = useSavedResources();
   const [showTutorial, setShowTutorial] = useState(false);
+  const [guideGlow, setGuideGlow] = useState(true);
   const { user, session, loading: authLoading, signOut } = useAuth();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setGuideGlow(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -164,9 +170,9 @@ export default function Layout({ children }: LayoutProps) {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
-              onClick={() => setIsAiOpen(true)}
-              title="Veteran Guide"
+              className={`text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 transition-shadow duration-700 ${guideGlow ? 'guide-glow' : ''}`}
+              onClick={() => { setIsAiOpen(true); setGuideGlow(false); }}
+              title="Ask the Veteran Guide"
             >
               <Sparkles className="h-5 w-5" />
             </Button>
