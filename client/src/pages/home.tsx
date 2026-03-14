@@ -278,7 +278,7 @@ export default function Home() {
               <Button
                 data-testid="button-ask-guide-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
+                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
                 onClick={openGuide}
               >
                 <Sparkles className="h-5 w-5 shrink-0" />
@@ -287,7 +287,7 @@ export default function Home() {
               <Button
                 data-testid="button-browse-resources-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
+                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
                 onClick={() => setLocation("/resources")}
               >
                 <BookOpen className="h-5 w-5 shrink-0" />
@@ -296,7 +296,7 @@ export default function Home() {
               <Button
                 data-testid="button-guided-help-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
+                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
                 onClick={() => setShowGuidedHelp(true)}
               >
                 <Compass className="h-5 w-5 shrink-0" />
@@ -305,7 +305,7 @@ export default function Home() {
               <Button
                 data-testid="button-learn-app-home"
                 variant="secondary"
-                className="w-full text-primary font-semibold shadow-md h-14 text-sm rounded-xl justify-start px-4 gap-2.5"
+                className="w-full text-primary font-semibold shadow-md h-14 text-[13px] md:text-sm rounded-xl flex items-center justify-start px-3.5 md:px-4 gap-3 whitespace-nowrap"
                 onClick={openTutorial}
               >
                 <HelpCircle className="h-5 w-5 shrink-0" />
