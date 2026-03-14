@@ -12,12 +12,30 @@
 --   Server-only:   user_profiles, navigator_requests,
 --                  partner_organizations, partner_routing_rules,
 --                  resource_clicks
---   Legacy/unused: saved_resources (does not exist in codebase;
---                  handled defensively with DO block below)
+--   Legacy/unused: saved_resources (may not exist; handled defensively)
 -- =============================================================
 
 -- =====================
--- PUBLIC READ-ONLY TABLES
+-- STEP 1: DROP ALL LEGACY PERMISSIVE POLICIES
+-- Remove any pre-existing overly-permissive policies from
+-- earlier SQL scripts before applying least-privilege policies.
+-- =====================
+
+DROP POLICY IF EXISTS "states_public_read" ON states;
+DROP POLICY IF EXISTS "states_anon_write" ON states;
+
+DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Service role full access" ON user_profiles;
+DROP POLICY IF EXISTS "Server-side anon key access" ON user_profiles;
+
+DROP POLICY IF EXISTS "Users can read own saved resources" ON user_saved_resources;
+DROP POLICY IF EXISTS "Users can insert own saved resources" ON user_saved_resources;
+DROP POLICY IF EXISTS "Users can delete own saved resources" ON user_saved_resources;
+
+-- =====================
+-- STEP 2: PUBLIC READ-ONLY TABLES
 -- (categories, resources, states)
 -- Anyone can SELECT; no INSERT/UPDATE/DELETE for anon
 -- =====================
@@ -38,7 +56,7 @@ CREATE POLICY "public_read_states" ON states
   FOR SELECT USING (true);
 
 -- =====================
--- USER-OWNED TABLES
+-- STEP 3: USER-OWNED TABLES
 -- (user_saved_resources)
 -- Authenticated users can read/write their own rows only.
 -- Server saved-resources routes use supabaseForUser(token) so
@@ -60,10 +78,9 @@ CREATE POLICY "users_delete_own_saved" ON user_saved_resources
   FOR DELETE USING (auth.uid() = user_id);
 
 -- =====================
--- LEGACY TABLE: saved_resources
+-- STEP 4: LEGACY TABLE — saved_resources
 -- This table does not exist in the current codebase.
--- All saved resource operations use user_saved_resources.
--- Defensive block: if it exists in a production schema, enable RLS
+-- Defensive block: if it exists in production, enable RLS
 -- and add ownership policies to prevent anonymous access.
 -- =====================
 
@@ -88,10 +105,10 @@ BEGIN
 END $$;
 
 -- =====================
--- SERVER-SIDE ONLY TABLES
+-- STEP 5: SERVER-SIDE ONLY TABLES
 -- (user_profiles, navigator_requests, partner_organizations,
 --  partner_routing_rules, resource_clicks)
--- No anon or authenticated policies — only service_role bypasses RLS.
+-- RLS enabled with NO policies = all access denied except service_role.
 -- All access goes through server routes using supabaseAdmin.
 -- =====================
 
@@ -120,4 +137,11 @@ ALTER TABLE resource_clicks ENABLE ROW LEVEL SECURITY;
 -- partner_organizations    | ON   | DENY        | DENY       | DENY         | BYPASS
 -- partner_routing_rules    | ON   | DENY        | DENY       | DENY         | BYPASS
 -- resource_clicks          | ON   | DENY        | DENY       | DENY         | BYPASS
+--
+-- Verification queries (run as anon role):
+--   SELECT * FROM user_profiles LIMIT 1;       -- Expected: 0 rows (denied)
+--   INSERT INTO states (code, name) VALUES ('XX','Test'); -- Expected: ERROR (denied)
+--   SELECT * FROM user_saved_resources LIMIT 1; -- Expected: 0 rows (denied, no auth.uid())
+--   SELECT * FROM categories LIMIT 1;           -- Expected: returns data (allowed)
+--   SELECT * FROM resources LIMIT 1;            -- Expected: returns data (allowed)
 -- =============================================================
