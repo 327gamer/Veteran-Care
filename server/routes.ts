@@ -1718,7 +1718,7 @@ export async function registerRoutes(
   app.get("/api/admin/navigator-requests", requireAdmin, async (req, res) => {
     const { status } = req.query;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from("navigator_requests")
       .select("*")
       .order("created_at", { ascending: false });
@@ -1783,7 +1783,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "No fields to update" });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("navigator_requests")
       .update(updates)
       .eq("id", id)
@@ -1940,7 +1940,7 @@ export async function registerRoutes(
         manual: true,
       });
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("navigator_requests")
         .update({
           routed_to_partner_id: partner.id,
@@ -2062,7 +2062,7 @@ export async function registerRoutes(
 
     let navRequests: any[] = [];
     try {
-      const { data: navData, error: navErr } = await supabase
+      const { data: navData, error: navErr } = await supabaseAdmin
         .from("navigator_requests")
         .select("id, status, category, subcategory, resource_title, user_state, user_city, created_at");
       if (navErr) console.warn("Navigator stats unavailable:", navErr.message);
