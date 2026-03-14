@@ -810,7 +810,7 @@ export async function registerRoutes(
       if (cat) category_id = cat.id;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("resources")
       .insert({
         title: title.trim(),
@@ -972,7 +972,7 @@ export async function registerRoutes(
       insertData.geocoded_at = latitude != null ? new Date().toISOString() : null;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("resources")
       .insert(insertData)
       .select(`*, categories(id, name, slug)`)
@@ -1121,7 +1121,7 @@ export async function registerRoutes(
             csvInsert.geocoded_at = (lat != null && !isNaN(lat)) ? new Date().toISOString() : null;
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from("resources")
           .insert(csvInsert);
 
@@ -1444,7 +1444,7 @@ export async function registerRoutes(
           const geo = await geocodeAddress(r.address, r.city, r.state, r.zip);
 
           if (geo) {
-            const { error: updateErr } = await supabase
+            const { error: updateErr } = await supabaseAdmin
               .from("resources")
               .update({
                 latitude: geo.latitude,
@@ -1539,7 +1539,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: "No valid fields to update" });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("resources")
       .update(updates)
       .eq("id", id)
@@ -1573,7 +1573,7 @@ export async function registerRoutes(
     const existingNotes = resource.notes_internal || "";
     const updatedNotes = existingNotes ? `${existingNotes}\n${reportNote}` : reportNote;
 
-    await supabase
+    await supabaseAdmin
       .from("resources")
       .update({
         notes_internal: updatedNotes,
@@ -2150,7 +2150,7 @@ export async function registerRoutes(
     } else {
       insert.active = false;
     }
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("states")
       .insert(insert)
       .select()
