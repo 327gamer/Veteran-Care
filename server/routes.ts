@@ -680,7 +680,7 @@ export async function registerRoutes(
     }
 
     const { error: savedError } = await supabaseAdmin
-      .from("saved_resources")
+      .from("user_saved_resources")
       .delete()
       .eq("user_id", user.id);
 
