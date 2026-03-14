@@ -1282,7 +1282,7 @@ export async function registerRoutes(
     const isDryRun = dry_run !== false;
 
     if (!isDryRun && toRemove.length > 0) {
-      const { error: delErr } = await supabase
+      const { error: delErr } = await supabaseAdmin
         .from("resources")
         .delete()
         .in("id", toRemove);
