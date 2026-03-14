@@ -47,7 +47,7 @@ const BOTTOM_NAV_ITEMS = [
 const TOP_HEADER_ITEMS = [
   { icon: MapPin, label: "Location", desc: "Find resources near you. (By Location)." },
   { icon: Search, label: "Search", desc: "Browse resources." },
-  { icon: Sparkles, label: "Get Help", desc: "Use the Veteran Care guide to request support or find the right resources." },
+  { icon: Sparkles, label: "Veteran Guide", desc: "An AI-powered assistant that helps veterans find resources, get guidance, and navigate support services based on their needs and location." },
   { icon: Bell, label: "Notifications", desc: "View updates about saved resources, messages and responses." },
   { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
   { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },
@@ -166,6 +166,7 @@ export default function Layout({ children }: LayoutProps) {
               size="icon" 
               className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
               onClick={() => setIsAiOpen(true)}
+              title="Veteran Guide"
             >
               <Sparkles className="h-5 w-5" />
             </Button>

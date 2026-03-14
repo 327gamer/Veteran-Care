@@ -269,7 +269,7 @@ export default function Home() {
               <div className="flex-1 space-y-1">
                 <p className="font-heading font-bold text-base">How can I help you today?</p>
                 <p className="text-primary-foreground/85 text-sm leading-relaxed">
-                  I'm your Veteran Care Guide. I can help you find benefits, healthcare services, housing support, employment opportunities, and trusted local resources for veterans and their families.
+                  I'm your Veteran Guide — an AI-powered assistant that helps veterans find resources, get guidance, and navigate support services based on your needs and location.
                 </p>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default function Home() {
                 onClick={openGuide}
               >
                 <Sparkles className="mr-1.5 h-4 w-4" />
-                Ask the Guide
+                Ask The Veteran Guide
               </Button>
               <Button
                 data-testid="button-browse-resources-home"

@@ -76,7 +76,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                <Bot className="h-6 w-6 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-heading">Veteran Care Guide</DialogTitle>
+              <DialogTitle className="text-lg font-heading">Veteran Guide</DialogTitle>
               <DialogDescription className="text-primary-foreground/80 text-xs">
                 Always here to help.
               </DialogDescription>
