@@ -282,7 +282,7 @@ export default function Home() {
                 onClick={openGuide}
               >
                 <Sparkles className="mr-1.5 h-4 w-4" />
-                Ask The Veteran Guide
+                Veteran Guide
               </Button>
               <Button
                 data-testid="button-browse-resources-home"
