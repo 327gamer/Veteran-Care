@@ -99,7 +99,8 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `PATCH /api/profile` - Auth'd: update profile fields
 - `GET /api/admin/user-profiles?user_type=&state=&profile_complete=&limit=` - Admin: list user profiles with filters
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
-- `GET /api/admin/ai-insights` - Admin: AI usage analytics (conversations, tokens, cost, crisis triggers, blocked topics, fallback activations, resource gap indicators)
+- `GET /api/admin/ai-insights` - Admin: AI usage analytics (conversations, tokens, cost, crisis triggers, blocked topics, fallback activations, resource gap indicators; includes slug normalizer for legacy logged categories)
+- `GET /api/admin/resources/csv-export?status=approved` - Admin: export all resources matching status as downloadable CSV
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug

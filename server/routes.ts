@@ -1152,6 +1152,43 @@ export async function registerRoutes(
     return res.json({ created, skipped, duplicates, errors, total: rows.length, dry_run: dryRun, results });
   });
 
+  app.get("/api/admin/resources/csv-export", requireAdmin, async (req, res) => {
+    try {
+      const status = (req.query.status as string) || "approved";
+      const { data: resources, error } = await supabaseAdmin
+        .from("resources")
+        .select("title, short_description, website_url, phone, email, address, city, state, zip, eligibility, subcategory, source_name, source_type, sponsored, monetization_type, affiliate_url, status, latitude, longitude, categories!inner(slug, name)")
+        .eq("status", status)
+        .order("state")
+        .order("title");
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const headers = ["title","category","subcategory","short_description","website_url","phone","email","address","city","state","zip","eligibility","source_name","source_type","sponsored","monetization_type","affiliate_url","status","latitude","longitude"];
+
+      const escapeCsv = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const s = String(val);
+        if (s.includes(",") || s.includes('"') || s.includes("\n")) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      };
+
+      const rows = (resources || []).map((r: any) => [
+        r.title, r.categories?.slug || "", r.subcategory, r.short_description,
+        r.website_url, r.phone, r.email, r.address, r.city, r.state, r.zip,
+        r.eligibility, r.source_name, r.source_type, r.sponsored,
+        r.monetization_type, r.affiliate_url, r.status, r.latitude, r.longitude,
+      ].map(escapeCsv).join(","));
+
+      const csv = [headers.join(","), ...rows].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="veteran-care-resources-${status}-${new Date().toISOString().slice(0,10)}.csv"`);
+      res.send(csv);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/admin/resources/csv-template", requireAdmin, async (_req, res) => {
     const { data: cats } = await supabase.from("categories").select("slug, name");
     const categoryList = (cats || []).map((c: any) => c.slug).join(", ");
@@ -2198,14 +2235,25 @@ export async function registerRoutes(
         if (slug) resourceCountByCategory[slug] = (resourceCountByCategory[slug] || 0) + 1;
       });
 
+      const slugNormalize: Record<string, string> = {
+        "housing-assistance": "housing",
+        "legal-assistance": "legal",
+        "financial-assistance": "financial",
+        "community-programs": "community-support",
+        "disability-services": "va-benefits",
+      };
+
       const resourceGaps = topCategories
         .filter(c => c.count >= 3)
-        .map(c => ({
-          category: c.category,
-          demand: c.count,
-          supply: resourceCountByCategory[c.category] || 0,
-          ratio: (resourceCountByCategory[c.category] || 0) / c.count,
-        }))
+        .map(c => {
+          const dbSlug = slugNormalize[c.category] || c.category;
+          return {
+            category: c.category,
+            demand: c.count,
+            supply: resourceCountByCategory[dbSlug] || 0,
+            ratio: (resourceCountByCategory[dbSlug] || 0) / c.count,
+          };
+        })
         .filter(g => g.ratio < 2)
         .sort((a, b) => a.ratio - b.ratio);
 

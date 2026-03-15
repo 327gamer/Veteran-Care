@@ -52,19 +52,19 @@ You are not alone, and reaching out takes courage. Would you like me to help you
 
   categoryKeywords: {
     "crisis-help": ["crisis", "emergency", "urgent", "suicide", "suicidal", "danger", "911", "help now", "immediate"],
-    "housing-assistance": ["housing", "rent", "shelter", "homeless", "apartment", "eviction", "lease", "landlord", "transitional", "section 8", "hud-vash"],
+    "housing": ["housing", "rent", "shelter", "homeless", "apartment", "eviction", "lease", "landlord", "transitional", "section 8", "hud-vash"],
     "healthcare": ["healthcare", "health care", "doctor", "medical", "clinic", "va hospital", "va medical", "prescription", "medication", "dental", "vision", "telehealth"],
-    "mental-health": ["mental health", "ptsd", "anxiety", "depression", "counseling", "therapy", "therapist", "vet center", "peer support", "substance abuse", "addiction", "recovery"],
-    "va-benefits": ["va benefits", "disability", "disability claim", "compensation", "pension", "dd214", "pact act", "appeals", "service connected", "rating", "va enrollment"],
+    "mental-health": ["mental health", "ptsd", "anxiety", "depression", "counseling", "therapy", "therapist", "vet center", "peer support"],
+    "va-benefits": ["va benefits", "disability claim", "compensation", "pension", "dd214", "pact act", "appeals", "service connected", "rating", "va enrollment"],
     "employment": ["job", "employment", "career", "resume", "hire", "hiring", "work", "apprenticeship", "certification", "entrepreneurship", "business", "voc rehab"],
-    "legal-assistance": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono"],
-    "financial-assistance": ["financial", "money", "bills", "utilities", "debt", "budget", "emergency funds", "relief fund", "financial counseling"],
+    "legal": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono"],
+    "financial": ["financial", "money", "bills", "utilities", "debt", "budget", "emergency funds", "relief fund", "financial counseling"],
     "education": ["education", "school", "college", "gi bill", "tuition", "degree", "technical", "training", "student"],
     "family-support": ["family", "spouse", "child", "childcare", "caregiver", "dependent", "gold star", "survivor benefits", "parenting"],
     "transportation": ["transportation", "ride", "bus", "transit", "medical transport", "dat", "volunteer driver"],
     "substance-recovery": ["substance", "alcohol", "drug", "recovery", "detox", "rehab", "sober", "aa", "na", "medication assisted"],
-    "community-programs": ["community", "volunteer", "recreation", "social", "peer", "mentor", "fellowship"],
-    "disability-services": ["disability", "adaptive", "wheelchair", "prosthetic", "blind", "deaf", "adaptive sports", "assistive"],
+    "community-support": ["community", "volunteer", "recreation", "social", "peer", "mentor", "fellowship"],
+    "food-assistance": ["food", "meals", "food bank", "food pantry", "groceries", "snap", "wic", "hunger"],
   },
 
   blockedTopics: [

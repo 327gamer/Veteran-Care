@@ -1440,6 +1440,22 @@ export default function AdminResources() {
               <Upload className="h-3.5 w-3.5 mr-1.5" /> CSV Import
             </Button>
             <Button
+              data-testid="button-csv-export"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = `/api/admin/resources/csv-export?status=approved`;
+                a.download = "";
+                fetch(a.href, { headers: { "x-admin-key": adminKey } })
+                  .then(r => r.blob())
+                  .then(blob => { a.href = URL.createObjectURL(blob); a.click(); });
+              }}
+            >
+              <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV
+            </Button>
+            <Button
               data-testid="button-geocode-missing"
               variant="outline"
               size="sm"
