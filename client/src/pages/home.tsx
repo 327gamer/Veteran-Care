@@ -286,10 +286,10 @@ export default function Home() {
                   key={id}
                   data-testid={id}
                   variant="secondary"
-                  className={`w-full text-primary font-semibold shadow-md h-14 rounded-xl flex items-center justify-start pl-3 pr-2 whitespace-nowrap ${glow ? 'guide-glow-home' : ''}`}
+                  className="w-full text-primary font-semibold shadow-md h-14 rounded-xl flex items-center justify-start pl-3 pr-2 whitespace-nowrap"
                   onClick={onClick}
                 >
-                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mr-2.5 ${glow ? 'bg-primary/15' : 'bg-primary/10'}`}>
+                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mr-2.5 ${glow ? 'bg-primary/15 guide-glow-home rounded-full' : 'bg-primary/10'}`}>
                     <Icon className="h-4 w-4 text-primary" />
                   </span>
                   <span className="text-[12.5px] md:text-[13px]">{label}</span>
