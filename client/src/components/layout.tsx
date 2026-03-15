@@ -129,8 +129,11 @@ export default function Layout({ children }: LayoutProps) {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Left: Logo */}
           <Link href="/home" className="flex items-center gap-2 group shrink-0">
-            <div className="h-12 w-14 overflow-hidden rounded-md bg-white transition-opacity hover:opacity-90 shadow-sm border border-white/20 flex items-center justify-center p-1">
+            <div className="relative h-12 w-14 overflow-hidden rounded-md bg-white transition-opacity hover:opacity-90 shadow-sm border border-white/20 flex items-center justify-center p-1">
                <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
+               <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 bg-white/90 rounded-t-sm px-1.5 py-px">
+                 <Home className="h-2.5 w-2.5 text-primary" />
+               </div>
             </div>
             <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">{platform.name}</span>
           </Link>
