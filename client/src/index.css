@@ -178,3 +178,12 @@
 .guide-glow {
   animation: guide-pulse 2s ease-in-out 3;
 }
+
+@keyframes guide-pulse-home {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(53, 79, 42, 0); }
+  50% { box-shadow: 0 0 10px 2px rgba(53, 79, 42, 0.2); }
+}
+
+.guide-glow-home {
+  animation: guide-pulse-home 2s ease-in-out infinite;
+}
