@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   Phone as PhoneIcon,
   Zap,
+  ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -1054,6 +1056,23 @@ export default function Resources() {
           })}
         </div>
       )}
+
+      <Card
+        className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group border-primary/20 bg-primary/5"
+        onClick={() => setLocation("/trusted-services")}
+        data-testid="card-trusted-services-entry"
+      >
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+            <ShieldCheck className="h-5 w-5 text-primary group-hover:text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-primary">Trusted Services</p>
+            <p className="text-[11px] text-muted-foreground">Vetted professionals and providers for veterans</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+        </CardContent>
+      </Card>
 
       <div className="pt-2 pb-4">
         <Button

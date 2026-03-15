@@ -101,6 +101,12 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
 - `GET /api/admin/ai-insights` - Admin: AI usage analytics (conversations, tokens, cost, crisis triggers, blocked topics, fallback activations, resource gap indicators; includes slug normalizer for legacy logged categories)
 - `GET /api/admin/resources/csv-export?status=approved` - Admin: export all resources matching status as downloadable CSV
+- `GET /api/trusted-services/categories` - Public: list active trusted service categories
+- `GET /api/trusted-services?category=&state=` - Public: list active trusted services, filterable by category slug and state
+- `GET /api/admin/trusted-services/categories` - Admin: list all trusted service categories
+- `POST /api/admin/trusted-services` - Admin: create trusted service provider
+- `PATCH /api/admin/trusted-services/:id` - Admin: update trusted service provider
+- `DELETE /api/admin/trusted-services/:id` - Admin: soft-delete (deactivate) trusted service
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
@@ -113,6 +119,8 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `user_profiles` - id (UUID PK, fk→auth.users), first_name, last_name, email, phone, user_type (veteran/spouse_family/dependent/caregiver_advocate/other), consent_contact (bool), branch_of_service, interests (text[]), service_area, state, city, zip, profile_complete (bool), created_at, updated_at
 - `user_saved_resources` - id, user_id (fk→auth.users), resource_id (fk→resources), saved_at; unique(user_id, resource_id)
 - `ai_usage_log` - id (uuid), user_id (fk→auth.users, nullable), is_guest (bool), detected_category (text), model (text), input_tokens (int), output_tokens (int), total_tokens (int), navigator_suggested (bool), created_at (SQL in `supabase/create_ai_usage_log.sql`)
+- `trusted_service_categories` - id (uuid), name, slug (unique), description, icon, display_order (int), is_active (bool), created_at (SQL in `supabase/create_trusted_services.sql`)
+- `trusted_services` - id (uuid), category_id (fk→trusted_service_categories), name, short_description, website_url, phone, email, address, city, state, zip, logo_url, verification_status (pending/verified), verification_label, cta_text, cta_url, is_featured (bool), is_active (bool), display_order (int), notes_internal, created_at
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -130,6 +138,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `/resources` - Resource library with category browsing and location filter
 - `/saved-resources` - Saved/bookmarked resources
 - `/submit-resource` - Community resource submission form
+- `/trusted-services` - Trusted Services page (vetted providers by category)
 - `/admin` - Admin resource review dashboard (key-protected, standalone layout)
 - `/admin/analytics` - Admin analytics dashboard
 - `/admin/ai-insights` - AI Insights dashboard (conversations, tokens, cost, crisis, gaps)

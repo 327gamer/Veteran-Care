@@ -9,7 +9,7 @@ import {
   Home, 
   BookOpen, 
   MessageSquare, 
-  ShoppingBag, 
+  ShieldCheck, 
   MapPin,
   Bot,
   Bell,
@@ -42,7 +42,7 @@ const BOTTOM_NAV_ITEMS = [
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
   { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
   { icon: MessageSquare, label: "Community", desc: "Connect with others." },
-  { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
+  { icon: ShieldCheck, label: "Services", desc: "Vetted professionals and providers for veterans." },
 ];
 
 const TOP_HEADER_ITEMS = [
@@ -284,9 +284,9 @@ export default function Layout({ children }: LayoutProps) {
             <span className="text-[10px] font-medium">Community</span>
           </Link>
 
-          <Link href="/shop" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/shop') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-            <ShoppingBag className={`h-5 w-5 ${isActive('/shop') ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium">Shop</span>
+          <Link href="/trusted-services" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/trusted-services') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+            <ShieldCheck className={`h-5 w-5 ${isActive('/trusted-services') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Services</span>
           </Link>
         </div>
       </nav>

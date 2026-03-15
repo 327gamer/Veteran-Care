@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Resources from "@/pages/resources";
 import Community from "@/pages/community";
 import Shop from "@/pages/shop";
+import TrustedServices from "@/pages/trusted-services";
 import NearMe from "@/pages/near-me";
 import Onboarding from "@/pages/onboarding";
 import SavedResources from "@/pages/saved-resources";
@@ -57,6 +58,12 @@ function Router() {
       <Route path="/community">
         <Layout>
           <Community />
+        </Layout>
+      </Route>
+
+      <Route path="/trusted-services">
+        <Layout>
+          <TrustedServices />
         </Layout>
       </Route>
 

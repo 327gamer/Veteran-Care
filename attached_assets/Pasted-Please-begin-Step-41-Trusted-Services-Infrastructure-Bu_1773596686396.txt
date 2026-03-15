@@ -1,0 +1,73 @@
+Please begin Step 41 — Trusted Services Infrastructure Build.
+
+We are building this directly into the existing Veteran Care web app in Replit.
+
+Goal:
+Create the Trusted Services section and framework inside the live platform so we can begin adding monetizable partner services alongside the existing free resource system.
+
+Important context:
+- Keep the main platform veteran-first and resource-first
+- Free resources should always remain primary
+- Trusted Services should appear as a secondary, clearly organized support layer
+- This should NOT feel spammy or ad-heavy
+- Trusted Services should be clean, credible, and aligned with the Veteran Care brand
+
+What I want built in this step:
+
+1. Bottom navigation
+Add “Trusted Services” to the bottom navigation so it is always visible.
+
+2. Resources integration
+Add a Trusted Services box/entry point within the Resources area as well, so users can reach it from both places.
+
+3. Trusted Services main page
+Create a dedicated Trusted Services page with clean category cards or sections.
+
+Initial Trusted Services categories should include:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Education & Training
+- Employment Support
+- Benefits Assistance
+- Wellness / Recovery Services
+
+4. Category structure
+Each Trusted Services category should support provider listings with:
+- provider name
+- short description
+- city/state
+- phone
+- website
+- trust/verification label placeholder
+- call-to-action button such as “Connect” or “Learn More”
+
+5. Admin-ready data structure
+Set up the underlying structure so Trusted Services providers can later be added, edited, categorized, and tracked cleanly.
+I want this built in a way that can scale by state later.
+
+6. Search awareness
+Prepare the system so that Trusted Services can later be tied into search results and keyword routing, but do not fully build search routing in this step yet. Just make sure the structure supports it.
+
+7. UI / brand
+Keep the design professional, clean, and trustworthy.
+This should feel like “trusted vetted help,” not a marketplace full of ads.
+
+8. No partner outreach logic yet
+Do not build the partner prospecting or outreach system in this step.
+This step is infrastructure only.
+
+Deliverables for this step:
+- Trusted Services page built in the app
+- Bottom nav updated
+- Resource section entry point added
+- Initial category structure built
+- Admin/data structure prepared for future partner records
+
+Before marking Step 41 complete, please provide:
+1. what pages/components were created or changed
+2. what navigation changed
+3. what data structure/model was set up
+4. how Trusted Services is positioned in the current app
+5. what the next step should be for adding actual partners and lead capture

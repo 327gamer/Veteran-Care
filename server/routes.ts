@@ -58,8 +58,20 @@ let hasRoutingColumns = false;
 let hasPartnerTable = false;
 let hasRoutingRulesTable = false;
 let hasStatesTable = false;
+let hasTrustedServicesTable = false;
 
 let statesHasFullSchema = false;
+
+async function checkTrustedServicesTable() {
+  const { error } = await supabaseAdmin.from("trusted_service_categories").select("id").limit(1);
+  if (error) {
+    hasTrustedServicesTable = false;
+    console.log("[schema] trusted_service_categories table not found. Run supabase/create_trusted_services.sql");
+  } else {
+    hasTrustedServicesTable = true;
+    console.log("[schema] trusted_service_categories table detected");
+  }
+}
 
 async function checkStatesTable() {
   const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
@@ -190,6 +202,7 @@ export async function registerRoutes(
   await checkNavLifecycleColumns();
   await checkPartnerTable();
   await checkStatesTable();
+  await checkTrustedServicesTable();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
@@ -2393,6 +2406,75 @@ export async function registerRoutes(
       .order("name", { ascending: true });
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data || []);
+  });
+
+  app.get("/api/trusted-services/categories", async (_req, res) => {
+    if (!hasTrustedServicesTable) return res.json([]);
+    const { data, error } = await supabase
+      .from("trusted_service_categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order");
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.get("/api/trusted-services", async (req, res) => {
+    if (!hasTrustedServicesTable) return res.json([]);
+    let query = supabase
+      .from("trusted_services")
+      .select("*, trusted_service_categories!inner(slug, name)")
+      .eq("is_active", true)
+      .order("is_featured", { ascending: false })
+      .order("display_order");
+    if (req.query.category) query = query.eq("trusted_service_categories.slug", req.query.category as string);
+    if (req.query.state) query = query.eq("state", (req.query.state as string).toUpperCase());
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.get("/api/admin/trusted-services/categories", requireAdmin, async (_req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available. Run supabase/create_trusted_services.sql" });
+    const { data, error } = await supabaseAdmin
+      .from("trusted_service_categories")
+      .select("*")
+      .order("display_order");
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.post("/api/admin/trusted-services", requireAdmin, async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
+    const { data, error } = await supabaseAdmin
+      .from("trusted_services")
+      .insert(req.body)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.patch("/api/admin/trusted-services/:id", requireAdmin, async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
+    const { data, error } = await supabaseAdmin
+      .from("trusted_services")
+      .update(req.body)
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.delete("/api/admin/trusted-services/:id", requireAdmin, async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
+    const { error } = await supabaseAdmin
+      .from("trusted_services")
+      .update({ is_active: false })
+      .eq("id", req.params.id);
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json({ success: true });
   });
 
   return httpServer;
