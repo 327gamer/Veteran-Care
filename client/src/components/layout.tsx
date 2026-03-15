@@ -10,6 +10,7 @@ import {
   BookOpen, 
   MessageSquare, 
   ShieldCheck, 
+  ShoppingBag,
   MapPin,
   Bot,
   Bell,
@@ -40,8 +41,8 @@ import { useAuth } from "@/lib/use-auth";
 const BOTTOM_NAV_ITEMS = [
   { icon: Home, label: "Home", desc: "Ask questions and find help." },
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
-  { icon: ShieldCheck, label: "Services", desc: "Vetted professionals and providers for veterans." },
-  { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
+  { icon: ShieldCheck, label: "Trusted Services", desc: "Vetted professionals and providers for veterans." },
+  { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
   { icon: MessageSquare, label: "Community", desc: "Connect with others." },
 ];
 
@@ -276,12 +277,12 @@ export default function Layout({ children }: LayoutProps) {
 
           <Link href="/trusted-services" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/trusted-services') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <ShieldCheck className={`h-5 w-5 ${isActive('/trusted-services') ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium">Services</span>
+            <span className="text-[9px] font-medium text-center leading-tight">Trusted<br/>Services</span>
           </Link>
 
-          <Link href="/saved-resources" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/saved-resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-            <Heart className={`h-5 w-5 ${isActive('/saved-resources') ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium text-center leading-tight">My Saved</span>
+          <Link href="/shop" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/shop') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+            <ShoppingBag className={`h-5 w-5 ${isActive('/shop') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Shop</span>
           </Link>
 
           <Link href="/community" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
