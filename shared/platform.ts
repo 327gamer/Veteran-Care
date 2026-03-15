@@ -23,11 +23,11 @@ export const platform = {
 
   ai: {
     assistantName: "Veteran Guide",
-    welcomeMessage: "Hello! I'm your {name} Guide. How can I help you today? I can assist with benefits, finding local resources, or just pointing you in the right direction.",
+    welcomeMessage: "Hello! I'm your Veteran Care Guide.\n\nI can help veterans, family members, dependents, caregivers, and case managers find benefits, services, and local resources.\n\nJust type your question below, or tap the microphone on your phone to speak your question, and I'll help point you in the right direction.",
     subtitle: "Always here to help.",
     guideDescription: "An AI-powered assistant that helps {userNounPlural} find resources, get guidance, and navigate support services based on their needs and location.",
     guideIntro: "I'm your {assistantName} — an AI-powered assistant that helps {userNounPlural} find resources, get guidance, and navigate support services based on your needs and location.",
-    askPrompt: "Ask the {assistantName} about eligibility, forms, or next steps.",
+    askPrompt: "Ask the Veteran Guide about benefits, services, or local resources\u2026",
   },
 
   profileFields: [

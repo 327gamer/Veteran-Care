@@ -14,6 +14,7 @@ import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, Exte
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
+import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 
 interface MatchedResourceCard {
   id: string;
@@ -215,8 +216,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
       <DialogContent className="sm:max-w-[425px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20">
         <DialogHeader className="px-6 py-4 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center border-2 border-white/20">
-               <Bot className="h-6 w-6 text-primary-foreground" />
+            <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center border-2 border-white/20 overflow-hidden">
+               <img src={logoImg} alt={platform.name} className="h-8 w-8 object-contain" />
             </div>
             <div className="flex-1">
               <DialogTitle className="text-lg font-heading">{platform.ai.assistantName}</DialogTitle>
@@ -248,8 +249,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                 className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
               >
                 {msg.role === 'assistant' ? (
-                   <Avatar className="h-8 w-8 border border-border flex-shrink-0">
-                     <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
+                   <Avatar className="h-8 w-8 border border-border flex-shrink-0 bg-white overflow-hidden">
+                     <img src={logoImg} alt={platform.name} className="h-6 w-6 object-contain" />
                    </Avatar>
                 ) : (
                    <Avatar className="h-8 w-8 border border-border flex-shrink-0">
@@ -297,8 +298,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
 
             {isTyping && streamingText && (
               <div className="flex gap-3 max-w-[85%]">
-                <Avatar className="h-8 w-8 border border-border flex-shrink-0">
-                  <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
+                <Avatar className="h-8 w-8 border border-border flex-shrink-0 bg-white overflow-hidden">
+                  <img src={logoImg} alt={platform.name} className="h-6 w-6 object-contain" />
                 </Avatar>
                 <div className="rounded-2xl px-4 py-2 text-sm shadow-sm bg-white text-foreground border border-border rounded-tl-none whitespace-pre-wrap">
                   {renderContent(streamingText)}
@@ -308,8 +309,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
 
             {isTyping && !streamingText && (
               <div className="flex gap-3 max-w-[85%]">
-                <Avatar className="h-8 w-8 border border-border flex-shrink-0">
-                  <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={14} /></AvatarFallback>
+                <Avatar className="h-8 w-8 border border-border flex-shrink-0 bg-white overflow-hidden">
+                  <img src={logoImg} alt={platform.name} className="h-6 w-6 object-contain" />
                 </Avatar>
                 <div className="rounded-2xl px-4 py-3 text-sm shadow-sm bg-white text-foreground border border-border rounded-tl-none">
                   <div className="flex gap-1">
