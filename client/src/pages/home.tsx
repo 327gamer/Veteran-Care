@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Compass,
   Globe,
+  ShieldCheck,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -469,6 +470,20 @@ export default function Home() {
               </Card>
             );
           })}
+          <Card 
+            data-testid="card-category-trusted-services"
+            className="hover:border-primary/50 transition-colors cursor-pointer h-full group"
+            onClick={() => setLocation("/trusted-services")}
+          >
+            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
+              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                Trusted Services
+              </span>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
