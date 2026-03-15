@@ -3,7 +3,7 @@ import { platform, t } from "../../shared/platform";
 export const aiConfig = {
   model: "gpt-4o-mini",
   maxTokens: 1024,
-  temperature: 0.7,
+  temperature: 0.4,
 
   rateLimits: {
     authenticated: { maxRequests: 30, windowMs: 60 * 60 * 1000 },
