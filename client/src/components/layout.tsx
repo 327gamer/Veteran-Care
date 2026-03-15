@@ -40,9 +40,9 @@ import { useAuth } from "@/lib/use-auth";
 const BOTTOM_NAV_ITEMS = [
   { icon: Home, label: "Home", desc: "Ask questions and find help." },
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
+  { icon: ShieldCheck, label: "Services", desc: "Vetted professionals and providers for veterans." },
   { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
   { icon: MessageSquare, label: "Community", desc: "Connect with others." },
-  { icon: ShieldCheck, label: "Services", desc: "Vetted professionals and providers for veterans." },
 ];
 
 const TOP_HEADER_ITEMS = [
@@ -274,6 +274,11 @@ export default function Layout({ children }: LayoutProps) {
             <span className="text-[10px] font-medium">Resources</span>
           </Link>
 
+          <Link href="/trusted-services" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/trusted-services') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+            <ShieldCheck className={`h-5 w-5 ${isActive('/trusted-services') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Services</span>
+          </Link>
+
           <Link href="/saved-resources" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/saved-resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <Heart className={`h-5 w-5 ${isActive('/saved-resources') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium text-center leading-tight">My Saved</span>
@@ -282,11 +287,6 @@ export default function Layout({ children }: LayoutProps) {
           <Link href="/community" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/community') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <MessageSquare className={`h-5 w-5 ${isActive('/community') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium">Community</span>
-          </Link>
-
-          <Link href="/trusted-services" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/trusted-services') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-            <ShieldCheck className={`h-5 w-5 ${isActive('/trusted-services') ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium">Services</span>
           </Link>
         </div>
       </nav>

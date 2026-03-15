@@ -22,7 +22,6 @@ import {
   Phone as PhoneIcon,
   Zap,
   ShieldCheck,
-  ChevronRight,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -1054,25 +1053,25 @@ export default function Resources() {
               </Card>
             );
           })}
+          <Card
+            data-testid="card-category-trusted-services"
+            className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
+            onClick={() => setLocation("/trusted-services")}
+          >
+            <CardHeader className="flex flex-row items-center gap-4 pb-2">
+              <div className="p-2.5 rounded-lg transition-colors bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">Trusted Services</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground leading-snug">Vetted professionals and service providers supporting veterans and families.</p>
+            </CardContent>
+          </Card>
         </div>
       )}
-
-      <Card
-        className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group border-primary/20 bg-primary/5"
-        onClick={() => setLocation("/trusted-services")}
-        data-testid="card-trusted-services-entry"
-      >
-        <CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-            <ShieldCheck className="h-5 w-5 text-primary group-hover:text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-primary">Trusted Services</p>
-            <p className="text-[11px] text-muted-foreground">Vetted professionals and providers for veterans</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-        </CardContent>
-      </Card>
 
       <div className="pt-2 pb-4">
         <Button
