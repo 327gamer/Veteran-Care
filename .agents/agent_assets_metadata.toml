@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Kpq4jT20aGtLN9aQ9Vs_Q"
+uri = "file://sample-import-template.csv"
+type = "table"
+title = "Veteran Care CSV Import Template (5 sample resources)"
