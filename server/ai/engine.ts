@@ -6,6 +6,7 @@ import { matchResources, detectCategories } from "./resource-matcher";
 import { buildSystemPrompt, buildMessageHistory } from "./prompt-builder";
 import { streamCompletion } from "./stream";
 import { logUsage } from "./usage-logger";
+import { checkBudget, invalidateBudgetCache } from "./budget-guard";
 import { aiConfig } from "./config";
 
 interface ChatRequest {
@@ -86,17 +87,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
   const detectedCats = detectCategories(lastUserMsg.content);
 
-  const userContext = {
-    state: userState,
-    city: userCity,
-    zip: userZip,
-    interests,
-    branch,
-    isGuest,
-  };
-
-  const systemPrompt = buildSystemPrompt(userContext, matchedResources);
-  const fullMessages = buildMessageHistory(messages, systemPrompt);
+  const budgetStatus = await checkBudget(isGuest);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -118,6 +109,44 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
     })}\n\n`);
   }
 
+  if (!budgetStatus.allowed) {
+    console.log(`[ai] Budget limit reached (${budgetStatus.todayTokens}/${budgetStatus.limit} tokens). Returning fallback for ${isGuest ? 'guest' : 'authenticated'} user.`);
+
+    res.write(`data: ${JSON.stringify({ type: "chunk", text: aiConfig.fallbackResponse })}\n\n`);
+    res.write(`data: ${JSON.stringify({
+      type: "done",
+      categories: detectedCats,
+      navigatorSuggested: true,
+      resourceCount: matchedResources.length,
+      fallbackMode: true,
+    })}\n\n`);
+    res.end();
+
+    logUsage({
+      userId,
+      isGuest,
+      detectedCategory: detectedCats[0] || null,
+      model: "fallback",
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      navigatorSuggested: true,
+    });
+    return;
+  }
+
+  const userContext = {
+    state: userState,
+    city: userCity,
+    zip: userZip,
+    interests,
+    branch,
+    isGuest,
+  };
+
+  const systemPrompt = buildSystemPrompt(userContext, matchedResources);
+  const fullMessages = buildMessageHistory(messages, systemPrompt);
+
   await streamCompletion({
     messages: fullMessages,
     onChunk: (text) => {
@@ -135,6 +164,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       })}\n\n`);
       res.end();
 
+      invalidateBudgetCache();
       logUsage({
         userId,
         isGuest,

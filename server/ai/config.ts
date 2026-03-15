@@ -74,4 +74,12 @@ You are not alone, and reaching out takes courage. Would you like me to help you
   ],
 
   blockedResponse: "I'm focused on helping you find resources and support services. I'm not able to help with that particular topic, but I'm happy to assist with benefits, healthcare, housing, employment, or other support needs. What can I help you with?",
+
+  budget: {
+    dailyTokenLimit: 500_000,
+    guestThresholdPct: 60,
+    cacheTtlMs: 60_000,
+  },
+
+  fallbackResponse: `I found some resources that may help you. Please review the matched resources above for contact details and website links.\n\nFor more personalized guidance, tap the **Request a Navigator** button below to connect with someone who can assist you directly.`,
 };
