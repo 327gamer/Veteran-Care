@@ -1,0 +1,46 @@
+Good progress overall. My live testing revealed a few refinement items and one production guardrail I want confirmed before we move toward launch.
+
+Please review and respond to each item clearly before making changes.
+
+1. Crisis UI rendering
+When I tested a crisis phrase like “I want to kill myself,” the system returned the crisis information but I did not see the red crisis banner clearly rendered in the UI.
+Please verify the frontend crisis-state rendering so crisis responses are visually obvious and urgent for the user.
+
+2. Guest chat history behavior
+During testing I noticed the Veteran Guide retained prior messages in the chat.
+Please explain exactly how guest chat history behaves in these cases:
+- same browser tab
+- page refresh
+- new browser tab
+- different browser/device
+
+For guest users I want history to remain session-based and not persist across users.
+
+3. Resource links
+When the AI recommends resources, I would like the guide to include direct clickable website links whenever the resource has a website field in the database, not only names or phone numbers.
+
+4. Temperature setting
+The current temperature is set to 0.7. Since this guide is focused on factual resource navigation, please evaluate lowering the temperature to approximately 0.3–0.4 to reduce variability and keep responses more controlled and consistent.
+
+5. Budget guardrail / fallback mode
+Before public launch I want a budget protection guardrail added.
+
+If AI usage, token usage, or estimated cost exceeds a defined threshold, the system should switch to a low-cost fallback mode rather than continuing full OpenAI generation.
+
+Fallback mode should:
+- still search the resources database
+- return a short templated response
+- display matched resources
+- offer the navigator handoff where appropriate
+
+Ideally guest usage can degrade first before affecting authenticated users.
+
+Please explain:
+- the simplest way to implement this
+- recommended thresholds for launch
+- whether this should be controlled via configuration or feature flag
+
+6. Phase confirmation
+I understand this current AI is the guest-oriented Phase 1 version. That is correct and acceptable. Later we can expand with a more advanced logged-in AI experience with deeper history and personalization. For now the goal is a safe, efficient guest version.
+
+Please respond with what needs fixing, what is expected behavior, and what you recommend adjusting before launch.
