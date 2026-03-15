@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake } from "lucide-react";
+import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
@@ -263,16 +263,6 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
               </div>
             )}
 
-            {isCrisis && (
-              <div className="mx-2 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2" data-testid="crisis-alert">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div className="text-xs text-red-800">
-                  <p className="font-semibold">If you're in crisis, please reach out now.</p>
-                  <p className="mt-1">Veterans Crisis Line: <strong>988 (press 1)</strong></p>
-                </div>
-              </div>
-            )}
-
             {showNavigatorHint && !isCrisis && (
               <div className="mx-2">
                 <Button
@@ -290,7 +280,35 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
           </div>
         </ScrollArea>
 
-        {chatHistory.length > 2 && (
+        {isCrisis && (
+          <div className="bg-red-600 text-white px-4 py-3 border-t border-red-700" data-testid="crisis-alert">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-6 w-6 flex-shrink-0 mt-0.5 text-white" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm">If you are in crisis, please reach out now.</p>
+                <p className="text-red-100 text-xs mt-1">Free, confidential, 24/7 support</p>
+              </div>
+            </div>
+            <a
+              href="tel:988"
+              data-testid="button-call-988"
+              className="mt-3 flex items-center justify-center gap-2 w-full bg-white text-red-700 font-bold py-3 rounded-lg text-base hover:bg-red-50 transition-colors"
+            >
+              <Phone className="h-5 w-5" />
+              Call 988 — Veterans Crisis Line
+            </a>
+            <div className="mt-2 flex gap-2 text-xs">
+              <a href="sms:838255" className="flex-1 text-center bg-red-700 hover:bg-red-800 py-2 rounded-md transition-colors">
+                Text 838255
+              </a>
+              <a href="https://www.veteranscrisisline.net/get-help-now/chat/" target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-red-700 hover:bg-red-800 py-2 rounded-md transition-colors">
+                Chat Online
+              </a>
+            </div>
+          </div>
+        )}
+
+        {chatHistory.length > 2 && !isCrisis && (
           <div className="px-4 py-1.5 bg-muted/50 border-t flex items-center gap-1.5 text-[10px] text-muted-foreground">
             <History className="h-3 w-3" />
             <span>{chatHistory.filter(m => m.role === 'user').length} messages in history</span>
