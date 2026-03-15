@@ -2118,6 +2118,119 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/admin/ai-insights", requireAdmin, async (_req, res) => {
+    try {
+      const { data: logs, error } = await supabaseAdmin
+        .from("ai_usage_log")
+        .select("id, is_guest, detected_category, model, input_tokens, output_tokens, total_tokens, navigator_suggested, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10000);
+
+      if (error) return res.status(500).json({ error: error.message });
+      const rows = logs || [];
+
+      const totalConversations = rows.length;
+      const guestCount = rows.filter(r => r.is_guest).length;
+      const authCount = totalConversations - guestCount;
+
+      const categoryCounts: Record<string, number> = {};
+      rows.forEach(r => {
+        if (r.detected_category && r.detected_category !== "blocked") {
+          categoryCounts[r.detected_category] = (categoryCounts[r.detected_category] || 0) + 1;
+        }
+      });
+      const topCategories = Object.entries(categoryCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([category, count]) => ({ category, count }));
+
+      const crisisCount = rows.filter(r => r.detected_category === "crisis-help").length;
+      const blockedCount = rows.filter(r => r.detected_category === "blocked").length;
+      const fallbackCount = rows.filter(r => r.model === "fallback").length;
+      const safetyFilterCount = rows.filter(r => r.model === "safety-filter").length;
+      const navigatorSuggestedCount = rows.filter(r => r.navigator_suggested).length;
+
+      const totalInputTokens = rows.reduce((s, r) => s + (r.input_tokens || 0), 0);
+      const totalOutputTokens = rows.reduce((s, r) => s + (r.output_tokens || 0), 0);
+      const totalTokens = rows.reduce((s, r) => s + (r.total_tokens || 0), 0);
+
+      const inputCostPer1M = 0.15;
+      const outputCostPer1M = 0.60;
+      const estimatedCost = (totalInputTokens / 1_000_000) * inputCostPer1M + (totalOutputTokens / 1_000_000) * outputCostPer1M;
+
+      const now = new Date();
+      const todayStart = new Date(now); todayStart.setUTCHours(0, 0, 0, 0);
+      const weekStart = new Date(now); weekStart.setUTCDate(weekStart.getUTCDate() - 7);
+
+      const todayRows = rows.filter(r => new Date(r.created_at) >= todayStart);
+      const weekRows = rows.filter(r => new Date(r.created_at) >= weekStart);
+
+      const todayTokens = todayRows.reduce((s, r) => s + (r.total_tokens || 0), 0);
+      const weekTokens = weekRows.reduce((s, r) => s + (r.total_tokens || 0), 0);
+      const todayConversations = todayRows.length;
+      const weekConversations = weekRows.length;
+      const todayCost = (todayRows.reduce((s, r) => s + (r.input_tokens || 0), 0) / 1_000_000) * inputCostPer1M +
+        (todayRows.reduce((s, r) => s + (r.output_tokens || 0), 0) / 1_000_000) * outputCostPer1M;
+      const weekCost = (weekRows.reduce((s, r) => s + (r.input_tokens || 0), 0) / 1_000_000) * inputCostPer1M +
+        (weekRows.reduce((s, r) => s + (r.output_tokens || 0), 0) / 1_000_000) * outputCostPer1M;
+
+      const dailyBreakdown: Record<string, { tokens: number; conversations: number; cost: number }> = {};
+      rows.forEach(r => {
+        const day = new Date(r.created_at).toISOString().slice(0, 10);
+        if (!dailyBreakdown[day]) dailyBreakdown[day] = { tokens: 0, conversations: 0, cost: 0 };
+        dailyBreakdown[day].tokens += r.total_tokens || 0;
+        dailyBreakdown[day].conversations += 1;
+        dailyBreakdown[day].cost += ((r.input_tokens || 0) / 1_000_000) * inputCostPer1M +
+          ((r.output_tokens || 0) / 1_000_000) * outputCostPer1M;
+      });
+      const dailyUsage = Object.entries(dailyBreakdown)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .slice(0, 14)
+        .map(([date, data]) => ({ date, ...data }));
+
+      const { data: resources } = await supabaseAdmin
+        .from("resources")
+        .select("id, category_id, categories!inner(slug)")
+        .eq("status", "approved");
+
+      const resourceCountByCategory: Record<string, number> = {};
+      (resources || []).forEach((r: any) => {
+        const slug = r.categories?.slug;
+        if (slug) resourceCountByCategory[slug] = (resourceCountByCategory[slug] || 0) + 1;
+      });
+
+      const resourceGaps = topCategories
+        .filter(c => c.count >= 3)
+        .map(c => ({
+          category: c.category,
+          demand: c.count,
+          supply: resourceCountByCategory[c.category] || 0,
+          ratio: (resourceCountByCategory[c.category] || 0) / c.count,
+        }))
+        .filter(g => g.ratio < 2)
+        .sort((a, b) => a.ratio - b.ratio);
+
+      res.json({
+        totalConversations,
+        guestCount,
+        authCount,
+        topCategories,
+        crisisCount,
+        blockedCount,
+        fallbackCount,
+        safetyFilterCount,
+        navigatorSuggestedCount,
+        tokens: { total: totalTokens, input: totalInputTokens, output: totalOutputTokens },
+        cost: { total: estimatedCost, today: todayCost, week: weekCost },
+        today: { tokens: todayTokens, conversations: todayConversations },
+        week: { tokens: weekTokens, conversations: weekConversations },
+        dailyUsage,
+        resourceGaps,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/admin/states", requireAdmin, async (_req, res) => {
     if (!hasStatesTable) return res.json([]);
     const selectFields = statesHasFullSchema

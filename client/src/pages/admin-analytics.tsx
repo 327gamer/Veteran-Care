@@ -150,15 +150,26 @@ export default function AdminAnalytics() {
             <BarChart3 className="h-5 w-5" />
             <span className="font-heading font-bold">Analytics Dashboard</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-            onClick={() => { setAuthenticated(false); setAdminKey(""); }}
-            data-testid="button-analytics-signout"
-          >
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => setLocation("/admin/ai-insights")}
+              data-testid="button-ai-insights"
+            >
+              <Sparkles className="h-4 w-4 mr-1" /> AI Insights
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => { setAuthenticated(false); setAdminKey(""); }}
+              data-testid="button-analytics-signout"
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

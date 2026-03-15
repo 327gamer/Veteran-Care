@@ -57,6 +57,7 @@ import {
   ChevronRight,
   ArrowRightLeft,
   Trash2,
+  Brain,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -735,6 +736,15 @@ export default function AdminResources() {
               onClick={() => setLocation("/admin/analytics")}
             >
               <BarChart3 className="h-4 w-4 mr-1.5" /> Analytics
+            </Button>
+            <Button
+              data-testid="button-ai-insights"
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => setLocation("/admin/ai-insights")}
+            >
+              <Brain className="h-4 w-4 mr-1.5" /> AI Insights
             </Button>
             <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); }}>
               Sign Out

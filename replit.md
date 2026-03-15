@@ -99,6 +99,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `PATCH /api/profile` - Auth'd: update profile fields
 - `GET /api/admin/user-profiles?user_type=&state=&profile_complete=&limit=` - Admin: list user profiles with filters
 - `GET /api/admin/analytics` - Admin: analytics dashboard data (clicks by category/state/city, top resources, affiliate vs non-affiliate, reported resources, navigator request stats)
+- `GET /api/admin/ai-insights` - Admin: AI usage analytics (conversations, tokens, cost, crisis triggers, blocked topics, fallback activations, resource gap indicators)
 
 ## Supabase Tables
 - `categories` - id (uuid), name, slug
@@ -130,6 +131,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `/submit-resource` - Community resource submission form
 - `/admin` - Admin resource review dashboard (key-protected, standalone layout)
 - `/admin/analytics` - Admin analytics dashboard
+- `/admin/ai-insights` - AI Insights dashboard (conversations, tokens, cost, crisis, gaps)
 - `/community` - Community feed (coming soon)
 - `/shop` - Shop page (coming soon)
 - `/near-me` - Location-based nearby resources
