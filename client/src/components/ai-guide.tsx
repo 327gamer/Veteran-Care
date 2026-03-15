@@ -10,10 +10,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone } from "lucide-react";
+import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
+
+interface MatchedResourceCard {
+  id: string;
+  title: string;
+  category: string;
+  city: string | null;
+  state: string | null;
+  website_url: string | null;
+  phone: string | null;
+}
 
 interface AiGuideProps {
   open: boolean;
@@ -32,6 +42,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
   const [streamingText, setStreamingText] = useState("");
   const [showNavigatorHint, setShowNavigatorHint] = useState(false);
   const [isCrisis, setIsCrisis] = useState(false);
+  const [matchedResources, setMatchedResources] = useState<MatchedResourceCard[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -64,6 +75,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     setStreamingText("");
     setShowNavigatorHint(false);
     setIsCrisis(false);
+    setMatchedResources([]);
 
     const allMessages = [
       ...chatHistory
@@ -121,7 +133,9 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
           try {
             const event = JSON.parse(jsonStr);
 
-            if (event.type === "chunk") {
+            if (event.type === "resources") {
+              setMatchedResources(event.resources || []);
+            } else if (event.type === "chunk") {
               accumulated += event.text;
               setStreamingText(accumulated);
             } else if (event.type === "done") {
@@ -156,6 +170,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     setIsTyping(false);
     setShowNavigatorHint(false);
     setIsCrisis(false);
+    setMatchedResources([]);
   };
 
   const handleNavigatorClick = () => {
@@ -165,13 +180,30 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     }, 300);
   };
 
+  const renderTextWithLinks = (text: string, keyPrefix: string) => {
+    const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+    const segments = text.split(urlRegex);
+    return segments.map((seg, j) => {
+      if (urlRegex.test(seg)) {
+        urlRegex.lastIndex = 0;
+        const display = seg.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+        return (
+          <a key={`${keyPrefix}-${j}`} href={seg} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 break-all">
+            {display}
+          </a>
+        );
+      }
+      return <span key={`${keyPrefix}-${j}`}>{seg}</span>;
+    });
+  };
+
   const renderContent = (content: string) => {
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
+        return <strong key={i}>{renderTextWithLinks(part.slice(2, -2), `b${i}`)}</strong>;
       }
-      return <span key={i}>{part}</span>;
+      return <span key={i}>{renderTextWithLinks(part, `t${i}`)}</span>;
     });
   };
 
@@ -236,6 +268,32 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                 </div>
               </div>
             ))}
+
+            {matchedResources.length > 0 && (
+              <div className="flex flex-col gap-2 mx-1" data-testid="matched-resources">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Matched Resources</p>
+                {matchedResources.slice(0, 4).map((r) => (
+                  <div key={r.id} data-testid={`resource-card-${r.id}`} className="bg-white border border-border rounded-xl px-3 py-2.5 shadow-sm">
+                    <p className="font-semibold text-xs text-foreground leading-snug">{r.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{r.category}{r.city ? ` · ${r.city}` : ''}{r.state ? `, ${r.state}` : ''}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                      {r.website_url && (
+                        <a href={r.website_url} target="_blank" rel="noopener noreferrer" data-testid={`link-resource-${r.id}`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium">
+                          <ExternalLink className="h-3 w-3" />
+                          Visit Website
+                        </a>
+                      )}
+                      {r.phone && (
+                        <a href={`tel:${r.phone}`} data-testid={`phone-resource-${r.id}`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium">
+                          <Phone className="h-3 w-3" />
+                          {r.phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {isTyping && streamingText && (
               <div className="flex gap-3 max-w-[85%]">

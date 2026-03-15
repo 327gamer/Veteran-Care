@@ -112,6 +112,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
         category: r.category_name,
         city: r.city,
         state: r.state,
+        website_url: r.website_url || null,
+        phone: r.phone || null,
       })),
     })}\n\n`);
   }
