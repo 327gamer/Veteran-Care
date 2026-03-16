@@ -8,6 +8,7 @@ import { streamCompletion } from "./stream";
 import { logUsage } from "./usage-logger";
 import { checkBudget, invalidateBudgetCache } from "./budget-guard";
 import { aiConfig } from "./config";
+import { routeToTrustedServices, type TrustedServiceSuggestion } from "../service-router";
 
 interface ChatRequest {
   messages: Array<{ role: string; content: string }>;
@@ -87,6 +88,13 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
   const detectedCats = detectCategories(lastUserMsg.content);
 
+  let trustedServiceResult: { categorySlug: string; categoryName: string; providers: TrustedServiceSuggestion[] } | null = null;
+  try {
+    trustedServiceResult = await routeToTrustedServices(lastUserMsg.content, userState);
+  } catch (err: any) {
+    console.log("[service-router] Error:", err?.message);
+  }
+
   const budgetStatus = await checkBudget(isGuest);
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -119,6 +127,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       navigatorSuggested: true,
       resourceCount: matchedResources.length,
       fallbackMode: true,
+      trustedServices: trustedServiceResult ? trustedServiceResult.providers : undefined,
+      trustedServiceCategory: trustedServiceResult ? trustedServiceResult.categoryName : undefined,
     })}\n\n`);
     res.end();
 
@@ -161,6 +171,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
         categories: detectedCats,
         navigatorSuggested,
         resourceCount: matchedResources.length,
+        trustedServices: trustedServiceResult ? trustedServiceResult.providers : undefined,
+        trustedServiceCategory: trustedServiceResult ? trustedServiceResult.categoryName : undefined,
       })}\n\n`);
       res.end();
 

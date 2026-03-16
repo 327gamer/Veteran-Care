@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink } from "lucide-react";
+import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink, Mail, Globe, Star, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
@@ -24,6 +24,19 @@ interface MatchedResourceCard {
   state: string | null;
   website_url: string | null;
   phone: string | null;
+}
+
+interface TrustedServiceCard {
+  id: string;
+  name: string;
+  description: string | null;
+  city: string | null;
+  state: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  is_featured: boolean;
+  category_name: string;
 }
 
 interface AiGuideProps {
@@ -44,6 +57,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
   const [showNavigatorHint, setShowNavigatorHint] = useState(false);
   const [isCrisis, setIsCrisis] = useState(false);
   const [matchedResources, setMatchedResources] = useState<MatchedResourceCard[]>([]);
+  const [trustedServices, setTrustedServices] = useState<TrustedServiceCard[]>([]);
+  const [trustedServiceCategory, setTrustedServiceCategory] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -76,6 +91,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     setStreamingText("");
     setShowNavigatorHint(false);
     setIsCrisis(false);
+    setTrustedServices([]);
+    setTrustedServiceCategory("");
     setMatchedResources([]);
 
     const allMessages = [
@@ -142,6 +159,10 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
             } else if (event.type === "done") {
               if (event.navigatorSuggested) setShowNavigatorHint(true);
               if (event.isCrisis) setIsCrisis(true);
+              if (event.trustedServices && event.trustedServices.length > 0) {
+                setTrustedServices(event.trustedServices);
+                setTrustedServiceCategory(event.trustedServiceCategory || "");
+              }
             } else if (event.type === "error") {
               accumulated = event.message;
               setStreamingText(accumulated);
@@ -172,6 +193,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     setShowNavigatorHint(false);
     setIsCrisis(false);
     setMatchedResources([]);
+    setTrustedServices([]);
+    setTrustedServiceCategory("");
   };
 
   const handleNavigatorClick = () => {
@@ -293,6 +316,66 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {trustedServices.length > 0 && (
+              <div className="flex flex-col gap-2 mx-1" data-testid="trusted-service-suggestions">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
+                  <p className="text-[10px] font-medium text-green-700 uppercase tracking-wide">
+                    Trusted {trustedServiceCategory} Partners
+                  </p>
+                </div>
+                {trustedServices.slice(0, 3).map((s) => (
+                  <div key={s.id} data-testid={`trusted-service-card-${s.id}`} className="bg-white border border-green-200 rounded-xl px-3 py-2.5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-xs text-foreground leading-snug">{s.name}</p>
+                        {s.description && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{s.description}</p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {s.category_name}{s.city ? ` · ${s.city}` : ''}{s.state ? `, ${s.state}` : ''}
+                        </p>
+                      </div>
+                      {s.is_featured && (
+                        <span className="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-amber-200 flex-shrink-0">
+                          <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                      {s.website && (
+                        <a href={s.website} target="_blank" rel="noopener noreferrer" data-testid={`link-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
+                          <Globe className="h-3 w-3" />
+                          Website
+                        </a>
+                      )}
+                      {s.phone && (
+                        <a href={`tel:${s.phone}`} data-testid={`phone-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
+                          <Phone className="h-3 w-3" />
+                          {s.phone}
+                        </a>
+                      )}
+                      {s.email && (
+                        <a href={`mailto:${s.email}`} data-testid={`email-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
+                          <Mail className="h-3 w-3" />
+                          Email
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <a
+                  href="/trusted-services"
+                  data-testid="link-view-all-trusted"
+                  className="text-[11px] text-green-700 hover:text-green-600 font-medium text-center py-1"
+                  onClick={(e) => { e.preventDefault(); onOpenChange(false); window.location.href = '/trusted-services'; }}
+                >
+                  View all Trusted Services →
+                </a>
               </div>
             )}
 
