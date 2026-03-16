@@ -2444,6 +2444,21 @@ export async function registerRoutes(
     return res.json(data || []);
   });
 
+  app.get("/api/admin/trusted-services", requireAdmin, async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
+    let query = supabaseAdmin
+      .from("trusted_services")
+      .select("*, trusted_service_categories(id, slug, name)")
+      .order("display_order")
+      .order("created_at", { ascending: false });
+    if (req.query.category_id) query = query.eq("category_id", req.query.category_id as string);
+    if (req.query.is_active === "true") query = query.eq("is_active", true);
+    if (req.query.is_active === "false") query = query.eq("is_active", false);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
   app.post("/api/admin/trusted-services", requireAdmin, async (req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
     const { data, error } = await supabaseAdmin

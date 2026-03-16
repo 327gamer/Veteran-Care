@@ -1,0 +1,58 @@
+Please begin Step 42 — Trusted Services Partner Onboarding Structure.
+
+Step 41 UI is now in place.
+
+Goal:
+Build the structure for adding real Trusted Services partners into the live Veteran Care app so we can start organizing providers under the Trusted Services categories and prepare for lead generation in the next step.
+
+Important context:
+- Keep the platform veteran-first and trustworthy
+- Trusted Services should feel clean, vetted, and professional
+- Do not make this feel like a cluttered ad marketplace
+- Free resources remain primary; Trusted Services are secondary support options
+
+What I want built in this step:
+
+1. Partner/provider card structure
+Each Trusted Services category should support provider listings/cards with:
+- provider name
+- short description
+- city/state
+- phone
+- website
+- email if available
+- trusted / verified badge placeholder
+- CTA button such as “Connect” or “Learn More”
+
+2. Category assignment
+Partners must be assignable to the Trusted Services categories already created in Step 41.
+
+3. Admin-ready management
+Prepare the admin/data structure so trusted partners can be:
+- added
+- edited
+- activated
+- deactivated
+- assigned to categories
+- ordered if needed
+
+4. Public category pages
+When a user clicks a Trusted Services category, they should see the provider listings for that category displayed cleanly.
+
+5. Empty-state handling
+If no providers exist yet in a category, show a clean placeholder message instead of a broken or blank page.
+
+6. Keep lead capture out of this step
+Do not build the actual lead form yet.
+This step is only for partner onboarding structure and public display.
+
+7. If Trusted Services Supabase setup is still incomplete
+If the Trusted Services tables/categories still need the SQL activation in Supabase, please include that as part of getting Step 42 operational and tell me exactly what still needs to be done in plain English.
+
+Before marking Step 42 complete, please provide:
+1. what pages/components were created or changed
+2. what data model was set up
+3. how partners are assigned to categories
+4. how providers display publicly
+5. whether any Supabase SQL still needs to be run
+6. what the next step should be for lead capture and tracking
