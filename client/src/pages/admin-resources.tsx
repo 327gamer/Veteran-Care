@@ -746,6 +746,15 @@ export default function AdminResources() {
             >
               <Brain className="h-4 w-4 mr-1.5" /> AI Insights
             </Button>
+            <Button
+              data-testid="button-admin-trusted"
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => setLocation("/admin/trusted-services")}
+            >
+              <ShieldCheck className="h-4 w-4 mr-1.5" /> Partners
+            </Button>
             <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); }}>
               Sign Out
             </Button>

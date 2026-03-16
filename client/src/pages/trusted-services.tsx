@@ -18,6 +18,8 @@ import {
   Phone,
   ExternalLink,
   MapPin,
+  Mail,
+  Star,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -38,6 +40,7 @@ interface TrustedService {
   short_description: string;
   website_url: string;
   phone: string;
+  email: string;
   city: string;
   state: string;
   verification_status: string;
@@ -117,7 +120,14 @@ export default function TrustedServices() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-sm">{service.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-sm">{service.name}</h3>
+                        {service.is_featured && (
+                          <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200">
+                            <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
+                          </Badge>
+                        )}
+                      </div>
                       {(service.city || service.state) && (
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3" />
@@ -167,6 +177,17 @@ export default function TrustedServices() {
                         data-testid={`button-phone-${service.id}`}
                       >
                         <Phone className="h-3 w-3 mr-1.5" /> Call
+                      </Button>
+                    )}
+                    {service.email && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        onClick={() => window.open(`mailto:${service.email}`)}
+                        data-testid={`button-email-${service.id}`}
+                      >
+                        <Mail className="h-3 w-3 mr-1.5" /> Email
                       </Button>
                     )}
                   </div>

@@ -57,7 +57,10 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `client/src/lib/category-config.ts` - Maps Supabase category slugs to icons, colors, and descriptions
 - `client/src/components/layout.tsx` - App shell with top bar, bottom nav, and AI guide listener
 - `client/src/components/resource-detail.tsx` - Rich resource detail sheet with click tracking
+- `client/src/pages/trusted-services.tsx` - Public Trusted Services page (category grid → provider listings)
+- `client/src/pages/admin-trusted-services.tsx` - Admin partner management (add/edit/activate/deactivate/feature)
 - `supabase/create_resource_clicks.sql` - SQL to create click tracking table in Supabase
+- `supabase/create_trusted_services.sql` - SQL to create trusted_service_categories and trusted_services tables
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
@@ -94,6 +97,13 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `POST /api/admin/resources/duplicate-check` - Admin: find duplicate resources by title within a state (body: {state, category?})
 - `POST /api/admin/resources/cleanup-duplicates` - Admin: remove duplicate resources keeping oldest (body: {state, dry_run?})
 - `POST /api/admin/states/:code/clone-resources` - Admin: clone national resources from template state to new state (body: {source_state?, categories?, exclude_categories?})
+- `GET /api/trusted-services/categories` - Public: list active trusted service categories
+- `GET /api/trusted-services?category=<slug>&state=<state>` - Public: list active trusted services, optionally filtered by category slug or state
+- `GET /api/admin/trusted-services/categories` - Admin: list all trusted service categories
+- `GET /api/admin/trusted-services?category_id=<id>&is_active=<bool>` - Admin: list all trusted services with filters
+- `POST /api/admin/trusted-services` - Admin: create a trusted service partner
+- `PATCH /api/admin/trusted-services/:id` - Admin: update a trusted service partner
+- `DELETE /api/admin/trusted-services/:id` - Admin: deactivate a trusted service partner
 - `GET /api/profile` - Auth'd: get current user's profile (returns `{profile: null}` if no profile yet)
 - `POST /api/profile` - Auth'd: create/upsert user profile (first_name, last_name, email, phone, user_type required; branch_of_service, interests, state, city, zip optional; sets profile_complete=true if enrichment data provided)
 - `PATCH /api/profile` - Auth'd: update profile fields
