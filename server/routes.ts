@@ -5,7 +5,7 @@ import { supabase, supabaseAdmin, supabaseForUser } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
-import { sendNavigatorNotification } from "./lead-email";
+import { sendNavigatorNotification, sendTrustedServiceLeadNotification } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 
 let hasGeoColumns = true;
@@ -2503,6 +2503,26 @@ export async function registerRoutes(
       .select()
       .single();
     if (error) return res.status(400).json({ error: error.message });
+
+    try {
+      const { data: provider } = await supabaseAdmin
+        .from("trusted_services")
+        .select("name, email, category_id, trusted_service_categories(name)")
+        .eq("id", provider_id)
+        .single();
+
+      const categoryName = (provider as any)?.trusted_service_categories?.name || null;
+
+      const result = await sendTrustedServiceLeadNotification(
+        data.id,
+        { name: provider?.name || provider_name, email: provider?.email || null, category_name: categoryName },
+        { name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, created_at: data.created_at }
+      );
+      console.log(`[trusted-leads] Lead ${data.id} notifications: partner=${result.partnerSent}, admin=${result.adminSent}`);
+    } catch (err: any) {
+      console.log(`[trusted-leads] Notification error for lead ${data.id}:`, err?.message);
+    }
+
     return res.json(data);
   });
 

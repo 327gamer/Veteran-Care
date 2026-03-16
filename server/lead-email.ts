@@ -315,6 +315,166 @@ export async function sendNavigatorNotification(
   }
 }
 
+interface TrustedServiceLeadData {
+  leadId: string;
+  providerName: string;
+  categoryName: string | null;
+  leadName: string;
+  leadEmail: string;
+  leadPhone: string | null;
+  leadCity: string | null;
+  leadState: string | null;
+  message: string | null;
+  createdAt: string;
+}
+
+function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: boolean): string {
+  const timestamp = new Date(lead.createdAt).toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const headerText = isAdminCopy
+    ? `New Trusted Services Lead — ${escapeHtml(lead.providerName)}`
+    : `New Connection Request via ${platform.name}`;
+
+  const headerSubtext = isAdminCopy
+    ? `A veteran has requested contact with a Trusted Services partner.`
+    : `A veteran would like to connect with your services.`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">${headerText}</h2>
+    <p style="margin: 0; color: #15803D; font-size: 13px;">${headerSubtext}</p>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px; width: 140px;">Provider</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.providerName)}</td>
+    </tr>
+    ${lead.categoryName ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Category</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(lead.categoryName)}</td>
+    </tr>` : ""}
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Veteran Name</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.leadName)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Email</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="mailto:${escapeHtml(lead.leadEmail)}" style="color: #2563EB;">${escapeHtml(lead.leadEmail)}</a></td>
+    </tr>
+    ${lead.leadPhone ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Phone</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="tel:${escapeHtml(lead.leadPhone)}" style="color: #2563EB;">${escapeHtml(lead.leadPhone)}</a></td>
+    </tr>` : ""}
+    ${lead.leadCity || lead.leadState ? `<tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Location</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${[escapeHtml(lead.leadCity), escapeHtml(lead.leadState)].filter(Boolean).join(", ")}</td>
+    </tr>` : ""}
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Submitted</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${timestamp} ET</td>
+    </tr>
+  </table>
+
+  ${lead.message ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Veteran's Message</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
+  </div>` : ""}
+
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0; font-size: 13px; color: #92400E;">
+      <strong>Next Steps:</strong> ${isAdminCopy
+        ? "This lead has also been sent to the partner. Monitor status in the admin dashboard."
+        : `Please reach out to this veteran using their preferred contact method. Thank you for supporting our veterans through ${platform.name}.`}
+    </p>
+  </div>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
+    <p>This lead was submitted via ${platform.name} Trusted Services.</p>
+    <p>Lead ID: ${lead.leadId}</p>
+  </div>
+
+</body>
+</html>`;
+}
+
+export async function sendTrustedServiceLeadNotification(
+  leadId: string,
+  providerData: { name: string; email: string | null; category_name: string | null },
+  leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; created_at: string }
+): Promise<{ partnerSent: boolean; adminSent: boolean; errors: string[] }> {
+  const errors: string[] = [];
+  let partnerSent = false;
+  let adminSent = false;
+
+  const data: TrustedServiceLeadData = {
+    leadId,
+    providerName: providerData.name,
+    categoryName: providerData.category_name,
+    leadName: leadData.name,
+    leadEmail: leadData.email,
+    leadPhone: leadData.phone,
+    leadCity: leadData.city,
+    leadState: leadData.state,
+    message: leadData.message,
+    createdAt: leadData.created_at,
+  };
+
+  if (providerData.email) {
+    try {
+      const partnerHtml = buildTrustedServiceLeadHtml(data, false);
+      const { error: emailErr } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [providerData.email],
+        subject: `New Veteran Connection Request — ${platform.name}`,
+        html: partnerHtml,
+      });
+      if (emailErr) {
+        console.log(`[email] Trusted service partner notification failed:`, emailErr.message);
+        errors.push(`Partner: ${emailErr.message}`);
+      } else {
+        partnerSent = true;
+        console.log(`[email] Trusted service partner notification sent to ${providerData.email}`);
+      }
+    } catch (err: any) {
+      errors.push(`Partner: ${err?.message}`);
+    }
+  } else {
+    console.log(`[email] No partner email for ${providerData.name} — skipping partner notification`);
+    errors.push("Partner has no email on file");
+  }
+
+  try {
+    const adminHtml = buildTrustedServiceLeadHtml(data, true);
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [DEFAULT_NOTIFY_EMAIL],
+      subject: `[Trusted Services Lead] ${providerData.name} — ${leadData.name}`,
+      html: adminHtml,
+    });
+    if (emailErr) {
+      console.log(`[email] Admin trusted service notification failed:`, emailErr.message);
+      errors.push(`Admin: ${emailErr.message}`);
+    } else {
+      adminSent = true;
+      console.log(`[email] Admin trusted service notification sent to ${DEFAULT_NOTIFY_EMAIL}`);
+    }
+  } catch (err: any) {
+    errors.push(`Admin: ${err?.message}`);
+  }
+
+  return { partnerSent, adminSent, errors };
+}
+
 export async function sendLeadNotification(
   leadId: string,
   partnerId: string
