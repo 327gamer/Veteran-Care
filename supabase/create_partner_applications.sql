@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS partner_applications (
   status TEXT NOT NULL DEFAULT 'prospect',
   admin_notes TEXT,
   converted_provider_id UUID REFERENCES trusted_services(id),
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  stripe_price_id TEXT,
+  stripe_checkout_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -26,3 +30,5 @@ CREATE INDEX IF NOT EXISTS idx_partner_applications_status ON partner_applicatio
 CREATE INDEX IF NOT EXISTS idx_partner_applications_category ON partner_applications(category_id);
 CREATE INDEX IF NOT EXISTS idx_partner_applications_state ON partner_applications(state);
 CREATE INDEX IF NOT EXISTS idx_partner_applications_created ON partner_applications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_partner_apps_stripe_customer ON partner_applications(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_partner_apps_stripe_sub ON partner_applications(stripe_subscription_id);

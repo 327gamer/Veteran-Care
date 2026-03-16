@@ -8,6 +8,8 @@ import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
+import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent } from "./stripe-service";
+import express from "express";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
@@ -2646,6 +2648,60 @@ export async function registerRoutes(
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/partner-applications/:id/approve", requireAdmin, async (req, res) => {
+    if (!isStripeEnabled()) {
+      return res.status(503).json({ error: "Stripe is not configured. Add STRIPE_SECRET_KEY." });
+    }
+    try {
+      const appRows = await pgQuery(`SELECT * FROM partner_applications WHERE id = $1`, [req.params.id]);
+      if (appRows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const application = appRows[0];
+
+      if (application.status === "active") return res.status(400).json({ error: "Partner is already active" });
+      if (!application.category_id) return res.status(400).json({ error: "Application must have a category before approval" });
+
+      const { url, sessionId } = await createPartnerCheckoutSession(req.params.id);
+
+      return res.json({
+        checkoutUrl: url,
+        sessionId,
+        status: "approved_pending_payment",
+        message: "Checkout session created. Send the payment link to the partner.",
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/stripe/webhook", async (req, res) => {
+    if (!stripe) return res.status(503).json({ error: "Stripe not configured" });
+    const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event: any;
+    try {
+      if (webhookSecret && sig) {
+        event = stripe.webhooks.constructEvent(req.rawBody as Buffer, sig, webhookSecret);
+      } else {
+        event = req.body;
+        console.log("[stripe] WARNING: No webhook secret configured — accepting unverified event");
+      }
+    } catch (err: any) {
+      console.log(`[stripe] Webhook signature verification failed:`, err.message);
+      return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+    }
+
+    console.log(`[stripe] Webhook received: ${event.type}`);
+
+    try {
+      await handleWebhookEvent(event);
+      return res.json({ received: true });
+    } catch (err: any) {
+      console.log(`[stripe] Webhook handler error:`, err.message);
+      return res.status(500).json({ error: err.message });
     }
   });
 

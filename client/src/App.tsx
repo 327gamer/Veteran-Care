@@ -21,6 +21,7 @@ import AdminTrustedServices from "@/pages/admin-trusted-services";
 import AdminTrustedServiceLeads from "@/pages/admin-trusted-service-leads";
 import AdminPartnerProspects from "@/pages/admin-partner-prospects";
 import PartnerApply from "@/pages/partner-apply";
+import PartnerPaymentSuccess from "@/pages/partner-payment-success";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 
@@ -77,6 +78,12 @@ function Router() {
       <Route path="/partner-apply">
         <Layout>
           <PartnerApply />
+        </Layout>
+      </Route>
+
+      <Route path="/partner-payment-success">
+        <Layout>
+          <PartnerPaymentSuccess />
         </Layout>
       </Route>
 

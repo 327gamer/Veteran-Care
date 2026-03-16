@@ -28,6 +28,9 @@ import {
   ArrowRightCircle,
   FileText,
   DollarSign,
+  CreditCard,
+  Link2,
+  Copy,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
@@ -48,6 +51,9 @@ interface PartnerApplication {
   status: string;
   admin_notes: string | null;
   converted_provider_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_checkout_url: string | null;
   created_at: string;
   updated_at: string;
   trusted_service_categories: { name: string; slug: string } | null;
@@ -56,6 +62,7 @@ interface PartnerApplication {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   prospect: { label: "Prospect", color: "bg-blue-100 text-blue-700 border-blue-200", icon: UserPlus },
   pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock },
+  approved_pending_payment: { label: "Awaiting Payment", color: "bg-purple-100 text-purple-700 border-purple-200", icon: CreditCard },
   active: { label: "Active Partner", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
   inactive: { label: "Inactive", color: "bg-gray-100 text-gray-500 border-gray-200", icon: XCircle },
 };
@@ -101,6 +108,31 @@ export default function AdminPartnerProspects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
       toast({ title: "Updated", description: "Application updated successfully." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/partner-applications/${id}/approve`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-admin-key": localStorage.getItem("adminKey") || "" },
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
+      if (data.checkoutUrl) {
+        navigator.clipboard.writeText(data.checkoutUrl).catch(() => {});
+        toast({
+          title: "Payment Link Created",
+          description: "Checkout URL has been copied to your clipboard. Send it to the partner.",
+        });
+      }
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -185,6 +217,7 @@ export default function AdminPartnerProspects() {
             { key: "all", label: "All" },
             { key: "prospect", label: "Prospects" },
             { key: "pending", label: "Pending" },
+            { key: "approved_pending_payment", label: "Awaiting Payment" },
             { key: "active", label: "Active" },
             { key: "inactive", label: "Inactive" },
           ].map((f) => (
@@ -334,6 +367,42 @@ export default function AdminPartnerProspects() {
                           )}
                         </div>
 
+                        {app.stripe_checkout_url && app.status === "approved_pending_payment" && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                            <div className="flex items-center gap-1.5 text-[10px] text-purple-700 uppercase tracking-wide mb-1.5">
+                              <CreditCard className="h-3 w-3" />
+                              Payment Link
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                readOnly
+                                value={app.stripe_checkout_url}
+                                className="flex-1 text-[11px] bg-white border rounded px-2 py-1 text-muted-foreground truncate"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1"
+                                data-testid={`button-copy-link-${app.id}`}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(app.stripe_checkout_url!);
+                                  toast({ title: "Copied", description: "Payment link copied to clipboard." });
+                                }}
+                              >
+                                <Copy className="h-3 w-3" />
+                                Copy
+                              </Button>
+                            </div>
+                            <p className="text-[10px] text-purple-600 mt-1">Send this link to the partner to complete their subscription payment.</p>
+                          </div>
+                        )}
+
+                        {app.stripe_subscription_id && (
+                          <div className="bg-muted/50 rounded-lg px-3 py-2 mb-3 text-[10px] text-muted-foreground">
+                            Stripe: Customer {app.stripe_customer_id?.slice(0, 18)}... · Subscription {app.stripe_subscription_id?.slice(0, 18)}...
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="flex-1 min-w-[140px]">
                             <Select
@@ -346,13 +415,31 @@ export default function AdminPartnerProspects() {
                               <SelectContent>
                                 <SelectItem value="prospect">Prospect</SelectItem>
                                 <SelectItem value="pending">Pending Review</SelectItem>
+                                <SelectItem value="approved_pending_payment">Awaiting Payment</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="inactive">Inactive</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
-                          {!app.converted_provider_id && app.category_id && (
+                          {!app.stripe_subscription_id && app.category_id && app.status !== "active" && app.status !== "approved_pending_payment" && (
+                            <Button
+                              size="sm"
+                              className="text-xs gap-1 bg-purple-600 hover:bg-purple-700"
+                              data-testid={`button-approve-${app.id}`}
+                              disabled={approveMutation.isPending}
+                              onClick={() => {
+                                if (confirm(`Approve "${app.company_name}" and generate a Stripe payment link? The partner will not be visible until they pay.`)) {
+                                  approveMutation.mutate(app.id);
+                                }
+                              }}
+                            >
+                              <CreditCard className="h-3.5 w-3.5" />
+                              Approve & Send Payment
+                            </Button>
+                          )}
+
+                          {!app.converted_provider_id && app.category_id && app.status === "active" && (
                             <Button
                               size="sm"
                               className="text-xs gap-1 bg-green-600 hover:bg-green-700"
