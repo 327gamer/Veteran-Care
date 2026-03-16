@@ -61,6 +61,8 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `client/src/pages/admin-trusted-services.tsx` - Admin partner management (add/edit/activate/deactivate/feature)
 - `supabase/create_resource_clicks.sql` - SQL to create click tracking table in Supabase
 - `supabase/create_trusted_services.sql` - SQL to create trusted_service_categories and trusted_services tables
+- `supabase/create_trusted_service_leads.sql` - SQL to create trusted_service_leads table for lead capture
+- `client/src/pages/admin-trusted-service-leads.tsx` - Admin lead management (view/filter/update status)
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
@@ -104,6 +106,9 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `POST /api/admin/trusted-services` - Admin: create a trusted service partner
 - `PATCH /api/admin/trusted-services/:id` - Admin: update a trusted service partner
 - `DELETE /api/admin/trusted-services/:id` - Admin: deactivate a trusted service partner
+- `POST /api/trusted-service-leads` - Public: submit a lead (provider_id, name, email required)
+- `GET /api/admin/trusted-service-leads?status=<status>` - Admin: list leads with optional status filter
+- `PATCH /api/admin/trusted-service-leads/:id` - Admin: update lead status (new/contacted/closed)
 - `GET /api/profile` - Auth'd: get current user's profile (returns `{profile: null}` if no profile yet)
 - `POST /api/profile` - Auth'd: create/upsert user profile (first_name, last_name, email, phone, user_type required; branch_of_service, interests, state, city, zip optional; sets profile_complete=true if enrichment data provided)
 - `PATCH /api/profile` - Auth'd: update profile fields

@@ -18,6 +18,7 @@ import AdminResources from "@/pages/admin-resources";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminAiInsights from "@/pages/admin-ai-insights";
 import AdminTrustedServices from "@/pages/admin-trusted-services";
+import AdminTrustedServiceLeads from "@/pages/admin-trusted-service-leads";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin/ai-insights" component={AdminAiInsights} />
       <Route path="/admin/trusted-services" component={AdminTrustedServices} />
+      <Route path="/admin/trusted-service-leads" component={AdminTrustedServiceLeads} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">

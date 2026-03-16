@@ -1,0 +1,227 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ShieldCheck,
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  User,
+  MessageSquare,
+  Building2,
+} from "lucide-react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/lib/use-auth";
+
+interface TrustedServiceLead {
+  id: string;
+  provider_id: string;
+  provider_name: string;
+  category_id: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  message: string | null;
+  status: string;
+  created_at: string;
+}
+
+const statusColors: Record<string, string> = {
+  new: "bg-blue-100 text-blue-700 border-blue-200",
+  contacted: "bg-amber-100 text-amber-700 border-amber-200",
+  closed: "bg-green-100 text-green-700 border-green-200",
+};
+
+export default function AdminTrustedServiceLeads() {
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  if (!isAdmin) {
+    return (
+      <div className="p-4 text-center py-20">
+        <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+        <p className="text-sm text-muted-foreground">Admin access required.</p>
+      </div>
+    );
+  }
+
+  const { data: leads = [], isLoading } = useQuery<TrustedServiceLead[]>({
+    queryKey: ["/api/admin/trusted-service-leads", filterStatus],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      const res = await fetch(`/api/admin/trusted-service-leads?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load leads");
+      return res.json();
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/admin/trusted-service-leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/trusted-service-leads"] });
+    },
+  });
+
+  const newCount = leads.filter(l => l.status === "new").length;
+  const contactedCount = leads.filter(l => l.status === "contacted").length;
+  const closedCount = leads.filter(l => l.status === "closed").length;
+
+  return (
+    <div className="p-4 space-y-4 animate-in fade-in duration-300">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin/trusted-services")} data-testid="button-back-admin">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-leads-title">Trusted Services Leads</h1>
+          <p className="text-xs text-muted-foreground">Veteran connection requests to partners</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Card>
+          <CardContent className="p-3 text-center">
+            <p className="text-lg font-bold text-blue-600">{newCount}</p>
+            <p className="text-[10px] text-muted-foreground">New</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <p className="text-lg font-bold text-amber-600">{contactedCount}</p>
+            <p className="text-[10px] text-muted-foreground">Contacted</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <p className="text-lg font-bold text-green-600">{closedCount}</p>
+            <p className="text-[10px] text-muted-foreground">Closed</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex gap-2">
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="h-8 text-xs w-[140px]" data-testid="select-filter-lead-status">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+            <SelectItem value="contacted">Contacted</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground self-center ml-auto">{leads.length} lead{leads.length !== 1 ? "s" : ""}</p>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-10">
+          <p className="text-sm text-muted-foreground">Loading leads...</p>
+        </div>
+      ) : leads.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No leads yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Connection requests from veterans will appear here.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {leads.map(lead => (
+            <Card key={lead.id} data-testid={`card-lead-${lead.id}`}>
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" />
+                        {lead.name}
+                      </span>
+                      <Badge className={`text-[9px] h-4 px-1.5 ${statusColors[lead.status] || ""}`}>
+                        {lead.status}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
+                      <Building2 className="h-3 w-3" />
+                      {lead.provider_name}
+                    </p>
+                  </div>
+                  <Select
+                    value={lead.status}
+                    onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v })}
+                  >
+                    <SelectTrigger className="h-7 text-[10px] w-[100px]" data-testid={`select-status-${lead.id}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    <a href={`mailto:${lead.email}`} className="text-primary hover:underline truncate">{lead.email}</a>
+                  </span>
+                  {lead.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      <a href={`tel:${lead.phone}`} className="text-primary hover:underline">{lead.phone}</a>
+                    </span>
+                  )}
+                  {(lead.city || lead.state) && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {[lead.city, lead.state].filter(Boolean).join(", ")}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(lead.created_at).toLocaleDateString()} {new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {lead.message && (
+                  <div className="flex items-start gap-1.5 bg-muted/30 rounded p-2 mt-1">
+                    <MessageSquare className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">{lead.message}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

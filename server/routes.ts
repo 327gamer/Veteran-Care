@@ -2492,5 +2492,46 @@ export async function registerRoutes(
     return res.json({ success: true });
   });
 
+  app.post("/api/trusted-service-leads", async (req, res) => {
+    const { provider_id, provider_name, category_id, name, email, phone, city, state, message } = req.body;
+    if (!provider_id || !name || !email) {
+      return res.status(400).json({ error: "provider_id, name, and email are required" });
+    }
+    const { data, error } = await supabaseAdmin
+      .from("trusted_service_leads")
+      .insert({ provider_id, provider_name: provider_name || "", category_id: category_id || null, name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, status: "new" })
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.get("/api/admin/trusted-service-leads", requireAdmin, async (req, res) => {
+    let query = supabaseAdmin
+      .from("trusted_service_leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (req.query.status && req.query.status !== "all") query = query.eq("status", req.query.status as string);
+    if (req.query.provider_id) query = query.eq("provider_id", req.query.provider_id as string);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.patch("/api/admin/trusted-service-leads/:id", requireAdmin, async (req, res) => {
+    const { status } = req.body;
+    if (!status || !["new", "contacted", "closed"].includes(status)) {
+      return res.status(400).json({ error: "Valid status required: new, contacted, closed" });
+    }
+    const { data, error } = await supabaseAdmin
+      .from("trusted_service_leads")
+      .update({ status })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json(data);
+  });
+
   return httpServer;
 }

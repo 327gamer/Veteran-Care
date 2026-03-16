@@ -491,14 +491,25 @@ export default function AdminTrustedServices() {
           <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-trusted-title">Trusted Services Partners</h1>
           <p className="text-xs text-muted-foreground">Manage vetted service providers</p>
         </div>
-        <Button
-          data-testid="button-add-partner"
-          size="sm"
-          onClick={() => { setShowAddForm(true); setEditingId(null); setForm({ ...emptyForm }); }}
-          className="h-8 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" /> Add Partner
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            data-testid="button-view-leads"
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation("/admin/trusted-service-leads")}
+            className="h-8 text-xs"
+          >
+            Leads
+          </Button>
+          <Button
+            data-testid="button-add-partner"
+            size="sm"
+            onClick={() => { setShowAddForm(true); setEditingId(null); setForm({ ...emptyForm }); }}
+            className="h-8 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Add Partner
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">

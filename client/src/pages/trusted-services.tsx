@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ShieldCheck,
   Home,
@@ -20,6 +23,10 @@ import {
   MapPin,
   Mail,
   Star,
+  Handshake,
+  X,
+  CheckCircle2,
+  Send,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -62,9 +69,23 @@ const iconMap: Record<string, any> = {
   "heart-pulse": HeartPulse,
 };
 
+type LeadForm = {
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  state: string;
+  message: string;
+};
+
+const emptyLeadForm: LeadForm = { name: "", email: "", phone: "", city: "", state: "", message: "" };
+
 export default function TrustedServices() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [connectService, setConnectService] = useState<TrustedService | null>(null);
+  const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
+  const [submitted, setSubmitted] = useState(false);
 
   const { data: categories = [] } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/trusted-services/categories"],
@@ -82,7 +103,178 @@ export default function TrustedServices() {
     enabled: !!selectedCategory,
   });
 
+  const leadMutation = useMutation({
+    mutationFn: async (data: { service: TrustedService; form: LeadForm }) => {
+      const res = await fetch("/api/trusted-service-leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: data.service.id,
+          provider_name: data.service.name,
+          category_id: data.service.category_id,
+          name: data.form.name,
+          email: data.form.email,
+          phone: data.form.phone || undefined,
+          city: data.form.city || undefined,
+          state: data.form.state || undefined,
+          message: data.form.message || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to submit");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      setLeadForm({ ...emptyLeadForm });
+    },
+  });
+
+  const handleSubmitLead = () => {
+    if (!connectService || !leadForm.name || !leadForm.email) return;
+    leadMutation.mutate({ service: connectService, form: leadForm });
+  };
+
+  const closeModal = () => {
+    setConnectService(null);
+    setLeadForm({ ...emptyLeadForm });
+    setSubmitted(false);
+    leadMutation.reset();
+  };
+
   const selectedCat = categories.find(c => c.slug === selectedCategory);
+
+  const ConnectModal = () => {
+    if (!connectService) return null;
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
+        <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Handshake className="h-5 w-5 text-primary" />
+              <h3 className="font-heading font-bold text-base text-primary">Connect With Provider</h3>
+            </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeModal} data-testid="button-close-connect-modal">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {submitted ? (
+            <div className="text-center py-6 space-y-3">
+              <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
+              <h4 className="font-heading font-bold text-base">Request Sent</h4>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                Thank you. Your request has been sent to this Trusted Services partner. They will contact you shortly.
+              </p>
+              <Button size="sm" className="mt-3" onClick={closeModal} data-testid="button-done-connect">
+                Done
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Card className="bg-muted/30">
+                <CardContent className="p-3">
+                  <p className="text-sm font-semibold">{connectService.name}</p>
+                  {connectService.trusted_service_categories?.name && (
+                    <p className="text-[11px] text-muted-foreground">{connectService.trusted_service_categories.name}</p>
+                  )}
+                  {(connectService.city || connectService.state) && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <MapPin className="h-3 w-3" />
+                      {[connectService.city, connectService.state].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Your Name *</Label>
+                  <Input
+                    data-testid="input-lead-name"
+                    value={leadForm.name}
+                    onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Full name"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Your Email *</Label>
+                  <Input
+                    data-testid="input-lead-email"
+                    type="email"
+                    value={leadForm.email}
+                    onChange={e => setLeadForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="you@example.com"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Phone (optional)</Label>
+                  <Input
+                    data-testid="input-lead-phone"
+                    value={leadForm.phone}
+                    onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="(xxx) xxx-xxxx"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">City (optional)</Label>
+                    <Input
+                      data-testid="input-lead-city"
+                      value={leadForm.city}
+                      onChange={e => setLeadForm(f => ({ ...f, city: e.target.value }))}
+                      placeholder="City"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">State (optional)</Label>
+                    <Input
+                      data-testid="input-lead-state"
+                      value={leadForm.state}
+                      onChange={e => setLeadForm(f => ({ ...f, state: e.target.value.toUpperCase() }))}
+                      placeholder="SC"
+                      maxLength={2}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Message (optional)</Label>
+                  <Textarea
+                    data-testid="input-lead-message"
+                    value={leadForm.message}
+                    onChange={e => setLeadForm(f => ({ ...f, message: e.target.value }))}
+                    placeholder="How can this provider help you?"
+                    className="text-sm min-h-[60px]"
+                  />
+                </div>
+
+                {leadMutation.isError && (
+                  <p className="text-xs text-destructive">{(leadMutation.error as Error).message}</p>
+                )}
+
+                <Button
+                  data-testid="button-submit-lead"
+                  className="w-full h-10"
+                  onClick={handleSubmitLead}
+                  disabled={!leadForm.name || !leadForm.email || leadMutation.isPending}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {leadMutation.isPending ? "Sending..." : "Connect With This Provider"}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   if (selectedCategory && selectedCat) {
     return (
@@ -145,57 +337,70 @@ export default function TrustedServices() {
                   {service.short_description && (
                     <p className="text-xs text-muted-foreground leading-relaxed mb-3">{service.short_description}</p>
                   )}
-                  <div className="flex items-center gap-2">
-                    {service.cta_url && (
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs flex-1"
-                        onClick={() => window.open(service.cta_url, "_blank")}
-                        data-testid={`button-cta-${service.id}`}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1.5" />
-                        {service.cta_text || "Learn More"}
-                      </Button>
-                    )}
-                    {service.website_url && !service.cta_url && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs flex-1"
-                        onClick={() => window.open(service.website_url, "_blank")}
-                        data-testid={`button-website-${service.id}`}
-                      >
-                        <Globe className="h-3 w-3 mr-1.5" /> Website
-                      </Button>
-                    )}
-                    {service.phone && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
-                        onClick={() => window.open(`tel:${service.phone}`)}
-                        data-testid={`button-phone-${service.id}`}
-                      >
-                        <Phone className="h-3 w-3 mr-1.5" /> Call
-                      </Button>
-                    )}
-                    {service.email && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
-                        onClick={() => window.open(`mailto:${service.email}`)}
-                        data-testid={`button-email-${service.id}`}
-                      >
-                        <Mail className="h-3 w-3 mr-1.5" /> Email
-                      </Button>
-                    )}
+                  <div className="space-y-2">
+                    <Button
+                      size="sm"
+                      className="w-full h-9 text-xs"
+                      onClick={() => setConnectService(service)}
+                      data-testid={`button-connect-${service.id}`}
+                    >
+                      <Handshake className="h-3.5 w-3.5 mr-1.5" /> Connect With This Provider
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      {service.cta_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs flex-1"
+                          onClick={() => window.open(service.cta_url, "_blank")}
+                          data-testid={`button-cta-${service.id}`}
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1.5" />
+                          {service.cta_text || "Learn More"}
+                        </Button>
+                      )}
+                      {service.website_url && !service.cta_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs flex-1"
+                          onClick={() => window.open(service.website_url, "_blank")}
+                          data-testid={`button-website-${service.id}`}
+                        >
+                          <Globe className="h-3 w-3 mr-1.5" /> Website
+                        </Button>
+                      )}
+                      {service.phone && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          onClick={() => window.open(`tel:${service.phone}`)}
+                          data-testid={`button-phone-${service.id}`}
+                        >
+                          <Phone className="h-3 w-3 mr-1.5" /> Call
+                        </Button>
+                      )}
+                      {service.email && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          onClick={() => window.open(`mailto:${service.email}`)}
+                          data-testid={`button-email-${service.id}`}
+                        >
+                          <Mail className="h-3 w-3 mr-1.5" /> Email
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        <ConnectModal />
       </div>
     );
   }
