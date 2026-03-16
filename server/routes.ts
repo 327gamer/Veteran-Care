@@ -7,6 +7,7 @@ import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
+import { query as pgQuery } from "./pg-client";
 
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
@@ -2551,6 +2552,145 @@ export async function registerRoutes(
       .single();
     if (error) return res.status(400).json({ error: error.message });
     return res.json(data);
+  });
+
+  // ── Partner Applications (public intake) ──
+
+  app.get("/api/trusted-services/categories", async (_req, res) => {
+    const { data, error } = await supabaseAdmin
+      .from("trusted_service_categories")
+      .select("id, name, slug")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json(data || []);
+  });
+
+  app.post("/api/partner-applications", async (req, res) => {
+    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest } = req.body;
+    if (!company_name || !contact_name || !email) {
+      return res.status(400).json({ error: "company_name, contact_name, and email are required" });
+    }
+    const validPricing = ["monthly", "lead-based", "both"];
+    try {
+      const rows = await pgQuery(
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'prospect')
+         RETURNING *`,
+        [
+          company_name, contact_name, email,
+          phone || null, website || null, city || null, state || null,
+          category_id || null, service_description || null,
+          validPricing.includes(pricing_interest) ? pricing_interest : "both",
+        ]
+      );
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ── Admin Partner Applications ──
+
+  app.get("/api/admin/partner-applications", requireAdmin, async (req, res) => {
+    try {
+      let sql = `SELECT pa.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS trusted_service_categories
+                 FROM partner_applications pa
+                 LEFT JOIN trusted_service_categories tsc ON pa.category_id = tsc.id`;
+      const conditions: string[] = [];
+      const params: any[] = [];
+      if (req.query.status) {
+        params.push(req.query.status);
+        conditions.push(`pa.status = $${params.length}`);
+      }
+      if (req.query.state) {
+        params.push(req.query.state);
+        conditions.push(`pa.state = $${params.length}`);
+      }
+      if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
+      sql += ` ORDER BY pa.created_at DESC`;
+      const rows = await pgQuery(sql, params);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/admin/partner-applications/:id", requireAdmin, async (req, res) => {
+    const { status, admin_notes } = req.body;
+    const setClauses: string[] = ["updated_at = NOW()"];
+    const params: any[] = [];
+    if (status) {
+      const validStatuses = ["prospect", "pending", "active", "inactive"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Valid status required: ${validStatuses.join(", ")}` });
+      }
+      params.push(status);
+      setClauses.push(`status = $${params.length}`);
+    }
+    if (admin_notes !== undefined) {
+      params.push(admin_notes);
+      setClauses.push(`admin_notes = $${params.length}`);
+    }
+    params.push(req.params.id);
+    try {
+      const rows = await pgQuery(
+        `UPDATE partner_applications SET ${setClauses.join(", ")} WHERE id = $${params.length} RETURNING *`,
+        params
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const catRows = rows[0].category_id
+        ? await pgQuery(`SELECT name, slug FROM trusted_service_categories WHERE id = $1`, [rows[0].category_id])
+        : [];
+      rows[0].trusted_service_categories = catRows[0] || null;
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/partner-applications/:id/convert", requireAdmin, async (req, res) => {
+    try {
+      const appRows = await pgQuery(
+        `SELECT pa.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS trusted_service_categories
+         FROM partner_applications pa
+         LEFT JOIN trusted_service_categories tsc ON pa.category_id = tsc.id
+         WHERE pa.id = $1`, [req.params.id]
+      );
+      if (appRows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const application = appRows[0];
+      if (application.converted_provider_id) return res.status(400).json({ error: "Already converted to a provider" });
+      if (!application.category_id) return res.status(400).json({ error: "Application must have a category before converting" });
+
+      const { data: provider, error: provErr } = await supabaseAdmin
+        .from("trusted_services")
+        .insert({
+          category_id: application.category_id,
+          name: application.company_name,
+          short_description: application.service_description || null,
+          website_url: application.website || null,
+          phone: application.phone || null,
+          email: application.email,
+          city: application.city || null,
+          state: application.state || null,
+          is_active: true,
+          is_featured: false,
+          verification_status: "verified",
+          notes_internal: `Converted from partner application ${application.id}`,
+        })
+        .select()
+        .single();
+      if (provErr) return res.status(400).json({ error: provErr.message });
+
+      await pgQuery(
+        `UPDATE partner_applications SET status = 'active', converted_provider_id = $1, updated_at = NOW() WHERE id = $2`,
+        [provider.id, req.params.id]
+      );
+
+      return res.json({ application, provider });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   return httpServer;

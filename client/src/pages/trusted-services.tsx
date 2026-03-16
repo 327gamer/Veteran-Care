@@ -455,14 +455,24 @@ export default function TrustedServices() {
       )}
 
       <div className="pt-2 pb-4">
-        <Card className="bg-muted/30">
-          <CardContent className="p-3 text-center">
-            <p className="text-[11px] text-muted-foreground">
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4 text-center">
+            <ShieldCheck className="h-6 w-6 text-green-600 mx-auto mb-1.5" />
+            <p className="text-sm font-semibold text-foreground">
               Interested in becoming a Trusted Services partner?
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Contact us at <span className="font-medium text-primary">info@veterancare.com</span>
+            <p className="text-xs text-muted-foreground mt-1 mb-3">
+              Join our vetted network and connect with veterans who need your services.
             </p>
+            <Button
+              data-testid="button-become-partner"
+              size="sm"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => window.location.href = "/partner-apply"}
+            >
+              <Handshake className="h-4 w-4 mr-1.5" />
+              Apply Now
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -493,6 +493,15 @@ export default function AdminTrustedServices() {
         </div>
         <div className="flex gap-2">
           <Button
+            data-testid="button-view-pipeline"
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation("/admin/partner-prospects")}
+            className="h-8 text-xs"
+          >
+            Pipeline
+          </Button>
+          <Button
             data-testid="button-view-leads"
             variant="outline"
             size="sm"
