@@ -256,7 +256,7 @@ export default function TrustedServices() {
               Interested in becoming a Trusted Services partner?
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Contact us at <span className="font-medium text-primary">partners@veterancare.com</span>
+              Contact us at <span className="font-medium text-primary">info@veterancare.com</span>
             </p>
           </CardContent>
         </Card>
