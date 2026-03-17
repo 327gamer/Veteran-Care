@@ -103,9 +103,13 @@ export default function TrustedServices() {
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
 
-  const { data: categories = [] } = useQuery<TrustedCategory[]>({
+  const { data: categories = [], isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/trusted-services/categories"],
-    queryFn: () => fetch("/api/trusted-services/categories").then(r => r.json()),
+    queryFn: () => fetch("/api/trusted-services/categories").then(r => {
+      if (!r.ok) throw new Error("Failed to load categories");
+      return r.json();
+    }),
+    retry: 2,
   });
 
   const { data: services = [] } = useQuery<TrustedService[]>({
@@ -454,9 +458,18 @@ export default function TrustedServices() {
         </CardContent>
       </Card>
 
-      {categories.length === 0 ? (
+      {catsLoading ? (
         <div className="text-center py-8">
           <p className="text-sm text-muted-foreground">Loading categories...</p>
+        </div>
+      ) : catsError ? (
+        <div className="text-center py-8 space-y-3">
+          <p className="text-sm text-destructive">Unable to load categories.</p>
+          <Button variant="outline" size="sm" onClick={() => refetchCats()}>Try Again</Button>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-sm text-muted-foreground">No categories available yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">

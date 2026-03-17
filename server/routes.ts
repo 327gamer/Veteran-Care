@@ -2415,7 +2415,7 @@ export async function registerRoutes(
     if (!hasTrustedServicesTable) return res.json([]);
     try {
       const rows = await pgQuery(
-        `SELECT * FROM trusted_service_categories WHERE is_active = true ORDER BY display_order`
+        `SELECT * FROM trusted_service_categories WHERE is_active IS NOT false ORDER BY display_order`
       );
       return res.json(rows);
     } catch (err: any) {
@@ -2426,7 +2426,7 @@ export async function registerRoutes(
   app.get("/api/trusted-services", async (req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
     try {
-      const conditions = [`ts.is_active = true`];
+      const conditions = [`ts.is_active IS NOT false`];
       const params: any[] = [];
       if (req.query.category) {
         params.push(req.query.category);
@@ -2472,7 +2472,7 @@ export async function registerRoutes(
                 json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
-         WHERE ts.is_active = true AND tsc.slug = $1
+         WHERE ts.is_active IS NOT false AND tsc.slug = $1
          ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST`,
         [trustedSlug]
       );
