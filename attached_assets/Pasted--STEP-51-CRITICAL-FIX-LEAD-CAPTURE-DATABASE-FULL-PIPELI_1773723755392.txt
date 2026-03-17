@@ -1,0 +1,151 @@
+🚨 STEP 51 – CRITICAL FIX: LEAD CAPTURE DATABASE + FULL PIPELINE IMPLEMENTATION
+
+We just tested the “Connect With Provider” feature and identified the issue below:
+
+Error:
+relation "trusted_service_leads" does not exist
+
+---
+
+🔍 ROOT CAUSE
+
+The frontend form and submission flow are working correctly, however:
+
+The backend is attempting to insert lead data into a table (trusted_service_leads) that does NOT exist in the database.
+
+As a result:
+- Leads are NOT being saved
+- Partner emails will NOT trigger correctly
+- Admin tracking and reporting will NOT work
+- Future analytics and monetization will break
+
+---
+
+🎯 OBJECTIVE
+
+We need to implement a COMPLETE, production-ready lead capture system — not just fix the error.
+
+This includes:
+1. Database table creation
+2. Backend insertion logic
+3. Email notifications
+4. Admin visibility
+5. Analytics readiness
+
+This is a core system (bread and butter of the platform) and must be built correctly for scale and reporting.
+
+---
+
+🧩 STEP 1 — CREATE LEADS TABLE
+
+Create the following table in PostgreSQL:
+
+CREATE TABLE trusted_service_leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  provider_id UUID,
+  provider_name TEXT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  city TEXT,
+  state TEXT,
+  message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+---
+
+🧩 STEP 2 — BACKEND INSERT (MANDATORY)
+
+Ensure the lead submission inserts correctly into this table:
+
+INSERT INTO trusted_service_leads (
+  provider_id,
+  provider_name,
+  name,
+  email,
+  phone,
+  city,
+  state,
+  message
+);
+
+---
+
+🧩 STEP 3 — EMAIL NOTIFICATIONS (CRITICAL)
+
+On successful submission:
+
+Send email to:
+- The provider (lead recipient)
+- Admin (system owner)
+
+Include:
+- Name
+- Email
+- Phone
+- Message
+- Provider name
+
+---
+
+🧩 STEP 4 — ADMIN PANEL INTEGRATION
+
+Leads MUST be visible in admin panel.
+
+Requirements:
+- New “Leads” section/tab
+- Display:
+  - Provider name
+  - User name
+  - Contact info
+  - Message
+  - Timestamp
+
+---
+
+🧩 STEP 5 — ANALYTICS / TRACKING FOUNDATION
+
+This table will be used for:
+- Lead volume tracking per provider
+- Conversion tracking
+- Future billing (per-lead or premium tiers)
+- Reporting dashboards
+
+Structure must be clean and query-friendly.
+
+---
+
+🧩 STEP 6 — VALIDATION + TESTING
+
+After implementation:
+
+1. Submit test lead
+2. Confirm:
+   - No errors
+   - Lead saved in DB
+   - Emails sent
+   - Lead visible in admin
+
+---
+
+⚠️ IMPORTANT NOTES
+
+- Do NOT mix Supabase REST and direct PostgreSQL access
+- Use consistent database access pattern
+- Ensure provider_id matches provider records
+- Must be scalable and reusable
+
+---
+
+🎯 FINAL GOAL
+
+User submits form →  
+Lead saved →  
+Emails sent →  
+Admin can view →  
+Data usable for analytics + monetization
+
+---
+
+This is a critical launch requirement and must be completed before Step 52.
