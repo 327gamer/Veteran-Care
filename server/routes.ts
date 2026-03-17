@@ -96,9 +96,43 @@ async function seedTrustedServiceCategoriesIfEmpty() {
       `);
       console.log("[seed] 8 trusted service categories seeded successfully");
     }
+    await ensureDefaultServices();
     await repairOrphanedServices();
   } catch (err: any) {
     console.log("[seed] Failed to seed trusted_service_categories:", err.message);
+  }
+}
+
+async function ensureDefaultServices() {
+  try {
+    const existing = await pgQuery(`SELECT id FROM trusted_services LIMIT 1`);
+    if (existing.length > 0) return;
+
+    const cats = await pgQuery(`SELECT id, slug FROM trusted_service_categories`);
+    const catBySlug: Record<string, string> = {};
+    cats.forEach((c: any) => { catBySlug[c.slug] = c.id; });
+
+    const eduCatId = catBySlug["education-training"];
+    if (!eduCatId) return;
+
+    console.log("[seed] trusted_services is empty — seeding default provider...");
+    await pgQuery(`
+      INSERT INTO trusted_services (name, description, email, phone, website, city, state, category_id, is_active, is_featured, verification_status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, false, 'verified')
+      ON CONFLICT DO NOTHING
+    `, [
+      "Second Chance Job Center (4)",
+      "Comprehensive employment services including job placement, resume building, interview prep, and career counseling for veterans and transitioning service members.",
+      "info@secondchancejobcenter.com",
+      "(843) 469-7000",
+      "https://secondchancejobcenter.com",
+      "Mount Pleasant",
+      "SC",
+      eduCatId
+    ]);
+    console.log("[seed] Default provider seeded successfully");
+  } catch (err: any) {
+    console.log("[seed] Failed to seed default services:", err.message);
   }
 }
 
