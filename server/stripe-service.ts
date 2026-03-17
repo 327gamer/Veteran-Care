@@ -1,6 +1,5 @@
 import Stripe from "stripe";
 import { query as pgQuery } from "./pg-client";
-import { supabaseAdmin } from "./supabase";
 import { platform } from "../shared/platform";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -150,40 +149,41 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   );
 
   if (app.converted_provider_id) {
-    const { error } = await supabaseAdmin
-      .from("trusted_services")
-      .update({ is_active: true })
-      .eq("id", app.converted_provider_id);
-    if (error) console.log(`[stripe] Failed to activate provider ${app.converted_provider_id}:`, error.message);
-    else console.log(`[stripe] Provider ${app.converted_provider_id} activated`);
+    try {
+      await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
+      console.log(`[stripe] Provider ${app.converted_provider_id} activated`);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to activate provider ${app.converted_provider_id}:`, err.message);
+    }
   } else if (app.category_id) {
-    const { data: provider, error: provErr } = await supabaseAdmin
-      .from("trusted_services")
-      .insert({
-        category_id: app.category_id,
-        name: app.company_name,
-        short_description: app.service_description || null,
-        website_url: app.website || null,
-        phone: app.phone || null,
-        email: app.email,
-        city: app.city || null,
-        state: app.state || null,
-        is_active: true,
-        is_featured: false,
-        verification_status: "verified",
-        notes_internal: `Auto-created via Stripe payment. Application ${applicationId}`,
-      })
-      .select()
-      .single();
-
-    if (provErr) {
-      console.log(`[stripe] Failed to create provider:`, provErr.message);
-    } else {
+    try {
+      const providerRows = await pgQuery(
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING id`,
+        [
+          app.category_id,
+          app.company_name,
+          app.service_description || null,
+          app.website || null,
+          app.phone || null,
+          app.email,
+          app.city || null,
+          app.state || null,
+          true,
+          false,
+          'verified',
+          `Auto-created via Stripe payment. Application ${applicationId}`,
+        ]
+      );
+      const providerId = providerRows[0].id;
       await pgQuery(
         `UPDATE partner_applications SET converted_provider_id = $1, updated_at = NOW() WHERE id = $2`,
-        [provider.id, applicationId]
+        [providerId, applicationId]
       );
-      console.log(`[stripe] Provider ${provider.id} created and linked to application ${applicationId}`);
+      console.log(`[stripe] Provider ${providerId} created and linked to application ${applicationId}`);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to create provider:`, err.message);
     }
   }
 }
@@ -210,7 +210,7 @@ export async function verifyAndActivateCheckoutSession(sessionId: string): Promi
 
     const app = rows[0];
 
-    if (app.status === "active") {
+    if (app.status === "active" && app.converted_provider_id) {
       return { status: "already_active", applicationId };
     }
 
@@ -246,12 +246,12 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
   );
 
   if (app.converted_provider_id) {
-    const { error } = await supabaseAdmin
-      .from("trusted_services")
-      .update({ is_active: false })
-      .eq("id", app.converted_provider_id);
-    if (error) console.log(`[stripe] Failed to deactivate provider:`, error.message);
-    else console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (subscription canceled)`);
+    try {
+      await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
+      console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (subscription canceled)`);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to deactivate provider:`, err.message);
+    }
   }
 }
 
@@ -276,10 +276,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     );
 
     if (app.converted_provider_id) {
-      await supabaseAdmin
-        .from("trusted_services")
-        .update({ is_active: false })
-        .eq("id", app.converted_provider_id);
+      await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
       console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (status: ${status})`);
     }
   }
@@ -307,10 +304,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   );
 
   if (app.converted_provider_id) {
-    await supabaseAdmin
-      .from("trusted_services")
-      .update({ is_active: false })
-      .eq("id", app.converted_provider_id);
+    await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
     console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (payment failed)`);
   }
 }

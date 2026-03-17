@@ -2759,25 +2759,26 @@ export async function registerRoutes(
       if (application.converted_provider_id) return res.status(400).json({ error: "Already converted to a provider" });
       if (!application.category_id) return res.status(400).json({ error: "Application must have a category before converting" });
 
-      const { data: provider, error: provErr } = await supabaseAdmin
-        .from("trusted_services")
-        .insert({
-          category_id: application.category_id,
-          name: application.company_name,
-          short_description: application.service_description || null,
-          website_url: application.website || null,
-          phone: application.phone || null,
-          email: application.email,
-          city: application.city || null,
-          state: application.state || null,
-          is_active: true,
-          is_featured: false,
-          verification_status: "verified",
-          notes_internal: `Converted from partner application ${application.id}`,
-        })
-        .select()
-        .single();
-      if (provErr) return res.status(400).json({ error: provErr.message });
+      const providerRows = await pgQuery(
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [
+          application.category_id,
+          application.company_name,
+          application.service_description || null,
+          application.website || null,
+          application.phone || null,
+          application.email,
+          application.city || null,
+          application.state || null,
+          true,
+          false,
+          'verified',
+          `Converted from partner application ${application.id}`,
+        ]
+      );
+      const provider = providerRows[0];
 
       await pgQuery(
         `UPDATE partner_applications SET status = 'active', converted_provider_id = $1, updated_at = NOW() WHERE id = $2`,
