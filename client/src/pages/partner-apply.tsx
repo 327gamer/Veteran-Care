@@ -58,9 +58,9 @@ export default function PartnerApply() {
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/trusted-services/categories"],
+    queryKey: ["/api/partner-categories"],
     queryFn: async () => {
-      const res = await fetch("/api/trusted-services/categories");
+      const res = await fetch("/api/partner-categories");
       if (!res.ok) throw new Error("Failed to load categories");
       return res.json();
     },

@@ -2558,14 +2558,15 @@ export async function registerRoutes(
 
   // ── Partner Applications (public intake) ──
 
-  app.get("/api/trusted-services/categories", async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from("trusted_service_categories")
-      .select("id, name, slug")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true });
-    if (error) return res.status(400).json({ error: error.message });
-    return res.json(data || []);
+  app.get("/api/partner-categories", async (_req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT id, name, slug FROM trusted_service_categories WHERE is_active = true ORDER BY display_order ASC`
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   app.post("/api/partner-applications", async (req, res) => {
