@@ -79,6 +79,7 @@ async function checkTrustedServicesTable() {
       await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS is_national BOOLEAN DEFAULT false`);
       console.log("[schema] Added is_national column to trusted_services");
     }
+    await ensureVobTable();
   } catch (err: any) {
     if (err.message?.includes("does not exist")) {
       hasTrustedServicesTable = false;
@@ -87,6 +88,39 @@ async function checkTrustedServicesTable() {
       hasTrustedServicesTable = true;
       console.log("[schema] trusted_service_categories check error (assuming exists):", err.message);
     }
+  }
+}
+
+async function ensureVobTable() {
+  try {
+    await pgQuery(`SELECT id FROM veteran_owned_businesses LIMIT 0`);
+    console.log("[schema] veteran_owned_businesses table exists");
+  } catch {
+    await pgQuery(`
+      CREATE TABLE veteran_owned_businesses (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        business_name TEXT NOT NULL,
+        owner_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT,
+        website TEXT,
+        address TEXT,
+        city TEXT,
+        state TEXT,
+        zip TEXT,
+        description TEXT,
+        category_id UUID REFERENCES trusted_service_categories(id),
+        subcategory TEXT,
+        is_veteran_owned BOOLEAN DEFAULT true,
+        is_nonprofit BOOLEAN DEFAULT false,
+        logo_url TEXT,
+        status TEXT DEFAULT 'pending',
+        admin_notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        reviewed_at TIMESTAMPTZ
+      )
+    `);
+    console.log("[schema] Created veteran_owned_businesses table");
   }
 }
 
@@ -3070,6 +3104,69 @@ export async function registerRoutes(
       );
 
       return res.json({ application, provider });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ── Veteran-Owned Business Directory ──
+
+  app.post("/api/vob", async (req, res) => {
+    try {
+      const b = req.body;
+      if (!b.business_name || !b.owner_name || !b.email) {
+        return res.status(400).json({ error: "Business name, owner name, and email are required" });
+      }
+      const rows = await pgQuery(
+        `INSERT INTO veteran_owned_businesses
+          (business_name, owner_name, email, phone, website, address, city, state, zip, description, category_id, subcategory, is_veteran_owned, is_nonprofit, logo_url, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'pending')
+         RETURNING *`,
+        [
+          b.business_name, b.owner_name, b.email,
+          b.phone || null, b.website || null, b.address || null,
+          b.city || null, b.state || null, b.zip || null,
+          b.description || null, b.category_id || null, b.subcategory || null,
+          b.is_veteran_owned ?? true, b.is_nonprofit ?? false, b.logo_url || null,
+        ]
+      );
+      console.log(`[vob] New submission: ${b.business_name} (${b.email})`);
+      return res.json(rows[0]);
+    } catch (err: any) {
+      console.log(`[vob] submit error: ${err.message}`);
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/vob", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
+         FROM veteran_owned_businesses vob
+         LEFT JOIN trusted_service_categories tsc ON vob.category_id = tsc.id
+         ORDER BY
+           CASE vob.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 END,
+           vob.created_at DESC`
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/admin/vob/:id", requireAdmin, async (req, res) => {
+    try {
+      const { status, admin_notes } = req.body;
+      if (!status || !["approved", "rejected", "pending"].includes(status)) {
+        return res.status(400).json({ error: "Valid status required (approved, rejected, pending)" });
+      }
+      const rows = await pgQuery(
+        `UPDATE veteran_owned_businesses SET status = $1, admin_notes = $2, reviewed_at = NOW() WHERE id = $3 RETURNING *`,
+        [status, admin_notes || null, req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      console.log(`[vob] Admin ${status} business: ${rows[0].business_name}`);
+      return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }

@@ -141,6 +141,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `ai_usage_log` - id (uuid), user_id (fk→auth.users, nullable), is_guest (bool), detected_category (text), model (text), input_tokens (int), output_tokens (int), total_tokens (int), navigator_suggested (bool), created_at (SQL in `supabase/create_ai_usage_log.sql`)
 - `trusted_service_categories` - id (uuid), name, slug (unique), description, icon, display_order (int), is_active (bool), created_at (SQL in `supabase/create_trusted_services.sql`)
 - `trusted_services` - id (uuid), category_id (fk→trusted_service_categories), name, short_description, website_url, phone, email, address, city, state, zip, logo_url, verification_status (pending/verified), verification_label, cta_text, cta_url, is_featured (bool), is_active (bool), is_national (bool, default false — national partners appear in all state filters), display_order (int), notes_internal, created_at
+- `veteran_owned_businesses` - id (uuid), business_name, owner_name, email, phone, website, address, city, state, zip, description, category_id (fk→trusted_service_categories), subcategory, is_veteran_owned (bool), is_nonprofit (bool), logo_url, status (pending/approved/rejected), admin_notes, created_at, reviewed_at — uses pgQuery (NOT supabaseAdmin)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL
@@ -159,11 +160,12 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `/saved-resources` - Saved/bookmarked resources
 - `/submit-resource` - Community resource submission form
 - `/trusted-services` - Trusted Services page (vetted providers by category)
-- `/vob/apply` - Veteran-Owned Business directory application (placeholder)
+- `/vob/apply` - Veteran-Owned Business directory application form (free, submits to admin review)
 - `/vob/start` - Veteran-Owned Business startup roadmap/help (placeholder)
 - `/admin` - Admin resource review dashboard (key-protected, standalone layout)
 - `/admin/analytics` - Admin analytics dashboard
 - `/admin/ai-insights` - AI Insights dashboard (conversations, tokens, cost, crisis, gaps)
+- `/admin/vob` - Admin review page for veteran-owned business directory submissions
 - `/community` - Community feed (coming soon)
 - `/shop` - Shop page (coming soon)
 - `/near-me` - Location-based nearby resources
