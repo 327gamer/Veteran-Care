@@ -23,6 +23,8 @@ import {
   Compass,
   Globe,
   ShieldCheck,
+  Store,
+  Rocket,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -482,6 +484,54 @@ export default function Home() {
               <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
                 Trusted Services
               </span>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Veteran-Owned Businesses */}
+      <section className="space-y-3" data-testid="section-veteran-owned-businesses">
+        <h2 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Veteran-Owned Businesses</h2>
+        <div className="grid grid-cols-1 gap-3">
+          <Card
+            className="hover:border-primary/50 transition-all cursor-pointer group border-primary/20 shadow-sm hover:shadow-md"
+            onClick={() => setLocation("/vob/apply")}
+            data-testid="card-vob-add-business"
+          >
+            <CardContent className="p-5 flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                <Store className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h3 className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors leading-snug">
+                  Add Your Veteran-Owned Business or Nonprofit to Our FREE Directory
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Get listed and connect with veterans and supporters in your community.
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 mt-1 transition-colors" />
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:border-amber-400/50 transition-all cursor-pointer group border-amber-200/50 shadow-sm hover:shadow-md"
+            onClick={() => setLocation("/vob/start")}
+            data-testid="card-vob-startup-help"
+          >
+            <CardContent className="p-5 flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 group-hover:bg-amber-100 transition-colors">
+                <Rocket className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h3 className="font-heading font-bold text-sm text-foreground group-hover:text-amber-700 transition-colors leading-snug">
+                  Need Help Starting Your Veteran-Owned Business or Nonprofit?
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Step-by-step roadmap, resources, and guidance for veteran entrepreneurs.
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-amber-600 shrink-0 mt-1 transition-colors" />
             </CardContent>
           </Card>
         </div>
