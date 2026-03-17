@@ -221,7 +221,7 @@ export default function TrustedServices() {
                   <SelectTrigger className="h-9 text-sm" data-testid="select-lead-role">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[200]">
                     {ROLE_OPTIONS.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
