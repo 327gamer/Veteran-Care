@@ -210,7 +210,7 @@ export default function TrustedServices() {
             <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
             <h4 className="font-heading font-bold text-base">Request Sent</h4>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-              Thank you. Your request has been sent to this Trusted Services partner. They will contact you shortly.
+              Thank you. Your request has been sent to this Trusted Services & Products partner. They will contact you shortly.
             </p>
             <Button size="sm" className="mt-3" onClick={closeModal} data-testid="button-done-connect">
               Done
@@ -500,7 +500,7 @@ export default function TrustedServices() {
         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
           <ShieldCheck className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-xl font-heading font-bold text-primary" data-testid="text-trusted-services-title">Trusted Services</h1>
+        <h1 className="text-xl font-heading font-bold text-primary" data-testid="text-trusted-services-title">Trusted Services & Products</h1>
         <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
           Vetted professionals and service providers supporting veterans and families.
         </p>
@@ -557,7 +557,7 @@ export default function TrustedServices() {
           <CardContent className="p-4 text-center">
             <ShieldCheck className="h-6 w-6 text-green-600 mx-auto mb-1.5" />
             <p className="text-sm font-semibold text-foreground">
-              Interested in becoming a Trusted Services partner?
+              Interested in becoming a Trusted Services & Products partner?
             </p>
             <p className="text-xs text-muted-foreground mt-1 mb-3">
               Join our vetted network and connect with veterans who need your services.

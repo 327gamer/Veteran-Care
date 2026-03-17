@@ -482,7 +482,7 @@ export default function Home() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                Trusted Services
+                Trusted Services & Products
               </span>
             </CardContent>
           </Card>

@@ -112,7 +112,7 @@ export default function AdminTrustedServiceLeads() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-leads-title">Trusted Services Leads</h1>
+          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-leads-title">Trusted Services & Products Leads</h1>
           <p className="text-xs text-muted-foreground">Veteran connection requests to partners</p>
         </div>
       </div>

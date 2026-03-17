@@ -488,7 +488,7 @@ export default function AdminTrustedServices() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-trusted-title">Trusted Services Partners</h1>
+          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-trusted-title">Trusted Services & Products Partners</h1>
           <p className="text-xs text-muted-foreground">Manage vetted service providers</p>
         </div>
         <div className="flex gap-2">

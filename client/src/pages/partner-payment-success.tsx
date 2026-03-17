@@ -56,14 +56,14 @@ export default function PartnerPaymentSuccess() {
               </div>
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-medium">
                 <ShieldCheck className="h-4 w-4" />
-                Trusted Services Partner
+                Trusted Services & Products Partner
               </div>
               <h2 className="text-xl font-heading font-bold text-foreground" data-testid="text-payment-success">
-                Welcome to {platform.name} Trusted Services
+                Welcome to {platform.name} Trusted Services & Products
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {verified
-                  ? "Your subscription is active and your business listing is now live in our Trusted Services directory. Veterans in your area can connect with you directly."
+                  ? "Your subscription is active and your business listing is now live in our Trusted Services & Products directory. Veterans in your area can connect with you directly."
                   : "Your payment has been received. Your listing will be activated shortly. If it doesn't appear within a few minutes, please contact us."}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -75,7 +75,7 @@ export default function PartnerPaymentSuccess() {
                   data-testid="button-view-listing"
                   onClick={() => setLocation("/trusted-services")}
                 >
-                  View Trusted Services
+                  View Trusted Services & Products
                 </Button>
               </div>
             </>
