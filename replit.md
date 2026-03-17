@@ -44,7 +44,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `server/ai/stream.ts` - OpenAI chat completions streaming wrapper
 - `server/ai/usage-logger.ts` - Logs AI usage to ai_usage_log table (graceful if missing)
 - `server/stripe-service.ts` - Stripe subscription workflow (checkout sessions, webhook handlers, auto-activation/deactivation)
-- `server/pg-client.ts` - Direct PostgreSQL client (bypasses Supabase PostgREST for partner_applications)
+- `server/pg-client.ts` - Direct PostgreSQL client (bypasses Supabase PostgREST for trusted_services, trusted_service_categories, trusted_service_leads, partner_applications — NEVER use supabaseAdmin for these tables)
 - `server/lead-email.ts` - Email templates using platform config for branding
 - `server/lead-router.ts` - Lead routing engine (platform-agnostic)
 - `server/lead-escalation.ts` - Escalation timer system (platform-agnostic)
@@ -103,6 +103,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `POST /api/admin/states/:code/clone-resources` - Admin: clone national resources from template state to new state (body: {source_state?, categories?, exclude_categories?})
 - `GET /api/trusted-services/categories` - Public: list active trusted service categories
 - `GET /api/trusted-services?category=<slug>&state=<state>` - Public: list active trusted services, optionally filtered by category slug or state
+- `GET /api/trusted-partners-for-category/:resourceSlug` - Public: returns active trusted service partners mapped to a resource category slug (e.g. housing→housing-home); used to surface verified partners in resource listings
 - `GET /api/admin/trusted-services/categories` - Admin: list all trusted service categories
 - `GET /api/admin/trusted-services?category_id=<id>&is_active=<bool>` - Admin: list all trusted services with filters
 - `POST /api/admin/trusted-services` - Admin: create a trusted service partner

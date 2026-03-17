@@ -246,6 +246,12 @@ export default function Resources() {
     queryFn: () => fetch("/api/categories").then(r => r.json()),
   });
 
+  const { data: trustedPartners = [] } = useQuery<any[]>({
+    queryKey: ["/api/trusted-partners-for-category", selectedSlug],
+    queryFn: () => selectedSlug ? fetch(`/api/trusted-partners-for-category/${selectedSlug}`).then(r => r.json()) : Promise.resolve([]),
+    enabled: !!selectedSlug,
+  });
+
   const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
   const cityParam = locationMode === "state" && debouncedCity.trim() ? debouncedCity.trim() : undefined;
   const zipParam = locationMode === "state" && debouncedZip.trim() ? debouncedZip.trim() : undefined;
@@ -883,6 +889,69 @@ export default function Resources() {
             )}
             {isLoading && !geo.loading && (
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
+            )}
+            {trustedPartners.length > 0 && (
+              <div className="space-y-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-emerald-700">Verified Partners</span>
+                </div>
+                {trustedPartners.map((partner: any) => (
+                  <Card
+                    key={`tp-${partner.id}`}
+                    data-testid={`card-trusted-partner-${partner.id}`}
+                    className="group border-emerald-200 bg-emerald-50/30 hover:border-emerald-400 transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (partner.website_url) window.open(partner.website_url.startsWith("http") ? partner.website_url : `https://${partner.website_url}`, "_blank");
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-base group-hover:text-emerald-700 transition-colors line-clamp-1">{partner.name}</h3>
+                            <Badge className="text-[10px] h-5 px-1.5 bg-emerald-600 text-white border-none shrink-0">
+                              <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Verified Partner
+                            </Badge>
+                            {partner.is_featured && (
+                              <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
+                                <Zap className="h-2.5 w-2.5 mr-0.5" /> Featured
+                              </Badge>
+                            )}
+                          </div>
+                          {partner.short_description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{partner.short_description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                            {partner.city && partner.state && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" /> {partner.city}, {partner.state}
+                              </span>
+                            )}
+                            {partner.phone && (
+                              <a href={`tel:${partner.phone}`} className="flex items-center gap-1 text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                                <PhoneIcon className="h-3 w-3" /> {partner.phone}
+                              </a>
+                            )}
+                            {partner.website_url && (
+                              <span className="flex items-center gap-1">
+                                <Globe className="h-3 w-3" /> Website
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {partner.website_url && (
+                            <Button data-testid={`button-partner-visit-${partner.id}`} variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
             {!showLocalOnlyEmpty && activeResources?.map((resource) => (
               <Card 

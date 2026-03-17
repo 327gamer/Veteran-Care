@@ -2413,86 +2413,161 @@ export async function registerRoutes(
 
   app.get("/api/trusted-services/categories", async (_req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
-    const { data, error } = await supabase
-      .from("trusted_service_categories")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order");
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    try {
+      const rows = await pgQuery(
+        `SELECT * FROM trusted_service_categories WHERE is_active = true ORDER BY display_order`
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.get("/api/trusted-services", async (req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
-    let query = supabase
-      .from("trusted_services")
-      .select("*, trusted_service_categories!inner(slug, name)")
-      .eq("is_active", true)
-      .order("is_featured", { ascending: false })
-      .order("display_order");
-    if (req.query.category) query = query.eq("trusted_service_categories.slug", req.query.category as string);
-    if (req.query.state) query = query.eq("state", (req.query.state as string).toUpperCase());
-    const { data, error } = await query;
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    try {
+      const conditions = [`ts.is_active = true`];
+      const params: any[] = [];
+      if (req.query.category) {
+        params.push(req.query.category);
+        conditions.push(`tsc.slug = $${params.length}`);
+      }
+      if (req.query.state) {
+        params.push((req.query.state as string).toUpperCase());
+        conditions.push(`ts.state = $${params.length}`);
+      }
+      const rows = await pgQuery(
+        `SELECT ts.*, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
+         FROM trusted_services ts
+         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`,
+        params
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  const RESOURCE_TO_TRUSTED_CATEGORY_MAP: Record<string, string> = {
+    "housing": "housing-home",
+    "legal": "legal-services",
+    "financial": "financial-credit",
+    "education": "education-training",
+    "employment": "employment-support",
+    "va-benefits": "benefits-assistance",
+    "substance-recovery": "wellness-recovery",
+    "healthcare": "insurance",
+  };
+
+  app.get("/api/trusted-partners-for-category/:resourceSlug", async (req, res) => {
+    if (!hasTrustedServicesTable) return res.json([]);
+    const trustedSlug = RESOURCE_TO_TRUSTED_CATEGORY_MAP[req.params.resourceSlug];
+    if (!trustedSlug) return res.json([]);
+    try {
+      const rows = await pgQuery(
+        `SELECT ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url, ts.city, ts.state,
+                ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
+                json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
+         FROM trusted_services ts
+         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         WHERE ts.is_active = true AND tsc.slug = $1
+         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST`,
+        [trustedSlug]
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.get("/api/admin/trusted-services/categories", requireAdmin, async (_req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available. Run supabase/create_trusted_services.sql" });
-    const { data, error } = await supabaseAdmin
-      .from("trusted_service_categories")
-      .select("*")
-      .order("display_order");
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    try {
+      const rows = await pgQuery(`SELECT * FROM trusted_service_categories ORDER BY display_order`);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.get("/api/admin/trusted-services", requireAdmin, async (req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
-    let query = supabaseAdmin
-      .from("trusted_services")
-      .select("*, trusted_service_categories(id, slug, name)")
-      .order("display_order")
-      .order("created_at", { ascending: false });
-    if (req.query.category_id) query = query.eq("category_id", req.query.category_id as string);
-    if (req.query.is_active === "true") query = query.eq("is_active", true);
-    if (req.query.is_active === "false") query = query.eq("is_active", false);
-    const { data, error } = await query;
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    try {
+      const conditions: string[] = [];
+      const params: any[] = [];
+      if (req.query.category_id) {
+        params.push(req.query.category_id);
+        conditions.push(`ts.category_id = $${params.length}`);
+      }
+      if (req.query.is_active === "true") conditions.push(`ts.is_active = true`);
+      if (req.query.is_active === "false") conditions.push(`ts.is_active = false`);
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const rows = await pgQuery(
+        `SELECT ts.*, json_build_object('id', tsc.id, 'slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
+         FROM trusted_services ts
+         LEFT JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         ${where}
+         ORDER BY ts.display_order ASC NULLS LAST, ts.created_at DESC`,
+        params
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.post("/api/admin/trusted-services", requireAdmin, async (req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
-    const { data, error } = await supabaseAdmin
-      .from("trusted_services")
-      .insert(req.body)
-      .select()
-      .single();
-    if (error) return res.status(400).json({ error: error.message });
-    return res.json(data);
+    try {
+      const b = req.body;
+      const rows = await pgQuery(
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.verification_status || 'pending', b.notes_internal || null]
+      );
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   app.patch("/api/admin/trusted-services/:id", requireAdmin, async (req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
-    const { data, error } = await supabaseAdmin
-      .from("trusted_services")
-      .update(req.body)
-      .eq("id", req.params.id)
-      .select()
-      .single();
-    if (error) return res.status(400).json({ error: error.message });
-    return res.json(data);
+    try {
+      const updates = req.body;
+      const setClauses: string[] = [];
+      const params: any[] = [];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'verification_status', 'notes_internal', 'display_order'];
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          params.push(updates[field]);
+          setClauses.push(`${field} = $${params.length}`);
+        }
+      }
+      if (setClauses.length === 0) return res.status(400).json({ error: "No valid fields to update" });
+      params.push(req.params.id);
+      const rows = await pgQuery(
+        `UPDATE trusted_services SET ${setClauses.join(", ")} WHERE id = $${params.length} RETURNING *`,
+        params
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   app.delete("/api/admin/trusted-services/:id", requireAdmin, async (req, res) => {
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
-    const { error } = await supabaseAdmin
-      .from("trusted_services")
-      .update({ is_active: false })
-      .eq("id", req.params.id);
-    if (error) return res.status(400).json({ error: error.message });
-    return res.json({ success: true });
+    try {
+      await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [req.params.id]);
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   app.post("/api/trusted-service-leads", async (req, res) => {
@@ -2500,45 +2575,59 @@ export async function registerRoutes(
     if (!provider_id || !name || !email) {
       return res.status(400).json({ error: "provider_id, name, and email are required" });
     }
-    const { data, error } = await supabaseAdmin
-      .from("trusted_service_leads")
-      .insert({ provider_id, provider_name: provider_name || "", category_id: category_id || null, name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, status: "new" })
-      .select()
-      .single();
-    if (error) return res.status(400).json({ error: error.message });
-
     try {
-      const { data: provider } = await supabaseAdmin
-        .from("trusted_services")
-        .select("name, email, category_id, trusted_service_categories(name)")
-        .eq("id", provider_id)
-        .single();
-
-      const categoryName = (provider as any)?.trusted_service_categories?.name || null;
-
-      const result = await sendTrustedServiceLeadNotification(
-        data.id,
-        { name: provider?.name || provider_name, email: provider?.email || null, category_name: categoryName },
-        { name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, created_at: data.created_at }
+      const leadRows = await pgQuery(
+        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new')
+         RETURNING *`,
+        [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null]
       );
-      console.log(`[trusted-leads] Lead ${data.id} notifications: partner=${result.partnerSent}, admin=${result.adminSent}`);
-    } catch (err: any) {
-      console.log(`[trusted-leads] Notification error for lead ${data.id}:`, err?.message);
-    }
+      const data = leadRows[0];
 
-    return res.json(data);
+      try {
+        const providerRows = await pgQuery(
+          `SELECT ts.name, ts.email, tsc.name AS category_name
+           FROM trusted_services ts
+           LEFT JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+           WHERE ts.id = $1`,
+          [provider_id]
+        );
+        const provider = providerRows[0];
+
+        const result = await sendTrustedServiceLeadNotification(
+          data.id,
+          { name: provider?.name || provider_name, email: provider?.email || null, category_name: provider?.category_name || null },
+          { name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, created_at: data.created_at }
+        );
+        console.log(`[trusted-leads] Lead ${data.id} notifications: partner=${result.partnerSent}, admin=${result.adminSent}`);
+      } catch (err: any) {
+        console.log(`[trusted-leads] Notification error for lead ${data.id}:`, err?.message);
+      }
+
+      return res.json(data);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   app.get("/api/admin/trusted-service-leads", requireAdmin, async (req, res) => {
-    let query = supabaseAdmin
-      .from("trusted_service_leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (req.query.status && req.query.status !== "all") query = query.eq("status", req.query.status as string);
-    if (req.query.provider_id) query = query.eq("provider_id", req.query.provider_id as string);
-    const { data, error } = await query;
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    try {
+      const conditions: string[] = [];
+      const params: any[] = [];
+      if (req.query.status && req.query.status !== "all") {
+        params.push(req.query.status);
+        conditions.push(`status = $${params.length}`);
+      }
+      if (req.query.provider_id) {
+        params.push(req.query.provider_id);
+        conditions.push(`provider_id = $${params.length}`);
+      }
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const rows = await pgQuery(`SELECT * FROM trusted_service_leads ${where} ORDER BY created_at DESC`, params);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.patch("/api/admin/trusted-service-leads/:id", requireAdmin, async (req, res) => {
@@ -2546,14 +2635,16 @@ export async function registerRoutes(
     if (!status || !["new", "contacted", "closed"].includes(status)) {
       return res.status(400).json({ error: "Valid status required: new, contacted, closed" });
     }
-    const { data, error } = await supabaseAdmin
-      .from("trusted_service_leads")
-      .update({ status })
-      .eq("id", req.params.id)
-      .select()
-      .single();
-    if (error) return res.status(400).json({ error: error.message });
-    return res.json(data);
+    try {
+      const rows = await pgQuery(
+        `UPDATE trusted_service_leads SET status = $1 WHERE id = $2 RETURNING *`,
+        [status, req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Lead not found" });
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   });
 
   // ── Partner Applications (public intake) ──
