@@ -58,6 +58,7 @@ import {
   ArrowRightLeft,
   Trash2,
   Brain,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
