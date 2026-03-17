@@ -80,23 +80,75 @@ async function checkTrustedServicesTable() {
 async function seedTrustedServiceCategoriesIfEmpty() {
   try {
     const rows = await pgQuery(`SELECT id FROM trusted_service_categories LIMIT 1`);
-    if (rows.length > 0) return;
-    console.log("[seed] trusted_service_categories is empty — seeding default categories...");
-    await pgQuery(`
-      INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active) VALUES
-        ('Housing & Home Services', 'housing-home', 'Trusted housing, moving, and home services for veterans and families', 'home', 1, true),
-        ('Legal Services', 'legal-services', 'Vetted legal professionals experienced with veteran-specific needs', 'scale', 2, true),
-        ('Financial & Credit Services', 'financial-credit', 'Trusted financial advisors, credit counseling, and lending partners', 'dollar-sign', 3, true),
-        ('Insurance Services', 'insurance', 'Insurance providers offering veteran-friendly coverage options', 'shield', 4, true),
-        ('Education & Training', 'education-training', 'Accredited programs and training providers supporting veteran success', 'graduation-cap', 5, true),
-        ('Employment Support', 'employment-support', 'Employers and staffing partners committed to hiring veterans', 'briefcase', 6, true),
-        ('Benefits Assistance', 'benefits-assistance', 'Professional services to help navigate and maximize veteran benefits', 'award', 7, true),
-        ('Wellness & Recovery', 'wellness-recovery', 'Wellness providers, recovery programs, and holistic support services', 'heart-pulse', 8, true)
-      ON CONFLICT (slug) DO UPDATE SET is_active = true
-    `);
-    console.log("[seed] 8 trusted service categories seeded successfully");
+    if (rows.length === 0) {
+      console.log("[seed] trusted_service_categories is empty — seeding default categories...");
+      await pgQuery(`
+        INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active) VALUES
+          ('Housing & Home Services', 'housing-home', 'Trusted housing, moving, and home services for veterans and families', 'home', 1, true),
+          ('Legal Services', 'legal-services', 'Vetted legal professionals experienced with veteran-specific needs', 'scale', 2, true),
+          ('Financial & Credit Services', 'financial-credit', 'Trusted financial advisors, credit counseling, and lending partners', 'dollar-sign', 3, true),
+          ('Insurance Services', 'insurance', 'Insurance providers offering veteran-friendly coverage options', 'shield', 4, true),
+          ('Education & Training', 'education-training', 'Accredited programs and training providers supporting veteran success', 'graduation-cap', 5, true),
+          ('Employment Support', 'employment-support', 'Employers and staffing partners committed to hiring veterans', 'briefcase', 6, true),
+          ('Benefits Assistance', 'benefits-assistance', 'Professional services to help navigate and maximize veteran benefits', 'award', 7, true),
+          ('Wellness & Recovery', 'wellness-recovery', 'Wellness providers, recovery programs, and holistic support services', 'heart-pulse', 8, true)
+        ON CONFLICT (slug) DO UPDATE SET is_active = true
+      `);
+      console.log("[seed] 8 trusted service categories seeded successfully");
+    }
+    await repairOrphanedServices();
   } catch (err: any) {
     console.log("[seed] Failed to seed trusted_service_categories:", err.message);
+  }
+}
+
+async function repairOrphanedServices() {
+  try {
+    const catMap = await pgQuery(`SELECT id, slug, name FROM trusted_service_categories`);
+    const catBySlug: Record<string, string> = {};
+    catMap.forEach((c: any) => { catBySlug[c.slug] = c.id; });
+
+    const orphaned = await pgQuery(`
+      SELECT ts.id, ts.name, ts.category_id
+      FROM trusted_services ts
+      LEFT JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+      WHERE ts.category_id IS NOT NULL AND tsc.id IS NULL
+    `);
+    if (orphaned.length === 0) return;
+    console.log(`[seed] Found ${orphaned.length} orphaned service(s) with mismatched category_id — repairing...`);
+
+    const slugKeywords: [string, string[]][] = [
+      ["education-training", ["education", "training", "job", "school"]],
+      ["employment-support", ["employ", "career", "staffing", "workforce"]],
+      ["housing-home", ["hous", "home", "moving", "real estate"]],
+      ["legal-services", ["legal", "law", "attorney"]],
+      ["financial-credit", ["financ", "credit", "loan", "bank"]],
+      ["insurance", ["insurance", "insur"]],
+      ["benefits-assistance", ["benefit", "va ", "claims"]],
+      ["wellness-recovery", ["wellness", "recovery", "health", "mental", "substance"]],
+    ];
+
+    for (const svc of orphaned) {
+      const nameLC = (svc.name || "").toLowerCase();
+      let matched = false;
+      for (const [slug, keywords] of slugKeywords) {
+        if (keywords.some(kw => nameLC.includes(kw)) && catBySlug[slug]) {
+          await pgQuery(`UPDATE trusted_services SET category_id = $1 WHERE id = $2`, [catBySlug[slug], svc.id]);
+          console.log(`[seed] Repaired service "${svc.name}" → "${slug}"`);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        const fallback = catBySlug["education-training"] || catMap[0]?.id;
+        if (fallback) {
+          await pgQuery(`UPDATE trusted_services SET category_id = $1 WHERE id = $2`, [fallback, svc.id]);
+          console.log(`[seed] Repaired service "${svc.name}" → fallback category`);
+        }
+      }
+    }
+  } catch (err: any) {
+    console.log("[seed] Failed to repair orphaned services:", err.message);
   }
 }
 

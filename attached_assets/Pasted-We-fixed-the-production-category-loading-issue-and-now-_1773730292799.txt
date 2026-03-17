@@ -1,0 +1,45 @@
+We fixed the production category loading issue, and now all Trusted Services categories are showing correctly on the live site.
+
+However, the provider I created under Education & Training is still NOT appearing on the live Trusted Services category page.
+
+Current live behavior:
+- Categories load correctly
+- Education & Training category opens correctly
+- But the page still says “Partners Coming Soon”
+
+This means the live production query is returning zero providers for that category.
+
+Please investigate and confirm all of the following in production:
+
+1. Confirm the provider record actually exists in the live production trusted_services table
+Specifically check the provider we created for:
+- Second Chance Job Center
+- category: Education & Training
+
+2. Confirm the provider is marked correctly for public visibility
+Please verify the live production row has the correct values for:
+- is_active
+- verification_status
+- category_id
+
+3. Confirm the provider category_id matches the live production Education & Training category row
+Since we had earlier category seeding / UUID mismatch issues, I need to know whether the provider is tied to a stale or mismatched category_id.
+
+4. Confirm the public production query for services is not filtering it out incorrectly
+Please test the exact production query/result for:
+- Education & Training trusted services
+and identify why it is returning zero rows.
+
+5. If the provider row is missing or mismatched, repair it in production
+If needed:
+- recreate the provider row in production
+- or update the category_id to the correct live production Education & Training category row
+- make sure it is active and publicly visible
+
+6. After fixing, test full live flow again
+Please confirm in production:
+- category loads
+- provider card displays under Education & Training
+- Connect With Provider still works
+
+At this point, categories are fixed. The remaining issue is that the live provider record is either missing, mismatched, or being filtered out in production.
