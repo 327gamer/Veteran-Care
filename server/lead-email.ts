@@ -324,6 +324,7 @@ interface TrustedServiceLeadData {
   leadPhone: string | null;
   leadCity: string | null;
   leadState: string | null;
+  leadRole: string | null;
   message: string | null;
   createdAt: string;
 }
@@ -340,8 +341,30 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
     : `New Connection Request via ${platform.name}`;
 
   const headerSubtext = isAdminCopy
-    ? `A veteran has requested contact with a Trusted Services partner.`
-    : `A veteran would like to connect with your services.`;
+    ? `A user is requesting to connect with a Trusted Services partner.`
+    : `A user is requesting to connect with your services.`;
+
+  const roleLabel = lead.leadRole || "Not specified";
+  const baseUrl = platform.domain ? `https://${platform.domain}` : "";
+  const contactedUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=contacted`;
+  const notFitUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=not_a_fit`;
+  const noResponseUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=no_response`;
+  const duplicateUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=duplicate`;
+  const referredUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=referred_elsewhere`;
+
+  const actionButtons = isAdminCopy ? "" : `
+  <div style="margin-bottom: 20px;">
+    <p style="margin: 0 0 10px 0; color: #374151; font-size: 13px; font-weight: 600;">Update Lead Status:</p>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="${contactedUrl}" style="display: inline-block; background: #16A34A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">✅ I Contacted This Lead</a>
+      <a href="${notFitUrl}" style="display: inline-block; background: #DC2626; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">❌ Not a Fit</a>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+      <a href="${noResponseUrl}" style="display: inline-block; background: #6B7280; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">No Response</a>
+      <a href="${duplicateUrl}" style="display: inline-block; background: #6B7280; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">Duplicate</a>
+      <a href="${referredUrl}" style="display: inline-block; background: #6B7280; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">Referred Elsewhere</a>
+    </div>
+  </div>`;
 
   return `
 <!DOCTYPE html>
@@ -364,8 +387,12 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(lead.categoryName)}</td>
     </tr>` : ""}
     <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Veteran Name</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Contact Name</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.leadName)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Role</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(roleLabel)}</td>
     </tr>
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Email</td>
@@ -386,15 +413,17 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
   </table>
 
   ${lead.message ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
-    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Veteran's Message</p>
+    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Message</p>
     <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
   </div>` : ""}
+
+  ${actionButtons}
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
       <strong>Next Steps:</strong> ${isAdminCopy
         ? "This lead has also been sent to the partner. Monitor status in the admin dashboard."
-        : `Please reach out to this veteran using their preferred contact method. Thank you for supporting our veterans through ${platform.name}.`}
+        : `Please reach out to this contact using their preferred contact method. After contacting them, click the "I Contacted This Lead" button above to update the status. Thank you for your partnership with ${platform.name}.`}
     </p>
   </div>
 
@@ -410,7 +439,7 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
 export async function sendTrustedServiceLeadNotification(
   leadId: string,
   providerData: { name: string; email: string | null; category_name: string | null },
-  leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; created_at: string }
+  leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; role: string | null; created_at: string }
 ): Promise<{ partnerSent: boolean; adminSent: boolean; errors: string[] }> {
   const errors: string[] = [];
   let partnerSent = false;
@@ -425,6 +454,7 @@ export async function sendTrustedServiceLeadNotification(
     leadPhone: leadData.phone,
     leadCity: leadData.city,
     leadState: leadData.state,
+    leadRole: leadData.role,
     message: leadData.message,
     createdAt: leadData.created_at,
   };
@@ -435,7 +465,7 @@ export async function sendTrustedServiceLeadNotification(
       const { error: emailErr } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [providerData.email],
-        subject: `New Veteran Connection Request — ${platform.name}`,
+        subject: `New Connection Request — ${platform.name}`,
         html: partnerHtml,
       });
       if (emailErr) {

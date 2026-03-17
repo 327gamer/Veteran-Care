@@ -2570,17 +2570,52 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/leads/update-status", async (req, res) => {
+    const { leadId, status } = req.query;
+    if (!leadId || !status) {
+      return res.status(400).send("<html><body><h2>Invalid link</h2><p>Missing required parameters.</p></body></html>");
+    }
+    const validStatuses = ["contacted", "not_a_fit", "no_response", "duplicate", "referred_elsewhere"];
+    if (!validStatuses.includes(status as string)) {
+      return res.status(400).send("<html><body><h2>Invalid status</h2><p>Status not recognized.</p></body></html>");
+    }
+    try {
+      const finalStatus = status === "not_a_fit" || status === "no_response" || status === "duplicate" || status === "referred_elsewhere" ? "closed" : status;
+      const closeReason = status !== "contacted" ? status : null;
+      const rows = await pgQuery(
+        `UPDATE trusted_service_leads SET status = $1, close_reason = $2, status_updated_at = NOW() WHERE id = $3 RETURNING *`,
+        [finalStatus, closeReason, leadId]
+      );
+      if (rows.length === 0) {
+        return res.status(404).send("<html><body><h2>Lead not found</h2><p>This lead may have been removed.</p></body></html>");
+      }
+      const lead = rows[0];
+      const statusLabel = status === "contacted" ? "Contacted" : status === "not_a_fit" ? "Not a Fit" : status === "no_response" ? "No Response" : status === "duplicate" ? "Duplicate" : "Referred Elsewhere";
+      return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Status Updated</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; text-align: center;">
+  <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 30px;">
+    <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+    <h2 style="color: #166534; margin: 0 0 8px 0;">Status Updated</h2>
+    <p style="color: #15803D; font-size: 14px; margin: 0 0 16px 0;">Lead for <strong>${lead.name}</strong> marked as <strong>${statusLabel}</strong>.</p>
+    <p style="color: #6B7280; font-size: 12px;">Thank you for updating this lead. You can close this tab.</p>
+  </div>
+</body></html>`);
+    } catch (err: any) {
+      return res.status(500).send("<html><body><h2>Error</h2><p>Something went wrong. Please try again.</p></body></html>");
+    }
+  });
+
   app.post("/api/trusted-service-leads", async (req, res) => {
-    const { provider_id, provider_name, category_id, name, email, phone, city, state, message } = req.body;
+    const { provider_id, provider_name, category_id, name, email, phone, city, state, message, role } = req.body;
     if (!provider_id || !name || !email) {
       return res.status(400).json({ error: "provider_id, name, and email are required" });
     }
     try {
       const leadRows = await pgQuery(
-        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new')
+        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, role, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'new')
          RETURNING *`,
-        [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null]
+        [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null, role || null]
       );
       const data = leadRows[0];
 
@@ -2597,7 +2632,7 @@ export async function registerRoutes(
         const result = await sendTrustedServiceLeadNotification(
           data.id,
           { name: provider?.name || provider_name, email: provider?.email || null, category_name: provider?.category_name || null },
-          { name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, created_at: data.created_at }
+          { name, email, phone: phone || null, city: city || null, state: state || null, message: message || null, role: role || null, created_at: data.created_at }
         );
         console.log(`[trusted-leads] Lead ${data.id} notifications: partner=${result.partnerSent}, admin=${result.adminSent}`);
       } catch (err: any) {

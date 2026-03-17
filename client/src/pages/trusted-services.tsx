@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ShieldCheck,
   Home,
   Scale,
@@ -73,12 +80,21 @@ type LeadForm = {
   name: string;
   email: string;
   phone: string;
+  role: string;
   city: string;
   state: string;
   message: string;
 };
 
-const emptyLeadForm: LeadForm = { name: "", email: "", phone: "", city: "", state: "", message: "" };
+const ROLE_OPTIONS = [
+  { value: "veteran", label: "Veteran" },
+  { value: "family_member", label: "Family Member" },
+  { value: "case_manager", label: "Case Manager" },
+  { value: "friend_supporter", label: "Friend / Supporter" },
+  { value: "other", label: "Other" },
+];
+
+const emptyLeadForm: LeadForm = { name: "", email: "", phone: "", role: "", city: "", state: "", message: "" };
 
 export default function TrustedServices() {
   const [, setLocation] = useLocation();
@@ -115,6 +131,7 @@ export default function TrustedServices() {
           name: data.form.name,
           email: data.form.email,
           phone: data.form.phone || undefined,
+          role: data.form.role || undefined,
           city: data.form.city || undefined,
           state: data.form.state || undefined,
           message: data.form.message || undefined,
@@ -133,7 +150,7 @@ export default function TrustedServices() {
   });
 
   const handleSubmitLead = () => {
-    if (!connectService || !leadForm.name || !leadForm.email) return;
+    if (!connectService || !leadForm.name || !leadForm.email || !leadForm.role) return;
     leadMutation.mutate({ service: connectService, form: leadForm });
   };
 
@@ -189,7 +206,7 @@ export default function TrustedServices() {
 
             <div className="space-y-3">
               <div>
-                <Label className="text-xs">Your Name *</Label>
+                <Label className="text-xs">Contact Name *</Label>
                 <Input
                   data-testid="input-lead-name"
                   value={leadForm.name}
@@ -199,7 +216,20 @@ export default function TrustedServices() {
                 />
               </div>
               <div>
-                <Label className="text-xs">Your Email *</Label>
+                <Label className="text-xs">I am a... *</Label>
+                <Select value={leadForm.role} onValueChange={v => setLeadForm(f => ({ ...f, role: v }))}>
+                  <SelectTrigger className="h-9 text-sm" data-testid="select-lead-role">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Email *</Label>
                 <Input
                   data-testid="input-lead-email"
                   type="email"
@@ -261,7 +291,7 @@ export default function TrustedServices() {
                 data-testid="button-submit-lead"
                 className="w-full h-10"
                 onClick={handleSubmitLead}
-                disabled={!leadForm.name || !leadForm.email || leadMutation.isPending}
+                disabled={!leadForm.name || !leadForm.email || !leadForm.role || leadMutation.isPending}
               >
                 <Send className="h-4 w-4 mr-2" />
                 {leadMutation.isPending ? "Sending..." : "Connect With This Provider"}

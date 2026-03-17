@@ -33,10 +33,21 @@ interface TrustedServiceLead {
   phone: string | null;
   city: string | null;
   state: string | null;
+  role: string | null;
   message: string | null;
   status: string;
+  close_reason: string | null;
+  status_updated_at: string | null;
   created_at: string;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  veteran: "Veteran",
+  family_member: "Family Member",
+  case_manager: "Case Manager",
+  friend_supporter: "Friend / Supporter",
+  other: "Other",
+};
 
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-700 border-blue-200",
@@ -174,6 +185,11 @@ export default function AdminTrustedServiceLeads() {
                       <Building2 className="h-3 w-3" />
                       {lead.provider_name}
                     </p>
+                    {lead.role && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Role: <span className="font-medium">{ROLE_LABELS[lead.role] || lead.role}</span>
+                      </p>
+                    )}
                   </div>
                   <Select
                     value={lead.status}
@@ -212,6 +228,13 @@ export default function AdminTrustedServiceLeads() {
                     {new Date(lead.created_at).toLocaleDateString()} {new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
+
+                {lead.close_reason && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Reason: <span className="font-medium capitalize">{lead.close_reason.replace(/_/g, " ")}</span>
+                    {lead.status_updated_at && ` · ${new Date(lead.status_updated_at).toLocaleDateString()}`}
+                  </p>
+                )}
 
                 {lead.message && (
                   <div className="flex items-start gap-1.5 bg-muted/30 rounded p-2 mt-1">

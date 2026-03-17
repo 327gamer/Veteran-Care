@@ -1,0 +1,96 @@
+We are very close to launch, and the Trusted Services lead system is now working technically. However, there are two critical issues that must be fixed before launch.
+
+These are not optional — they directly impact accuracy, trust, and scalability.
+
+---
+
+1. The lead form incorrectly assumes every user is a veteran
+
+Right now:
+- The form labels say “Veteran Name”
+- Emails say “A veteran would like to connect…”
+
+This is incorrect.
+
+Users submitting leads may be:
+- Veteran
+- Family Member
+- Case Manager
+- Friend / Supporter
+- Other
+
+Required changes:
+- Add a required “Role” dropdown to the Connect With Provider form:
+  - Veteran
+  - Family Member
+  - Case Manager
+  - Friend / Supporter
+  - Other
+
+- Store this value in the database
+
+- Update all language to be neutral:
+  - Replace “Veteran Name” → “Contact Name”
+  - Replace “A veteran would like to connect…” → “A user is requesting to connect with your services”
+  - Add “Role: [value]” in provider and admin emails
+
+---
+
+2. Lead status system is currently manual and does not work
+
+Current problem:
+- Leads are marked New / Contacted / Closed manually
+- Providers do NOT have access to admin
+- There is no way to know if a lead was actually contacted
+- This breaks tracking, analytics, and scalability
+
+We need to make lead status provider-driven.
+
+Required fix:
+
+- Add action buttons inside the provider email:
+  - “I Contacted This Lead”
+  - “Not a Fit”
+
+- Each button should hit an endpoint such as:
+  /api/leads/update-status?leadId=XYZ&status=contacted
+  /api/leads/update-status?leadId=XYZ&status=closed
+
+- When clicked:
+  - Update the lead status in the database
+  - Reflect immediately in the admin panel
+
+Optional (if simple):
+- Add additional close reasons:
+  - No response
+  - Duplicate
+  - Referred elsewhere
+
+---
+
+3. Clarify fallback workflow if provider does not respond
+
+We need confirmation of how this is handled:
+- Is there any automatic follow-up?
+- Or is admin expected to monitor New leads and intervene?
+
+For launch, we need a clear and reliable workflow so no lead is missed.
+
+---
+
+Summary
+
+Right now the system captures leads but does not reliably track outcomes.
+
+We need:
+- Accurate user role capture
+- Provider-driven status updates
+- Clear operational workflow
+
+These changes are critical for:
+- data accuracy
+- partner accountability
+- analytics
+- future monetization
+
+Please prioritize this before launch.
