@@ -193,6 +193,36 @@ async function repairOrphanedServices() {
   }
 }
 
+async function alignCategoryNames() {
+  const RENAMES: Record<string, string> = {
+    "housing": "Housing & Home Services",
+    "employment": "Employment Support",
+    "education": "Education & Training",
+    "legal": "Legal Services",
+    "financial": "Financial & Credit Services",
+    "healthcare": "Insurance Services",
+    "substance-recovery": "Wellness & Recovery",
+    "va-benefits": "Benefits Assistance",
+  };
+  try {
+    const { data: cats } = await supabaseAdmin.from("categories").select("id, name, slug");
+    if (!cats) return;
+    let updated = 0;
+    for (const cat of cats) {
+      const newName = RENAMES[cat.slug];
+      if (newName && cat.name !== newName) {
+        await supabaseAdmin.from("categories").update({ name: newName }).eq("id", cat.id);
+        updated++;
+      }
+    }
+    if (updated > 0) {
+      console.log(`[categories] Renamed ${updated} resource categories to match Trusted Service names`);
+    }
+  } catch (err: any) {
+    console.log("[categories] Failed to align category names:", err.message);
+  }
+}
+
 async function checkStatesTable() {
   const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
   if (error) {
@@ -323,6 +353,7 @@ export async function registerRoutes(
   await checkPartnerTable();
   await checkStatesTable();
   await checkTrustedServicesTable();
+  await alignCategoryNames();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
