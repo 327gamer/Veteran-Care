@@ -8,7 +8,7 @@ import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
-import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent } from "./stripe-service";
+import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
 import express from "express";
 
 let hasGeoColumns = true;
@@ -2624,7 +2624,7 @@ export async function registerRoutes(
     const setClauses: string[] = ["updated_at = NOW()"];
     const params: any[] = [];
     if (status) {
-      const validStatuses = ["prospect", "pending", "active", "inactive"];
+      const validStatuses = ["prospect", "under_review", "rejected", "approved_pending_payment", "active", "inactive", "archived"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: `Valid status required: ${validStatuses.join(", ")}` });
       }
@@ -2647,6 +2647,16 @@ export async function registerRoutes(
         : [];
       rows[0].trusted_service_categories = catRows[0] || null;
       return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/admin/partner-applications/:id", requireAdmin, async (req, res) => {
+    try {
+      const rows = await pgQuery(`DELETE FROM partner_applications WHERE id = $1 RETURNING id`, [req.params.id]);
+      if (rows.length === 0) return res.status(404).json({ error: "Application not found" });
+      return res.json({ deleted: true, id: rows[0].id });
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
@@ -2719,6 +2729,19 @@ export async function registerRoutes(
       return res.json({ received: true });
     } catch (err: any) {
       console.log(`[stripe] Webhook handler error:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/stripe/verify-session", async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+    if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe not configured" });
+
+    try {
+      const result = await verifyAndActivateCheckoutSession(sessionId);
+      return res.json(result);
+    } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   });

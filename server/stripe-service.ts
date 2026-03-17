@@ -188,6 +188,42 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   }
 }
 
+export async function verifyAndActivateCheckoutSession(sessionId: string): Promise<{ status: string; applicationId?: string; error?: string }> {
+  if (!stripe) return { status: "error", error: "Stripe not configured" };
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      return { status: "unpaid", error: "Payment not completed" };
+    }
+
+    const applicationId = session.metadata?.application_id;
+    if (!applicationId) {
+      return { status: "error", error: "No application_id in session metadata" };
+    }
+
+    const rows = await pgQuery(`SELECT * FROM partner_applications WHERE id = $1`, [applicationId]);
+    if (rows.length === 0) {
+      return { status: "error", error: "Application not found" };
+    }
+
+    const app = rows[0];
+
+    if (app.status === "active") {
+      return { status: "already_active", applicationId };
+    }
+
+    console.log(`[stripe] Verify endpoint: activating application ${applicationId} from session ${sessionId}`);
+    await handleCheckoutCompleted(session);
+
+    return { status: "activated", applicationId };
+  } catch (err: any) {
+    console.log(`[stripe] Verify session error:`, err.message);
+    return { status: "error", error: err.message };
+  }
+}
+
 async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Promise<void> {
   const applicationId = subscription.metadata?.application_id;
   const subscriptionId = subscription.id;

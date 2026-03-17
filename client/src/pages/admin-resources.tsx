@@ -2130,10 +2130,12 @@ interface PartnerApp {
 
 const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   prospect: { label: "New", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  under_review: { label: "Under Review", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200" },
   approved_pending_payment: { label: "Awaiting Payment", color: "bg-purple-100 text-purple-700 border-purple-200" },
   active: { label: "Active", color: "bg-green-100 text-green-700 border-green-200" },
   inactive: { label: "Inactive", color: "bg-gray-100 text-gray-500 border-gray-200" },
+  archived: { label: "Archived", color: "bg-gray-100 text-gray-400 border-gray-200" },
 };
 
 function ApplicationsPanel({ adminKey }: { adminKey: string }) {
@@ -2211,13 +2213,31 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
     onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/partner-applications/${id}`, {
+        method: "DELETE",
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
+      toast({ description: "Application deleted." });
+    },
+    onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
+  });
+
   const tabs = [
     { key: "all", label: "All" },
-    { key: "prospect", label: "Applications" },
-    { key: "pending", label: "Under Review" },
+    { key: "prospect", label: "New" },
+    { key: "under_review", label: "Under Review" },
     { key: "approved_pending_payment", label: "Awaiting Payment" },
     { key: "active", label: "Active" },
+    { key: "rejected", label: "Rejected" },
     { key: "inactive", label: "Inactive" },
+    { key: "archived", label: "Archived" },
   ];
 
   return (
@@ -2325,20 +2345,29 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="prospect">New Application</SelectItem>
-                          <SelectItem value="pending">Under Review</SelectItem>
+                          <SelectItem value="prospect">New</SelectItem>
+                          <SelectItem value="under_review">Under Review</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
                           <SelectItem value="approved_pending_payment">Awaiting Payment</SelectItem>
                           <SelectItem value="active">Active</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {!app.stripe_subscription_id && app.category_id && app.status !== "active" && app.status !== "approved_pending_payment" && (
+                    {!app.stripe_subscription_id && app.category_id && !["active", "approved_pending_payment", "rejected", "archived"].includes(app.status) && (
                       <Button size="sm" className="text-xs gap-1 bg-purple-600 hover:bg-purple-700" data-testid={`button-approve-${app.id}`}
                         disabled={approveMutation.isPending}
-                        onClick={() => { if (confirm(`Approve "${app.company_name}" and generate a Stripe payment link?`)) approveMutation.mutate(app.id); }}>
+                        onClick={() => { if (confirm(`Approve "${app.company_name}" and email a Stripe payment link?`)) approveMutation.mutate(app.id); }}>
                         <DollarSign className="h-3.5 w-3.5" /> Approve & Send Payment
+                      </Button>
+                    )}
+
+                    {!["active", "rejected", "archived"].includes(app.status) && (
+                      <Button size="sm" variant="outline" className="text-xs gap-1 text-red-600 border-red-200 hover:bg-red-50" data-testid={`button-reject-${app.id}`}
+                        onClick={() => { if (confirm(`Reject "${app.company_name}"?`)) updateMutation.mutate({ id: app.id, status: "rejected" }); }}>
+                        <XCircle className="h-3.5 w-3.5" /> Reject
                       </Button>
                     )}
 
@@ -2350,7 +2379,13 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
                       </Button>
                     )}
 
-                    {!app.category_id && (
+                    <Button size="sm" variant="ghost" className="text-xs gap-1 text-muted-foreground hover:text-red-600" data-testid={`button-delete-${app.id}`}
+                      disabled={deleteMutation.isPending}
+                      onClick={() => { if (confirm(`Permanently delete "${app.company_name}"? This cannot be undone.`)) deleteMutation.mutate(app.id); }}>
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+
+                    {!app.category_id && !["rejected", "archived"].includes(app.status) && (
                       <p className="text-[10px] text-amber-600">Assign a category before approving</p>
                     )}
                   </div>
