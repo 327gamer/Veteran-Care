@@ -33,7 +33,6 @@ import {
   Copy,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface PartnerApplication {
@@ -75,19 +74,27 @@ const PRICING_LABELS: Record<string, string> = {
 
 export default function AdminPartnerProspects() {
   const [, setLocation] = useLocation();
-  const { isAdmin, isLoading: authLoading } = useAuth();
+  const adminKey = localStorage.getItem("adminKey") || "";
+  const isAdmin = !!adminKey;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
 
+  if (!isAdmin) {
+    setLocation("/admin");
+    return null;
+  }
+
   const { data: applications = [], isLoading } = useQuery<PartnerApplication[]>({
     queryKey: ["/api/admin/partner-applications", filterStatus],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.set("status", filterStatus);
-      const res = await fetch(`/api/admin/partner-applications?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/admin/partner-applications?${params}`, {
+        headers: { "x-admin-key": adminKey },
+      });
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
@@ -98,8 +105,7 @@ export default function AdminPartnerProspects() {
     mutationFn: async ({ id, status, admin_notes }: { id: string; status?: string; admin_notes?: string }) => {
       const res = await fetch(`/api/admin/partner-applications/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
         body: JSON.stringify({ status, admin_notes }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
@@ -118,8 +124,7 @@ export default function AdminPartnerProspects() {
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/admin/partner-applications/${id}/approve`, {
         method: "POST",
-        credentials: "include",
-        headers: { "x-admin-key": localStorage.getItem("adminKey") || "" },
+        headers: { "x-admin-key": adminKey },
       });
       if (!res.ok) throw new Error((await res.json()).error);
       return res.json();
@@ -143,7 +148,7 @@ export default function AdminPartnerProspects() {
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/admin/partner-applications/${id}/convert`, {
         method: "POST",
-        credentials: "include",
+        headers: { "x-admin-key": adminKey },
       });
       if (!res.ok) throw new Error((await res.json()).error);
       return res.json();
@@ -158,11 +163,7 @@ export default function AdminPartnerProspects() {
     },
   });
 
-  if (authLoading) return null;
-  if (!isAdmin) {
-    setLocation("/admin");
-    return null;
-  }
+  
 
   const statusCounts = applications.reduce((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;

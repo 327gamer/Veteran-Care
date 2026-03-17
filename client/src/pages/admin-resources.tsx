@@ -131,9 +131,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 };
 
 export default function AdminResources() {
-  const [adminKey, setAdminKey] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners">("resources");
+  const [adminKey, setAdminKey] = useState(() => localStorage.getItem("adminKey") || "");
+  const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("adminKey"));
+  const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners" | "applications">("resources");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
@@ -624,6 +624,7 @@ export default function AdminResources() {
       headers: { "x-admin-key": adminKey },
     }).then(r => {
       if (r.ok) {
+        localStorage.setItem("adminKey", adminKey);
         setAuthenticated(true);
       } else {
         toast({ description: "Invalid admin key", variant: "destructive" });
@@ -746,16 +747,7 @@ export default function AdminResources() {
             >
               <Brain className="h-4 w-4 mr-1.5" /> AI Insights
             </Button>
-            <Button
-              data-testid="button-admin-trusted"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/trusted-services")}
-            >
-              <ShieldCheck className="h-4 w-4 mr-1.5" /> Partners
-            </Button>
-            <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); }}>
+            <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); localStorage.removeItem("adminKey"); }}>
               Sign Out
             </Button>
           </div>
@@ -790,6 +782,15 @@ export default function AdminResources() {
             onClick={() => setActiveTab("partners")}
           >
             <Building2 className="h-3.5 w-3.5 mr-1.5" /> Partners
+          </Button>
+          <Button
+            data-testid="tab-applications"
+            variant={activeTab === "applications" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setActiveTab("applications")}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" /> Applications
           </Button>
         </div>
 
@@ -1409,6 +1410,10 @@ export default function AdminResources() {
               <p className="text-center text-muted-foreground py-8">No partners yet. Add your first partner organization to enable lead routing.</p>
             )}
           </div>
+        )}
+
+        {activeTab === "applications" && (
+          <ApplicationsPanel adminKey={adminKey} />
         )}
 
         {activeTab === "resources" && (<>
@@ -2095,6 +2100,261 @@ export default function AdminResources() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+interface PartnerApp {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone: string | null;
+  website: string | null;
+  city: string | null;
+  state: string | null;
+  category_id: string | null;
+  service_description: string | null;
+  pricing_interest: string;
+  status: string;
+  admin_notes: string | null;
+  converted_provider_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_checkout_url: string | null;
+  created_at: string;
+  updated_at: string;
+  trusted_service_categories: { name: string; slug: string } | null;
+}
+
+const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  prospect: { label: "New", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  approved_pending_payment: { label: "Awaiting Payment", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  active: { label: "Active", color: "bg-green-100 text-green-700 border-green-200" },
+  inactive: { label: "Inactive", color: "bg-gray-100 text-gray-500 border-gray-200" },
+};
+
+function ApplicationsPanel({ adminKey }: { adminKey: string }) {
+  const [appFilter, setAppFilter] = useState("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
+
+  const { data: applications = [], isLoading } = useQuery<PartnerApp[]>({
+    queryKey: ["/api/admin/partner-applications", appFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (appFilter !== "all") params.set("status", appFilter);
+      const res = await fetch(`/api/admin/partner-applications?${params}`, {
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status, admin_notes }: { id: string; status?: string; admin_notes?: string }) => {
+      const res = await fetch(`/api/admin/partner-applications/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ status, admin_notes }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
+      toast({ description: "Application updated." });
+    },
+    onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/partner-applications/${id}/approve`, {
+        method: "POST",
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
+      if (data.checkoutUrl) {
+        navigator.clipboard.writeText(data.checkoutUrl).catch(() => {});
+        toast({ description: "Payment link copied to clipboard. Send it to the partner." });
+      }
+    },
+    onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/partner-applications/${id}/convert`, {
+        method: "POST",
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
+      toast({ description: "Partner converted to provider." });
+    },
+    onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
+  });
+
+  const tabs = [
+    { key: "all", label: "All" },
+    { key: "prospect", label: "Applications" },
+    { key: "pending", label: "Under Review" },
+    { key: "approved_pending_payment", label: "Awaiting Payment" },
+    { key: "active", label: "Active" },
+    { key: "inactive", label: "Inactive" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Partner Applications</h2>
+        <Badge variant="outline" className="text-xs">{applications.length} total</Badge>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {tabs.map((t) => (
+          <Button
+            key={t.key}
+            data-testid={`app-filter-${t.key}`}
+            variant={appFilter === t.key ? "default" : "outline"}
+            size="sm"
+            className="h-8 text-xs whitespace-nowrap"
+            onClick={() => setAppFilter(t.key)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+
+      {isLoading && <p className="text-center text-muted-foreground py-8">Loading applications...</p>}
+
+      {!isLoading && applications.length === 0 && (
+        <p className="text-center text-muted-foreground py-8">No applications found for this filter.</p>
+      )}
+
+      {applications.map((app) => {
+        const statusCfg = APP_STATUS_CONFIG[app.status] || APP_STATUS_CONFIG.prospect;
+        const isExpanded = expandedId === app.id;
+
+        return (
+          <Card key={app.id} data-testid={`app-card-${app.id}`} className="border">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-2 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : app.id)}>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-sm">{app.company_name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {app.contact_name} · {app.email}
+                    {app.city && ` · ${app.city}`}{app.state && `, ${app.state}`}
+                  </p>
+                  {app.trusted_service_categories && (
+                    <Badge variant="outline" className="text-[10px] mt-1">{app.trusted_service_categories.name}</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge className={`text-[10px] border ${statusCfg.color}`}>{statusCfg.label}</Badge>
+                  {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="mt-4 pt-3 border-t space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {app.phone && <div><span className="text-muted-foreground">Phone:</span> {app.phone}</div>}
+                    {app.website && <div><span className="text-muted-foreground">Website:</span> <a href={app.website} target="_blank" className="text-primary hover:underline">{app.website}</a></div>}
+                    {app.service_description && <div className="col-span-2"><span className="text-muted-foreground">Description:</span> {app.service_description}</div>}
+                    <div><span className="text-muted-foreground">Pricing Interest:</span> {app.pricing_interest}</div>
+                    <div><span className="text-muted-foreground">Submitted:</span> {new Date(app.created_at).toLocaleDateString()}</div>
+                  </div>
+
+                  {app.stripe_checkout_url && app.status === "approved_pending_payment" && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <p className="text-[10px] text-purple-700 uppercase tracking-wide mb-1.5 font-medium">Payment Link</p>
+                      <div className="flex items-center gap-2">
+                        <input readOnly value={app.stripe_checkout_url} className="flex-1 text-[11px] bg-white border rounded px-2 py-1 text-muted-foreground truncate" />
+                        <Button size="sm" variant="outline" className="h-7 text-xs" data-testid={`button-copy-link-${app.id}`}
+                          onClick={() => { navigator.clipboard.writeText(app.stripe_checkout_url!); toast({ description: "Payment link copied." }); }}>
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-purple-600 mt-1">Send this link to the partner to complete payment.</p>
+                    </div>
+                  )}
+
+                  {app.stripe_subscription_id && (
+                    <div className="bg-muted/50 rounded-lg px-3 py-2 text-[10px] text-muted-foreground">
+                      Stripe: Customer {app.stripe_customer_id?.slice(0, 18)}... · Subscription {app.stripe_subscription_id?.slice(0, 18)}...
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Admin Notes</Label>
+                    <Textarea
+                      className="text-xs min-h-[60px]"
+                      data-testid={`input-notes-${app.id}`}
+                      value={editingNotes[app.id] ?? app.admin_notes ?? ""}
+                      onChange={(e) => setEditingNotes((prev) => ({ ...prev, [app.id]: e.target.value }))}
+                    />
+                    {editingNotes[app.id] !== undefined && editingNotes[app.id] !== (app.admin_notes ?? "") && (
+                      <Button size="sm" className="h-7 text-xs" data-testid={`button-save-notes-${app.id}`}
+                        onClick={() => { updateMutation.mutate({ id: app.id, admin_notes: editingNotes[app.id] }); setEditingNotes((prev) => { const next = { ...prev }; delete next[app.id]; return next; }); }}>
+                        Save Notes
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex-1 min-w-[140px]">
+                      <Select value={app.status} onValueChange={(v) => updateMutation.mutate({ id: app.id, status: v })}>
+                        <SelectTrigger className="h-8 text-xs" data-testid={`select-app-status-${app.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="prospect">New Application</SelectItem>
+                          <SelectItem value="pending">Under Review</SelectItem>
+                          <SelectItem value="approved_pending_payment">Awaiting Payment</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {!app.stripe_subscription_id && app.category_id && app.status !== "active" && app.status !== "approved_pending_payment" && (
+                      <Button size="sm" className="text-xs gap-1 bg-purple-600 hover:bg-purple-700" data-testid={`button-approve-${app.id}`}
+                        disabled={approveMutation.isPending}
+                        onClick={() => { if (confirm(`Approve "${app.company_name}" and generate a Stripe payment link?`)) approveMutation.mutate(app.id); }}>
+                        <DollarSign className="h-3.5 w-3.5" /> Approve & Send Payment
+                      </Button>
+                    )}
+
+                    {!app.converted_provider_id && app.category_id && app.status === "active" && (
+                      <Button size="sm" className="text-xs gap-1 bg-green-600 hover:bg-green-700" data-testid={`button-convert-${app.id}`}
+                        disabled={convertMutation.isPending}
+                        onClick={() => { if (confirm(`Convert "${app.company_name}" into a provider listing?`)) convertMutation.mutate(app.id); }}>
+                        <ArrowRightLeft className="h-3.5 w-3.5" /> Convert to Provider
+                      </Button>
+                    )}
+
+                    {!app.category_id && (
+                      <p className="text-[10px] text-amber-600">Assign a category before approving</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
