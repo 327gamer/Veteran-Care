@@ -146,135 +146,132 @@ export default function TrustedServices() {
 
   const selectedCat = categories.find(c => c.slug === selectedCategory);
 
-  const ConnectModal = () => {
-    if (!connectService) return null;
-    return (
-      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
-        <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Handshake className="h-5 w-5 text-primary" />
-              <h3 className="font-heading font-bold text-base text-primary">Connect With Provider</h3>
-            </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeModal} data-testid="button-close-connect-modal">
-              <X className="h-4 w-4" />
+  const connectModal = connectService ? (
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
+      <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Handshake className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-bold text-base text-primary">Connect With Provider</h3>
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeModal} data-testid="button-close-connect-modal">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {submitted ? (
+          <div className="text-center py-6 space-y-3">
+            <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
+            <h4 className="font-heading font-bold text-base">Request Sent</h4>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              Thank you. Your request has been sent to this Trusted Services partner. They will contact you shortly.
+            </p>
+            <Button size="sm" className="mt-3" onClick={closeModal} data-testid="button-done-connect">
+              Done
             </Button>
           </div>
+        ) : (
+          <>
+            <Card className="bg-muted/30">
+              <CardContent className="p-3">
+                <p className="text-sm font-semibold">{connectService.name}</p>
+                {connectService.trusted_service_categories?.name && (
+                  <p className="text-[11px] text-muted-foreground">{connectService.trusted_service_categories.name}</p>
+                )}
+                {(connectService.city || connectService.state) && (
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="h-3 w-3" />
+                    {[connectService.city, connectService.state].filter(Boolean).join(", ")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-          {submitted ? (
-            <div className="text-center py-6 space-y-3">
-              <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
-              <h4 className="font-heading font-bold text-base">Request Sent</h4>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                Thank you. Your request has been sent to this Trusted Services partner. They will contact you shortly.
-              </p>
-              <Button size="sm" className="mt-3" onClick={closeModal} data-testid="button-done-connect">
-                Done
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Your Name *</Label>
+                <Input
+                  data-testid="input-lead-name"
+                  value={leadForm.name}
+                  onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Full name"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Your Email *</Label>
+                <Input
+                  data-testid="input-lead-email"
+                  type="email"
+                  value={leadForm.email}
+                  onChange={e => setLeadForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="you@example.com"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Phone (optional)</Label>
+                <Input
+                  data-testid="input-lead-phone"
+                  value={leadForm.phone}
+                  onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="(xxx) xxx-xxxx"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">City (optional)</Label>
+                  <Input
+                    data-testid="input-lead-city"
+                    value={leadForm.city}
+                    onChange={e => setLeadForm(f => ({ ...f, city: e.target.value }))}
+                    placeholder="City"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">State (optional)</Label>
+                  <Input
+                    data-testid="input-lead-state"
+                    value={leadForm.state}
+                    onChange={e => setLeadForm(f => ({ ...f, state: e.target.value.toUpperCase() }))}
+                    placeholder="SC"
+                    maxLength={2}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Message (optional)</Label>
+                <Textarea
+                  data-testid="input-lead-message"
+                  value={leadForm.message}
+                  onChange={e => setLeadForm(f => ({ ...f, message: e.target.value }))}
+                  placeholder="How can this provider help you?"
+                  className="text-sm min-h-[60px]"
+                />
+              </div>
+
+              {leadMutation.isError && (
+                <p className="text-xs text-destructive">{(leadMutation.error as Error).message}</p>
+              )}
+
+              <Button
+                data-testid="button-submit-lead"
+                className="w-full h-10"
+                onClick={handleSubmitLead}
+                disabled={!leadForm.name || !leadForm.email || leadMutation.isPending}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {leadMutation.isPending ? "Sending..." : "Connect With This Provider"}
               </Button>
             </div>
-          ) : (
-            <>
-              <Card className="bg-muted/30">
-                <CardContent className="p-3">
-                  <p className="text-sm font-semibold">{connectService.name}</p>
-                  {connectService.trusted_service_categories?.name && (
-                    <p className="text-[11px] text-muted-foreground">{connectService.trusted_service_categories.name}</p>
-                  )}
-                  {(connectService.city || connectService.state) && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3" />
-                      {[connectService.city, connectService.state].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Your Name *</Label>
-                  <Input
-                    data-testid="input-lead-name"
-                    value={leadForm.name}
-                    onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="Full name"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Your Email *</Label>
-                  <Input
-                    data-testid="input-lead-email"
-                    type="email"
-                    value={leadForm.email}
-                    onChange={e => setLeadForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="you@example.com"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Phone (optional)</Label>
-                  <Input
-                    data-testid="input-lead-phone"
-                    value={leadForm.phone}
-                    onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="(xxx) xxx-xxxx"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs">City (optional)</Label>
-                    <Input
-                      data-testid="input-lead-city"
-                      value={leadForm.city}
-                      onChange={e => setLeadForm(f => ({ ...f, city: e.target.value }))}
-                      placeholder="City"
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">State (optional)</Label>
-                    <Input
-                      data-testid="input-lead-state"
-                      value={leadForm.state}
-                      onChange={e => setLeadForm(f => ({ ...f, state: e.target.value.toUpperCase() }))}
-                      placeholder="SC"
-                      maxLength={2}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs">Message (optional)</Label>
-                  <Textarea
-                    data-testid="input-lead-message"
-                    value={leadForm.message}
-                    onChange={e => setLeadForm(f => ({ ...f, message: e.target.value }))}
-                    placeholder="How can this provider help you?"
-                    className="text-sm min-h-[60px]"
-                  />
-                </div>
-
-                {leadMutation.isError && (
-                  <p className="text-xs text-destructive">{(leadMutation.error as Error).message}</p>
-                )}
-
-                <Button
-                  data-testid="button-submit-lead"
-                  className="w-full h-10"
-                  onClick={handleSubmitLead}
-                  disabled={!leadForm.name || !leadForm.email || leadMutation.isPending}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {leadMutation.isPending ? "Sending..." : "Connect With This Provider"}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+          </>
+        )}
       </div>
-    );
-  };
+    </div>
+  ) : null;
 
   if (selectedCategory && selectedCat) {
     return (
@@ -400,7 +397,7 @@ export default function TrustedServices() {
           </div>
         )}
 
-        <ConnectModal />
+        {connectModal}
       </div>
     );
   }
