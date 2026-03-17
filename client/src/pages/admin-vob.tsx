@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Store,
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -39,6 +41,7 @@ interface VobEntry {
   logo_url: string | null;
   status: string;
   admin_notes: string | null;
+  show_in_trusted_services: boolean;
   created_at: string;
   reviewed_at: string | null;
   category: { name: string; slug: string } | null;
@@ -67,11 +70,15 @@ export default function AdminVob() {
   });
 
   const reviewMutation = useMutation({
-    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes?: string }) => {
-      const res = await fetch(`/api/admin/vob/${id}`, {
+    mutationFn: async (data: { id: string; status?: string; notes?: string; show_in_trusted_services?: boolean }) => {
+      const body: any = {};
+      if (data.status !== undefined) body.status = data.status;
+      if (data.notes !== undefined) body.admin_notes = data.notes;
+      if (data.show_in_trusted_services !== undefined) body.show_in_trusted_services = data.show_in_trusted_services;
+      const res = await fetch(`/api/admin/vob/${data.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey || "" },
-        body: JSON.stringify({ status, admin_notes: notes || null }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to update");
       return res.json();
@@ -140,6 +147,11 @@ export default function AdminVob() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-sm">{entry.business_name}</h3>
+                      {entry.show_in_trusted_services && (
+                        <Badge variant="outline" className="text-[9px] h-4 px-1 bg-emerald-50 text-emerald-700 border-emerald-200">
+                          <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> In Trusted Services
+                        </Badge>
+                      )}
                       {entry.is_nonprofit && (
                         <Badge variant="outline" className="text-[9px] h-4 px-1 bg-blue-50 text-blue-700 border-blue-200">
                           <Building2 className="h-2.5 w-2.5 mr-0.5" /> Nonprofit
@@ -200,6 +212,23 @@ export default function AdminVob() {
                       <div>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Last Reviewed</p>
                         <p className="text-xs">{new Date(entry.reviewed_at).toLocaleString()}</p>
+                      </div>
+                    )}
+
+                    {entry.status === "approved" && entry.category?.name && (
+                      <div className="flex items-start gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50/50">
+                        <Checkbox
+                          id={`ts-toggle-${entry.id}`}
+                          checked={entry.show_in_trusted_services}
+                          onCheckedChange={(v) => reviewMutation.mutate({ id: entry.id, show_in_trusted_services: !!v })}
+                          data-testid={`checkbox-show-ts-${entry.id}`}
+                        />
+                        <label htmlFor={`ts-toggle-${entry.id}`} className="text-xs leading-relaxed cursor-pointer">
+                          <span className="font-semibold flex items-center gap-1 mb-0.5">
+                            <ShieldCheck className="h-3 w-3 text-emerald-600" /> Show in Trusted Services
+                          </span>
+                          Also display this business under <strong>{entry.category.name}</strong> in the Trusted Services directory with a "Veteran-Owned" verification badge.
+                        </label>
                       </div>
                     )}
 

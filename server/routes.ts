@@ -95,6 +95,12 @@ async function ensureVobTable() {
   try {
     await pgQuery(`SELECT id FROM veteran_owned_businesses LIMIT 0`);
     console.log("[schema] veteran_owned_businesses table exists");
+    try {
+      await pgQuery(`SELECT show_in_trusted_services FROM veteran_owned_businesses LIMIT 0`);
+    } catch {
+      await pgQuery(`ALTER TABLE veteran_owned_businesses ADD COLUMN IF NOT EXISTS show_in_trusted_services BOOLEAN DEFAULT false`);
+      console.log("[schema] Added show_in_trusted_services column to veteran_owned_businesses");
+    }
   } catch {
     await pgQuery(`
       CREATE TABLE veteran_owned_businesses (
@@ -116,6 +122,7 @@ async function ensureVobTable() {
         logo_url TEXT,
         status TEXT DEFAULT 'pending',
         admin_notes TEXT,
+        show_in_trusted_services BOOLEAN DEFAULT false,
         created_at TIMESTAMPTZ DEFAULT now(),
         reviewed_at TIMESTAMPTZ
       )
@@ -2628,11 +2635,40 @@ export async function registerRoutes(
         params.push((req.query.state as string).toUpperCase());
         conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
       }
-      const sql = `SELECT ts.*, COALESCE(ts.is_national, false) AS is_national, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
+      const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`];
+      const vobParams = [...params];
+      if (req.query.category) {
+        vobConditions.push(`tsc2.slug = $${vobParams.length > 0 ? '1' : '1'}`);
+      }
+      if (req.query.state) {
+        const stateIdx = req.query.category ? 2 : 1;
+        vobConditions.push(`vob.state = $${stateIdx}`);
+      }
+
+      const mainSql = `SELECT ts.id, ts.category_id, ts.name, ts.short_description, ts.website_url, ts.phone, ts.email,
+             ts.address, ts.city, ts.state, ts.zip, ts.logo_url, ts.verification_status, ts.verification_label,
+             ts.cta_text, ts.cta_url, ts.is_featured, ts.is_active, ts.display_order, ts.notes_internal, ts.created_at,
+             COALESCE(ts.is_national, false) AS is_national,
+             json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories,
+             'trusted_service' AS source_type
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
-         WHERE ${conditions.join(" AND ")}
-         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+         WHERE ${conditions.join(" AND ")}`;
+
+      const vobSql = `SELECT vob.id, vob.category_id, vob.business_name AS name, vob.description AS short_description,
+             vob.website AS website_url, vob.phone, vob.email, vob.address, vob.city, vob.state, vob.zip,
+             vob.logo_url, 'verified' AS verification_status, 'Veteran-Owned' AS verification_label,
+             NULL AS cta_text, NULL AS cta_url, false AS is_featured, true AS is_active, 999 AS display_order,
+             NULL AS notes_internal, vob.created_at,
+             false AS is_national,
+             json_build_object('slug', tsc2.slug, 'name', tsc2.name) AS trusted_service_categories,
+             'vob' AS source_type
+         FROM veteran_owned_businesses vob
+         INNER JOIN trusted_service_categories tsc2 ON vob.category_id = tsc2.id
+         WHERE ${vobConditions.join(" AND ")}`;
+
+      const sql = `${mainSql} UNION ALL ${vobSql}
+         ORDER BY is_featured DESC, display_order ASC NULLS LAST, created_at DESC`;
       const rows = await pgQuery(sql, params);
       console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'})`);
       return res.json(rows);
@@ -3184,16 +3220,30 @@ export async function registerRoutes(
 
   app.patch("/api/admin/vob/:id", requireAdmin, async (req, res) => {
     try {
-      const { status, admin_notes } = req.body;
-      if (!status || !["approved", "rejected", "pending"].includes(status)) {
-        return res.status(400).json({ error: "Valid status required (approved, rejected, pending)" });
+      const updates = req.body;
+      const setClauses: string[] = [];
+      const params: any[] = [];
+      const allowedFields = ['status', 'admin_notes', 'show_in_trusted_services', 'category_id'];
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          params.push(updates[field]);
+          setClauses.push(`${field} = $${params.length}`);
+        }
       }
+      if (updates.status) {
+        if (!["approved", "rejected", "pending"].includes(updates.status)) {
+          return res.status(400).json({ error: "Valid status required (approved, rejected, pending)" });
+        }
+        setClauses.push(`reviewed_at = NOW()`);
+      }
+      if (setClauses.length === 0) return res.status(400).json({ error: "No valid fields to update" });
+      params.push(req.params.id);
       const rows = await pgQuery(
-        `UPDATE veteran_owned_businesses SET status = $1, admin_notes = $2, reviewed_at = NOW() WHERE id = $3 RETURNING *`,
-        [status, admin_notes || null, req.params.id]
+        `UPDATE veteran_owned_businesses SET ${setClauses.join(", ")} WHERE id = $${params.length} RETURNING *`,
+        params
       );
       if (rows.length === 0) return res.status(404).json({ error: "Not found" });
-      console.log(`[vob] Admin ${status} business: ${rows[0].business_name}`);
+      console.log(`[vob] Admin updated business: ${rows[0].business_name} (status=${rows[0].status}, show_in_ts=${rows[0].show_in_trusted_services})`);
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
