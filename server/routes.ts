@@ -442,7 +442,13 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
 
-    return res.json(data);
+    const sorted = (data || []).sort((a: any, b: any) => {
+      if (a.slug === "crisis-help") return -1;
+      if (b.slug === "crisis-help") return 1;
+      return 0;
+    });
+
+    return res.json(sorted);
   });
 
   app.get("/api/resources", async (req, res) => {
