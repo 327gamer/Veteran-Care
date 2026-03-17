@@ -117,7 +117,7 @@ async function ensureDefaultServices() {
 
     console.log("[seed] trusted_services is empty — seeding default provider...");
     await pgQuery(`
-      INSERT INTO trusted_services (name, description, email, phone, website, city, state, category_id, is_active, is_featured, verification_status)
+      INSERT INTO trusted_services (name, short_description, email, phone, website_url, city, state, category_id, is_active, is_featured, verification_status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, false, 'verified')
       ON CONFLICT DO NOTHING
     `, [
