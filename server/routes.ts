@@ -73,6 +73,30 @@ async function checkTrustedServicesTable() {
   } else {
     hasTrustedServicesTable = true;
     console.log("[schema] trusted_service_categories table detected");
+    await seedTrustedServiceCategoriesIfEmpty();
+  }
+}
+
+async function seedTrustedServiceCategoriesIfEmpty() {
+  try {
+    const rows = await pgQuery(`SELECT id FROM trusted_service_categories LIMIT 1`);
+    if (rows.length > 0) return;
+    console.log("[seed] trusted_service_categories is empty — seeding default categories...");
+    await pgQuery(`
+      INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active) VALUES
+        ('Housing & Home Services', 'housing-home', 'Trusted housing, moving, and home services for veterans and families', 'home', 1, true),
+        ('Legal Services', 'legal-services', 'Vetted legal professionals experienced with veteran-specific needs', 'scale', 2, true),
+        ('Financial & Credit Services', 'financial-credit', 'Trusted financial advisors, credit counseling, and lending partners', 'dollar-sign', 3, true),
+        ('Insurance Services', 'insurance', 'Insurance providers offering veteran-friendly coverage options', 'shield', 4, true),
+        ('Education & Training', 'education-training', 'Accredited programs and training providers supporting veteran success', 'graduation-cap', 5, true),
+        ('Employment Support', 'employment-support', 'Employers and staffing partners committed to hiring veterans', 'briefcase', 6, true),
+        ('Benefits Assistance', 'benefits-assistance', 'Professional services to help navigate and maximize veteran benefits', 'award', 7, true),
+        ('Wellness & Recovery', 'wellness-recovery', 'Wellness providers, recovery programs, and holistic support services', 'heart-pulse', 8, true)
+      ON CONFLICT (slug) DO UPDATE SET is_active = true
+    `);
+    console.log("[seed] 8 trusted service categories seeded successfully");
+  } catch (err: any) {
+    console.log("[seed] Failed to seed trusted_service_categories:", err.message);
   }
 }
 

@@ -1,0 +1,53 @@
+The production Trusted Services page is still not working.
+
+The behavior has changed:
+- it is no longer stuck on “Loading categories…”
+- it now says: “No categories available yet.”
+
+This tells us the frontend is receiving a response, but production is still returning zero categories.
+
+So this is now a confirmed production data / query issue, not just a loading-state problem.
+
+Please investigate and confirm the following:
+
+1. Test the live production endpoint directly
+Please hit the exact production endpoint and confirm what it returns on the live site:
+- /api/trusted-services/categories
+
+I need to know whether production is still returning [].
+
+2. Verify the live production database actually contains the 8 trusted service categories
+Please confirm:
+- the trusted_service_categories table in production has records
+- those records are in the same database the live app is querying
+- is_active values are correct or being handled correctly
+
+3. Confirm production is using the correct database connection
+I need to know whether:
+- dev and production are pointing to different databases
+- categories exist in dev but not in the live production DB
+- the live deployment is actually reading the intended PostgreSQL/Supabase production database
+
+4. Confirm the latest backend query is truly deployed live
+You already updated the query logic, but production is still showing zero categories.
+Please verify the current live deployment includes the latest categories query and not an older build.
+
+5. If production DB is missing the categories, seed/populate them immediately
+The live site should have these 8 categories available:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Education & Training
+- Employment Support
+- Benefits Assistance
+- Wellness & Recovery
+
+6. After fixing, test full live flow again
+Please confirm in production:
+- categories load
+- category cards display
+- provider listing displays
+- Connect With Provider still works
+
+At this point the issue is no longer the loading state. The live site is responding, but it is still responding with zero category data. Please identify whether this is a production DB content issue, wrong DB connection, or a deployment mismatch.
