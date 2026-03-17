@@ -66,14 +66,21 @@ let hasTrustedServicesTable = false;
 let statesHasFullSchema = false;
 
 async function checkTrustedServicesTable() {
-  const { error } = await supabaseAdmin.from("trusted_service_categories").select("id").limit(1);
-  if (error) {
-    hasTrustedServicesTable = false;
-    console.log("[schema] trusted_service_categories table not found. Run supabase/create_trusted_services.sql");
-  } else {
+  try {
+    const rows = await pgQuery(`SELECT id FROM trusted_service_categories LIMIT 1`);
     hasTrustedServicesTable = true;
-    console.log("[schema] trusted_service_categories table detected");
+    console.log(`[schema] trusted_service_categories table detected via pg (${rows.length} rows)`);
     await seedTrustedServiceCategoriesIfEmpty();
+    const svcCount = await pgQuery(`SELECT count(*) as cnt FROM trusted_services`);
+    console.log(`[schema] trusted_services count: ${svcCount[0]?.cnt}`);
+  } catch (err: any) {
+    if (err.message?.includes("does not exist")) {
+      hasTrustedServicesTable = false;
+      console.log("[schema] trusted_service_categories table not found. Run supabase/create_trusted_services.sql");
+    } else {
+      hasTrustedServicesTable = true;
+      console.log("[schema] trusted_service_categories check error (assuming exists):", err.message);
+    }
   }
 }
 
@@ -2534,7 +2541,11 @@ export async function registerRoutes(
   });
 
   app.get("/api/trusted-services", async (req, res) => {
-    if (!hasTrustedServicesTable) return res.json([]);
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    if (!hasTrustedServicesTable) {
+      console.log("[trusted-services] hasTrustedServicesTable=false, returning []");
+      return res.json([]);
+    }
     try {
       const conditions = [`ts.is_active IS NOT false`];
       const params: any[] = [];
@@ -2546,16 +2557,16 @@ export async function registerRoutes(
         params.push((req.query.state as string).toUpperCase());
         conditions.push(`ts.state = $${params.length}`);
       }
-      const rows = await pgQuery(
-        `SELECT ts.*, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
+      const sql = `SELECT ts.*, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
-         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`,
-        params
-      );
+         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+      const rows = await pgQuery(sql, params);
+      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'})`);
       return res.json(rows);
     } catch (err: any) {
+      console.log(`[trusted-services] query error: ${err.message}`);
       return res.status(500).json({ error: err.message });
     }
   });
