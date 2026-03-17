@@ -22,7 +22,6 @@ import {
   Building2,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/use-auth";
 
 interface TrustedServiceLead {
   id: string;
@@ -47,26 +46,30 @@ const statusColors: Record<string, string> = {
 
 export default function AdminTrustedServiceLeads() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  if (!isAdmin) {
+  const adminKey = localStorage.getItem("adminKey") || "";
+  if (!adminKey) {
     return (
       <div className="p-4 text-center py-20">
         <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
         <p className="text-sm text-muted-foreground">Admin access required.</p>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => setLocation("/admin")}>
+          Go to Admin Login
+        </Button>
       </div>
     );
   }
 
   const { data: leads = [], isLoading } = useQuery<TrustedServiceLead[]>({
-    queryKey: ["/api/admin/trusted-service-leads", filterStatus],
+    queryKey: ["/api/admin/trusted-service-leads", filterStatus, adminKey],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.set("status", filterStatus);
-      const res = await fetch(`/api/admin/trusted-service-leads?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/admin/trusted-service-leads?${params}`, {
+        headers: { "x-admin-key": adminKey },
+      });
       if (!res.ok) throw new Error("Failed to load leads");
       return res.json();
     },
@@ -76,8 +79,7 @@ export default function AdminTrustedServiceLeads() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const res = await fetch(`/api/admin/trusted-service-leads/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Failed to update");
@@ -95,7 +97,7 @@ export default function AdminTrustedServiceLeads() {
   return (
     <div className="p-4 space-y-4 animate-in fade-in duration-300">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin/trusted-services")} data-testid="button-back-admin">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
@@ -107,19 +109,19 @@ export default function AdminTrustedServiceLeads() {
       <div className="grid grid-cols-3 gap-2">
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-lg font-bold text-blue-600">{newCount}</p>
+            <p className="text-lg font-bold text-blue-600" data-testid="text-leads-new-count">{newCount}</p>
             <p className="text-[10px] text-muted-foreground">New</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-lg font-bold text-amber-600">{contactedCount}</p>
+            <p className="text-lg font-bold text-amber-600" data-testid="text-leads-contacted-count">{contactedCount}</p>
             <p className="text-[10px] text-muted-foreground">Contacted</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-lg font-bold text-green-600">{closedCount}</p>
+            <p className="text-lg font-bold text-green-600" data-testid="text-leads-closed-count">{closedCount}</p>
             <p className="text-[10px] text-muted-foreground">Closed</p>
           </CardContent>
         </Card>
