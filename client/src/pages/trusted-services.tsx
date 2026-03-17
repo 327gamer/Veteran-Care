@@ -34,6 +34,7 @@ import {
   X,
   CheckCircle2,
   Send,
+  Filter,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -62,8 +63,29 @@ interface TrustedService {
   cta_text: string;
   cta_url: string;
   is_featured: boolean;
+  is_national: boolean;
   trusted_service_categories: { slug: string; name: string };
 }
+
+const US_STATES = [
+  { label: "Alabama", value: "AL" }, { label: "Alaska", value: "AK" }, { label: "Arizona", value: "AZ" },
+  { label: "Arkansas", value: "AR" }, { label: "California", value: "CA" }, { label: "Colorado", value: "CO" },
+  { label: "Connecticut", value: "CT" }, { label: "Delaware", value: "DE" }, { label: "Florida", value: "FL" },
+  { label: "Georgia", value: "GA" }, { label: "Hawaii", value: "HI" }, { label: "Idaho", value: "ID" },
+  { label: "Illinois", value: "IL" }, { label: "Indiana", value: "IN" }, { label: "Iowa", value: "IA" },
+  { label: "Kansas", value: "KS" }, { label: "Kentucky", value: "KY" }, { label: "Louisiana", value: "LA" },
+  { label: "Maine", value: "ME" }, { label: "Maryland", value: "MD" }, { label: "Massachusetts", value: "MA" },
+  { label: "Michigan", value: "MI" }, { label: "Minnesota", value: "MN" }, { label: "Mississippi", value: "MS" },
+  { label: "Missouri", value: "MO" }, { label: "Montana", value: "MT" }, { label: "Nebraska", value: "NE" },
+  { label: "Nevada", value: "NV" }, { label: "New Hampshire", value: "NH" }, { label: "New Jersey", value: "NJ" },
+  { label: "New Mexico", value: "NM" }, { label: "New York", value: "NY" }, { label: "North Carolina", value: "NC" },
+  { label: "North Dakota", value: "ND" }, { label: "Ohio", value: "OH" }, { label: "Oklahoma", value: "OK" },
+  { label: "Oregon", value: "OR" }, { label: "Pennsylvania", value: "PA" }, { label: "Rhode Island", value: "RI" },
+  { label: "South Carolina", value: "SC" }, { label: "South Dakota", value: "SD" }, { label: "Tennessee", value: "TN" },
+  { label: "Texas", value: "TX" }, { label: "Utah", value: "UT" }, { label: "Vermont", value: "VT" },
+  { label: "Virginia", value: "VA" }, { label: "Washington", value: "WA" }, { label: "West Virginia", value: "WV" },
+  { label: "Wisconsin", value: "WI" }, { label: "Wyoming", value: "WY" },
+];
 
 const iconMap: Record<string, any> = {
   home: Home,
@@ -99,6 +121,7 @@ const emptyLeadForm: LeadForm = { name: "", email: "", phone: "", role: "", city
 export default function TrustedServices() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [filterState, setFilterState] = useState<string>("");
   const [connectService, setConnectService] = useState<TrustedService | null>(null);
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
@@ -113,11 +136,13 @@ export default function TrustedServices() {
   });
 
   const { data: services = [] } = useQuery<TrustedService[]>({
-    queryKey: ["/api/trusted-services", selectedCategory],
+    queryKey: ["/api/trusted-services", selectedCategory, filterState],
     queryFn: () => {
-      const url = selectedCategory
-        ? `/api/trusted-services?category=${selectedCategory}`
-        : "/api/trusted-services";
+      const params = new URLSearchParams();
+      if (selectedCategory) params.set("category", selectedCategory);
+      if (filterState) params.set("state", filterState);
+      const qs = params.toString();
+      const url = qs ? `/api/trusted-services?${qs}` : "/api/trusted-services";
       return fetch(url).then(r => r.json());
     },
     enabled: !!selectedCategory,
@@ -315,25 +340,54 @@ export default function TrustedServices() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => setSelectedCategory(null)}
+            onClick={() => { setSelectedCategory(null); setFilterState(""); }}
             data-testid="button-back-trusted-categories"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-heading font-bold text-primary">{selectedCat.name}</h1>
             <p className="text-xs text-muted-foreground">{selectedCat.description}</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Select value={filterState} onValueChange={(v) => setFilterState(v === "all" ? "" : v)}>
+            <SelectTrigger className="h-9 text-xs flex-1" data-testid="select-state-filter">
+              <SelectValue placeholder="Filter by state" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All States</SelectItem>
+              {US_STATES.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label} ({s.value})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filterState && (
+            <Button variant="ghost" size="sm" className="h-9 text-xs px-2" onClick={() => setFilterState("")} data-testid="button-clear-state-filter">
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
 
         {services.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">Partners Coming Soon</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                We're currently vetting trusted providers for this category. Check back soon.
+              <p className="text-sm font-medium text-muted-foreground">
+                {filterState ? "No Partners in This State Yet" : "Partners Coming Soon"}
               </p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                {filterState
+                  ? `No trusted providers found in ${US_STATES.find(s => s.value === filterState)?.label || filterState}. Try selecting a different state or view all states.`
+                  : "We're currently vetting trusted providers for this category. Check back soon."}
+              </p>
+              {filterState && (
+                <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setFilterState("")} data-testid="button-view-all-states">
+                  View All States
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -351,12 +405,16 @@ export default function TrustedServices() {
                           </Badge>
                         )}
                       </div>
-                      {(service.city || service.state) && (
+                      {service.is_national ? (
+                        <p className="text-[11px] text-blue-600 flex items-center gap-1 mt-0.5 font-medium">
+                          <Globe className="h-3 w-3" /> Nationwide
+                        </p>
+                      ) : (service.city || service.state) ? (
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3" />
                           {[service.city, service.state].filter(Boolean).join(", ")}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     {service.verification_label && (
                       <Badge variant="secondary" className="text-[10px] shrink-0 bg-green-50 text-green-700 border-green-200">

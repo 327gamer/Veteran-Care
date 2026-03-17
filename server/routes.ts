@@ -73,6 +73,12 @@ async function checkTrustedServicesTable() {
     await seedTrustedServiceCategoriesIfEmpty();
     const svcCount = await pgQuery(`SELECT count(*) as cnt FROM trusted_services`);
     console.log(`[schema] trusted_services count: ${svcCount[0]?.cnt}`);
+    try {
+      await pgQuery(`SELECT is_national FROM trusted_services LIMIT 0`);
+    } catch {
+      await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS is_national BOOLEAN DEFAULT false`);
+      console.log("[schema] Added is_national column to trusted_services");
+    }
   } catch (err: any) {
     if (err.message?.includes("does not exist")) {
       hasTrustedServicesTable = false;
@@ -2586,15 +2592,15 @@ export async function registerRoutes(
       }
       if (req.query.state) {
         params.push((req.query.state as string).toUpperCase());
-        conditions.push(`ts.state = $${params.length}`);
+        conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
       }
-      const sql = `SELECT ts.*, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
+      const sql = `SELECT ts.*, COALESCE(ts.is_national, false) AS is_national, json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
          ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
       const rows = await pgQuery(sql, params);
-      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'})`);
+      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'})`);
       return res.json(rows);
     } catch (err: any) {
       console.log(`[trusted-services] query error: ${err.message}`);
@@ -2675,10 +2681,10 @@ export async function registerRoutes(
     try {
       const b = req.body;
       const rows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, is_national, verification_status, notes_internal)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *`,
-        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.verification_status || 'pending', b.notes_internal || null]
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null]
       );
       return res.json(rows[0]);
     } catch (err: any) {
@@ -2692,7 +2698,7 @@ export async function registerRoutes(
       const updates = req.body;
       const setClauses: string[] = [];
       const params: any[] = [];
-      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'verification_status', 'notes_internal', 'display_order'];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order'];
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
           params.push(updates[field]);
