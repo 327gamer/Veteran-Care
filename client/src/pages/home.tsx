@@ -491,7 +491,19 @@ export default function Home() {
 
       {/* Veteran-Owned Businesses */}
       <section className="space-y-3" data-testid="section-veteran-owned-businesses">
-        <h2 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Veteran-Owned Businesses</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Veteran-Owned Businesses</h2>
+        </div>
+        <div
+          data-testid="vob-browse-directory"
+          className="relative cursor-pointer"
+          onClick={() => setLocation("/vob")}
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="w-full h-10 pl-9 pr-4 rounded-lg border bg-background text-sm text-muted-foreground/60 flex items-center">
+            Browse veteran-owned businesses & nonprofits...
+          </div>
+        </div>
         <div className="grid grid-cols-1 gap-3">
           <Card
             className="hover:border-primary/50 transition-all cursor-pointer group border-primary/20 shadow-sm hover:shadow-md"

@@ -22,6 +22,7 @@ import AdminTrustedServiceLeads from "@/pages/admin-trusted-service-leads";
 import AdminPartnerProspects from "@/pages/admin-partner-prospects";
 import PartnerApply from "@/pages/partner-apply";
 import PartnerPaymentSuccess from "@/pages/partner-payment-success";
+import VobDirectory from "@/pages/vob-directory";
 import VobDirectoryApply from "@/pages/vob-directory-apply";
 import VobStartupHelp from "@/pages/vob-startup-help";
 import AdminVob from "@/pages/admin-vob";
@@ -88,6 +89,12 @@ function Router() {
       <Route path="/partner-payment-success">
         <Layout>
           <PartnerPaymentSuccess />
+        </Layout>
+      </Route>
+
+      <Route path="/vob">
+        <Layout>
+          <VobDirectory />
         </Layout>
       </Route>
 

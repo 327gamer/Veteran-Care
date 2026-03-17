@@ -160,6 +160,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `/saved-resources` - Saved/bookmarked resources
 - `/submit-resource` - Community resource submission form
 - `/trusted-services` - Trusted Services page (vetted providers by category)
+- `/vob` - Veteran-Owned Business public directory (approved listings, search, category/state filters)
 - `/vob/apply` - Veteran-Owned Business directory application form (free, submits to admin review)
 - `/vob/start` - Veteran-Owned Business startup roadmap/help (placeholder)
 - `/admin` - Admin resource review dashboard (key-protected, standalone layout)

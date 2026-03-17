@@ -3111,6 +3111,34 @@ export async function registerRoutes(
 
   // ── Veteran-Owned Business Directory ──
 
+  app.get("/api/vob", async (req, res) => {
+    try {
+      const conditions = [`vob.status = 'approved'`];
+      const params: any[] = [];
+      if (req.query.category) {
+        params.push(req.query.category);
+        conditions.push(`tsc.slug = $${params.length}`);
+      }
+      if (req.query.state) {
+        params.push((req.query.state as string).toUpperCase());
+        conditions.push(`vob.state = $${params.length}`);
+      }
+      if (req.query.search) {
+        params.push(`%${(req.query.search as string).toLowerCase()}%`);
+        conditions.push(`(LOWER(vob.business_name) LIKE $${params.length} OR LOWER(vob.description) LIKE $${params.length} OR LOWER(vob.subcategory) LIKE $${params.length})`);
+      }
+      const sql = `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
+         FROM veteran_owned_businesses vob
+         LEFT JOIN trusted_service_categories tsc ON vob.category_id = tsc.id
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY vob.is_nonprofit DESC, vob.created_at DESC`;
+      const rows = await pgQuery(sql, params);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/vob", async (req, res) => {
     try {
       const b = req.body;
