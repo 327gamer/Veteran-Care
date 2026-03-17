@@ -1,0 +1,60 @@
+We tested the updated Trusted Services lead flow again.
+
+Current status:
+
+WHAT IS WORKING
+- The Connect With Provider modal now shows the Role dropdown correctly
+- The form submits correctly
+- The provider email is being sent
+- The provider email now uses neutral wording
+- The Role field is showing in the email correctly
+
+WHAT IS STILL BROKEN
+When the provider clicks the email action buttons such as:
+- I Contacted This Lead
+- Not a Fit
+- No Response
+- Duplicate
+- Referred Elsewhere
+
+the link goes to a 404 page not found.
+
+Example:
+veterancare.com/api/leads/update-status?leadId=...&status=contacted
+
+This means the provider status update action is NOT reaching the backend and is NOT updating the lead in the system/admin panel.
+
+We need this fixed before launch.
+
+Please investigate and fix the following:
+
+1. Confirm the route actually exists and is active in the deployed/live environment:
+   /api/leads/update-status
+
+2. Confirm the email buttons are generating the correct production URL and not a broken or front-end-captured route
+
+3. Make sure the route is handled by the backend server, not intercepted by the frontend router
+
+4. Confirm clicking any provider action button:
+   - updates the lead status in the database
+   - updates the admin panel immediately
+   - shows a clean confirmation page to the provider
+
+Expected provider button behavior:
+- I Contacted This Lead → status = contacted
+- Not a Fit → status = closed (with close_reason = not_a_fit)
+- No Response → status = closed (with close_reason = no_response)
+- Duplicate → status = closed (with close_reason = duplicate)
+- Referred Elsewhere → status = closed (with close_reason = referred_elsewhere)
+
+5. After fixing, please test end to end:
+   - submit a lead
+   - receive provider email
+   - click each button
+   - confirm the database updates
+   - confirm admin panel reflects the new status/reason
+
+This is important because the lead capture is now working, but provider response tracking is still broken if the email action links do not update the backend.
+
+The role dropdown issue appears fixed.
+The remaining blocker is the provider email status buttons returning 404 instead of updating the lead.
