@@ -5,7 +5,7 @@ import { supabase, supabaseAdmin, supabaseForUser } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
-import { sendNavigatorNotification, sendTrustedServiceLeadNotification } from "./lead-email";
+import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent } from "./stripe-service";
@@ -2666,11 +2666,28 @@ export async function registerRoutes(
 
       const { url, sessionId } = await createPartnerCheckoutSession(req.params.id);
 
+      let emailSent = false;
+      let emailError: string | undefined;
+      if (application.email) {
+        const emailResult = await sendPartnerPaymentEmail(
+          application.email,
+          application.company_name,
+          application.contact_name,
+          url
+        );
+        emailSent = emailResult.sent;
+        emailError = emailResult.error;
+      }
+
       return res.json({
         checkoutUrl: url,
         sessionId,
         status: "approved_pending_payment",
-        message: "Checkout session created. Send the payment link to the partner.",
+        emailSent,
+        emailError,
+        message: emailSent
+          ? `Payment link emailed to ${application.email}. Link also available below as backup.`
+          : `Checkout session created. Email delivery failed${emailError ? `: ${emailError}` : ""}. Copy the link manually.`,
       });
     } catch (err: any) {
       return res.status(400).json({ error: err.message });

@@ -475,6 +475,91 @@ export async function sendTrustedServiceLeadNotification(
   return { partnerSent, adminSent, errors };
 }
 
+export async function sendPartnerPaymentEmail(
+  partnerEmail: string,
+  companyName: string,
+  contactName: string | null,
+  checkoutUrl: string
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const greeting = contactName ? escapeHtml(contactName) : escapeHtml(companyName);
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">Your ${platform.name} Partner Application Has Been Approved!</h2>
+    <p style="margin: 0; color: #15803D; font-size: 13px;">One step left — activate your listing.</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Great news! Your application to join the <strong>${platform.name} Trusted Services</strong> network has been approved.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    To activate your listing and start receiving veteran referrals, please complete your subscription setup by clicking the button below:
+  </p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${escapeHtml(checkoutUrl)}" style="display: inline-block; background: #166534; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+      Activate My Listing
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
+    Or copy and paste this link into your browser:<br>
+    <a href="${escapeHtml(checkoutUrl)}" style="color: #2563EB; word-break: break-all;">${escapeHtml(checkoutUrl)}</a>
+  </p>
+
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin: 24px 0;">
+    <p style="margin: 0; font-size: 13px; color: #92400E;">
+      <strong>What happens next:</strong> Once payment is complete, your business will be listed in our Trusted Services directory and you'll begin receiving veteran referrals in your service area.
+    </p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Thank you for supporting our veterans!
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    — The ${platform.name} Team
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
+    <p>This email was sent by ${platform.name} (${platform.domain}) regarding your partner application.</p>
+    <p>If you did not apply, please disregard this email.</p>
+  </div>
+
+</body>
+</html>`;
+
+    console.log(`[email] Sending partner payment link to ${partnerEmail}`);
+
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [partnerEmail],
+      subject: `${platform.name} — Your Application Is Approved! Activate Your Listing`,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Partner payment email failed:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Partner payment email sent to ${partnerEmail}`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending partner payment email:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
 export async function sendLeadNotification(
   leadId: string,
   partnerId: string

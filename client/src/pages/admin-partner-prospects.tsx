@@ -134,8 +134,10 @@ export default function AdminPartnerProspects() {
       if (data.checkoutUrl) {
         navigator.clipboard.writeText(data.checkoutUrl).catch(() => {});
         toast({
-          title: "Payment Link Created",
-          description: "Checkout URL has been copied to your clipboard. Send it to the partner.",
+          title: data.emailSent ? "Payment Link Emailed" : "Payment Link Created",
+          description: data.emailSent
+            ? "Payment link emailed to the partner. Link also copied to clipboard as backup."
+            : "Email delivery failed. Payment link copied to clipboard — send it manually.",
         });
       }
     },

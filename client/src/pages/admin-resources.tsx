@@ -2185,7 +2185,11 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
       if (data.checkoutUrl) {
         navigator.clipboard.writeText(data.checkoutUrl).catch(() => {});
-        toast({ description: "Payment link copied to clipboard. Send it to the partner." });
+        toast({
+          description: data.emailSent
+            ? `Payment link emailed to the partner. Link also copied to clipboard as backup.`
+            : `Email delivery failed. Payment link copied to clipboard — send it manually.`,
+        });
       }
     },
     onError: (err: any) => toast({ description: err.message, variant: "destructive" }),
