@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,14 @@ import {
   ChevronDown,
   ChevronUp,
   ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { useLocation } from "wouter";
+
+interface PartnerSlot {
+  label: string;
+  categorySlugs?: string[];
+}
 
 interface RoadmapStep {
   id: string;
@@ -28,7 +35,17 @@ interface RoadmapStep {
   summary: string;
   details: string[];
   vetTip: string;
-  futurePartnerTypes: string[];
+  partnerSlots: PartnerSlot[];
+}
+
+interface TrustedServicePartner {
+  id: string;
+  name: string;
+  short_description: string;
+  website_url: string | null;
+  category_slug: string;
+  verification_label: string | null;
+  source_type: string;
 }
 
 const ROADMAP_STEPS: RoadmapStep[] = [
@@ -49,7 +66,11 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "Set realistic short-term and long-term goals",
     ],
     vetTip: "Many veteran entrepreneurs succeed by solving problems they experienced during or after service. Your military experience is a strength — leadership, discipline, and mission focus translate directly to business.",
-    futurePartnerTypes: ["Business plan consultants", "Veteran entrepreneur mentors", "SBA VBOC centers"],
+    partnerSlots: [
+      { label: "Business plan consultants", categorySlugs: ["education-training"] },
+      { label: "Veteran entrepreneur mentors", categorySlugs: ["employment-support"] },
+      { label: "SBA VBOC centers", categorySlugs: ["benefits-assistance"] },
+    ],
   },
   {
     id: "legal-setup",
@@ -69,7 +90,12 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "Consider trademark registration for your business name and logo",
     ],
     vetTip: "If you're forming a nonprofit to serve veterans, the 501(c)(3) process takes time — start early. For businesses, an LLC is often the simplest and most protective structure to begin with.",
-    futurePartnerTypes: ["Formation services", "Business attorneys", "Registered agents", "Trademark services"],
+    partnerSlots: [
+      { label: "Formation services", categorySlugs: ["legal-services"] },
+      { label: "Business attorneys", categorySlugs: ["legal-services"] },
+      { label: "Registered agents", categorySlugs: ["legal-services"] },
+      { label: "Trademark services", categorySlugs: ["legal-services"] },
+    ],
   },
   {
     id: "financial-setup",
@@ -89,7 +115,12 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "Consider hiring a CPA or accountant familiar with veteran-owned businesses",
     ],
     vetTip: "The VA and SBA offer free financial literacy workshops for veteran entrepreneurs. Take advantage of these before spending money on outside help.",
-    futurePartnerTypes: ["Accountants / CPAs", "Bookkeeping services", "Business banking partners", "Tax preparation services"],
+    partnerSlots: [
+      { label: "Accountants / CPAs", categorySlugs: ["financial-credit"] },
+      { label: "Bookkeeping services", categorySlugs: ["financial-credit"] },
+      { label: "Business banking partners", categorySlugs: ["financial-credit"] },
+      { label: "Tax preparation services", categorySlugs: ["financial-credit"] },
+    ],
   },
   {
     id: "funding-loans",
@@ -110,7 +141,12 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "For nonprofits: foundation grants, government grants, and donor strategies",
     ],
     vetTip: "Don't take on debt until you've exhausted grant opportunities. Many veteran-specific grants don't require repayment and can cover startup costs.",
-    futurePartnerTypes: ["SBA-approved lenders", "Veteran-focused grant programs", "Crowdfunding platforms", "CDFIs"],
+    partnerSlots: [
+      { label: "SBA-approved lenders", categorySlugs: ["financial-credit"] },
+      { label: "Veteran-focused grant programs", categorySlugs: ["benefits-assistance"] },
+      { label: "Crowdfunding platforms" },
+      { label: "CDFIs", categorySlugs: ["financial-credit"] },
+    ],
   },
   {
     id: "launch-branding",
@@ -131,7 +167,12 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "Announce your launch to your personal and professional network",
     ],
     vetTip: "Your veteran status is a powerful brand asset. Many consumers actively seek out and prefer to support veteran-owned businesses. Make it visible in your branding.",
-    futurePartnerTypes: ["Web design services", "Logo & branding agencies", "Marketing consultants", "VOSB certification help"],
+    partnerSlots: [
+      { label: "Web design services", categorySlugs: ["employment-support"] },
+      { label: "Logo & branding agencies" },
+      { label: "Marketing consultants" },
+      { label: "VOSB certification help", categorySlugs: ["benefits-assistance"] },
+    ],
   },
   {
     id: "operations-delegation",
@@ -151,7 +192,12 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "Create a simple customer management system (CRM)",
     ],
     vetTip: "In the military, you learned to delegate and build teams. Apply that same principle — you don't have to do everything yourself. Focus on what you do best and find help for the rest.",
-    futurePartnerTypes: ["Business insurance providers", "Virtual assistant services", "HR / payroll services", "CRM platforms"],
+    partnerSlots: [
+      { label: "Business insurance providers", categorySlugs: ["insurance"] },
+      { label: "Virtual assistant services" },
+      { label: "HR / payroll services", categorySlugs: ["employment-support"] },
+      { label: "CRM platforms" },
+    ],
   },
   {
     id: "growth-scaling",
@@ -172,13 +218,41 @@ const ROADMAP_STEPS: RoadmapStep[] = [
       "For nonprofits: build a sustainable fundraising and donor retention strategy",
     ],
     vetTip: "Federal government contracts set aside billions for veteran-owned small businesses each year. Getting certified and registered in SAM.gov opens a massive revenue opportunity.",
-    futurePartnerTypes: ["Government contracting consultants", "Business growth coaches", "Networking organizations", "Advanced funding partners"],
+    partnerSlots: [
+      { label: "Government contracting consultants", categorySlugs: ["employment-support"] },
+      { label: "Business growth coaches", categorySlugs: ["education-training"] },
+      { label: "Networking organizations" },
+      { label: "Advanced funding partners", categorySlugs: ["financial-credit"] },
+    ],
   },
 ];
 
 export default function VobStartupHelp() {
   const [, setLocation] = useLocation();
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+
+  const { data: allPartners = [] } = useQuery<TrustedServicePartner[]>({
+    queryKey: ["/api/trusted-services/roadmap-partners"],
+    queryFn: async () => {
+      const res = await fetch("/api/trusted-services");
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        short_description: p.short_description,
+        website_url: p.website_url,
+        category_slug: p.trusted_service_categories?.slug || "",
+        verification_label: p.verification_label,
+        source_type: p.source_type,
+      }));
+    },
+  });
+
+  const getPartnersForSlugs = (slugs?: string[]) => {
+    if (!slugs || slugs.length === 0) return [];
+    return allPartners.filter((p) => slugs.includes(p.category_slug));
+  };
 
   const toggleStep = (id: string) => {
     setExpandedSteps((prev) => {
@@ -310,22 +384,82 @@ export default function VobStartupHelp() {
                       </p>
                     </div>
 
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                        <ShieldCheck className="h-3 w-3" /> Partner Resources Coming Soon
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {step.futurePartnerTypes.map((partner, i) => (
-                          <Badge
-                            key={i}
-                            variant="outline"
-                            className="text-[10px] h-5 px-1.5 bg-white text-muted-foreground border-border"
-                          >
-                            {partner}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                    {(() => {
+                      const allSlugs = step.partnerSlots.flatMap((s) => s.categorySlugs || []);
+                      const uniqueSlugs = [...new Set(allSlugs)];
+                      const livePartners = getPartnersForSlugs(uniqueSlugs);
+                      const slotsWithoutPartners = step.partnerSlots.filter((s) => {
+                        if (!s.categorySlugs || s.categorySlugs.length === 0) return true;
+                        return !allPartners.some((p) => s.categorySlugs!.includes(p.category_slug));
+                      });
+
+                      return (
+                        <div className="space-y-2">
+                          {livePartners.length > 0 && (
+                            <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-200">
+                              <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> Recommended Partners
+                              </p>
+                              <div className="space-y-2">
+                                {livePartners.slice(0, 3).map((partner) => (
+                                  <div
+                                    key={partner.id}
+                                    className="flex items-center justify-between gap-2 bg-white rounded-md p-2 border border-emerald-100"
+                                    data-testid={`partner-referral-${partner.id}`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs font-medium text-foreground truncate">{partner.name}</p>
+                                      {partner.verification_label && (
+                                        <Badge variant="outline" className="text-[9px] h-4 px-1 mt-0.5 bg-emerald-50 text-emerald-700 border-emerald-200">
+                                          {partner.verification_label}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-[10px] px-2 shrink-0"
+                                      onClick={() => setLocation(`/trusted-services?highlight=${partner.id}`)}
+                                      data-testid={`button-view-partner-${partner.id}`}
+                                    >
+                                      View <ExternalLink className="h-2.5 w-2.5 ml-1" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                {livePartners.length > 3 && (
+                                  <button
+                                    className="text-[10px] text-emerald-700 hover:text-emerald-600 font-medium w-full text-center py-1"
+                                    onClick={() => setLocation(`/trusted-services?category=${uniqueSlugs[0]}`)}
+                                    data-testid="link-view-all-step-partners"
+                                  >
+                                    View all {livePartners.length} partners →
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {slotsWithoutPartners.length > 0 && (
+                            <div className="bg-muted/30 rounded-lg p-3 border border-border">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> {livePartners.length > 0 ? "More Partners Coming Soon" : "Partner Resources Coming Soon"}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {slotsWithoutPartners.map((slot, i) => (
+                                  <Badge
+                                    key={i}
+                                    variant="outline"
+                                    className="text-[10px] h-5 px-1.5 bg-white text-muted-foreground border-border"
+                                  >
+                                    {slot.label}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
