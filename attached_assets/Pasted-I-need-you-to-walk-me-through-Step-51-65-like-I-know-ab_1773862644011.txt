@@ -1,0 +1,63 @@
+I need you to walk me through Step 51.65 like I know absolutely nothing.
+
+Please use the “turkey wrapper” approach:
+- one tiny step at a time
+- no skipped steps
+- no assumptions
+- no general explanations
+- no developer language unless you immediately explain it
+
+Important:
+Your directions must match the CURRENT Stripe interface exactly.
+The last time, the icons/menus/locations did not match what I was seeing, so I got lost.
+
+Here is what I need from you right now:
+
+PART 1 — FIND THE CURRENT SUBSCRIPTION / PRODUCT WE ALREADY HAVE
+1. Tell me exactly where to click in Stripe to find the EXISTING $99 partner subscription/product we already set up
+2. Tell me whether I need to be in test mode or live mode first
+3. Tell me exactly what words/buttons I should look for on the screen
+4. Tell me exactly how to know I am looking at the correct existing product and price
+5. Tell me exactly what ID I should copy if needed (product ID vs price ID)
+
+PART 2 — CREATE THE NEW NATIONAL PLAN
+6. Walk me step-by-step through creating the new NATIONAL plan in Stripe
+7. Tell me exactly what to name it
+8. Tell me exactly what description to type
+9. Tell me exactly how to set it to recurring monthly
+10. Tell me exactly how to set the price to $499/month
+11. Tell me exactly where to click Save
+
+PART 3 — COPY THE RIGHT PRICE IDS
+12. Tell me exactly where the PRICE ID is shown after saving
+13. Tell me exactly what it looks like
+14. Warn me clearly not to copy the wrong ID
+15. Tell me exactly which ID is for:
+- STRIPE_PARTNER_PRICE_ID_STATE
+- STRIPE_PARTNER_PRICE_ID_NATIONAL
+
+PART 4 — REPLIT SECRETS
+16. Walk me step-by-step through where to go in Replit to add the secrets
+17. Tell me exactly what to paste for:
+- STRIPE_PARTNER_PRICE_ID_STATE
+- STRIPE_PARTNER_PRICE_ID_NATIONAL
+18. Tell me exactly whether I should keep the old STRIPE_PARTNER_PRICE_ID secret or remove it
+19. Tell me exactly what I should expect to see after saving the secrets
+
+PART 5 — TEST MODE
+20. Tell me exactly how to confirm I am still in TEST mode
+21. Tell me exactly whether I should create these products in test mode first
+22. Tell me exactly when I should repeat this in LIVE mode later
+
+PART 6 — TESTING AFTER SETUP
+23. After I finish the Stripe setup and Replit secrets, tell me exactly how I test:
+- a State Plan application
+- a National Plan application
+24. Tell me exactly what I should expect to see on the Stripe checkout page for each one
+25. Tell me exactly what test card to use
+
+IMPORTANT:
+- Please write this as a numbered checklist I can follow line by line
+- Please do not tell me what should be true in theory
+- Please tell me exactly what to click, what to type, what to copy, and what to expect to see on screen
+- If there are places where Stripe has changed their layout, mention the alternate place it may appear
