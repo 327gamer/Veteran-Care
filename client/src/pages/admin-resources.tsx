@@ -162,6 +162,8 @@ export default function AdminResources() {
   const [ruleForm, setRuleForm] = useState<Record<string, any> | null>(null);
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesText, setNotesText] = useState("");
+  const [manualAssignLeadId, setManualAssignLeadId] = useState<string | null>(null);
+  const [manualPartnerId, setManualPartnerId] = useState<string>("");
 
   const queryClient = useQueryClient();
 
@@ -228,12 +230,15 @@ export default function AdminResources() {
       if (!res.ok) throw new Error("Failed to reroute");
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
       if (data.rerouted === false) {
-        toast({ description: "No matching partner found", variant: "destructive" });
+        setManualAssignLeadId(variables.id);
+        setManualPartnerId("");
+        toast({ description: "No auto-match found — choose a partner below", variant: "destructive" });
       } else {
-        toast({ description: `Rerouted to ${data.partner_name || "partner"}` });
+        setManualAssignLeadId(null);
+        toast({ description: `Routed to ${data.partner_name || "partner"}` });
       }
     },
   });
@@ -241,7 +246,16 @@ export default function AdminResources() {
   const { data: partners = [], isLoading: partnersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/partners", adminKey],
     queryFn: () => fetch("/api/admin/partners", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
-    enabled: authenticated && activeTab === "partners",
+    enabled: authenticated && (activeTab === "partners" || activeTab === "leads"),
+  });
+
+  const { data: suggestedPartners = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/leads", manualAssignLeadId, "suggest-partners", adminKey],
+    queryFn: () =>
+      fetch(`/api/admin/leads/${manualAssignLeadId}/suggest-partners`, {
+        headers: { "x-admin-key": adminKey },
+      }).then(r => r.json()),
+    enabled: authenticated && !!manualAssignLeadId,
   });
 
   const partnerMutation = useMutation({
@@ -999,28 +1013,125 @@ export default function AdminResources() {
 
                     {req.routed_to_partner_id && (
                       <div className="text-[10px] bg-blue-50 text-blue-800 rounded p-2 border border-blue-200 space-y-0.5">
-                        <p className="flex items-center gap-1">
-                          <ArrowRightLeft className="h-3 w-3" />
-                          Routed to partner
+                        <p className="flex items-center gap-1 flex-wrap">
+                          <ArrowRightLeft className="h-3 w-3 shrink-0" />
+                          <span className="font-medium">
+                            {partners.find(p => p.id === req.routed_to_partner_id)?.name || "Routing Partner"}
+                          </span>
                           {req.delivery_status && (
-                            <Badge variant="outline" className={`text-[9px] ml-1 ${
+                            <Badge variant="outline" className={`text-[9px] ml-auto ${
                               req.delivery_status === "pending" ? "bg-amber-100 text-amber-800" :
                               req.delivery_status === "escalated" ? "bg-red-100 text-red-700" :
                               req.delivery_status === "fallback_manual" ? "bg-slate-100 text-slate-700" :
-                              ""
+                              "bg-green-100 text-green-800"
                             }`}>
                               {req.delivery_status === "fallback_manual" ? "Manual Fallback" : req.delivery_status}
                             </Badge>
                           )}
                         </p>
-                        {req.routed_at && <p className="text-muted-foreground">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
+                        <div className="flex items-center justify-between">
+                          {req.routed_at && <p className="text-muted-foreground">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
+                          {(req.status === "new" || req.status === "in_progress") && (
+                            <button
+                              className="text-blue-600 underline text-[9px] hover:text-blue-800"
+                              onClick={() => { setManualAssignLeadId(manualAssignLeadId === req.id ? null : req.id); setManualPartnerId(""); }}
+                            >
+                              Change
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
 
                     {req.delivery_status === "fallback_manual" && !req.routed_to_partner_id && (
-                      <div className="text-[10px] bg-amber-50 text-amber-800 rounded p-2 border border-amber-200">
-                        <AlertTriangle className="h-3 w-3 inline mr-1" />
-                        No partner matched — manual handling required
+                      <div className="text-[10px] bg-amber-50 text-amber-800 rounded p-2 border border-amber-200 flex items-start justify-between gap-2">
+                        <div>
+                          <AlertTriangle className="h-3 w-3 inline mr-1" />
+                          No partner matched — manual assignment needed
+                        </div>
+                        <button
+                          className="text-amber-700 underline whitespace-nowrap hover:text-amber-900"
+                          onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); }}
+                        >
+                          Assign manually
+                        </button>
+                      </div>
+                    )}
+
+                    {manualAssignLeadId === req.id && (
+                      <div className="bg-slate-50 border border-slate-200 rounded p-3 space-y-3">
+                        <p className="text-[11px] font-semibold text-slate-700">Assign to Partner</p>
+
+                        {suggestedPartners.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Suggested matches</p>
+                            {suggestedPartners.map((s: any) => (
+                              <button
+                                key={s.partnerId}
+                                data-testid={`suggest-partner-${s.partnerId}`}
+                                className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded border border-green-200 bg-green-50 hover:bg-green-100 text-left transition-colors"
+                                onClick={() => {
+                                  rerouteMutation.mutate({ id: req.id, partner_id: s.partnerId });
+                                  setManualAssignLeadId(null);
+                                  setManualPartnerId("");
+                                }}
+                              >
+                                <span className="flex items-center gap-1.5 text-[11px] text-green-800 font-medium">
+                                  <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />
+                                  {s.partnerName}
+                                </span>
+                                <Badge variant="outline" className="text-[9px] bg-white border-green-300 text-green-700">
+                                  {s.categoryMatch ? "Category match" : "Catch-all"}
+                                </Badge>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {suggestedPartners.length === 0 && (
+                          <p className="text-[10px] text-muted-foreground italic">No routing rules match this request — you can still assign any active partner below.</p>
+                        )}
+
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+                            {suggestedPartners.length > 0 ? "Or choose any partner" : "Choose a partner"}
+                          </p>
+                          <div className="flex gap-2">
+                            <Select
+                              value={manualPartnerId}
+                              onValueChange={setManualPartnerId}
+                            >
+                              <SelectTrigger data-testid={`select-manual-partner-${req.id}`} className="h-7 text-xs flex-1">
+                                <SelectValue placeholder="Choose partner…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {partners.filter((p: any) => p.is_active && p.is_lead_enabled).map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              data-testid={`button-manual-assign-${req.id}`}
+                              size="sm"
+                              className="h-7 text-xs shrink-0"
+                              disabled={!manualPartnerId || rerouteMutation.isPending}
+                              onClick={() => {
+                                rerouteMutation.mutate({ id: req.id, partner_id: manualPartnerId });
+                                setManualPartnerId("");
+                                setManualAssignLeadId(null);
+                              }}
+                            >
+                              Assign
+                            </Button>
+                          </div>
+                        </div>
+
+                        <button
+                          className="text-[10px] text-muted-foreground underline w-full text-center hover:text-slate-600"
+                          onClick={() => { setManualAssignLeadId(null); setManualPartnerId(""); }}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
 
@@ -1140,17 +1251,32 @@ export default function AdminResources() {
                         </Button>
                       )}
                       {(req.status === "new" || req.status === "in_progress") && (
-                        <Button
-                          data-testid={`lead-reroute-${req.id}`}
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs text-blue-700 border-blue-300"
-                          onClick={() => rerouteMutation.mutate({ id: req.id })}
-                          disabled={rerouteMutation.isPending}
-                        >
-                          <ArrowRightLeft className="h-3 w-3 mr-1" />
-                          {req.routed_to_partner_id ? "Re-route" : "Route"}
-                        </Button>
+                        <>
+                          <Button
+                            data-testid={`lead-reroute-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-blue-700 border-blue-300"
+                            onClick={() => rerouteMutation.mutate({ id: req.id })}
+                            disabled={rerouteMutation.isPending}
+                          >
+                            <ArrowRightLeft className="h-3 w-3 mr-1" />
+                            {req.routed_to_partner_id ? "Re-route" : "Route"}
+                          </Button>
+                          <Button
+                            data-testid={`lead-manual-assign-${req.id}`}
+                            size="sm"
+                            variant="outline"
+                            className={`h-7 text-xs ${manualAssignLeadId === req.id ? "bg-slate-100 text-slate-700 border-slate-400" : "text-slate-600 border-slate-300"}`}
+                            onClick={() => {
+                              setManualAssignLeadId(manualAssignLeadId === req.id ? null : req.id);
+                              setManualPartnerId("");
+                            }}
+                          >
+                            <Users className="h-3 w-3 mr-1" />
+                            Assign
+                          </Button>
+                        </>
                       )}
                     </div>
                   </CardContent>

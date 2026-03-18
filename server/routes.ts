@@ -2229,6 +2229,20 @@ export async function registerRoutes(
     return res.json({ success: true, rerouted: true, partner_name: result.partnerName });
   });
 
+  app.get("/api/admin/leads/:id/suggest-partners", requireAdmin, async (req, res) => {
+    if (!hasPartnerTable || !hasRoutingColumns) return res.json([]);
+    const { id } = req.params;
+    const { data: lead } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, category, subcategory, urgency, user_state, user_city")
+      .eq("id", id)
+      .single();
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    const { findCandidatePartners } = await import("./lead-router");
+    const candidates = await findCandidatePartners(lead);
+    return res.json(candidates);
+  });
+
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
     let { data: clicks, error: clicksErr } = await supabaseAdmin
       .from("resource_clicks")

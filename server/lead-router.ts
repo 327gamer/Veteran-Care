@@ -63,20 +63,16 @@ async function countTodayLeadsForPartner(partnerId: string): Promise<number> {
   return count || 0;
 }
 
-export async function findBestPartner(
-  lead: LeadForRouting,
-  excludePartnerIds: string[] = []
-): Promise<{ partnerId: string; partnerName: string; ruleId: string } | null> {
-  const categorySlug = await getCategorySlugForLead(lead);
+export interface PartnerCandidate {
+  partnerId: string;
+  partnerName: string;
+  ruleId: string;
+  priority: number;
+  categoryMatch: boolean;
+}
 
-  const { data: rules, error } = await supabaseAdmin
-    .from("partner_routing_rules")
-    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
-    .eq("is_active", true);
-
-  if (error || !rules || rules.length === 0) return null;
-
-  const candidates = (rules as any[]).filter((rule) => {
+function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: string | null, excludePartnerIds: string[]): any[] {
+  return rules.filter((rule) => {
     const partner = rule.partner;
     if (!partner || !partner.is_active || !partner.is_lead_enabled) return false;
     if (excludePartnerIds.includes(partner.id)) return false;
@@ -108,6 +104,58 @@ export async function findBestPartner(
 
     return true;
   });
+}
+
+export async function findCandidatePartners(
+  lead: LeadForRouting,
+  excludePartnerIds: string[] = []
+): Promise<PartnerCandidate[]> {
+  const categorySlug = await getCategorySlugForLead(lead);
+
+  const { data: rules, error } = await supabaseAdmin
+    .from("partner_routing_rules")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
+    .eq("is_active", true);
+
+  if (error || !rules || rules.length === 0) return [];
+
+  const filtered = applyRoutingFilters(rules as any[], lead, categorySlug, excludePartnerIds);
+
+  filtered.sort((a, b) => {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return computeSpecificity(b) - computeSpecificity(a);
+  });
+
+  const seen = new Set<string>();
+  return filtered
+    .filter((rule) => {
+      if (seen.has(rule.partner.id)) return false;
+      seen.add(rule.partner.id);
+      return true;
+    })
+    .map((rule) => ({
+      partnerId: rule.partner.id,
+      partnerName: rule.partner.name,
+      ruleId: rule.id,
+      priority: rule.priority,
+      categoryMatch: !!rule.category_slug,
+    }));
+}
+
+export async function findBestPartner(
+  lead: LeadForRouting,
+  excludePartnerIds: string[] = []
+): Promise<{ partnerId: string; partnerName: string; ruleId: string } | null> {
+  const categorySlug = await getCategorySlugForLead(lead);
+
+  const { data: rules, error } = await supabaseAdmin
+    .from("partner_routing_rules")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
+    .eq("is_active", true);
+
+  if (error || !rules || rules.length === 0) return null;
+
+  const candidates = applyRoutingFilters(rules as any[], lead, categorySlug, excludePartnerIds);
 
   if (candidates.length === 0) return null;
 
