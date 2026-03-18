@@ -59,21 +59,21 @@ const URGENCY_OPTIONS = [
 ];
 
 const HELP_CATEGORIES = [
-  { value: "benefits", label: "Benefits & VA Claims" },
+  { value: "va-benefits", label: "Benefits & VA Claims" },
   { value: "healthcare", label: "Healthcare" },
-  { value: "crisis", label: "Crisis Help" },
+  { value: "crisis-help", label: "Crisis Help" },
   { value: "mental-health", label: "Mental Health" },
   { value: "housing", label: "Housing Support" },
   { value: "employment", label: "Employment" },
   { value: "education", label: "Education & GI Bill" },
-  { value: "legal-financial", label: "Legal & Financial" },
-  { value: "family", label: "Family & Caregivers" },
+  { value: "legal", label: "Legal & Financial" },
+  { value: "family-support", label: "Family & Caregivers" },
   { value: "records", label: "Military Records" },
   { value: "transition", label: "Transition" },
 ];
 
 const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
-  "benefits": [
+  "va-benefits": [
     { value: "disability-claim", label: "Disability Claim" },
     { value: "pact-act", label: "PACT Act / Burn Pit" },
     { value: "pension", label: "Pension" },
@@ -87,7 +87,7 @@ const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
     { value: "community-care", label: "Community Care" },
     { value: "other-healthcare", label: "Other Healthcare" },
   ],
-  "crisis": [
+  "crisis-help": [
     { value: "suicide-prevention", label: "Suicide Prevention" },
     { value: "homeless-services", label: "Homeless Services" },
     { value: "domestic-violence", label: "Domestic Violence" },
@@ -122,14 +122,14 @@ const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
     { value: "scholarships", label: "Scholarships" },
     { value: "other-education", label: "Other Education" },
   ],
-  "legal-financial": [
+  "legal": [
     { value: "legal-aid", label: "Legal Aid" },
     { value: "financial-counseling", label: "Financial Counseling" },
     { value: "debt-relief", label: "Debt Relief" },
     { value: "tax-help", label: "Tax Help" },
     { value: "other-legal-financial", label: "Other Legal / Financial" },
   ],
-  "family": [
+  "family-support": [
     { value: "caregiver-support", label: "Caregiver Support" },
     { value: "spouse-benefits", label: "Spouse / Dependent Benefits" },
     { value: "childcare", label: "Childcare" },
@@ -240,7 +240,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
           veteran_email: form.veteran_email || null,
           message: form.message || null,
           preferred_contact: form.preferred_contact,
-          category: categoryLabel || null,
+          category: form.category || null,
           subcategory: subcategoryLabel || null,
           user_state: loc.stateCode || null,
           user_city: loc.city || null,
