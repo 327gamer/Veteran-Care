@@ -2930,21 +2930,23 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
     const validPricing = ["monthly", "lead-based", "both"];
+    const validPlanTypes = ["state", "national"];
     try {
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'prospect')
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect')
          RETURNING *`,
         [
           company_name, contact_name, email,
           phone || null, website || null, city || null, state || null,
           category_id || null, service_description || null,
           validPricing.includes(pricing_interest) ? pricing_interest : "both",
+          validPlanTypes.includes(plan_type) ? plan_type : null,
         ]
       );
       return res.json(rows[0]);

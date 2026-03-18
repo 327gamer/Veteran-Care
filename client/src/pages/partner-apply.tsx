@@ -21,6 +21,8 @@ import {
   Users,
   BarChart3,
   Handshake,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -55,6 +57,7 @@ export default function PartnerApply() {
     category_id: "",
     service_description: "",
     pricing_interest: "both",
+    plan_type: "" as "state" | "national" | "",
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -74,6 +77,7 @@ export default function PartnerApply() {
         body: JSON.stringify({
           ...form,
           category_id: form.category_id || null,
+          state: form.plan_type === "national" ? null : (form.state || null),
         }),
       });
       if (!res.ok) {
@@ -94,7 +98,20 @@ export default function PartnerApply() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const canSubmit = form.company_name.trim() && form.contact_name.trim() && form.email.trim();
+  const selectPlan = (plan: "state" | "national") => {
+    setForm((prev) => ({
+      ...prev,
+      plan_type: plan,
+      state: plan === "national" ? "" : prev.state,
+    }));
+  };
+
+  const canSubmit =
+    form.company_name.trim() &&
+    form.contact_name.trim() &&
+    form.email.trim() &&
+    form.plan_type !== "" &&
+    (form.plan_type === "national" || form.state !== "");
 
   if (submitted) {
     return (
@@ -178,6 +195,91 @@ export default function PartnerApply() {
           </div>
         </div>
 
+        {/* Plan Selection */}
+        <div className="mb-5">
+          <h2 className="text-sm font-semibold text-foreground mb-1">
+            Select Your Plan <span className="text-destructive">*</span>
+          </h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Choose the coverage area that matches your business reach.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* State Plan */}
+            <button
+              type="button"
+              data-testid="button-plan-state"
+              onClick={() => selectPlan("state")}
+              className={`relative text-left rounded-xl border-2 p-4 transition-all focus:outline-none ${
+                form.plan_type === "state"
+                  ? "border-primary bg-green-50 shadow-sm"
+                  : "border-border bg-white hover:border-primary/50"
+              }`}
+            >
+              {form.plan_type === "state" && (
+                <span className="absolute top-3 right-3 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                  <CheckCircle2 className="h-3 w-3 text-white" />
+                </span>
+              )}
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">State Plan</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">
+                $99<span className="text-sm font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Listed in one state. Ideal for local and regional businesses.
+              </p>
+            </button>
+
+            {/* National Plan */}
+            <button
+              type="button"
+              data-testid="button-plan-national"
+              onClick={() => selectPlan("national")}
+              className={`relative text-left rounded-xl border-2 p-4 transition-all focus:outline-none ${
+                form.plan_type === "national"
+                  ? "border-primary bg-green-50 shadow-sm"
+                  : "border-border bg-white hover:border-primary/50"
+              }`}
+            >
+              {form.plan_type === "national" && (
+                <span className="absolute top-3 right-3 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                  <CheckCircle2 className="h-3 w-3 text-white" />
+                </span>
+              )}
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">National Plan</span>
+                <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Best Value</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">
+                $499<span className="text-sm font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Listed in all states. Ideal for national and online businesses.
+              </p>
+            </button>
+          </div>
+
+          {/* No plan selected warning */}
+          {form.plan_type === "" && (
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Please select a plan to continue.
+            </p>
+          )}
+
+          {/* National plan confirmation */}
+          {form.plan_type === "national" && (
+            <div className="mt-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+              <Globe className="h-4 w-4 text-blue-600 shrink-0" />
+              <p className="text-xs text-blue-800 font-medium">
+                National Plan — All States Access. Your listing will appear for veterans in every state.
+              </p>
+            </div>
+          )}
+        </div>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -244,7 +346,8 @@ export default function PartnerApply() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* City + State — state required if state plan, hidden if national */}
+            <div className={`grid gap-4 ${form.plan_type === "national" ? "grid-cols-1" : "grid-cols-2"}`}>
               <div>
                 <Label htmlFor="city" className="text-xs">City</Label>
                 <Input
@@ -255,19 +358,28 @@ export default function PartnerApply() {
                   placeholder="City"
                 />
               </div>
-              <div>
-                <Label htmlFor="state" className="text-xs">State</Label>
-                <Select value={form.state} onValueChange={(v) => updateField("state", v)}>
-                  <SelectTrigger data-testid="select-state">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {US_STATES.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {form.plan_type !== "national" && (
+                <div>
+                  <Label htmlFor="state" className="text-xs">
+                    State {form.plan_type === "state" && <span className="text-destructive">*</span>}
+                  </Label>
+                  <Select value={form.state} onValueChange={(v) => updateField("state", v)}>
+                    <SelectTrigger data-testid="select-state">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {form.plan_type === "national" && (
+                <div className="hidden" aria-hidden="true" />
+              )}
             </div>
 
             <div>
@@ -308,7 +420,7 @@ export default function PartnerApply() {
                   <SelectItem value="both">Open to Both</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">Our team will discuss pricing details with you after review.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Our team will discuss any additional pricing details with you after review.</p>
             </div>
 
             <Button
