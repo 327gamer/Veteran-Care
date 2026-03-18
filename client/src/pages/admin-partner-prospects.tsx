@@ -27,7 +27,6 @@ import {
   XCircle,
   ArrowRightCircle,
   FileText,
-  DollarSign,
   CreditCard,
   Link2,
   Copy,
@@ -46,7 +45,7 @@ interface PartnerApplication {
   state: string | null;
   category_id: string | null;
   service_description: string | null;
-  pricing_interest: string;
+  plan_type: string | null;
   status: string;
   admin_notes: string | null;
   converted_provider_id: string | null;
@@ -64,12 +63,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
   approved_pending_payment: { label: "Awaiting Payment", color: "bg-purple-100 text-purple-700 border-purple-200", icon: CreditCard },
   active: { label: "Active Partner", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
   inactive: { label: "Inactive", color: "bg-gray-100 text-gray-500 border-gray-200", icon: XCircle },
-};
-
-const PRICING_LABELS: Record<string, string> = {
-  monthly: "Monthly Listing",
-  "lead-based": "Lead-Based Pricing",
-  both: "Open to Both",
 };
 
 export default function AdminPartnerProspects() {
@@ -188,7 +181,7 @@ export default function AdminPartnerProspects() {
             </button>
             <div>
               <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-prospects-title">
-                Partner Pipeline
+                Trusted Partner Applications
               </h1>
               <p className="text-xs text-muted-foreground">{applications.length} total applications</p>
             </div>
@@ -201,7 +194,7 @@ export default function AdminPartnerProspects() {
               onClick={() => setLocation("/admin/trusted-services")}
               data-testid="button-nav-partners"
             >
-              Partners
+              Trusted Partners
             </Button>
             <Button
               variant="outline"
@@ -210,7 +203,7 @@ export default function AdminPartnerProspects() {
               onClick={() => setLocation("/admin/trusted-service-leads")}
               data-testid="button-nav-leads"
             >
-              Leads
+              Trusted Partner Leads
             </Button>
           </div>
         </div>
@@ -273,6 +266,16 @@ export default function AdminPartnerProspects() {
                             <StatusIcon className="h-3 w-3 mr-0.5" />
                             {cfg.label}
                           </Badge>
+                          {app.plan_type === "national" && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                              <Globe className="h-2.5 w-2.5 mr-0.5" /> National
+                            </Badge>
+                          )}
+                          {app.plan_type === "state" && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
+                              <MapPin className="h-2.5 w-2.5 mr-0.5" /> State
+                            </Badge>
+                          )}
                           {app.converted_provider_id && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
                               Converted
@@ -316,10 +319,18 @@ export default function AdminPartnerProspects() {
                               <span>{[app.city, app.state].filter(Boolean).join(", ")}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <DollarSign className="h-3 w-3" />
-                            <span>{PRICING_LABELS[app.pricing_interest] || app.pricing_interest}</span>
-                          </div>
+                          {app.plan_type && (
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              {app.plan_type === "national"
+                                ? <Globe className="h-3 w-3" />
+                                : <MapPin className="h-3 w-3" />}
+                              <span className="font-medium text-foreground">
+                                {app.plan_type === "national"
+                                  ? "National Plan — All States Access"
+                                  : `State Plan — ${app.state || "State not set"}`}
+                              </span>
+                            </div>
+                          )}
                           {app.trusted_service_categories && (
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <ShieldCheck className="h-3 w-3" />

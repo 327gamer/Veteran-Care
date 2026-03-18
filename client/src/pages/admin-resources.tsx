@@ -756,7 +756,7 @@ export default function AdminResources() {
               className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
               onClick={() => setLocation("/admin/trusted-service-leads")}
             >
-              <Handshake className="h-4 w-4 mr-1.5" /> Partner Leads
+              <Handshake className="h-4 w-4 mr-1.5" /> Trusted Partner Leads
             </Button>
             <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); localStorage.removeItem("adminKey"); }}>
               Sign Out
@@ -783,7 +783,7 @@ export default function AdminResources() {
             className="h-9 text-xs"
             onClick={() => setActiveTab("leads")}
           >
-            <Users className="h-3.5 w-3.5 mr-1.5" /> Navigator Leads
+            <Users className="h-3.5 w-3.5 mr-1.5" /> Navigator Requests
           </Button>
           <Button
             data-testid="tab-partners"
@@ -792,7 +792,7 @@ export default function AdminResources() {
             className="h-9 text-xs"
             onClick={() => setActiveTab("partners")}
           >
-            <Building2 className="h-3.5 w-3.5 mr-1.5" /> Partners
+            <Building2 className="h-3.5 w-3.5 mr-1.5" /> Routing Partners
           </Button>
           <Button
             data-testid="tab-applications"
@@ -801,7 +801,7 @@ export default function AdminResources() {
             className="h-9 text-xs"
             onClick={() => setActiveTab("applications")}
           >
-            <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" /> Applications
+            <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" /> Trusted Partner Applications
           </Button>
         </div>
 
@@ -2126,7 +2126,7 @@ interface PartnerApp {
   state: string | null;
   category_id: string | null;
   service_description: string | null;
-  pricing_interest: string;
+  plan_type: string | null;
   status: string;
   admin_notes: string | null;
   converted_provider_id: string | null;
@@ -2253,7 +2253,7 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Partner Applications</h2>
+        <h2 className="text-sm font-semibold">Trusted Partner Applications</h2>
         <Badge variant="outline" className="text-xs">{applications.length} total</Badge>
       </div>
 
@@ -2308,7 +2308,16 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
                     {app.phone && <div><span className="text-muted-foreground">Phone:</span> {app.phone}</div>}
                     {app.website && <div><span className="text-muted-foreground">Website:</span> <a href={app.website} target="_blank" className="text-primary hover:underline">{app.website}</a></div>}
                     {app.service_description && <div className="col-span-2"><span className="text-muted-foreground">Description:</span> {app.service_description}</div>}
-                    <div><span className="text-muted-foreground">Pricing Interest:</span> {app.pricing_interest}</div>
+                    {app.plan_type && (
+                      <div>
+                        <span className="text-muted-foreground">Plan: </span>
+                        <span className="font-medium">
+                          {app.plan_type === "national"
+                            ? "National Plan — All States"
+                            : `State Plan — ${app.state || "State not set"}`}
+                        </span>
+                      </div>
+                    )}
                     <div><span className="text-muted-foreground">Submitted:</span> {new Date(app.created_at).toLocaleDateString()}</div>
                   </div>
 

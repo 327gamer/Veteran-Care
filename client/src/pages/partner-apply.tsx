@@ -408,21 +408,6 @@ export default function PartnerApply() {
               />
             </div>
 
-            <div>
-              <Label className="text-xs">Pricing Interest</Label>
-              <Select value={form.pricing_interest} onValueChange={(v) => updateField("pricing_interest", v)}>
-                <SelectTrigger data-testid="select-pricing">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly Listing</SelectItem>
-                  <SelectItem value="lead-based">Lead-Based Pricing</SelectItem>
-                  <SelectItem value="both">Open to Both</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">Our team will discuss any additional pricing details with you after review.</p>
-            </div>
-
             <Button
               data-testid="button-submit-application"
               className="w-full"
