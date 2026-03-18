@@ -11,7 +11,9 @@ export const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, { apiVersion: "2025-03-31.basil" as any })
   : null;
 
-const PARTNER_PRICE_ID = process.env.STRIPE_PARTNER_PRICE_ID || null;
+const PARTNER_PRICE_ID_STATE    = process.env.STRIPE_PARTNER_PRICE_ID_STATE    || null;
+const PARTNER_PRICE_ID_NATIONAL = process.env.STRIPE_PARTNER_PRICE_ID_NATIONAL || null;
+const PARTNER_PRICE_ID_LEGACY   = process.env.STRIPE_PARTNER_PRICE_ID          || null;
 const DEFAULT_NOTIFY_EMAIL = "info@veterancare.com";
 
 export function isStripeEnabled(): boolean {
@@ -53,8 +55,26 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
     );
   }
 
-  const priceId = app.stripe_price_id || PARTNER_PRICE_ID;
-  if (!priceId) throw new Error("No Stripe price configured. Set STRIPE_PARTNER_PRICE_ID environment variable or assign a price to this application.");
+  // Determine price ID: admin override → plan_type tier → legacy fallback
+  let resolvedPriceId: string | null = app.stripe_price_id || null;
+  if (!resolvedPriceId) {
+    if (app.plan_type === "national") {
+      resolvedPriceId = PARTNER_PRICE_ID_NATIONAL;
+    } else if (app.plan_type === "state") {
+      resolvedPriceId = PARTNER_PRICE_ID_STATE;
+    } else {
+      resolvedPriceId = PARTNER_PRICE_ID_LEGACY;
+    }
+  }
+
+  if (!resolvedPriceId) {
+    const missing = app.plan_type === "national"
+      ? "STRIPE_PARTNER_PRICE_ID_NATIONAL"
+      : app.plan_type === "state"
+        ? "STRIPE_PARTNER_PRICE_ID_STATE"
+        : "STRIPE_PARTNER_PRICE_ID";
+    throw new Error(`No Stripe price configured for ${app.plan_type || "unknown"} plan. Set the ${missing} environment variable.`);
+  }
 
   const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
 
@@ -62,17 +82,19 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [{ price: resolvedPriceId, quantity: 1 }],
     success_url: `${appUrl}/partner-payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/partner-apply`,
     metadata: {
       application_id: applicationId,
       company_name: app.company_name,
+      plan_type: app.plan_type || "unknown",
     },
     subscription_data: {
       metadata: {
         application_id: applicationId,
         company_name: app.company_name,
+        plan_type: app.plan_type || "unknown",
       },
     },
   });
@@ -81,7 +103,7 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
     `UPDATE partner_applications
      SET status = 'approved_pending_payment', stripe_checkout_url = $1, stripe_price_id = $2, updated_at = NOW()
      WHERE id = $3`,
-    [session.url, priceId, applicationId]
+    [session.url, resolvedPriceId, applicationId]
   );
 
   return { url: session.url!, sessionId: session.id };
