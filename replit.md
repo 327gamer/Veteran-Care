@@ -1,5 +1,8 @@
 # Veteran Care
 
+## Platform Blueprint
+- **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
+
 ## Stable Restore Points
 - **veterancare-stable-onboarding** → commit `b6ce19e` (published as `e4ceeb2` on 2026-03-10)
   - Working onboarding: Welcome → Account/Guest → Location → Interests → Home
