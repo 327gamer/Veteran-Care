@@ -198,7 +198,7 @@ export default function ResourceCenter() {
           </div>
           <button
             data-testid="cta-create-account-resource-center"
-            onClick={() => setLocation("/onboarding")}
+            onClick={() => setLocation("/onboarding?step=2")}
             className="w-full max-w-xs py-3 rounded-full bg-primary text-white font-bold text-sm shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
           >
             Create Free Account

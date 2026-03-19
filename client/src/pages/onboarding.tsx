@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { MapPin, UserPlus } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -8,7 +8,9 @@ import { useSavedResources } from "@/lib/store";
 import AuthModal from "@/components/auth-modal";
 
 export default function Onboarding() {
-  const [step, setStep] = useState(1);
+  const search = useSearch();
+  const initialStep = new URLSearchParams(search).get("step");
+  const [step, setStep] = useState(initialStep === "2" ? 2 : 1);
   const [, setLocation] = useLocation();
   const [locLoading, setLocLoading] = useState(false);
   const [locStatus, setLocStatus] = useState<string>("");
