@@ -61,13 +61,8 @@ export default function LandingPage() {
   const { onboardingComplete } = useSavedResources();
 
   const navigateToGetHelp = (slug: string | null = null) => {
-    sessionStorage.setItem("vc_action", "gethelp");
-    if (slug) {
-      sessionStorage.setItem("vc_category", slug);
-    } else {
-      sessionStorage.removeItem("vc_category");
-    }
-    setLocation(onboardingComplete ? "/home" : "/onboarding");
+    const url = slug ? `/get-help?category=${encodeURIComponent(slug)}` : "/get-help";
+    setLocation(url);
   };
 
   const handleBrowse = () => {
