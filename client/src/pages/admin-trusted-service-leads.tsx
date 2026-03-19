@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
   User,
   MessageSquare,
   Building2,
+  Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -59,6 +61,8 @@ export default function AdminTrustedServiceLeads() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
 
   const adminKey = localStorage.getItem("adminKey") || "";
   if (!adminKey) {
@@ -101,9 +105,25 @@ export default function AdminTrustedServiceLeads() {
     },
   });
 
-  const newCount = leads.filter(l => l.status === "new").length;
-  const contactedCount = leads.filter(l => l.status === "contacted").length;
-  const closedCount = leads.filter(l => l.status === "closed").length;
+  const uniqueStates = useMemo(
+    () => [...new Set(leads.map(l => l.state).filter(Boolean) as string[])].sort(),
+    [leads]
+  );
+
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (![l.provider_name, l.name, l.email, l.phone].some(v => v?.toLowerCase().includes(q))) return false;
+      }
+      if (stateFilter && l.state !== stateFilter) return false;
+      return true;
+    });
+  }, [leads, searchQuery, stateFilter]);
+
+  const newCount = filteredLeads.filter(l => l.status === "new").length;
+  const contactedCount = filteredLeads.filter(l => l.status === "contacted").length;
+  const closedCount = filteredLeads.filter(l => l.status === "closed").length;
 
   return (
     <div className="p-4 space-y-4 animate-in fade-in duration-300">
@@ -138,36 +158,67 @@ export default function AdminTrustedServiceLeads() {
         </Card>
       </div>
 
-      <div className="flex gap-2">
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-8 text-xs w-[140px]" data-testid="select-filter-lead-status">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="contacted">Contacted</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground self-center ml-auto">{leads.length} lead{leads.length !== 1 ? "s" : ""}</p>
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            data-testid="input-leads-search"
+            className="pl-8 h-8 text-xs"
+            placeholder="Search provider, name, or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 text-xs w-[130px]" data-testid="select-filter-lead-status">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="contacted">Contacted</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+          {uniqueStates.length > 0 && (
+            <Select value={stateFilter || "all"} onValueChange={v => setStateFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-filter-lead-state">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All States</SelectItem>
+                {uniqueStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <p className="text-xs text-muted-foreground ml-auto">
+            {filteredLeads.length}{filteredLeads.length !== leads.length ? ` of ${leads.length}` : ""} lead{leads.length !== 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="text-center py-10">
           <p className="text-sm text-muted-foreground">Loading leads...</p>
         </div>
-      ) : leads.length === 0 ? (
+      ) : filteredLeads.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No leads yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Connection requests from veterans will appear here.</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {leads.length === 0 ? "No leads yet" : "No leads match your filters"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {leads.length === 0
+                ? "Connection requests from veterans will appear here."
+                : "Try clearing your search or adjusting the filters."}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
-          {leads.map(lead => (
+          {filteredLeads.map(lead => (
             <Card key={lead.id} data-testid={`card-lead-${lead.id}`}>
               <CardContent className="p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">

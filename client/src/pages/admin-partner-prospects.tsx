@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -30,6 +31,7 @@ import {
   CreditCard,
   Link2,
   Copy,
+  Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +74,9 @@ export default function AdminPartnerProspects() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [planTypeFilter, setPlanTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
 
@@ -160,6 +165,23 @@ export default function AdminPartnerProspects() {
 
   
 
+  const uniqueCategories = useMemo(
+    () => [...new Set(applications.map(a => a.trusted_service_categories?.name).filter(Boolean) as string[])].sort(),
+    [applications]
+  );
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter(a => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (![a.company_name, a.contact_name, a.email].some(v => v?.toLowerCase().includes(q))) return false;
+      }
+      if (planTypeFilter && a.plan_type !== planTypeFilter) return false;
+      if (categoryFilter && a.trusted_service_categories?.name !== categoryFilter) return false;
+      return true;
+    });
+  }, [applications, searchQuery, planTypeFilter, categoryFilter]);
+
   const statusCounts = applications.reduce((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
@@ -183,7 +205,9 @@ export default function AdminPartnerProspects() {
               <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-prospects-title">
                 Trusted Partner Applications
               </h1>
-              <p className="text-xs text-muted-foreground">{applications.length} total applications</p>
+              <p className="text-xs text-muted-foreground">
+                {filteredApplications.length}{filteredApplications.length !== applications.length ? ` of ${applications.length}` : ""} applications
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -205,6 +229,42 @@ export default function AdminPartnerProspects() {
             >
               Trusted Partner Leads
             </Button>
+          </div>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              data-testid="input-apps-search"
+              className="pl-8 h-8 text-xs"
+              placeholder="Search company, contact, or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Select value={planTypeFilter || "all"} onValueChange={v => setPlanTypeFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[130px]" data-testid="select-filter-plan-type">
+                <SelectValue placeholder="All Plans" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Plans</SelectItem>
+                <SelectItem value="state">State Plan</SelectItem>
+                <SelectItem value="national">National Plan</SelectItem>
+              </SelectContent>
+            </Select>
+            {uniqueCategories.length > 0 && (
+              <Select value={categoryFilter || "all"} onValueChange={v => setCategoryFilter(v === "all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs w-[150px]" data-testid="select-filter-category">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {uniqueCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
@@ -236,17 +296,23 @@ export default function AdminPartnerProspects() {
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">Loading applications...</div>
-        ) : applications.length === 0 ? (
+        ) : filteredApplications.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Building2 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No partner applications yet.</p>
-              <p className="text-xs text-muted-foreground mt-1">Applications submitted through the partner form will appear here.</p>
+              <p className="text-sm text-muted-foreground">
+                {applications.length === 0 ? "No partner applications yet." : "No applications match your filters."}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {applications.length === 0
+                  ? "Applications submitted through the partner form will appear here."
+                  : "Try clearing your search or adjusting the filters."}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {applications.map((app) => {
+            {filteredApplications.map((app) => {
               const isExpanded = expandedId === app.id;
               const cfg = STATUS_CONFIG[app.status] || STATUS_CONFIG.prospect;
               const StatusIcon = cfg.icon;

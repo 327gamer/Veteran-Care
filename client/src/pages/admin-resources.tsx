@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +165,21 @@ export default function AdminResources() {
   const [manualAssignLeadId, setManualAssignLeadId] = useState<string | null>(null);
   const [manualPartnerId, setManualPartnerId] = useState<string>("");
 
+  // Resources additional filters
+  const [resourceStateFilter, setResourceStateFilter] = useState("");
+  const [resourceCategoryFilter, setResourceCategoryFilter] = useState("");
+
+  // Navigator Requests client-side filters
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadStateFilter, setLeadStateFilter] = useState("");
+  const [leadCategoryFilter, setLeadCategoryFilter] = useState("");
+  const [leadRoutedFilter, setLeadRoutedFilter] = useState("");
+
+  // Routing Partners client-side filters
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const [partnerActiveFilter, setPartnerActiveFilter] = useState("");
+  const [partnerLeadFilter, setPartnerLeadFilter] = useState("");
+
   const queryClient = useQueryClient();
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
@@ -174,11 +189,12 @@ export default function AdminResources() {
   });
 
   const { data: resources = [], isLoading } = useQuery<AdminResource[]>({
-    queryKey: ["/api/admin/resources", statusFilter, searchQuery, adminKey],
+    queryKey: ["/api/admin/resources", statusFilter, searchQuery, resourceStateFilter, adminKey],
     queryFn: () => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
       if (searchQuery) params.set("q", searchQuery);
+      if (resourceStateFilter) params.set("state", resourceStateFilter);
       return fetch(`/api/admin/resources?${params}`, {
         headers: { "x-admin-key": adminKey },
       }).then(r => {
@@ -734,6 +750,52 @@ export default function AdminResources() {
     );
   }
 
+  // ── Derived / filtered data ──────────────────────────────────────────────
+
+  const filteredResources = useMemo(() => {
+    if (!resourceCategoryFilter) return resources;
+    return resources.filter(r => r.categories?.slug === resourceCategoryFilter);
+  }, [resources, resourceCategoryFilter]);
+
+  const navStates = useMemo(
+    () => [...new Set(navRequests.map(r => r.user_state).filter(Boolean) as string[])].sort(),
+    [navRequests]
+  );
+
+  const navCategories = useMemo(
+    () => [...new Set(navRequests.map(r => r.category).filter(Boolean) as string[])].sort(),
+    [navRequests]
+  );
+
+  const filteredNavRequests = useMemo(() => {
+    return navRequests.filter(r => {
+      if (leadSearch) {
+        const q = leadSearch.toLowerCase();
+        const hit = [r.veteran_name, r.veteran_email, r.veteran_phone, r.message].some(v => v?.toLowerCase().includes(q));
+        if (!hit) return false;
+      }
+      if (leadStateFilter && r.user_state !== leadStateFilter) return false;
+      if (leadCategoryFilter && r.category !== leadCategoryFilter) return false;
+      if (leadRoutedFilter === "routed" && !r.routed_to_partner_id) return false;
+      if (leadRoutedFilter === "unrouted" && r.routed_to_partner_id) return false;
+      return true;
+    });
+  }, [navRequests, leadSearch, leadStateFilter, leadCategoryFilter, leadRoutedFilter]);
+
+  const filteredPartners = useMemo(() => {
+    return (Array.isArray(partners) ? partners : []).filter((p: any) => {
+      if (partnerSearch) {
+        const q = partnerSearch.toLowerCase();
+        if (![p.name, p.contact_name, p.contact_email].some((v: string | null) => v?.toLowerCase().includes(q))) return false;
+      }
+      if (partnerActiveFilter === "active" && !p.is_active) return false;
+      if (partnerActiveFilter === "inactive" && p.is_active) return false;
+      if (partnerLeadFilter === "lead-enabled" && !p.is_lead_enabled) return false;
+      if (partnerLeadFilter === "not-lead-enabled" && p.is_lead_enabled) return false;
+      return true;
+    });
+  }, [partners, partnerSearch, partnerActiveFilter, partnerLeadFilter]);
+
   const pendingCount = resources.filter(r => r.status === "pending").length;
 
   return (
@@ -836,10 +898,60 @@ export default function AdminResources() {
               ))}
             </div>
 
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  data-testid="input-leads-search"
+                  className="pl-8 h-8 text-xs"
+                  placeholder="Search name, email, phone, or message..."
+                  value={leadSearch}
+                  onChange={(e) => setLeadSearch(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 flex-wrap items-center">
+                {navStates.length > 0 && (
+                  <Select value={leadStateFilter || "all"} onValueChange={v => setLeadStateFilter(v === "all" ? "" : v)}>
+                    <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-lead-state">
+                      <SelectValue placeholder="All States" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All States</SelectItem>
+                      {navStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                {navCategories.length > 0 && (
+                  <Select value={leadCategoryFilter || "all"} onValueChange={v => setLeadCategoryFilter(v === "all" ? "" : v)}>
+                    <SelectTrigger className="h-8 text-xs w-[155px]" data-testid="select-lead-category">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {navCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Select value={leadRoutedFilter || "all"} onValueChange={v => setLeadRoutedFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-8 text-xs w-[120px]" data-testid="select-lead-routed">
+                    <SelectValue placeholder="All Routing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Routing</SelectItem>
+                    <SelectItem value="routed">Routed</SelectItem>
+                    <SelectItem value="unrouted">Unrouted</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground ml-auto">
+                  {filteredNavRequests.length}{filteredNavRequests.length !== navRequests.length ? ` of ${navRequests.length}` : ""} request{navRequests.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+
             {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 
             <div className="space-y-3">
-              {[...navRequests]
+              {[...filteredNavRequests]
                 .sort((a, b) => {
                   const urgencyRank: Record<string, number> = { immediate: 0, same_week: 1, standard: 2, information: 3 };
                   const aRank = urgencyRank[a.urgency || ""] ?? 4;
@@ -1283,8 +1395,12 @@ export default function AdminResources() {
                 </Card>
                 );
               })}
-              {!navLoading && navRequests.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No {leadStatusFilter.replace("_", " ")} navigator requests.</p>
+              {!navLoading && filteredNavRequests.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  {navRequests.length === 0
+                    ? `No ${leadStatusFilter.replace("_", " ")} navigator requests.`
+                    : "No requests match the current filters."}
+                </p>
               )}
             </div>
           </>
@@ -1302,6 +1418,44 @@ export default function AdminResources() {
               >
                 <Plus className="h-3 w-3 mr-1" /> Add Partner
               </Button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  data-testid="input-partner-search"
+                  className="pl-8 h-8 text-xs"
+                  placeholder="Search org, contact, or email..."
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 flex-wrap items-center">
+                <Select value={partnerActiveFilter || "all"} onValueChange={v => setPartnerActiveFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-7 text-xs w-[110px]" data-testid="select-partner-active">
+                    <SelectValue placeholder="Active status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={partnerLeadFilter || "all"} onValueChange={v => setPartnerLeadFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-7 text-xs w-[130px]" data-testid="select-partner-lead">
+                    <SelectValue placeholder="Lead enabled" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Lead Types</SelectItem>
+                    <SelectItem value="lead-enabled">Lead-Enabled</SelectItem>
+                    <SelectItem value="not-lead-enabled">Not Lead-Enabled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground ml-auto">
+                  {filteredPartners.length}{filteredPartners.length !== (partners?.length ?? 0) ? ` of ${partners?.length ?? 0}` : ""} partner{(partners?.length ?? 0) !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
 
             {partnerForm && (
@@ -1373,7 +1527,7 @@ export default function AdminResources() {
 
             {partnersLoading && <p className="text-center text-muted-foreground py-8">Loading partners...</p>}
 
-            {Array.isArray(partners) && partners.map((p: any) => (
+            {Array.isArray(partners) && filteredPartners.map((p: any) => (
               <Card key={p.id} data-testid={`partner-card-${p.id}`} className={`border ${!p.is_active ? "opacity-50" : ""}`}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex justify-between items-start">
@@ -1543,8 +1697,12 @@ export default function AdminResources() {
               </Card>
             ))}
 
-            {!partnersLoading && Array.isArray(partners) && partners.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No partners yet. Add your first partner organization to enable lead routing.</p>
+            {!partnersLoading && filteredPartners.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                {!partners || partners.length === 0
+                  ? "No partners yet. Add your first partner organization to enable lead routing."
+                  : "No partners match the current filters."}
+              </p>
             )}
           </div>
         )}
@@ -1628,6 +1786,39 @@ export default function AdminResources() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <div className="flex gap-2 flex-wrap">
+            <Select value={resourceStateFilter || "all"} onValueChange={v => setResourceStateFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-resource-state">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All States</SelectItem>
+                {["SC", "NC", "GA", "FL", "VA", "TX", "CA", "NY", "PA", "OH", "IL", "MI", "WA"].map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={resourceCategoryFilter || "all"} onValueChange={v => setResourceCategoryFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[160px]" data-testid="select-resource-category">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(c => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(resourceStateFilter || resourceCategoryFilter) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground"
+                onClick={() => { setResourceStateFilter(""); setResourceCategoryFilter(""); }}
+                data-testid="button-clear-resource-filters"
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
         </div>
 
         {(geocodeRunning || geocodeResult) && (
@@ -1689,7 +1880,7 @@ export default function AdminResources() {
         {isLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 
         <div className="space-y-3">
-          {resources.map((resource) => {
+          {filteredResources.map((resource) => {
             const cfg = STATUS_CONFIG[resource.status] || STATUS_CONFIG.pending;
             const StatusIcon = cfg.icon;
             return (
@@ -1722,8 +1913,12 @@ export default function AdminResources() {
               </Card>
             );
           })}
-          {!isLoading && resources.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No {statusFilter} resources found.</p>
+          {!isLoading && filteredResources.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">
+              {resources.length === 0
+                ? `No ${statusFilter} resources found.`
+                : "No resources match the current filters."}
+            </p>
           )}
         </div>
         </>)}
