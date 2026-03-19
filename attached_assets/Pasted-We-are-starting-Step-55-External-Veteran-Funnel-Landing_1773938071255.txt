@@ -1,0 +1,88 @@
+We are starting Step 55 — External Veteran Funnel Landing Page.
+
+This is a separate external landing page and should NOT change the app onboarding flow or existing internal UX.
+
+Goal:
+Create a high-converting landing page for veterans, families, and loved ones that drives users into our existing platform, especially the current Get Help flow.
+
+This page should use strong AIDA-style marketing structure:
+- Attention
+- Interest
+- Desire
+- Action
+
+PAGE STRUCTURE:
+
+1. HERO SECTION
+Headline:
+Get the Help You Need — Fast, Local, and Trusted
+
+Subheadline:
+Veteran Care connects veterans, families, and loved ones with trusted local support for benefits, healthcare, housing, employment, food assistance, and more.
+
+Primary CTA:
+Get Help Now
+
+Secondary CTA:
+Browse Resources
+
+Trust line:
+Free to use. Private. Built to connect you with real support near you.
+
+2. VISUAL SECTION
+Create a clean hero visual area or image/video block placeholder.
+Do not overdesign it. Debbie will later improve visuals, images, and video.
+
+3. HOW IT WORKS
+Use 3 short steps:
+- Tell us what you need
+- Get connected to support
+- Get help faster
+
+4. CATEGORY GRID
+Show the main categories:
+- Housing
+- Employment
+- Mental Health
+- Healthcare
+- Crisis Help
+- Legal
+- Education
+- VA Benefits
+- Family Support
+- Food Assistance
+
+5. WHY VETERAN CARE
+Short trust-building section:
+Heading:
+One Place to Start
+
+Body:
+Veteran Care is designed to make getting help easier by bringing trusted support, resources, and guidance together in one place.
+
+6. FINAL CTA SECTION
+Heading:
+Need help now?
+
+Primary CTA:
+Get Help Now
+
+TECHNICAL BEHAVIOR:
+- This page must be external and separate from the app onboarding
+- Get Help Now should deep-link into the existing Get Help flow inside the platform
+- Browse Resources should deep-link into the existing Resources section
+- Do not rebuild intake or onboarding
+- Do not change current app flow
+
+DESIGN DIRECTION:
+- Mobile-first
+- Clean
+- Action-oriented
+- Keep current Veteran Care branding
+- Make the primary CTA visually dominant
+- A subtle glow or stronger emphasis on the Get Help Now button is okay
+
+Before marking complete:
+1. Tell me the route/URL for this external landing page
+2. Tell me exactly where the CTA buttons link
+3. Confirm no onboarding/app flow was changed

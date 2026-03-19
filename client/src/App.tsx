@@ -28,11 +28,13 @@ import VobStartupHelp from "@/pages/vob-startup-help";
 import AdminVob from "@/pages/admin-vob";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
+import LandingPage from "@/pages/landing-page";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/start" component={LandingPage} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/enable-location" component={Onboarding} />
       

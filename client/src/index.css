@@ -196,3 +196,12 @@
 .now-glow {
   animation: now-text-pulse 1.8s ease-in-out infinite;
 }
+
+@keyframes landing-cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  50% { box-shadow: 0 0 18px 6px rgba(255, 255, 255, 0.35); }
+}
+
+.landing-cta-glow {
+  animation: landing-cta-pulse 2.2s ease-in-out infinite;
+}
