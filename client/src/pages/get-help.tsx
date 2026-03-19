@@ -75,7 +75,7 @@ export default function GetHelp() {
         <img
           src={logoImg}
           alt={platform.name}
-          className="h-20 w-auto object-contain drop-shadow-xl mb-5"
+          className="h-48 w-auto object-contain drop-shadow-xl mb-5"
         />
         <div className="flex items-center gap-2 mb-1">
           <Compass className="h-5 w-5 text-white/80" />
@@ -205,7 +205,7 @@ export default function GetHelp() {
         {/* Back link */}
         <button
           data-testid="get-help-back"
-          onClick={() => setLocation("/start")}
+          onClick={() => setLocation("/home")}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
