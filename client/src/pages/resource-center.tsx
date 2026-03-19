@@ -83,7 +83,7 @@ export default function ResourceCenter() {
           <img
             src={logoImg}
             alt={platform.name}
-            className="h-20 w-auto object-contain drop-shadow-xl mb-6"
+            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
           />
           <h1 className="text-[1.6rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-3">
             The All-in-One Resource Center for Those Who Help Veterans
@@ -179,6 +179,34 @@ export default function ResourceCenter() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── CREATE ACCOUNT CTA ── */}
+      <section className="px-5 py-10 max-w-lg mx-auto">
+        <div className="border border-primary/20 bg-primary/5 rounded-2xl p-6 flex flex-col items-center text-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-heading font-extrabold text-primary leading-snug">
+              Create a Free Account for a More Personalized Experience
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Save important resources, organize what you find, and unlock more personalized support tools as {platform.name} continues to grow.
+            </p>
+          </div>
+          <button
+            data-testid="cta-create-account-resource-center"
+            onClick={() => setLocation("/onboarding")}
+            className="w-full max-w-xs py-3 rounded-full bg-primary text-white font-bold text-sm shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
+          >
+            Create Free Account
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <p className="text-xs text-muted-foreground">
+            Free. Takes less than a minute.
+          </p>
         </div>
       </section>
 
