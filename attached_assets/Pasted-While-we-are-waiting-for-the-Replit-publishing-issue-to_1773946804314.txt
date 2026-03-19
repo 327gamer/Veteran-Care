@@ -1,0 +1,68 @@
+While we are waiting for the Replit publishing issue to be resolved, let’s build the other 2 external funnel URLs in development.
+
+We already have:
+- /start
+- /get-help
+
+Now build these 2 standalone external pages:
+
+1. /resources
+Purpose:
+This is the external landing/funnel page for case managers, nonprofits, churches, social workers, VA reps, and others helping veterans.
+
+Goal:
+Explain the platform as a resource center and send users directly into the existing resources experience.
+
+Requirements:
+- Separate external page
+- Do not change onboarding or app flow
+- Mobile-first
+- Consistent Veteran Care branding
+- CTA should link directly into the existing resources section
+- This page should explain clearly that Veteran Care can be used as an all-in-one resource center to help veterans find trusted local support, programs, and services
+
+Suggested page structure:
+- Headline
+- Short subheadline
+- 3-step “how it helps” section
+- key benefits for case managers / nonprofits
+- CTA: Browse Resources
+- optional secondary CTA: Learn How It Works
+
+2. /partners
+Purpose:
+This is the external landing/funnel page for businesses/providers/organizations we want to monetize and onboard into Trusted Services.
+
+Goal:
+Explain the value of joining Veteran Care as a trusted partner and send users into the partner signup/subscription flow.
+
+Requirements:
+- Separate external page
+- Do not change onboarding or app flow
+- Mobile-first
+- Consistent Veteran Care branding
+- CTA should point to the trusted partner/business signup path
+- This page should explain clearly:
+  - access to veterans and families
+  - local and statewide visibility
+  - qualified requests / leads
+  - trusted partner positioning
+  - monthly subscription model / partner opportunity
+
+Suggested page structure:
+- Headline
+- Subheadline
+- value proposition section
+- how it works section
+- benefits / lead value section
+- CTA: Become a Trusted Partner
+
+Important:
+- These should be real standalone routes/pages, not modal-based
+- Reuse existing logic where possible
+- Do not rebuild app internals unnecessarily
+
+Before marking complete:
+1. Give me the exact preview URLs for /resources and /partners
+2. Tell me exactly where each CTA links
+3. Confirm again that no onboarding or internal app flow was changed

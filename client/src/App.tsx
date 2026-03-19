@@ -30,6 +30,8 @@ import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
 import GetHelp from "@/pages/get-help";
+import ResourceCenter from "@/pages/resource-center";
+import PartnersLanding from "@/pages/partners-landing";
 
 function Router() {
   return (
@@ -37,6 +39,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/start" component={LandingPage} />
       <Route path="/get-help" component={GetHelp} />
+      <Route path="/resource-center" component={ResourceCenter} />
+      <Route path="/partners" component={PartnersLanding} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/enable-location" component={Onboarding} />
       
