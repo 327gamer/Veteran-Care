@@ -60,13 +60,13 @@ const steps = [
 const tiers = [
   {
     icon: MapPin,
-    name: "Regional Listing",
-    desc: "Visible to veterans in a specific city or region within your state.",
+    name: "State Plan",
+    desc: "Visible to veterans and families across one state. Ideal for organizations serving a single-state market.",
   },
   {
     icon: Star,
-    name: "Statewide Listing",
-    desc: "Visible to veterans across the full state — maximum reach for your service area.",
+    name: "National Plan",
+    desc: "Visible to veterans and families across the country. Ideal for organizations with national reach or multi-state coverage.",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function PartnersLanding() {
           <img
             src={logoImg}
             alt={platform.name}
-            className="h-20 w-auto object-contain drop-shadow-xl mb-6"
+            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
           />
           <div className="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1 mb-4">
             <Building2 className="h-3.5 w-3.5 text-white/80" />
