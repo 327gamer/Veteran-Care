@@ -112,6 +112,9 @@ export default function ResourceCenter() {
             <Lock className="h-3 w-3 shrink-0" />
             <span>Free to use. No sign-up required to browse.</span>
           </div>
+          <p className="mt-3 text-white/50 text-[11px] leading-relaxed text-center px-2">
+            <span className="font-semibold text-white/60">Tip:</span> Use the location filter at the top of the directory to quickly find services near your client.
+          </p>
         </div>
       </section>
 
