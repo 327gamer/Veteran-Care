@@ -187,3 +187,12 @@
 .guide-glow-home {
   animation: guide-pulse-home 2s ease-in-out infinite;
 }
+
+@keyframes now-text-pulse {
+  0%, 100% { text-shadow: 0 0 0px rgba(53, 79, 42, 0); }
+  50% { text-shadow: 0 0 6px rgba(53, 79, 42, 0.75), 0 0 14px rgba(53, 79, 42, 0.35); }
+}
+
+.now-glow {
+  animation: now-text-pulse 1.8s ease-in-out infinite;
+}

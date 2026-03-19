@@ -282,9 +282,9 @@ export default function Home() {
               {[
                 { id: "button-ask-guide-home", icon: Sparkles, label: platform.ai.assistantName, onClick: openGuide, glow: true },
                 { id: "button-browse-resources-home", icon: BookOpen, label: "Resources", onClick: () => setLocation("/resources") },
-                { id: "button-guided-help-home", icon: Compass, label: "Get Help", onClick: () => setShowGuidedHelp(true) },
+                { id: "button-guided-help-home", icon: Compass, label: "Get Help", subLabel: "NOW", onClick: () => setShowGuidedHelp(true), urgent: true },
                 { id: "button-learn-app-home", icon: HelpCircle, label: "How It Works", onClick: openTutorial },
-              ].map(({ id, icon: Icon, label, onClick, glow }) => (
+              ].map(({ id, icon: Icon, label, subLabel, onClick, glow, urgent }) => (
                 <Button
                   key={id}
                   data-testid={id}
@@ -292,10 +292,17 @@ export default function Home() {
                   className="w-full text-primary font-semibold shadow-md h-14 rounded-xl flex items-center justify-start pl-3 pr-2 whitespace-nowrap"
                   onClick={onClick}
                 >
-                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mr-2.5 ${glow ? 'bg-primary/15 guide-glow-home rounded-full' : 'bg-primary/10'}`}>
+                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mr-2.5 ${(glow || urgent) ? 'bg-primary/15 guide-glow-home rounded-full' : 'bg-primary/10'}`}>
                     <Icon className="h-4 w-4 text-primary" />
                   </span>
-                  <span className="text-[12.5px] md:text-[13px]">{label}</span>
+                  {subLabel ? (
+                    <span className="flex flex-col leading-tight">
+                      <span className="text-[12.5px] md:text-[13px]">{label}</span>
+                      <span className="text-[9.5px] md:text-[10px] font-bold tracking-[0.2em] uppercase now-glow text-center">{subLabel}</span>
+                    </span>
+                  ) : (
+                    <span className="text-[12.5px] md:text-[13px]">{label}</span>
+                  )}
                 </Button>
               ))}
             </div>
