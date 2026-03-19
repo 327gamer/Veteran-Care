@@ -79,7 +79,7 @@ export default function LandingPage() {
           <img
             src={logoImg}
             alt={platform.name}
-            className="h-28 w-auto object-contain drop-shadow-xl mb-6"
+            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
           />
           <h1 className="text-[1.65rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-3">
             Get the Help You Need —<br />Fast, Local, and Trusted
@@ -114,15 +114,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── VISUAL PLACEHOLDER ── */}
+      {/* ── VISUAL SECTION ── */}
       <section className="bg-muted/40 border-y border-border py-10 px-5">
-        <div className="max-w-lg mx-auto flex flex-col items-center text-center gap-3">
-          <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <img src={logoImg} alt={platform.name} className="h-16 w-16 object-contain opacity-80" />
-          </div>
-          <p className="text-muted-foreground text-xs italic">
-            Visual area — images &amp; video will be added here.
-          </p>
+        <div className="max-w-lg mx-auto flex flex-col items-center">
+          <img src={logoImg} alt={platform.name} className="h-52 w-auto object-contain drop-shadow-lg" />
         </div>
       </section>
 
