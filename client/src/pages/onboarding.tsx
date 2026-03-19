@@ -153,12 +153,18 @@ export default function Onboarding() {
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Create Your Free Account
               </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                Sign up for a personalized experience with saved resources, tailored recommendations, and direct support.
+              <p className="text-primary/80 text-sm font-semibold leading-relaxed px-2">
+                {platform.onboardingAccountSubtitle}
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed px-2">
+                {platform.onboardingAccountBody}
+              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed px-2 italic">
+                {platform.onboardingAccountPrivacy}
               </p>
             </div>
 
