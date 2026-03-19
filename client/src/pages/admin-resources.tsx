@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
+import { US_STATE_ABBRS, ADMIN_CATEGORIES } from "@/lib/admin-filters";
 import { useLocation } from "wouter";
 
 interface NavigatorRequest {
@@ -757,16 +758,6 @@ export default function AdminResources() {
     return resources.filter(r => r.categories?.slug === resourceCategoryFilter);
   }, [resources, resourceCategoryFilter]);
 
-  const navStates = useMemo(
-    () => [...new Set(navRequests.map(r => r.user_state).filter(Boolean) as string[])].sort(),
-    [navRequests]
-  );
-
-  const navCategories = useMemo(
-    () => [...new Set(navRequests.map(r => r.category).filter(Boolean) as string[])].sort(),
-    [navRequests]
-  );
-
   const filteredNavRequests = useMemo(() => {
     return navRequests.filter(r => {
       if (leadSearch) {
@@ -775,7 +766,12 @@ export default function AdminResources() {
         if (!hit) return false;
       }
       if (leadStateFilter && r.user_state !== leadStateFilter) return false;
-      if (leadCategoryFilter && r.category !== leadCategoryFilter) return false;
+      if (leadCategoryFilter) {
+        const cat = ADMIN_CATEGORIES.find(c => c.value === leadCategoryFilter);
+        const matchesSlug = r.category === leadCategoryFilter;
+        const matchesLabel = cat ? r.category === cat.label : false;
+        if (!matchesSlug && !matchesLabel) return false;
+      }
       if (leadRoutedFilter === "routed" && !r.routed_to_partner_id) return false;
       if (leadRoutedFilter === "unrouted" && r.routed_to_partner_id) return false;
       return true;
@@ -910,28 +906,24 @@ export default function AdminResources() {
                 />
               </div>
               <div className="flex gap-2 flex-wrap items-center">
-                {navStates.length > 0 && (
-                  <Select value={leadStateFilter || "all"} onValueChange={v => setLeadStateFilter(v === "all" ? "" : v)}>
-                    <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-lead-state">
-                      <SelectValue placeholder="All States" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All States</SelectItem>
-                      {navStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-                {navCategories.length > 0 && (
-                  <Select value={leadCategoryFilter || "all"} onValueChange={v => setLeadCategoryFilter(v === "all" ? "" : v)}>
-                    <SelectTrigger className="h-8 text-xs w-[155px]" data-testid="select-lead-category">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {navCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
+                <Select value={leadStateFilter || "all"} onValueChange={v => setLeadStateFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-8 text-xs w-[110px]" data-testid="select-lead-state">
+                    <SelectValue placeholder="All States" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All States</SelectItem>
+                    {US_STATE_ABBRS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={leadCategoryFilter || "all"} onValueChange={v => setLeadCategoryFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-8 text-xs w-[160px]" data-testid="select-lead-category">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {ADMIN_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
                 <Select value={leadRoutedFilter || "all"} onValueChange={v => setLeadRoutedFilter(v === "all" ? "" : v)}>
                   <SelectTrigger className="h-8 text-xs w-[120px]" data-testid="select-lead-routed">
                     <SelectValue placeholder="All Routing" />
@@ -1788,14 +1780,12 @@ export default function AdminResources() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Select value={resourceStateFilter || "all"} onValueChange={v => setResourceStateFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-resource-state">
+              <SelectTrigger className="h-8 text-xs w-[110px]" data-testid="select-resource-state">
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 <SelectItem value="all">All States</SelectItem>
-                {["SC", "NC", "GA", "FL", "VA", "TX", "CA", "NY", "PA", "OH", "IL", "MI", "WA"].map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
+                {US_STATE_ABBRS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={resourceCategoryFilter || "all"} onValueChange={v => setResourceCategoryFilter(v === "all" ? "" : v)}>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { US_STATE_ABBRS } from "@/lib/admin-filters";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,11 +106,6 @@ export default function AdminTrustedServiceLeads() {
     },
   });
 
-  const uniqueStates = useMemo(
-    () => [...new Set(leads.map(l => l.state).filter(Boolean) as string[])].sort(),
-    [leads]
-  );
-
   const filteredLeads = useMemo(() => {
     return leads.filter(l => {
       if (searchQuery) {
@@ -181,17 +177,15 @@ export default function AdminTrustedServiceLeads() {
               <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
-          {uniqueStates.length > 0 && (
-            <Select value={stateFilter || "all"} onValueChange={v => setStateFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-xs w-[100px]" data-testid="select-filter-lead-state">
-                <SelectValue placeholder="All States" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All States</SelectItem>
-                {uniqueStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
+          <Select value={stateFilter || "all"} onValueChange={v => setStateFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="h-8 text-xs w-[110px]" data-testid="select-filter-lead-state">
+              <SelectValue placeholder="All States" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="all">All States</SelectItem>
+              {US_STATE_ABBRS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <p className="text-xs text-muted-foreground ml-auto">
             {filteredLeads.length}{filteredLeads.length !== leads.length ? ` of ${leads.length}` : ""} lead{leads.length !== 1 ? "s" : ""}
           </p>

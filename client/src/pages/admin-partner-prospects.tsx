@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { US_STATE_ABBRS } from "@/lib/admin-filters";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,7 @@ export default function AdminPartnerProspects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [planTypeFilter, setPlanTypeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
 
@@ -165,10 +167,10 @@ export default function AdminPartnerProspects() {
 
   
 
-  const uniqueCategories = useMemo(
-    () => [...new Set(applications.map(a => a.trusted_service_categories?.name).filter(Boolean) as string[])].sort(),
-    [applications]
-  );
+  const { data: partnerCategories = [] } = useQuery<{ id: string; name: string; slug: string }[]>({
+    queryKey: ["/api/partner-categories"],
+    queryFn: () => fetch("/api/partner-categories").then(r => r.json()),
+  });
 
   const filteredApplications = useMemo(() => {
     return applications.filter(a => {
@@ -177,10 +179,11 @@ export default function AdminPartnerProspects() {
         if (![a.company_name, a.contact_name, a.email].some(v => v?.toLowerCase().includes(q))) return false;
       }
       if (planTypeFilter && a.plan_type !== planTypeFilter) return false;
+      if (stateFilter && a.state !== stateFilter) return false;
       if (categoryFilter && a.trusted_service_categories?.name !== categoryFilter) return false;
       return true;
     });
-  }, [applications, searchQuery, planTypeFilter, categoryFilter]);
+  }, [applications, searchQuery, planTypeFilter, stateFilter, categoryFilter]);
 
   const statusCounts = applications.reduce((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
@@ -243,7 +246,7 @@ export default function AdminPartnerProspects() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <Select value={planTypeFilter || "all"} onValueChange={v => setPlanTypeFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="h-8 text-xs w-[130px]" data-testid="select-filter-plan-type">
                 <SelectValue placeholder="All Plans" />
@@ -254,17 +257,36 @@ export default function AdminPartnerProspects() {
                 <SelectItem value="national">National Plan</SelectItem>
               </SelectContent>
             </Select>
-            {uniqueCategories.length > 0 && (
-              <Select value={categoryFilter || "all"} onValueChange={v => setCategoryFilter(v === "all" ? "" : v)}>
-                <SelectTrigger className="h-8 text-xs w-[150px]" data-testid="select-filter-category">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {uniqueCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <Select value={stateFilter || "all"} onValueChange={v => setStateFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[110px]" data-testid="select-filter-app-state">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">All States</SelectItem>
+                {US_STATE_ABBRS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter || "all"} onValueChange={v => setCategoryFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs w-[160px]" data-testid="select-filter-category">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectItem value="all">All Categories</SelectItem>
+                {partnerCategories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(stateFilter || planTypeFilter || categoryFilter) && (
+              <button
+                data-testid="button-clear-app-filters"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => { setStateFilter(""); setPlanTypeFilter(""); setCategoryFilter(""); }}
+              >
+                Clear
+              </button>
             )}
+            <p className="text-xs text-muted-foreground ml-auto">
+              {filteredApplications.length}{filteredApplications.length !== applications.length ? ` of ${applications.length}` : ""} application{applications.length !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
 
