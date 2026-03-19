@@ -1,5 +1,4 @@
 import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
 import { useSavedResources } from "@/lib/store";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -21,17 +20,17 @@ import {
   Lock,
 } from "lucide-react";
 
-const categories = [
-  { label: "Housing", icon: Home },
-  { label: "Employment", icon: Briefcase },
-  { label: "Mental Health", icon: Heart },
-  { label: "Healthcare", icon: Activity },
-  { label: "Crisis Help", icon: AlertCircle },
-  { label: "Legal", icon: Scale },
-  { label: "Education", icon: GraduationCap },
-  { label: "VA Benefits", icon: ShieldCheck },
-  { label: "Family Support", icon: Users },
-  { label: "Food Assistance", icon: UtensilsCrossed },
+const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
+  { label: "Housing", icon: Home, slug: "housing" },
+  { label: "Employment", icon: Briefcase, slug: "employment" },
+  { label: "Mental Health", icon: Heart, slug: "mental-health" },
+  { label: "Healthcare", icon: Activity, slug: "healthcare" },
+  { label: "Crisis Help", icon: AlertCircle, slug: null },
+  { label: "Legal", icon: Scale, slug: "legal" },
+  { label: "Education", icon: GraduationCap, slug: "education" },
+  { label: "VA Benefits", icon: ShieldCheck, slug: "va-benefits" },
+  { label: "Family Support", icon: Users, slug: "family-support" },
+  { label: "Food Assistance", icon: UtensilsCrossed, slug: "food-assistance" },
 ];
 
 const steps = [
@@ -55,24 +54,24 @@ const steps = [
   },
 ];
 
+import React from "react";
+
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const { onboardingComplete } = useSavedResources();
 
-  const handleGetHelp = () => {
-    if (onboardingComplete) {
-      setLocation("/home");
+  const navigateToGetHelp = (slug: string | null = null) => {
+    sessionStorage.setItem("vc_action", "gethelp");
+    if (slug) {
+      sessionStorage.setItem("vc_category", slug);
     } else {
-      setLocation("/onboarding");
+      sessionStorage.removeItem("vc_category");
     }
+    setLocation(onboardingComplete ? "/home" : "/onboarding");
   };
 
   const handleBrowse = () => {
-    if (onboardingComplete) {
-      setLocation("/resources");
-    } else {
-      setLocation("/onboarding");
-    }
+    setLocation(onboardingComplete ? "/resources" : "/onboarding");
   };
 
   return (
@@ -99,15 +98,15 @@ export default function LandingPage() {
           <div className="w-full flex flex-col gap-3">
             <button
               data-testid="cta-get-help-now-hero"
-              onClick={handleGetHelp}
-              className="w-full h-13 py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95"
+              onClick={() => navigateToGetHelp()}
+              className="w-full py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95"
             >
               Get Help Now
             </button>
             <button
               data-testid="cta-browse-resources-hero"
               onClick={handleBrowse}
-              className="w-full h-12 py-3 rounded-full border-2 border-white/60 text-white font-semibold text-sm transition-opacity hover:opacity-90 active:opacity-75"
+              className="w-full py-3 rounded-full border-2 border-white/60 text-white font-semibold text-sm transition-opacity hover:opacity-90 active:opacity-75"
             >
               Browse Resources
             </button>
@@ -138,7 +137,7 @@ export default function LandingPage() {
           How It Works
         </h2>
         <div className="flex flex-col gap-5">
-          {steps.map(({ icon: Icon, number, title, desc }) => (
+          {steps.map(({ number, title, desc }) => (
             <div key={number} className="flex items-start gap-4">
               <div className="shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shadow-md">
                 {number}
@@ -159,11 +158,11 @@ export default function LandingPage() {
             What We Can Help With
           </h2>
           <div className="grid grid-cols-2 gap-2.5">
-            {categories.map(({ label, icon: Icon }) => (
+            {categories.map(({ label, icon: Icon, slug }) => (
               <button
                 key={label}
                 data-testid={`category-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                onClick={handleGetHelp}
+                onClick={() => navigateToGetHelp(slug)}
                 className="flex items-center gap-2.5 bg-background border border-border rounded-xl px-3.5 py-3 text-left shadow-sm hover:border-primary/40 transition-colors active:bg-muted"
               >
                 <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -195,8 +194,8 @@ export default function LandingPage() {
           </h2>
           <button
             data-testid="cta-get-help-now-footer"
-            onClick={handleGetHelp}
-            className="w-full max-w-sm h-13 py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
+            onClick={() => navigateToGetHelp()}
+            className="w-full max-w-sm py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
           >
             Get Help Now
             <ChevronRight className="h-4 w-4" />

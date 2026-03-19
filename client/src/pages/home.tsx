@@ -98,6 +98,17 @@ export default function Home() {
     setSelectedCity(userLocation.city);
   }, [userLocation]);
 
+  useEffect(() => {
+    const action = sessionStorage.getItem("vc_action");
+    const category = sessionStorage.getItem("vc_category");
+    if (action === "gethelp") {
+      sessionStorage.removeItem("vc_action");
+      sessionStorage.removeItem("vc_category");
+      if (category) setGuidedCategory(category);
+      setShowGuidedHelp(true);
+    }
+  }, []);
+
   const handleCategoryClick = (category: string) => {
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
