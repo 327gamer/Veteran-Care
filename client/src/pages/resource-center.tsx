@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { trackEvent } from "@/lib/analytics";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import {
@@ -94,7 +95,7 @@ export default function ResourceCenter() {
           <div className="w-full flex flex-col gap-3">
             <button
               data-testid="cta-browse-resources-hero"
-              onClick={() => setLocation("/resources")}
+              onClick={() => { trackEvent("resource_center_browse_click"); setLocation("/resources"); }}
               className="w-full py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               Browse Resources
@@ -102,7 +103,7 @@ export default function ResourceCenter() {
             </button>
             <button
               data-testid="cta-learn-how-it-works"
-              onClick={() => setLocation("/start")}
+              onClick={() => { trackEvent("resource_center_learn_click"); setLocation("/start"); }}
               className="w-full py-3 rounded-full border-2 border-white/60 text-white font-semibold text-sm transition-opacity hover:opacity-90 active:opacity-75"
             >
               Learn How It Works

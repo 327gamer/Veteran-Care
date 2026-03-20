@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { trackEvent } from "@/lib/analytics";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import {
@@ -98,7 +99,7 @@ export default function PartnersLanding() {
           <div className="w-full flex flex-col gap-3">
             <button
               data-testid="cta-become-partner-hero"
-              onClick={() => setLocation("/partner-apply")}
+              onClick={() => { trackEvent("partners_cta_click", { location: "hero" }); setLocation("/partner-apply"); }}
               className="w-full py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               Become a Trusted Partner
@@ -223,7 +224,7 @@ export default function PartnersLanding() {
           </p>
           <button
             data-testid="cta-become-partner-footer"
-            onClick={() => setLocation("/partner-apply")}
+            onClick={() => { trackEvent("partners_cta_click", { location: "footer" }); setLocation("/partner-apply"); }}
             className="w-full max-w-sm py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
           >
             Become a Trusted Partner

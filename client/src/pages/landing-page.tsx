@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
 import { platform } from "@shared/platform";
+import { trackEvent } from "@/lib/analytics";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import {
   Home,
@@ -61,11 +62,13 @@ export default function LandingPage() {
   const { onboardingComplete } = useSavedResources();
 
   const navigateToGetHelp = (slug: string | null = null) => {
+    trackEvent("start_get_help_click", slug ? { category: slug } : {});
     const url = slug ? `/get-help?category=${encodeURIComponent(slug)}` : "/get-help";
     setLocation(url);
   };
 
   const handleBrowse = () => {
+    trackEvent("start_browse_resources_click");
     setLocation(onboardingComplete ? "/resources" : "/onboarding");
   };
 

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { trackEvent } from "@/lib/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,10 @@ export default function PartnerApply() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    trackEvent("partner_apply_started");
+  }, []);
+
   const [form, setForm] = useState({
     company_name: "",
     contact_name: "",
@@ -87,6 +92,7 @@ export default function PartnerApply() {
       return res.json();
     },
     onSuccess: () => {
+      trackEvent("partner_apply_submitted");
       setSubmitted(true);
     },
     onError: (err: any) => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { platform } from "@shared/platform";
@@ -57,6 +58,10 @@ export default function GetHelp() {
 
   const handleFindResources = () => {
     if (!selectedCategory) return;
+    trackEvent("get_help_find_resources_click", {
+      category: selectedCategory,
+      ...(selectedUrgency ? { urgency: selectedUrgency } : {}),
+    });
     const params = new URLSearchParams();
     params.set("category", selectedCategory);
     if (selectedUrgency) params.set("urgency", selectedUrgency);
@@ -64,6 +69,9 @@ export default function GetHelp() {
   };
 
   const handleRequestNavigator = () => {
+    trackEvent("get_help_request_support_click", {
+      ...(selectedCategory ? { category: selectedCategory } : {}),
+    });
     setShowNavigator(true);
   };
 
@@ -106,7 +114,7 @@ export default function GetHelp() {
                   key={cat.slug}
                   data-testid={`get-help-category-${cat.slug}`}
                   type="button"
-                  onClick={() => setSelectedCategory(cat.slug)}
+                  onClick={() => { trackEvent("get_help_category_selected", { category: cat.slug }); setSelectedCategory(cat.slug); }}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs transition-all ${
                     isSelected
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
@@ -135,7 +143,7 @@ export default function GetHelp() {
                   key={opt.value}
                   data-testid={`get-help-urgency-${opt.value}`}
                   type="button"
-                  onClick={() => setSelectedUrgency(opt.value)}
+                  onClick={() => { trackEvent("get_help_urgency_selected", { urgency: opt.value }); setSelectedUrgency(opt.value); }}
                   className={`flex items-start gap-2 p-3 rounded-xl border text-left transition-all ${
                     isSelected
                       ? opt.selected + " " + opt.color.split(" ").slice(1).join(" ")

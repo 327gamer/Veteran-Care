@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
 import { useSavedResources } from "@/lib/store";
 import { useLocation } from "wouter";
+import { trackEvent } from "@/lib/analytics";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 import {
@@ -455,6 +456,7 @@ export default function Resources() {
   };
 
   const selectCategory = (cat: SupabaseCategory) => {
+    trackEvent("resources_category_click", { category: cat.slug });
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
@@ -668,7 +670,7 @@ export default function Resources() {
               {locationMode === "state" && (
                 <>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
+                    <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { trackEvent("resources_location_filter_used", { filter_type: "state", value: v }); setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
                       <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
                         <SelectValue placeholder="Select a state" />
                       </SelectTrigger>
