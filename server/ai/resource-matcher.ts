@@ -93,9 +93,9 @@ async function searchByCategory(
 ): Promise<MatchedResource[]> {
   let query = supabase
     .from("resources")
-    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, categories!inner(slug, name)")
+    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories!inner(categories!inner(slug, name))")
     .eq("status", "approved")
-    .in("categories.slug", categorySlugs)
+    .in("resource_categories.categories.slug", categorySlugs)
     .limit(10);
 
   if (userState) {
@@ -115,8 +115,8 @@ async function searchByCategory(
     state: r.state,
     eligibility: r.eligibility,
     subcategory: r.subcategory,
-    category_slug: r.categories?.slug || null,
-    category_name: r.categories?.name || null,
+    category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
+    category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
   })).sort((a, b) => {
     if (userCity) {
       const aLocal = a.city?.toLowerCase() === userCity.toLowerCase() ? 0 : 1;
@@ -146,7 +146,7 @@ async function searchByText(
 
   let query = supabase
     .from("resources")
-    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, categories(slug, name)")
+    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
     .eq("status", "approved")
     .or(ilikeClauses)
     .limit(8);
@@ -168,7 +168,7 @@ async function searchByText(
     state: r.state,
     eligibility: r.eligibility,
     subcategory: r.subcategory,
-    category_slug: r.categories?.slug || null,
-    category_name: r.categories?.name || null,
+    category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
+    category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
   }));
 }

@@ -141,6 +141,7 @@ export default function AdminResources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>([]);
   const [, setLocation] = useLocation();
   const [leadStatusFilter, setLeadStatusFilter] = useState("new");
   const [createMode, setCreateMode] = useState(false);
@@ -363,12 +364,13 @@ export default function AdminResources() {
   });
 
   const handleCreate = () => {
-    createMutation.mutate(editForm);
+    createMutation.mutate({ ...editForm, additional_category_ids: additionalCategoryIds });
   };
 
   const openCreateForm = () => {
     setCreateMode(true);
     setSelectedResource({ id: "__new__" } as any);
+    setAdditionalCategoryIds([]);
     setEditForm({
       title: "",
       short_description: "",
@@ -692,6 +694,12 @@ export default function AdminResources() {
       latitude: resource.latitude ?? null,
       longitude: resource.longitude ?? null,
     });
+    const cats = resource.categories;
+    if (Array.isArray(cats)) {
+      setAdditionalCategoryIds(cats.map((c: any) => c.id).filter((id: string) => id !== resource.category_id));
+    } else {
+      setAdditionalCategoryIds([]);
+    }
   };
 
   const handleApprove = () => {
@@ -710,12 +718,20 @@ export default function AdminResources() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedResource) return;
     patchMutation.mutate({
       id: selectedResource.id,
       updates: editForm,
     });
+    const allCatIds = [...new Set([editForm.category_id, ...additionalCategoryIds].filter(Boolean))];
+    if (allCatIds.length > 0) {
+      await fetch(`/api/admin/resources/${selectedResource.id}/categories`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ category_ids: allCatIds }),
+      });
+    }
   };
 
   if (!authenticated) {
@@ -1892,7 +1908,7 @@ export default function AdminResources() {
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">{resource.short_description}</p>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        {resource.categories && <span>{resource.categories.name}</span>}
+                        {resource.categories && <span>{Array.isArray(resource.categories) ? resource.categories.map((c: any) => c.name).join(", ") : resource.categories.name}</span>}
                         {resource.state && <span>• {resource.state}</span>}
                         {resource.submitted_by_name && <span>• by {resource.submitted_by_name}</span>}
                         <span>• {new Date(resource.created_at).toLocaleDateString()}</span>
@@ -1931,7 +1947,7 @@ export default function AdminResources() {
           <ScrollArea className="flex-1 w-full">
             <div className="p-4 space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs">Category</Label>
+                <Label className="text-xs">Primary Category</Label>
                 <Select value={editForm.category_id || undefined} onValueChange={(v) => setEditForm(p => ({ ...p, category_id: v }))}>
                   <SelectTrigger data-testid="select-admin-category" className="h-9 text-xs">
                     <SelectValue placeholder="Select category" />
@@ -1942,6 +1958,30 @@ export default function AdminResources() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Additional Categories</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {categories.filter(c => c.id !== editForm.category_id).map((c) => {
+                    const isSelected = additionalCategoryIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        data-testid={`btn-add-category-${c.slug}`}
+                        className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:border-primary/50"}`}
+                        onClick={() => {
+                          setAdditionalCategoryIds(prev =>
+                            isSelected ? prev.filter(id => id !== c.id) : [...prev, c.id]
+                          );
+                        }}
+                      >
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-2">

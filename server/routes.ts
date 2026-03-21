@@ -383,7 +383,27 @@ async function checkNavLifecycleColumns() {
   }
 }
 
-function resourceSelectFields() {
+function normalizeResourceCategories(resource: any): any {
+  if (!resource) return resource;
+  if (resource.resource_categories && Array.isArray(resource.resource_categories)) {
+    resource.categories = resource.resource_categories
+      .map((rc: any) => rc.categories)
+      .filter(Boolean);
+    if (resource.categories.length === 1) {
+      resource.categories = resource.categories[0];
+    } else if (resource.categories.length === 0) {
+      resource.categories = null;
+    }
+    delete resource.resource_categories;
+  }
+  return resource;
+}
+
+function normalizeResourceList(resources: any[]): any[] {
+  return (resources || []).map(normalizeResourceCategories);
+}
+
+function resourceSelectFields(categoryFilter?: boolean) {
   const base = [
     "id", "category_id", "title", "short_description", "website_url", "phone", "email",
     "address", "city", "state", "zip", "eligibility", "source_name", "source_type",
@@ -392,7 +412,12 @@ function resourceSelectFields() {
   if (hasSubcategoryColumn) base.push("subcategory");
   if (hasServicePriorityColumn) base.push("service_priority");
   if (hasGeoColumns) base.push("latitude", "longitude");
-  base.push("status", "created_at", "categories!inner(id, name, slug)");
+  base.push("status", "created_at");
+  if (categoryFilter) {
+    base.push("resource_categories!inner(categories!inner(id, name, slug))");
+  } else {
+    base.push("resource_categories(categories(id, name, slug))");
+  }
   return base.join(", ");
 }
 
@@ -499,12 +524,12 @@ export async function registerRoutes(
     const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined
       && !isNaN(userLat) && !isNaN(userLng) && !isNaN(radiusMiles);
 
-    let query = supabase.from("resources").select(resourceSelectFields());
+    let query = supabase.from("resources").select(resourceSelectFields(!!category));
 
     query = query.eq("status", "approved");
 
     if (category) {
-      query = query.eq("categories.slug", category as string);
+      query = query.eq("resource_categories.categories.slug", category as string);
     }
 
     if (sub && hasSubcategoryColumn) {
@@ -565,10 +590,10 @@ export async function registerRoutes(
         .filter((r: any) => r.distance_miles !== null && r.distance_miles <= radiusMiles!)
         .sort((a: any, b: any) => a.distance_miles - b.distance_miles);
 
-      let nationalQuery = supabase.from("resources").select(resourceSelectFields())
+      let nationalQuery = supabase.from("resources").select(resourceSelectFields(!!category))
         .eq("status", "approved").is("state", null);
       if (category) {
-        nationalQuery = nationalQuery.eq("categories.slug", category as string);
+        nationalQuery = nationalQuery.eq("resource_categories.categories.slug", category as string);
       }
       if (sub && hasSubcategoryColumn) {
         nationalQuery = nationalQuery.ilike("subcategory", `%${sub}%`);
@@ -581,10 +606,10 @@ export async function registerRoutes(
         .filter((r: any) => !localIds.has(r.id))
         .map((r: any) => ({ ...r, distance_miles: null, is_national: true }));
 
-      return res.json({ results: [...localResults, ...nationalResults], local_count: localResults.length });
+      return res.json({ results: normalizeResourceList([...localResults, ...nationalResults]), local_count: localResults.length });
     }
 
-    return res.json(data);
+    return res.json(normalizeResourceList(data || []));
   });
 
   app.get("/api/locations/cities", async (req, res) => {
@@ -592,7 +617,7 @@ export async function registerRoutes(
 
     let query = supabase
       .from("resources")
-      .select("city, categories!inner(slug)")
+      .select(category ? "city, resource_categories!inner(categories!inner(slug))" : "city, resource_categories(categories(slug))")
       .eq("status", "approved")
       .not("city", "is", null);
 
@@ -601,7 +626,7 @@ export async function registerRoutes(
     }
 
     if (category) {
-      query = query.eq("categories.slug", category as string);
+      query = query.eq("resource_categories.categories.slug", category as string);
     }
 
     const { data, error } = await query;
@@ -619,7 +644,7 @@ export async function registerRoutes(
 
     let query = supabase
       .from("resources")
-      .select("zip, categories!inner(slug)")
+      .select(category ? "zip, resource_categories!inner(categories!inner(slug))" : "zip, resource_categories(categories(slug))")
       .eq("status", "approved")
       .not("zip", "is", null);
 
@@ -632,7 +657,7 @@ export async function registerRoutes(
     }
 
     if (category) {
-      query = query.eq("categories.slug", category as string);
+      query = query.eq("resource_categories.categories.slug", category as string);
     }
 
     const { data, error } = await query;
@@ -652,7 +677,7 @@ export async function registerRoutes(
       .from("resources")
       .select(`
         *,
-        categories(id, name, slug)
+        resource_categories(categories(id, name, slug))
       `)
       .eq("id", id)
       .eq("status", "approved")
@@ -662,7 +687,7 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Resource not found" });
     }
 
-    return res.json(data);
+    return res.json(normalizeResourceCategories(data));
   });
 
   app.post("/api/resources/by-ids", async (req, res) => {
@@ -681,7 +706,7 @@ export async function registerRoutes(
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    return res.json(data || []);
+    return res.json(normalizeResourceList(data || []));
   });
 
   app.get("/api/saved-resources", async (req, res) => {
@@ -1150,7 +1175,7 @@ export async function registerRoutes(
 
     let query = supabaseAdmin.from("resources").select(`
       *,
-      categories(id, name, slug)
+      resource_categories(categories(id, name, slug))
     `);
 
     if (status) {
@@ -1174,7 +1199,7 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
 
-    return res.json(data);
+    return res.json(normalizeResourceList(data || []));
   });
 
   app.post("/api/admin/resources", requireAdmin, async (req, res) => {
@@ -1244,14 +1269,33 @@ export async function registerRoutes(
     const { data, error } = await supabaseAdmin
       .from("resources")
       .insert(insertData)
-      .select(`*, categories(id, name, slug)`)
+      .select(`*, resource_categories(categories(id, name, slug))`)
       .single();
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    return res.status(201).json(data);
+    if (data && data.id && data.category_id) {
+      await supabaseAdmin.from("resource_categories")
+        .upsert({ resource_id: data.id, category_id: data.category_id }, { onConflict: "resource_id,category_id" });
+    }
+    const additionalCategoryIds: string[] = req.body.additional_category_ids || [];
+    for (const addCatId of additionalCategoryIds) {
+      if (addCatId && addCatId !== data?.category_id) {
+        await supabaseAdmin.from("resource_categories")
+          .upsert({ resource_id: data.id, category_id: addCatId }, { onConflict: "resource_id,category_id" });
+      }
+    }
+
+    if (additionalCategoryIds.length > 0 && data) {
+      const { data: refreshed } = await supabaseAdmin.from("resources")
+        .select(`*, resource_categories(categories(id, name, slug))`)
+        .eq("id", data.id).single();
+      return res.status(201).json(normalizeResourceCategories(refreshed || data));
+    }
+
+    return res.status(201).json(normalizeResourceCategories(data));
   });
 
   app.post("/api/admin/resources/csv-import", requireAdmin, async (req, res) => {
@@ -1390,13 +1434,19 @@ export async function registerRoutes(
             csvInsert.geocoded_at = (lat != null && !isNaN(lat)) ? new Date().toISOString() : null;
         }
 
-        const { error } = await supabaseAdmin
+        const { data: inserted, error } = await supabaseAdmin
           .from("resources")
-          .insert(csvInsert);
+          .insert(csvInsert)
+          .select("id")
+          .single();
 
         if (error) {
           results.push({ row: i + 1, status: "error", title, reason: error.message });
         } else {
+          if (inserted?.id && category_id) {
+            await supabaseAdmin.from("resource_categories")
+              .upsert({ resource_id: inserted.id, category_id }, { onConflict: "resource_id,category_id" });
+          }
           results.push({ row: i + 1, status: "created", title });
           if (skipDuplicates && rowState) {
             existingTitles.add(`${title.toLowerCase()}|${rowState}`);
@@ -1420,7 +1470,7 @@ export async function registerRoutes(
       const status = (req.query.status as string) || "approved";
       const { data: resources, error } = await supabaseAdmin
         .from("resources")
-        .select("title, short_description, website_url, phone, email, address, city, state, zip, eligibility, subcategory, source_name, source_type, sponsored, monetization_type, affiliate_url, status, latitude, longitude, categories!inner(slug, name)")
+        .select("title, short_description, website_url, phone, email, address, city, state, zip, eligibility, subcategory, source_name, source_type, sponsored, monetization_type, affiliate_url, status, latitude, longitude, resource_categories(categories(slug, name))")
         .eq("status", status)
         .order("state")
         .order("title");
@@ -1436,12 +1486,17 @@ export async function registerRoutes(
         return s;
       };
 
-      const rows = (resources || []).map((r: any) => [
-        r.title, r.categories?.slug || "", r.subcategory, r.short_description,
+      const normalized = normalizeResourceList(resources || []);
+      const rows = normalized.map((r: any) => {
+        const catSlug = Array.isArray(r.categories)
+          ? r.categories.map((c: any) => c.slug).join("|")
+          : (r.categories?.slug || "");
+        return [
+        r.title, catSlug, r.subcategory, r.short_description,
         r.website_url, r.phone, r.email, r.address, r.city, r.state, r.zip,
         r.eligibility, r.source_name, r.source_type, r.sponsored,
         r.monetization_type, r.affiliate_url, r.status, r.latitude, r.longitude,
-      ].map(escapeCsv).join(","));
+      ].map(escapeCsv).join(","); });
 
       const csv = [headers.join(","), ...rows].join("\n");
       res.setHeader("Content-Type", "text/csv");
@@ -1845,18 +1900,71 @@ export async function registerRoutes(
       return res.status(400).json({ error: "No valid fields to update" });
     }
 
+    if (updates.category_id) {
+      await supabaseAdmin.from("resource_categories")
+        .upsert({ resource_id: id, category_id: updates.category_id }, { onConflict: "resource_id,category_id" });
+    }
+
+    const additionalCategoryIds: string[] = req.body.additional_category_ids || [];
+    if (additionalCategoryIds.length > 0 || req.body.replace_categories) {
+      if (req.body.replace_categories) {
+        await supabaseAdmin.from("resource_categories").delete().eq("resource_id", id);
+      }
+      const allCatIds = new Set([...(updates.category_id ? [updates.category_id] : []), ...additionalCategoryIds]);
+      for (const catId of allCatIds) {
+        if (catId) {
+          await supabaseAdmin.from("resource_categories")
+            .upsert({ resource_id: id, category_id: catId }, { onConflict: "resource_id,category_id" });
+        }
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from("resources")
       .update(updates)
       .eq("id", id)
-      .select(`*, categories(id, name, slug)`)
+      .select(`*, resource_categories(categories(id, name, slug))`)
       .single();
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    return res.json(data);
+    return res.json(normalizeResourceCategories(data));
+  });
+
+  app.get("/api/admin/resources/:id/categories", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from("resource_categories")
+      .select("category_id, categories(id, name, slug)")
+      .eq("resource_id", id);
+    if (error) return res.status(500).json({ error: error.message });
+    const cats = (data || []).map((rc: any) => rc.categories).filter(Boolean);
+    return res.json(cats);
+  });
+
+  app.put("/api/admin/resources/:id/categories", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { category_ids } = req.body;
+    if (!Array.isArray(category_ids) || category_ids.length === 0) {
+      return res.status(400).json({ error: "category_ids array is required" });
+    }
+
+    await supabaseAdmin.from("resource_categories").delete().eq("resource_id", id);
+
+    const inserts = category_ids.map((cid: string) => ({ resource_id: id, category_id: cid }));
+    const { error } = await supabaseAdmin.from("resource_categories").insert(inserts);
+    if (error) return res.status(500).json({ error: error.message });
+
+    await supabaseAdmin.from("resources").update({ category_id: category_ids[0] }).eq("id", id);
+
+    const { data: updated } = await supabaseAdmin
+      .from("resource_categories")
+      .select("category_id, categories(id, name, slug)")
+      .eq("resource_id", id);
+    const cats = (updated || []).map((rc: any) => rc.categories).filter(Boolean);
+    return res.json(cats);
   });
 
   app.post("/api/report-resource", async (req, res) => {
@@ -2306,11 +2414,12 @@ export async function registerRoutes(
 
     const { data: resources } = await supabase
       .from("resources")
-      .select("id, title, category_id, state, city, sponsored, monetization_type, affiliate_url, categories(name, slug)")
+      .select("id, title, category_id, state, city, sponsored, monetization_type, affiliate_url, resource_categories(categories(name, slug))")
       .eq("status", "approved");
 
+    const normalizedResources = normalizeResourceList(resources || []);
     const resourceMap = new Map<string, any>();
-    (resources || []).forEach((r: any) => resourceMap.set(r.id, r));
+    normalizedResources.forEach((r: any) => resourceMap.set(r.id, r));
 
     const byCategory: Record<string, number> = {};
     const byState: Record<string, number> = {};
@@ -2503,13 +2612,16 @@ export async function registerRoutes(
 
       const { data: resources } = await supabaseAdmin
         .from("resources")
-        .select("id, category_id, categories!inner(slug)")
+        .select("id, category_id, resource_categories(categories(slug))")
         .eq("status", "approved");
 
       const resourceCountByCategory: Record<string, number> = {};
-      (resources || []).forEach((r: any) => {
-        const slug = r.categories?.slug;
-        if (slug) resourceCountByCategory[slug] = (resourceCountByCategory[slug] || 0) + 1;
+      const normalizedRes = normalizeResourceList(resources || []);
+      normalizedRes.forEach((r: any) => {
+        const cats = Array.isArray(r.categories) ? r.categories : (r.categories ? [r.categories] : []);
+        cats.forEach((c: any) => {
+          if (c?.slug) resourceCountByCategory[c.slug] = (resourceCountByCategory[c.slug] || 0) + 1;
+        });
       });
 
       const slugNormalize: Record<string, string> = {

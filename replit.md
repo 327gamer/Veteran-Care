@@ -48,6 +48,15 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `server/ai/usage-logger.ts` - Logs AI usage to ai_usage_log table (graceful if missing)
 - `server/stripe-service.ts` - Stripe subscription workflow (checkout sessions, webhook handlers, auto-activation/deactivation)
 - `server/pg-client.ts` - Direct PostgreSQL client (bypasses Supabase PostgREST for trusted_services, trusted_service_categories, trusted_service_leads, partner_applications — NEVER use supabaseAdmin for these tables)
+
+## Multi-Category Support
+Resources can belong to multiple categories via the `resource_categories` junction table in Supabase:
+- **Junction table**: `resource_categories(resource_id, category_id)` — composite PK
+- **Legacy `category_id`**: Still on resources table for backward compat; kept in sync as the "primary" category
+- **Query pattern**: Use `resource_categories!inner(categories!inner(...))` when filtering by category slug; use `resource_categories(categories(...))` when loading all categories
+- **Normalization**: `normalizeResourceCategories()` and `normalizeResourceList()` in routes.ts convert junction table shape to flat `categories` field (single object for 1 category, array for multiple)
+- **Admin APIs**: `GET/PUT /api/admin/resources/:id/categories` for managing category assignments
+- **Admin UI**: Primary category dropdown + additional category toggle chips in edit form
 - `server/lead-email.ts` - Email templates using platform config for branding
 - `server/lead-router.ts` - Lead routing engine (platform-agnostic)
 - `server/lead-escalation.ts` - Escalation timer system (platform-agnostic)
@@ -74,7 +83,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
-- `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>` - Returns approved resources filtered by category slug, state, city, ZIP, and/or search query; search matches title, short_description, city, state, eligibility, source_name via ILIKE
+- `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>&sub=<subcategory>` - Returns approved resources filtered by category slug, state, city, ZIP, search query, and/or subcategory; uses `resource_categories` junction table for multi-category support; search matches title, short_description, city, state, eligibility, source_name via ILIKE
 - `GET /api/resources/:id` - Returns a single resource by UUID
 - `GET /api/locations/cities?state=<code>&category=<slug>` - Returns distinct city names from approved resources
 - `GET /api/locations/zips?state=<code>&city=<name>&category=<slug>` - Returns distinct ZIP codes from approved resources

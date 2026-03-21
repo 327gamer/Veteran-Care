@@ -87,14 +87,20 @@ interface SupabaseResource {
   distance_miles?: number | null;
   is_national?: boolean;
   created_at: string;
-  categories: { id: string; name: string; slug: string };
+  categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null;
+}
+
+function getCategoryName(cats: SupabaseResource["categories"]): string {
+  if (!cats) return "";
+  if (Array.isArray(cats)) return cats.map(c => c.name).join(", ");
+  return cats.name || "";
 }
 
 function toResourceItem(r: SupabaseResource): ResourceItem {
   return {
     id: r.id,
     title: r.title,
-    category: r.categories?.name || "",
+    category: getCategoryName(r.categories),
     description: r.short_description || "",
     source: r.source_name || "",
     type: (r.source_type as ResourceItem["type"]) || "guide",
