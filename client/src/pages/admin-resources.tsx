@@ -125,6 +125,7 @@ interface AdminResource {
   longitude: number | null;
   created_at: string;
   categories: { id: string; name: string; slug: string } | null;
+  subcategories_list?: { id: string; name: string; slug: string; category_id: string }[];
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
@@ -142,6 +143,7 @@ export default function AdminResources() {
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>([]);
+  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
   const [, setLocation] = useLocation();
   const [leadStatusFilter, setLeadStatusFilter] = useState("new");
   const [createMode, setCreateMode] = useState(false);
@@ -187,6 +189,12 @@ export default function AdminResources() {
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(r => r.json()),
+    enabled: authenticated,
+  });
+
+  const { data: allSubcategories = [] } = useQuery<{ id: string; name: string; slug: string; category_id: string }[]>({
+    queryKey: ["/api/subcategories"],
+    queryFn: () => fetch("/api/subcategories").then(r => r.json()),
     enabled: authenticated,
   });
 
@@ -364,13 +372,14 @@ export default function AdminResources() {
   });
 
   const handleCreate = () => {
-    createMutation.mutate({ ...editForm, additional_category_ids: additionalCategoryIds });
+    createMutation.mutate({ ...editForm, additional_category_ids: additionalCategoryIds, subcategory_ids: selectedSubcategoryIds });
   };
 
   const openCreateForm = () => {
     setCreateMode(true);
     setSelectedResource({ id: "__new__" } as any);
     setAdditionalCategoryIds([]);
+    setSelectedSubcategoryIds([]);
     setEditForm({
       title: "",
       short_description: "",
@@ -700,22 +709,45 @@ export default function AdminResources() {
     } else {
       setAdditionalCategoryIds([]);
     }
+    if (Array.isArray(resource.subcategories_list)) {
+      setSelectedSubcategoryIds(resource.subcategories_list.map((s: any) => s.id));
+    } else {
+      setSelectedSubcategoryIds([]);
+    }
   };
 
-  const handleApprove = () => {
+  const saveAssociations = async (resourceId: string) => {
+    const allCatIds = [...new Set([editForm.category_id, ...additionalCategoryIds].filter(Boolean))];
+    if (allCatIds.length > 0) {
+      await fetch(`/api/admin/resources/${resourceId}/categories`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ category_ids: allCatIds }),
+      });
+    }
+    await fetch(`/api/admin/resources/${resourceId}/subcategories`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify({ subcategory_ids: selectedSubcategoryIds }),
+    });
+  };
+
+  const handleApprove = async () => {
     if (!selectedResource) return;
     patchMutation.mutate({
       id: selectedResource.id,
       updates: { ...editForm, status: "approved" },
     });
+    await saveAssociations(selectedResource.id);
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!selectedResource) return;
     patchMutation.mutate({
       id: selectedResource.id,
       updates: { ...editForm, status: "rejected" },
     });
+    await saveAssociations(selectedResource.id);
   };
 
   const handleSave = async () => {
@@ -724,14 +756,7 @@ export default function AdminResources() {
       id: selectedResource.id,
       updates: editForm,
     });
-    const allCatIds = [...new Set([editForm.category_id, ...additionalCategoryIds].filter(Boolean))];
-    if (allCatIds.length > 0) {
-      await fetch(`/api/admin/resources/${selectedResource.id}/categories`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ category_ids: allCatIds }),
-      });
-    }
+    await saveAssociations(selectedResource.id);
   };
 
   if (!authenticated) {
@@ -1985,8 +2010,56 @@ export default function AdminResources() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs">Subcategory</Label>
+                <Label className="text-xs">Primary Subcategory (legacy)</Label>
                 <Input data-testid="input-admin-subcategory" className="h-9 text-xs" placeholder="e.g. Emergency Shelter, Rental Assistance" value={editForm.subcategory || ""} onChange={(e) => setEditForm(p => ({ ...p, subcategory: e.target.value }))} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Subcategories {selectedSubcategoryIds.length > 0 && <span className="text-muted-foreground">({selectedSubcategoryIds.length})</span>}</Label>
+                <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 max-h-48 overflow-y-auto">
+                  {(() => {
+                    const allCatIds = [...new Set([editForm.category_id, ...additionalCategoryIds].filter(Boolean))];
+                    const relevantSubs = allSubcategories.filter((s: any) => allCatIds.includes(s.category_id));
+                    if (relevantSubs.length === 0) {
+                      return <span className="text-xs text-muted-foreground italic">Select categories first to see available subcategories</span>;
+                    }
+                    const grouped = new Map<string, typeof relevantSubs>();
+                    relevantSubs.forEach((s: any) => {
+                      const catName = categories.find((c: any) => c.id === s.category_id)?.name || "Other";
+                      if (!grouped.has(catName)) grouped.set(catName, []);
+                      grouped.get(catName)!.push(s);
+                    });
+                    return Array.from(grouped.entries()).map(([catName, subs]) => (
+                      <div key={catName} className="w-full">
+                        <p className="text-[10px] font-medium text-muted-foreground mb-1 mt-1">{catName}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {subs.sort((a: any, b: any) => a.name.localeCompare(b.name)).map((s: any) => {
+                            const isSelected = selectedSubcategoryIds.includes(s.id);
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                data-testid={`chip-subcategory-${s.id}`}
+                                className={`px-2 py-0.5 rounded-full text-[10px] border transition-colors ${
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-foreground border-border hover:bg-accent"
+                                }`}
+                                onClick={() => {
+                                  setSelectedSubcategoryIds(prev =>
+                                    isSelected ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                                  );
+                                }}
+                              >
+                                {s.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
 
               <div className="space-y-2">

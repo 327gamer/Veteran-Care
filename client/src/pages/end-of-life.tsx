@@ -10,7 +10,7 @@ export default function EndOfLife() {
 
   const handleSubcategoryClick = (sub: typeof EOL_SUBCATEGORIES[number]) => {
     trackEvent("eol_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=end-of-life-services&sub=${encodeURIComponent(sub.name)}`);
+    setLocation(`/resources?category=end-of-life-services&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -50,7 +50,7 @@ export default function EndOfLife() {
             or{" "}
             <button
               onClick={() => {
-                const benefits = EOL_SUBCATEGORIES.find(s => s.slug === "va-death-benefits");
+                const benefits = EOL_SUBCATEGORIES.find(s => s.slug === "va-death-benefits-survivor-benefits");
                 if (benefits) handleSubcategoryClick(benefits);
               }}
               className="font-medium text-primary hover:underline"

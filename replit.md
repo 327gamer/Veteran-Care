@@ -57,6 +57,19 @@ Resources can belong to multiple categories via the `resource_categories` juncti
 - **Normalization**: `normalizeResourceCategories()` and `normalizeResourceList()` in routes.ts convert junction table shape to flat `categories` field (single object for 1 category, array for multiple)
 - **Admin APIs**: `GET/PUT /api/admin/resources/:id/categories` for managing category assignments
 - **Admin UI**: Primary category dropdown + additional category toggle chips in edit form
+
+## Multi-Subcategory Support
+Resources can belong to multiple subcategories via normalized junction tables in Supabase:
+- **`subcategories` table**: `id, name, slug, category_id` — normalized subcategory definitions, each tied to a category. UNIQUE(slug, category_id).
+- **`resource_subcategories` junction table**: `resource_id, subcategory_id` — composite PK, many-to-many
+- **Legacy `subcategory` text field**: Still on resources table for backward compat; first subcategory name synced on save
+- **Query pattern**: Use `resource_subcategories!inner(subcategories!inner(...))` when filtering by subcategory slug; use `resource_subcategories(subcategories(...))` when loading all
+- **Normalization**: `normalizeResourceSubcategories()` / `normalizeAllFields()` / `normalizeAllFieldsList()` convert junction data to `subcategories_list` array
+- **API filtering**: `/api/resources?category=X&sub=SLUG` filters by subcategory slug via junction table (no more ilike on text field)
+- **Public API**: `GET /api/subcategories?category_slug=X` returns all subcategories for a category
+- **Admin APIs**: `GET/PUT /api/admin/resources/:id/subcategories` for managing subcategory assignments
+- **Admin UI**: Toggle chips grouped by category in edit form; Approve/Reject/Save all persist subcategory assignments
+- **EOL subcategory slugs**: Defined in `client/src/lib/eol-subcategories.ts`, aligned with DB-generated slugs from full subcategory names
 - `server/lead-email.ts` - Email templates using platform config for branding
 - `server/lead-router.ts` - Lead routing engine (platform-agnostic)
 - `server/lead-escalation.ts` - Escalation timer system (platform-agnostic)

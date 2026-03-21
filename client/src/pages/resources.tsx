@@ -520,7 +520,8 @@ export default function Resources() {
     filterChips.push({ label: "Local only", onRemove: () => setLocalOnly(false) });
   }
   if (subFilter) {
-    filterChips.push({ label: subFilter, onRemove: () => { setSubFilter(null); setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); } });
+    const subLabel = subFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    filterChips.push({ label: subLabel, onRemove: () => { setSubFilter(null); setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); } });
   }
 
   const handleUseMyLocation = () => {
