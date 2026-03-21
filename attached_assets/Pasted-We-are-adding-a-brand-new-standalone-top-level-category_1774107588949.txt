@@ -1,0 +1,117 @@
+We are adding a brand-new standalone top-level category to Veteran Care called:
+
+END OF LIFE SERVICES
+
+This is NOT part of Family Support. It must be its own main category throughout the app.
+
+PURPOSE:
+This category is for veterans, family members, caregivers, case managers, and helpers who need to navigate end-of-life support, planning, benefits, legal help, hospice, funeral services, and related care. It must be simple, clear, respectful, and easy to use.
+
+IMPORTANT:
+This new category must flow exactly like the rest of the app and integrate fully with:
+- homepage category grid
+- category navigation
+- location filtering
+- Near Me logic
+- resource search
+- AI Guide / Navigator compatibility
+- current resource list layout
+- existing app styling and UX patterns
+
+UI REQUIREMENT:
+When a user clicks “End of Life Services” from the homepage or category area, do NOT take them straight into a flat resource list first.
+
+Instead:
+STEP 1:
+Open a clean subcategory grid page styled similarly to the Trusted Services section — simple boxed cards, clean spacing, mobile-friendly, easy to tap.
+
+STEP 2:
+When the user clicks one of those subcategory boxes, take them to the existing resource listing view filtered to that End of Life Services subcategory, using the same clean resource list system already used throughout the app.
+
+This must feel native to the current platform and not like a separate module.
+
+ADD THIS NEW TOP-LEVEL CATEGORY EVERYWHERE MAIN CATEGORIES APPEAR:
+- homepage category grid
+- resource/category browsing views
+- any category selectors tied to resources
+- any relevant admin category dropdowns
+- any resource intake/category assignment areas
+- any AI/category mapping where appropriate
+
+USE THIS CATEGORY NAME:
+End of Life Services
+
+USE THIS CATEGORY SLUG:
+end-of-life-services
+
+CREATE THESE SUBCATEGORIES UNDER IT:
+1. Hospice & Palliative Care
+2. In-Home Care & Skilled Nursing
+3. Assisted Living & Nursing Homes
+4. Funeral & Burial Services
+5. VA Death Benefits & Survivor Benefits
+6. Wills, Estate Planning & Probate
+7. Power of Attorney & Advance Directives
+8. Grief Counseling & Family Support
+9. Homebound Support & Daily Living Services
+10. End-of-Life Care Planning
+11. Veteran Funeral Honors & Cemetery Assistance
+12. Legal Help for Family & Final Affairs
+
+FUNCTIONAL REQUIREMENTS:
+1. Top-level category card must appear in homepage/category grid like the other major categories.
+2. Clicking it opens the new subcategory card grid page.
+3. Clicking a subcategory opens the normal resource results page filtered to that subcategory.
+4. Resource results must continue using:
+   - location filtering
+   - Near Me
+   - state/city logic
+   - existing card/list layout
+   - current click tracking
+5. This new category must support both free resources and monetizable paid services.
+6. It must work with the current resource database architecture, not as a disconnected custom page.
+7. It must support resources that may already exist in the database and allow us to reassign or additionally classify them properly.
+8. It must be fully mobile-friendly and visually consistent with the rest of Veteran Care.
+
+ADMIN / DATA REQUIREMENTS:
+1. Add “End of Life Services” as a valid top-level category in the category system.
+2. Add all listed subcategories to the correct category/subcategory structure.
+3. Make sure admin can assign imported or existing resources to this category and its subcategories.
+4. Do not break existing categories or imports.
+5. If some current resources already belong here, make it easy for us to identify and reclassify them.
+
+AI / SEARCH REQUIREMENTS:
+Make sure the AI Guide and search system can map common phrases into this category, such as:
+- hospice
+- funeral help
+- burial benefits
+- survivor benefits
+- VA death benefits
+- nursing home
+- palliative care
+- wills
+- estate planning
+- probate
+- power of attorney
+- advance directives
+- grief support
+- homebound help
+- meals on wheels
+- veteran cemetery
+- funeral honors
+
+MONETIZATION NOTE:
+This category will eventually include many paid platform partners and monetizable service providers, so build it in a way that supports:
+- trusted services integration
+- future featured placement
+- partner visibility
+- lead generation opportunities
+
+DO NOT:
+- bury this under Family Support
+- make it a one-off static page
+- create a UX flow different from the rest of the app
+- skip integration with filtering, search, and admin tools
+
+DELIVERABLE:
+Build the new top-level category “End of Life Services” with the clean subcategory card view and full integration into the existing Veteran Care system, then tell me exactly what was created, what database/category changes were made, and what existing resources may need reclassification into this new category.

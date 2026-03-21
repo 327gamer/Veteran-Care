@@ -19,6 +19,7 @@ import {
   Zap,
   ChevronRight,
   Lock,
+  Flower2,
 } from "lucide-react";
 
 const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
@@ -32,6 +33,7 @@ const categories: { label: string; icon: React.ElementType; slug: string | null 
   { label: "VA Benefits", icon: ShieldCheck, slug: "va-benefits" },
   { label: "Family Support", icon: Users, slug: "family-support" },
   { label: "Food Assistance", icon: UtensilsCrossed, slug: "food-assistance" },
+  { label: "End of Life Services", icon: Flower2, slug: "end-of-life-services" },
 ];
 
 const steps = [
@@ -63,6 +65,10 @@ export default function LandingPage() {
 
   const navigateToGetHelp = (slug: string | null = null) => {
     trackEvent("start_get_help_click", slug ? { category: slug } : {});
+    if (slug === "end-of-life-services") {
+      setLocation("/end-of-life");
+      return;
+    }
     const url = slug ? `/get-help?category=${encodeURIComponent(slug)}` : "/get-help";
     setLocation(url);
   };

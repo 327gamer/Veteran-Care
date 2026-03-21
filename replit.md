@@ -62,6 +62,9 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `client/src/lib/category-config.ts` - Maps Supabase category slugs to icons, colors, and descriptions
 - `client/src/components/layout.tsx` - App shell with top bar, bottom nav, and AI guide listener
 - `client/src/components/resource-detail.tsx` - Rich resource detail sheet with click tracking
+- `client/src/pages/end-of-life.tsx` - End of Life Services subcategory grid page (12 subcategories, clean card layout)
+- `client/src/lib/eol-subcategories.ts` - Subcategory config (names, slugs, icons, keywords) for End of Life Services
+- `client/src/lib/analytics.ts` - GA4 analytics module (event tracking, page views, UTM capture)
 - `client/src/pages/trusted-services.tsx` - Public Trusted Services page (category grid → provider listings)
 - `client/src/pages/admin-trusted-services.tsx` - Admin partner management (add/edit/activate/deactivate/feature)
 - `supabase/create_resource_clicks.sql` - SQL to create click tracking table in Supabase

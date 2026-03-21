@@ -270,6 +270,44 @@ async function alignCategoryNames() {
   }
 }
 
+async function ensureEndOfLifeCategory() {
+  try {
+    const { data } = await supabaseAdmin
+      .from("categories")
+      .select("id")
+      .eq("slug", "end-of-life-services")
+      .maybeSingle();
+    if (!data) {
+      const { error } = await supabaseAdmin
+        .from("categories")
+        .insert({ name: "End of Life Services", slug: "end-of-life-services" });
+      if (error) {
+        console.log("[seed] Failed to insert End of Life Services category:", error.message);
+      } else {
+        console.log("[seed] Created End of Life Services category");
+      }
+    }
+  } catch (err: any) {
+    console.log("[seed] ensureEndOfLifeCategory error:", err.message);
+  }
+
+  try {
+    const existing = await pgQuery(
+      `SELECT id FROM trusted_service_categories WHERE slug = 'end-of-life-services' LIMIT 1`
+    );
+    if (existing.length === 0) {
+      await pgQuery(`
+        INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
+        VALUES ('End of Life Services', 'end-of-life-services', 'Hospice, funeral services, estate planning, and survivor benefits for veterans and families', 'flower-2', 9, true)
+        ON CONFLICT (slug) DO UPDATE SET is_active = true
+      `);
+      console.log("[seed] Added End of Life Services to trusted_service_categories");
+    }
+  } catch (err: any) {
+    console.log("[seed] trusted_service_categories EOL insert skipped:", err.message);
+  }
+}
+
 async function checkStatesTable() {
   const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
   if (error) {
@@ -401,6 +439,7 @@ export async function registerRoutes(
   await checkStatesTable();
   await checkTrustedServicesTable();
   await alignCategoryNames();
+  await ensureEndOfLifeCategory();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
@@ -452,7 +491,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/resources", async (req, res) => {
-    const { category, state, q } = req.query;
+    const { category, state, q, sub } = req.query;
 
     const userLat = req.query.user_lat ? parseFloat(req.query.user_lat as string) : undefined;
     const userLng = req.query.user_lng ? parseFloat(req.query.user_lng as string) : undefined;
@@ -466,6 +505,10 @@ export async function registerRoutes(
 
     if (category) {
       query = query.eq("categories.slug", category as string);
+    }
+
+    if (sub && hasSubcategoryColumn) {
+      query = query.ilike("subcategory", `%${sub}%`);
     }
 
     if (nearMeMode && hasGeoColumns) {
@@ -526,6 +569,9 @@ export async function registerRoutes(
         .eq("status", "approved").is("state", null);
       if (category) {
         nationalQuery = nationalQuery.eq("categories.slug", category as string);
+      }
+      if (sub && hasSubcategoryColumn) {
+        nationalQuery = nationalQuery.ilike("subcategory", `%${sub}%`);
       }
       nationalQuery = nationalQuery.order("sponsored", { ascending: false }).order("title");
       const { data: nationalData } = await nationalQuery;

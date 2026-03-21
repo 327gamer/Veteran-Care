@@ -65,6 +65,7 @@ You are not alone, and reaching out takes courage. Would you like me to help you
     "substance-recovery": ["substance", "alcohol", "drug", "recovery", "detox", "rehab", "sober", "aa", "na", "medication assisted"],
     "community-support": ["community", "volunteer", "recreation", "social", "peer", "mentor", "fellowship"],
     "food-assistance": ["food", "meals", "food bank", "food pantry", "groceries", "snap", "wic", "hunger"],
+    "end-of-life-services": ["hospice", "funeral", "burial", "survivor benefits", "va death", "death benefit", "nursing home", "palliative", "wills", "estate planning", "probate", "power of attorney", "advance directive", "grief", "bereavement", "homebound", "meals on wheels", "veteran cemetery", "funeral honors", "cremation", "end of life"],
   },
 
   blockedTopics: [

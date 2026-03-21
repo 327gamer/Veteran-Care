@@ -13,6 +13,7 @@ import {
   Car,
   Heart,
   HandHeart,
+  Flower2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ const configBySlug: Record<string, CategoryDisplayConfig> = {
   "transportation": { icon: Car, color: "text-teal-600", bg: "bg-teal-50", desc: "Travel assistance and vehicle grants" },
   "substance-recovery": { icon: Heart, color: "text-rose-600", bg: "bg-rose-50", desc: "Wellness, recovery programs, and holistic support" },
   "community-support": { icon: HandHeart, color: "text-violet-600", bg: "bg-violet-50", desc: "Veteran organizations, volunteer groups, and peer networks" },
+  "end-of-life-services": { icon: Flower2, color: "text-stone-600", bg: "bg-stone-50", desc: "Hospice, funeral services, estate planning, and survivor benefits" },
 };
 
 const defaultConfig: CategoryDisplayConfig = {

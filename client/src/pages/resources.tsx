@@ -224,6 +224,7 @@ export default function Resources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<string | null>(null);
+  const [subFilter, setSubFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
@@ -267,11 +268,12 @@ export default function Resources() {
   const isNearMeQuery = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
 
   const { data: rawApiResponse, isLoading: resourcesLoading, isFetched: resourcesFetched } = useQuery<SupabaseResource[] | { results: SupabaseResource[]; local_count: number }>({
-    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode, searchParam],
+    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, zipParam, nearMeLat, nearMeLng, nearMeRadius, locationMode, searchParam, subFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
       if (searchParam) params.set("q", searchParam);
+      if (subFilter) params.set("sub", subFilter);
       if (isNearMeQuery) {
         params.set("user_lat", String(nearMeLat));
         params.set("user_lng", String(nearMeLng));
@@ -431,6 +433,16 @@ export default function Resources() {
         setSelectedName(cat.name);
       }
     }
+    const qParam = params.get("q");
+    if (qParam) {
+      setSearchQuery(decodeURIComponent(qParam));
+    }
+    const subParam = params.get("sub");
+    if (subParam) {
+      setSubFilter(decodeURIComponent(subParam));
+    } else {
+      setSubFilter(null);
+    }
     const urg = params.get("urgency");
     if (urg && ["immediate", "same_week", "standard", "information"].includes(urg)) {
       setUrgencyFilter(urg);
@@ -479,7 +491,7 @@ export default function Resources() {
     setNearMeRadius(25);
   };
 
-  const hasActiveFilters = locationMode !== "national" || searchQuery.trim() !== "" || localOnly;
+  const hasActiveFilters = locationMode !== "national" || searchQuery.trim() !== "" || localOnly || !!subFilter;
 
   const filterChips: { label: string; onRemove: () => void }[] = [];
   if (selectedState) {
@@ -500,6 +512,9 @@ export default function Resources() {
   }
   if (localOnly) {
     filterChips.push({ label: "Local only", onRemove: () => setLocalOnly(false) });
+  }
+  if (subFilter) {
+    filterChips.push({ label: subFilter, onRemove: () => { setSubFilter(null); setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); } });
   }
 
   const handleUseMyLocation = () => {

@@ -110,6 +110,10 @@ export default function Home() {
   }, []);
 
   const handleCategoryClick = (category: string) => {
+    if (category === "end-of-life-services") {
+      setLocation("/end-of-life");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 

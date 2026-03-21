@@ -33,6 +33,7 @@ import LandingPage from "@/pages/landing-page";
 import GetHelp from "@/pages/get-help";
 import ResourceCenter from "@/pages/resource-center";
 import PartnersLanding from "@/pages/partners-landing";
+import EndOfLife from "@/pages/end-of-life";
 
 function PageViewTracker() {
   const [location] = useLocation();
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/get-help" component={GetHelp} />
       <Route path="/resource-center" component={ResourceCenter} />
       <Route path="/partners" component={PartnersLanding} />
+      <Route path="/end-of-life" component={EndOfLife} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/enable-location" component={Onboarding} />
       
