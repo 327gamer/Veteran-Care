@@ -1,0 +1,51 @@
+We are continuing the End of Life Services category build.
+
+The resource population and system integration is underway. Now we want to enhance the user experience inside this category by adding a guided introduction section at the top of the End of Life Services subcategory page.
+
+This is very important because this category deals with sensitive, emotional, and complex situations. Users need clarity and reassurance when they land here.
+
+GOAL:
+Add a clean, simple, and supportive introduction section at the top of the End of Life Services subcategory page, above the subcategory boxes.
+
+UI REQUIREMENTS:
+- Place this section ABOVE the subcategory grid
+- Keep it visually clean and consistent with the platform
+- Mobile-first design
+- Use soft spacing, no clutter
+- Should feel similar in tone to the rest of the app (not heavy or overwhelming)
+
+CONTENT REQUIREMENTS:
+
+TITLE:
+End of Life Services
+
+DESCRIPTION (use this exact text):
+Support for veterans, family members, caregivers, and case managers navigating end-of-life care, hospice, final arrangements, family benefits, and legal planning.
+
+SUBTEXT (short guidance line):
+If you're not sure where to start, begin with Hospice & Palliative Care or VA Death Benefits & Survivor Benefits.
+
+OPTIONAL CTA (if it fits UI cleanly):
+Add a small, subtle "Get Help Now" or "Request Support" button that links to the Navigator / Request Support flow.
+
+FUNCTIONAL REQUIREMENTS:
+- This is purely a UI/UX layer — it should not interfere with:
+  - subcategory navigation
+  - resource filtering
+  - geolocation logic
+  - search behavior
+- It should render consistently across all devices
+- It should load quickly and not affect performance
+
+DO NOT:
+- Overdesign this section
+- Add large blocks of text
+- Make it feel like a separate page
+- Break existing layout structure
+
+DELIVERABLE:
+Implement the End of Life Services introduction section at the top of the subcategory page and confirm:
+- placement
+- styling
+- responsiveness
+- that it integrates cleanly with the existing UI

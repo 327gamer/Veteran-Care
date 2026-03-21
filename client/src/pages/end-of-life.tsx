@@ -3,7 +3,7 @@ import { platform } from "@shared/platform";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
-import { ChevronLeft, Flower2, ChevronRight } from "lucide-react";
+import { ChevronLeft, Flower2, ChevronRight, HeartHandshake } from "lucide-react";
 
 export default function EndOfLife() {
   const [, setLocation] = useLocation();
@@ -29,11 +29,51 @@ export default function EndOfLife() {
           </h1>
         </div>
         <p className="text-white/70 text-sm leading-relaxed max-w-sm">
-          Support for veterans and families navigating hospice, planning, benefits, and care.
+          Support for veterans, family members, caregivers, and case managers navigating end-of-life care, hospice, final arrangements, family benefits, and legal planning.
         </p>
       </div>
 
       <div className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
+        <div className="mb-6 px-1" data-testid="eol-intro">
+          <p className="text-sm text-muted-foreground leading-relaxed text-center">
+            If you're not sure where to start, begin with{" "}
+            <button
+              onClick={() => {
+                const hospice = EOL_SUBCATEGORIES.find(s => s.slug === "hospice-palliative-care");
+                if (hospice) handleSubcategoryClick(hospice);
+              }}
+              className="font-medium text-primary hover:underline"
+              data-testid="eol-intro-hospice-link"
+            >
+              Hospice &amp; Palliative Care
+            </button>{" "}
+            or{" "}
+            <button
+              onClick={() => {
+                const benefits = EOL_SUBCATEGORIES.find(s => s.slug === "va-death-benefits");
+                if (benefits) handleSubcategoryClick(benefits);
+              }}
+              className="font-medium text-primary hover:underline"
+              data-testid="eol-intro-benefits-link"
+            >
+              VA Death Benefits &amp; Survivor Benefits
+            </button>.
+          </p>
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => {
+                trackEvent("eol_request_support_click");
+                setLocation("/get-help");
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+              data-testid="eol-request-support"
+            >
+              <HeartHandshake className="h-3.5 w-3.5" />
+              Request Support
+            </button>
+          </div>
+        </div>
+
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
         </p>
