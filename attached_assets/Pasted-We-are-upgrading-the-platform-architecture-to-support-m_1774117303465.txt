@@ -1,0 +1,118 @@
+We are upgrading the platform architecture to support multi-subcategory assignment.
+
+IMPORTANT WORKFLOW RULE:
+If any database changes (Supabase) are required, DO NOT assume direct access.
+Instead:
+1. Give me the exact SQL or steps to run inside Supabase
+2. I will execute them manually in Supabase
+3. I will confirm once completed
+4. Then you continue with the application updates
+
+Do NOT request or use database passwords.
+
+-------------------------------------
+
+GOAL:
+Allow each resource to belong to multiple subcategories across categories, just like multi-category support.
+
+CURRENT STATE:
+- resource_categories junction table exists (many-to-many)
+- subcategory is currently a single field on the resource
+
+PROBLEM:
+- Resources assigned to End of Life Services as an additional category do not appear in its subcategory views
+- This limits UX, analytics, filtering, and monetization tracking
+
+TARGET STATE:
+- A resource can belong to:
+  - multiple categories
+  - multiple subcategories
+
+-------------------------------------
+
+STEP 1 — DATABASE PLAN (SUPABASE)
+
+First:
+Explain the exact Supabase database changes needed.
+
+Then:
+Provide me with:
+- the SQL to create the new junction table (resource_subcategories)
+- any indexes needed
+- any migration SQL to move existing subcategory data into the new table
+
+WAIT for my confirmation after I run it.
+
+-------------------------------------
+
+STEP 2 — BACKEND / API UPDATE
+
+After I confirm the DB changes are complete:
+
+- Update all queries to use resource_subcategories instead of the single subcategory field
+- Support filtering by:
+  - category
+  - subcategory
+  - combined category + subcategory
+- Ensure:
+  - search
+  - Near Me
+  - city/zip filtering
+  - AI Guide
+  - analytics
+  all work correctly
+
+-------------------------------------
+
+STEP 3 — ADMIN PANEL UPDATE
+
+- Keep "Primary Subcategory" (for compatibility)
+- Add "Additional Subcategories" (toggle chips like categories)
+- Allow assigning multiple subcategories
+- Prevent duplicates
+- Ensure UI is clean and easy to use
+
+-------------------------------------
+
+STEP 4 — DATA CONSISTENCY
+
+- Every resource must have:
+  - at least one category
+  - at least one subcategory
+- Prevent orphaned resources
+
+-------------------------------------
+
+STEP 5 — TESTING
+
+Use real examples:
+
+1. Legal resource:
+- Legal → Estate Planning
+- End of Life → Legal Help for Final Affairs
+
+2. Grief resource:
+- Family Support → Grief
+- End of Life → Grief Counseling
+
+3. Benefits resource:
+- Benefits → Survivor Benefits
+- End of Life → VA Death Benefits
+
+-------------------------------------
+
+DELIVERABLE:
+
+After everything is complete, provide:
+- DB confirmation
+- API confirmation
+- Admin UI confirmation
+- test results
+- confirmation nothing else broke
+
+-------------------------------------
+
+IMPORTANT:
+This is a foundational blueprint upgrade.
+Do not create shortcuts or temporary fixes.
+Build it cleanly like the multi-category system.
