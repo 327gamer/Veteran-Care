@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Flag,
   Scale,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -106,5 +107,12 @@ export const EOL_SUBCATEGORIES: EolSubcategory[] = [
     icon: Scale,
     description: "Attorneys and legal aid for end-of-life and survivor matters",
     keywords: ["legal help", "attorney", "legal aid", "final affairs", "survivor legal", "death certificate"],
+  },
+  {
+    name: "Insurance & Financial Planning",
+    slug: "insurance-financial-planning",
+    icon: ShieldCheck,
+    description: "Life insurance, burial insurance, and financial support for families",
+    keywords: ["life insurance", "burial insurance", "final expense", "financial planning", "financial counseling", "estate financial", "SGLI", "VGLI"],
   },
 ];
