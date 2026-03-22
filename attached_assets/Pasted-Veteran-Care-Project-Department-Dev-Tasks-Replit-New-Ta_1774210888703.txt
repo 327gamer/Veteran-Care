@@ -1,0 +1,71 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.5 – Near Me Results Not Loading Even When Location Is Granted
+
+Issue:
+Near Me is still not functioning correctly in live testing.
+
+Observed behavior:
+- even when location is enabled at first login / app entry
+- or when location is later granted from the Near Me flow
+- the Near Me tab still shows the Enable Location prompt and/or "No resources found"
+- All search works correctly
+- Near Me does not return expected local results
+
+Important:
+This means the problem is no longer just the permission prompt UX.
+It now appears to be a deeper issue in the Near Me results pipeline.
+
+What needs to be investigated end-to-end:
+1. whether coordinates are actually being captured and stored correctly after permission is granted
+2. whether the Resources / Near Me page is receiving the updated geo location state
+3. whether the Near Me query/filter is re-running after location becomes available
+4. whether radius filtering is working correctly
+5. whether keyword search + Near Me is incorrectly producing empty states
+6. whether stale error state, stale prompt state, or stale empty-result state is still overriding the live location state
+7. whether local resources actually fall within the selected radius for the tester's location
+8. whether distance calculations / geospatial filtering / fallback logic are working correctly
+
+Requested output:
+Please respond in this exact structure:
+
+1. ROOT CAUSE
+- explain why Near Me is still not returning results even when location is granted
+- explain whether this is:
+  a) location-state issue
+  b) query/filter issue
+  c) radius/distance issue
+  d) stale UI state issue
+  e) combination of the above
+
+2. SAFE FIX PLAN
+- explain the smallest safe fix
+- do not bundle unrelated UI or feature changes
+
+3. FILES / COMPONENTS AFFECTED
+- list likely files, hooks, query logic, or resource filtering components involved
+
+4. IMPLEMENTATION
+- make only the Near Me functional fix
+- ensure:
+  - granted location activates properly
+  - prompt disappears when appropriate
+  - results refresh correctly
+  - radius filtering works
+  - keyword + Near Me works correctly
+
+5. QA CHECKLIST
+- verify Near Me works when location was granted at initial login
+- verify Near Me works when location is granted later
+- verify prompt disappears once location is valid
+- verify local results load within selected radius
+- verify keyword + Near Me search works
+- verify All and By State still work
+- verify no regression in onboarding location flow
+
+Important rules:
+- treat this as a critical isolated bug fix
+- test before publish
+- do not stack any unrelated changes into this task

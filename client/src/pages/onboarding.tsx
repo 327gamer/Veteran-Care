@@ -58,6 +58,19 @@ export default function Onboarding() {
           const { stateCode, state, city, zip } = await res.json();
           if (stateCode || state || city) {
             setStoreLocation(stateCode || "", state || "", city || "", zip || "");
+            try {
+              localStorage.setItem("vc-geo-cache", JSON.stringify({
+                data: {
+                  state: state || "",
+                  stateCode: stateCode || "",
+                  city: city || "",
+                  zip: zip || "",
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                },
+                ts: Date.now(),
+              }));
+            } catch {}
             const display = [city, stateCode || state].filter(Boolean).join(", ");
             setLocStatus(`Location set: ${display}`);
           } else {

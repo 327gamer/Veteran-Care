@@ -137,6 +137,8 @@ export function useGeolocation(): UseGeolocationReturn {
     const cached = getCachedLocation();
     if (cached) {
       setLocation(cached);
+      setHasPermission(true);
+      setError(null);
       return;
     }
 
@@ -154,7 +156,11 @@ export function useGeolocation(): UseGeolocationReturn {
             fetchLocation(true);
           }
         };
-      }).catch(() => {});
+      }).catch(() => {
+        fetchLocation();
+      });
+    } else {
+      fetchLocation();
     }
   }, [fetchLocation]);
 
