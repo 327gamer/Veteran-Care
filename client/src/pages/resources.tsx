@@ -799,6 +799,37 @@ export default function Resources() {
               {geo.error && locationMode !== "nearme" && (
                 <p className="text-[10px] text-destructive">{geo.error}</p>
               )}
+
+              {locationMode === "nearme" && (
+                <details className="mt-2 border border-dashed border-gray-300 rounded-lg p-2 bg-gray-50">
+                  <summary className="text-[10px] font-mono text-gray-500 cursor-pointer">Debug: Geo Pipeline</summary>
+                  <div className="mt-1 space-y-0.5 text-[9px] font-mono text-gray-600 max-h-48 overflow-y-auto">
+                    <div><b>geo.location:</b> {geo.location ? `lat=${geo.location.lat.toFixed(4)}, lng=${geo.location.lng.toFixed(4)}, city=${geo.location.city}, state=${geo.location.stateCode}` : "null"}</div>
+                    <div><b>geo.loading:</b> {String(geo.loading)}</div>
+                    <div><b>geo.error:</b> {geo.error || "null"}</div>
+                    <div><b>geo.hasPermission:</b> {String(geo.hasPermission)}</div>
+                    <div><b>locationMode:</b> {locationMode}</div>
+                    <div><b>nearMeLat:</b> {String(nearMeLat)}</div>
+                    <div><b>nearMeLng:</b> {String(nearMeLng)}</div>
+                    <div><b>isNearMeQuery:</b> {String(isNearMeQuery)}</div>
+                    <div><b>selectedSlug:</b> {selectedSlug || "null"}</div>
+                    <div><b>searchParam:</b> {searchParam || "null"}</div>
+                    <div><b>nearMeRadius:</b> {nearMeRadius}</div>
+                    <div><b>query enabled:</b> {String((!!selectedSlug || !!searchParam || isNearMeQuery) && (locationMode !== "nearme" || isNearMeQuery))}</div>
+                    <div><b>resourcesLoading:</b> {String(resourcesLoading)}</div>
+                    <div><b>resourcesFetched:</b> {String(resourcesFetched)}</div>
+                    <div><b>apiResources.length:</b> {apiResources.length}</div>
+                    <div><b>nearMeLocalCount:</b> {String(nearMeLocalCount)}</div>
+                    <div className="border-t border-gray-300 pt-1 mt-1"><b>Event Log:</b></div>
+                    {geo.debugLog.map((entry, i) => (
+                      <div key={i} className="text-gray-500">
+                        <span className="text-gray-400">{new Date(entry.ts).toLocaleTimeString()}</span>{" "}
+                        {entry.msg}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           </div>
 

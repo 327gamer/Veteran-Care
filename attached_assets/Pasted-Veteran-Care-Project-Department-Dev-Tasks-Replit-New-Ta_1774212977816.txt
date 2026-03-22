@@ -1,0 +1,72 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.7 – Add Mobile Geolocation Diagnostics Before Another Fix
+
+Issue:
+Near Me is STILL failing on iPhone Safari and iPhone Chrome after multiple fixes.
+
+Confirmed live behavior:
+- Desktop works correctly
+- iPhone Safari fails
+- iPhone Chrome fails
+- All and By State work
+- Near Me/location behavior still shows denied state incorrectly or fails to load local results
+
+Decision:
+Do NOT make another blind patch.
+Before changing more logic, add temporary diagnostics so we can identify the exact mobile failure point.
+
+What I need:
+Please add temporary debug logging / diagnostic visibility for the full mobile Near Me flow.
+
+Track and expose these exact checkpoints:
+1. whether geolocation permission request is triggered
+2. whether permission is granted / denied / timed out
+3. whether getCurrentPosition returns coordinates
+4. the exact coordinates returned (can be rounded/safe for debugging)
+5. whether reverse geocode succeeds or fails
+6. whether geo.location state is updated
+7. whether geo.error is cleared or persists
+8. whether hasPermission becomes true
+9. whether the Near Me query becomes enabled
+10. what params are being used in the Near Me query:
+   - lat
+   - lng
+   - radius
+   - search term
+   - selected category/subcategory if any
+11. whether the API request is actually fired
+12. whether the API returns zero results or never gets called
+13. whether the UI is showing stale denied state after valid location data exists
+
+Best implementation:
+- add temporary console logging AND
+- add a temporary visible mobile debug panel or debug text block only for this testing session if that is easier
+- keep it simple and removable after debugging
+
+Requested output:
+Please respond in this structure:
+
+1. DIAGNOSTIC PLAN
+- what temporary logging/debug output you will add
+
+2. FILES / COMPONENTS AFFECTED
+- list exact files
+
+3. IMPLEMENTATION
+- add diagnostics only
+- do not bundle unrelated fixes yet
+
+4. TEST INSTRUCTIONS
+- tell me exactly what to do on mobile
+- tell me exactly what screenshots/logs you need back from me
+
+5. CLEANUP PLAN
+- explain how these temporary diagnostics will be removed after root cause is confirmed
+
+Important rules:
+- do not bundle a speculative fix into this step unless the root cause becomes immediately obvious from the diagnostics
+- keep this isolated and reversible
+- this is now a debugging step, not a redesign step
