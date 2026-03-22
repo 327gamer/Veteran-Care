@@ -475,6 +475,10 @@ export default function Resources() {
 
   const selectCategory = (cat: SupabaseCategory) => {
     trackEvent("resources_category_click", { category: cat.slug });
+    if (cat.slug === "end-of-life-services") {
+      setLocation("/end-of-life");
+      return;
+    }
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
