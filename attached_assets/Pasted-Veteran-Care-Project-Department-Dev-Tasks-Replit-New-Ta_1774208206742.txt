@@ -1,0 +1,61 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.3 – Near Me Location Re-Prompt UX Fix
+
+Issue:
+When a user is in search / navigation / Near Me flows and location permission is denied or not active, the app currently shows a denied-permission warning state, but the UX is not as clean or simple as the original web-app location enable prompt.
+
+Observed behavior:
+- user sees a "Location permission denied" message
+- user may see buttons like "Try Again" and "Filter by State"
+- but the experience does not clearly re-present the same simple "Enable Location" flow used earlier in the web app
+- this creates friction during search / Near Me use
+
+Expected behavior:
+When a user attempts a Near Me or location-based search and permission is denied or missing, the app should provide a clean and obvious path to re-enable location, modeled on the original onboarding/location prompt experience.
+
+Reference:
+Use the original web-app "Enable Location" prompt as the UX reference:
+- simple message
+- clear primary action
+- easy fallback if permission still fails
+
+What to investigate:
+1. Check how the original "Enable Location" flow is triggered on first entry to the web app
+2. Check how the Near Me / search flow handles denied or missing location permission
+3. Identify whether the current "Try Again" action is only retrying geolocation silently instead of re-triggering the clean permission prompt UX
+4. Determine whether this should:
+   - re-open the same Enable Location screen/modal/component, or
+   - present an equivalent inline prompt with a clear primary action and optional settings guidance
+5. Confirm the best behavior for mobile web, especially Safari/iPhone
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why Near Me/search does not re-use the original clean location prompt experience
+
+2. SAFE FIX PLAN
+- explain the smallest safe fix
+- do not bundle unrelated search, filter, or map changes
+
+3. FILES / COMPONENTS AFFECTED
+- list likely files, routes, hooks, or shared location components
+
+4. IMPLEMENTATION
+- make only this location re-prompt / UX consistency fix
+- preserve current search, Near Me, state filter, and fallback behavior
+
+5. QA CHECKLIST
+- verify denied permission state now gives a clean, obvious re-prompt path
+- verify user can still use state/manual fallback
+- verify original onboarding location flow remains intact
+- verify no regression in Near Me results when permission is granted
+- verify behavior on mobile web is clean and understandable
+
+Important rules:
+- make this a small isolated change only
+- test before publish
+- do not stack other fixes into this task

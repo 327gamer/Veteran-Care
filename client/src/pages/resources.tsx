@@ -757,31 +757,39 @@ export default function Resources() {
               )}
 
               {locationMode === "nearme" && !geo.location && !geo.loading && geo.error && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="space-y-2">
-                    <p className="text-xs text-amber-800">{geo.error}</p>
-                    <p className="text-[10px] text-amber-700">Allow location access in your browser settings, or filter manually by state and city.</p>
-                    <div className="flex gap-2">
-                      <Button
-                        data-testid="button-retry-location"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[10px] px-2"
-                        onClick={() => geo.requestLocation(true)}
-                      >
-                        <Locate className="h-3 w-3 mr-1" /> Try Again
-                      </Button>
-                      <Button
-                        data-testid="button-switch-to-state"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[10px] px-2"
-                        onClick={() => setLocationMode("state")}
-                      >
-                        <MapPinned className="h-3 w-3 mr-1" /> Filter by State
-                      </Button>
+                <div className="flex flex-col items-center text-center py-6 px-4 bg-background border rounded-xl shadow-sm space-y-4">
+                  <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-primary fill-primary" />
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-heading font-bold text-primary">Enable Location</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Allow location access so we can show resources near you.
+                    </p>
+                    {geo.error.includes("denied") && (
+                      <p className="text-xs text-muted-foreground/70 pt-1">
+                        If prompted, tap "Allow" — or update location settings in your browser.
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-full space-y-2 max-w-xs">
+                    <Button
+                      data-testid="button-retry-location"
+                      className="w-full h-10 text-sm font-bold rounded-full shadow"
+                      onClick={() => geo.requestLocation(true)}
+                    >
+                      <Locate className="h-4 w-4 mr-2" /> Allow Location
+                    </Button>
+                    <Button
+                      data-testid="button-switch-to-state"
+                      variant="ghost"
+                      className="w-full text-sm font-medium text-muted-foreground h-9"
+                      onClick={() => setLocationMode("state")}
+                    >
+                      Search by State Instead
+                    </Button>
                   </div>
                 </div>
               )}
