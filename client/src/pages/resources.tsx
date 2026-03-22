@@ -560,6 +560,11 @@ export default function Resources() {
                 if (locationMode === "nearme" && !selectedSlug) {
                   setLocationMode("national");
                   setLocation("/resources");
+                } else if (selectedSlug === "end-of-life-services" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/end-of-life");
+                } else if (selectedSlug === "end-of-life-services") {
+                  setLocation("/end-of-life");
                 } else {
                   clearCategory();
                 }

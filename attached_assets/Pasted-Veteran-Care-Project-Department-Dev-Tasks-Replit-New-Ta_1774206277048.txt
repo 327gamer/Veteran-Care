@@ -1,0 +1,59 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.1 – End of Life Back Navigation Fix
+
+Issue:
+In the live app, when a user navigates:
+
+Resources
+→ End of Life Services
+→ a filtered End of Life subcategory resource list
+
+and then taps the in-app back arrow at the top left of the End of Life Services page,
+the app returns the user to the main Resources page.
+
+Expected behavior:
+The in-app back arrow should return the user to the End of Life Services subcategory menu page, not all the way back to the main Resources page.
+
+Observed behavior:
+- Browser / phone back button behaves correctly
+- Internal app back arrow does not
+- Resource filtering itself appears to work correctly
+- Location filtering appears to work correctly
+
+What to investigate:
+1. Check whether the top-left back arrow is hardcoded to /resources instead of using prior route context
+2. Check whether the End of Life subcategory list page is being treated as a child of the main Resources route instead of the End of Life Services landing/subcategory route
+3. Check whether route state, breadcrumb state, or navigation history is being dropped when entering a subcategory filter view
+4. Check whether this issue affects only End of Life Services or all category → subcategory → filtered results flows
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why the in-app back arrow is routing to the wrong page
+
+2. SAFE FIX PLAN
+- explain the smallest safe fix
+- do not bundle unrelated UI changes
+
+3. FILES / COMPONENTS AFFECTED
+- list likely files, routes, or components
+
+4. IMPLEMENTATION
+- make only this navigation fix
+- preserve all current filtering and location behavior
+
+5. QA CHECKLIST
+- verify in-app back arrow now returns:
+  End of Life filtered results → End of Life subcategory menu
+- verify browser back still works
+- verify no regression in Resources main navigation
+- verify no regression in other category flows if shared component is used
+
+Important rules:
+- make this a small isolated change only
+- test before publish
+- do not stack other fixes into this task
