@@ -1,0 +1,75 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.8 – Add Manual City Filter + Location Failure Fallback
+
+Context:
+Mobile Near Me geolocation is still failing on iPhone Safari/Chrome despite multiple debugging rounds.
+We should stop relying only on device location and add a strong manual fallback so users can still narrow results easily.
+
+New priority:
+Add a City filter and improve the location-failure UX on the Resources / navigation page.
+
+Required changes:
+
+1. Add a new filter option alongside:
+- All
+- Near Me
+- By State
+
+Add:
+- By City
+
+2. City filter behavior:
+- user can manually choose a city
+- city filtering should work even when device location is unavailable
+- city filter should combine cleanly with:
+  - search keyword
+  - category/subcategory
+  - state if applicable
+
+3. Improve location failure UX:
+When Near Me fails or permission is denied, show a clean message such as:
+"Location isn't available right now. You can still search by State or City."
+
+Include action options:
+- Search by State
+- Search by City
+- Try Again (optional)
+
+4. Keep Near Me as-is for now:
+- do not remove it
+- do not do another speculative geolocation refactor in this step
+- this step is about fallback UX and usability
+
+5. Also make sure:
+- manual city selection uses existing resource city data
+- no duplicate results
+- filters clear cleanly
+- mobile layout remains simple and readable
+
+Requested output:
+Please respond in this structure:
+
+1. SAFE IMPLEMENTATION PLAN
+- smallest clean way to add By City and fallback messaging
+
+2. FILES / COMPONENTS AFFECTED
+- list exact files/components/routes
+
+3. IMPLEMENTATION
+- make only the city filter + fallback UX improvements
+- do not bundle unrelated location-engine changes
+
+4. QA CHECKLIST
+- verify By City works on mobile
+- verify By City works with keyword search
+- verify By City works when location fails
+- verify All and By State still work
+- verify Near Me remains visible but fallback messaging is improved
+
+Important:
+- this is a launch usability fix
+- keep scope tight
+- do not stack unrelated geolocation debugging into this task

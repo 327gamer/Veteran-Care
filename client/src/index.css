@@ -205,3 +205,11 @@
 .landing-cta-glow {
   animation: landing-cta-pulse 2.2s ease-in-out infinite;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

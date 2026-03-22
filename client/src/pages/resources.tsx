@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Settings,
   ShieldAlert,
+  Building2,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -220,7 +221,7 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
 
-  const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme">("national");
+  const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme" | "city">("national");
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
   const [zipFilter, setZipFilter] = useState<string>("");
@@ -263,10 +264,10 @@ export default function Resources() {
   });
 
   const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
-  const cityParam = locationMode === "state" && debouncedCity.trim() ? debouncedCity.trim() : undefined;
+  const cityParam = (locationMode === "state" || locationMode === "city") && debouncedCity.trim() ? debouncedCity.trim() : undefined;
   const zipParam = locationMode === "state" && debouncedZip.trim() ? debouncedZip.trim() : undefined;
   const hasLocationFilters = !!(stateParam || cityParam || zipParam);
-  const hasAnyLocationInput = locationMode === "state" && !!(selectedState || cityFilter.trim() || zipFilter.trim());
+  const hasAnyLocationInput = (locationMode === "state" && !!(selectedState || cityFilter.trim() || zipFilter.trim())) || (locationMode === "city" && !!cityFilter.trim());
 
   const nearMeLat = locationMode === "nearme" && geo.location ? geo.location.lat : undefined;
   const nearMeLng = locationMode === "nearme" && geo.location ? geo.location.lng : undefined;
@@ -293,7 +294,7 @@ export default function Resources() {
       }
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
-    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery) && (locationMode !== "nearme" || isNearMeQuery),
+    enabled: (!!selectedSlug || !!searchParam || isNearMeQuery || (locationMode === "city" && !!cityParam)) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
   const apiResources: SupabaseResource[] = rawApiResponse
@@ -306,7 +307,7 @@ export default function Resources() {
   const hasNoLocalNearMe = resourcesFetched && isNearMeQuery && nearMeLocalCount === 0;
 
   const needsFallback = resourcesFetched && apiResources.length === 0 && !searchParam &&
-    ((hasLocationFilters && locationMode === "state" && !localOnly));
+    ((hasLocationFilters && (locationMode === "state" || locationMode === "city") && !localOnly));
 
   const { data: fallbackResources = [], isLoading: fallbackLoading } = useQuery<SupabaseResource[]>({
     queryKey: ["/api/resources", selectedSlug, "national-fallback"],
@@ -319,14 +320,14 @@ export default function Resources() {
   });
 
   const { data: citySuggestions = [] } = useQuery<string[]>({
-    queryKey: ["/api/locations/cities", stateParam, selectedSlug],
+    queryKey: ["/api/locations/cities", stateParam, selectedSlug, locationMode],
     queryFn: () => {
       const params = new URLSearchParams();
       if (stateParam) params.set("state", stateParam);
       if (selectedSlug) params.set("category", selectedSlug);
       return fetch(`/api/locations/cities?${params}`).then(r => r.json());
     },
-    enabled: locationMode === "state" && !!stateParam,
+    enabled: locationMode === "city" || (locationMode === "state" && !!stateParam),
   });
 
   const { data: zipSuggestions = [] } = useQuery<string[]>({
@@ -503,7 +504,7 @@ export default function Resources() {
     setNearMeRadius(25);
   };
 
-  const hasActiveFilters = locationMode !== "national" || searchQuery.trim() !== "" || localOnly || !!subFilter;
+  const hasActiveFilters = locationMode !== "national" || searchQuery.trim() !== "" || localOnly || !!subFilter || cityFilter.trim() !== "";
 
   const filterChips: { label: string; onRemove: () => void }[] = [];
   if (selectedState) {
@@ -511,7 +512,7 @@ export default function Resources() {
     filterChips.push({ label: stateName, onRemove: () => { setSelectedState(""); setCityFilter(""); setZipFilter(""); if (!cityFilter && !zipFilter) setLocationMode("national"); } });
   }
   if (cityFilter.trim()) {
-    filterChips.push({ label: cityFilter.trim(), onRemove: () => { setCityFilter(""); setZipFilter(""); } });
+    filterChips.push({ label: cityFilter.trim(), onRemove: () => { setCityFilter(""); setZipFilter(""); if (locationMode === "city") setLocationMode("national"); } });
   }
   if (zipFilter.trim()) {
     filterChips.push({ label: `ZIP: ${zipFilter.trim()}`, onRemove: () => setZipFilter("") });
@@ -537,12 +538,16 @@ export default function Resources() {
 
   const locationSummary = () => {
     const parts: string[] = [];
-    if (selectedState) {
-      const name = US_STATES.find(s => s.value === selectedState)?.label;
-      parts.push(`Showing national + ${name || selectedState} resources`);
+    if (locationMode === "city" && cityFilter) {
+      parts.push(`Showing resources in ${cityFilter}`);
+    } else {
+      if (selectedState) {
+        const name = US_STATES.find(s => s.value === selectedState)?.label;
+        parts.push(`Showing national + ${name || selectedState} resources`);
+      }
+      if (cityFilter) parts.push(`in ${cityFilter}`);
+      if (zipFilter) parts.push(`(ZIP: ${zipFilter})`);
     }
-    if (cityFilter) parts.push(`in ${cityFilter}`);
-    if (zipFilter) parts.push(`(ZIP: ${zipFilter})`);
     return parts.join(" ");
   };
 
@@ -557,14 +562,15 @@ export default function Resources() {
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          {(selectedSlug || locationMode === "nearme") && (
+          {(selectedSlug || locationMode === "nearme" || locationMode === "city") && (
             <Button 
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 -ml-2 rounded-full" 
               onClick={() => {
-                if (locationMode === "nearme" && !selectedSlug) {
+                if ((locationMode === "nearme" || locationMode === "city") && !selectedSlug) {
                   setLocationMode("national");
+                  setCityFilter("");
                   setLocation("/resources");
                 } else if (selectedSlug === "end-of-life-services" && subFilter) {
                   setSubFilter(null);
@@ -614,18 +620,18 @@ export default function Resources() {
         )}
       </div>
 
-      {(selectedSlug || locationMode === "nearme") ? (
+      {(selectedSlug || locationMode === "nearme" || locationMode === "city") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
 
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground">Location:</span>
-                <div className="flex rounded-full border bg-background overflow-hidden">
+                <div className="flex rounded-full border bg-background overflow-x-auto no-scrollbar">
                   <button
                     data-testid="toggle-national"
                     onClick={() => { setLocationMode("national"); setSelectedState(""); setCityFilter(""); setZipFilter(""); setLocalOnly(false); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${locationMode === "national" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Globe className="h-3 w-3" />
                     All
@@ -638,18 +644,26 @@ export default function Resources() {
                         geo.requestLocation();
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Radar className="h-3 w-3" />
                     Near Me
                   </button>
                   <button
+                    data-testid="toggle-by-city"
+                    onClick={() => { setLocationMode("city"); setSelectedState(""); setZipFilter(""); }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${locationMode === "city" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Building2 className="h-3 w-3" />
+                    City
+                  </button>
+                  <button
                     data-testid="toggle-by-state"
-                    onClick={() => setLocationMode("state")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "state" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => { setLocationMode("state"); setCityFilter(""); }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${locationMode === "state" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <MapPinned className="h-3 w-3" />
-                    By State
+                    State
                   </button>
                 </div>
               </div>
@@ -698,6 +712,24 @@ export default function Resources() {
                     <span className="text-[10px] text-muted-foreground">
                       Near {geo.location.city || geo.location.stateCode}
                     </span>
+                  )}
+                </div>
+              )}
+
+              {locationMode === "city" && (
+                <div className="flex flex-col gap-2">
+                  <AutocompleteInput
+                    value={cityFilter}
+                    onChange={(v) => { setCityFilter(v); trackEvent("resources_location_filter_used", { filter_type: "city", value: v }); }}
+                    suggestions={citySuggestions}
+                    placeholder="Type a city name..."
+                    testId="input-city-filter-standalone"
+                    className="flex-1"
+                  />
+                  {cityFilter.trim() && (
+                    <p data-testid="text-city-summary" className="text-[10px] text-muted-foreground">
+                      {locationSummary()}
+                    </p>
                   )}
                 </div>
               )}
@@ -796,22 +828,32 @@ export default function Resources() {
                           <li>Return here and tap <b>Try Again</b></li>
                         </ol>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Location isn't available right now. You can still search by City or State.
+                      </p>
                       <div className="w-full space-y-2 max-w-xs">
                         <Button
-                          data-testid="button-retry-location"
-                          variant="outline"
-                          className="w-full h-10 text-sm font-medium rounded-full"
-                          onClick={() => geo.requestLocation(true)}
+                          data-testid="button-switch-to-city-denied"
+                          className="w-full h-10 text-sm font-bold rounded-full shadow"
+                          onClick={() => { setLocationMode("city"); }}
                         >
-                          <Locate className="h-4 w-4 mr-2" /> Try Again
+                          <Building2 className="h-4 w-4 mr-2" /> Search by City
                         </Button>
                         <Button
                           data-testid="button-switch-to-state"
-                          variant="ghost"
-                          className="w-full text-sm font-medium text-muted-foreground h-9"
+                          variant="outline"
+                          className="w-full h-10 text-sm font-medium rounded-full"
                           onClick={() => setLocationMode("state")}
                         >
-                          Search by State Instead
+                          <MapPinned className="h-4 w-4 mr-2" /> Search by State
+                        </Button>
+                        <Button
+                          data-testid="button-retry-location"
+                          variant="ghost"
+                          className="w-full text-sm font-medium text-muted-foreground h-9"
+                          onClick={() => geo.requestLocation(true)}
+                        >
+                          <Locate className="h-4 w-4 mr-2" /> Try Again
                         </Button>
                       </div>
                     </>
@@ -825,16 +867,24 @@ export default function Resources() {
                       <div className="space-y-1">
                         <h3 className="text-base font-heading font-bold text-primary">Enable Location</h3>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                          Allow location access so we can show resources near you.
+                          Location isn't available right now. You can still search by City or State.
                         </p>
                       </div>
                       <div className="w-full space-y-2 max-w-xs">
                         <Button
-                          data-testid="button-retry-location"
+                          data-testid="button-allow-location"
                           className="w-full h-10 text-sm font-bold rounded-full shadow"
                           onClick={() => geo.requestLocation(true)}
                         >
                           <Locate className="h-4 w-4 mr-2" /> Allow Location
+                        </Button>
+                        <Button
+                          data-testid="button-switch-to-city-prompt"
+                          variant="outline"
+                          className="w-full h-10 text-sm font-medium rounded-full"
+                          onClick={() => { setLocationMode("city"); }}
+                        >
+                          <Building2 className="h-4 w-4 mr-2" /> Search by City
                         </Button>
                         <Button
                           data-testid="button-switch-to-state"
