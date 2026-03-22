@@ -1,0 +1,105 @@
+COPY/PASTE TO REPLIT
+
+Veteran Care Project
+Department: Dev Tasks & Replit
+Current Step: Step 56.1 – Supabase Join Table Architecture
+Goal: Upgrade the live platform from single-subcategory support to multi-subcategory support using a safe additive migration in Supabase, without breaking the current live system.
+
+Important rules:
+- Do NOT remove the current legacy subcategory field yet
+- Do NOT break existing live queries or admin flows
+- This is an additive migration first
+- I will run any SQL manually in Supabase if needed
+- Do NOT ask me for secrets or credentials in chat
+- If SQL is required, return the exact SQL and exact place in Supabase where I should run it
+- After DB setup is confirmed, then prepare the backend/Replit integration steps
+
+Context:
+The Veteran Care platform is already live in Replit + Supabase.
+Current architecture already supports:
+- multi-category assignment
+- live categories/subcategories
+- search
+- Near Me / city / zip filtering
+- AI routing
+- admin dashboards
+- CSV intake/import system
+We are now upgrading subcategories to support many-to-many assignment.
+
+Target architecture:
+A resource must be able to belong to:
+- multiple categories
+- multiple subcategories
+
+Requested task:
+Please review this migration plan and tell me the exact safest way to implement it inside our current Replit + Supabase setup.
+
+Target DB design:
+Create a join table:
+public.resource_subcategories
+- id uuid primary key default gen_random_uuid()
+- resource_id uuid not null
+- subcategory_id uuid not null
+- created_at timestamptz default now()
+
+Requirements:
+1. foreign key resource_id -> public.resources(id) on delete cascade
+2. foreign key subcategory_id -> public.subcategories(id) on delete cascade
+3. unique constraint on (resource_id, subcategory_id)
+4. index on resource_id
+5. index on subcategory_id
+6. backfill existing legacy resources.subcategory_id values into the new join table
+7. keep the old single subcategory field temporarily during transition
+8. do not remove old code paths until full validation is complete
+
+Please return your answer in this exact structure:
+
+1. SUPABASE REVIEW
+- confirm whether this join-table plan is correct for our current platform
+- tell me if any table/column names should be adjusted
+
+2. EXACT SQL I SHOULD RUN MANUALLY
+- give me the exact SQL blocks in the correct order
+- separate:
+  A. create table
+  B. indexes/constraints
+  C. backfill
+  D. validation queries
+
+3. WHERE TO RUN IT IN SUPABASE
+- tell me exactly where in Supabase dashboard I should paste/run each SQL block
+
+4. SAFETY / ROLLBACK NOTES
+- tell me what to check before and after running it
+- tell me the safest rollback path if anything looks wrong
+
+5. REPLIT INTEGRATION PLAN
+- after DB setup, tell me the exact backend updates needed in Replit
+- identify likely files/routes/functions that need to switch from legacy single-subcategory reads to join-table reads
+- do not write production code yet unless I ask
+- first give me the implementation plan
+
+6. QA CHECKLIST
+- tell me exactly what I should test after the Supabase step
+- include:
+  - search
+  - Near Me
+  - subcategory filtering
+  - admin panel editing
+  - duplicate prevention
+
+Important:
+We are following Step 56 in our Veteran Care blueprint:
+
+Step 56.1 – Supabase Join Table Architecture
+Step 56.2 – Legacy Data Backfill + Validation
+Step 56.3 – Backend Read Logic Update
+Step 56.4 – Backend Write Logic Update
+Step 56.5 – Admin Panel Multi-Select Support
+Step 56.6 – Search / Near Me / Filter Compatibility
+Step 56.7 – AI Guide Compatibility
+Step 56.8 – Analytics Compatibility
+Step 56.9 – CSV Import / Export Compatibility
+Step 56.10 – QA / Regression Testing
+
+Please keep your answer tightly scoped to Step 56.1 and Step 56.2 first.
