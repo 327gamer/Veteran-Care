@@ -22,6 +22,8 @@ import {
   Phone as PhoneIcon,
   Zap,
   ShieldCheck,
+  Settings,
+  ShieldAlert,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
@@ -760,39 +762,91 @@ export default function Resources() {
 
               {locationMode === "nearme" && !geo.location && !geo.loading && geo.error && (
                 <div className="flex flex-col items-center text-center py-6 px-4 bg-background border rounded-xl shadow-sm space-y-4">
-                  <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-primary fill-primary" />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-heading font-bold text-primary">Enable Location</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Allow location access so we can show resources near you.
-                    </p>
-                    {geo.error.includes("denied") && (
-                      <p className="text-xs text-muted-foreground/70 pt-1">
-                        If prompted, tap "Allow" — or update location settings in your browser.
-                      </p>
-                    )}
-                  </div>
-                  <div className="w-full space-y-2 max-w-xs">
-                    <Button
-                      data-testid="button-retry-location"
-                      className="w-full h-10 text-sm font-bold rounded-full shadow"
-                      onClick={() => geo.requestLocation(true)}
-                    >
-                      <Locate className="h-4 w-4 mr-2" /> Allow Location
-                    </Button>
-                    <Button
-                      data-testid="button-switch-to-state"
-                      variant="ghost"
-                      className="w-full text-sm font-medium text-muted-foreground h-9"
-                      onClick={() => setLocationMode("state")}
-                    >
-                      Search by State Instead
-                    </Button>
-                  </div>
+                  {geo.permDenied ? (
+                    <>
+                      <div className="h-14 w-14 rounded-full bg-amber-50 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                          <ShieldAlert className="h-5 w-5 text-amber-600" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-base font-heading font-bold text-foreground">Location Access Blocked</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Location access is currently blocked on your device. To use Near Me, update your settings:
+                        </p>
+                      </div>
+                      <div className="w-full max-w-xs text-left bg-muted/50 rounded-lg p-3 space-y-2">
+                        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                          <Settings className="h-3.5 w-3.5" /> For iPhone Safari:
+                        </p>
+                        <ol className="text-xs text-muted-foreground space-y-1 pl-5 list-decimal">
+                          <li>Open <b>Settings</b> on your iPhone</li>
+                          <li>Scroll down and tap <b>Safari</b></li>
+                          <li>Tap <b>Location</b></li>
+                          <li>Select <b>"Ask"</b> or <b>"Allow"</b></li>
+                          <li>Return here and tap <b>Try Again</b></li>
+                        </ol>
+                        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 pt-1">
+                          <Settings className="h-3.5 w-3.5" /> For iPhone Chrome:
+                        </p>
+                        <ol className="text-xs text-muted-foreground space-y-1 pl-5 list-decimal">
+                          <li>Open <b>Settings</b> → <b>Chrome</b></li>
+                          <li>Tap <b>Location</b></li>
+                          <li>Select <b>"While Using the App"</b></li>
+                          <li>Return here and tap <b>Try Again</b></li>
+                        </ol>
+                      </div>
+                      <div className="w-full space-y-2 max-w-xs">
+                        <Button
+                          data-testid="button-retry-location"
+                          variant="outline"
+                          className="w-full h-10 text-sm font-medium rounded-full"
+                          onClick={() => geo.requestLocation(true)}
+                        >
+                          <Locate className="h-4 w-4 mr-2" /> Try Again
+                        </Button>
+                        <Button
+                          data-testid="button-switch-to-state"
+                          variant="ghost"
+                          className="w-full text-sm font-medium text-muted-foreground h-9"
+                          onClick={() => setLocationMode("state")}
+                        >
+                          Search by State Instead
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-primary fill-primary" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-base font-heading font-bold text-primary">Enable Location</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Allow location access so we can show resources near you.
+                        </p>
+                      </div>
+                      <div className="w-full space-y-2 max-w-xs">
+                        <Button
+                          data-testid="button-retry-location"
+                          className="w-full h-10 text-sm font-bold rounded-full shadow"
+                          onClick={() => geo.requestLocation(true)}
+                        >
+                          <Locate className="h-4 w-4 mr-2" /> Allow Location
+                        </Button>
+                        <Button
+                          data-testid="button-switch-to-state"
+                          variant="ghost"
+                          className="w-full text-sm font-medium text-muted-foreground h-9"
+                          onClick={() => setLocationMode("state")}
+                        >
+                          Search by State Instead
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

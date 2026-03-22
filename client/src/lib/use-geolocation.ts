@@ -20,6 +20,7 @@ interface UseGeolocationReturn {
   error: string | null;
   requestLocation: (force?: boolean) => void;
   hasPermission: boolean | null;
+  permDenied: boolean;
   debugLog: GeoDebugLog[];
 }
 
@@ -91,6 +92,7 @@ export function useGeolocation(): UseGeolocationReturn {
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const pendingRef = useRef(false);
+  const [permDenied, setPermDenied] = useState(false);
   const [debugLog, setDebugLog] = useState<GeoDebugLog[]>([]);
 
   const log = useCallback((msg: string) => {
@@ -99,7 +101,7 @@ export function useGeolocation(): UseGeolocationReturn {
   }, []);
 
   const fetchLocation = useCallback((force?: boolean) => {
-    log(`fetchLocation called, force=${!!force}`);
+    log(`fetchLocation called, force=${!!force}, permDenied=${permDenied}`);
 
     if (!navigator.geolocation) {
       log("ERROR: Geolocation API not supported");
@@ -114,9 +116,14 @@ export function useGeolocation(): UseGeolocationReturn {
         setLocation(cached);
         setError(null);
         setHasPermission(true);
+        setPermDenied(false);
         return;
       }
       log("Cache miss");
+      if (permDenied) {
+        log("BLOCKED: permDenied=true, not retrying GPS. User must fix in device settings.");
+        return;
+      }
     } else {
       clearCachedLocation();
       log("Cache cleared (force)");
@@ -150,6 +157,7 @@ export function useGeolocation(): UseGeolocationReturn {
           setCachedLocation(result);
           setLocation(result);
           setHasPermission(true);
+          setPermDenied(false);
           setError(null);
           log("Location state UPDATED");
         } catch (e) {
@@ -168,6 +176,10 @@ export function useGeolocation(): UseGeolocationReturn {
         pendingRef.current = false;
         const reason = err.code === 1 ? "PERMISSION_DENIED" : err.code === 2 ? "POSITION_UNAVAILABLE" : err.code === 3 ? "TIMEOUT" : `UNKNOWN(${err.code})`;
         log(`GPS FAILED in ${elapsed}ms: ${reason} — ${err.message}`);
+        if (err.code === 1) {
+          setPermDenied(true);
+          log("permDenied=true (device-level block detected)");
+        }
         setHasPermission(false);
         setError(
           err.code === 1
@@ -178,7 +190,7 @@ export function useGeolocation(): UseGeolocationReturn {
       },
       { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 }
     );
-  }, [log]);
+  }, [log, permDenied]);
 
   useEffect(() => {
     const cached = getCachedLocation();
@@ -219,5 +231,5 @@ export function useGeolocation(): UseGeolocationReturn {
     }
   }, [fetchLocation, log]);
 
-  return { location, loading, error, requestLocation: fetchLocation, hasPermission, debugLog };
+  return { location, loading, error, requestLocation: fetchLocation, hasPermission, permDenied, debugLog };
 }
