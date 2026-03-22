@@ -95,6 +95,8 @@ export function useGeolocation(): UseGeolocationReturn {
       const cached = getCachedLocation();
       if (cached) {
         setLocation(cached);
+        setError(null);
+        setHasPermission(true);
         return;
       }
     } else {
@@ -111,6 +113,7 @@ export function useGeolocation(): UseGeolocationReturn {
           setCachedLocation(result);
           setLocation(result);
           setHasPermission(true);
+          setError(null);
         } catch (e) {
           setError("Could not determine your location");
         } finally {
@@ -144,7 +147,12 @@ export function useGeolocation(): UseGeolocationReturn {
           fetchLocation();
         }
         result.onchange = () => {
-          setHasPermission(result.state === "granted");
+          const granted = result.state === "granted";
+          setHasPermission(granted);
+          if (granted) {
+            setError(null);
+            fetchLocation(true);
+          }
         };
       }).catch(() => {});
     }

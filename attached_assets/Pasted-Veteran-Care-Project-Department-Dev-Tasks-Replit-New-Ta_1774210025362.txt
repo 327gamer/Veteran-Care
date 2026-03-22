@@ -1,0 +1,60 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.4 – Near Me Permission State Sync + Prompt Dismiss Fix
+
+Issue:
+If a user does NOT enable location on first app entry, then later goes to Near Me / search and taps Allow Location, the app does not fully transition into active location mode.
+
+Observed behavior:
+- user can later tap Allow Location from the Near Me/search flow
+- but Near Me does not reliably start working
+- the Enable Location prompt remains visible even after permission appears to be granted
+- “All” search still works, but Near Me remains stuck or behaves as if permission is still missing
+
+Expected behavior:
+- if the user grants location later from the Near Me/search flow, the app should immediately update into active location mode
+- the Enable Location prompt should disappear once permission is granted
+- Near Me results should refresh automatically using the granted location
+- this should behave like the earlier onboarding/homepage flow: once location is enabled, the prompt is gone
+
+What to investigate:
+1. Check how location permission state is stored and refreshed after the user taps Allow Location from the Near Me/search flow
+2. Check whether the geolocation hook or permission-state listener updates correctly after permission changes from denied/missing → granted
+3. Check whether the denied-prompt component is only re-requesting permission but not updating the resource page state afterward
+4. Check whether the prompt visibility is tied to stale state and not being cleared after successful permission grant
+5. Compare this with how the homepage/onboarding location flow behaves after permission is granted
+6. Confirm behavior specifically on mobile web / iPhone Safari
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why granting location later does not fully activate Near Me
+- explain why the Enable Location prompt remains visible after permission is granted
+
+2. SAFE FIX PLAN
+- explain the smallest safe fix
+- do not bundle unrelated search/filter/map work
+
+3. FILES / COMPONENTS AFFECTED
+- list likely files, hooks, state handlers, or shared location components
+
+4. IMPLEMENTATION
+- fix permission-state sync
+- fix prompt dismissal after successful location grant
+- preserve current search, state fallback, and onboarding flow behavior
+
+5. QA CHECKLIST
+- verify user can deny location on first entry, then later enable it from Near Me
+- verify Near Me activates immediately after permission is granted
+- verify the Enable Location prompt disappears once permission is granted
+- verify Near Me results refresh correctly
+- verify All / By State still work
+- verify no regression in first-time onboarding location flow
+
+Important rules:
+- make this a small isolated fix only
+- test before publish
+- do not stack other fixes into this task
