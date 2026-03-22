@@ -457,7 +457,7 @@ export default function Resources() {
     if (modeParam === "nearme") {
       setLocationMode("nearme");
       setGeoApplied(true);
-      geo.requestLocation(true);
+      geo.requestLocation();
     } else if (locationMode === "nearme") {
       setLocationMode("national");
     }
@@ -530,7 +530,7 @@ export default function Resources() {
 
   const handleUseMyLocation = () => {
     setLocationMode("nearme");
-    geo.requestLocation(true);
+    geo.requestLocation();
   };
 
   const locationSummary = () => {
@@ -632,7 +632,9 @@ export default function Resources() {
                     data-testid="toggle-near-me"
                     onClick={() => {
                       setLocationMode("nearme");
-                      geo.requestLocation(true);
+                      if (!geo.location) {
+                        geo.requestLocation();
+                      }
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${locationMode === "nearme" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"}`}
                   >

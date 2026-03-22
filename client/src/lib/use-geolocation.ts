@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface GeoLocation {
   state: string;
@@ -84,6 +84,7 @@ export function useGeolocation(): UseGeolocationReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const pendingRef = useRef(false);
 
   const fetchLocation = useCallback((force?: boolean) => {
     if (!navigator.geolocation) {
@@ -103,11 +104,14 @@ export function useGeolocation(): UseGeolocationReturn {
       clearCachedLocation();
     }
 
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     setLoading(true);
     setError(null);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        pendingRef.current = false;
         try {
           const result = await reverseGeocode(position.coords.latitude, position.coords.longitude);
           setCachedLocation(result);
@@ -115,12 +119,16 @@ export function useGeolocation(): UseGeolocationReturn {
           setHasPermission(true);
           setError(null);
         } catch (e) {
-          setError("Could not determine your location");
+          setLocation({ state: "", stateCode: "", city: "", zip: "", lat: position.coords.latitude, lng: position.coords.longitude });
+          setCachedLocation({ state: "", stateCode: "", city: "", zip: "", lat: position.coords.latitude, lng: position.coords.longitude });
+          setHasPermission(true);
+          setError(null);
         } finally {
           setLoading(false);
         }
       },
       (err) => {
+        pendingRef.current = false;
         setHasPermission(false);
         setError(
           err.code === 1
@@ -129,7 +137,7 @@ export function useGeolocation(): UseGeolocationReturn {
         );
         setLoading(false);
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 }
     );
   }, []);
 
@@ -156,11 +164,7 @@ export function useGeolocation(): UseGeolocationReturn {
             fetchLocation(true);
           }
         };
-      }).catch(() => {
-        fetchLocation();
-      });
-    } else {
-      fetchLocation();
+      }).catch(() => {});
     }
   }, [fetchLocation]);
 

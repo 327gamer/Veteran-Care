@@ -1,0 +1,73 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.6 – Mobile Browser Geolocation Fails While Desktop Works
+
+Issue:
+Near Me works correctly on desktop, but does NOT work correctly on mobile browsers.
+
+Confirmed live behavior:
+- Desktop: location detection works and Near Me returns local results
+- iPhone Safari: location permission can be enabled, but Near Me still does not return local resources
+- iPhone Chrome: same issue
+- All and By State continue to work correctly
+
+Important:
+This means the issue is now clearly mobile-specific.
+Because Safari and Chrome on iPhone both use WebKit, this is likely a mobile browser geolocation / permission / async state handling issue rather than a resource data issue.
+
+What to investigate end-to-end:
+1. Verify whether getCurrentPosition is actually returning valid coordinates on mobile Safari and mobile Chrome
+2. Verify whether reverse geocode succeeds on mobile after coordinates are received
+3. Verify whether the geo hook receives and stores location on mobile
+4. Verify whether the Resources / Near Me page receives updated location state on mobile
+5. Verify whether the Near Me query is actually firing on mobile after location is granted
+6. Verify whether the prompt is being hidden correctly when mobile location is valid
+7. Verify whether the issue is tied to:
+   - iPhone Safari / WebKit permission flow
+   - secure context / HTTPS assumptions
+   - async timing / state race condition
+   - reverse-geocode delay or failure
+   - stale mobile UI state
+8. Add temporary logging if needed to trace the exact mobile flow:
+   - permission result
+   - coordinates received
+   - reverse geocode success/failure
+   - query enabled state
+   - results returned
+
+Requested output:
+Please respond in this exact structure:
+
+1. ROOT CAUSE
+- explain exactly why desktop works but iPhone Safari/Chrome do not
+- identify the precise mobile-specific failure point
+
+2. SAFE FIX PLAN
+- explain the smallest safe fix
+- do not bundle unrelated UI, search, or category changes
+
+3. FILES / COMPONENTS AFFECTED
+- list likely hooks, pages, mobile-specific handlers, or shared components involved
+
+4. IMPLEMENTATION
+- fix only the mobile Near Me issue
+- ensure mobile granted location activates correctly
+- ensure query fires correctly on mobile
+- ensure prompt disappears correctly
+- ensure results load correctly
+
+5. QA CHECKLIST
+- verify desktop still works
+- verify iPhone Safari works
+- verify iPhone Chrome works
+- verify onboarding-granted flow works
+- verify later-granted flow works
+- verify keyword + Near Me works
+- verify All and By State still work
+
+Important rules:
+- treat this as a critical isolated mobile bug fix
+- test before publish
+- do not stack unrelated changes into this task
