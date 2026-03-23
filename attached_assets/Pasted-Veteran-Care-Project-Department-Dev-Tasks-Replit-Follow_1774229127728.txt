@@ -1,0 +1,60 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Follow-up Task:
+Step 57.10B – Resource Detail Mobile Viewport / Full-Width Rendering Fix
+
+Context:
+The earlier Step 57.10 fixes helped with overflow and added the back button, but the main mobile issue is still present.
+
+Current problem:
+On some resource detail pages, the content is technically present but the page renders in a shrunk/scaled way on mobile, almost like a mini page inside the viewport. Users may need to pinch-zoom to comfortably read/use the page. This makes the back button and content harder to notice and use.
+
+Observed behavior:
+- content appears boxed/constrained inside a smaller frame
+- the page does not open at a natural full mobile width
+- users may need to zoom with two fingers
+- desktop is less affected; mobile is the key problem
+
+Expected behavior:
+1. Resource detail pages should render at correct full mobile width automatically
+2. No pinch-zoom should be needed
+3. The sheet/detail view should feel like a normal full-screen mobile panel/page
+4. Back button should remain visible and easy to use
+5. Full vertical scrolling should still work
+
+What to investigate:
+1. Check Sheet / SheetContent sizing behavior on mobile
+2. Check whether the detail view is inheriting desktop-style max-width or transform behavior that causes mobile shrinkage
+3. Check viewport/meta/layout interactions
+4. Check whether the resource detail should use true full-screen behavior on mobile instead of a narrower side sheet pattern
+5. Compare with Trusted Services or any other mobile detail pattern that already renders correctly
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why the detail view is still visually shrunk/scaled on mobile
+
+2. SAFE FIX PLAN
+- explain the smallest clean fix
+- do not bundle unrelated finder/location changes
+
+3. FILES / COMPONENTS AFFECTED
+- list exact files/components
+
+4. IMPLEMENTATION
+- fix mobile width/height/rendering so the detail page opens naturally full-size
+- preserve the new back button and scrolling behavior
+
+5. QA CHECKLIST
+- verify no pinch-zoom needed on mobile
+- verify content fills the mobile viewport properly
+- verify back button remains visible
+- verify full scrolling still works
+- verify desktop still looks clean
+
+Important:
+- keep this a focused mobile rendering fix
+- test before publish
+- do not stack unrelated changes into this task

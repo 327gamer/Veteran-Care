@@ -157,7 +157,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col h-[100dvh] bg-background border-l-primary/20 overflow-hidden">
+      <SheetContent className="!w-full sm:!max-w-xl p-0 flex flex-col h-[100dvh] bg-background border-l-primary/20 overflow-hidden">
         
         <div className="bg-primary px-5 py-4 text-primary-foreground relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 p-2 opacity-10">
