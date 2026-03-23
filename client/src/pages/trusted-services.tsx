@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { trackEvent } from "@/lib/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -180,6 +181,7 @@ export default function TrustedServices() {
 
   const handleSubmitLead = () => {
     if (!connectService || !leadForm.name || !leadForm.email || !leadForm.role) return;
+    trackEvent("lead_submit", { source: "trusted_services", service_name: connectService.name || "", category: selectedCategory || "" });
     leadMutation.mutate({ service: connectService, form: leadForm });
   };
 

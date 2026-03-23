@@ -1,0 +1,228 @@
+VETERAN CARE — STEP 56.6 MASTER IMPLEMENTATION
+FUNNELS & TRACKING DEPARTMENT
+
+We are now executing the COMPLETE analytics, tracking, and marketing link system for Veteran Care.
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change funnel structure or routing
+- DO NOT break any existing working systems
+- DO NOT assume access to Google, Supabase, Stripe, or any external platforms
+- You must guide me step-by-step for ANY manual setup required (GA4, environment variables, etc.)
+- Provide instructions I can follow and then confirm back to you
+- All work must be production-safe, clean, and scalable
+
+OBJECTIVE:
+Fully implement:
+1. Google Analytics 4 (GA4)
+2. UTM tracking system
+3. Event tracking system
+4. Funnel tracking
+5. Multi-subcategory-safe attribution
+6. Marketing link / ambassador / partner tracking structure
+
+This must result in COMPLETE visibility into:
+- where users come from
+- what they do
+- what converts
+- which campaigns, ambassadors, or partners drive results
+
+==================================================
+PART 1 — GOOGLE ANALYTICS (GA4) SETUP (CRITICAL)
+==================================================
+
+IF GA4 IS NOT SET UP:
+
+1. Explain step-by-step:
+   - how to create GA4 property
+   - how to create Web Data Stream
+   - where to find Measurement ID (G-XXXX)
+
+2. Tell me EXACTLY where to place it in Replit:
+   Environment variable:
+   VITE_GA4_MEASUREMENT_ID
+
+3. Wait for my confirmation before continuing
+
+--------------------------------------------------
+
+ONCE ID IS PROVIDED:
+
+- Install GA4 across ALL pages:
+  /start
+  /get-help
+  /resource-center
+  /resources
+  /partners
+  /partner-apply
+
+- Track page_view:
+  - on initial load
+  - on route changes
+
+- Prevent duplicate page views
+
+- Show how I verify using GA4 DebugView
+
+==================================================
+PART 2 — UTM CAPTURE SYSTEM
+==================================================
+
+Implement:
+
+- Capture:
+  utm_source
+  utm_medium
+  utm_campaign
+  utm_content
+  utm_term
+  utm_id
+
+- Store first-touch values in localStorage
+- DO NOT overwrite once set
+- Attach UTMs to all future tracked events
+
+- Show how to test UTM tracking
+
+==================================================
+PART 3 — EVENT TRACKING SYSTEM
+==================================================
+
+Implement EXACT events:
+
+CORE:
+- resource_click
+- resource_contact_click
+- category_view
+- subcategory_view
+- search_submit
+- near_me_use
+- city_filter_use
+- state_filter_use
+- lead_submit
+
+FUNNEL:
+- start_get_help_click
+- start_browse_resources_click
+- get_help_category_selected
+- get_help_urgency_selected
+- get_help_find_resources_click
+- get_help_request_support_click
+
+PARTNER:
+- partners_cta_click
+- partner_apply_started
+- partner_apply_submitted
+- partner_stripe_success
+
+AI (if available):
+- ai_chat_start
+- ai_message_sent
+- ai_resource_shown
+- ai_escalation_triggered
+
+--------------------------------------------------
+
+ALL EVENTS MUST INCLUDE (IF AVAILABLE):
+- page_path
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content
+- category
+- subcategory
+- primary_subcategory
+- category_names_csv
+- subcategory_names_csv
+- city
+- state
+- resource_id
+
+==================================================
+PART 4 — MULTI-SUBCATEGORY PROTECTION
+==================================================
+
+CRITICAL:
+
+- Assign ONE primary_subcategory per event (based on user view context)
+- Keep full subcategory list as metadata only
+
+FOR resource_click + resource_contact_click:
+- prevent duplicate tracking within same session
+- use dedup key:
+  resource_id + page context + event type
+
+DO NOT affect UI behavior
+ONLY prevent duplicate analytics events
+
+==================================================
+PART 5 — FUNNEL TRACKING
+==================================================
+
+Track full journey:
+
+- entry source (UTM)
+- first page visited
+- category/subcategory interaction
+- search/filter usage
+- resource interaction
+- lead submission
+- drop-off point
+
+==================================================
+PART 6 — MARKETING LINK SYSTEM
+==================================================
+
+Define system for:
+
+AMBASSADOR LINKS:
+- utm_source=ambassador
+- utm_medium=referral
+- utm_campaign=sc_ambassador_[name]
+
+PARTNER LINKS:
+- utm_source=partner
+- utm_medium=referral
+- utm_campaign=sc_partner_[name]
+
+CAMPAIGNS:
+- utm_source=[platform]
+- utm_medium=[type]
+- utm_campaign=[campaign_name]
+
+Provide examples and how I should create and use links
+
+==================================================
+PART 7 — CONVERSIONS + VALIDATION
+==================================================
+
+Set GA4 conversions:
+
+- get_help_request_support_click
+- partner_apply_submitted
+- partner_stripe_success
+- resource_contact_click
+
+--------------------------------------------------
+
+Provide FULL checklist:
+
+1. What was implemented
+2. What I must set up manually
+3. How to verify GA4 is working
+4. How to test events
+5. How to test UTMs
+6. How to test funnels
+7. Any remaining blockers
+
+==================================================
+SUCCESS CRITERIA
+==================================================
+
+- GA4 fully installed and working
+- UTMs captured and persistent
+- events firing correctly
+- no duplicate tracking
+- multi-subcategory handled correctly
+- funnels fully measurable
+- system ready for marketing + monetization

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { trackEvent } from "@/lib/analytics";
 
 interface MatchedResourceCard {
   id: string;
@@ -73,13 +74,19 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
   }, []);
 
   useEffect(() => {
-    if (open) scrollToBottom();
+    if (open) {
+      scrollToBottom();
+      if (chatHistory.length === 0) {
+        trackEvent("ai_chat_start");
+      }
+    }
   }, [open, chatHistory.length, streamingText, scrollToBottom]);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
     
     const userMessage = input.trim();
+    trackEvent("ai_message_sent", { message_length: userMessage.length });
     
     if (chatHistory.length === 0) {
       addChatMessage(INITIAL_MESSAGE);
@@ -153,12 +160,21 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
 
             if (event.type === "resources") {
               setMatchedResources(event.resources || []);
+              if (event.resources?.length) {
+                trackEvent("ai_resource_shown", { count: event.resources.length });
+              }
             } else if (event.type === "chunk") {
               accumulated += event.text;
               setStreamingText(accumulated);
             } else if (event.type === "done") {
-              if (event.navigatorSuggested) setShowNavigatorHint(true);
-              if (event.isCrisis) setIsCrisis(true);
+              if (event.navigatorSuggested) {
+                setShowNavigatorHint(true);
+                trackEvent("ai_escalation_triggered", { type: "navigator" });
+              }
+              if (event.isCrisis) {
+                setIsCrisis(true);
+                trackEvent("ai_escalation_triggered", { type: "crisis" });
+              }
               if (event.trustedServices && event.trustedServices.length > 0) {
                 setTrustedServices(event.trustedServices);
                 setTrustedServiceCategory(event.trustedServiceCategory || "");

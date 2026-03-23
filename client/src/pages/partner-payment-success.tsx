@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, ShieldCheck, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
+import { trackEvent } from "@/lib/analytics";
 
 export default function PartnerPaymentSuccess() {
   const [, setLocation] = useLocation();
@@ -25,7 +26,9 @@ export default function PartnerPaymentSuccess() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setVerified(data.status === "activated" || data.status === "already_active");
+        const success = data.status === "activated" || data.status === "already_active";
+        setVerified(success);
+        if (success) trackEvent("partner_stripe_success");
         setVerifying(false);
       })
       .catch(() => {

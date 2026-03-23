@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { platform, t } from "@shared/platform";
+import { trackEvent } from "@/lib/analytics";
 import {
   Dialog,
   DialogContent,
@@ -252,6 +253,12 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit");
       setSubmitted(true);
+      trackEvent("lead_submit", {
+        category: form.category || "",
+        subcategory: subcategoryLabel || "",
+        urgency: form.urgency || "",
+        source: source || (context?.resource_id ? "resource_page" : ""),
+      });
       toast({ description: "Request submitted! A navigator will contact you soon.", duration: 4000 });
     } catch (err: any) {
       const msg = err.message?.toLowerCase().includes("relation") || err.message?.toLowerCase().includes("does not exist")

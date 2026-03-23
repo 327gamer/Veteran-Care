@@ -25,6 +25,7 @@ import { useSavedResources } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import NavigatorModal, { type NavigatorContext } from "./navigator-modal";
+import { trackEventDedup } from "@/lib/analytics";
 
 interface ResourceDetailProps {
   resource: ResourceItem | null;
@@ -64,6 +65,15 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo(0, 0);
       });
+      if (resource) {
+        trackEventDedup("resource_click", resource.id, {
+          resource_id: resource.id,
+          category: resource.category_slug || "",
+          subcategory: resource.subcategory_slug || "",
+          city: resource.city || "",
+          state: resource.state || "",
+        });
+      }
       return () => { document.body.style.overflow = ""; };
     }
   }, [open, resource?.id]);
@@ -78,21 +88,32 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
     zip: resource.zip || undefined,
   };
 
+  const evParams = {
+    resource_id: resource.id,
+    category: resource.category_slug || "",
+    subcategory: resource.subcategory_slug || "",
+    city: resource.city || "",
+    state: resource.state || "",
+  };
+
   const handleWebsiteClick = () => {
     const url = resource.affiliate_url || resource.website_url;
     if (!url) return;
     trackClick(resource.id, "website_click", fb);
+    trackEventDedup("resource_contact_click", `${resource.id}:website`, { ...evParams, contact_type: "website" });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCallClick = () => {
     if (!resource.phone) return;
     trackClick(resource.id, "call_click", fb);
+    trackEventDedup("resource_contact_click", `${resource.id}:call`, { ...evParams, contact_type: "call" });
     window.location.href = `tel:${resource.phone}`;
   };
 
   const handleDirectionsClick = () => {
     trackClick(resource.id, "directions_click", fb);
+    trackEventDedup("resource_contact_click", `${resource.id}:directions`, { ...evParams, contact_type: "directions" });
     const q = resource.address || [resource.city, resource.state].filter(Boolean).join(", ");
     if (q) {
       window.open(`https://maps.google.com/maps?q=${encodeURIComponent(q)}`, "_blank");
@@ -141,6 +162,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   const handleApplyClick = () => {
     trackClick(resource.id, "apply_click", fb);
+    trackEventDedup("resource_contact_click", `${resource.id}:apply`, { ...evParams, contact_type: "apply" });
     const url = resource.affiliate_url || resource.website_url;
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");

@@ -246,7 +246,12 @@ export default function Resources() {
   }, [zipFilter]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      if (searchQuery.trim()) {
+        trackEvent("search_submit", { query: searchQuery.trim(), category: selectedSlug || "" });
+      }
+    }, 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
@@ -448,7 +453,9 @@ export default function Resources() {
     }
     const subParam = params.get("sub");
     if (subParam) {
-      setSubFilter(decodeURIComponent(subParam));
+      const decoded = decodeURIComponent(subParam);
+      setSubFilter(decoded);
+      trackEvent("subcategory_view", { subcategory: decoded, category: selectedSlug || "" });
     } else {
       setSubFilter(null);
     }
@@ -477,7 +484,7 @@ export default function Resources() {
   };
 
   const selectCategory = (cat: SupabaseCategory) => {
-    trackEvent("resources_category_click", { category: cat.slug });
+    trackEvent("category_view", { category: cat.slug });
     if (cat.slug === "end-of-life-services") {
       setLocation("/end-of-life");
       return;
@@ -534,6 +541,7 @@ export default function Resources() {
   const handleUseMyLocation = () => {
     setLocationMode("nearme");
     geo.requestLocation();
+    trackEvent("near_me_use");
   };
 
   const locationSummary = () => {
@@ -720,7 +728,7 @@ export default function Resources() {
                 <div className="flex flex-col gap-2">
                   <AutocompleteInput
                     value={cityFilter}
-                    onChange={(v) => { setCityFilter(v); trackEvent("resources_location_filter_used", { filter_type: "city", value: v }); }}
+                    onChange={(v) => { setCityFilter(v); trackEvent("city_filter_use", { city: v }); }}
                     suggestions={citySuggestions}
                     placeholder="Type a city name..."
                     testId="input-city-filter-standalone"
@@ -737,7 +745,7 @@ export default function Resources() {
               {locationMode === "state" && (
                 <>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { trackEvent("resources_location_filter_used", { filter_type: "state", value: v }); setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
+                    <Select key={selectedState || "empty"} value={selectedState || undefined} onValueChange={(v) => { trackEvent("state_filter_use", { state: v }); setSelectedState(v); setCityFilter(""); setZipFilter(""); }}>
                       <SelectTrigger data-testid="select-state" className="h-9 text-xs flex-1">
                         <SelectValue placeholder="Select a state" />
                       </SelectTrigger>
