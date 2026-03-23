@@ -45,9 +45,19 @@ export function getUTMParams(): Record<string, string> {
   }
 }
 
+const isDebug = () => {
+  try {
+    return new URLSearchParams(window.location.search).has("ga_debug")
+      || localStorage.getItem("vc_ga_debug") === "1";
+  } catch { return false; }
+};
+
 export function initAnalytics(): void {
   captureUTM();
   if (!MEASUREMENT_ID) return;
+
+  const debug = isDebug();
+  if (debug) localStorage.setItem("vc_ga_debug", "1");
 
   const script = document.createElement("script");
   script.async = true;
@@ -59,10 +69,17 @@ export function initAnalytics(): void {
     window.dataLayer.push(args);
   };
   window.gtag("js", new Date());
-  window.gtag("config", MEASUREMENT_ID, { send_page_view: false });
+  window.gtag("config", MEASUREMENT_ID, {
+    send_page_view: false,
+    ...(debug ? { debug_mode: true } : {}),
+  });
 }
 
 let lastTrackedPath = "";
+
+function debugParams(): Record<string, boolean> {
+  return isDebug() ? { debug_mode: true } : {};
+}
 
 export function trackPageView(path: string): void {
   if (!MEASUREMENT_ID || typeof window.gtag !== "function") return;
@@ -71,6 +88,7 @@ export function trackPageView(path: string): void {
   window.gtag("event", "page_view", {
     page_path: path,
     ...getUTMParams(),
+    ...debugParams(),
   });
 }
 
@@ -83,6 +101,7 @@ export function trackEvent(
     page_path: window.location.pathname,
     ...params,
     ...getUTMParams(),
+    ...debugParams(),
   });
 }
 

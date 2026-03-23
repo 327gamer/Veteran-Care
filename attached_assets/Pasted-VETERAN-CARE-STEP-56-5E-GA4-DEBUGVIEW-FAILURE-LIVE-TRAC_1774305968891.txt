@@ -1,0 +1,51 @@
+VETERAN CARE — STEP 56.5E — GA4 DEBUGVIEW FAILURE / LIVE TRACKING VALIDATION
+
+We need you to debug and resolve a GA4 issue immediately.
+
+CURRENT SITUATION:
+- GA4 property and web stream are created correctly
+- Measurement ID is set to: G-CPZXC6Y900
+- The site has been republished live
+- window.dataLayer is present in the browser console and contains data
+- However, GA4 DebugView still shows:
+  - Debug Device = 0
+  - Waiting for debug events
+  - No events appearing in DebugView
+
+IMPORTANT:
+We do NOT want general advice.
+We need you to actively diagnose why live traffic is not appearing in GA4 DebugView and tell us exactly what to do next, or make the needed code changes and have us republish.
+
+REQUIRED ACTIONS:
+
+1. Verify the Google tag is loading correctly on the LIVE published site, not just in development.
+2. Verify page_view requests are actually being sent to GA4 on the live domain.
+3. Verify the Measurement ID in the live code matches exactly:
+   G-CPZXC6Y900
+4. Verify whether debug_mode is being set correctly for GA4 DebugView.
+5. If debug_mode is not being sent automatically, implement the safest temporary debug approach so we can validate tracking in GA4 DebugView.
+6. Check whether any CSP, script timing, SPA routing issue, or deployment issue is preventing GA4 from sending proper debug traffic.
+7. Tell us whether standard GA4 collection is working even if DebugView is not, and explain how to verify that.
+8. If any code changes are needed, make them now.
+9. If republishing is required again after your fix, clearly say:
+   PUBLISH REQUIRED
+10. Give us an exact step-by-step validation checklist after your fix.
+
+WE ALREADY VERIFIED:
+- GA4 stream exists
+- site is published
+- window.dataLayer returns populated arrays
+- manually running:
+  gtag('set', 'debug_mode', true);
+  did not make DebugView populate
+
+OUTPUT REQUIRED:
+1. Root cause
+2. What you changed
+3. Whether publish is required
+4. Exact validation steps
+5. Whether tracking is live even without DebugView
+6. Any remaining blocker
+
+GOAL:
+Get GA4 tracking visibly confirmed and debugged properly so we can move on without wasting more time.
