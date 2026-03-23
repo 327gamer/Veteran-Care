@@ -184,13 +184,13 @@ export default function Home() {
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* Brand Header */}
-      <section className="-mx-4 md:-mx-6 -mt-4 md:-mt-6 py-10 flex flex-col items-center justify-center text-center space-y-5 mb-6 bg-white">
-        <div className="h-56 md:h-64 w-full max-w-[364px] md:max-w-[400px] flex items-center justify-center drop-shadow-2xl">
+      <section className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 py-10 lg:py-16 flex flex-col items-center justify-center text-center space-y-5 mb-6 bg-white">
+        <div className="h-56 md:h-64 lg:h-72 w-full max-w-[364px] md:max-w-[400px] lg:max-w-[440px] flex items-center justify-center drop-shadow-2xl">
           <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
         </div>
-        <div className="space-y-2 px-6">
-          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to {platform.name}</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">{platform.longDescription}</p>
+        <div className="space-y-3 px-6">
+          <h1 className="text-2xl lg:text-3xl font-heading font-extrabold text-primary tracking-tight">Welcome to {platform.name}</h1>
+          <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-sm lg:max-w-lg mx-auto">{platform.longDescription}</p>
         </div>
       </section>
 
@@ -293,7 +293,7 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
               {[
                 { id: "button-ask-guide-home", icon: Sparkles, label: platform.ai.assistantName, onClick: openGuide, glow: true },
                 { id: "button-browse-resources-home", icon: BookOpen, label: "Resources", onClick: () => setLocation("/resources") },
@@ -473,7 +473,7 @@ export default function Home() {
           </a>
         </section>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {categories.map((cat) => {
             const config = getCategoryConfig(cat.slug);
             const Icon = config.icon;

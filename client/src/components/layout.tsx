@@ -123,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
     : "JD";
 
   return (
-    <div className="min-h-screen bg-background pb-20 font-sans">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 font-sans">
       {/* Top Bar - Persistent */}
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -137,6 +137,24 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">{platform.name}</span>
           </Link>
+
+          <nav className="hidden lg:flex items-center gap-1 ml-6">
+            <Link href="/resources" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              Resources
+            </Link>
+            <Link href="/trusted-services" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/trusted-services') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              Trusted Services
+            </Link>
+            <Link href="/shop" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/shop') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              Shop
+            </Link>
+            <Link href="/saved-resources" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/saved-resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              My Saved
+            </Link>
+            <Link href="/community" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/community') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              Community
+            </Link>
+          </nav>
 
           {/* Right: Icons */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -252,7 +270,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto p-4 md:p-6 max-w-4xl">
+      <main className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
         {children}
       </main>
 
@@ -266,7 +284,7 @@ export default function Layout({ children }: LayoutProps) {
       <ProfileModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
 
       {/* Bottom Navigation - Mobile First */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.05)] safe-area-bottom lg:hidden">
         <div className="flex h-16 items-center justify-around px-2">
           <Link href="/resources" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <BookOpen className={`h-5 w-5 ${isActive('/resources') ? 'fill-current' : ''}`} />

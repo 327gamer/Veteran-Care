@@ -157,7 +157,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
           <FileText className="h-24 w-24" />
         </div>
         
-        <div className="relative z-10 max-w-3xl mx-auto">
+        <div className="relative z-10 max-w-3xl lg:max-w-4xl mx-auto">
           <button
             data-testid="button-back-resource-detail"
             onClick={() => onOpenChange(false)}
@@ -195,7 +195,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 pb-24 sm:pb-8">
+        <div className="max-w-3xl lg:max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 pb-24 lg:pb-8">
 
           <section data-testid="section-overview" className="space-y-2">
             <h3 className="font-bold text-base flex items-center gap-2 text-primary">

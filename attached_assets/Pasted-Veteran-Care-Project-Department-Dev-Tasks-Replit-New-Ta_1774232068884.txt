@@ -1,0 +1,65 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.13 – Desktop Responsive Layout Refinement
+
+Context:
+Mobile behavior has improved significantly, but desktop still does not feel like a proper desktop web experience.
+
+Current problem:
+The app still presents too much like a mobile app stretched onto a desktop screen.
+
+Observed issues:
+1. Homepage/content area feels too narrow with excessive side gutters
+2. Desktop pages still look constrained inside a mobile-style frame
+3. Bottom mobile navigation is still present on desktop and can interfere visually
+4. Resource detail pages on desktop still feel compressed and not fully web-page-like
+5. Overall desktop experience needs a more intentional responsive layout rather than simply scaling mobile presentation
+
+Expected behavior:
+1. Desktop should have a cleaner responsive layout strategy
+2. Content should use more horizontal space appropriately while staying readable
+3. Homepage should feel centered and intentionally laid out
+4. Resource detail pages should feel like proper desktop pages
+5. Bottom mobile nav should not behave the same way on desktop
+6. Desktop should still preserve the same data/functions, but present them in a more natural desktop UI
+
+What to investigate:
+1. Check responsive breakpoints for main app layout, homepage, resource list, and resource detail pages
+2. Check whether desktop should use wider containers and different spacing/padding
+3. Check whether the mobile bottom nav should be hidden/replaced/repositioned on desktop
+4. Check whether resource detail pages should use a true desktop content width and spacing system
+5. Check whether homepage hero/logo/intro block should use a different desktop max-width and vertical spacing
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why desktop still feels like a blown-up mobile view
+
+2. SAFE FIX PLAN
+- explain the cleanest desktop-responsive refinement pass
+- do not bundle unrelated geolocation/finder logic changes
+
+3. FILES / COMPONENTS AFFECTED
+- list exact layout/pages/components involved
+
+4. IMPLEMENTATION
+- improve desktop-responsive layout for:
+  - main/home page
+  - resource list views
+  - resource detail pages
+  - bottom navigation behavior on desktop
+
+5. QA CHECKLIST
+- verify homepage looks intentional on desktop
+- verify content uses width better without becoming too stretched
+- verify resource detail pages feel like proper desktop pages
+- verify bottom navigation no longer interferes on desktop
+- verify mobile experience remains unchanged/improved
+
+Important:
+- this is a responsive desktop layout refinement step
+- keep scope focused
+- do not stack unrelated system changes into this task
