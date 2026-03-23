@@ -213,3 +213,11 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+html, body {
+  overscroll-behavior: contain;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
