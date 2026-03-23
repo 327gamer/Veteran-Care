@@ -5,7 +5,7 @@ declare global {
   }
 }
 
-const MEASUREMENT_ID = (import.meta.env.VITE_GA4_MEASUREMENT_ID as string) || "";
+const MEASUREMENT_ID = "G-CPZXC6Y900";
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "utm_id"] as const;
 
@@ -47,12 +47,8 @@ export function getUTMParams(): Record<string, string> {
 
 export function initAnalytics(): void {
   captureUTM();
-  if (!MEASUREMENT_ID) return;
 
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
-  document.head.appendChild(script);
+  if (typeof window.gtag === "function") return;
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = function (...args: any[]) {
@@ -64,12 +60,19 @@ export function initAnalytics(): void {
     send_page_view: false,
     debug_mode: true,
   });
+
+  if (!document.querySelector(`script[src*="gtag/js?id=${MEASUREMENT_ID}"]`)) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+  }
 }
 
 let lastTrackedPath = "";
 
 export function trackPageView(path: string): void {
-  if (!MEASUREMENT_ID || typeof window.gtag !== "function") return;
+  if (typeof window.gtag !== "function") return;
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
   window.gtag("event", "page_view", {
