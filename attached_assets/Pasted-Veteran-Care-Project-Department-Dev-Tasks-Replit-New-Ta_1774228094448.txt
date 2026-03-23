@@ -1,0 +1,70 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.10 – Resource Detail Page Overflow + In-App Back Navigation Fix
+
+Issue A – Page overflow / clipping:
+On some resource detail pages, the content is cut off horizontally/vertically on mobile and sometimes desktop. Users cannot see the full page cleanly, and scrolling behavior appears constrained or mis-sized.
+
+Observed examples:
+- right edge of the page looks clipped
+- some content/cards/buttons appear partially cut off
+- on mobile, some pages do not feel fully scrollable/visible
+
+Issue B – Missing in-app back navigation:
+On some resource detail pages, especially mobile, users can get stuck because there is no visible in-app back button within the page itself. Browser back may work inconsistently, but the app should provide its own back/navigation control.
+
+Expected behavior:
+1. Resource detail pages must render and scroll cleanly on mobile and desktop
+2. No horizontal clipping or trapped content
+3. Every resource detail page should include a clear in-app back button
+4. Back button should return users intelligently to the previous context when possible:
+   - search results
+   - category/subcategory list
+   - filtered results
+   - resource directory list
+5. If prior context is unavailable, use a safe fallback route
+
+What to investigate:
+1. Check resource detail page container width, overflow, min-height, and scroll behavior on mobile
+2. Check whether any inner cards/buttons are forcing horizontal overflow
+3. Check whether the page is inside a constrained wrapper or modal-like layout
+4. Check how Trusted Services detail pages handle back navigation and use that as the model if appropriate
+5. Check whether resource detail route can preserve referrer/return context via route state, query params, or history
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain the overflow/clipping issue
+- explain the missing back-navigation issue
+
+2. SAFE FIX PLAN
+- explain the smallest safe front-end fix
+- do not bundle unrelated finder/location/category changes
+
+3. FILES / COMPONENTS AFFECTED
+- list likely page/component/layout files
+
+4. IMPLEMENTATION
+- fix layout overflow and scrolling
+- add clear in-app back button to resource detail pages
+- preserve current content and actions
+
+5. QA CHECKLIST
+- verify resource pages render fully on mobile
+- verify no horizontal clipping
+- verify full vertical scrolling
+- verify back button appears on all resource detail pages
+- verify back returns users correctly from:
+  - search results
+  - category pages
+  - city/state filtered results
+  - direct resource list views
+- verify desktop remains clean
+
+Important:
+- keep this a focused UI/layout/navigation fix
+- test before publish
+- do not stack unrelated changes into this task

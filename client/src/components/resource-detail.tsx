@@ -23,7 +23,8 @@ import {
   ArrowRight,
   Sparkles,
   Globe,
-  Check
+  Check,
+  ChevronLeft,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { useSavedResources } from "@/lib/store";
@@ -156,7 +157,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col h-[100dvh] bg-background border-l-primary/20">
+      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col h-[100dvh] bg-background border-l-primary/20 overflow-hidden">
         
         <div className="bg-primary px-5 py-4 text-primary-foreground relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 p-2 opacity-10">
@@ -164,6 +165,14 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
           </div>
           
           <div className="relative z-10">
+            <button
+              data-testid="button-back-resource-detail"
+              onClick={() => onOpenChange(false)}
+              className="flex items-center gap-1 text-primary-foreground/80 hover:text-primary-foreground text-xs font-medium mb-2 -ml-0.5 transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to results
+            </button>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <Badge variant="outline" className="text-[10px] h-5 border-primary-foreground/30 text-primary-foreground/90 bg-primary-foreground/10">
                 {resource.category}
@@ -192,8 +201,8 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
           </div>
         </div>
 
-        <ScrollArea className="flex-1 w-full">
-          <div className="p-4 space-y-4">
+        <ScrollArea className="flex-1 w-full overflow-x-hidden">
+          <div className="p-4 space-y-4 overflow-hidden">
 
             <section data-testid="section-overview" className="space-y-2">
               <h3 className="font-bold text-base flex items-center gap-2 text-primary">
@@ -231,15 +240,15 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                     </div>
                   )}
                   {resource.email && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm min-w-0">
                       <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <a href={`mailto:${resource.email}`} className="text-primary hover:underline">{resource.email}</a>
+                      <a href={`mailto:${resource.email}`} className="text-primary hover:underline truncate">{resource.email}</a>
                     </div>
                   )}
                   {resource.website_url && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm min-w-0">
                       <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <a href={resource.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{resource.website_url.replace(/^https?:\/\//, '')}</a>
+                      <a href={resource.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{resource.website_url.replace(/^https?:\/\//, '')}</a>
                     </div>
                   )}
                   {hasAddress && (
@@ -382,10 +391,10 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                 {resource.phone && (
                   <Button
                     data-testid="button-call"
-                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white gap-2"
+                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white gap-2 overflow-hidden"
                     onClick={handleCallClick}
                   >
-                    <Phone className="h-4 w-4" /> Call {resource.phone}
+                    <Phone className="h-4 w-4 shrink-0" /> <span className="truncate">Call {resource.phone}</span>
                   </Button>
                 )}
 
