@@ -139,19 +139,24 @@ export default function Layout({ children }: LayoutProps) {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1 ml-6">
-            <Link href="/resources" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/resources" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              <BookOpen className="h-4 w-4" />
               Resources
             </Link>
-            <Link href="/trusted-services" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/trusted-services') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/trusted-services" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/trusted-services') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              <ShieldCheck className="h-4 w-4" />
               Trusted Services
             </Link>
-            <Link href="/shop" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/shop') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/shop" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/shop') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              <ShoppingBag className="h-4 w-4" />
               Shop
             </Link>
-            <Link href="/saved-resources" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/saved-resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/saved-resources" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/saved-resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              <Heart className="h-4 w-4" />
               My Saved
             </Link>
-            <Link href="/community" className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/community') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/community" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/community') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+              <MessageSquare className="h-4 w-4" />
               Community
             </Link>
           </nav>
@@ -328,32 +333,40 @@ export default function Layout({ children }: LayoutProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Bottom Navigation</p>
-            <div className="space-y-1">
-              {BOTTOM_NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.label} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-muted/40">
-                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-3.5 w-3.5 text-primary" />
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Getting around is easy:
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 pl-1">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>On <strong>mobile</strong>, use the top icons and bottom menu bar</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>On <strong>desktop</strong>, use the top navigation and icons</span>
+              </li>
+            </ul>
+            <div className="border-t pt-3 mt-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Navigation Items</p>
+              <div className="space-y-1">
+                {BOTTOM_NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-muted/40">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{item.label}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">{item.label}</p>
-                      <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ArrowDown className="h-3.5 w-3.5 animate-bounce" />
-              <span>These tabs are at the bottom of your screen</span>
-            </div>
-            <div className="border-t pt-2 mt-1">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Top Header</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                <span>These icons are at the top of your screen</span>
+                  );
+                })}
               </div>
+            </div>
+            <div className="border-t pt-3 mt-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Top Header Icons</p>
               <div className="space-y-1">
                 {TOP_HEADER_ITEMS.map((item) => {
                   const Icon = item.icon;
@@ -370,6 +383,14 @@ export default function Layout({ children }: LayoutProps) {
                   );
                 })}
               </div>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3 mt-2">
+              <p className="text-xs font-semibold text-primary mb-1">How to navigate {platform.name}:</p>
+              <ul className="text-xs text-muted-foreground space-y-0.5">
+                <li>• <strong>Mobile:</strong> use the top icons and bottom navigation bar</li>
+                <li>• <strong>Desktop:</strong> use the top navigation menu and icons</li>
+                <li>• Quickly search, save resources, and get help anytime</li>
+              </ul>
             </div>
             <Button
               data-testid="button-got-it"
