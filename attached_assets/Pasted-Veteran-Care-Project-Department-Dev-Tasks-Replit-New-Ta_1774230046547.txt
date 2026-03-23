@@ -1,0 +1,94 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+New Task:
+Step 57.11 – Replace Resource Detail Sheet With Full Resource Detail Page / Full-Screen View
+
+Decision:
+The current resource detail sheet/slide-over approach is not acceptable for launch.
+
+Why:
+- mobile still feels cramped and unprofessional
+- desktop layout is off-center / cut off
+- scrolling behavior is awkward
+- users should not have to pinch, hunt for buttons, or feel trapped
+- resource details are too content-heavy for a narrow sheet/modal pattern
+
+New requirement:
+Replace the current sheet/modal behavior for resource details with a proper full resource detail view.
+
+Target behavior:
+1. Mobile:
+- clicking a resource opens a full-screen page/view
+- content fills the viewport naturally
+- normal vertical scrolling
+- clear back button at top
+- no pinch-zoom needed
+- no clipped side edges
+
+2. Desktop:
+- resource detail should render centered and fully readable
+- prefer using the same full-page route/view for consistency
+- normal page scrolling
+- no narrow side-sheet layout
+
+3. Navigation:
+- keep a clear in-app back button at the top
+- preserve prior context when possible:
+  - search results
+  - category/subcategory results
+  - city/state filtered results
+  - saved resources
+- use safe fallback if referrer context is unavailable
+
+4. Preserve content and actions:
+- official website
+- save
+- share
+- report
+- call
+- directions
+- apply/get help
+- local assistance
+- navigator prompts
+- veteran guide prompt
+
+What to investigate:
+1. Replace the current Sheet-based resource detail UI with a route-based or full-view detail pattern
+2. Check whether resource detail can open as its own page while keeping prior results context in history/router state
+3. Reuse as much existing detail component structure/content as possible, but change the container/presentation pattern
+4. Ensure mobile and desktop both feel polished and app-like
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain why the sheet-based approach remains flawed for this content
+
+2. SAFE FIX PLAN
+- explain the cleanest way to move from sheet to full detail page/view
+- do not bundle unrelated finder/location changes
+
+3. FILES / COMPONENTS AFFECTED
+- list exact routes/pages/components to update
+
+4. IMPLEMENTATION
+- replace sheet/modal presentation with full resource detail page/view
+- preserve existing content/actions
+- add proper top back navigation
+- preserve result-context return behavior
+
+5. QA CHECKLIST
+- verify mobile resource detail fills screen naturally
+- verify desktop is centered and fully readable
+- verify full-page scrolling works correctly
+- verify no clipping
+- verify back navigation works from results/filter views
+- verify action buttons remain intact
+- verify no regression in search/category/city/state flows
+
+Important:
+- this is now a presentation/container redesign for resource details only
+- keep scope focused
+- do not stack unrelated geolocation or category work
+- this should make resource details feel launch-quality on both mobile and desktop
