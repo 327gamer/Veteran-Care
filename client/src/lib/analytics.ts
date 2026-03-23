@@ -45,31 +45,45 @@ export function getUTMParams(): Record<string, string> {
   }
 }
 
+const isDebug = (): boolean => {
+  try {
+    return new URLSearchParams(window.location.search).has("ga_debug")
+      || localStorage.getItem("vc_ga_debug") === "1";
+  } catch { return false; }
+};
+
 export function initAnalytics(): void {
   captureUTM();
 
-  if (typeof window.gtag === "function") return;
+  const debug = isDebug();
+  if (debug) localStorage.setItem("vc_ga_debug", "1");
 
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function (...args: any[]) {
-    window.dataLayer.push(args);
-  };
-  window.gtag("js", new Date());
-  window.gtag("set", { debug_mode: true });
-  window.gtag("config", MEASUREMENT_ID, {
-    send_page_view: false,
-    debug_mode: true,
-  });
+  if (typeof window.gtag !== "function") {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function (...args: any[]) {
+      window.dataLayer.push(args);
+    };
+    window.gtag("js", new Date());
 
-  if (!document.querySelector(`script[src*="gtag/js?id=${MEASUREMENT_ID}"]`)) {
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
-    document.head.appendChild(script);
+    if (!document.querySelector(`script[src*="gtag/js?id=${MEASUREMENT_ID}"]`)) {
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+      document.head.appendChild(script);
+    }
+  }
+
+  if (debug) {
+    window.gtag("set", { debug_mode: true });
+    window.gtag("config", MEASUREMENT_ID, { send_page_view: false, debug_mode: true });
   }
 }
 
 let lastTrackedPath = "";
+
+function debugFlag(): Record<string, boolean> {
+  return isDebug() ? { debug_mode: true } : {};
+}
 
 export function trackPageView(path: string): void {
   if (typeof window.gtag !== "function") return;
@@ -77,8 +91,8 @@ export function trackPageView(path: string): void {
   lastTrackedPath = path;
   window.gtag("event", "page_view", {
     page_path: path,
-    debug_mode: true,
     ...getUTMParams(),
+    ...debugFlag(),
   });
 }
 
@@ -89,9 +103,9 @@ export function trackEvent(
   if (typeof window.gtag !== "function") return;
   window.gtag("event", name, {
     page_path: window.location.pathname,
-    debug_mode: true,
     ...params,
     ...getUTMParams(),
+    ...debugFlag(),
   });
 }
 
