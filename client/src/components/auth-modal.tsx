@@ -209,7 +209,6 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
             body: JSON.stringify(body),
           });
         } catch (err) {
-          console.log("[profile] Save error:", err);
         }
       }
     }

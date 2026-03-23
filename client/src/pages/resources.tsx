@@ -828,8 +828,8 @@ export default function Resources() {
                           <li>Return here and tap <b>Try Again</b></li>
                         </ol>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Location isn't available right now. You can still search by City or State.
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        If location still isn't working in Safari, please try Chrome. You can also search by City or State.
                       </p>
                       <div className="w-full space-y-2 max-w-xs">
                         <Button
