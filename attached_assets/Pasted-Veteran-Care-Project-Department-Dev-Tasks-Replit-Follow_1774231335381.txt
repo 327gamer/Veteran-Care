@@ -1,0 +1,86 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Follow-up Task:
+Step 57.12 – Resource Detail Full-Page Layout + Sticky Navigation Cleanup
+
+Context:
+The full-page resource detail redesign is a big improvement, but it still needs final polish to feel truly launch-quality on both mobile and desktop.
+
+Remaining issues:
+
+1. Bottom navigation interference
+- the bottom nav can visually overlap content
+- content appears to scroll behind it
+- lower actions (Official Website / Save / Share / Report) can be partially obscured
+- the page needs proper bottom safe-area spacing so important content/buttons are never trapped behind the nav
+
+2. Previous page bleed-through / overlay feel
+- on some views, the detail page still feels like it is sitting on top of the previous page instead of being a fully clean standalone page/view
+- on shorter pages, content behind/below can feel visible or implied
+
+3. Scroll position not resetting
+- some resource details open mid-scroll instead of loading from the top
+- resource detail should always open at the top of the page/view
+
+4. Desktop layout still too mobile-like
+- the desktop detail view still feels squeezed
+- it should use a more natural web-page layout on desktop:
+  - centered
+  - comfortable width
+  - proper spacing
+  - clean vertical flow
+- not just a blown-up mobile view
+
+Expected behavior:
+
+Mobile:
+- resource detail opens at the top every time
+- no visual bleed-through from prior page
+- bottom nav stays fixed cleanly
+- content has enough bottom padding/safe area so no actions are hidden
+- scrolling feels natural
+
+Desktop:
+- resource detail is centered and fully readable
+- action buttons at bottom remain fully visible
+- layout feels like a proper desktop detail page, not a cramped mobile layout
+
+What to investigate:
+1. Ensure detail open action scrolls window/container to top
+2. Ensure background page is fully visually isolated/locked when detail is open
+3. Add bottom padding / safe-area spacing for fixed bottom nav
+4. Add desktop-specific container/layout refinements for resource detail
+5. Verify saved resources and standard resource list behave the same way
+
+Requested output:
+Please respond in this structure:
+
+1. ROOT CAUSE
+- explain the remaining overlap / bleed-through / scroll-position / desktop-layout issues
+
+2. SAFE FIX PLAN
+- explain the smallest clean polish pass
+- do not bundle unrelated finder/location changes
+
+3. FILES / COMPONENTS AFFECTED
+- list exact files/components
+
+4. IMPLEMENTATION
+- fix open-at-top behavior
+- fix bottom-nav overlap
+- fix standalone/full-page feel
+- improve desktop-specific layout
+
+5. QA CHECKLIST
+- verify resource detail always opens at top
+- verify no previous-page bleed-through feel
+- verify bottom nav does not obscure content
+- verify Official Website / Save / Share / Report remain fully visible
+- verify desktop looks centered and polished
+- verify mobile remains clean
+
+Important:
+- this is a final layout/polish pass for resource details
+- keep scope focused
+- do not stack unrelated changes into this step
