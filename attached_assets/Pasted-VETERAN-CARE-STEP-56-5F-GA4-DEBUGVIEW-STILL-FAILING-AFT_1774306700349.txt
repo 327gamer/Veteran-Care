@@ -1,0 +1,58 @@
+VETERAN CARE — STEP 56.5F — GA4 DEBUGVIEW STILL FAILING AFTER FIX + PUBLISH
+
+We followed your instructions exactly and DebugView is STILL not working.
+
+CONFIRMED:
+- GA4 property and stream are correct
+- Measurement ID is G-CPZXC6Y900
+- Site was republished after your fix
+- We used the ?ga_debug URL
+- We waited and refreshed
+- We checked GA4 Admin → DebugView
+- Debug Device still shows 0
+- No debug events appear
+
+IMPORTANT:
+We do NOT want more generic instructions.
+We need you to directly diagnose the live implementation and resolve the failure.
+
+REQUIRED ACTIONS:
+
+1. Verify on the LIVE published domain that:
+   - gtag.js is loading
+   - page_view is being sent to GA4
+   - debug_mode is actually being included in the outgoing requests
+   - the requests are being sent to the correct GA4 endpoint for measurement ID G-CPZXC6Y900
+
+2. Inspect the actual outgoing GA requests and confirm whether:
+   - debug_mode is present
+   - the requests are returning successfully
+   - any CSP, extension conflict, deployment issue, or routing issue is blocking debug traffic
+
+3. If the URL-based ?ga_debug approach is not enough, implement a stronger temporary validation mode so DebugView definitely works on the live site.
+
+4. Give us an alternate validation path if DebugView is unreliable, including:
+   - exact Network tab filters
+   - exact request URL patterns
+   - exact response codes we should see
+   - exact parameters proving GA4 is receiving events
+
+5. Confirm whether standard GA4 collection is working on the live site right now, even if DebugView is not.
+
+6. If you need to change code again, do it now.
+
+7. If another publish is required after your changes, clearly state:
+   PUBLISH REQUIRED
+
+8. Provide exact final validation steps after your changes.
+
+WE NEED FROM YOU:
+1. Root cause
+2. What you changed
+3. Whether publish is required
+4. Exact validation steps
+5. Whether GA4 standard tracking is live right now
+6. Whether DebugView failure is only a debug issue or a broader collection issue
+
+GOAL:
+Resolve this completely so we can confirm tracking without wasting more time.
