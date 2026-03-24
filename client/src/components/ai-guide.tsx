@@ -252,7 +252,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
       if (!v && abortRef.current) abortRef.current.abort();
       onOpenChange(v);
     }}>
-      <DialogContent overlayClassName="z-[70]" className="sm:max-w-[425px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20 z-[70]">
+      <DialogContent overlayClassName="z-[70]" className="sm:max-w-[425px] h-[calc(100vh-10rem)] lg:h-[80vh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20 z-[70]">
         <DialogHeader className="px-6 py-4 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center border-2 border-white/20 overflow-hidden p-1">

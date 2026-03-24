@@ -276,7 +276,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[440px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[440px] max-h-[calc(100vh-10rem)] lg:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
