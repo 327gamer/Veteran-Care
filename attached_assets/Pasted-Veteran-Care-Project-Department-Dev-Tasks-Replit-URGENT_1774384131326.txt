@@ -1,0 +1,122 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+URGENT FOLLOW-UP
+Step 57.18B – Restore Resource Detail Header + Correct Help Card Behavior
+
+IMPORTANT:
+The prior fix introduced regressions and made the resource-detail UX worse.
+Please treat this as a focused corrective task.
+
+Do not redesign anything.
+Do not reinterpret the UX.
+Restore the intended behavior exactly.
+
+==================================================
+REGRESSION 1 — "BACK TO RESULTS" MUST BE RESTORED AND VISIBLE
+==================================================
+
+CURRENT PROBLEM:
+Inside an actual resource detail page, the "Back to results" option is now cut off / inaccessible at the top.
+Users can no longer reliably go back one step to the prior provider/resource result list.
+
+REQUIRED BEHAVIOR:
+1. "Back to results" must be restored at the top of the resource detail page
+2. It must be fully visible and tappable on mobile and desktop
+3. It must take the user back ONE STEP to the previous provider/resource result set
+4. It must NOT be replaced by the global Resources nav behavior
+5. Keep the separate Resources nav behavior:
+   - clicking Resources nav anywhere should still go to the main Resources landing page
+
+IMPORTANT DISTINCTION:
+- Back to results = return to previous filtered/provider result set
+- Resources nav = return to main Resources categories/finder page
+
+TEST CASES:
+1. Resources → category → provider/resource detail → Back to results
+   EXPECTED: returns to prior provider/resource result list
+
+2. Resources → category → provider/resource detail → Resources nav
+   EXPECTED: returns to main Resources categories/finder page
+
+==================================================
+REGRESSION 2 — GET HELP BUTTON FREEZES APP
+==================================================
+
+CURRENT PROBLEM:
+Clicking the Get Help button inside a resource detail is not fixed.
+It now freezes the page/app and forces a full restart.
+
+This is unacceptable.
+
+REQUIRED BEHAVIOR:
+1. The Veteran Guide / AI button inside a resource detail must open the AI chatbot reliably
+2. It must NOT freeze the UI
+3. It must NOT create hidden modal / z-index / focus-trap issues
+4. It must work on mobile and desktop
+5. If the resource detail needs to close first, do that safely and then open the AI guide
+6. No hanging state, no blocked scrolling, no broken overlay
+
+==================================================
+REGRESSION 3 — SUPPORT CARDS INSIDE RESOURCE WERE CHANGED INCORRECTLY
+==================================================
+
+CURRENT PROBLEM:
+The two support cards inside the resource detail are now wrong.
+Their wording, icons, and behaviors were altered incorrectly.
+
+THEY MUST BE RESTORED TO THE INTENDED ROLES:
+
+CARD A:
+- Personal help / navigator support
+- This should go to the Get Help Now / Navigator flow
+- This is NOT the AI bot
+
+CARD B:
+- Veteran Guide / AI support
+- This should go to the AI chatbot
+- This is NOT the navigator request flow
+
+REQUIRED FIX:
+1. Restore the correct text/content/icon distinction between the two cards
+2. Restore the correct actions:
+   - Request Help / Get Help Now → Navigator flow
+   - Veteran Guide / AI Help → AI chatbot
+3. Do not make both cards say the same thing
+4. Do not swap their actions
+5. Do not change the UX copy unless necessary to restore original intent
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing this, report back with:
+
+1. ROOT CAUSE
+- what part of the prior fix caused these regressions
+
+2. EXACT FIX
+- what was restored / changed
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile + desktop
+- back to results
+- resources nav
+- navigator card
+- AI guide card
+- confirm no freeze / no blocked UI
+
+5. FINAL CONFIRMATION
+Please explicitly confirm:
+a) Back to results is restored and visible
+b) Resources nav still goes to main Resources landing page
+c) Navigator card goes to navigator / Get Help Now flow
+d) Veteran Guide card opens AI chatbot
+e) No freeze occurs
+
+IMPORTANT:
+Please do not give me a theoretical answer.
+Please verify the actual live behavior after implementation.

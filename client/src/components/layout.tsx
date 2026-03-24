@@ -125,7 +125,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 font-sans overscroll-contain">
       {/* Top Bar - Persistent */}
-      <header className="sticky top-0 z-[65] w-full border-b bg-primary text-primary-foreground shadow-md">
+      <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Left: Logo */}
           <Link href="/home" className="flex items-center gap-2 group shrink-0">

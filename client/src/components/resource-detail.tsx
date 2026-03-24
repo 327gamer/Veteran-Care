@@ -122,10 +122,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   const handleGuideClick = () => {
     trackClick(resource.id, "guide_click", fb);
-    onOpenChange(false);
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("open-ai-guide"));
-    }, 150);
+    window.dispatchEvent(new CustomEvent("open-ai-guide"));
   };
 
   const handleSaveClick = () => {
@@ -175,7 +172,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const hasAddress = resource.address || (resource.city && resource.state);
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col" data-testid="resource-detail-page">
+    <div className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-background flex flex-col" data-testid="resource-detail-page">
       <div className="bg-primary px-4 sm:px-6 py-4 text-primary-foreground relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 p-2 opacity-10">
           <FileText className="h-24 w-24" />
@@ -390,11 +387,11 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
             <Button
               data-testid="button-ask-guide"
               size="sm"
-              className="h-8 text-xs bg-accent text-accent-foreground hover:bg-accent/90 shrink-0 gap-1.5"
+              variant="secondary"
+              className="h-7 text-xs bg-white shadow-sm border shrink-0"
               onClick={handleGuideClick}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              Get Help
+              {platform.ai.assistantName}
             </Button>
           </section>
 
