@@ -240,6 +240,7 @@ export default function Resources() {
   useEffect(() => {
     const handler = () => {
       setSelectedResource(null);
+      setSelectedPartner(null);
       setSelectedSlug(null);
       setSelectedName(null);
       setSelectedState("");

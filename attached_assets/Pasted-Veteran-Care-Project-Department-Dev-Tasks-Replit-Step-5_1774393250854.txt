@@ -1,0 +1,105 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.24 – Fix Resources Nav Override for Trusted/Verified Partner Detail Opened from Regular Resources
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not make any other changes in this step.
+Fix only the Resources navigation behavior for trusted/verified partner detail pages opened from regular Resources.
+
+==================================================
+ISSUE – RESOURCES NAV DOES NOT RESET TO MAIN RESOURCES LANDING FROM TRUSTED/VERIFIED PARTNER DETAIL
+==================================================
+
+CURRENT PROBLEM:
+Inside regular Resources, if the user opens a trusted/verified partner detail page, the behavior is now partially correct:
+
+- "Back to results" works correctly and returns the user one step back
+- BUT clicking "Resources" in navigation does NOT always return the user to the main Resources landing/finder page
+
+This is the same issue we fixed earlier for regular resource detail pages, but it is still happening for trusted/verified partner detail opened from inside regular Resources.
+
+==================================================
+REQUIRED BEHAVIOR
+==================================================
+
+We need the same two distinct behaviors:
+
+1. Back to results
+- keep this exactly as-is
+- should return the user one step back to the prior category/provider/resource result set
+
+2. Resources navigation click
+- should NOT behave like Back to results
+- should ALWAYS return the user to the main Resources landing/finder page
+- this means:
+  - close the current trusted/verified partner detail state
+  - clear the relevant detail selection state
+  - return to the main Resources categories/finder screen
+
+==================================================
+IMPORTANT DISTINCTION
+==================================================
+
+- Back to results = one step back to previous results
+- Resources nav = full reset to main Resources landing page
+
+==================================================
+SCOPE
+==================================================
+
+This fix applies specifically to:
+- trusted/verified partner detail pages that are opened from inside regular Resources results
+
+Do NOT change:
+- Trusted Services category flow
+- Back to results behavior
+- Search behavior
+- Any unrelated detail views
+
+==================================================
+TEST CASES
+==================================================
+
+1. Open Resources
+2. Open a category
+3. Click a trusted/verified partner from the regular Resources list
+4. Click Back to results
+   EXPECTED:
+   - returns one step back to prior result list
+
+5. Open the trusted/verified partner detail again
+6. Click Resources nav (top nav or bottom nav depending on device)
+   EXPECTED:
+   - returns to main Resources landing/finder page
+   - does NOT just go back one step
+
+7. Test mobile and desktop
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE
+- why this trusted/verified partner detail path was not following the same Resources-nav override behavior as regular resource detail
+
+2. EXACT FIX
+- what selection/detail/reset logic was added or reused
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile
+- desktop
+- back to results
+- resources nav reset behavior
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) Back to results still goes back one step
+b) Resources nav now goes to the main Resources landing page
+c) no unrelated flows were changed
