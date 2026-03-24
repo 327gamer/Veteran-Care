@@ -36,9 +36,13 @@ import {
   CheckCircle2,
   Send,
   Filter,
+  Heart,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
+import { useSavedResources } from "@/lib/store";
+import TrustedServiceDetail from "@/components/trusted-service-detail";
+import { toast } from "@/hooks/use-toast";
 
 interface TrustedCategory {
   id: string;
@@ -126,6 +130,8 @@ export default function TrustedServices() {
   const [connectService, setConnectService] = useState<TrustedService | null>(null);
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
+  const [detailService, setDetailService] = useState<TrustedService | null>(null);
+  const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
 
   const { data: categories = [], isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/trusted-services/categories"],
@@ -394,104 +400,109 @@ export default function TrustedServices() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {services.map(service => (
-              <Card key={service.id} className="overflow-hidden" data-testid={`card-trusted-service-${service.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm">{service.name}</h3>
-                        {service.is_featured && (
-                          <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200">
-                            <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
+            {services.map(service => {
+              const isSaved = isTrustedServiceSaved(service.id);
+              return (
+                <Card
+                  key={service.id}
+                  className="overflow-hidden cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                  data-testid={`card-trusted-service-${service.id}`}
+                  onClick={() => {
+                    trackEvent("trusted_service_click", { service_id: service.id, service_name: service.name });
+                    setDetailService(service);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-sm">{service.name}</h3>
+                          {service.is_featured && (
+                            <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200">
+                              <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
+                            </Badge>
+                          )}
+                        </div>
+                        {service.is_national ? (
+                          <p className="text-[11px] text-blue-600 flex items-center gap-1 mt-0.5 font-medium">
+                            <Globe className="h-3 w-3" /> Nationwide
+                          </p>
+                        ) : (service.city || service.state) ? (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <MapPin className="h-3 w-3" />
+                            {[service.city, service.state].filter(Boolean).join(", ")}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          data-testid={`button-heart-${service.id}`}
+                          className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSaveTrustedService(service.id);
+                            toast({
+                              description: isSaved ? "Removed from My Saved" : "Saved to My Saved",
+                              duration: 2000,
+                            });
+                          }}
+                        >
+                          <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                        </button>
+                        {service.verification_label && (
+                          <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                            <ShieldCheck className="h-3 w-3 mr-1" />
+                            {service.verification_label}
                           </Badge>
                         )}
                       </div>
-                      {service.is_national ? (
-                        <p className="text-[11px] text-blue-600 flex items-center gap-1 mt-0.5 font-medium">
-                          <Globe className="h-3 w-3" /> Nationwide
-                        </p>
-                      ) : (service.city || service.state) ? (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3" />
-                          {[service.city, service.state].filter(Boolean).join(", ")}
-                        </p>
-                      ) : null}
                     </div>
-                    {service.verification_label && (
-                      <Badge variant="secondary" className="text-[10px] shrink-0 bg-green-50 text-green-700 border-green-200">
-                        <ShieldCheck className="h-3 w-3 mr-1" />
-                        {service.verification_label}
-                      </Badge>
+                    {service.short_description && (
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{service.short_description}</p>
                     )}
-                  </div>
-                  {service.short_description && (
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">{service.short_description}</p>
-                  )}
-                  <div className="space-y-2">
-                    <Button
-                      size="sm"
-                      className="w-full h-9 text-xs"
-                      onClick={() => setConnectService(service)}
-                      data-testid={`button-connect-${service.id}`}
-                    >
-                      <Handshake className="h-3.5 w-3.5 mr-1.5" /> Connect With This Provider
-                    </Button>
                     <div className="flex items-center gap-2">
-                      {service.cta_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs flex-1"
-                          onClick={() => window.open(service.cta_url, "_blank")}
-                          data-testid={`button-cta-${service.id}`}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1.5" />
-                          {service.cta_text || "Learn More"}
-                        </Button>
-                      )}
-                      {service.website_url && !service.cta_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs flex-1"
-                          onClick={() => window.open(service.website_url, "_blank")}
-                          data-testid={`button-website-${service.id}`}
-                        >
-                          <Globe className="h-3 w-3 mr-1.5" /> Website
-                        </Button>
-                      )}
-                      {service.phone && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs"
-                          onClick={() => window.open(`tel:${service.phone}`)}
-                          data-testid={`button-phone-${service.id}`}
-                        >
-                          <Phone className="h-3 w-3 mr-1.5" /> Call
-                        </Button>
-                      )}
-                      {service.email && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs"
-                          onClick={() => window.open(`mailto:${service.email}`)}
-                          data-testid={`button-email-${service.id}`}
-                        >
-                          <Mail className="h-3 w-3 mr-1.5" /> Email
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailService(service);
+                        }}
+                        data-testid={`button-view-${service.id}`}
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConnectService(service);
+                        }}
+                        data-testid={`button-connect-${service.id}`}
+                      >
+                        <Handshake className="h-3.5 w-3.5 mr-1" /> Connect
+                      </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
         {connectModal}
+
+        <TrustedServiceDetail
+          service={detailService}
+          open={!!detailService}
+          onOpenChange={(open) => { if (!open) setDetailService(null); }}
+          onConnect={(svc) => {
+            setDetailService(null);
+            setConnectService(svc);
+          }}
+        />
       </div>
     );
   }

@@ -87,7 +87,8 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `client/src/pages/end-of-life.tsx` - End of Life Services subcategory grid page (12 subcategories, clean card layout)
 - `client/src/lib/eol-subcategories.ts` - Subcategory config (names, slugs, icons, keywords) for End of Life Services
 - `client/src/lib/analytics.ts` - GA4 analytics module (event tracking, page views, UTM capture)
-- `client/src/pages/trusted-services.tsx` - Public Trusted Services page (category grid → provider listings)
+- `client/src/pages/trusted-services.tsx` - Public Trusted Services page (category grid → provider listings → internal detail view)
+- `client/src/components/trusted-service-detail.tsx` - Trusted Service internal detail view (mirrors resource-detail pattern: overview, contact, actions, save/share, navigator/guide cards)
 - `client/src/pages/admin-trusted-services.tsx` - Admin partner management (add/edit/activate/deactivate/feature)
 - `supabase/create_resource_clicks.sql` - SQL to create click tracking table in Supabase
 - `supabase/create_trusted_services.sql` - SQL to create trusted_service_categories and trusted_services tables

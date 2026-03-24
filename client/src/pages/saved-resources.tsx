@@ -11,10 +11,14 @@ import {
   Loader2,
   Cloud,
   Smartphone,
+  ShieldCheck,
+  Globe,
+  Star,
 } from "lucide-react";
 import { useSavedResources } from "@/lib/store";
 import { ResourceItem } from "@/lib/resources-data";
 import ResourceDetail from "@/components/resource-detail";
+import TrustedServiceDetail, { type TrustedServiceItem } from "@/components/trusted-service-detail";
 import { Link } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -67,8 +71,9 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
 }
 
 export default function SavedResources() {
-  const { savedIds, toggleSave } = useSavedResources();
+  const { savedIds, toggleSave, savedTrustedServiceIds, toggleSaveTrustedService } = useSavedResources();
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
+  const [selectedTrustedService, setSelectedTrustedService] = useState<TrustedServiceItem | null>(null);
   const { user } = useAuth();
 
   const { data: savedItems = [], isLoading } = useQuery<ResourceItem[]>({
@@ -87,6 +92,16 @@ export default function SavedResources() {
     enabled: savedIds.length > 0,
   });
 
+  const { data: savedTrustedServices = [], isLoading: tsLoading } = useQuery<TrustedServiceItem[]>({
+    queryKey: ["/api/trusted-services/by-ids", savedTrustedServiceIds],
+    queryFn: async () => {
+      if (savedTrustedServiceIds.length === 0) return [];
+      const all = await fetch("/api/trusted-services").then(r => r.json());
+      return all.filter((s: TrustedServiceItem) => savedTrustedServiceIds.includes(s.id));
+    },
+    enabled: savedTrustedServiceIds.length > 0,
+  });
+
   const handleRemove = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     toggleSave(id);
@@ -95,6 +110,17 @@ export default function SavedResources() {
       duration: 2000,
     });
   };
+
+  const handleRemoveTrustedService = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    toggleSaveTrustedService(id);
+    toast({
+      description: "Removed from My Saved",
+      duration: 2000,
+    });
+  };
+
+  const hasSavedAnything = savedIds.length > 0 || savedTrustedServiceIds.length > 0;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
@@ -137,8 +163,9 @@ export default function SavedResources() {
         </p>
       )}
 
-      {!isLoading && savedItems.length > 0 ? (
+      {!isLoading && savedItems.length > 0 && (
         <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Resources</h2>
           {savedItems.map((resource) => (
             <Card 
               key={resource.id} 
@@ -199,16 +226,81 @@ export default function SavedResources() {
             </Card>
           ))}
         </div>
-      ) : !isLoading ? (
+      )}
+
+      {!tsLoading && savedTrustedServices.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Trusted Services</h2>
+          {savedTrustedServices.map((service) => (
+            <Card
+              key={service.id}
+              data-testid={`card-saved-ts-${service.id}`}
+              className="group hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setSelectedTrustedService(service)}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{service.name}</h3>
+                      {service.is_featured && (
+                        <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200 shrink-0">
+                          <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {service.verification_label && (
+                        <Badge variant="secondary" className="text-[10px] h-5 bg-green-50 text-green-700 border-green-200">
+                          <ShieldCheck className="h-3 w-3 mr-0.5" /> {service.verification_label}
+                        </Badge>
+                      )}
+                      {service.is_national ? (
+                        <span className="text-[11px] text-blue-600 flex items-center gap-0.5 font-medium">
+                          <Globe className="h-3 w-3" /> Nationwide
+                        </span>
+                      ) : (service.city || service.state) ? (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+                          <MapPin className="h-3 w-3" /> {[service.city, service.state].filter(Boolean).join(", ")}
+                        </span>
+                      ) : null}
+                    </div>
+                    {service.short_description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{service.short_description}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid={`button-unsave-ts-${service.id}`}
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 shrink-0"
+                    onClick={(e) => handleRemoveTrustedService(e, service.id)}
+                  >
+                    <Heart className="h-5 w-5 fill-current" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <TrustedServiceDetail
+        service={selectedTrustedService}
+        open={!!selectedTrustedService}
+        onOpenChange={(open) => { if (!open) setSelectedTrustedService(null); }}
+      />
+
+      {!isLoading && !tsLoading && !hasSavedAnything && (
         <Card className="bg-muted/30 border-dashed mt-8">
            <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                <Heart className="h-8 w-8" />
              </div>
              <div className="space-y-2">
-               <h3 className="font-semibold text-lg">No saved resources yet</h3>
+               <h3 className="font-semibold text-lg">No saved items yet</h3>
                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                 Tap the heart icon next to any resource to save it here for quick access.
+                 Tap the heart icon next to any resource or trusted service to save it here for quick access.
                </p>
              </div>
              <Link href="/resources">
@@ -218,7 +310,7 @@ export default function SavedResources() {
              </Link>
            </CardContent>
         </Card>
-      ) : null}
+      )}
     </div>
   );
 }

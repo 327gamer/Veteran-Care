@@ -17,6 +17,7 @@ interface ChatMessage {
 
 interface SavedResourcesState {
   savedIds: string[];
+  savedTrustedServiceIds: string[];
   userLocation: {
     state: string;
     stateCode: string;
@@ -34,6 +35,8 @@ interface SavedResourcesState {
   toggleSave: (id: string) => void;
   isSaved: (id: string) => boolean;
   setSavedIds: (ids: string[]) => void;
+  toggleSaveTrustedService: (id: string) => void;
+  isTrustedServiceSaved: (id: string) => boolean;
   setLocation: (stateCode: string, state: string, city: string, zip: string) => void;
   completeOnboarding: () => void;
   setInterests: (interests: string[]) => void;
@@ -70,6 +73,7 @@ export const useSavedResources = create<SavedResourcesState>()(
   persist(
     (set, get) => ({
       savedIds: [],
+      savedTrustedServiceIds: [],
       userLocation: { state: "", stateCode: "", city: "", zip: "" },
       onboardingComplete: false,
       interests: [],
@@ -98,6 +102,15 @@ export const useSavedResources = create<SavedResourcesState>()(
       },
       isSaved: (id: string) => get().savedIds.includes(id),
       setSavedIds: (ids: string[]) => set({ savedIds: ids }),
+      toggleSaveTrustedService: (id: string) => {
+        const state = get();
+        const isAlreadySaved = state.savedTrustedServiceIds.includes(id);
+        const newIds = isAlreadySaved
+          ? state.savedTrustedServiceIds.filter((sid: string) => sid !== id)
+          : [...state.savedTrustedServiceIds, id];
+        set({ savedTrustedServiceIds: newIds });
+      },
+      isTrustedServiceSaved: (id: string) => get().savedTrustedServiceIds.includes(id),
       setLocation: (stateCode: string, state: string, city: string, zip: string) => set(() => ({
         userLocation: { stateCode, state, city, zip }
       })),

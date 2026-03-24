@@ -1,0 +1,104 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.19 – Trusted Services / Verified Partner Internal Detail Flow + Favorites
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not work on search normalization yet.
+Fix only the Trusted Services / verified partner flow first, test it, and report back clearly.
+
+==================================================
+ISSUE – TRUSTED SERVICES / VERIFIED PARTNERS DO NOT FOLLOW PLATFORM DETAIL FLOW
+==================================================
+
+CURRENT PROBLEM:
+Trusted Services partners and verified partners do not currently behave like first-class platform entities.
+
+Examples:
+- In Trusted Services, when a user clicks a category like Housing and sees providers such as Blueprint and Tri-County Veteran Support Network, users can often connect or go directly to the provider website.
+- In regular Resources, entities generally behave more like in-platform items with detail views and save/favorite patterns.
+
+WHAT IS MISSING:
+1. No visible heart / favorite save action near some partner listings
+2. Clicking a partner can send users straight to the external website instead of opening an internal platform detail page
+3. The flow is inconsistent with regular resources
+4. This weakens UX, tracking, and partner subscription value
+
+==================================================
+REQUIRED FIX
+==================================================
+
+Trusted Services / verified partners should behave more like regular platform resources.
+
+REQUIRED BEHAVIOR:
+1. Add a visible heart / favorite action for Trusted Services / verified partner listings
+2. Do NOT make external website the primary first-click behavior
+3. Primary click on a partner should open an internal detail view/page
+4. That partner detail view should include, where available:
+   - overview
+   - contact information
+   - website link
+   - phone number
+   - connect / request action if applicable
+   - favorite / save action
+5. External website should remain available as an action INSIDE the detail view, not the primary first click
+6. Keep tracking intact so partner interaction and downstream monetization can be measured
+
+==================================================
+GOAL
+==================================================
+
+Trusted Services / verified partners should feel like first-class platform entities, not outbound links.
+
+==================================================
+TEST CASES
+==================================================
+
+1. Open Trusted Services category → click provider
+   EXPECTED: opens internal detail view
+
+2. Heart/favorite available on listing and/or detail view
+   EXPECTED: user can save partner
+
+3. External website still available inside detail view
+   EXPECTED: outbound website action still exists, but is not the primary click
+
+4. Saved partner appears with saved items/favorites if that matches the current platform pattern
+   EXPECTED: saved behavior is consistent with current app logic
+
+5. Test on mobile and desktop
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing this issue only, report back with:
+
+1. ROOT CAUSE
+- why Trusted Services / verified partners were bypassing the normal internal detail flow
+
+2. EXACT FIX
+- how partner detail behavior now works
+- how favorite/save now works
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile + desktop
+- listing click
+- detail page
+- favorite/save
+- outbound website action
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) partner primary click now opens internal detail view
+b) favorite/save is available
+c) website remains available as an action inside the detail view
+d) tracking behavior remains intact or note any follow-up needed
+
+IMPORTANT:
+Do not work on Issue 4 yet.
+One issue only for this step.
