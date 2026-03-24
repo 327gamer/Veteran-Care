@@ -1,0 +1,117 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Follow-Up Task:
+Step 57.18 – Fix Resources Nav Override + Resource Detail Get Help
+
+IMPORTANT:
+The prior fix did NOT fully solve the 2 issues.
+Please treat this as a focused correction task.
+Fix these exact behaviors only, test them, and report back before making anything else.
+
+==================================================
+ISSUE 1 — RESOURCES NAV MUST ALWAYS GO TO MAIN RESOURCES LANDING
+==================================================
+
+CURRENT PROBLEM:
+When a user is inside a resource detail flow, clicking Resources in navigation is still only taking them back one step in some cases instead of taking them to the main Resources landing page that shows all categories.
+
+We need two different behaviors:
+
+A) "Back to results"
+- This should stay exactly as-is
+- It should return the user to the prior filtered/search/category result set
+
+B) "Resources" navigation click
+- This should NOT behave like Back to results
+- This should ALWAYS take the user to the main Resources landing page / finder root
+- That means the full Resources categories landing screen, not the prior result set
+
+REQUIRED FIX:
+If a user clicks ANY Resources navigation entry point while in a resource detail flow, it must:
+1. close the resource detail state
+2. clear any in-page detail/selection state tied to the current resource overlay/view
+3. navigate to the main Resources landing/root page
+4. not preserve the prior result set in that action
+
+IMPORTANT DISTINCTION:
+- Back to results = go back one step to prior filtered results
+- Resources nav = go to Resources home / all resource categories
+
+TEST CASES:
+1. Resources → category → resource detail → click Back to results
+   EXPECTED: returns to prior filtered/category result set
+
+2. Resources → category → resource detail → click Resources nav
+   EXPECTED: goes to main Resources landing page with all resource categories
+
+3. Homepage or other page → open resource detail somehow → click Resources nav
+   EXPECTED: goes to main Resources landing page
+
+4. Test both desktop top nav and mobile nav
+
+==================================================
+ISSUE 2 — GET HELP INSIDE RESOURCE DETAIL STILL NOT OPENING VETERAN GUIDE
+==================================================
+
+CURRENT PROBLEM:
+Inside a resource detail, clicking Get Help still does NOT reliably open the Veteran Guide AI chatbot.
+
+This must behave exactly like the working AI open behavior from:
+- homepage
+- top diamond icon
+- any other working AI entry point
+
+The prior attempt did not solve it.
+
+REQUIRED FIX:
+1. Clicking the resource-detail Get Help button must immediately open the Veteran Guide
+2. It must be visibly on top of the resource detail layer
+3. It must work on mobile and desktop
+4. No silent failure
+5. No hidden dialog behind the detail page
+6. If needed, close/unmount the detail first, THEN open the AI guide
+7. The user must clearly see the chatbot open
+
+OPTIONAL:
+If safe and easy, pass current resource context into the AI guide.
+But this is secondary.
+Primary requirement = it opens reliably and visibly.
+
+TEST CASES:
+1. Homepage diamond opens Veteran Guide
+2. Resource detail Get Help opens Veteran Guide
+3. Resource detail Get Help works on mobile
+4. Resource detail Get Help works on desktop
+5. No console errors
+6. No z-index issue / hidden modal behind overlay
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing both issues, report back with:
+
+1. ROOT CAUSE
+- what was still wrong after the first attempt
+
+2. EXACT FIX
+- what logic/state/routing was changed
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile + desktop results
+- nav behavior tested
+- AI opening behavior tested
+
+5. CONFIRMATION
+- confirm that:
+  a) Resources nav now always goes to the main Resources landing page
+  b) Back to results still returns to prior filtered results
+  c) resource-detail Get Help now opens Veteran Guide visibly and reliably
+
+IMPORTANT:
+Do not give me a theoretical fix.
+Please verify the real behavior after implementation.

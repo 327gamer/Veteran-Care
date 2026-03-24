@@ -123,9 +123,9 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const handleGuideClick = () => {
     trackClick(resource.id, "guide_click", fb);
     onOpenChange(false);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       window.dispatchEvent(new CustomEvent("open-ai-guide"));
-    });
+    }, 150);
   };
 
   const handleSaveClick = () => {

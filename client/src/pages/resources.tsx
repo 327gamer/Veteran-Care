@@ -221,14 +221,6 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
 
-  useEffect(() => {
-    if (selectedResource) {
-      const closeOnNav = () => setSelectedResource(null);
-      window.addEventListener("close-resource-detail", closeOnNav);
-      return () => window.removeEventListener("close-resource-detail", closeOnNav);
-    }
-  }, [selectedResource]);
-
   const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme" | "city">("national");
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
@@ -242,6 +234,24 @@ export default function Resources() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<string | null>(null);
   const [subFilter, setSubFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = () => {
+      setSelectedResource(null);
+      setSelectedSlug(null);
+      setSelectedName(null);
+      setSelectedState("");
+      setCityFilter("");
+      setZipFilter("");
+      setLocalOnly(false);
+      setSearchQuery("");
+      setUrgencyFilter(null);
+      setSubFilter(null);
+      setLocationMode("national");
+    };
+    window.addEventListener("close-resource-detail", handler);
+    return () => window.removeEventListener("close-resource-detail", handler);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCity(cityFilter), 300);
