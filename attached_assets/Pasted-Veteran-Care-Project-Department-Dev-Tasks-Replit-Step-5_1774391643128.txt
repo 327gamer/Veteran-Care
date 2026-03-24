@@ -1,0 +1,102 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.22 – Remove Redundant Request Help Card from Trusted Services Provider Detail
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not make any other Trusted Services changes in this step.
+The Connect With Provider modal fix is separate.
+
+==================================================
+ISSUE – REQUEST HELP CARD IS REDUNDANT INSIDE TRUSTED SERVICES PROVIDER DETAIL
+==================================================
+
+CURRENT PROBLEM:
+Inside a Trusted Services provider detail page, there are currently two support cards:
+1. Request Help
+2. Veteran Guide
+
+However, inside a Trusted Services provider detail page, the Request Help card is redundant because the page already includes the direct provider action:
+- Connect With Provider
+
+That direct provider action already covers the human/help-request use case.
+
+So on this page:
+- Request Help is unnecessary and confusing
+- Veteran Guide can remain as the AI support option
+- Connect With Provider already serves the provider contact/request flow
+
+==================================================
+REQUIRED FIX
+==================================================
+
+Inside Trusted Services provider detail pages only:
+
+1. Remove the "Need personal help?" / "Request Help" card
+2. Keep the Veteran Guide / AI card
+3. Keep Connect With Provider
+4. Do not affect regular Resources pages
+5. Do not affect homepage help cards
+6. Do not affect navigator/get-help behavior elsewhere in the app
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+Inside a Trusted Services provider detail page, users should see:
+- provider detail information
+- Connect With Provider action
+- Veteran Guide AI support card
+
+They should NOT see the extra Request Help card there.
+
+==================================================
+TEST CASES
+==================================================
+
+1. Open Trusted Services
+2. Open category
+3. Open provider detail
+   EXPECTED:
+   - Request Help card is gone
+   - Veteran Guide card remains
+   - Connect With Provider remains
+
+4. Check regular Resources detail page
+   EXPECTED:
+   - existing support card structure remains unchanged there
+
+5. Check homepage
+   EXPECTED:
+   - homepage help card structure remains unchanged there
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE
+- why the Request Help card was being shown redundantly in Trusted Services provider detail
+
+2. EXACT FIX
+- what was removed / preserved
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile
+- desktop
+- trusted services provider detail
+- regular resources detail
+- homepage regression check
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) Request Help card is removed from Trusted Services provider detail
+b) Veteran Guide remains there
+c) Connect With Provider remains there
+d) regular Resources pages were not changed
+e) homepage was not changed

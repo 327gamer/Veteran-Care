@@ -12,7 +12,6 @@ import {
   Star,
   Handshake,
   ExternalLink,
-  Compass,
   Sparkles,
 } from "lucide-react";
 import { useSavedResources } from "@/lib/store";
@@ -278,30 +277,6 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
               >
                 <Share2 className="h-4 w-4 mr-1.5" />
                 Share
-              </Button>
-            </div>
-          </section>
-
-          <section data-testid="section-navigator" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                <Compass className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm text-primary">Need personal help?</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tell us what you need and we'll point you in the right direction.
-                </p>
-              </div>
-              <Button
-                data-testid="button-request-navigator-ts"
-                size="sm"
-                className="h-8 text-xs bg-primary hover:bg-primary/90 text-white shrink-0"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent("open-navigator-modal"));
-                }}
-              >
-                Request Help
               </Button>
             </div>
           </section>
