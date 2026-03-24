@@ -201,8 +201,8 @@ export default function TrustedServices() {
   const selectedCat = categories.find(c => c.slug === selectedCategory);
 
   const connectModal = connectService ? (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
-      <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
+      <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Handshake className="h-5 w-5 text-primary" />

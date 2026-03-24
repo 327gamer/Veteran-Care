@@ -1,0 +1,101 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.21 – Fix Trusted Services “Connect With Provider” Modal/Page on Mobile
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not change the Request Help / Veteran Guide cards yet.
+Fix only the Trusted Services “Connect With Provider” experience on mobile first.
+
+==================================================
+ISSUE – CONNECT WITH PROVIDER VIEW DOES NOT FIT / SCROLL PROPERLY ON MOBILE
+==================================================
+
+CURRENT PROBLEM:
+Inside a Trusted Services provider detail page, when the user clicks “Connect With Provider,” the connect form/page does not fit properly on mobile.
+
+Observed behavior:
+- the page/form is cut off
+- the bottom part is not fully visible
+- the user cannot scroll properly to reach the lower part of the form
+- this prevents smooth form completion on mobile
+
+This is similar to the mobile fitting/scroll issue we saw earlier on other pages.
+
+==================================================
+REQUIRED FIX
+==================================================
+
+Fix the Trusted Services “Connect With Provider” modal/page so it works cleanly on mobile.
+
+REQUIRED BEHAVIOR:
+1. The full connect form must fit properly within the mobile viewport
+2. The user must be able to scroll through the entire form
+3. The bottom CTA / submit area must be reachable and visible
+4. No clipping
+5. No frozen scroll
+6. No cut-off footer area
+7. Desktop behavior should remain unchanged if it is already working
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+1. Do NOT redesign the page
+2. Do NOT change the provider detail page layout beyond what is necessary for this mobile fit/scroll fix
+3. Do NOT change the Request Help / Veteran Guide cards in this step
+4. Do NOT bundle unrelated Trusted Services changes
+5. Keep this as a mobile viewport / scroll / fit fix only
+
+==================================================
+TEST CASES
+==================================================
+
+1. Open Trusted Services
+2. Open a category
+3. Open an actual provider
+4. Click “Connect With Provider”
+5. On mobile:
+   EXPECTED:
+   - form opens properly
+   - full form can be scrolled
+   - bottom of form is reachable
+   - submit/connect CTA is visible and usable
+
+6. On desktop:
+   EXPECTED:
+   - no regression
+   - current behavior remains clean
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE
+- why the connect form/page was being cut off on mobile
+
+2. EXACT FIX
+- what was changed to make the full form fit and scroll correctly
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile
+- desktop
+- full form scroll
+- bottom CTA visibility
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) Connect With Provider now fits properly on mobile
+b) user can scroll through the entire form
+c) bottom CTA is reachable
+d) desktop behavior remains intact
+
+IMPORTANT:
+Please verify actual live behavior after implementation.
+Do not give me only a theoretical fix.
