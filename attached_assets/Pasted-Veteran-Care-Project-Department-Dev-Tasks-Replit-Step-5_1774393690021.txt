@@ -1,0 +1,111 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.20 – GLOBAL Search Normalization (Punctuation, Hyphens, Spacing, Case)
+
+IMPORTANT:
+This is a GLOBAL system fix — NOT a one-off for any specific name like “Tri-County”.
+
+Do NOT hardcode or special-case any individual organization or resource.
+
+This must apply to ALL search queries and ALL searchable data across the platform.
+
+==================================================
+ISSUE – SEARCH IS TOO SENSITIVE TO FORMATTING
+==================================================
+
+CURRENT PROBLEM:
+Search currently fails or returns inconsistent results when users do not type names exactly as stored.
+
+Examples of problematic variations:
+- Hyphens (Tri-County vs Tri County vs tricounty)
+- Apostrophes (Veteran’s vs Veterans)
+- Extra or missing spaces
+- Case sensitivity (uppercase/lowercase)
+- Minor formatting differences
+
+This is a major usability issue.
+
+Users should NOT have to match exact punctuation to find a resource.
+
+==================================================
+REQUIRED FIX – GLOBAL NORMALIZATION
+==================================================
+
+Search must be normalized so that matching is based on the core text, not formatting.
+
+The normalization should apply to BOTH:
+1. User search input
+2. Stored searchable data (resource names, partner names, etc.)
+
+Normalization should include:
+
+- Convert to lowercase
+- Remove or normalize:
+  - hyphens (-)
+  - apostrophes (')
+  - punctuation
+- Normalize spacing:
+  - treat multiple spaces as one
+  - treat "tri county" and "tricounty" as equivalent where possible
+- Trim leading/trailing spaces
+
+==================================================
+EXPECTED BEHAVIOR
+==================================================
+
+These should all return the SAME correct result:
+
+- Tri-County Veteran Support Network
+- Tri County Veteran Support Network
+- tricounty veteran support network
+
+And similarly for ALL other resources and partners across the platform.
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+1. DO NOT hardcode fixes for specific names
+2. DO NOT create special-case logic (e.g., “if name === Tri-County”)
+3. This must work dynamically for ANY resource or partner
+4. Do NOT break existing relevant search results
+5. Do NOT change UI or layout — this is backend/search logic only
+
+==================================================
+TEST CASES (MANDATORY)
+==================================================
+
+Test multiple examples beyond Tri-County:
+
+1. Hyphen variations
+2. Apostrophe variations
+3. Spacing differences
+4. Lowercase vs uppercase
+
+At least 3–5 different real resource/partner names must be tested.
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE
+- why the search was sensitive to punctuation and formatting
+
+2. EXACT FIX
+- how normalization was implemented (input + dataset)
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- list of multiple names tested (not just Tri-County)
+- confirm consistent results across variations
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) this is a GLOBAL solution (not hardcoded)
+b) any resource name now matches regardless of punctuation/spacing
+c) no unrelated flows were changed

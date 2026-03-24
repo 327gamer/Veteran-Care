@@ -11,6 +11,16 @@ import { query as pgQuery } from "./pg-client";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
 import express from "express";
 
+function normalizeSearchTerm(q: string): string {
+  return q
+    .toLowerCase()
+    .replace(/[''`]/g, "")
+    .replace(/[-–—]/g, " ")
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, "%")
+    .trim();
+}
+
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
@@ -593,8 +603,18 @@ export async function registerRoutes(
     }
 
     if (q) {
-      const search = `%${q}%`;
-      query = query.or(`title.ilike.${search},short_description.ilike.${search},city.ilike.${search},state.ilike.${search},eligibility.ilike.${search},source_name.ilike.${search}`);
+      const normalized = `%${normalizeSearchTerm(q as string)}%`;
+      const raw = `%${q}%`;
+      const patterns = new Set([normalized, raw]);
+      const orClauses = [...patterns].flatMap(p => [
+        `title.ilike.${p}`,
+        `short_description.ilike.${p}`,
+        `city.ilike.${p}`,
+        `state.ilike.${p}`,
+        `eligibility.ilike.${p}`,
+        `source_name.ilike.${p}`,
+      ]);
+      query = query.or(orClauses.join(","));
     }
 
     if (!nearMeMode) {
@@ -1217,8 +1237,14 @@ export async function registerRoutes(
     }
 
     if (q) {
-      const search = `%${q}%`;
-      query = query.or(`title.ilike.${search},short_description.ilike.${search}`);
+      const normalized = `%${normalizeSearchTerm(q as string)}%`;
+      const raw = `%${q}%`;
+      const patterns = new Set([normalized, raw]);
+      const orClauses = [...patterns].flatMap(p => [
+        `title.ilike.${p}`,
+        `short_description.ilike.${p}`,
+      ]);
+      query = query.or(orClauses.join(","));
     }
 
     query = query.order("created_at", { ascending: false });
@@ -3461,8 +3487,13 @@ export async function registerRoutes(
         conditions.push(`vob.state = $${params.length}`);
       }
       if (req.query.search) {
-        params.push(`%${(req.query.search as string).toLowerCase()}%`);
-        conditions.push(`(LOWER(vob.business_name) LIKE $${params.length} OR LOWER(vob.description) LIKE $${params.length} OR LOWER(vob.subcategory) LIKE $${params.length})`);
+        const rawSearch = `%${(req.query.search as string).toLowerCase()}%`;
+        const normSearch = `%${normalizeSearchTerm(req.query.search as string)}%`;
+        params.push(rawSearch);
+        const rawIdx = params.length;
+        params.push(normSearch);
+        const normIdx = params.length;
+        conditions.push(`(LOWER(vob.business_name) LIKE $${rawIdx} OR LOWER(vob.description) LIKE $${rawIdx} OR LOWER(vob.subcategory) LIKE $${rawIdx} OR LOWER(REGEXP_REPLACE(vob.business_name, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx} OR LOWER(REGEXP_REPLACE(vob.description, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx})`);
       }
       const sql = `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
          FROM veteran_owned_businesses vob
