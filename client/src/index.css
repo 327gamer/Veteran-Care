@@ -222,12 +222,3 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-@media (max-width: 1023px) {
-  .dialog-mobile-fit {
-    top: 1rem !important;
-    bottom: 5.5rem !important;
-    transform: translateX(-50%) !important;
-    height: auto !important;
-    max-height: none !important;
-  }
-}
