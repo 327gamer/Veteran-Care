@@ -29,6 +29,7 @@ import {
 import { ResourceItem } from "@/lib/resources-data";
 import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
+import TrustedServiceDetail from "@/components/trusted-service-detail";
 import { useSavedResources } from "@/lib/store";
 import { useLocation } from "wouter";
 import { trackEvent } from "@/lib/analytics";
@@ -219,7 +220,8 @@ export default function Resources() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
-  const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
+  const [selectedPartner, setSelectedPartner] = useState<any>(null);
+  const { isSaved, toggleSave, toggleSaveTrustedService, isTrustedServiceSaved, setLocation: setStoreLocation } = useSavedResources();
 
   const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme" | "city">("national");
   const [selectedState, setSelectedState] = useState<string>("");
@@ -584,6 +586,12 @@ export default function Resources() {
         resource={selectedResource} 
         open={!!selectedResource} 
         onOpenChange={(open) => !open && setSelectedResource(null)} 
+      />
+
+      <TrustedServiceDetail
+        service={selectedPartner}
+        open={!!selectedPartner}
+        onOpenChange={(open) => { if (!open) setSelectedPartner(null); }}
       />
 
       <div>
@@ -1070,61 +1078,88 @@ export default function Resources() {
                   <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   <span className="text-sm font-semibold text-emerald-700">Verified Partners</span>
                 </div>
-                {trustedPartners.map((partner: any) => (
-                  <Card
-                    key={`tp-${partner.id}`}
-                    data-testid={`card-trusted-partner-${partner.id}`}
-                    className="group border-emerald-200 bg-emerald-50/30 hover:border-emerald-400 transition-colors cursor-pointer"
-                    onClick={() => {
-                      if (partner.website_url) window.open(partner.website_url.startsWith("http") ? partner.website_url : `https://${partner.website_url}`, "_blank");
-                    }}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold text-base group-hover:text-emerald-700 transition-colors line-clamp-1">{partner.name}</h3>
-                            <Badge className="text-[10px] h-5 px-1.5 bg-emerald-600 text-white border-none shrink-0">
-                              <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Verified Partner
-                            </Badge>
-                            {partner.is_featured && (
-                              <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
-                                <Zap className="h-2.5 w-2.5 mr-0.5" /> Featured
+                {trustedPartners.map((partner: any) => {
+                  const detailPartner = {
+                    ...partner,
+                    website_url: partner.website_url || "",
+                    phone: partner.phone || "",
+                    email: partner.email || "",
+                    city: partner.city || "",
+                    state: partner.state || "",
+                    verification_status: "verified",
+                    verification_label: "Verified Partner",
+                    cta_text: partner.cta_text || "",
+                    cta_url: partner.cta_url || "",
+                    is_featured: partner.is_featured || false,
+                    is_national: partner.is_national || false,
+                    trusted_service_categories: partner.category || { slug: "", name: "" },
+                  };
+                  const partnerSaved = isTrustedServiceSaved(partner.id);
+                  return (
+                    <Card
+                      key={`tp-${partner.id}`}
+                      data-testid={`card-trusted-partner-${partner.id}`}
+                      className="group border-emerald-200 bg-emerald-50/30 hover:border-emerald-400 transition-colors cursor-pointer"
+                      onClick={() => {
+                        trackEvent("verified_partner_detail_open", { partner_id: partner.id, partner_name: partner.name, from: "resources" });
+                        setSelectedPartner(detailPartner);
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-base group-hover:text-emerald-700 transition-colors line-clamp-1">{partner.name}</h3>
+                              <Badge className="text-[10px] h-5 px-1.5 bg-emerald-600 text-white border-none shrink-0">
+                                <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Verified Partner
                               </Badge>
+                              {partner.is_featured && (
+                                <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
+                                  <Zap className="h-2.5 w-2.5 mr-0.5" /> Featured
+                                </Badge>
+                              )}
+                            </div>
+                            {partner.short_description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{partner.short_description}</p>
                             )}
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              {partner.city && partner.state && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" /> {partner.city}, {partner.state}
+                                </span>
+                              )}
+                              {partner.phone && (
+                                <a href={`tel:${partner.phone}`} className="flex items-center gap-1 text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                                  <PhoneIcon className="h-3 w-3" /> {partner.phone}
+                                </a>
+                              )}
+                              {partner.website_url && (
+                                <span className="flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> Website
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {partner.short_description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">{partner.short_description}</p>
-                          )}
-                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            {partner.city && partner.state && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" /> {partner.city}, {partner.state}
-                              </span>
-                            )}
-                            {partner.phone && (
-                              <a href={`tel:${partner.phone}`} className="flex items-center gap-1 text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                                <PhoneIcon className="h-3 w-3" /> {partner.phone}
-                              </a>
-                            )}
-                            {partner.website_url && (
-                              <span className="flex items-center gap-1">
-                                <Globe className="h-3 w-3" /> Website
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          {partner.website_url && (
-                            <Button data-testid={`button-partner-visit-${partner.id}`} variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100">
-                              <ExternalLink className="h-4 w-4" />
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              data-testid={`button-partner-save-${partner.id}`}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSaveTrustedService(partner.id);
+                                trackEvent("verified_partner_save_toggle", { partner_id: partner.id, saved: !partnerSaved });
+                              }}
+                            >
+                              <Heart className={`h-4 w-4 ${partnerSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
                             </Button>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
             {!showLocalOnlyEmpty && activeResources?.map((resource) => (

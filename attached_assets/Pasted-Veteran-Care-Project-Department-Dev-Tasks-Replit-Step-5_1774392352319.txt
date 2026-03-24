@@ -1,0 +1,142 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.23 – Make Verified Partners Inside Regular Resources Open Internal Detail View
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not make any other changes in this step.
+Fix only how verified partners behave when shown inside regular Resources category results.
+
+==================================================
+ISSUE – VERIFIED PARTNERS INSIDE REGULAR RESOURCES STILL CLICK OUTBOUND
+==================================================
+
+CURRENT PROBLEM:
+Inside regular Resources category results, verified partners are correctly appearing at the top and visually stand out with the highlighted verified-partner treatment.
+
+Examples:
+- BootPrint
+- Tri-County Veterans Support Network
+
+That part is good.
+
+However, when the user clicks one of these verified partners from inside regular Resources, it still takes them straight to the external website instead of opening an internal detail view.
+
+This is inconsistent with:
+- regular resources
+- trusted services provider detail flow
+- the desired platform behavior
+
+Also:
+- these verified partner cards inside regular Resources do not currently expose the same internal save/favorite/detail experience we want
+
+==================================================
+REQUIRED FIX
+==================================================
+
+Inside REGULAR RESOURCES category results:
+
+1. Verified partner cards should NOT use outbound website as the primary click behavior
+2. Primary click on a verified partner should open an INTERNAL detail view/page
+3. That internal detail should behave like a first-class platform entity, similar to:
+   - regular resource detail flow
+   - trusted services provider detail flow
+
+The internal detail view should include, where available:
+- overview
+- contact information
+- website link
+- phone number
+- location
+- connect/request action if applicable
+- favorite/save action
+
+External website should remain available as an action INSIDE the detail view, not as the primary click.
+
+==================================================
+FAVORITE / SAVE REQUIREMENT
+==================================================
+
+Verified partners shown inside regular Resources should also support the platform’s normal save/favorite pattern.
+
+REQUIRED:
+1. visible heart/save action on listing and/or detail
+2. user can save verified partner
+3. saved item should follow the same saved/favorites pattern used elsewhere in the app
+
+==================================================
+GOAL
+==================================================
+
+Verified partners inside regular Resources should behave like first-class internal platform entities, not outbound links.
+
+==================================================
+TEST CASES
+==================================================
+
+1. Open Resources
+2. Open a category where a verified partner appears
+   Example:
+   - BootPrint
+   - Tri-County Veterans Support Network
+
+3. Click verified partner
+   EXPECTED:
+   - opens internal detail view
+   - does NOT go straight to external website
+
+4. Inside detail view
+   EXPECTED:
+   - website still available as an action
+   - connect action available if applicable
+   - save/favorite available
+
+5. Save/favorite behavior
+   EXPECTED:
+   - partner can be saved
+   - saved pattern is consistent with current app logic
+
+6. Test mobile and desktop
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+1. Do NOT change Trusted Services flow in this step
+2. Do NOT change search behavior in this step
+3. Do NOT redesign category results
+4. Only fix verified partner behavior INSIDE regular Resources results
+5. Keep the existing highlighted verified-partner visual treatment
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE
+- why verified partners inside regular Resources were still acting like outbound links
+
+2. EXACT FIX
+- how verified partners now open internal detail views
+- how save/favorite works there
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- mobile
+- desktop
+- verified partner click behavior
+- detail view
+- save/favorite
+- outbound website action from inside detail
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) verified partners inside regular Resources now open internal detail view
+b) they no longer use outbound website as the primary click
+c) favorite/save is available
+d) website remains available inside detail view
+e) no unrelated flows were changed
