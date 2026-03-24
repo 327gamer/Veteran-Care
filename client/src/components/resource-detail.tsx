@@ -19,7 +19,7 @@ import {
   Globe,
   Check,
   ChevronLeft,
-  Handshake,
+  Compass,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import { useSavedResources } from "@/lib/store";
@@ -339,27 +339,29 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
             )}
           </section>
 
-          <section data-testid="section-navigator" className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
-            <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-              <Handshake className="h-5 w-5 text-orange-600" />
+          <section data-testid="section-navigator" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                <Compass className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm text-primary">Need personal help?</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tell us what you need and we'll point you in the right direction.
+                </p>
+              </div>
+              <Button
+                data-testid="button-request-navigator"
+                size="sm"
+                className="h-8 text-xs bg-primary hover:bg-primary/90 text-white shrink-0"
+                onClick={() => {
+                  setNavModalOpen(true);
+                  trackClick(resource.id, "navigator_click", fb);
+                }}
+              >
+                Request Help
+              </Button>
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-sm text-orange-900">Need personal help?</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Tell us what you need and we'll point you in the right direction.
-              </p>
-            </div>
-            <Button
-              data-testid="button-request-navigator"
-              size="sm"
-              className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white shrink-0"
-              onClick={() => {
-                setNavModalOpen(true);
-                trackClick(resource.id, "navigator_click", fb);
-              }}
-            >
-              Request Help
-            </Button>
           </section>
 
           <NavigatorModal
@@ -373,24 +375,26 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
             }}
           />
 
-          <section data-testid="section-help" className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <Bot className="h-5 w-5 text-green-700" />
+          <section data-testid="section-help" className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-4 border border-primary/10">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm text-primary">How can I help you today?</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  I'm your Veteran Guide — an AI-powered assistant that helps veterans find resources, get guidance, and navigate support services.
+                </p>
+              </div>
+              <Button
+                data-testid="button-ask-guide"
+                size="sm"
+                className="h-8 text-xs bg-primary hover:bg-primary/90 text-white shrink-0"
+                onClick={handleGuideClick}
+              >
+                Veteran Guide
+              </Button>
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-sm text-green-900">How can I help you today?</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                I'm your Veteran Guide — an AI-powered assistant that helps veterans find resources, get guidance, and navigate support services.
-              </p>
-            </div>
-            <Button
-              data-testid="button-ask-guide"
-              size="sm"
-              className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white shrink-0"
-              onClick={handleGuideClick}
-            >
-              Veteran Guide
-            </Button>
           </section>
 
           <section data-testid="section-actions" className="space-y-3">
