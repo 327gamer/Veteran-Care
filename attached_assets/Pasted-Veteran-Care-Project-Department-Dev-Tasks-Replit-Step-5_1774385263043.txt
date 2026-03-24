@@ -1,0 +1,128 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 57.18C – Fix Resource Detail Help Cards to Match Homepage Logic
+
+IMPORTANT:
+Please treat this as ONE focused task only.
+Do not change anything else.
+Fix only the two help cards inside the actual resource detail page.
+
+==================================================
+ISSUE – RESOURCE DETAIL HELP CARDS ARE BACKWARDS / MISMATCHED
+==================================================
+
+CURRENT PROBLEM:
+Inside a resource detail page, the two help/support cards are visually and logically reversed compared to the homepage.
+
+We need these cards to match the homepage structure, wording, color treatment, icon meaning, and button logic.
+
+==================================================
+REQUIRED CORRECT STRUCTURE
+==================================================
+
+CARD 1 (TOP CARD) – HUMAN / NAVIGATOR HELP
+This should match the homepage "Get Help Now" concept.
+
+REQUIRED:
+- This top card should be the ORANGE / navigator-style support card
+- It should represent human/personal help, not AI
+- It should keep the Request Help button
+- That button should continue taking users to the Get Help Now / Navigator request flow
+
+COPY DIRECTION:
+Headline:
+Need personal help?
+
+Body copy:
+Tell us what you need and we’ll point you in the right direction.
+
+Button:
+Request Help
+
+This is the HUMAN / NAVIGATOR support card.
+It is NOT the AI/Veteran Guide card.
+
+--------------------------------------------------
+
+CARD 2 (BOTTOM CARD) – AI / VETERAN GUIDE HELP
+This should match the homepage Veteran Guide AI support card.
+
+REQUIRED:
+- This bottom card should be the GREEN / AI-style support card
+- It should use the Veteran Guide / AI chatbot icon treatment
+- It should be the AI help card, not the human navigator card
+- The button should say Veteran Guide
+- That button should open the AI chatbot
+
+COPY DIRECTION:
+Headline:
+How can I help you today?
+
+Body copy:
+I'm your Veteran Guide — an AI-powered assistant that helps veterans find resources, get guidance, and navigate support and services based on your needs and location.
+
+Button:
+Veteran Guide
+
+This is the AI support card.
+It is NOT the navigator request card.
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+1. Do NOT change anything else in the resource detail page
+2. Do NOT change back-to-results behavior
+3. Do NOT change Resources nav behavior
+4. Do NOT change desktop/mobile layout
+5. Do NOT change action buttons below
+6. Only fix:
+   - card order
+   - icon/color treatment
+   - copy
+   - button label
+   - button action mapping
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+TOP CARD:
+- orange
+- human/navigator help
+- Request Help button
+- goes to Get Help Now / Navigator flow
+
+BOTTOM CARD:
+- green
+- AI / Veteran Guide help
+- Veteran Guide button
+- opens AI chatbot
+
+These two cards should feel consistent with the homepage help card logic.
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. EXACT FIX
+- what card content/order/actions were changed
+
+2. FILES CHANGED
+- exact files
+
+3. TESTING PERFORMED
+- mobile
+- desktop
+- Request Help card opens navigator flow
+- Veteran Guide card opens AI chatbot
+
+4. CONFIRMATION
+Please explicitly confirm:
+a) top card is now human/navigator help
+b) bottom card is now AI/Veteran Guide help
+c) Request Help still goes to navigator flow
+d) Veteran Guide opens the AI chatbot
