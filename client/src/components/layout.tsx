@@ -139,7 +139,7 @@ export default function Layout({ children }: LayoutProps) {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1 ml-6">
-            <Link href="/resources" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/resources" onClick={() => window.dispatchEvent(new CustomEvent("close-resource-detail"))} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
               <BookOpen className="h-4 w-4" />
               Resources
             </Link>
@@ -291,7 +291,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Bottom Navigation - Mobile First */}
       <nav className="fixed bottom-0 left-0 right-0 w-full z-[100] border-t bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.08)] safe-area-bottom lg:hidden">
         <div className="flex h-16 items-center justify-around px-2">
-          <Link href="/resources" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+          <Link href="/resources" onClick={() => window.dispatchEvent(new CustomEvent("close-resource-detail"))} className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <BookOpen className={`h-5 w-5 ${isActive('/resources') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium">Resources</span>
           </Link>

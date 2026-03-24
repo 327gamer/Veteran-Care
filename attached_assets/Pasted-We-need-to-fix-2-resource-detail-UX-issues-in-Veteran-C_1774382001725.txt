@@ -1,0 +1,67 @@
+We need to fix 2 resource-detail UX issues in Veteran Care.
+
+IMPORTANT:
+Please treat this as a focused task. Fix these 2 issues only first, test them, and report back before moving on to any other changes.
+
+-------------------------------------
+ISSUE 1 — RESOURCES NAVIGATION BEHAVIOR
+
+CURRENT PROBLEM:
+When a user is in Resources and clicks into a resource detail, they currently have to click "Back to results" to return to the previous results view.
+
+That is fine for the resource detail page itself.
+
+However, if the user clicks:
+- the Resources button
+- or any Resources navigation entry point
+while already inside a resource detail view,
+
+it should take them directly back to the main Resources page / resources finder experience.
+
+RIGHT NOW:
+That is not happening consistently.
+
+REQUIRED FIX:
+- If a user is viewing a resource detail page and clicks Resources in navigation, they should go directly to the main Resources page.
+- Do not trap the user inside the detail view.
+- Keep "Back to results" working for returning to the prior filtered results state.
+- But the Resources nav action must override that and go to the main Resources finder.
+
+TEST CASES:
+1. Open Resources → click a resource → click Resources nav → should go to main Resources page
+2. Open Resources → click a resource → click Back to results → should go back to previous result set
+3. Test on mobile and desktop
+
+-------------------------------------
+ISSUE 2 — GET HELP BUTTON INSIDE RESOURCE DETAIL
+
+CURRENT PROBLEM:
+Inside a resource detail view, the "Get Help" button is supposed to open the Veteran Guide / AI chat.
+
+It works:
+- from the homepage
+- from the top diamond icon
+
+But it does NOT work properly from inside a resource detail page.
+When clicked there, nothing opens.
+
+REQUIRED FIX:
+- Make the "Get Help" button inside each resource detail open the Veteran Guide immediately
+- Behavior should match the working homepage / top icon experience
+- If context can be passed safely, include the current resource context so the guide knows what the user was viewing
+- But first priority is simple: clicking "Get Help" must reliably open the Veteran Guide
+
+TEST CASES:
+1. Homepage diamond opens Veteran Guide
+2. Resource detail "Get Help" opens Veteran Guide
+3. Behavior works on mobile and desktop
+4. No console errors or blocked UI events
+
+-------------------------------------
+DELIVERABLE
+
+After fixing both issues, report back with:
+- what files were changed
+- what routing / state behavior was updated
+- what testing was performed
+- whether anything else was affected

@@ -123,7 +123,9 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const handleGuideClick = () => {
     trackClick(resource.id, "guide_click", fb);
     onOpenChange(false);
-    setTimeout(() => window.dispatchEvent(new CustomEvent("open-ai-guide")), 300);
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent("open-ai-guide"));
+    });
   };
 
   const handleSaveClick = () => {
@@ -359,7 +361,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                   trackClick(resource.id, "navigator_click", fb);
                 }}
               >
-                Get Help
+                Request Help
               </Button>
             </div>
           </section>
@@ -388,11 +390,11 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
             <Button
               data-testid="button-ask-guide"
               size="sm"
-              variant="secondary"
-              className="h-7 text-xs bg-white shadow-sm border shrink-0"
+              className="h-8 text-xs bg-accent text-accent-foreground hover:bg-accent/90 shrink-0 gap-1.5"
               onClick={handleGuideClick}
             >
-              {platform.ai.assistantName}
+              <Sparkles className="h-3.5 w-3.5" />
+              Get Help
             </Button>
           </section>
 

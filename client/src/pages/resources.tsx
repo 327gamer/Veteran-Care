@@ -221,6 +221,14 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const { isSaved, toggleSave, setLocation: setStoreLocation } = useSavedResources();
 
+  useEffect(() => {
+    if (selectedResource) {
+      const closeOnNav = () => setSelectedResource(null);
+      window.addEventListener("close-resource-detail", closeOnNav);
+      return () => window.removeEventListener("close-resource-detail", closeOnNav);
+    }
+  }, [selectedResource]);
+
   const [locationMode, setLocationMode] = useState<"national" | "state" | "nearme" | "city">("national");
   const [selectedState, setSelectedState] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
