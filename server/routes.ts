@@ -26,6 +26,7 @@ let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
 let hasNavLifecycleColumns = false;
+let hasNavAmbassadorId = false;
 let hasNotifyEmailColumn = false;
 
 async function checkGeoColumns() {
@@ -315,6 +316,35 @@ async function ensureAttributionTables() {
     console.log("[schema] attribution tables ready (with ambassadors + payouts)");
   } catch (err: any) {
     console.log("[schema] attribution tables setup error:", err.message);
+  }
+}
+
+async function backfillNavAmbassadorId() {
+  if (!hasNavAmbassadorId) return;
+  try {
+    const { data: rows, error } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, utm_content, utm_id")
+      .is("ambassador_id", null)
+      .not("utm_content", "is", null);
+    if (error || !rows || rows.length === 0) return;
+
+    let backfilled = 0;
+    for (const row of rows) {
+      const ambId = await resolveAmbassadorId(row.utm_content || null, row.utm_id || null);
+      if (ambId) {
+        const { error: upErr } = await supabaseAdmin
+          .from("navigator_requests")
+          .update({ ambassador_id: ambId })
+          .eq("id", row.id);
+        if (!upErr) backfilled++;
+      }
+    }
+    if (backfilled > 0) {
+      console.log(`[schema] Backfilled ambassador_id on ${backfilled} navigator_requests`);
+    }
+  } catch (err: any) {
+    console.log("[schema] navigator_requests ambassador_id backfill skipped:", err.message);
   }
 }
 
@@ -659,6 +689,17 @@ async function checkNavLifecycleColumns() {
     hasRoutingColumns = true;
     console.log("[schema] Routing columns detected");
   }
+
+  const { error: ambErr } = await supabaseAdmin.from("navigator_requests").select("ambassador_id").limit(1);
+  if (ambErr && ambErr.message.includes("does not exist")) {
+    hasNavAmbassadorId = false;
+    console.log("[schema] navigator_requests.ambassador_id not found. Run in Supabase SQL editor:");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS ambassador_id UUID;");
+    console.log("  CREATE INDEX IF NOT EXISTS idx_nav_req_amb_id ON navigator_requests(ambassador_id);");
+  } else {
+    hasNavAmbassadorId = true;
+    console.log("[schema] navigator_requests.ambassador_id detected");
+  }
 }
 
 function normalizeResourceCategories(resource: any): any {
@@ -771,6 +812,7 @@ export async function registerRoutes(
   await checkStatesTable();
   await checkTrustedServicesTable();
   await ensureAttributionTables();
+  await backfillNavAmbassadorId();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
 
@@ -3186,6 +3228,14 @@ export async function registerRoutes(
       if (session_id && typeof session_id === "string") baseRow.session_id = session_id.trim();
       if (urgency && validUrgency.includes(urgency)) baseRow.urgency = urgency;
       if (consent_followup === true) baseRow.consent_followup = true;
+    }
+
+    if (hasNavAmbassadorId && (utm_content || utm_id)) {
+      const navAmbId = await resolveAmbassadorId(
+        (utm_content && typeof utm_content === "string") ? utm_content.trim() : null,
+        (utm_id && typeof utm_id === "string") ? utm_id.trim() : null
+      );
+      if (navAmbId) baseRow.ambassador_id = navAmbId;
     }
 
     let { data, error } = await supabaseAdmin

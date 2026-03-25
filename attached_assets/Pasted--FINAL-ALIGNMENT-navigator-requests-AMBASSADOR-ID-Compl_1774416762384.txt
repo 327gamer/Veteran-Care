@@ -1,0 +1,78 @@
+--- FINAL ALIGNMENT: navigator_requests AMBASSADOR_ID ---
+
+Complete the remaining Step 56.6A alignment.
+
+-------------------------------------
+TASK
+-------------------------------------
+
+Add:
+
+ambassador_id UUID NULL
+
+to:
+
+navigator_requests
+
+This is the remaining attribution alignment item so Navigator / Get Help leads are fully attributed to ambassadors.
+
+-------------------------------------
+REQUIREMENTS
+-------------------------------------
+
+1) Add ambassador_id to navigator_requests using the correct path for this table
+- if navigator_requests is managed through Supabase and not the standard pgQuery migration path, use the correct safe Supabase-compatible method
+- do not break existing behavior
+
+2) Preserve dual attribution structure
+- utm_id = raw attribution evidence
+- ambassador_id = stable ownership/reporting key
+
+3) Resolution logic
+- populate ambassador_id using utm_id linkage through ambassador_links
+- if needed, resolve through the ambassador ownership chain in the safest available way
+- do NOT modify or replace utm_id
+
+4) Backfill
+- backfill existing navigator_requests records where ambassador_id can be resolved safely
+- use an idempotent approach where possible
+- only populate records where ambassador_id is currently null
+
+5) New records
+- ensure all new navigator_requests rows capture ambassador_id automatically when attribution is available
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+- do NOT modify utm_id
+- do NOT remove existing attribution behavior
+- do NOT redesign UI
+- do NOT rebuild production data
+- if RLS or Supabase policy changes are needed, report them clearly before or after implementation as appropriate
+- if any manual action is needed from me in Supabase outside chat, give me the exact SQL or exact steps separately
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please confirm:
+
+1. whether ambassador_id was successfully added to navigator_requests
+2. whether this was done through Supabase SQL / migration / alternate safe path
+3. how ambassador_id is resolved for navigator_requests
+4. whether existing records were backfilled
+5. whether new navigator_requests now store ambassador_id automatically
+6. whether publish is required
+7. whether any RLS or policy updates are needed
+8. whether any manual action is required from me
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Ensure Navigator / Get Help leads are fully attributed using:
+- utm_id for evidence
+- ambassador_id for ownership, reporting, and payout logic
+
+--- END ---
