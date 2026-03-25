@@ -10,6 +10,7 @@ import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
 import express from "express";
+import QRCode from "qrcode";
 
 function normalizeSearchTerm(q: string): string {
   return q
@@ -924,6 +925,108 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[ambassador] report error:", err.message);
       return res.status(500).json({ error: "Failed to generate report" });
+    }
+  });
+
+  app.get("/a/:utmId", async (req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT full_url FROM ambassador_links WHERE utm_id = $1 AND is_active = true LIMIT 1`,
+        [req.params.utmId]
+      );
+      if (rows.length === 0) {
+        return res.status(404).send("Link not found");
+      }
+      return res.redirect(301, rows[0].full_url);
+    } catch (err: any) {
+      console.log("[ambassador] short link error:", err.message);
+      return res.status(500).send("Server error");
+    }
+  });
+
+  app.get("/api/admin/ambassador-links/:id/qr", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const rows = await pgQuery(`SELECT full_url, utm_id, link_name FROM ambassador_links WHERE id = $1`, [req.params.id]);
+      if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
+
+      const kebabName = (rows[0].link_name || rows[0].utm_id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const png = await QRCode.toBuffer(rows[0].full_url, { width: 400, margin: 2, type: "png" });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", `inline; filename="${kebabName}.png"`);
+      return res.send(png);
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to generate QR code" });
+    }
+  });
+
+  app.get("/api/admin/ambassador-links/qr-by-utm/:utmId", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const rows = await pgQuery(`SELECT full_url, utm_id, link_name FROM ambassador_links WHERE utm_id = $1`, [req.params.utmId]);
+      if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
+
+      const kebabName = (rows[0].link_name || rows[0].utm_id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const png = await QRCode.toBuffer(rows[0].full_url, { width: 400, margin: 2, type: "png" });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", `inline; filename="${kebabName}.png"`);
+      return res.send(png);
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to generate QR code" });
+    }
+  });
+
+  app.get("/api/admin/ambassador-pack/:code", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const code = sanitizeCode(req.params.code);
+    const format = (req.query.format as string) || "json";
+
+    try {
+      const rows = await pgQuery(
+        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, created_at
+         FROM ambassador_links WHERE ambassador_code = $1 ORDER BY audience_type, channel_type`,
+        [code]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "No links found for this ambassador" });
+
+      const baseUrl = `https://veterancare.com`;
+      const pack = rows.map((r: any) => ({
+        link_name: r.link_name,
+        utm_id: r.utm_id,
+        full_url: r.full_url,
+        short_url: `${baseUrl}/a/${r.utm_id}`,
+        qr_url: `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${r.utm_id}`,
+        audience: r.audience_type,
+        channel: r.channel_type,
+        campaign: r.utm_campaign,
+        active: r.is_active,
+      }));
+
+      if (format === "csv") {
+        const header = "link_name,utm_id,full_url,short_url,qr_url,audience,channel,campaign";
+        const csvRows = pack.map((p: any) =>
+          `"${p.link_name}","${p.utm_id}","${p.full_url}","${p.short_url}","${p.qr_url}","${p.audience}","${p.channel}","${p.campaign}"`
+        );
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="${code}_link_pack.csv"`);
+        return res.send([header, ...csvRows].join("\n"));
+      }
+
+      return res.json({
+        ambassador_code: code,
+        ambassador_name: rows[0].ambassador_name,
+        total_links: pack.length,
+        links: pack,
+      });
+    } catch (err: any) {
+      console.log("[ambassador] pack error:", err.message);
+      return res.status(500).json({ error: "Failed to retrieve pack" });
     }
   });
 

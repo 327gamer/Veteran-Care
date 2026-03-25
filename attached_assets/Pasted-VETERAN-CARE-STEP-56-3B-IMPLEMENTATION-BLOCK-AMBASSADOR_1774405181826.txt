@@ -1,0 +1,151 @@
+VETERAN CARE — STEP 56.3B IMPLEMENTATION BLOCK
+AMBASSADOR LINK PACK GENERATION
+
+FOUNDATION ALREADY COMPLETE:
+- utm structure locked (56.3A)
+- utm_id standardized + unique (56.3A.1 / 56.3A.2)
+- link_name labeling live (56.3A.3)
+
+IMPORTANT RULES:
+- DO NOT change the locked UTM structure
+- DO NOT remove utm_id
+- DO NOT remove link_name
+- DO NOT break existing attribution persistence
+- DO NOT redesign UI unless absolutely necessary
+- build only what is required for distribution-ready ambassador link packs
+
+========================================
+OBJECTIVE
+========================================
+
+Generate live ambassador link packs that are ready to distribute and use for outreach.
+
+Each pack must include:
+- standardized tracked links by channel
+- human-readable labels
+- unique utm_id values
+- optional short links / redirects if feasible
+- optional QR code output if feasible
+
+========================================
+PART 1 — DEFAULT LINK SET PER AMBASSADOR
+========================================
+
+At minimum, generate these default links per ambassador:
+
+- Facebook – General
+- Email – General
+- SMS/Text – General
+- LinkedIn – Professional
+- QR Code – General
+
+If quick and safe, also support optional category links for:
+- Housing
+- Jobs
+- Benefits
+- End Of Life Services
+
+========================================
+PART 2 — LINK FORMAT
+========================================
+
+All generated links must include:
+
+- utm_source=ambassador
+- utm_medium={channel}
+- utm_campaign={campaign}
+- utm_content={ambassador_identifier}
+- utm_id={unique id}
+
+Do not change this structure.
+
+========================================
+PART 3 — LABELING
+========================================
+
+Use the existing link_name field.
+
+Auto-generate labels using the pattern:
+
+{Ambassador} – {Channel} – {Purpose}
+
+Examples:
+- Tracy Upstate – Facebook – General
+- Tracy Upstate – Email – General
+- Tracy Upstate – LinkedIn – Professional
+- Tracy Upstate – QR Code – General
+
+========================================
+PART 4 — SHORT LINKS (IF AVAILABLE)
+========================================
+
+If fast and safe, implement short redirect links using:
+
+/a/{utm_id}
+
+Requirements:
+- redirect must preserve destination page and UTM behavior
+- attribution must still persist correctly after redirect
+
+If not appropriate for this step, explain and defer clearly.
+
+========================================
+PART 5 — QR CODES
+========================================
+
+Generate QR code output at least for:
+- QR Code – General
+
+If feasible, support QR generation for all generated links.
+
+Filename convention:
+- use kebab-case version of link_name
+
+========================================
+PART 6 — OUTPUT FORMAT
+========================================
+
+For each ambassador, provide output in a structured format (JSON, CSV, or equivalent) including:
+
+- link_name
+- utm_id
+- full_url
+- short_url (if available)
+- qr_code_url or qr_code_file (if available)
+
+Also provide:
+- copy-ready distribution list
+- easiest method for admin retrieval of the generated link pack
+
+========================================
+PART 7 — VALIDATION
+========================================
+
+Validate end-to-end for at least 2–3 test ambassadors.
+
+Required validation:
+1. click generated link → creates user_attribution_sessions with correct UTM fields + utm_id
+2. submit Navigator lead → utm_id persists
+3. submit Trusted Services lead → utm_id persists
+4. if possible, complete partner flow → utm_id appears in partner_attribution
+
+========================================
+PART 8 — OUTPUT REQUIRED
+========================================
+
+Provide:
+
+1. what was built
+2. whether publish is required
+3. whether short links were included
+4. whether QR codes were included
+5. example output for at least one ambassador
+6. validation summary for end-to-end attribution persistence
+7. any external/manual steps required
+
+SUCCESS CRITERIA:
+- ambassador link packs are generated and usable
+- labels are clean
+- utm_id is unique and persistent
+- attribution works end-to-end
+- system is ready for ambassador rollout
