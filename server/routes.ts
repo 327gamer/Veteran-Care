@@ -1446,6 +1446,237 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/attribution", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { ambassador, campaign, date_from, date_to, state } = req.query;
+    const ambCode = ambassador ? sanitizeCode(ambassador as string) : null;
+
+    function buildFilters(tableAlias: string, cols: { date?: string; ambassador?: string; campaign?: string }) {
+      let sql = "";
+      const params: any[] = [];
+      let pIdx = 1;
+      if (date_from && cols.date) {
+        sql += ` AND ${tableAlias}${cols.date} >= $${pIdx}`;
+        params.push(date_from);
+        pIdx++;
+      }
+      if (date_to && cols.date) {
+        sql += ` AND ${tableAlias}${cols.date} < ($${pIdx}::date + interval '1 day')`;
+        params.push(date_to);
+        pIdx++;
+      }
+      if (ambCode && cols.ambassador) {
+        sql += ` AND ${tableAlias}${cols.ambassador} = $${pIdx}`;
+        params.push(ambCode);
+        pIdx++;
+      }
+      if (campaign && cols.campaign) {
+        sql += ` AND ${tableAlias}${cols.campaign} = $${pIdx}`;
+        params.push(campaign);
+        pIdx++;
+      }
+      return { sql, params, pIdx };
+    }
+
+    function buildNavFilters(q: any) {
+      if (ambCode && hasNavUtmColumns) q = q.eq("utm_content", ambCode);
+      if (campaign && hasNavUtmColumns) q = q.eq("utm_campaign", campaign);
+      if (date_from) q = q.gte("created_at", date_from as string);
+      if (date_to) {
+        const endDate = new Date(date_to as string);
+        endDate.setDate(endDate.getDate() + 1);
+        q = q.lt("created_at", endDate.toISOString().split("T")[0]);
+      }
+      if (state && hasNavUtmColumns) q = q.eq("state", state);
+      return q;
+    }
+
+    try {
+      const clickF = buildFilters("al.", { date: "created_at", ambassador: "ambassador_code", campaign: "utm_campaign" });
+      const clickStats = await pgQuery(`
+        SELECT COALESCE(SUM(al.click_count), 0)::int AS total_clicks
+        FROM ambassador_links al
+        WHERE al.is_active IS NOT NULL ${clickF.sql}
+      `, clickF.params);
+
+      const sessF = buildFilters("s.", { date: "created_at", ambassador: "utm_content", campaign: "utm_campaign" });
+      const sessionStats = await pgQuery(`
+        SELECT COUNT(*)::int AS total_sessions,
+               COUNT(DISTINCT s.session_id)::int AS unique_sessions
+        FROM user_attribution_sessions s
+        WHERE s.utm_source = 'ambassador' ${sessF.sql}
+      `, sessF.params);
+
+      const tslF = buildFilters("tsl.", { date: "created_at", ambassador: "utm_content" });
+      const tslStats = await pgQuery(`
+        SELECT COUNT(*)::int AS total_tsl
+        FROM trusted_service_leads tsl
+        WHERE tsl.ambassador_id IS NOT NULL ${tslF.sql}
+      `, tslF.params);
+
+      let navCount = 0;
+      try {
+        let navQuery = supabaseAdmin.from("navigator_requests").select("id", { count: "exact", head: true });
+        if (hasNavAmbassadorId) navQuery = navQuery.not("ambassador_id", "is", null);
+        navQuery = buildNavFilters(navQuery);
+        const { count } = await navQuery;
+        navCount = count || 0;
+      } catch {}
+
+      const baLinkF = buildFilters("", { date: "created_at", ambassador: "ambassador_code", campaign: "utm_campaign" });
+      const baSessF = buildFilters("", { date: "created_at", ambassador: "utm_content", campaign: "utm_campaign" });
+      const baTslF = buildFilters("", { date: "created_at" });
+
+      let baParams = [...baLinkF.params, ...baSessF.params, ...baTslF.params];
+      let baLinkSql = baLinkF.sql;
+      let baSessSql = baSessF.sql;
+      let baTslSql = baTslF.sql;
+      let baWhereSql = "";
+      const linkOffset = 0;
+      const sessOffset = baLinkF.params.length;
+      const tslOffset = sessOffset + baSessF.params.length;
+
+      baLinkSql = baLinkSql.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + linkOffset}`);
+      baSessSql = baSessSql.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + sessOffset}`);
+      baTslSql = baTslSql.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + tslOffset}`);
+
+      if (ambCode) {
+        const ambIdx = baParams.length + 1;
+        baWhereSql = `WHERE a.code = $${ambIdx}`;
+        baParams.push(ambCode);
+      }
+
+      const byAmbassador = await pgQuery(`
+        SELECT
+          a.code AS ambassador_code,
+          a.display_name AS ambassador_name,
+          COALESCE(lk.clicks, 0)::int AS clicks,
+          COALESCE(ss.sessions, 0)::int AS sessions,
+          COALESCE(tl.leads, 0)::int AS tsl_leads
+        FROM ambassadors a
+        LEFT JOIN (
+          SELECT ambassador_code, SUM(click_count)::int AS clicks
+          FROM ambassador_links
+          WHERE 1=1 ${baLinkSql}
+          GROUP BY ambassador_code
+        ) lk ON lk.ambassador_code = a.code
+        LEFT JOIN (
+          SELECT utm_content, COUNT(*)::int AS sessions
+          FROM user_attribution_sessions
+          WHERE utm_source = 'ambassador' ${baSessSql}
+          GROUP BY utm_content
+        ) ss ON ss.utm_content = a.code
+        LEFT JOIN (
+          SELECT a2.code, COUNT(*)::int AS leads
+          FROM trusted_service_leads tsl2
+          JOIN ambassadors a2 ON a2.id = tsl2.ambassador_id
+          WHERE 1=1 ${baTslSql}
+          GROUP BY a2.code
+        ) tl ON tl.code = a.code
+        ${baWhereSql}
+        ORDER BY clicks DESC, sessions DESC
+      `, baParams);
+
+      const blF = buildFilters("al.", { date: "created_at", ambassador: "ambassador_code", campaign: "utm_campaign" });
+      const blSessF = buildFilters("", { date: "created_at" });
+      const blTslF = buildFilters("", { date: "created_at" });
+      let blParams = [...blF.params, ...blSessF.params, ...blTslF.params];
+      let blSessSql = blSessF.sql.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + blF.params.length}`);
+      let blTslSql = blTslF.sql.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + blF.params.length + blSessF.params.length}`);
+
+      const byLink = await pgQuery(`
+        SELECT
+          al.utm_id,
+          al.link_name,
+          al.ambassador_code,
+          a.display_name AS ambassador_name,
+          al.utm_campaign,
+          al.channel_type,
+          al.click_count::int AS clicks,
+          COALESCE(ss.sessions, 0)::int AS sessions,
+          COALESCE(tl.leads, 0)::int AS leads
+        FROM ambassador_links al
+        LEFT JOIN ambassadors a ON a.id = al.ambassador_id
+        LEFT JOIN (
+          SELECT utm_id, COUNT(*)::int AS sessions
+          FROM user_attribution_sessions
+          WHERE utm_source = 'ambassador' AND utm_id IS NOT NULL ${blSessSql}
+          GROUP BY utm_id
+        ) ss ON ss.utm_id = al.utm_id
+        LEFT JOIN (
+          SELECT utm_id, COUNT(*)::int AS leads
+          FROM trusted_service_leads
+          WHERE utm_id IS NOT NULL ${blTslSql}
+          GROUP BY utm_id
+        ) tl ON tl.utm_id = al.utm_id
+        WHERE 1=1 ${blF.sql}
+        ORDER BY al.click_count DESC
+        LIMIT 100
+      `, blParams);
+
+      let navByAmbassador: Record<string, number> = {};
+      try {
+        if (hasNavAmbassadorId && hasNavUtmColumns) {
+          let navQ = supabaseAdmin.from("navigator_requests").select("utm_content");
+          navQ = navQ.not("ambassador_id", "is", null);
+          navQ = buildNavFilters(navQ);
+          const { data: navRows } = await navQ;
+          if (navRows) {
+            for (const row of navRows) {
+              const code = (row as any).utm_content;
+              if (code) navByAmbassador[code] = (navByAmbassador[code] || 0) + 1;
+            }
+          }
+        }
+      } catch {}
+
+      const byAmbassadorWithNav = byAmbassador.map((a: any) => ({
+        ...a,
+        nav_leads: navByAmbassador[a.ambassador_code] || 0,
+        total_leads: (a.tsl_leads || 0) + (navByAmbassador[a.ambassador_code] || 0),
+      }));
+
+      const filterOptions = await pgQuery(`
+        SELECT
+          ARRAY_AGG(DISTINCT ambassador_code) FILTER (WHERE ambassador_code IS NOT NULL) AS ambassadors,
+          ARRAY_AGG(DISTINCT utm_campaign) FILTER (WHERE utm_campaign IS NOT NULL) AS campaigns
+        FROM ambassador_links
+      `);
+
+      const totalClicks = clickStats[0]?.total_clicks || 0;
+      const totalSessions = sessionStats[0]?.total_sessions || 0;
+      const totalTsl = tslStats[0]?.total_tsl || 0;
+      const totalLeads = totalTsl + navCount;
+
+      return res.json({
+        summary: {
+          total_clicks: totalClicks,
+          total_sessions: totalSessions,
+          unique_sessions: sessionStats[0]?.unique_sessions || 0,
+          nav_requests: navCount,
+          tsl_leads: totalTsl,
+          total_leads: totalLeads,
+        },
+        funnel: {
+          clicks: totalClicks,
+          sessions: totalSessions,
+          leads: totalLeads,
+          click_to_session: totalClicks > 0 ? ((totalSessions / totalClicks) * 100).toFixed(1) : "0.0",
+          session_to_lead: totalSessions > 0 ? ((totalLeads / totalSessions) * 100).toFixed(1) : "0.0",
+          click_to_lead: totalClicks > 0 ? ((totalLeads / totalClicks) * 100).toFixed(1) : "0.0",
+        },
+        byAmbassador: byAmbassadorWithNav,
+        byLink,
+        filterOptions: filterOptions[0] || { ambassadors: [], campaigns: [] },
+      });
+    } catch (err: any) {
+      console.log("[attribution] error:", err.message);
+      return res.status(500).json({ error: "Failed to load attribution data" });
+    }
+  });
+
   app.get("/a/:utmId", async (req, res) => {
     try {
       const rows = await pgQuery(

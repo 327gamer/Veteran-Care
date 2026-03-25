@@ -1,0 +1,140 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 56.6B.3 – Attribution & Funnel Visibility (Phase 1)
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Build ONLY attribution + basic funnel visibility.
+Do NOT build commission payout UI yet.
+Do NOT expand dashboard card click behavior beyond what is required for this step.
+
+-------------------------------------
+
+OBJECTIVE
+
+Create an Attribution & Funnel view that shows how traffic flows through the system:
+
+click → session → lead
+
+-------------------------------------
+
+FEATURE 1 — ATTRIBUTION PAGE
+
+Create new admin page:
+
+/admin/attribution
+
+-------------------------------------
+
+FEATURE 2 — SUMMARY CARDS
+
+Display:
+
+- Total Clicks
+- Total Sessions
+- Total Navigator Requests
+- Total Trusted Service Leads
+- Total Leads
+
+Where:
+- Total Leads = navigator_requests + trusted_service_leads
+
+-------------------------------------
+
+FEATURE 3 — FUNNEL VIEW
+
+Show simple funnel:
+
+Clicks → Sessions → Leads
+
+Where:
+- Clicks = ambassador_links.click_count
+- Sessions = user_attribution_sessions
+- Leads = navigator_requests + trusted_service_leads
+
+Display:
+- counts
+- basic conversion rates between steps
+
+-------------------------------------
+
+FEATURE 4 — BREAKDOWN TABLES
+
+A) By Ambassador
+
+Display:
+- ambassador_name
+- clicks
+- sessions
+- navigator_requests
+- trusted_service_leads
+- total_leads
+
+B) By Link (utm_id)
+
+Display:
+- utm_id
+- link_name
+- ambassador_name
+- clicks
+- sessions
+- leads
+
+-------------------------------------
+
+FEATURE 5 — FILTERS
+
+Add global filters:
+
+- ambassador
+- date range
+- campaign (if available)
+- state (if available)
+
+-------------------------------------
+
+FEATURE 6 — DATA CONNECTION
+
+Use existing tables ONLY:
+
+- ambassador_links
+- user_attribution_sessions
+- navigator_requests
+- trusted_service_leads
+
+IMPORTANT:
+- utm_id = evidence
+- ambassador_id = ownership
+
+-------------------------------------
+
+FEATURE 7 — NAVIGATION
+
+- Add admin navigation entry
+- Label: Attribution
+
+-------------------------------------
+
+GOAL
+
+Allow admin to clearly see:
+
+- which ambassadors drive traffic
+- which links perform best
+- how traffic converts into leads
+
+-------------------------------------
+
+DELIVERABLE REQUIRED
+
+Please report back with:
+
+1. UI structure
+2. queries used
+3. funnel calculation logic
+4. filters implemented
+5. exact files changed
+6. testing performed
+
+--- END ---
