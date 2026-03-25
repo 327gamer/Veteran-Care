@@ -27,6 +27,7 @@ import VobDirectory from "@/pages/vob-directory";
 import VobDirectoryApply from "@/pages/vob-directory-apply";
 import VobStartupHelp from "@/pages/vob-startup-help";
 import AdminVob from "@/pages/admin-vob";
+import AdminAmbassadors from "@/pages/admin-ambassadors";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/admin/trusted-service-leads" component={AdminTrustedServiceLeads} />
       <Route path="/admin/partner-prospects" component={AdminPartnerProspects} />
       <Route path="/admin/vob" component={AdminVob} />
+      <Route path="/admin/ambassadors" component={AdminAmbassadors} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">

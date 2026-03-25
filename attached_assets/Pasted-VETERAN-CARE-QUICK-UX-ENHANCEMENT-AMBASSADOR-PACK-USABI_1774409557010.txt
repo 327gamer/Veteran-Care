@@ -1,0 +1,77 @@
+VETERAN CARE — QUICK UX ENHANCEMENT
+AMBASSADOR PACK USABILITY
+
+IMPORTANT RULES:
+- DO NOT modify backend logic
+- DO NOT change attribution, links, or tracking
+- DO NOT delay Step 56.5
+- This is a lightweight UI/UX enhancement only
+
+OBJECTIVE:
+Improve ambassador usability by making it easier to copy, share, and preview distribution content.
+
+========================================
+PART 1 — COPY TO CLIPBOARD
+========================================
+
+Add copy buttons for the following fields in the ambassador distribution pack UI:
+
+1. short_url
+2. suggested_copy
+3. qr_url (or provide a download button for QR image)
+
+Behavior:
+- one-click copy to clipboard
+- show small visual confirmation (e.g., “Copied”)
+
+========================================
+PART 2 — OPTIONAL MESSAGE PREVIEW
+========================================
+
+Add a simple preview block for each message:
+
+Display:
+- message_title
+- first line of suggested_copy
+
+Purpose:
+- quick readability
+- easier selection by ambassadors
+
+Keep this lightweight — no complex formatting required.
+
+========================================
+PART 3 — UI GUIDELINES
+========================================
+
+- Keep layout clean and minimal
+- Do not redesign the entire page
+- Enhance existing ambassador distribution output only
+- Ensure mobile usability (buttons must be tappable)
+
+========================================
+PART 4 — VALIDATION
+========================================
+
+Confirm:
+
+1. clicking copy button copies correct value
+2. suggested_copy copies full text including link
+3. QR button works (copy or download)
+4. preview displays correctly for each message
+5. no impact to existing data or endpoints
+
+========================================
+PART 5 — OUTPUT REQUIRED
+========================================
+
+Provide:
+1. what UI elements were added
+2. where copy buttons appear
+3. whether publish is required
+4. confirmation that no backend logic was modified
+
+SUCCESS CRITERIA:
+- ambassadors can copy links/messages in one click
+- friction is reduced
+- system is easier to use immediately
