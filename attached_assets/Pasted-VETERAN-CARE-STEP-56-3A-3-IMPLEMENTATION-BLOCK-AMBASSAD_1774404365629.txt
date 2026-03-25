@@ -1,0 +1,100 @@
+VETERAN CARE — STEP 56.3A.3 IMPLEMENTATION BLOCK
+AMBASSADOR LINK LABELING
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change funnels or routing
+- DO NOT alter the locked UTM structure
+- DO NOT replace utm_id
+- label/link_name is human-readable only
+- utm_id remains the system identifier
+
+OBJECTIVE:
+Add a human-readable label field to the ambassador link system so links are easier to manage, distribute, report on, and explain.
+
+========================================
+PART 1 — FIELD REQUIREMENT
+========================================
+
+Add a field to ambassador_links:
+
+- link_name
+
+Alternative acceptable internal naming:
+- label
+
+Preferred final field name:
+- link_name
+
+This field is for human readability only.
+
+Examples:
+- Tracy – Facebook – General
+- Tracy – Email – Veterans Group
+- Colin – Charleston Outreach – Partner Intro
+
+========================================
+PART 2 — DATABASE
+========================================
+
+Update ambassador_links to store:
+- link_name
+
+Confirm:
+- link_name is retrievable in all relevant admin endpoints
+- link_name is returned alongside:
+  - utm_id
+  - full_url
+  - ambassador_name
+  - audience_type
+  - channel_type
+  - campaign
+
+========================================
+PART 3 — LINK GENERATION
+========================================
+
+Update link generation so Step 56.3B link pack generation includes link_name automatically.
+
+For default generated packs, create readable labels based on:
+- ambassador
+- channel
+- audience
+- campaign (if useful)
+
+Example patterns:
+- Tracy – Facebook – General
+- Tracy – Email – Veteran Help
+- Tracy – LinkedIn – Partner Outreach
+
+If custom label input is supported safely, allow it as optional.
+If not, auto-generate labels now and explain how custom labels could be added later.
+
+========================================
+PART 4 — REPORTING / ADMIN READINESS
+========================================
+
+Ensure reporting/admin responses can display:
+- link_name
+- utm_id
+
+So the system can show:
+- human-friendly label for operations
+- utm_id for precise attribution
+
+========================================
+PART 5 — OUTPUT REQUIRED
+========================================
+
+Provide:
+1. whether link_name was added
+2. what table/endpoint changes were made
+3. example generated labels
+4. whether publish is required
+5. confirmation that Step 56.3B can proceed with labels included
+
+SUCCESS CRITERIA:
+- ambassador_links stores a human-readable label
+- labels are returned in admin endpoints
+- link packs include labels automatically
+- utm_id remains unchanged as the tracking key

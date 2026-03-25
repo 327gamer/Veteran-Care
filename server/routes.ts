@@ -146,6 +146,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS link_name TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
@@ -643,12 +644,21 @@ export async function registerRoutes(
 
   const AMBASSADOR_BASE_DOMAIN = "https://veterancare.com";
 
-  const AMBASSADOR_AUDIENCES: Record<string, { path: string; campaign: string }> = {
-    general:       { path: "/start",           campaign: "sc_launch" },
-    veteran:       { path: "/get-help",        campaign: "sc_veteran_help" },
-    case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
-    partner:       { path: "/partners",        campaign: "sc_partner_growth" },
+  const AMBASSADOR_AUDIENCES: Record<string, { path: string; campaign: string; label: string }> = {
+    general:       { path: "/start",           campaign: "sc_launch",              label: "General" },
+    veteran:       { path: "/get-help",        campaign: "sc_veteran_help",        label: "Veteran Help" },
+    case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager" },
+    partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner Outreach" },
   };
+
+  const CHANNEL_LABELS: Record<string, string> = {
+    facebook: "Facebook", instagram: "Instagram", email: "Email",
+    linkedin: "LinkedIn", text: "Text", qr: "QR Code", flyer: "Flyer",
+  };
+
+  function titleCase(s: string): string {
+    return s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  }
 
   const AMBASSADOR_CHANNELS = ["facebook", "instagram", "email", "linkedin", "text", "qr", "flyer"] as const;
 
@@ -737,12 +747,13 @@ export async function registerRoutes(
         for (const channel of selectedChannels) {
           const utmId = await nextUtmId(code, campaign, channel);
           const fullUrl = buildAmbassadorUrl(audience.path, channel, campaign, code, utmId);
+          const linkName = `${titleCase(code)} – ${CHANNEL_LABELS[channel] || titleCase(channel)} – ${audience.label}`;
 
           await pgQuery(
             `INSERT INTO ambassador_links
-             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel]
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName]
           );
 
           generated.push({
@@ -751,6 +762,7 @@ export async function registerRoutes(
             campaign,
             url: fullUrl,
             utm_id: utmId,
+            link_name: linkName,
           });
         }
       }
