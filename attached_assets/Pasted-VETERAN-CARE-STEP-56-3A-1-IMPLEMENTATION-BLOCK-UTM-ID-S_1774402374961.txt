@@ -1,0 +1,106 @@
+VETERAN CARE — STEP 56.3A.1 IMPLEMENTATION BLOCK
+UTM_ID STANDARDIZATION (FOUNDATIONAL REQUIREMENT)
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change funnel routing
+- DO NOT break existing GA4 tracking, attribution storage, or Stripe attribution
+- DO NOT proceed to full ambassador link pack generation (Step 56.3B) until this requirement is fully implemented and confirmed
+
+OBJECTIVE:
+Implement a standardized utm_id system across all ambassador links and all attribution layers so every individual link is uniquely identifiable for reporting, attribution, and commission accuracy.
+
+========================================
+PART 1 — LOCKED UTM_ID FORMAT
+========================================
+
+Use this exact format:
+
+utm_id = {ambassador}_{campaign}_{channel}
+
+Example:
+utm_id=tracy_upstate_sc_launch_facebook
+
+Rules:
+- lowercase only
+- underscores only
+- no spaces
+- must be unique per link
+- generated consistently everywhere
+
+========================================
+PART 2 — LINK GENERATION
+========================================
+
+Update ambassador link generation so every generated ambassador link includes:
+
+- utm_source=ambassador
+- utm_medium={channel}
+- utm_campaign={campaign}
+- utm_content={ambassador_identifier}
+- utm_id={ambassador}_{campaign}_{channel}
+
+Confirm all future generated ambassador links include utm_id automatically.
+
+========================================
+PART 3 — DATABASE STORAGE
+========================================
+
+Confirm utm_id is captured and stored in all relevant attribution layers.
+
+Required tables / layers:
+- user_attribution_sessions
+- trusted_service_leads
+- navigator_requests
+- partner_applications
+- partner_attribution
+
+If any table is missing utm_id:
+- add it now using the proper migration path
+- if any manual step is required, provide exact instructions
+
+========================================
+PART 4 — FLOW PERSISTENCE
+========================================
+
+Confirm utm_id persists across:
+
+1. session creation
+2. navigation/session retention
+3. lead submission
+4. partner application
+5. Stripe revenue attribution
+
+========================================
+PART 5 — REPORTING READINESS
+========================================
+
+Ensure reporting queries can filter/group by utm_id cleanly.
+
+We need to support future analysis of:
+
+- exact link performance
+- link → lead conversion
+- link → revenue conversion
+- ambassador-level rollups
+- campaign-level rollups
+- channel-level rollups
+
+========================================
+PART 6 — OUTPUT REQUIRED
+========================================
+
+Provide:
+
+1. confirmation that utm_id is now included in generated links
+2. confirmation that utm_id is stored in all required attribution layers
+3. list of any tables changed
+4. exact example of a final generated link
+5. whether publish is required
+6. how to validate utm_id end-to-end
+
+SUCCESS CRITERIA:
+- every ambassador link includes utm_id
+- utm_id is stored from session through revenue
+- reporting can use utm_id as a clean join/filter field
+- system is ready to proceed to Step 56.3B

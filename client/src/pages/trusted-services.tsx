@@ -176,6 +176,7 @@ export default function TrustedServices() {
           utm_medium: utm.utm_medium || undefined,
           utm_campaign: utm.utm_campaign || undefined,
           utm_content: utm.utm_content || undefined,
+          utm_id: utm.utm_id || undefined,
           session_id: sessionStorage.getItem("vc_session_id") || undefined,
         }),
       });

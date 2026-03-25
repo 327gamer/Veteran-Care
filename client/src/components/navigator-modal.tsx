@@ -253,6 +253,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
           utm_medium: utm.utm_medium || null,
           utm_campaign: utm.utm_campaign || null,
           utm_content: utm.utm_content || null,
+          utm_id: utm.utm_id || null,
           session_id: sessionStorage.getItem("vc_session_id") || null,
         }),
       });

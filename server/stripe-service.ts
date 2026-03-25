@@ -215,14 +215,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
       revenueAmount = session.amount_total / 100;
     }
     await pgQuery(
-      `INSERT INTO partner_attribution (application_id, ambassador, utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount, event_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'checkout_completed')`,
+      `INSERT INTO partner_attribution (application_id, ambassador, utm_source, utm_medium, utm_campaign, utm_id, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount, event_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'checkout_completed')`,
       [
         applicationId,
         app.utm_content || null,
         app.utm_source || null,
         app.utm_medium || null,
         app.utm_campaign || null,
+        app.utm_id || null,
         customerId || null,
         subscriptionId || null,
         app.plan_type || null,
