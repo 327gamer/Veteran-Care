@@ -1693,6 +1693,7 @@ export async function registerRoutes(
       } catch {}
 
       let navClickToLeadOverall = { total_seconds: 0, count: 0 };
+      const clickToLeadBuckets = { under_5m: 0, m5_to_30m: 0, m30_to_2h: 0, over_2h: 0 };
       try {
         if (hasNavAmbassadorId && hasNavUtmColumns) {
           let navCLQ = supabaseAdmin.from("navigator_requests").select("created_at, utm_content");
@@ -1718,6 +1719,10 @@ export async function registerRoutes(
                 const diffSec = (leadTime - clickTime) / 1000;
                 navClickToLeadOverall.total_seconds += diffSec;
                 navClickToLeadOverall.count++;
+                if (diffSec < 300) clickToLeadBuckets.under_5m++;
+                else if (diffSec < 1800) clickToLeadBuckets.m5_to_30m++;
+                else if (diffSec < 7200) clickToLeadBuckets.m30_to_2h++;
+                else clickToLeadBuckets.over_2h++;
               }
             }
           }
@@ -1791,6 +1796,12 @@ export async function registerRoutes(
           click_to_lead: totalClicks > 0 ? ((totalLeads / totalClicks) * 100).toFixed(1) : "0.0",
         },
         timing,
+        speedBuckets: {
+          buckets: clickToLeadBuckets,
+          total: navClickToLeadOverall.count,
+          is_proxy: true,
+          note: "Click time is proxy-based (ambassador earliest first_clicked_at)",
+        },
         byAmbassador: byAmbassadorWithTiming,
         byLink,
         filterOptions: filterOptions[0] || { ambassadors: [], campaigns: [] },

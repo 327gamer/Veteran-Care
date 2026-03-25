@@ -78,6 +78,17 @@ interface AttributionData {
     sessions: number;
     leads: number;
   }[];
+  speedBuckets: {
+    buckets: {
+      under_5m: number;
+      m5_to_30m: number;
+      m30_to_2h: number;
+      over_2h: number;
+    };
+    total: number;
+    is_proxy: boolean;
+    note: string;
+  };
   filterOptions: {
     ambassadors: string[] | null;
     campaigns: string[] | null;
@@ -448,6 +459,41 @@ export default function AdminAttribution() {
                         </p>
                       )}
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {data.speedBuckets && data.speedBuckets.total > 0 && (
+              <Card className="mb-6 border-violet-200" data-testid="card-speed-buckets">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-violet-600" /> Conversion Speed Distribution
+                    {data.speedBuckets.is_proxy && (
+                      <Badge variant="outline" className="text-[9px] font-normal text-amber-600 border-amber-300 ml-1">
+                        <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Proxy-based click time
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { key: "under_5m", label: "< 5 min", color: "text-green-700 bg-green-50 border-green-200" },
+                      { key: "m5_to_30m", label: "5–30 min", color: "text-blue-700 bg-blue-50 border-blue-200" },
+                      { key: "m30_to_2h", label: "30–120 min", color: "text-amber-700 bg-amber-50 border-amber-200" },
+                      { key: "over_2h", label: "2+ hours", color: "text-red-700 bg-red-50 border-red-200" },
+                    ].map(({ key, label, color }) => {
+                      const count = data.speedBuckets.buckets[key as keyof typeof data.speedBuckets.buckets];
+                      const pct = data.speedBuckets.total > 0 ? ((count / data.speedBuckets.total) * 100).toFixed(0) : "0";
+                      return (
+                        <div key={key} className={`rounded-lg border p-3 text-center ${color}`} data-testid={`bucket-${key}`}>
+                          <p className="text-lg font-bold">{count}</p>
+                          <p className="text-xs font-medium">{label}</p>
+                          <p className="text-[10px] mt-0.5 opacity-70">{pct}%</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
