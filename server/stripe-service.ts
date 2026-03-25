@@ -214,9 +214,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
     if (session.amount_total && session.amount_total > 0) {
       revenueAmount = session.amount_total / 100;
     }
+
+    let resolvedAmbassadorId: string | null = null;
+    if (app.utm_content || app.utm_id) {
+      if (app.utm_content) {
+        const ambRows = await pgQuery(`SELECT id FROM ambassadors WHERE code = $1 LIMIT 1`, [app.utm_content]);
+        if (ambRows.length > 0) resolvedAmbassadorId = ambRows[0].id;
+      }
+      if (!resolvedAmbassadorId && app.utm_id) {
+        const linkRows = await pgQuery(`SELECT ambassador_id FROM ambassador_links WHERE utm_id = $1 AND ambassador_id IS NOT NULL LIMIT 1`, [app.utm_id]);
+        if (linkRows.length > 0) resolvedAmbassadorId = linkRows[0].ambassador_id;
+      }
+    }
+
     await pgQuery(
-      `INSERT INTO partner_attribution (application_id, ambassador, utm_source, utm_medium, utm_campaign, utm_id, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount, event_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'checkout_completed')`,
+      `INSERT INTO partner_attribution (application_id, ambassador, utm_source, utm_medium, utm_campaign, utm_id, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount, event_type, ambassador_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'checkout_completed', $11)`,
       [
         applicationId,
         app.utm_content || null,
@@ -228,18 +241,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
         subscriptionId || null,
         app.plan_type || null,
         revenueAmount,
+        resolvedAmbassadorId,
       ]
     );
-    console.log(`[stripe] Attribution recorded for application ${applicationId}, ambassador: ${app.utm_content || "none"}`);
+    console.log(`[stripe] Attribution recorded for application ${applicationId}, ambassador: ${app.utm_content || "none"} (id: ${resolvedAmbassadorId || "unresolved"})`);
 
     if (app.utm_content && revenueAmount && revenueAmount > 0) {
       const ambassadorCode = app.utm_content;
       const commissionPct = 10.00;
       const commissionAmt = Math.round(revenueAmount * commissionPct) / 100;
       await pgQuery(
-        `INSERT INTO commissions (ambassador_code, utm_id, application_id, revenue_amount, commission_percentage, commission_amount, status)
-         VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
-        [ambassadorCode, app.utm_id || null, applicationId, revenueAmount, commissionPct, commissionAmt]
+        `INSERT INTO commissions (ambassador_code, utm_id, application_id, revenue_amount, commission_percentage, commission_amount, status, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7)`,
+        [ambassadorCode, app.utm_id || null, applicationId, revenueAmount, commissionPct, commissionAmt, resolvedAmbassadorId]
       );
       console.log(`[stripe] Commission created: ${ambassadorCode}, $${commissionAmt} (${commissionPct}% of $${revenueAmount})`);
     }

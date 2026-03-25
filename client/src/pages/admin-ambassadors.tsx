@@ -61,13 +61,16 @@ interface DistPack {
 }
 
 interface AmbassadorSummary {
+  ambassador_id: string;
   ambassador_code: string;
   ambassador_name: string;
   link_count: number;
   total_clicks: number;
   last_activity: string | null;
   email: string | null;
+  phone: string | null;
   region: string | null;
+  status: string;
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -508,7 +511,12 @@ export default function AdminAmbassadors() {
               <CardContent className="py-3 px-4">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="font-medium text-sm" data-testid={`text-name-${amb.ambassador_code}`}>{amb.ambassador_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm" data-testid={`text-name-${amb.ambassador_code}`}>{amb.ambassador_name}</p>
+                      {amb.status !== "active" && (
+                        <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300">{amb.status}</Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                       <span>{amb.ambassador_code}</span>
                       <span>•</span>

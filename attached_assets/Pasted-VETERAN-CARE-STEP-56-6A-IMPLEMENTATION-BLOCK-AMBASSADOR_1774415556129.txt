@@ -1,0 +1,136 @@
+VETERAN CARE — STEP 56.6A IMPLEMENTATION BLOCK
+AMBASSADOR DATA MODEL + ATTRIBUTION ALIGNMENT
+
+IMPORTANT RULES:
+- DO NOT remove or replace utm_id
+- DO NOT break existing attribution flows
+- DO NOT redesign UI unless required for data wiring only
+- DO NOT rebuild production data
+- Use gradual migration / backfill approach
+- If any manual secret, token, Stripe key, or password action is needed from me, tell me separately and I will do it manually outside chat
+
+APPROVED ARCHITECTURE (LOCK THIS)
+1) ambassadors = identity layer
+2) ambassador_links = child distribution / tracking asset layer
+3) utm_id = raw attribution evidence
+4) ambassador_id = stable ownership / reporting key once resolved
+5) commissions = earnings ledger
+6) ambassador_payouts = payout operations table
+
+APPROVED TABLE DIRECTION
+
+A) ambassadors
+Create / confirm dedicated ambassadors table with fields along these lines:
+- id
+- code
+- first_name
+- last_name
+- display_name
+- email
+- phone nullable
+- region_type nullable
+- region_value nullable
+- referral_code nullable
+- stripe_connect_account_id nullable
+- payout_method_status nullable
+- commission_plan_id nullable
+- status
+- notes nullable
+- created_at
+- updated_at
+- created_by nullable
+
+B) ambassador_links
+Use ambassador_links as child table with ambassador_id FK.
+Keep / confirm fields such as:
+- id
+- ambassador_id
+- utm_id unique
+- link_name
+- channel nullable
+- campaign nullable
+- source nullable
+- medium nullable
+- content nullable
+- term nullable
+- landing_path nullable
+- full_url
+- short_url nullable
+- qr_code_url nullable
+- is_primary
+- is_active
+- click_count
+- first_clicked_at
+- last_clicked_at
+- created_at
+- updated_at
+- created_by nullable
+
+C) ambassador_payouts
+Create now, even if payout automation is later.
+Fields should support:
+- ambassador_id
+- payout_period_start
+- payout_period_end
+- total_amount
+- payout_status
+- payout_method
+- external_payout_id nullable
+- paid_at nullable
+- notes nullable
+- created_at
+- updated_at
+
+D) commissions
+Keep commissions as earnings ledger, not payout ledger.
+It should support ambassador_id and payout linkage.
+
+ATTRIBUTION ALIGNMENT REQUIRED
+Ensure both utm_id and ambassador_id can coexist when available across:
+
+- user_attribution_sessions
+- navigator_requests
+- trusted_service_leads
+- partner_applications
+- partner_attribution
+- commissions
+
+RULE:
+- utm_id stays as the raw tracking token / audit trail
+- ambassador_id becomes the stable ownership key for reporting, admin filtering, commission logic, and payout logic
+
+RESOLUTION LOGIC REQUIRED
+Implement / confirm the resolution rule:
+- when tracked link/session data is captured, resolve ambassador_id from ambassador ownership using utm/link relationship
+- once resolved, persist ambassador_id alongside utm_id
+- do not rely only on utm_content or loose text fields long-term if ambassador_id can be stored directly
+
+SAFE MIGRATION REQUIREMENT
+Do this using a safe migration path:
+1) create ambassadors table
+2) backfill ambassador identities from existing ambassador link data if needed
+3) add ambassador_id columns where missing
+4) preserve utm_id throughout
+5) migrate reads toward ambassador-centric reporting without breaking current flow
+
+OUTPUT REQUIRED
+Please reply with:
+
+1. which tables already exist vs which must be created
+2. which tables were updated
+3. exact migration plan
+4. how ambassador_id is resolved from existing tracking/link data
+5. whether ambassador_id is now stored alongside utm_id
+6. whether ambassador_payouts should be created now in this step
+7. whether publish is required
+8. whether any existing behavior changes
+9. what remains before full Step 56.6 admin/dashboard work begins
+10. any RLS/security implications
+11. any manual key/secret action needed from me outside chat
+
+SUCCESS CRITERIA:
+- utm_id remains intact
+- ambassador_id is added as stable ownership key
+- both values coexist across attribution and commission layers
+- schema is aligned for reporting, payouts, and admin visibility
+- no production-breaking rebuild

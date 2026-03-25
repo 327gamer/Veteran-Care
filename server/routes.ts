@@ -78,6 +78,33 @@ let statesHasFullSchema = false;
 
 async function ensureAttributionTables() {
   try {
+    // === AMBASSADORS (canonical identity table) ===
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS ambassadors (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        code TEXT NOT NULL UNIQUE,
+        first_name TEXT,
+        last_name TEXT,
+        display_name TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        region_type TEXT,
+        region_value TEXT,
+        referral_code TEXT,
+        stripe_connect_account_id TEXT,
+        payout_method_status TEXT,
+        commission_plan_id TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        created_by TEXT
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_code ON ambassadors(code)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_status ON ambassadors(status)`);
+
+    // === USER ATTRIBUTION SESSIONS ===
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS user_attribution_sessions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -93,23 +120,33 @@ async function ensureAttributionTables() {
       )
     `);
     await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS utm_id TEXT`);
+    await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_session ON user_attribution_sessions(session_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_ambassador ON user_attribution_sessions(utm_content)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_utm_id ON user_attribution_sessions(utm_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_amb_id ON user_attribution_sessions(ambassador_id)`);
 
+    // === TRUSTED SERVICE LEADS ===
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_source TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_medium TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_content TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS session_id TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_id TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_tsl_amb_id ON trusted_service_leads(ambassador_id)`);
 
+    // === PARTNER APPLICATIONS ===
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_source TEXT`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_medium TEXT`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_campaign TEXT`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_content TEXT`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS session_id TEXT`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_id TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_pa_amb_id ON partner_applications(ambassador_id)`);
 
+    // === PARTNER ATTRIBUTION ===
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS partner_attribution (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -127,8 +164,11 @@ async function ensureAttributionTables() {
       )
     `);
     await pgQuery(`ALTER TABLE partner_attribution ADD COLUMN IF NOT EXISTS utm_id TEXT`);
+    await pgQuery(`ALTER TABLE partner_attribution ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_attr_ambassador ON partner_attribution(ambassador)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_attr_amb_id ON partner_attribution(ambassador_id)`);
 
+    // === AMBASSADOR LINKS (child of ambassadors) ===
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS ambassador_links (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -153,12 +193,14 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS email TEXT`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS region TEXT`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_amb_links_utm_id ON ambassador_links(utm_id)`);
-    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_utm_id ON user_attribution_sessions(utm_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_ambassador_id ON ambassador_links(ambassador_id)`);
 
+    // === COMMISSIONS (earnings ledger) ===
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS commissions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -172,12 +214,129 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE commissions ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
+    await pgQuery(`ALTER TABLE commissions ADD COLUMN IF NOT EXISTS payout_id UUID`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_ambassador ON commissions(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_amb_id ON commissions(ambassador_id)`);
 
-    console.log("[schema] attribution tables ready");
+    // === AMBASSADOR PAYOUTS ===
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS ambassador_payouts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        ambassador_id UUID NOT NULL REFERENCES ambassadors(id),
+        payout_period_start TIMESTAMPTZ NOT NULL,
+        payout_period_end TIMESTAMPTZ NOT NULL,
+        total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+        payout_status TEXT NOT NULL DEFAULT 'pending',
+        payout_method TEXT,
+        external_payout_id TEXT,
+        paid_at TIMESTAMPTZ,
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_amb_id ON ambassador_payouts(ambassador_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_status ON ambassador_payouts(payout_status)`);
+
+    // === BACKFILL: Create ambassador profiles from existing link data ===
+    await pgQuery(`
+      INSERT INTO ambassadors (code, display_name, email, region_value, created_at)
+      SELECT DISTINCT ON (ambassador_code)
+        ambassador_code,
+        ambassador_name,
+        email,
+        region,
+        MIN(created_at) OVER (PARTITION BY ambassador_code)
+      FROM ambassador_links
+      WHERE ambassador_code IS NOT NULL
+      ORDER BY ambassador_code, created_at ASC
+      ON CONFLICT (code) DO NOTHING
+    `);
+
+    // === BACKFILL: Link existing ambassador_links to ambassadors ===
+    await pgQuery(`
+      UPDATE ambassador_links al
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE al.ambassador_code = a.code
+        AND al.ambassador_id IS NULL
+    `);
+
+    // === BACKFILL: Link existing commissions to ambassadors ===
+    await pgQuery(`
+      UPDATE commissions c
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE c.ambassador_code = a.code
+        AND c.ambassador_id IS NULL
+    `);
+
+    // === BACKFILL: Link partner_attribution to ambassadors ===
+    await pgQuery(`
+      UPDATE partner_attribution pa
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE pa.ambassador = a.code
+        AND pa.ambassador_id IS NULL
+    `);
+
+    // === BACKFILL: Link user_attribution_sessions to ambassadors (via utm_content = code) ===
+    await pgQuery(`
+      UPDATE user_attribution_sessions uas
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE uas.utm_content = a.code
+        AND uas.ambassador_id IS NULL
+        AND uas.utm_content IS NOT NULL
+    `);
+
+    // === BACKFILL: Link trusted_service_leads to ambassadors (via utm_content = code) ===
+    await pgQuery(`
+      UPDATE trusted_service_leads tsl
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE tsl.utm_content = a.code
+        AND tsl.ambassador_id IS NULL
+        AND tsl.utm_content IS NOT NULL
+    `);
+
+    // === BACKFILL: Link partner_applications to ambassadors (via utm_content = code) ===
+    await pgQuery(`
+      UPDATE partner_applications pa
+      SET ambassador_id = a.id
+      FROM ambassadors a
+      WHERE pa.utm_content = a.code
+        AND pa.ambassador_id IS NULL
+        AND pa.utm_content IS NOT NULL
+    `);
+
+    console.log("[schema] attribution tables ready (with ambassadors + payouts)");
   } catch (err: any) {
     console.log("[schema] attribution tables setup error:", err.message);
+  }
+}
+
+async function resolveAmbassadorId(ambassadorCode: string | null, utmId?: string | null): Promise<string | null> {
+  try {
+    if (ambassadorCode) {
+      const rows = await pgQuery(
+        `SELECT id FROM ambassadors WHERE code = $1 LIMIT 1`,
+        [ambassadorCode]
+      );
+      if (rows.length > 0) return rows[0].id;
+    }
+    if (utmId) {
+      const rows = await pgQuery(
+        `SELECT ambassador_id FROM ambassador_links WHERE utm_id = $1 AND ambassador_id IS NOT NULL LIMIT 1`,
+        [utmId]
+      );
+      if (rows.length > 0) return rows[0].ambassador_id;
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -652,10 +811,14 @@ export async function registerRoutes(
       return res.status(400).json({ error: "session_id is required" });
     }
     try {
+      let ambassadorId: string | null = null;
+      if (utm_content || utm_id) {
+        ambassadorId = await resolveAmbassadorId(utm_content || null, utm_id || null);
+      }
       await pgQuery(
-        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, utm_id || null, landing_page || null, referrer || null]
+        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, utm_id || null, landing_page || null, referrer || null, ambassadorId]
       );
       return res.json({ ok: true });
     } catch (err: any) {
@@ -708,12 +871,14 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador_name, channels, audiences, campaigns, email, region } = req.body;
+    const { ambassador_name, channels, audiences, campaigns, email, region, phone, first_name, last_name, notes } = req.body;
     if (!ambassador_name || typeof ambassador_name !== "string") {
       return res.status(400).json({ error: "ambassador_name is required" });
     }
     const ambassadorEmail = (email && typeof email === "string") ? email.trim() : null;
     const ambassadorRegion = (region && typeof region === "string") ? region.trim() : null;
+    const ambassadorPhone = (phone && typeof phone === "string") ? phone.trim() : null;
+    const ambassadorNotes = (notes && typeof notes === "string") ? notes.trim() : null;
 
     const code = sanitizeCode(ambassador_name);
     if (!code) return res.status(400).json({ error: "Invalid ambassador name" });
@@ -742,6 +907,30 @@ export async function registerRoutes(
           });
         }
       }
+
+      const ambRows = await pgQuery(
+        `INSERT INTO ambassadors (code, display_name, first_name, last_name, email, phone, region_value, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (code) DO UPDATE SET
+           display_name = COALESCE(EXCLUDED.display_name, ambassadors.display_name),
+           email = COALESCE(EXCLUDED.email, ambassadors.email),
+           phone = COALESCE(EXCLUDED.phone, ambassadors.phone),
+           region_value = COALESCE(EXCLUDED.region_value, ambassadors.region_value),
+           notes = COALESCE(EXCLUDED.notes, ambassadors.notes),
+           updated_at = NOW()
+         RETURNING id`,
+        [
+          code,
+          ambassador_name,
+          (first_name && typeof first_name === "string") ? first_name.trim() : null,
+          (last_name && typeof last_name === "string") ? last_name.trim() : null,
+          ambassadorEmail,
+          ambassadorPhone,
+          ambassadorRegion,
+          ambassadorNotes,
+        ]
+      );
+      const ambassadorId = ambRows[0].id;
 
       const generated: any[] = [];
 
@@ -775,9 +964,9 @@ export async function registerRoutes(
 
           await pgQuery(
             `INSERT INTO ambassador_links
-             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name, email, region)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion]
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name, email, region, ambassador_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion, ambassadorId]
           );
 
           generated.push({
@@ -841,17 +1030,26 @@ export async function registerRoutes(
 
     try {
       const rows = await pgQuery(`
-        SELECT ambassador_code, ambassador_name,
-               COUNT(*) as link_count,
-               COUNT(*) FILTER (WHERE is_active) as active_count,
-               COALESCE(SUM(click_count), 0)::int as total_clicks,
-               MAX(last_clicked_at) as last_activity,
-               MAX(email) as email,
-               MAX(region) as region,
-               MIN(created_at) as created_at
-        FROM ambassador_links
-        GROUP BY ambassador_code, ambassador_name
-        ORDER BY ambassador_name
+        SELECT a.id as ambassador_id, a.code as ambassador_code, a.display_name as ambassador_name,
+               a.email, a.phone, a.region_value as region, a.status,
+               a.first_name, a.last_name, a.notes,
+               a.created_at,
+               COALESCE(ls.link_count, 0)::int as link_count,
+               COALESCE(ls.active_count, 0)::int as active_count,
+               COALESCE(ls.total_clicks, 0)::int as total_clicks,
+               ls.last_activity
+        FROM ambassadors a
+        LEFT JOIN (
+          SELECT ambassador_id,
+                 COUNT(*) as link_count,
+                 COUNT(*) FILTER (WHERE is_active) as active_count,
+                 COALESCE(SUM(click_count), 0) as total_clicks,
+                 MAX(last_clicked_at) as last_activity
+          FROM ambassador_links
+          WHERE ambassador_id IS NOT NULL
+          GROUP BY ambassador_id
+        ) ls ON ls.ambassador_id = a.id
+        ORDER BY a.display_name
       `);
       return res.json({ ambassadors: rows });
     } catch (err: any) {
@@ -3935,12 +4133,13 @@ export async function registerRoutes(
       return res.status(400).json({ error: "provider_id, name, and email are required" });
     }
     try {
+      const leadAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
       const leadRows = await pgQuery(
-        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, role, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'new', $11, $12, $13, $14, $15, $16)
+        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, role, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'new', $11, $12, $13, $14, $15, $16, $17)
          RETURNING *`,
         [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null, role || null,
-         utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null]
+         utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null, leadAmbassadorId]
       );
       const data = leadRows[0];
 
@@ -4028,9 +4227,10 @@ export async function registerRoutes(
     const validPricing = ["monthly", "lead-based", "both"];
     const validPlanTypes = ["state", "national"];
     try {
+      const paAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect', $12, $13, $14, $15, $16, $17)
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect', $12, $13, $14, $15, $16, $17, $18)
          RETURNING *`,
         [
           company_name, contact_name, email,
@@ -4039,6 +4239,7 @@ export async function registerRoutes(
           validPricing.includes(pricing_interest) ? pricing_interest : "both",
           validPlanTypes.includes(plan_type) ? plan_type : null,
           utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null,
+          paAmbassadorId,
         ]
       );
       return res.json(rows[0]);

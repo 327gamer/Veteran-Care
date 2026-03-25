@@ -171,12 +171,22 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `trusted_service_categories` - id (uuid), name, slug (unique), description, icon, display_order (int), is_active (bool), created_at (SQL in `supabase/create_trusted_services.sql`)
 - `trusted_services` - id (uuid), category_id (fk→trusted_service_categories), name, short_description, website_url, phone, email, address, city, state, zip, logo_url, verification_status (pending/verified), verification_label, cta_text, cta_url, is_featured (bool), is_active (bool), is_national (bool, default false — national partners appear in all state filters), display_order (int), notes_internal, created_at
 - `veteran_owned_businesses` - id (uuid), business_name, owner_name, email, phone, website, address, city, state, zip, description, category_id (fk→trusted_service_categories), subcategory, is_veteran_owned (bool), is_nonprofit (bool), logo_url, status (pending/approved/rejected), admin_notes, show_in_trusted_services (bool, default false — when true + approved + has category, surfaces in Trusted Services with "Veteran-Owned" badge via UNION query), created_at, reviewed_at — uses pgQuery (NOT supabaseAdmin)
-- `user_attribution_sessions` - id (uuid), session_id (text), utm_source, utm_medium, utm_campaign, utm_content (ambassador), utm_term, landing_page, referrer, created_at — captures UTM attribution per session (Neon/pgQuery)
-- `partner_attribution` - id (uuid), application_id (fk→partner_applications), ambassador (utm_content), utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount (numeric), event_type, created_at — records attribution at Stripe checkout completion (Neon/pgQuery)
+- `ambassadors` - id (uuid), code (unique), first_name, last_name, display_name, email, phone, region_type, region_value, referral_code, stripe_connect_account_id, payout_method_status, commission_plan_id, status (active/inactive/paused), notes, created_at, updated_at, created_by — canonical ambassador identity table (Neon/pgQuery)
+- `ambassador_links` - id (uuid), ambassador_id (fk→ambassadors), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id (unique), full_url, link_name, audience_type, channel_type, is_active (bool), click_count (int, default 0), first_clicked_at, last_clicked_at, email, region, created_at — child distribution/tracking asset table (Neon/pgQuery)
+- `ambassador_payouts` - id (uuid), ambassador_id (fk→ambassadors), payout_period_start, payout_period_end, total_amount, payout_status (pending/processing/paid/failed), payout_method, external_payout_id, paid_at, notes, created_at, updated_at — payout operations table (Neon/pgQuery)
+- `commissions` - id (uuid), ambassador_id (fk→ambassadors), ambassador_code (text), utm_id (text), application_id (uuid), payout_id (uuid), revenue_amount (numeric 10,2), commission_percentage (numeric 5,2, default 10%), commission_amount (numeric 10,2), status (pending/approved/paid), created_at — earnings ledger (Neon/pgQuery)
+- `user_attribution_sessions` - id (uuid), session_id (text), utm_source, utm_medium, utm_campaign, utm_content (ambassador), utm_term, utm_id, landing_page, referrer, ambassador_id (fk→ambassadors), created_at — UTM attribution per session (Neon/pgQuery)
+- `partner_attribution` - id (uuid), application_id (fk→partner_applications), ambassador (utm_content), ambassador_id (fk→ambassadors), utm_source, utm_medium, utm_campaign, utm_id, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount (numeric), event_type, created_at — Stripe checkout attribution (Neon/pgQuery)
 
-- `ambassador_links` - id (uuid), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id, full_url, link_name, audience_type, channel_type, is_active (bool), click_count (int, default 0), first_clicked_at (timestamptz), last_clicked_at (timestamptz), created_at — stores generated ambassador link packs with click tracking (Neon/pgQuery)
-
-- `commissions` - id (uuid), ambassador_code (text), utm_id (text), application_id (uuid), revenue_amount (numeric 10,2), commission_percentage (numeric 5,2, default 10%), commission_amount (numeric 10,2), status (pending/approved/paid), created_at — tracks ambassador commissions on partner payments (Neon/pgQuery)
+### Ambassador Data Model (56.6A)
+- **ambassadors** = canonical identity layer (profile, status, payout config)
+- **ambassador_links** = child distribution/tracking layer (utm_id links, click counts)
+- **ambassador_payouts** = payout operations (periods, amounts, external refs)
+- **commissions** = earnings ledger (linked to ambassador_id + ambassador_code for backward compat)
+- **utm_id** = raw attribution evidence token (never removed)
+- **ambassador_id** = stable ownership key for reporting, filtering, commission, payout logic
+- **Resolution rule**: `resolveAmbassadorId(ambassadorCode)` resolves code → ambassador.id at insert time across all attribution tables
+- **Dual key coexistence**: utm_id + ambassador_id stored alongside each other in user_attribution_sessions, partner_applications, partner_attribution, trusted_service_leads, commissions
 
 ### Ambassador Link Pack Endpoints (56.3B)
 - `GET /a/:utmId` — Public short redirect, resolves utm_id → full_url (301 redirect)
@@ -186,9 +196,9 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `GET /api/admin/commissions` — List commissions with optional `?ambassador=` and `?status=` filters. Returns commissions + summary by ambassador
 - `GET /api/admin/ambassador-distribution/:code` — Full distribution-ready pack with message templates by audience×channel. JSON (grouped by audience with suggested_copy + commission_info) or CSV (`?format=csv`). Templates auto-inject ambassador's short_url.
 
-### Attribution Columns Added to Existing Tables
-- `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, session_id
-- `partner_applications` — utm_source, utm_medium, utm_campaign, utm_content, session_id
+### Attribution Columns on Existing Tables
+- `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id
+- `partner_applications` — utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id
 - `navigator_requests` (Supabase) — utm_content, session_id (in addition to existing utm_source/medium/campaign)
 
 ## Environment Variables (Secrets)
