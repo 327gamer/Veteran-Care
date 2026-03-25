@@ -103,7 +103,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
 
   return (
     <div className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-background overflow-hidden animate-in slide-in-from-right-8 duration-300" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div ref={scrollRef} className="h-full overflow-y-auto pb-8">
+      <div ref={scrollRef} className="h-full overflow-y-auto pb-24 lg:pb-8">
         <div className="sticky top-0 z-10 bg-primary text-white px-4 py-3">
           <button
             data-testid="button-back-trusted-service"

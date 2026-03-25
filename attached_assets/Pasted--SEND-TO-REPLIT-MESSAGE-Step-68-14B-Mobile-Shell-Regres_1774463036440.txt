@@ -1,0 +1,81 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 68.14B – Mobile Shell Regression Fixes (Post-Stabilization Validation)
+
+IMPORTANT:
+Treat this as ONE focused mobile-shell regression pass.
+These 3 issues appear related to the same viewport / safe-area / overflow system.
+Do not move on to other work until these are fixed and re-tested.
+
+-------------------------------------
+Issue 1: Navigation Guide Cut Off (Entry Screen)
+Device: iPhone Safari
+Flow: Initial load → Quick Navigation Guide
+
+Problem:
+- Top of the guide is slightly cut off
+- Scroll works, but the layout is not respecting top safe-area / viewport spacing properly
+
+Expected:
+- Full guide visible within the mobile viewport
+- Proper top spacing
+- No clipped header/content
+
+-------------------------------------
+Issue 2: Near Me Page Scroll Bug (CRITICAL)
+Device: iPhone Safari
+Flow: Location / Near Me results page
+
+Problem:
+- This page scrolls left/right instead of normal vertical scrolling
+- Only this page appears affected
+
+Expected:
+- Vertical scroll only
+- No horizontal overflow
+- No container wider than viewport
+
+Please specifically audit:
+- overflow-x
+- min-width / width behavior
+- any child container exceeding viewport
+- any shell/layout regression unique to Near Me
+
+-------------------------------------
+Issue 3: Bottom Navigation Cut Off on Resource Detail (CRITICAL)
+Device: iPhone Safari
+Flow: Open any resource detail page
+
+Problem:
+- Bottom navigation is partially cut off
+- Not fully visible within viewport
+
+Expected:
+- Bottom nav fully visible at all times
+- Proper safe-area spacing
+- No nav content pushed below viewport
+
+Please specifically audit:
+- env(safe-area-inset-bottom)
+- nav container height
+- shell height calculation
+- resource detail page interaction with bottom shell
+
+-------------------------------------
+REQUIRED RESPONSE
+-------------------------------------
+
+Please report back with:
+
+1. Root cause for each issue
+2. Exact files changed
+3. Unified fix approach (if these share the same shell cause)
+4. Confirmation mobile re-test was completed
+5. Confirmation that no unrelated layout/admin work was changed
+
+PRIORITY:
+- Issue 2 and Issue 3 are launch blockers
+- Issue 1 is polish, but should be fixed in the same pass if tied to the same shell issue
+
+--- END ---
