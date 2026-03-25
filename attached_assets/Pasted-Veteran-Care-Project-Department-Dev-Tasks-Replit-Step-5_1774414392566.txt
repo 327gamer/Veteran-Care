@@ -1,0 +1,117 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 56.6.1A – Ambassador Table Migration Plan + Manual Supabase Setup
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Do NOT continue building the admin panel UI yet.
+Do NOT assume DB access.
+This step is architecture-safe migration planning + manual Supabase setup instructions only.
+
+We have now reviewed the Master Blueprint system alignment response.
+
+DECISION:
+We will NOT treat ambassador_links as the permanent home for ambassador identity/profile data.
+
+We need to move to the recommended scalable structure:
+
+- ambassadors (canonical ambassador profile table)
+- ambassador_links (child table linked by ambassador_id)
+
+==================================================
+OBJECTIVE
+==================================================
+
+Prepare the system for a proper ambassador data model before continuing Step 56.6 UI work.
+
+This step must ONLY do:
+
+1. confirm migration plan
+2. define exact schema changes
+3. provide manual Supabase SQL for me to run
+4. explain backfill strategy
+5. explain what code changes should happen only AFTER DB confirmation
+
+==================================================
+TARGET DATA MODEL
+==================================================
+
+Create / use:
+
+A) ambassadors
+Fields should include:
+- id (uuid)
+- code (unique short ambassador code)
+- name
+- email
+- phone (optional)
+- region
+- status
+- notes (optional)
+- created_at
+- updated_at
+
+B) ambassador_links
+Should remain the link table, but include:
+- ambassador_id (FK to ambassadors.id)
+
+Use additive migration only.
+Do NOT break working attribution/link logic.
+
+==================================================
+THIS STEP ONLY – REQUIRED OUTPUT
+==================================================
+
+Please provide:
+
+1. CURRENT STATE ASSESSMENT
+- what the current live schema appears to be
+- what assumptions you are making
+- what is already present vs missing
+
+2. EXACT SUPABASE SCHEMA PLAN
+- create ambassadors table
+- add ambassador_id to ambassador_links
+- any indexes / constraints / FKs needed
+- whether any additional helper fields are recommended now
+
+3. BACKFILL PLAN
+- how to backfill ambassadors from current ambassador link data safely
+- how to link existing ambassador_links rows to ambassadors
+- how to handle duplicate ambassador identity rows if present
+
+4. MANUAL SQL
+Provide exact SQL in the correct order for me to run manually in Supabase.
+
+5. POST-MIGRATION CODE PLAN
+After DB confirmation, explain what app/backend changes should happen next:
+- generate endpoint
+- admin ambassadors list view
+- any reads/writes that should switch to ambassadors + ambassador_links
+
+6. SAFETY / ROLLBACK NOTES
+- what to verify before and after running SQL
+- how to avoid breaking working attribution logic
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+- Do NOT build UI changes in this step
+- Do NOT continue admin panel expansion in this step
+- Do NOT remove legacy fields yet
+- Do NOT destroy or overwrite current working attribution/link system
+- This must be additive and safe
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After this planning step, report back with:
+
+1. ROOT DESIGN DECISION
+2. EXACT SQL TO RUN MANUALLY
+3. BACKFILL PLAN
+4. POST-DB CODE CHANGES TO DO NEXT
+5. CONFIRMATION THAT UI BUILD SHOULD WAIT UNTIL DB MIGRATION IS CONFIRMED
