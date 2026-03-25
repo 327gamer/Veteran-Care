@@ -1,0 +1,107 @@
+VETERAN CARE — STEP 56.3A.2 IMPLEMENTATION BLOCK
+UTM_ID UNIQUENESS ENFORCEMENT
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change funnel routing
+- DO NOT break existing GA4 tracking, attribution storage, or Stripe attribution
+- DO NOT proceed to final ambassador link pack generation until utm_id uniqueness is fully enforced
+
+OBJECTIVE:
+Enforce globally unique utm_id values for every distributed ambassador link so attribution, reporting, and commissions remain precise at link level.
+
+========================================
+PART 1 — FINAL UTM_ID FORMAT
+========================================
+
+Lock the final utm_id format as:
+
+utm_id={ambassador}_{campaign}_{channel}_{sequence}
+
+Examples:
+- tracy_upstate_sc_launch_facebook_01
+- tracy_upstate_sc_launch_facebook_02
+- john_smith_sc_partner_growth_linkedin_01
+
+Rules:
+- lowercase only
+- underscores only
+- no spaces
+- sequence must be zero-padded when practical (01, 02, 03)
+
+========================================
+PART 2 — UNIQUENESS RULE
+========================================
+
+Every generated ambassador link must have a unique utm_id.
+
+Preferred method:
+- sequence suffix per ambassador + campaign + channel combination
+
+Example:
+If tracy_upstate already has:
+tracy_upstate_sc_launch_facebook_01
+
+Then the next generated Facebook link for the same ambassador/campaign must become:
+tracy_upstate_sc_launch_facebook_02
+
+Do NOT reuse utm_id values.
+
+========================================
+PART 3 — GENERATION LOGIC
+========================================
+
+Update ambassador link generation logic so it:
+
+1. checks existing links
+2. determines next available sequence
+3. generates the next unique utm_id automatically
+
+If a database-backed ambassador_links table already exists or is being created, use it to guarantee uniqueness.
+If not, implement the safest persistence method now.
+
+========================================
+PART 4 — DATABASE / STORAGE
+========================================
+
+Ensure utm_id is stored in all required layers:
+
+- user_attribution_sessions
+- trusted_service_leads
+- navigator_requests
+- partner_applications
+- partner_attribution
+- ambassador_links (if used)
+
+If any layer is missing utm_id:
+- add it now
+- provide exact details of what changed
+
+========================================
+PART 5 — VALIDATION
+========================================
+
+Confirm:
+
+1. two links for same ambassador + campaign + channel generate different utm_id values
+2. utm_id persists from session → lead → partner application → Stripe attribution
+3. reporting queries can group/filter by utm_id cleanly
+
+========================================
+PART 6 — OUTPUT REQUIRED
+========================================
+
+Provide:
+
+1. final uniqueness method used
+2. whether a sequence system was implemented
+3. any tables created or updated
+4. two example links showing unique utm_id values
+5. whether publish is required
+6. confirmation that Step 56.3B can safely proceed after this
+
+SUCCESS CRITERIA:
+- every distributed ambassador link has a globally unique utm_id
+- no duplicate link identifiers are possible
+- attribution remains precise at link level
+- system is ready for final ambassador link pack generation

@@ -149,6 +149,8 @@ async function ensureAttributionTables() {
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
+    await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_amb_links_utm_id ON ambassador_links(utm_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_utm_id ON user_attribution_sessions(utm_id)`);
 
     console.log("[schema] attribution tables ready");
   } catch (err: any) {
@@ -709,6 +711,22 @@ export async function registerRoutes(
 
       const generated: any[] = [];
 
+      async function nextUtmId(ambassadorCode: string, campaign: string, channel: string): Promise<string> {
+        const prefix = `${ambassadorCode}_${campaign}_${channel}_`;
+        const rows = await pgQuery(
+          `SELECT utm_id FROM ambassador_links WHERE utm_id LIKE $1 ORDER BY utm_id DESC LIMIT 1`,
+          [`${prefix}%`]
+        );
+        let seq = 1;
+        if (rows.length > 0) {
+          const last = rows[0].utm_id as string;
+          const suffix = last.slice(prefix.length);
+          const num = parseInt(suffix, 10);
+          if (!isNaN(num)) seq = num + 1;
+        }
+        return `${prefix}${String(seq).padStart(2, "0")}`;
+      }
+
       for (const audienceKey of selectedAudiences) {
         const audience = AMBASSADOR_AUDIENCES[audienceKey];
         if (!audience) continue;
@@ -717,7 +735,7 @@ export async function registerRoutes(
         const campaign = sanitizeCode(campaignOverride || audience.campaign);
 
         for (const channel of selectedChannels) {
-          const utmId = `${code}_${campaign}_${channel}`;
+          const utmId = await nextUtmId(code, campaign, channel);
           const fullUrl = buildAmbassadorUrl(audience.path, channel, campaign, code, utmId);
 
           await pgQuery(
