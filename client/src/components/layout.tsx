@@ -123,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
     : "JD";
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-background font-sans">
+    <div className="h-screen flex flex-col overflow-hidden bg-background font-sans" style={{ height: '100dvh' }}>
       {/* Top Bar - Persistent */}
       <header className="shrink-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -275,7 +275,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pb-20 lg:pb-0">
+      <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden overscroll-contain pb-20 lg:pb-0" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
           {children}
         </div>
