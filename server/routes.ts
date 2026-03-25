@@ -103,6 +103,7 @@ async function ensureAttributionTables() {
         created_by TEXT
       )
     `);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(5,2)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_code ON ambassadors(code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_status ON ambassadors(status)`);
 
@@ -196,6 +197,8 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS email TEXT`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS region TEXT`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS short_url TEXT`);
+    await pgQuery(`UPDATE ambassador_links SET short_url = '/a/' || utm_id WHERE short_url IS NULL AND utm_id IS NOT NULL`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
@@ -1025,9 +1028,9 @@ export async function registerRoutes(
 
           await pgQuery(
             `INSERT INTO ambassador_links
-             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name, email, region, ambassador_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion, ambassadorId]
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, short_url, audience_type, channel_type, link_name, email, region, ambassador_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, `/a/${utmId}`, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion, ambassadorId]
           );
 
           generated.push({
@@ -1123,7 +1126,7 @@ export async function registerRoutes(
     try {
       const rows = await pgQuery(
         `SELECT id, code, display_name, first_name, last_name, email, phone,
-                region_type, region_value, status, notes,
+                region_type, region_value, status, notes, commission_rate,
                 created_at, updated_at
          FROM ambassadors WHERE id = $1`,
         [req.params.id]
@@ -1132,7 +1135,7 @@ export async function registerRoutes(
       const amb = rows[0];
 
       const links = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, audience_type, channel_type,
+        `SELECT id, link_name, utm_id, full_url, short_url, audience_type, channel_type,
                 click_count, first_clicked_at, last_clicked_at, is_active, created_at
          FROM ambassador_links
          WHERE ambassador_id = $1
@@ -1168,7 +1171,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/ambassadors/:id", requireAdmin, async (req, res) => {
     try {
-      const { display_name, first_name, last_name, email, phone, region_type, region_value, status, notes } = req.body;
+      const { display_name, first_name, last_name, email, phone, region_type, region_value, status, notes, commission_rate } = req.body;
       const fields: string[] = [];
       const values: any[] = [];
       let idx = 1;
@@ -1189,6 +1192,10 @@ export async function registerRoutes(
       addField("region_value", region_value);
       addField("status", status);
       addField("notes", notes);
+      if (commission_rate !== undefined) {
+        fields.push(`commission_rate = $${idx++}`);
+        values.push(commission_rate === null || commission_rate === "" ? null : parseFloat(commission_rate));
+      }
 
       if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
 

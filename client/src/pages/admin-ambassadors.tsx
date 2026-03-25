@@ -79,6 +79,7 @@ interface AmbassadorDetail {
   region_value: string | null;
   status: string;
   notes: string | null;
+  commission_rate: number | null;
   created_at: string;
   updated_at: string | null;
   links: AmbassadorLink[];
@@ -551,6 +552,12 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                         <MapPin className="h-3 w-3 text-slate-400" />
                         {[amb.region_value, amb.region_type ? `(${amb.region_type})` : ""].filter(Boolean).join(" ")}
                       </p>
+                    </div>
+                  )}
+                  {amb.commission_rate != null && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">Commission Rate</span>
+                      <p className="font-medium" data-testid="text-commission-rate">{amb.commission_rate}%</p>
                     </div>
                   )}
                 </div>

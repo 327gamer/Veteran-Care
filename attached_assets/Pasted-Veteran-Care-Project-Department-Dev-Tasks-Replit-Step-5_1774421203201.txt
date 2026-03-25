@@ -1,0 +1,102 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 56.6B.1A – Small Schema Additions (Non-Blocking)
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+This step is schema + light wiring only.
+Do NOT build new UI modules.
+Do NOT change attribution or commission logic.
+
+==================================================
+OBJECTIVE
+==================================================
+
+Add two small fields to support future admin panel functionality:
+
+1) ambassador_links.short_url
+2) ambassadors.commission_rate
+
+These are additive and non-breaking.
+
+==================================================
+REQUIRED CHANGES
+==================================================
+
+1) Add column: ambassador_links.short_url
+
+- type: text
+- nullable
+- purpose: store short link format (e.g. '/a/{utm_id}' or full absolute URL)
+
+Backfill:
+- for all existing rows:
+  short_url = '/a/' || utm_id
+
+2) Add column: ambassadors.commission_rate
+
+- type: numeric (decimal, e.g. numeric(5,2))
+- nullable
+- no logic change required
+- display-only for now
+
+==================================================
+BACKEND WIRING
+==================================================
+
+1) Ensure short_url is:
+- populated during link generation (POST /api/admin/ambassador-links/generate)
+- returned in any link-related endpoints
+
+2) Ensure commission_rate is:
+- included in ambassador read endpoints (list + detail)
+- included in create/edit endpoints (but optional)
+
+==================================================
+FRONTEND (MINIMAL ONLY)
+==================================================
+
+- For Ambassador Detail View:
+  optionally display commission_rate if present
+  (do not build commission logic, just show value if available)
+
+- For Links display:
+  use short_url if available, fallback to full_url
+
+No UI redesign required.
+
+==================================================
+TEST CASES
+==================================================
+
+1) Existing ambassador_links rows now have short_url populated
+2) New link generation includes short_url automatically
+3) Ambassador list/detail still works
+4) commission_rate can be saved (optional) and retrieved
+5) No errors in existing admin views
+6) No changes to attribution or commission calculations
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+Report back with:
+
+1. SCHEMA CHANGES
+- confirmation both columns exist
+
+2. BACKFILL
+- confirmation short_url populated for all existing rows
+
+3. FILES CHANGED
+- exact backend/frontend files
+
+4. TESTING PERFORMED
+- existing data
+- new ambassador
+- new link generation
+
+5. CONFIRMATION
+- no regressions
+- no impact to attribution/commission logic
