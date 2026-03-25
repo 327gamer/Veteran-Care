@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, getUTMParams } from "@/lib/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -157,6 +157,7 @@ export default function TrustedServices() {
 
   const leadMutation = useMutation({
     mutationFn: async (data: { service: TrustedService; form: LeadForm }) => {
+      const utm = getUTMParams();
       const res = await fetch("/api/trusted-service-leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -171,6 +172,11 @@ export default function TrustedServices() {
           city: data.form.city || undefined,
           state: data.form.state || undefined,
           message: data.form.message || undefined,
+          utm_source: utm.utm_source || undefined,
+          utm_medium: utm.utm_medium || undefined,
+          utm_campaign: utm.utm_campaign || undefined,
+          utm_content: utm.utm_content || undefined,
+          session_id: sessionStorage.getItem("vc_session_id") || undefined,
         }),
       });
       if (!res.ok) {

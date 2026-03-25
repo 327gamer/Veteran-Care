@@ -1,0 +1,113 @@
+VETERAN CARE — STEP 56.2 IMPLEMENTATION BLOCK
+AMBASSADOR ATTRIBUTION + COMMISSION FOUNDATION
+
+IMPORTANT RULES:
+- DO NOT change UI
+- DO NOT break existing flows
+- DO NOT modify Stripe logic yet
+- ONLY extend system for attribution capture
+
+OBJECTIVE:
+Capture UTM attribution data and persist it through the full funnel so conversions (leads + partner payments) can be tied to ambassadors and campaigns.
+
+========================================
+PART 1 — UTM BACKEND CAPTURE
+========================================
+
+On user session:
+
+Capture and store:
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content (ambassador)
+- landing_page
+- timestamp
+
+Store in:
+- localStorage (already exists)
+- ALSO send to backend (Supabase)
+
+Create table:
+
+user_attribution_sessions:
+- id
+- session_id
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content
+- landing_page
+- created_at
+
+========================================
+PART 2 — LEAD ATTRIBUTION
+========================================
+
+When:
+- lead_submit occurs
+
+Attach:
+- utm fields
+- session_id
+
+Store in:
+leads table (or new attribution_leads table)
+
+========================================
+PART 3 — PARTNER / STRIPE ATTRIBUTION
+========================================
+
+When:
+- partner_apply_submitted
+- Stripe success event
+
+Capture and store:
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content (ambassador)
+- stripe_customer_id
+- plan
+- timestamp
+
+Create table:
+
+partner_attribution:
+- id
+- ambassador (utm_content)
+- utm_source
+- utm_medium
+- utm_campaign
+- stripe_customer_id
+- revenue_amount
+- created_at
+
+========================================
+PART 4 — ADMIN PANEL PREP
+========================================
+
+Prepare data for future admin dashboard:
+
+- leads per ambassador
+- revenue per ambassador
+- conversion rate per ambassador
+
+DO NOT build UI yet
+ONLY ensure data is stored correctly
+
+========================================
+PART 5 — OUTPUT REQUIRED
+
+1. SQL for all new tables
+2. backend flow explanation
+3. where attribution is captured
+4. how it connects to Stripe events
+5. how to verify attribution works
+
+SUCCESS CRITERIA:
+
+- Every lead has attribution
+- Every partner signup has attribution
+- Attribution persists across session
+- System ready for commission logic

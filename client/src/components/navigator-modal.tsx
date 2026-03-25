@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { platform, t } from "@shared/platform";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, getUTMParams } from "@/lib/analytics";
 import {
   Dialog,
   DialogContent,
@@ -230,6 +230,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
     setSubmitting(true);
     try {
       const loc = useSavedResources.getState().userLocation;
+      const utm = getUTMParams();
       const res = await fetch("/api/navigator-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -248,6 +249,11 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
           user_zip: loc.zip || null,
           urgency: form.urgency || null,
           source: source || (context?.resource_id ? "resource_page" : null),
+          utm_source: utm.utm_source || null,
+          utm_medium: utm.utm_medium || null,
+          utm_campaign: utm.utm_campaign || null,
+          utm_content: utm.utm_content || null,
+          session_id: sessionStorage.getItem("vc_session_id") || null,
         }),
       });
       const data = await res.json();

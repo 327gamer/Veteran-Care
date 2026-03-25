@@ -14,7 +14,18 @@ const SESSION_UTM_KEY = "vc_utm";
 const DEDUP_KEY = "vc_event_dedup";
 const DEDUP_TTL = 30 * 60 * 1000;
 
+function getOrCreateSessionId(): string {
+  let sid = sessionStorage.getItem("vc_session_id");
+  if (!sid) {
+    sid = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem("vc_session_id", sid);
+  }
+  return sid;
+}
+
 export function captureUTM(): void {
+  getOrCreateSessionId();
+
   const params = new URLSearchParams(window.location.search);
   const captured: Record<string, string> = {};
   UTM_KEYS.forEach((key) => {
@@ -28,6 +39,23 @@ export function captureUTM(): void {
   if (!localStorage.getItem(FIRST_TOUCH_KEY)) {
     localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(captured));
   }
+
+  try {
+    fetch("/api/attribution-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: getOrCreateSessionId(),
+        utm_source: captured.utm_source || null,
+        utm_medium: captured.utm_medium || null,
+        utm_campaign: captured.utm_campaign || null,
+        utm_content: captured.utm_content || null,
+        utm_term: captured.utm_term || null,
+        landing_page: window.location.pathname,
+        referrer: document.referrer || null,
+      }),
+    }).catch(() => {});
+  } catch {}
 }
 
 export function getUTMParams(): Record<string, string> {

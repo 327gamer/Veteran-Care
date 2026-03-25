@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, getUTMParams } from "@/lib/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,7 @@ export default function PartnerApply() {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
+      const utm = getUTMParams();
       const res = await fetch("/api/partner-applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,6 +84,11 @@ export default function PartnerApply() {
           ...form,
           category_id: form.category_id || null,
           state: form.plan_type === "national" ? null : (form.state || null),
+          utm_source: utm.utm_source || null,
+          utm_medium: utm.utm_medium || null,
+          utm_campaign: utm.utm_campaign || null,
+          utm_content: utm.utm_content || null,
+          session_id: sessionStorage.getItem("vc_session_id") || null,
         }),
       });
       if (!res.ok) {

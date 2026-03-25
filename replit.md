@@ -171,6 +171,13 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `trusted_service_categories` - id (uuid), name, slug (unique), description, icon, display_order (int), is_active (bool), created_at (SQL in `supabase/create_trusted_services.sql`)
 - `trusted_services` - id (uuid), category_id (fk→trusted_service_categories), name, short_description, website_url, phone, email, address, city, state, zip, logo_url, verification_status (pending/verified), verification_label, cta_text, cta_url, is_featured (bool), is_active (bool), is_national (bool, default false — national partners appear in all state filters), display_order (int), notes_internal, created_at
 - `veteran_owned_businesses` - id (uuid), business_name, owner_name, email, phone, website, address, city, state, zip, description, category_id (fk→trusted_service_categories), subcategory, is_veteran_owned (bool), is_nonprofit (bool), logo_url, status (pending/approved/rejected), admin_notes, show_in_trusted_services (bool, default false — when true + approved + has category, surfaces in Trusted Services with "Veteran-Owned" badge via UNION query), created_at, reviewed_at — uses pgQuery (NOT supabaseAdmin)
+- `user_attribution_sessions` - id (uuid), session_id (text), utm_source, utm_medium, utm_campaign, utm_content (ambassador), utm_term, landing_page, referrer, created_at — captures UTM attribution per session (Neon/pgQuery)
+- `partner_attribution` - id (uuid), application_id (fk→partner_applications), ambassador (utm_content), utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount (numeric), event_type, created_at — records attribution at Stripe checkout completion (Neon/pgQuery)
+
+### Attribution Columns Added to Existing Tables
+- `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, session_id
+- `partner_applications` — utm_source, utm_medium, utm_campaign, utm_content, session_id
+- `navigator_requests` (Supabase) — utm_content, session_id (in addition to existing utm_source/medium/campaign)
 
 ## Environment Variables (Secrets)
 - `SUPABASE_URL` - Supabase project URL

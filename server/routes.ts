@@ -75,6 +75,61 @@ let hasTrustedServicesTable = false;
 
 let statesHasFullSchema = false;
 
+async function ensureAttributionTables() {
+  try {
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS user_attribution_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id TEXT NOT NULL,
+        utm_source TEXT,
+        utm_medium TEXT,
+        utm_campaign TEXT,
+        utm_content TEXT,
+        utm_term TEXT,
+        landing_page TEXT,
+        referrer TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_session ON user_attribution_sessions(session_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_ambassador ON user_attribution_sessions(utm_content)`);
+
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_source TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_medium TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_content TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS session_id TEXT`);
+
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_source TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_medium TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_campaign TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS utm_content TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS session_id TEXT`);
+
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS partner_attribution (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        application_id UUID REFERENCES partner_applications(id),
+        ambassador TEXT,
+        utm_source TEXT,
+        utm_medium TEXT,
+        utm_campaign TEXT,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        plan_type TEXT,
+        revenue_amount NUMERIC(10, 2),
+        event_type TEXT NOT NULL DEFAULT 'checkout_completed',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_attr_ambassador ON partner_attribution(ambassador)`);
+
+    console.log("[schema] attribution tables ready");
+  } catch (err: any) {
+    console.log("[schema] attribution tables setup error:", err.message);
+  }
+}
+
 async function checkTrustedServicesTable() {
   try {
     const rows = await pgQuery(`SELECT id FROM trusted_service_categories LIMIT 1`);
@@ -367,6 +422,8 @@ async function checkNavLifecycleColumns() {
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_source TEXT;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_medium TEXT;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_campaign TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_content TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS session_id TEXT;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS urgency TEXT;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS assigned_to TEXT;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS contacted_at TIMESTAMPTZ;");
@@ -502,6 +559,7 @@ export async function registerRoutes(
   await checkPartnerTable();
   await checkStatesTable();
   await checkTrustedServicesTable();
+  await ensureAttributionTables();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
 
@@ -533,6 +591,24 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[geocode] Reverse geocode failed:", err?.message);
       return res.status(502).json({ error: "Reverse geocode failed" });
+    }
+  });
+
+  app.post("/api/attribution-session", async (req, res) => {
+    const { session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, referrer } = req.body;
+    if (!session_id) {
+      return res.status(400).json({ error: "session_id is required" });
+    }
+    try {
+      await pgQuery(
+        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, referrer)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, landing_page || null, referrer || null]
+      );
+      return res.json({ ok: true });
+    } catch (err: any) {
+      console.log("[attribution] session capture error:", err.message);
+      return res.status(500).json({ error: "Failed to capture attribution" });
     }
   });
 
@@ -2168,6 +2244,8 @@ export async function registerRoutes(
       utm_source,
       utm_medium,
       utm_campaign,
+      utm_content,
+      session_id,
       urgency,
       consent_followup,
     } = req.body;
@@ -2215,6 +2293,8 @@ export async function registerRoutes(
       if (utm_source && typeof utm_source === "string") baseRow.utm_source = utm_source.trim();
       if (utm_medium && typeof utm_medium === "string") baseRow.utm_medium = utm_medium.trim();
       if (utm_campaign && typeof utm_campaign === "string") baseRow.utm_campaign = utm_campaign.trim();
+      if (utm_content && typeof utm_content === "string") baseRow.utm_content = utm_content.trim();
+      if (session_id && typeof session_id === "string") baseRow.session_id = session_id.trim();
       if (urgency && validUrgency.includes(urgency)) baseRow.urgency = urgency;
       if (consent_followup === true) baseRow.consent_followup = true;
     }
@@ -3159,16 +3239,17 @@ export async function registerRoutes(
   });
 
   app.post("/api/trusted-service-leads", async (req, res) => {
-    const { provider_id, provider_name, category_id, name, email, phone, city, state, message, role } = req.body;
+    const { provider_id, provider_name, category_id, name, email, phone, city, state, message, role, utm_source, utm_medium, utm_campaign, utm_content, session_id } = req.body;
     if (!provider_id || !name || !email) {
       return res.status(400).json({ error: "provider_id, name, and email are required" });
     }
     try {
       const leadRows = await pgQuery(
-        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, role, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'new')
+        `INSERT INTO trusted_service_leads (provider_id, provider_name, category_id, name, email, phone, city, state, message, role, status, utm_source, utm_medium, utm_campaign, utm_content, session_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'new', $11, $12, $13, $14, $15)
          RETURNING *`,
-        [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null, role || null]
+        [provider_id, provider_name || "", category_id || null, name, email, phone || null, city || null, state || null, message || null, role || null,
+         utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, session_id || null]
       );
       const data = leadRows[0];
 
@@ -3249,7 +3330,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, utm_source, utm_medium, utm_campaign, utm_content, session_id } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
@@ -3257,8 +3338,8 @@ export async function registerRoutes(
     const validPlanTypes = ["state", "national"];
     try {
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect')
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status, utm_source, utm_medium, utm_campaign, utm_content, session_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect', $12, $13, $14, $15, $16)
          RETURNING *`,
         [
           company_name, contact_name, email,
@@ -3266,6 +3347,7 @@ export async function registerRoutes(
           category_id || null, service_description || null,
           validPricing.includes(pricing_interest) ? pricing_interest : "both",
           validPlanTypes.includes(plan_type) ? plan_type : null,
+          utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, session_id || null,
         ]
       );
       return res.json(rows[0]);

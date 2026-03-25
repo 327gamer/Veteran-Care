@@ -208,6 +208,31 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
       console.log(`[stripe] Failed to create provider:`, err.message);
     }
   }
+
+  try {
+    let revenueAmount: number | null = null;
+    if (session.amount_total && session.amount_total > 0) {
+      revenueAmount = session.amount_total / 100;
+    }
+    await pgQuery(
+      `INSERT INTO partner_attribution (application_id, ambassador, utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount, event_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'checkout_completed')`,
+      [
+        applicationId,
+        app.utm_content || null,
+        app.utm_source || null,
+        app.utm_medium || null,
+        app.utm_campaign || null,
+        customerId || null,
+        subscriptionId || null,
+        app.plan_type || null,
+        revenueAmount,
+      ]
+    );
+    console.log(`[stripe] Attribution recorded for application ${applicationId}, ambassador: ${app.utm_content || "none"}`);
+  } catch (err: any) {
+    console.log(`[stripe] Attribution recording failed:`, err.message);
+  }
 }
 
 export async function verifyAndActivateCheckoutSession(sessionId: string): Promise<{ status: string; applicationId?: string; error?: string }> {
