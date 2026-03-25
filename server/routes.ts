@@ -157,6 +157,22 @@ async function ensureAttributionTables() {
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_amb_links_utm_id ON ambassador_links(utm_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_utm_id ON user_attribution_sessions(utm_id)`);
 
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS commissions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        ambassador_code TEXT NOT NULL,
+        utm_id TEXT,
+        application_id UUID,
+        revenue_amount NUMERIC(10,2) DEFAULT 0,
+        commission_percentage NUMERIC(5,2) DEFAULT 10.00,
+        commission_amount NUMERIC(10,2) DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_ambassador ON commissions(ambassador_code)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`);
+
     console.log("[schema] attribution tables ready");
   } catch (err: any) {
     console.log("[schema] attribution tables setup error:", err.message);
@@ -928,6 +944,38 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[ambassador] report error:", err.message);
       return res.status(500).json({ error: "Failed to generate report" });
+    }
+  });
+
+  app.get("/api/admin/commissions", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { ambassador, status } = req.query;
+    try {
+      let sql = `SELECT * FROM commissions WHERE 1=1`;
+      const params: any[] = [];
+      let idx = 1;
+      if (ambassador) { sql += ` AND ambassador_code = $${idx++}`; params.push(sanitizeCode(ambassador as string)); }
+      if (status) { sql += ` AND status = $${idx++}`; params.push(status); }
+      sql += ` ORDER BY created_at DESC`;
+      const rows = await pgQuery(sql, params);
+
+      const summary = await pgQuery(`
+        SELECT ambassador_code,
+               COUNT(*) AS total,
+               SUM(commission_amount) AS total_commission,
+               SUM(revenue_amount) AS total_revenue,
+               SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END) AS pending_amount,
+               SUM(CASE WHEN status = 'approved' THEN commission_amount ELSE 0 END) AS approved_amount,
+               SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END) AS paid_amount
+        FROM commissions GROUP BY ambassador_code ORDER BY total_commission DESC
+      `);
+
+      return res.json({ commissions: rows, count: rows.length, summary });
+    } catch (err: any) {
+      console.log("[commissions] list error:", err.message);
+      return res.status(500).json({ error: "Failed to list commissions" });
     }
   });
 

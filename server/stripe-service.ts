@@ -231,6 +231,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
       ]
     );
     console.log(`[stripe] Attribution recorded for application ${applicationId}, ambassador: ${app.utm_content || "none"}`);
+
+    if (app.utm_content && revenueAmount && revenueAmount > 0) {
+      const ambassadorCode = app.utm_content;
+      const commissionPct = 10.00;
+      const commissionAmt = Math.round(revenueAmount * commissionPct) / 100;
+      await pgQuery(
+        `INSERT INTO commissions (ambassador_code, utm_id, application_id, revenue_amount, commission_percentage, commission_amount, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+        [ambassadorCode, app.utm_id || null, applicationId, revenueAmount, commissionPct, commissionAmt]
+      );
+      console.log(`[stripe] Commission created: ${ambassadorCode}, $${commissionAmt} (${commissionPct}% of $${revenueAmount})`);
+    }
   } catch (err: any) {
     console.log(`[stripe] Attribution recording failed:`, err.message);
   }

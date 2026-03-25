@@ -65,9 +65,14 @@ export function getUTMParams(): Record<string, string> {
     const first = JSON.parse(localStorage.getItem(FIRST_TOUCH_KEY) || "{}");
     const merged: Record<string, string> = {};
     UTM_KEYS.forEach((key) => {
-      if (session[key]) merged[key] = session[key];
-      else if (first[key]) merged[key] = first[key];
+      if (key === "utm_id") {
+        merged[key] = first[key] || session[key];
+      } else {
+        if (session[key]) merged[key] = session[key];
+        else if (first[key]) merged[key] = first[key];
+      }
     });
+    Object.keys(merged).forEach((k) => { if (!merged[k]) delete merged[k]; });
     return merged;
   } catch {
     return {};

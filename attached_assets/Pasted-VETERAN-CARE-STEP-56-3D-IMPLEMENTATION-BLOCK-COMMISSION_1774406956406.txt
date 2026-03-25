@@ -1,0 +1,93 @@
+VETERAN CARE — STEP 56.3D IMPLEMENTATION BLOCK
+COMMISSION & ATTRIBUTION LOCK FOUNDATION
+
+IMPORTANT RULES:
+- DO NOT change UTM structure
+- DO NOT break existing attribution flows
+- DO NOT redesign UI
+- This step prepares backend for commission tracking and payout accuracy
+
+OBJECTIVE:
+Lock attribution logic and create a commission tracking foundation so every revenue event can be tied to an ambassador and prepared for payout.
+
+========================================
+PART 1 — ATTRIBUTION LOCK (CRITICAL)
+========================================
+
+Implement FIRST-TOUCH attribution rule:
+
+- first utm_id captured in session becomes permanent
+- do NOT overwrite utm_id on future visits
+- store first_touch_utm_id if not already explicitly stored
+
+========================================
+PART 2 — LEAD SNAPSHOT
+========================================
+
+Ensure all lead tables store:
+- utm_id snapshot at submission time
+
+Do NOT rely on session after submission.
+
+========================================
+PART 3 — PARTNER SNAPSHOT
+========================================
+
+Ensure partner_applications and partner_attribution store:
+- utm_id snapshot at time of submission/payment
+
+========================================
+PART 4 — COMMISSION TABLE
+========================================
+
+Create new table:
+
+commissions
+
+Fields:
+- id
+- ambassador_identifier
+- utm_id
+- partner_id or application_id
+- revenue_amount
+- commission_percentage
+- commission_amount
+- status (pending / approved / paid)
+- created_at
+
+========================================
+PART 5 — STRIPE TRIGGER
+========================================
+
+On Stripe successful payment:
+
+- read utm_id from partner_attribution
+- calculate commission (use placeholder % for now)
+- insert record into commissions table
+
+========================================
+PART 6 — VALIDATION
+========================================
+
+Confirm:
+
+1. same user clicking multiple ambassador links keeps first utm_id
+2. lead stores utm_id snapshot
+3. partner payment creates commission record
+4. commission links to correct ambassador + utm_id
+
+========================================
+PART 7 — OUTPUT REQUIRED
+========================================
+
+Provide:
+1. tables created
+2. fields added
+3. attribution rule confirmed
+4. commission logic implemented
+5. whether publish is required
+
+SUCCESS CRITERIA:
+- attribution is locked and defensible
+- commission tracking is created
+- system is ready for payout logic and dashboards

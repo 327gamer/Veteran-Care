@@ -176,11 +176,14 @@ Resources can belong to multiple subcategories via normalized junction tables in
 
 - `ambassador_links` - id (uuid), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id, full_url, link_name, audience_type, channel_type, is_active (bool), click_count (int, default 0), first_clicked_at (timestamptz), last_clicked_at (timestamptz), created_at — stores generated ambassador link packs with click tracking (Neon/pgQuery)
 
+- `commissions` - id (uuid), ambassador_code (text), utm_id (text), application_id (uuid), revenue_amount (numeric 10,2), commission_percentage (numeric 5,2, default 10%), commission_amount (numeric 10,2), status (pending/approved/paid), created_at — tracks ambassador commissions on partner payments (Neon/pgQuery)
+
 ### Ambassador Link Pack Endpoints (56.3B)
 - `GET /a/:utmId` — Public short redirect, resolves utm_id → full_url (301 redirect)
 - `GET /api/admin/ambassador-pack/:code` — Full link pack for ambassador (JSON default, `?format=csv` for CSV download). Includes link_name, utm_id, full_url, short_url, qr_url, audience, channel, campaign
 - `GET /api/admin/ambassador-links/:id/qr` — QR code PNG by link ID (admin-protected)
 - `GET /api/admin/ambassador-links/qr-by-utm/:utmId` — QR code PNG by utm_id (admin-protected). Filename uses kebab-case link_name
+- `GET /api/admin/commissions` — List commissions with optional `?ambassador=` and `?status=` filters. Returns commissions + summary by ambassador
 
 ### Attribution Columns Added to Existing Tables
 - `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, session_id
