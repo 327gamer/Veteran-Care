@@ -148,6 +148,9 @@ async function ensureAttributionTables() {
       )
     `);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS link_name TEXT`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS first_clicked_at TIMESTAMPTZ`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
@@ -931,7 +934,12 @@ export async function registerRoutes(
   app.get("/a/:utmId", async (req, res) => {
     try {
       const rows = await pgQuery(
-        `SELECT full_url FROM ambassador_links WHERE utm_id = $1 AND is_active = true LIMIT 1`,
+        `UPDATE ambassador_links
+         SET click_count = click_count + 1,
+             first_clicked_at = COALESCE(first_clicked_at, NOW()),
+             last_clicked_at = NOW()
+         WHERE utm_id = $1 AND is_active = true
+         RETURNING full_url`,
         [req.params.utmId]
       );
       if (rows.length === 0) {
@@ -989,7 +997,7 @@ export async function registerRoutes(
 
     try {
       const rows = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, created_at
+        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
          FROM ambassador_links WHERE ambassador_code = $1 ORDER BY audience_type, channel_type`,
         [code]
       );
@@ -1006,12 +1014,15 @@ export async function registerRoutes(
         channel: r.channel_type,
         campaign: r.utm_campaign,
         active: r.is_active,
+        click_count: r.click_count || 0,
+        first_clicked_at: r.first_clicked_at || null,
+        last_clicked_at: r.last_clicked_at || null,
       }));
 
       if (format === "csv") {
-        const header = "link_name,utm_id,full_url,short_url,qr_url,audience,channel,campaign";
+        const header = "link_name,utm_id,full_url,short_url,qr_url,audience,channel,campaign,click_count,first_clicked_at,last_clicked_at";
         const csvRows = pack.map((p: any) =>
-          `"${p.link_name}","${p.utm_id}","${p.full_url}","${p.short_url}","${p.qr_url}","${p.audience}","${p.channel}","${p.campaign}"`
+          `"${p.link_name}","${p.utm_id}","${p.full_url}","${p.short_url}","${p.qr_url}","${p.audience}","${p.channel}","${p.campaign}",${p.click_count},"${p.first_clicked_at || ''}","${p.last_clicked_at || ''}"`
         );
         res.setHeader("Content-Type", "text/csv");
         res.setHeader("Content-Disposition", `attachment; filename="${code}_link_pack.csv"`);

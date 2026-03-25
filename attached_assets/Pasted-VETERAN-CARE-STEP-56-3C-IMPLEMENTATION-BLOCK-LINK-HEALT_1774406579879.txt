@@ -1,0 +1,103 @@
+VETERAN CARE — STEP 56.3C IMPLEMENTATION BLOCK
+LINK HEALTH & USAGE TRACKING
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change locked UTM structure
+- DO NOT remove or alter GA4 tracking
+- DO NOT break /a/{utm_id} redirect behavior
+- This is a lightweight operational tracking layer only
+
+OBJECTIVE:
+Add simple internal link health tracking so each ambassador link can record:
+- click_count
+- first_clicked_at
+- last_clicked_at
+
+This will provide a fast operational view of whether links are being used before full dashboard/reporting work in later steps.
+
+========================================
+PART 1 — DATA MODEL
+========================================
+
+Add the following fields to ambassador_links (preferred) or a related table if you strongly recommend a separate structure:
+
+- click_count
+- first_clicked_at
+- last_clicked_at
+
+Preferred behavior:
+- click_count default = 0
+- first_clicked_at nullable
+- last_clicked_at nullable
+
+If a separate event/click table is better for long-term architecture, explain why clearly.
+However, for this quick-win step, the priority is lightweight operational tracking.
+
+========================================
+PART 2 — REDIRECT ROUTE UPDATE
+========================================
+
+Update the /a/{utm_id} redirect flow so that on every successful redirect:
+
+1. increment click_count by 1
+2. set first_clicked_at if currently null
+3. update last_clicked_at on every click
+
+This must happen before or during redirect handling without breaking redirect speed or reliability.
+
+========================================
+PART 3 — ADMIN / QUERY READINESS
+========================================
+
+Ensure these fields are queryable through existing admin endpoints related to ambassador links / packs.
+
+Admin responses should include:
+- click_count
+- first_clicked_at
+- last_clicked_at
+
+alongside existing:
+- link_name
+- utm_id
+- full_url
+- short_url
+- qr_url
+- audience
+- channel
+- campaign
+
+========================================
+PART 4 — VALIDATION
+========================================
+
+Validate at minimum:
+
+1. click short link once
+   - click_count = 1
+   - first_clicked_at populated
+   - last_clicked_at populated
+
+2. click same short link again
+   - click_count increments
+   - first_clicked_at stays unchanged
+   - last_clicked_at updates
+
+3. confirm values are returned in admin endpoint output
+
+========================================
+PART 5 — OUTPUT REQUIRED
+========================================
+
+Provide:
+1. whether fields were added to ambassador_links or another table
+2. what code/routes were updated
+3. whether publish is required
+4. example validation result for one test link
+5. confirmation that data is retrievable via admin endpoints
+
+SUCCESS CRITERIA:
+- every short link click updates internal link health stats
+- link health data is queryable
+- GA4 remains unchanged
+- system is ready for early ambassador activity monitoring

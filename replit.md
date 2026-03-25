@@ -174,7 +174,7 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `user_attribution_sessions` - id (uuid), session_id (text), utm_source, utm_medium, utm_campaign, utm_content (ambassador), utm_term, landing_page, referrer, created_at — captures UTM attribution per session (Neon/pgQuery)
 - `partner_attribution` - id (uuid), application_id (fk→partner_applications), ambassador (utm_content), utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount (numeric), event_type, created_at — records attribution at Stripe checkout completion (Neon/pgQuery)
 
-- `ambassador_links` - id (uuid), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id, full_url, link_name, audience_type, channel_type, is_active (bool), created_at — stores generated ambassador link packs (Neon/pgQuery)
+- `ambassador_links` - id (uuid), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id, full_url, link_name, audience_type, channel_type, is_active (bool), click_count (int, default 0), first_clicked_at (timestamptz), last_clicked_at (timestamptz), created_at — stores generated ambassador link packs with click tracking (Neon/pgQuery)
 
 ### Ambassador Link Pack Endpoints (56.3B)
 - `GET /a/:utmId` — Public short redirect, resolves utm_id → full_url (301 redirect)
