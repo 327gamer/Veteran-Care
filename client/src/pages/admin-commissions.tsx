@@ -79,6 +79,27 @@ const TRANSITIONS: Record<string, string[]> = {
   void: [],
 };
 
+function AgingBadge({ createdAt, status }: { createdAt: string; status: string }) {
+  if (status === "paid" || status === "void") return null;
+  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  let label: string, className: string;
+  if (days <= 7) {
+    label = `${days}d · New`;
+    className = "bg-green-50 text-green-700 border-green-200";
+  } else if (days <= 30) {
+    label = `${days}d · Review`;
+    className = "bg-amber-50 text-amber-700 border-amber-200";
+  } else {
+    label = `${days}d · Stale`;
+    className = "bg-red-50 text-red-700 border-red-200";
+  }
+  return (
+    <Badge variant="outline" className={`${className} text-[9px] font-normal ml-1`} data-testid={`badge-aging-${days}d`}>
+      {label}
+    </Badge>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = cfg.icon;
@@ -515,7 +536,8 @@ function CommissionTable({
                 </td>
                 <td className="p-3 text-center"><StatusBadge status={c.status} /></td>
                 <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  <span>{new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <AgingBadge createdAt={c.created_at} status={c.status} />
                 </td>
                 <td className="p-3">
                   {transitions.length > 0 ? (
