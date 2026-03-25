@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  ExternalLink,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -158,6 +159,16 @@ function LinkCard({ link }: { link: DistLink }) {
           <span className="truncate text-slate-600">{link.short_url}</span>
         </div>
         <CopyButton value={link.short_url} label="Link" />
+        <a
+          href={link.short_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 h-7 px-2 text-xs rounded-md border hover:bg-slate-50"
+          data-testid={`test-link-${link.utm_id}`}
+        >
+          <ExternalLink className="h-3 w-3" />
+          Test
+        </a>
         <a
           href={link.qr_url}
           target="_blank"
