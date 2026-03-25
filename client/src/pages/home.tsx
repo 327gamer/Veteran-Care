@@ -329,7 +329,7 @@ export default function Home() {
       <NavigatorModal open={showNavigator} onOpenChange={setShowNavigator} initialUrgency={guidedUrgency || undefined} source={guidedUrgency ? "guided_help" : undefined} />
 
       <Dialog open={showGuidedHelp} onOpenChange={(v) => { if (!v) { setGuidedCategory(null); setGuidedUrgency(null); } setShowGuidedHelp(v); }}>
-        <DialogContent className="sm:max-w-[440px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[440px] max-h-[85dvh] overflow-y-scroll" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Compass className="h-5 w-5 text-primary" />
