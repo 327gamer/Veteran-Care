@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -12,8 +11,6 @@ import {
   TrendingUp,
   MapPin,
   MousePointer,
-  ShieldCheck,
-  Lock,
   AlertTriangle,
   DollarSign,
   ChevronLeft,
@@ -22,6 +19,12 @@ import {
   Flag,
   Sparkles,
   ExternalLink,
+  Link2,
+  MousePointerClick,
+  Wallet,
+  Clock,
+  CheckCircle,
+  Banknote,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -49,6 +52,15 @@ interface AnalyticsData {
   navigatorStats?: NavigatorStats;
 }
 
+interface DashboardSummary {
+  ambassadors: { active_ambassadors: number; total_ambassadors: number };
+  links: { total_links: number; active_links: number; total_clicks: number; zero_click_links: number };
+  commissions: { total_commissions: number; pending_commissions: number; approved_commissions: number; paid_commissions: number; total_commission_records: number; pending_count: number; approved_count: number };
+  payouts: { total_paid_out: number; pending_payouts: number; total_payouts: number };
+  sessions: { total_sessions: number; unique_sessions: number; attributed_sessions: number };
+  revenue: { total_revenue: number; total_conversions: number };
+}
+
 const CLICK_TYPE_LABELS: Record<string, string> = {
   website_click: "Website",
   call_click: "Phone Call",
@@ -60,61 +72,59 @@ const CLICK_TYPE_LABELS: Record<string, string> = {
   report_click: "Report",
 };
 
-export default function AdminAnalytics() {
-  const [adminKey, setAdminKey] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [, setLocation] = useLocation();
+function getAdminHeaders(): Record<string, string> {
+  const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (adminKey) h["x-admin-key"] = adminKey;
+  return h;
+}
 
-  const { data, isLoading, refetch } = useQuery<AnalyticsData>({
+function fmtCurrency(val: number | string): string {
+  const n = typeof val === "string" ? parseFloat(val) : val;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
+}
+
+function fmtNum(val: number | string): string {
+  const n = typeof val === "string" ? parseInt(val as string, 10) : val;
+  return (n || 0).toLocaleString();
+}
+
+export default function AdminAnalytics() {
+  const [, setLocation] = useLocation();
+  const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
+  const headers = getAdminHeaders();
+
+  const { data, isLoading, isError } = useQuery<AnalyticsData>({
     queryKey: ["/api/admin/analytics", adminKey],
     queryFn: () =>
-      fetch("/api/admin/analytics", {
-        headers: { "x-admin-key": adminKey },
-      }).then((r) => {
+      fetch("/api/admin/analytics", { headers }).then((r) => {
         if (!r.ok) throw new Error("Unauthorized");
         return r.json();
       }),
-    enabled: authenticated,
+    enabled: !!adminKey,
     refetchInterval: 30000,
+    retry: false,
   });
 
-  const handleLogin = () => {
-    fetch("/api/admin/analytics", {
-      headers: { "x-admin-key": adminKey },
-    }).then((r) => {
-      if (r.ok) {
-        setAuthenticated(true);
-      } else {
-        toast({ description: "Invalid admin key", variant: "destructive" });
-      }
-    });
-  };
+  const { data: summary } = useQuery<DashboardSummary>({
+    queryKey: ["/api/admin/dashboard-summary", adminKey],
+    queryFn: () =>
+      fetch("/api/admin/dashboard-summary", { headers }).then((r) => {
+        if (!r.ok) throw new Error("Failed");
+        return r.json();
+      }),
+    enabled: !!adminKey,
+    refetchInterval: 30000,
+    retry: false,
+  });
 
-  if (!authenticated) {
+  if (!adminKey || isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-xl font-heading">Analytics Dashboard</CardTitle>
-            <p className="text-sm text-muted-foreground">Enter your admin key to view analytics.</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                data-testid="input-analytics-key"
-                type="password"
-                value={adminKey}
-                onChange={(e) => setAdminKey(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                placeholder="Enter admin key"
-              />
-            </div>
-            <Button data-testid="button-analytics-login" className="w-full" onClick={handleLogin}>
-              <ShieldCheck className="h-4 w-4 mr-2" /> Authenticate
-            </Button>
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground">{isError ? "Session expired or invalid. Please re-authenticate." : "Admin access required. Please log in via the admin panel first."}</p>
+            <Button className="mt-4" onClick={() => setLocation("/admin")} data-testid="button-go-admin">Go to Admin</Button>
           </CardContent>
         </Card>
       </div>
@@ -160,15 +170,6 @@ export default function AdminAnalytics() {
             >
               <Sparkles className="h-4 w-4 mr-1" /> AI Insights
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => { setAuthenticated(false); setAdminKey(""); }}
-              data-testid="button-analytics-signout"
-            >
-              Sign Out
-            </Button>
           </div>
         </div>
       </header>
@@ -205,6 +206,125 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
         </div>
+
+        {summary && (
+          <>
+            <Separator />
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Ambassador Program
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="border-blue-100 bg-blue-50/30">
+                <CardContent className="p-4 text-center">
+                  <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+                  <p className="text-2xl font-bold text-blue-700" data-testid="stat-active-ambassadors">{fmtNum(summary.ambassadors.active_ambassadors)}</p>
+                  <p className="text-xs text-muted-foreground">Active Ambassadors</p>
+                  {Number(summary.ambassadors.total_ambassadors) > Number(summary.ambassadors.active_ambassadors) && (
+                    <p className="text-[10px] text-muted-foreground">{fmtNum(summary.ambassadors.total_ambassadors)} total</p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="border-indigo-100 bg-indigo-50/30">
+                <CardContent className="p-4 text-center">
+                  <Link2 className="h-5 w-5 mx-auto mb-1 text-indigo-600" />
+                  <p className="text-2xl font-bold text-indigo-700" data-testid="stat-active-links">{fmtNum(summary.links.active_links)}</p>
+                  <p className="text-xs text-muted-foreground">Active Links</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.links.total_links)} total</p>
+                </CardContent>
+              </Card>
+              <Card className="border-cyan-100 bg-cyan-50/30">
+                <CardContent className="p-4 text-center">
+                  <MousePointerClick className="h-5 w-5 mx-auto mb-1 text-cyan-600" />
+                  <p className="text-2xl font-bold text-cyan-700" data-testid="stat-link-clicks">{fmtNum(summary.links.total_clicks)}</p>
+                  <p className="text-xs text-muted-foreground">Link Clicks</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.sessions.unique_sessions)} unique sessions</p>
+                </CardContent>
+              </Card>
+              <Card className="border-green-100 bg-green-50/30">
+                <CardContent className="p-4 text-center">
+                  <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600" />
+                  <p className="text-2xl font-bold text-green-700" data-testid="stat-total-revenue">{fmtCurrency(summary.revenue.total_revenue)}</p>
+                  <p className="text-xs text-muted-foreground">Attributed Revenue</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.revenue.total_conversions)} conversions</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Clock className="h-5 w-5 mx-auto mb-1 text-amber-500" />
+                  <p className="text-2xl font-bold text-amber-600" data-testid="stat-pending-commissions">{fmtCurrency(summary.commissions.pending_commissions)}</p>
+                  <p className="text-xs text-muted-foreground">Pending Commissions</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.commissions.pending_count)} records</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <CheckCircle className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+                  <p className="text-2xl font-bold text-blue-600" data-testid="stat-approved-commissions">{fmtCurrency(summary.commissions.approved_commissions)}</p>
+                  <p className="text-xs text-muted-foreground">Approved Commissions</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.commissions.approved_count)} records</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Banknote className="h-5 w-5 mx-auto mb-1 text-green-500" />
+                  <p className="text-2xl font-bold text-green-600" data-testid="stat-paid-commissions">{fmtCurrency(summary.commissions.paid_commissions)}</p>
+                  <p className="text-xs text-muted-foreground">Paid Out</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.payouts.total_payouts)} payouts</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Wallet className="h-5 w-5 mx-auto mb-1 text-purple-500" />
+                  <p className="text-2xl font-bold text-purple-600" data-testid="stat-total-commissions">{fmtCurrency(summary.commissions.total_commissions)}</p>
+                  <p className="text-xs text-muted-foreground">Total Commissions</p>
+                  <p className="text-[10px] text-muted-foreground">{fmtNum(summary.commissions.total_commission_records)} records</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {Number(summary.links.zero_click_links) > 0 && (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="py-3 px-4 flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800" data-testid="alert-zero-click-links">
+                      {fmtNum(summary.links.zero_click_links)} active link{Number(summary.links.zero_click_links) !== 1 ? "s" : ""} with zero clicks
+                    </p>
+                    <p className="text-xs text-amber-600">These links have been generated but never used. Review in the Ambassadors panel.</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => setLocation("/admin/ambassadors")} data-testid="button-view-ambassadors">
+                    View
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {Number(summary.commissions.pending_count) > 0 && (
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardContent className="py-3 px-4 flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-blue-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800" data-testid="alert-pending-commissions">
+                      {fmtNum(summary.commissions.pending_count)} commission{Number(summary.commissions.pending_count) !== 1 ? "s" : ""} awaiting approval ({fmtCurrency(summary.commissions.pending_commissions)})
+                    </p>
+                    <p className="text-xs text-blue-600">Review and approve pending commissions to proceed with payouts.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        <Separator />
+        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+          <MousePointer className="h-5 w-5 text-primary" />
+          Resource Engagement
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 

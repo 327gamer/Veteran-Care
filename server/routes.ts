@@ -1341,6 +1341,78 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/dashboard-summary", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const ambassadorStats = await pgQuery(`
+        SELECT
+          COUNT(*) FILTER (WHERE status = 'active') AS active_ambassadors,
+          COUNT(*) AS total_ambassadors
+        FROM ambassadors
+      `);
+
+      const linkStats = await pgQuery(`
+        SELECT
+          COUNT(*) AS total_links,
+          COUNT(*) FILTER (WHERE is_active = true) AS active_links,
+          COALESCE(SUM(click_count), 0) AS total_clicks,
+          COUNT(*) FILTER (WHERE click_count = 0 AND is_active = true) AS zero_click_links
+        FROM ambassador_links
+      `);
+
+      const commissionStats = await pgQuery(`
+        SELECT
+          COALESCE(SUM(commission_amount), 0) AS total_commissions,
+          COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) AS pending_commissions,
+          COALESCE(SUM(CASE WHEN status = 'approved' THEN commission_amount ELSE 0 END), 0) AS approved_commissions,
+          COALESCE(SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END), 0) AS paid_commissions,
+          COUNT(*) AS total_commission_records,
+          COUNT(*) FILTER (WHERE status = 'pending') AS pending_count,
+          COUNT(*) FILTER (WHERE status = 'approved') AS approved_count
+        FROM commissions
+      `);
+
+      const payoutStats = await pgQuery(`
+        SELECT
+          COALESCE(SUM(total_amount), 0) AS total_paid_out,
+          COUNT(*) FILTER (WHERE payout_status = 'pending') AS pending_payouts,
+          COUNT(*) AS total_payouts
+        FROM ambassador_payouts
+      `);
+
+      const sessionStats = await pgQuery(`
+        SELECT
+          COUNT(*) AS total_sessions,
+          COUNT(DISTINCT session_id) AS unique_sessions,
+          COUNT(*) FILTER (WHERE ambassador_id IS NOT NULL) AS attributed_sessions
+        FROM user_attribution_sessions
+        WHERE utm_source = 'ambassador'
+      `);
+
+      const revenueStats = await pgQuery(`
+        SELECT
+          COALESCE(SUM(revenue_amount), 0) AS total_revenue,
+          COUNT(*) AS total_conversions
+        FROM partner_attribution
+        WHERE ambassador IS NOT NULL
+      `);
+
+      return res.json({
+        ambassadors: ambassadorStats[0] || { active_ambassadors: 0, total_ambassadors: 0 },
+        links: linkStats[0] || { total_links: 0, active_links: 0, total_clicks: 0, zero_click_links: 0 },
+        commissions: commissionStats[0] || { total_commissions: 0, pending_commissions: 0, approved_commissions: 0, paid_commissions: 0, total_commission_records: 0, pending_count: 0, approved_count: 0 },
+        payouts: payoutStats[0] || { total_paid_out: 0, pending_payouts: 0, total_payouts: 0 },
+        sessions: sessionStats[0] || { total_sessions: 0, unique_sessions: 0, attributed_sessions: 0 },
+        revenue: revenueStats[0] || { total_revenue: 0, total_conversions: 0 },
+      });
+    } catch (err: any) {
+      console.log("[dashboard-summary] error:", err.message);
+      return res.status(500).json({ error: "Failed to load dashboard summary" });
+    }
+  });
+
   app.get("/a/:utmId", async (req, res) => {
     try {
       const rows = await pgQuery(
