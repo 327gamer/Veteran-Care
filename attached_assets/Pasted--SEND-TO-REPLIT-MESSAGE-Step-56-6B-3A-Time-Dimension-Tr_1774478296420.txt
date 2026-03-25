@@ -1,0 +1,104 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 56.6B.3A – Time Dimension Tracking (Attribution Enhancement)
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+This is a small additive enhancement to the attribution system only.
+Do NOT move into commission or payout UI yet.
+Do NOT rebuild attribution architecture.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add a lightweight time-dimension layer to attribution so admin can see how long it takes users to move through the funnel:
+
+click → session → lead
+
+This should support:
+- conversion speed visibility
+- campaign optimization
+- future performance analysis
+
+-------------------------------------
+REQUIREMENTS
+-------------------------------------
+
+Please audit and confirm the following timestamps are present and usable:
+
+1. CLICK TIME
+- review current available click timestamp fields
+- if exact per-user click timestamp is not available, use the best available proxy and clearly note that in implementation/reporting
+
+2. SESSION TIME
+- confirm user_attribution_sessions.created_at is reliably populated and usable
+
+3. LEAD TIME
+- confirm both are reliably populated and usable:
+  - navigator_requests.created_at
+  - trusted_service_leads.created_at
+
+-------------------------------------
+DERIVED METRICS
+-------------------------------------
+
+Add lightweight derived timing metrics where possible:
+
+1. time_to_session
+= session time - click time/proxy
+
+2. time_to_lead
+= lead time - session time
+
+3. time_click_to_lead
+= lead time - click time/proxy
+
+IMPORTANT:
+- use query-based calculation where possible
+- do not introduce heavy analytics processing
+- do not create unnecessary new tables
+
+-------------------------------------
+ADMIN PANEL ADDITION
+-------------------------------------
+
+In the Attribution / Funnel view:
+
+Add at minimum:
+- average time_to_lead
+- average time_to_session
+- average session_to_lead
+
+Optional if easy:
+- per ambassador averages
+- per link averages
+
+No charts required.
+Simple display is enough.
+
+-------------------------------------
+IMPLEMENTATION RULES
+-------------------------------------
+
+- additive only
+- lightweight only
+- query-based where possible
+- if exact click-to-user timing is not available, do not fake precision
+- clearly state whether click-time calculations are exact or proxy-based
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Please report back with:
+
+1. which timestamps are confirmed usable
+2. whether click-time is exact or proxy-based
+3. exact derived metrics implemented
+4. where they are displayed in /admin/attribution
+5. exact files changed
+6. confirmation no attribution, commission, or payout logic was rebuilt
+
+--- END ---

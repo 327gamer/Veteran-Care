@@ -1638,6 +1638,129 @@ export async function registerRoutes(
         total_leads: (a.tsl_leads || 0) + (navByAmbassador[a.ambassador_code] || 0),
       }));
 
+      const timingSessF = buildFilters("s.", { date: "created_at", ambassador: "utm_content", campaign: "utm_campaign" });
+      let timingSessParams = [...timingSessF.params];
+      const timingClickToSession = await pgQuery(`
+        SELECT
+          AVG(EXTRACT(EPOCH FROM (s.created_at - al.first_clicked_at))) AS avg_seconds,
+          MIN(EXTRACT(EPOCH FROM (s.created_at - al.first_clicked_at))) AS min_seconds,
+          MAX(EXTRACT(EPOCH FROM (s.created_at - al.first_clicked_at))) AS max_seconds,
+          COUNT(*)::int AS sample_count
+        FROM user_attribution_sessions s
+        JOIN ambassador_links al ON al.utm_id = s.utm_id
+        WHERE s.utm_source = 'ambassador'
+          AND al.first_clicked_at IS NOT NULL
+          AND s.created_at >= al.first_clicked_at
+          ${timingSessF.sql}
+      `, timingSessParams);
+
+      let navTimingByAmbassador: Record<string, { total_seconds: number; count: number }> = {};
+      let navTimingOverall = { total_seconds: 0, count: 0, min_seconds: Infinity, max_seconds: 0 };
+      try {
+        if (hasNavAmbassadorId && hasNavUtmColumns) {
+          let navTQ = supabaseAdmin.from("navigator_requests").select("created_at, utm_content");
+          navTQ = navTQ.not("ambassador_id", "is", null);
+          navTQ = buildNavFilters(navTQ);
+          const { data: navTRows } = await navTQ;
+          if (navTRows && navTRows.length > 0) {
+            const sessLookup = await pgQuery(`
+              SELECT utm_content, MIN(created_at) AS first_session
+              FROM user_attribution_sessions
+              WHERE utm_source = 'ambassador'
+              GROUP BY utm_content
+            `);
+            const sessMap: Record<string, Date> = {};
+            for (const sr of sessLookup) {
+              sessMap[sr.utm_content] = new Date(sr.first_session);
+            }
+            for (const nr of navTRows as any[]) {
+              const code = nr.utm_content;
+              const leadTime = new Date(nr.created_at).getTime();
+              const sessTime = sessMap[code]?.getTime();
+              if (code && sessTime && leadTime >= sessTime) {
+                const diffSec = (leadTime - sessTime) / 1000;
+                navTimingOverall.total_seconds += diffSec;
+                navTimingOverall.count++;
+                navTimingOverall.min_seconds = Math.min(navTimingOverall.min_seconds, diffSec);
+                navTimingOverall.max_seconds = Math.max(navTimingOverall.max_seconds, diffSec);
+                if (!navTimingByAmbassador[code]) navTimingByAmbassador[code] = { total_seconds: 0, count: 0 };
+                navTimingByAmbassador[code].total_seconds += diffSec;
+                navTimingByAmbassador[code].count++;
+              }
+            }
+          }
+        }
+      } catch {}
+
+      let navClickToLeadOverall = { total_seconds: 0, count: 0 };
+      try {
+        if (hasNavAmbassadorId && hasNavUtmColumns) {
+          let navCLQ = supabaseAdmin.from("navigator_requests").select("created_at, utm_content");
+          navCLQ = navCLQ.not("ambassador_id", "is", null);
+          navCLQ = buildNavFilters(navCLQ);
+          const { data: navCLRows } = await navCLQ;
+          if (navCLRows && navCLRows.length > 0) {
+            const clickLookup = await pgQuery(`
+              SELECT ambassador_code, MIN(first_clicked_at) AS earliest_click
+              FROM ambassador_links
+              WHERE first_clicked_at IS NOT NULL
+              GROUP BY ambassador_code
+            `);
+            const clickMap: Record<string, Date> = {};
+            for (const cr of clickLookup) {
+              clickMap[cr.ambassador_code] = new Date(cr.earliest_click);
+            }
+            for (const nr of navCLRows as any[]) {
+              const code = nr.utm_content;
+              const leadTime = new Date(nr.created_at).getTime();
+              const clickTime = clickMap[code]?.getTime();
+              if (code && clickTime && leadTime >= clickTime) {
+                const diffSec = (leadTime - clickTime) / 1000;
+                navClickToLeadOverall.total_seconds += diffSec;
+                navClickToLeadOverall.count++;
+              }
+            }
+          }
+        }
+      } catch {}
+
+      const c2s = timingClickToSession[0] || {};
+      const s2lAvg = navTimingOverall.count > 0 ? navTimingOverall.total_seconds / navTimingOverall.count : null;
+      const c2lAvg = navClickToLeadOverall.count > 0 ? navClickToLeadOverall.total_seconds / navClickToLeadOverall.count : null;
+
+      const timing = {
+        click_to_session: {
+          avg_seconds: c2s.avg_seconds ? parseFloat(parseFloat(c2s.avg_seconds).toFixed(1)) : null,
+          min_seconds: c2s.min_seconds ? parseFloat(parseFloat(c2s.min_seconds).toFixed(1)) : null,
+          max_seconds: c2s.max_seconds ? parseFloat(parseFloat(c2s.max_seconds).toFixed(1)) : null,
+          sample_count: c2s.sample_count || 0,
+          is_proxy: true,
+          note: "Based on link first_clicked_at (per-link proxy, not per-user)",
+        },
+        session_to_lead: {
+          avg_seconds: s2lAvg !== null ? parseFloat(s2lAvg.toFixed(1)) : null,
+          min_seconds: navTimingOverall.count > 0 ? parseFloat(navTimingOverall.min_seconds.toFixed(1)) : null,
+          max_seconds: navTimingOverall.count > 0 ? parseFloat(navTimingOverall.max_seconds.toFixed(1)) : null,
+          sample_count: navTimingOverall.count,
+          is_proxy: false,
+          note: "Based on navigator_request.created_at - earliest session for same ambassador",
+        },
+        click_to_lead: {
+          avg_seconds: c2lAvg !== null ? parseFloat(c2lAvg.toFixed(1)) : null,
+          sample_count: navClickToLeadOverall.count,
+          is_proxy: true,
+          note: "Based on navigator_request.created_at - ambassador earliest first_clicked_at",
+        },
+      };
+
+      const byAmbassadorWithTiming = byAmbassadorWithNav.map((a: any) => {
+        const navT = navTimingByAmbassador[a.ambassador_code];
+        return {
+          ...a,
+          avg_session_to_lead_seconds: navT ? parseFloat((navT.total_seconds / navT.count).toFixed(1)) : null,
+        };
+      });
+
       const filterOptions = await pgQuery(`
         SELECT
           ARRAY_AGG(DISTINCT ambassador_code) FILTER (WHERE ambassador_code IS NOT NULL) AS ambassadors,
@@ -1667,7 +1790,8 @@ export async function registerRoutes(
           session_to_lead: totalSessions > 0 ? ((totalLeads / totalSessions) * 100).toFixed(1) : "0.0",
           click_to_lead: totalClicks > 0 ? ((totalLeads / totalClicks) * 100).toFixed(1) : "0.0",
         },
-        byAmbassador: byAmbassadorWithNav,
+        timing,
+        byAmbassador: byAmbassadorWithTiming,
         byLink,
         filterOptions: filterOptions[0] || { ambassadors: [], campaigns: [] },
       });

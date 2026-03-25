@@ -21,8 +21,19 @@ import {
   Search,
   Megaphone,
   Radio,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { useLocation } from "wouter";
+
+interface TimingMetric {
+  avg_seconds: number | null;
+  min_seconds?: number | null;
+  max_seconds?: number | null;
+  sample_count: number;
+  is_proxy: boolean;
+  note: string;
+}
 
 interface AttributionData {
   summary: {
@@ -41,6 +52,11 @@ interface AttributionData {
     session_to_lead: string;
     click_to_lead: string;
   };
+  timing: {
+    click_to_session: TimingMetric;
+    session_to_lead: TimingMetric;
+    click_to_lead: TimingMetric;
+  };
   byAmbassador: {
     ambassador_code: string;
     ambassador_name: string;
@@ -49,6 +65,7 @@ interface AttributionData {
     tsl_leads: number;
     nav_leads: number;
     total_leads: number;
+    avg_session_to_lead_seconds: number | null;
   }[];
   byLink: {
     utm_id: string;
@@ -65,6 +82,19 @@ interface AttributionData {
     ambassadors: string[] | null;
     campaigns: string[] | null;
   };
+}
+
+function formatDuration(seconds: number | null): string {
+  if (seconds === null || seconds === undefined) return "—";
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  }
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.round((seconds % 3600) / 60);
+  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
 }
 
 function getAdminHeaders(): Record<string, string> {
@@ -362,6 +392,67 @@ export default function AdminAttribution() {
               </CardContent>
             </Card>
 
+            {data.timing && (
+              <Card className="mb-6 border-amber-200" data-testid="card-timing">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-600" /> Conversion Timing
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-3 text-center">
+                      <p className="text-xs font-medium text-slate-500 mb-1">Avg Click → Session</p>
+                      <p className="text-xl font-bold text-cyan-700" data-testid="timing-click-to-session">
+                        {formatDuration(data.timing.click_to_session.avg_seconds)}
+                      </p>
+                      {data.timing.click_to_session.sample_count > 0 && (
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {data.timing.click_to_session.sample_count} sample{data.timing.click_to_session.sample_count !== 1 ? "s" : ""}
+                          {" · "}min {formatDuration(data.timing.click_to_session.min_seconds ?? null)}
+                          {" · "}max {formatDuration(data.timing.click_to_session.max_seconds ?? null)}
+                        </p>
+                      )}
+                      {data.timing.click_to_session.is_proxy && (
+                        <p className="text-[9px] text-amber-600 mt-1 flex items-center justify-center gap-0.5">
+                          <AlertTriangle className="h-2.5 w-2.5" /> Proxy-based
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3 text-center">
+                      <p className="text-xs font-medium text-slate-500 mb-1">Avg Session → Lead</p>
+                      <p className="text-xl font-bold text-indigo-700" data-testid="timing-session-to-lead">
+                        {formatDuration(data.timing.session_to_lead.avg_seconds)}
+                      </p>
+                      {data.timing.session_to_lead.sample_count > 0 && (
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {data.timing.session_to_lead.sample_count} sample{data.timing.session_to_lead.sample_count !== 1 ? "s" : ""}
+                          {" · "}min {formatDuration(data.timing.session_to_lead.min_seconds ?? null)}
+                          {" · "}max {formatDuration(data.timing.session_to_lead.max_seconds ?? null)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-lg border border-green-200 bg-green-50/50 p-3 text-center">
+                      <p className="text-xs font-medium text-slate-500 mb-1">Avg Click → Lead</p>
+                      <p className="text-xl font-bold text-green-700" data-testid="timing-click-to-lead">
+                        {formatDuration(data.timing.click_to_lead.avg_seconds)}
+                      </p>
+                      {data.timing.click_to_lead.sample_count > 0 && (
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {data.timing.click_to_lead.sample_count} sample{data.timing.click_to_lead.sample_count !== 1 ? "s" : ""}
+                        </p>
+                      )}
+                      {data.timing.click_to_lead.is_proxy && (
+                        <p className="text-[9px] text-amber-600 mt-1 flex items-center justify-center gap-0.5">
+                          <AlertTriangle className="h-2.5 w-2.5" /> Proxy-based
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex items-center gap-2 mb-4">
               <div className="flex border rounded-lg overflow-hidden">
                 <button
@@ -414,6 +505,9 @@ export default function AdminAttribution() {
                           <th className="text-right p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("total_leads")} data-testid="sort-total-leads">
                             <span className="inline-flex items-center gap-1">Total <SortIcon col="total_leads" /></span>
                           </th>
+                          <th className="text-right p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("avg_session_to_lead_seconds")} data-testid="sort-avg-s2l">
+                            <span className="inline-flex items-center gap-1">Avg S→L <SortIcon col="avg_session_to_lead_seconds" /></span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -441,11 +535,16 @@ export default function AdminAttribution() {
                                 <span className={`font-mono font-semibold ${a.total_leads > 0 ? "text-green-700" : "text-slate-400"}`}>{a.total_leads}</span>
                                 <span className="text-[10px] text-muted-foreground ml-1">({cvr}%)</span>
                               </td>
+                              <td className="p-3 text-right font-mono text-xs" data-testid={`timing-s2l-${a.ambassador_code}`}>
+                                <span className={a.avg_session_to_lead_seconds !== null ? "text-amber-700" : "text-slate-300"}>
+                                  {formatDuration(a.avg_session_to_lead_seconds)}
+                                </span>
+                              </td>
                             </tr>
                           );
                         })}
                         {sortedAmbassadors.length === 0 && (
-                          <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No ambassador data found</td></tr>
+                          <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No ambassador data found</td></tr>
                         )}
                       </tbody>
                     </table>
