@@ -1,0 +1,101 @@
+Thanks. We need to finish this properly before we move on.
+
+Please do a COMPLETE final security audit of ALL tables in the Supabase database used by Veteran Care, including older platform tables and all newer ambassador / attribution / commission tables.
+
+IMPORTANT:
+Do not assume the earlier Task #17 covered everything.
+We now need one final consolidated remediation plan.
+
+-------------------------------------
+
+REQUIRED AUDIT SCOPE
+
+Please review ALL relevant tables, including but not limited to:
+
+Core / existing:
+- categories
+- resources
+- states
+- subcategories
+- resource_categories
+- resource_subcategories
+- user_saved_resources
+- saved_resources
+- user_profiles
+- navigator_requests
+- trusted_service_leads
+- partner_organizations
+- partner_routing_rules
+- partner_applications
+- resource_clicks
+- ai_usage_log
+
+Ambassador / attribution / revenue:
+- ambassadors
+- ambassador_links
+- user_attribution_sessions
+- partner_attribution
+- commissions
+- ambassador_payouts
+
+-------------------------------------
+
+FOR EACH TABLE, TELL ME:
+
+1. Does it exist in Supabase?
+2. Is RLS enabled already?
+3. If yes, are the policies correct?
+4. What access model should it use:
+   - public read
+   - public insert only
+   - authenticated user scoped
+   - service-role only
+5. Is any manual SQL still required?
+
+-------------------------------------
+
+OUTPUT REQUIRED
+
+Please give me ONE final Supabase action pack with:
+
+1. exact list of tables still needing remediation
+2. exact SQL to run manually in Supabase
+3. exact order to run it
+4. any publish/restart steps after
+5. any risks of breaking current app behavior
+
+-------------------------------------
+
+PROACTIVE REQUIREMENT (IMPORTANT)
+
+Going forward, ALL new tables created in Supabase must:
+
+- have RLS enabled by default
+- include appropriate policies at creation time
+- never be left publicly accessible
+
+Please confirm:
+
+1. the recommended default policy pattern for:
+   - service-role-only tables
+   - insert-only public tables (forms)
+   - public read tables (if any)
+
+2. whether this can be enforced via:
+   - migration templates
+   - schema standards
+   - or developer workflow rules
+
+Goal:
+We do NOT want to repeat this issue in future builds.
+
+-------------------------------------
+
+IMPORTANT
+
+- We must protect all sensitive tables
+- We must not break lead capture, attribution, ambassador tracking, commissions, or admin panel flows
+- Do not leave newer tables out of this review
+
+Goal:
+One final complete RLS/security pass so the database is properly locked down.
