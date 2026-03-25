@@ -485,7 +485,7 @@ export default function AdminAttribution() {
                       { key: "over_2h", label: "2+ hours", color: "text-red-700 bg-red-50 border-red-200" },
                     ].map(({ key, label, color }) => {
                       const count = data.speedBuckets.buckets[key as keyof typeof data.speedBuckets.buckets];
-                      const pct = data.speedBuckets.total > 0 ? ((count / data.speedBuckets.total) * 100).toFixed(0) : "0";
+                      const pct = data.speedBuckets.total > 0 ? ((count / data.speedBuckets.total) * 100).toFixed(1) : "0.0";
                       return (
                         <div key={key} className={`rounded-lg border p-3 text-center ${color}`} data-testid={`bucket-${key}`}>
                           <p className="text-lg font-bold">{count}</p>
