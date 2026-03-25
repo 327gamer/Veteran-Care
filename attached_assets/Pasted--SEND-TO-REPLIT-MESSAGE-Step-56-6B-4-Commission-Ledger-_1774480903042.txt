@@ -1,0 +1,143 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 56.6B.4 – Commission Ledger Basics
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+This is a focused operational admin build only.
+Do NOT build payout automation, Stripe payout integration, or advanced finance workflows yet.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a basic, usable commission ledger inside the admin panel so a non-technical admin can:
+
+- view commissions
+- understand status
+- review by ambassador
+- manually move commissions through simple status stages
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Build a Commission Ledger view using the existing commissions table.
+
+-------------------------------------
+REQUIRED UI
+-------------------------------------
+
+1. COMMISSION LIST VIEW
+
+Display a table with:
+
+- ambassador name
+- commission amount
+- gross revenue
+- commission_rate
+- source_type
+- source_record_id
+- utm_id
+- created_at / earned date
+- status
+
+Default sort:
+- created_at descending
+
+If notes or adjustment fields already exist on the commissions table:
+- display them in detail view or expandable row
+- do NOT add new schema just for this step
+
+Status values:
+- pending
+- approved
+- paid
+- void
+
+2. BASIC FILTERS
+
+Add filters for:
+
+- ambassador
+- status
+- date range
+- source_type
+
+3. BASIC SUMMARY CARDS
+
+At top of page show:
+
+- total commissions
+- total pending amount
+- total approved amount
+- total paid amount
+
+4. BASIC ROW ACTIONS
+
+Allow admin to:
+
+- mark commission as approved
+- mark commission as paid
+- mark commission as void
+
+IMPORTANT:
+These actions must update the existing commissions table only.
+No payout automation yet.
+
+Use sensible one-way status handling for now:
+- pending → approved
+- approved → paid
+- pending → void
+- approved → void
+
+Do not build reverse/reopen workflow unless already supported.
+
+5. AMBASSADOR GROUPING
+
+Allow grouped view or easy filtering by ambassador so admin can quickly review commission totals per ambassador.
+
+-------------------------------------
+IMPORTANT CONSTRAINTS
+-------------------------------------
+
+- DO NOT build Stripe payout automation
+- DO NOT build ambassador_payouts workflow yet
+- DO NOT build batch payout tools yet
+- DO NOT redesign commission logic
+- DO NOT change attribution logic
+
+This step is a ledger / admin visibility layer only.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+- commission list loads correctly
+- filters work correctly
+- summary amounts calculate correctly
+- status changes persist correctly
+- no regressions to attribution or admin panel
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Please report back with:
+
+1. UI structure
+2. queries/endpoints used
+3. status transition rules implemented
+4. exact files changed
+5. testing performed
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make commissions visible and manageable in a simple operational format for launch.
+
+--- END ---

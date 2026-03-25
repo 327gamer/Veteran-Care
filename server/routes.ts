@@ -1342,38 +1342,6 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/commissions", async (req, res) => {
-    const adminKey = req.headers["x-admin-key"];
-    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
-
-    const { ambassador, status } = req.query;
-    try {
-      let sql = `SELECT * FROM commissions WHERE 1=1`;
-      const params: any[] = [];
-      let idx = 1;
-      if (ambassador) { sql += ` AND ambassador_code = $${idx++}`; params.push(sanitizeCode(ambassador as string)); }
-      if (status) { sql += ` AND status = $${idx++}`; params.push(status); }
-      sql += ` ORDER BY created_at DESC`;
-      const rows = await pgQuery(sql, params);
-
-      const summary = await pgQuery(`
-        SELECT ambassador_code,
-               COUNT(*) AS total,
-               SUM(commission_amount) AS total_commission,
-               SUM(revenue_amount) AS total_revenue,
-               SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END) AS pending_amount,
-               SUM(CASE WHEN status = 'approved' THEN commission_amount ELSE 0 END) AS approved_amount,
-               SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END) AS paid_amount
-        FROM commissions GROUP BY ambassador_code ORDER BY total_commission DESC
-      `);
-
-      return res.json({ commissions: rows, count: rows.length, summary });
-    } catch (err: any) {
-      console.log("[commissions] list error:", err.message);
-      return res.status(500).json({ error: "Failed to list commissions" });
-    }
-  });
-
   app.get("/api/admin/dashboard-summary", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
@@ -1809,6 +1777,133 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[attribution] error:", err.message);
       return res.status(500).json({ error: "Failed to load attribution data" });
+    }
+  });
+
+  app.get("/api/admin/commissions", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { ambassador, status, date_from, date_to } = req.query;
+    try {
+      let where = "WHERE 1=1";
+      const params: any[] = [];
+      let pIdx = 1;
+
+      if (ambassador) {
+        where += ` AND c.ambassador_code = $${pIdx}`;
+        params.push(sanitizeCode(ambassador as string));
+        pIdx++;
+      }
+      if (status) {
+        where += ` AND c.status = $${pIdx}`;
+        params.push(status);
+        pIdx++;
+      }
+      if (date_from) {
+        where += ` AND c.created_at >= $${pIdx}`;
+        params.push(date_from);
+        pIdx++;
+      }
+      if (date_to) {
+        where += ` AND c.created_at < ($${pIdx}::date + interval '1 day')`;
+        params.push(date_to);
+        pIdx++;
+      }
+
+      const commissions = await pgQuery(`
+        SELECT
+          c.id,
+          c.ambassador_code,
+          COALESCE(a.display_name, c.ambassador_code) AS ambassador_name,
+          c.utm_id,
+          c.application_id,
+          c.revenue_amount::text,
+          c.commission_percentage::text AS commission_percentage,
+          c.commission_amount::text,
+          c.status,
+          c.created_at,
+          c.payout_id
+        FROM commissions c
+        LEFT JOIN ambassadors a ON a.code = c.ambassador_code
+        ${where}
+        ORDER BY c.created_at DESC
+        LIMIT 500
+      `, params);
+
+      const summary = await pgQuery(`
+        SELECT
+          COUNT(*)::int AS total_count,
+          COALESCE(SUM(commission_amount) FILTER (WHERE status = 'pending'), 0)::text AS pending_amount,
+          COALESCE(SUM(commission_amount) FILTER (WHERE status = 'approved'), 0)::text AS approved_amount,
+          COALESCE(SUM(commission_amount) FILTER (WHERE status = 'paid'), 0)::text AS paid_amount,
+          COALESCE(SUM(commission_amount) FILTER (WHERE status = 'void'), 0)::text AS void_amount,
+          COALESCE(SUM(commission_amount), 0)::text AS total_amount,
+          COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
+          COUNT(*) FILTER (WHERE status = 'approved')::int AS approved_count,
+          COUNT(*) FILTER (WHERE status = 'paid')::int AS paid_count,
+          COUNT(*) FILTER (WHERE status = 'void')::int AS void_count
+        FROM commissions c
+        ${where}
+      `, params);
+
+      const filterOptions = await pgQuery(`
+        SELECT
+          ARRAY_AGG(DISTINCT ambassador_code) FILTER (WHERE ambassador_code IS NOT NULL) AS ambassadors,
+          ARRAY_AGG(DISTINCT status) FILTER (WHERE status IS NOT NULL) AS statuses
+        FROM commissions
+      `);
+
+      return res.json({
+        commissions,
+        summary: summary[0] || {
+          total_count: 0, pending_amount: "0", approved_amount: "0",
+          paid_amount: "0", void_amount: "0", total_amount: "0",
+          pending_count: 0, approved_count: 0, paid_count: 0, void_count: 0,
+        },
+        filterOptions: filterOptions[0] || { ambassadors: [], statuses: [] },
+      });
+    } catch (err: any) {
+      console.log("[commissions] error:", err.message);
+      return res.status(500).json({ error: "Failed to load commissions" });
+    }
+  });
+
+  app.patch("/api/admin/commissions/:id/status", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const { status: newStatus } = req.body;
+
+    const validTransitions: Record<string, string[]> = {
+      pending: ["approved", "void"],
+      approved: ["paid", "void"],
+      paid: [],
+      void: [],
+    };
+
+    if (!["pending", "approved", "paid", "void"].includes(newStatus)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    try {
+      const current = await pgQuery("SELECT status FROM commissions WHERE id = $1", [id]);
+      if (current.length === 0) {
+        return res.status(404).json({ error: "Commission not found" });
+      }
+
+      const currentStatus = current[0].status;
+      const allowed = validTransitions[currentStatus] || [];
+      if (!allowed.includes(newStatus)) {
+        return res.status(400).json({ error: `Cannot transition from '${currentStatus}' to '${newStatus}'` });
+      }
+
+      await pgQuery("UPDATE commissions SET status = $1 WHERE id = $2", [newStatus, id]);
+      return res.json({ success: true, id, status: newStatus });
+    } catch (err: any) {
+      console.log("[commission-status] error:", err.message);
+      return res.status(500).json({ error: "Failed to update commission status" });
     }
   });
 
