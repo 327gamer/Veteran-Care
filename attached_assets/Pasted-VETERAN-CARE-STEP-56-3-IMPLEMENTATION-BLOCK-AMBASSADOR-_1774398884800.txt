@@ -1,0 +1,185 @@
+VETERAN CARE — STEP 56.3 IMPLEMENTATION BLOCK
+AMBASSADOR LINK SYSTEM & DISTRIBUTION FOUNDATION
+
+IMPORTANT RULES:
+- DO NOT redesign UI
+- DO NOT change current funnels or routing
+- DO NOT break existing GA4 tracking or attribution storage
+- DO NOT change Stripe logic
+- ONLY build the ambassador link system foundation, storage structure, and admin-ready logic
+- If any DB change is needed, provide exact SQL or exact migration details and apply only if already within current deployment workflow
+
+OBJECTIVE:
+Build the Ambassador Link System so each ambassador can be issued clean, trackable, reusable links by audience and channel, while preserving accurate attribution for leads and revenue.
+
+========================================
+PART 1 — AMBASSADOR LINK MODEL
+========================================
+
+Create a structured ambassador link system using the already-existing Veteran Care entry URLs:
+
+- /start
+- /get-help
+- /resource-center
+- /partners
+
+The system must support unique links by:
+
+1. ambassador
+2. audience
+3. channel
+4. campaign
+
+Required UTM logic:
+
+- utm_source = platform/channel
+  Examples:
+  facebook
+  instagram
+  email
+  linkedin
+  text
+  qr
+  flyer
+
+- utm_medium = ambassador
+  Value should be:
+  ambassador
+
+- utm_campaign = campaign name
+  Examples:
+  sc_launch
+  sc_veteran_help
+  sc_case_manager_drive
+  sc_partner_growth
+
+- utm_content = ambassador identifier
+  Examples:
+  john_smith
+  sarah_jones
+  mike_brown
+
+Optional:
+- utm_id = unique internal tracking ID if useful for future automation
+
+========================================
+PART 2 — AMBASSADOR MASTER DATA STRUCTURE
+========================================
+
+Prepare backend support for ambassador link ownership.
+
+Create a clean table for ambassador link ownership if needed:
+
+ambassador_links
+- id
+- ambassador_name
+- ambassador_code
+- base_path
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content
+- utm_id
+- full_url
+- audience_type
+- channel_type
+- is_active
+- created_at
+
+Goal:
+Allow each generated link to be identifiable and reusable later for reporting and commission review.
+
+If a table is not necessary yet, explain why and provide the best lightweight alternative.
+
+========================================
+PART 3 — STANDARD LINK PACK GENERATION
+========================================
+
+Prepare the system so each ambassador can have a standard pack of links.
+
+Each ambassador should be able to receive these default links:
+
+1. General / Start
+2. Veteran Help
+3. Case Manager / Nonprofit
+4. Business / Partner
+
+For each of the above, support at least these channels:
+
+- facebook
+- instagram
+- email
+- linkedin
+- text
+
+This means each ambassador can have multiple tracked links without confusion.
+
+Example structure for ambassador John Smith:
+
+General / Facebook
+General / Email
+Veteran / Facebook
+Veteran / Email
+Case Manager / Email
+Partner / LinkedIn
+
+Do NOT build a fancy UI yet unless it is already easy and safe.
+Backend structure + generation logic is the priority.
+
+========================================
+PART 4 — NAMING RULES
+========================================
+
+Implement and enforce these naming rules:
+
+- lowercase only
+- underscores only
+- no spaces
+- consistent ambassador identifier format
+- consistent campaign naming format
+
+Recommended ambassador code format:
+first_last
+Example:
+john_smith
+
+Recommended campaign examples:
+sc_launch
+sc_veteran_help
+sc_case_manager_drive
+sc_partner_growth
+
+========================================
+PART 5 — ADMIN / REPORTING READINESS
+========================================
+
+Prepare the data so the system can later answer:
+
+- which ambassador link was used
+- which channel performed best
+- which audience page converted best
+- which ambassador generated leads
+- which ambassador generated partner revenue
+
+Do NOT build final dashboard UI yet.
+Only ensure structure is ready.
+
+========================================
+PART 6 — OUTPUT REQUIRED
+========================================
+
+Provide:
+
+1. what was built
+2. whether any tables were created
+3. exact link format used
+4. how ambassadors will be identified
+5. whether publish is required
+6. how to test one ambassador link
+7. how this connects to future commissions
+
+SUCCESS CRITERIA:
+- system supports unique ambassador links
+- links can distinguish ambassador + channel + campaign + audience
+- attribution remains clean
+- structure is ready for distribution and later reporting

@@ -51,6 +51,7 @@ export function captureUTM(): void {
         utm_campaign: captured.utm_campaign || null,
         utm_content: captured.utm_content || null,
         utm_term: captured.utm_term || null,
+        utm_id: captured.utm_id || null,
         landing_page: window.location.pathname,
         referrer: document.referrer || null,
       }),

@@ -91,6 +91,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS utm_id TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_session ON user_attribution_sessions(session_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_ambassador ON user_attribution_sessions(utm_content)`);
 
@@ -123,6 +124,28 @@ async function ensureAttributionTables() {
       )
     `);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_attr_ambassador ON partner_attribution(ambassador)`);
+
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS ambassador_links (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        ambassador_name TEXT NOT NULL,
+        ambassador_code TEXT NOT NULL,
+        base_path TEXT NOT NULL,
+        utm_source TEXT NOT NULL,
+        utm_medium TEXT NOT NULL DEFAULT 'ambassador',
+        utm_campaign TEXT NOT NULL,
+        utm_content TEXT NOT NULL,
+        utm_id TEXT,
+        full_url TEXT NOT NULL,
+        audience_type TEXT NOT NULL,
+        channel_type TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
 
     console.log("[schema] attribution tables ready");
   } catch (err: any) {
@@ -595,20 +618,278 @@ export async function registerRoutes(
   });
 
   app.post("/api/attribution-session", async (req, res) => {
-    const { session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, referrer } = req.body;
+    const { session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer } = req.body;
     if (!session_id) {
       return res.status(400).json({ error: "session_id is required" });
     }
     try {
       await pgQuery(
-        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, referrer)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, landing_page || null, referrer || null]
+        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, utm_id || null, landing_page || null, referrer || null]
       );
       return res.json({ ok: true });
     } catch (err: any) {
       console.log("[attribution] session capture error:", err.message);
       return res.status(500).json({ error: "Failed to capture attribution" });
+    }
+  });
+
+  const AMBASSADOR_BASE_DOMAIN = "https://veterancare.com";
+
+  const AMBASSADOR_AUDIENCES: Record<string, { path: string; campaign: string }> = {
+    general:       { path: "/start",           campaign: "sc_launch" },
+    veteran:       { path: "/get-help",        campaign: "sc_veteran_help" },
+    case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
+    partner:       { path: "/partners",        campaign: "sc_partner_growth" },
+  };
+
+  const AMBASSADOR_CHANNELS = ["facebook", "instagram", "email", "linkedin", "text", "qr", "flyer"] as const;
+
+  function sanitizeCode(raw: string): string {
+    return raw.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  }
+
+  function buildAmbassadorUrl(
+    basePath: string,
+    source: string,
+    campaign: string,
+    ambassadorCode: string,
+    utmId?: string
+  ): string {
+    const params = new URLSearchParams();
+    params.set("utm_source", source);
+    params.set("utm_medium", "ambassador");
+    params.set("utm_campaign", campaign);
+    params.set("utm_content", ambassadorCode);
+    if (utmId) params.set("utm_id", utmId);
+    return `${AMBASSADOR_BASE_DOMAIN}${basePath}?${params.toString()}`;
+  }
+
+  app.post("/api/admin/ambassador-links/generate", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { ambassador_name, channels, audiences, campaigns } = req.body;
+    if (!ambassador_name || typeof ambassador_name !== "string") {
+      return res.status(400).json({ error: "ambassador_name is required" });
+    }
+
+    const code = sanitizeCode(ambassador_name);
+    if (!code) return res.status(400).json({ error: "Invalid ambassador name" });
+
+    const selectedChannels = (channels && Array.isArray(channels) && channels.length > 0)
+      ? channels.filter((c: string) => AMBASSADOR_CHANNELS.includes(c as any))
+      : [...AMBASSADOR_CHANNELS];
+
+    const selectedAudiences = (audiences && Array.isArray(audiences) && audiences.length > 0)
+      ? audiences.filter((a: string) => a in AMBASSADOR_AUDIENCES)
+      : Object.keys(AMBASSADOR_AUDIENCES);
+
+    try {
+      const regenerate = req.body.regenerate === true;
+
+      const existing = await pgQuery(
+        `SELECT id FROM ambassador_links WHERE ambassador_code = $1 LIMIT 1`,
+        [code]
+      );
+      if (existing.length > 0) {
+        if (regenerate) {
+          await pgQuery(`DELETE FROM ambassador_links WHERE ambassador_code = $1`, [code]);
+        } else {
+          return res.status(409).json({
+            error: `Ambassador "${code}" already has links. Pass "regenerate": true to replace, or DELETE first.`,
+          });
+        }
+      }
+
+      const generated: any[] = [];
+
+      for (const audienceKey of selectedAudiences) {
+        const audience = AMBASSADOR_AUDIENCES[audienceKey];
+        if (!audience) continue;
+
+        const campaignOverride = campaigns?.[audienceKey];
+        const campaign = sanitizeCode(campaignOverride || audience.campaign);
+
+        for (const channel of selectedChannels) {
+          const utmId = `${code}_${audienceKey}_${channel}`;
+          const fullUrl = buildAmbassadorUrl(audience.path, channel, campaign, code, utmId);
+
+          await pgQuery(
+            `INSERT INTO ambassador_links
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [ambassador_name, code, audience.path, channel, "ambassador", campaign, code, utmId, fullUrl, audienceKey, channel]
+          );
+
+          generated.push({
+            audience: audienceKey,
+            channel,
+            campaign,
+            url: fullUrl,
+            utm_id: utmId,
+          });
+        }
+      }
+
+      return res.json({
+        ambassador_name,
+        ambassador_code: code,
+        links_generated: generated.length,
+        links: generated,
+      });
+    } catch (err: any) {
+      console.log("[ambassador] generate error:", err.message);
+      return res.status(500).json({ error: "Failed to generate ambassador links" });
+    }
+  });
+
+  app.get("/api/admin/ambassador-links", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const { ambassador, audience, channel } = req.query;
+    try {
+      let sql = `SELECT * FROM ambassador_links WHERE 1=1`;
+      const params: any[] = [];
+      let idx = 1;
+
+      if (ambassador) {
+        sql += ` AND ambassador_code = $${idx++}`;
+        params.push(sanitizeCode(ambassador as string));
+      }
+      if (audience) {
+        sql += ` AND audience_type = $${idx++}`;
+        params.push(audience);
+      }
+      if (channel) {
+        sql += ` AND channel_type = $${idx++}`;
+        params.push(channel);
+      }
+
+      sql += ` ORDER BY ambassador_code, audience_type, channel_type`;
+      const rows = await pgQuery(sql, params);
+      return res.json({ links: rows, count: rows.length });
+    } catch (err: any) {
+      console.log("[ambassador] list error:", err.message);
+      return res.status(500).json({ error: "Failed to list ambassador links" });
+    }
+  });
+
+  app.get("/api/admin/ambassadors", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const rows = await pgQuery(`
+        SELECT ambassador_code, ambassador_name,
+               COUNT(*) as link_count,
+               COUNT(*) FILTER (WHERE is_active) as active_count,
+               MIN(created_at) as created_at
+        FROM ambassador_links
+        GROUP BY ambassador_code, ambassador_name
+        ORDER BY ambassador_name
+      `);
+      return res.json({ ambassadors: rows });
+    } catch (err: any) {
+      console.log("[ambassador] list ambassadors error:", err.message);
+      return res.status(500).json({ error: "Failed to list ambassadors" });
+    }
+  });
+
+  app.put("/api/admin/ambassador-links/:id/toggle", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const rows = await pgQuery(
+        `UPDATE ambassador_links SET is_active = NOT is_active WHERE id = $1 RETURNING id, is_active`,
+        [req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to toggle link" });
+    }
+  });
+
+  app.delete("/api/admin/ambassador-links/ambassador/:code", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const normalizedCode = sanitizeCode(req.params.code);
+      const rows = await pgQuery(
+        `DELETE FROM ambassador_links WHERE ambassador_code = $1 RETURNING id`,
+        [normalizedCode]
+      );
+      return res.json({ deleted: rows.length });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to delete ambassador links" });
+    }
+  });
+
+  app.get("/api/admin/ambassador-report", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const sessions = await pgQuery(`
+        SELECT utm_content AS ambassador,
+               COUNT(*) AS session_count,
+               COUNT(DISTINCT session_id) AS unique_sessions,
+               MIN(created_at) AS first_seen,
+               MAX(created_at) AS last_seen
+        FROM user_attribution_sessions
+        WHERE utm_medium = 'ambassador' AND utm_content IS NOT NULL
+        GROUP BY utm_content
+        ORDER BY session_count DESC
+      `);
+
+      const leads = await pgQuery(`
+        SELECT utm_content AS ambassador,
+               COUNT(*) AS lead_count
+        FROM trusted_service_leads
+        WHERE utm_content IS NOT NULL
+        GROUP BY utm_content
+        ORDER BY lead_count DESC
+      `);
+
+      const revenue = await pgQuery(`
+        SELECT ambassador,
+               COUNT(*) AS conversion_count,
+               COALESCE(SUM(revenue_amount), 0) AS total_revenue
+        FROM partner_attribution
+        WHERE ambassador IS NOT NULL
+        GROUP BY ambassador
+        ORDER BY total_revenue DESC
+      `);
+
+      const byChannel = await pgQuery(`
+        SELECT utm_source AS channel,
+               COUNT(*) AS session_count,
+               COUNT(DISTINCT session_id) AS unique_sessions
+        FROM user_attribution_sessions
+        WHERE utm_medium = 'ambassador' AND utm_source IS NOT NULL
+        GROUP BY utm_source
+        ORDER BY session_count DESC
+      `);
+
+      const byAudience = await pgQuery(`
+        SELECT landing_page AS audience_path,
+               COUNT(*) AS session_count,
+               COUNT(DISTINCT session_id) AS unique_sessions
+        FROM user_attribution_sessions
+        WHERE utm_medium = 'ambassador' AND landing_page IS NOT NULL
+        GROUP BY landing_page
+        ORDER BY session_count DESC
+      `);
+
+      return res.json({ sessions, leads, revenue, byChannel, byAudience });
+    } catch (err: any) {
+      console.log("[ambassador] report error:", err.message);
+      return res.status(500).json({ error: "Failed to generate report" });
     }
   });
 

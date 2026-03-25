@@ -174,6 +174,8 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `user_attribution_sessions` - id (uuid), session_id (text), utm_source, utm_medium, utm_campaign, utm_content (ambassador), utm_term, landing_page, referrer, created_at — captures UTM attribution per session (Neon/pgQuery)
 - `partner_attribution` - id (uuid), application_id (fk→partner_applications), ambassador (utm_content), utm_source, utm_medium, utm_campaign, stripe_customer_id, stripe_subscription_id, plan_type, revenue_amount (numeric), event_type, created_at — records attribution at Stripe checkout completion (Neon/pgQuery)
 
+- `ambassador_links` - id (uuid), ambassador_name, ambassador_code, base_path, utm_source, utm_medium (default 'ambassador'), utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, is_active (bool), created_at — stores generated ambassador link packs (Neon/pgQuery)
+
 ### Attribution Columns Added to Existing Tables
 - `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, session_id
 - `partner_applications` — utm_source, utm_medium, utm_campaign, utm_content, session_id
