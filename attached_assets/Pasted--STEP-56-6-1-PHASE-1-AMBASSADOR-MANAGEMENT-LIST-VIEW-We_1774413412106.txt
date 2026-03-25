@@ -1,0 +1,163 @@
+--- STEP 56.6.1 – PHASE 1: AMBASSADOR MANAGEMENT + LIST VIEW ---
+
+We are beginning Step 56.6 build.
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Only implement Phase 1.
+Do NOT build leads, revenue, commissions, or payout tracking yet.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a simple admin interface that allows a non-technical admin to:
+
+1) Add ambassadors
+2) View all ambassadors in a list
+
+This is the first operational layer on top of the existing attribution engine.
+
+-------------------------------------
+SCOPE FOR THIS STEP ONLY
+-------------------------------------
+
+Build ONLY:
+
+A) Add Ambassador UI
+B) Ambassador List View
+
+Do NOT build:
+- commission dashboard
+- revenue view
+- payout tracking
+- new attribution logic
+- new commission logic
+
+-------------------------------------
+FEATURE A — ADD AMBASSADOR
+-------------------------------------
+
+Create admin UI with:
+
+Button:
+- Add Ambassador
+
+Fields:
+- name (required)
+- email (optional)
+- region (optional)
+
+On submit:
+1. generate ambassador code
+2. generate full link pack automatically
+3. store records using existing data model / tables
+4. return success state so admin can immediately see the ambassador in the list
+
+IMPORTANT:
+- If email is blank, ambassador should still be creatable
+- If region is blank, ambassador should still be creatable
+- Do not require anything beyond name for Phase 1 unless existing logic absolutely requires it
+
+-------------------------------------
+LINK PACK REQUIREMENT
+-------------------------------------
+
+For this phase, “generate full link pack” means:
+- create the ambassador’s tracked links using the existing ambassador link system
+- store them in ambassador_links
+- make them available for later use in the detail/distribution UI
+
+If the platform already has a standard link structure, reuse it.
+Do NOT invent a second link logic.
+
+-------------------------------------
+FEATURE B — AMBASSADOR LIST VIEW
+-------------------------------------
+
+Create a list/table that displays:
+
+- ambassador name
+- ambassador code
+- total links
+- total click_count (sum)
+- last activity (max last_clicked_at)
+- region if available
+- email if available
+
+Each row should be clickable.
+
+IMPORTANT:
+For this phase, clicking a row can:
+- either open the existing detail view if already wired
+- OR route to a placeholder/detail shell if needed
+
+But do NOT build the full ambassador detail page in this step unless it already exists.
+This phase is about:
+- creation
+- visibility
+
+-------------------------------------
+DATA / LOGIC RULES
+-------------------------------------
+
+- Reuse existing tables and logic
+- Do NOT rebuild attribution engine
+- Do NOT rebuild commission logic
+- Do NOT create duplicate ambassador systems
+
+Use existing relevant tables only, especially:
+- ambassador_links
+- any existing ambassador-related tables already in use
+
+If any required table/field is missing, do NOT guess.
+Report it clearly.
+
+-------------------------------------
+UI / UX GOAL
+-------------------------------------
+
+Allow a non-technical admin to:
+- create ambassadors easily
+- immediately see them in a clean list
+- confirm that links and activity tracking are attached
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+After implementation, report back with:
+
+1. UI STRUCTURE
+- where the Add Ambassador button/form lives
+- where the list view lives
+
+2. DATA QUERIES / DATA FLOW
+- what tables are read
+- what tables are written
+- how totals are calculated
+
+3. BUILD PLAN COMPLETED
+- what was actually built in this phase
+- what was intentionally deferred
+
+4. FILES CHANGED
+- exact files
+
+5. TESTING PERFORMED
+- ambassador creation
+- optional email/region handling
+- link pack generation
+- ambassador list rendering
+- click count / last activity display
+
+6. CONFIRMATION
+Please explicitly confirm:
+a) admin can create ambassador with required minimum fields
+b) ambassador code is generated
+c) link pack is generated and stored
+d) ambassador appears in list
+e) click_count and last activity are displayed from existing data
+f) no attribution or commission logic was changed
+
+--- END ---

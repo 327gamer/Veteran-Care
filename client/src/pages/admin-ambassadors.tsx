@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,11 @@ import {
   ChevronUp,
   Search,
   ExternalLink,
+  Plus,
+  MousePointerClick,
+  Mail,
+  MapPin,
+  Loader2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -59,6 +64,10 @@ interface AmbassadorSummary {
   ambassador_code: string;
   ambassador_name: string;
   link_count: number;
+  total_clicks: number;
+  last_activity: string | null;
+  email: string | null;
+  region: string | null;
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -250,10 +259,16 @@ export default function AdminAmbassadors() {
   const [, navigate] = useLocation();
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formRegion, setFormRegion] = useState("");
 
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (adminKey) headers["x-admin-key"] = adminKey;
+
+  const queryClient = useQueryClient();
 
   const { data: ambassadors, isLoading: loadingList } = useQuery<{ ambassadors: AmbassadorSummary[] }>({
     queryKey: ["admin-ambassadors"],
@@ -263,6 +278,28 @@ export default function AdminAmbassadors() {
       return res.json();
     },
     enabled: !!adminKey,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { ambassador_name: string; email?: string; region?: string }) => {
+      const res = await fetch("/api/admin/ambassador-links/generate", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create ambassador");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] });
+      setShowAddForm(false);
+      setFormName("");
+      setFormEmail("");
+      setFormRegion("");
+    },
   });
 
   const { data: distPack, isLoading: loadingPack } = useQuery<DistPack>({
@@ -281,7 +318,7 @@ export default function AdminAmbassadors() {
         <Card className="w-full max-w-sm">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">Admin access required. Please log in via the admin panel first.</p>
-            <Button className="mt-4" onClick={() => navigate("/admin")}>Go to Admin</Button>
+            <Button className="mt-4" onClick={() => navigate("/admin")} data-testid="button-go-admin">Go to Admin</Button>
           </CardContent>
         </Card>
       </div>
@@ -360,12 +397,82 @@ export default function AdminAmbassadors() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-2xl mx-auto p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} data-testid="button-back-admin">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Admin
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} data-testid="button-back-admin">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Admin
+            </Button>
+            <h1 className="text-lg font-bold">Ambassadors</h1>
+          </div>
+          <Button size="sm" onClick={() => setShowAddForm(!showAddForm)} data-testid="button-add-ambassador">
+            <Plus className="h-4 w-4 mr-1" /> Add Ambassador
           </Button>
-          <h1 className="text-lg font-bold">Ambassador Packs</h1>
         </div>
+
+        {showAddForm && (
+          <Card className="mb-4 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Add New Ambassador</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Name *</label>
+                <Input
+                  placeholder="e.g. Tracy Johnson"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  data-testid="input-ambassador-name"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Email (optional)</label>
+                <Input
+                  type="email"
+                  placeholder="tracy@example.com"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  data-testid="input-ambassador-email"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Region (optional)</label>
+                <Input
+                  placeholder="e.g. Upstate SC"
+                  value={formRegion}
+                  onChange={(e) => setFormRegion(e.target.value)}
+                  data-testid="input-ambassador-region"
+                />
+              </div>
+              {createMutation.isError && (
+                <p className="text-xs text-red-600" data-testid="text-create-error">
+                  {(createMutation.error as Error).message}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={!formName.trim() || createMutation.isPending}
+                  onClick={() => {
+                    const payload: any = { ambassador_name: formName.trim() };
+                    if (formEmail.trim()) payload.email = formEmail.trim();
+                    if (formRegion.trim()) payload.region = formRegion.trim();
+                    createMutation.mutate(payload);
+                  }}
+                  data-testid="button-submit-ambassador"
+                >
+                  {createMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Creating...</>
+                  ) : (
+                    "Create & Generate Links"
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowAddForm(false)} data-testid="button-cancel-add">
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -383,7 +490,9 @@ export default function AdminAmbassadors() {
         {!loadingList && (!filteredAmbassadors || filteredAmbassadors.length === 0) && (
           <Card>
             <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">No ambassadors found. Generate link packs via the API first.</p>
+              <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">No ambassadors found.</p>
+              <p className="text-xs text-muted-foreground mt-1">Click "Add Ambassador" to create your first one.</p>
             </CardContent>
           </Card>
         )}
@@ -396,12 +505,48 @@ export default function AdminAmbassadors() {
               onClick={() => setSelectedCode(amb.ambassador_code)}
               data-testid={`card-ambassador-${amb.ambassador_code}`}
             >
-              <CardContent className="py-3 px-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{amb.ambassador_name}</p>
-                  <p className="text-xs text-muted-foreground">{amb.ambassador_code} • {amb.link_count} links</p>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm" data-testid={`text-name-${amb.ambassador_code}`}>{amb.ambassador_name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                      <span>{amb.ambassador_code}</span>
+                      <span>•</span>
+                      <span>{amb.link_count} links</span>
+                      {amb.region && (
+                        <>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-0.5">
+                            <MapPin className="h-3 w-3" />{amb.region}
+                          </span>
+                        </>
+                      )}
+                      {amb.email && (
+                        <>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-0.5">
+                            <Mail className="h-3 w-3" />{amb.email}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 justify-end">
+                        <MousePointerClick className="h-3 w-3 text-slate-400" />
+                        <span className={`text-sm font-medium ${amb.total_clicks > 0 ? "text-blue-600" : "text-slate-400"}`} data-testid={`text-clicks-${amb.ambassador_code}`}>
+                          {amb.total_clicks}
+                        </span>
+                      </div>
+                      {amb.last_activity && (
+                        <p className="text-[10px] text-muted-foreground" data-testid={`text-activity-${amb.ambassador_code}`}>
+                          {timeAgo(amb.last_activity)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-xs">{amb.link_count}</Badge>
               </CardContent>
             </Card>
           ))}

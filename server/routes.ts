@@ -151,6 +151,8 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS first_clicked_at TIMESTAMPTZ`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS email TEXT`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS region TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_code ON ambassador_links(ambassador_code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_audience ON ambassador_links(audience_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_channel ON ambassador_links(channel_type)`);
@@ -706,10 +708,12 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador_name, channels, audiences, campaigns } = req.body;
+    const { ambassador_name, channels, audiences, campaigns, email, region } = req.body;
     if (!ambassador_name || typeof ambassador_name !== "string") {
       return res.status(400).json({ error: "ambassador_name is required" });
     }
+    const ambassadorEmail = (email && typeof email === "string") ? email.trim() : null;
+    const ambassadorRegion = (region && typeof region === "string") ? region.trim() : null;
 
     const code = sanitizeCode(ambassador_name);
     if (!code) return res.status(400).json({ error: "Invalid ambassador name" });
@@ -771,9 +775,9 @@ export async function registerRoutes(
 
           await pgQuery(
             `INSERT INTO ambassador_links
-             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName]
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type, link_name, email, region)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion]
           );
 
           generated.push({
@@ -840,6 +844,10 @@ export async function registerRoutes(
         SELECT ambassador_code, ambassador_name,
                COUNT(*) as link_count,
                COUNT(*) FILTER (WHERE is_active) as active_count,
+               COALESCE(SUM(click_count), 0)::int as total_clicks,
+               MAX(last_clicked_at) as last_activity,
+               MAX(email) as email,
+               MAX(region) as region,
                MIN(created_at) as created_at
         FROM ambassador_links
         GROUP BY ambassador_code, ambassador_name
