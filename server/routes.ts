@@ -132,7 +132,7 @@ async function ensureAttributionTables() {
         ambassador_code TEXT NOT NULL,
         base_path TEXT NOT NULL,
         utm_source TEXT NOT NULL,
-        utm_medium TEXT NOT NULL DEFAULT 'ambassador',
+        utm_medium TEXT NOT NULL,
         utm_campaign TEXT NOT NULL,
         utm_content TEXT NOT NULL,
         utm_id TEXT,
@@ -652,14 +652,14 @@ export async function registerRoutes(
 
   function buildAmbassadorUrl(
     basePath: string,
-    source: string,
+    channel: string,
     campaign: string,
     ambassadorCode: string,
     utmId?: string
   ): string {
     const params = new URLSearchParams();
-    params.set("utm_source", source);
-    params.set("utm_medium", "ambassador");
+    params.set("utm_source", "ambassador");
+    params.set("utm_medium", channel);
     params.set("utm_campaign", campaign);
     params.set("utm_content", ambassadorCode);
     if (utmId) params.set("utm_id", utmId);
@@ -720,7 +720,7 @@ export async function registerRoutes(
             `INSERT INTO ambassador_links
              (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, audience_type, channel_type)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-            [ambassador_name, code, audience.path, channel, "ambassador", campaign, code, utmId, fullUrl, audienceKey, channel]
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, audienceKey, channel]
           );
 
           generated.push({
@@ -842,7 +842,7 @@ export async function registerRoutes(
                MIN(created_at) AS first_seen,
                MAX(created_at) AS last_seen
         FROM user_attribution_sessions
-        WHERE utm_medium = 'ambassador' AND utm_content IS NOT NULL
+        WHERE utm_source = 'ambassador' AND utm_content IS NOT NULL
         GROUP BY utm_content
         ORDER BY session_count DESC
       `);
@@ -867,12 +867,12 @@ export async function registerRoutes(
       `);
 
       const byChannel = await pgQuery(`
-        SELECT utm_source AS channel,
+        SELECT utm_medium AS channel,
                COUNT(*) AS session_count,
                COUNT(DISTINCT session_id) AS unique_sessions
         FROM user_attribution_sessions
-        WHERE utm_medium = 'ambassador' AND utm_source IS NOT NULL
-        GROUP BY utm_source
+        WHERE utm_source = 'ambassador' AND utm_medium IS NOT NULL
+        GROUP BY utm_medium
         ORDER BY session_count DESC
       `);
 
@@ -881,7 +881,7 @@ export async function registerRoutes(
                COUNT(*) AS session_count,
                COUNT(DISTINCT session_id) AS unique_sessions
         FROM user_attribution_sessions
-        WHERE utm_medium = 'ambassador' AND landing_page IS NOT NULL
+        WHERE utm_source = 'ambassador' AND landing_page IS NOT NULL
         GROUP BY landing_page
         ORDER BY session_count DESC
       `);
