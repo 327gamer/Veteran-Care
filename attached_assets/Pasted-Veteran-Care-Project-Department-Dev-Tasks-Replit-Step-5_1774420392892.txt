@@ -1,0 +1,217 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+Step 56.6B.1 – Admin Panel Phase 1 Build (Launch-Critical)
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Build Phase 1 only.
+Do NOT build finance, payouts, advanced reporting, or full dashboard summary cards yet.
+
+Current step alignment:
+- Step 56.6A = data model (completed)
+- Step 56.6B = architecture (completed)
+- We are now executing:
+  Step 56.6B.1 – Admin Panel Phase 1 Build
+
+==================================================
+PHASE 1 SCOPE ONLY
+==================================================
+
+Build these three pieces only:
+
+1. Ambassador Management
+   - create ambassador
+   - edit ambassador basic profile
+
+2. Ambassador List View
+   - list all ambassadors
+   - key operational summary fields
+
+3. Basic Ambassador Detail View
+   - ambassador profile summary
+   - owned links
+   - basic activity summary
+
+Do NOT build:
+- commission dashboard
+- revenue dashboard
+- payout management
+- advanced attribution reports
+- alerts / exceptions
+- executive dashboards
+
+==================================================
+1) AMBASSADOR MANAGEMENT
+==================================================
+
+Create admin UI for:
+- Add Ambassador
+- Edit Ambassador
+
+Use the ambassadors table as the canonical identity layer.
+
+Expected fields:
+- first_name
+- last_name
+- display_name
+- email
+- phone (optional)
+- region_type (optional)
+- region_value (optional)
+- referral_code (optional if already supported)
+- status
+- notes (optional)
+
+Behavior:
+- create new ambassador record in ambassadors
+- if required by current link logic, code should still be generated consistently
+- do NOT rebuild link-generation logic in this step unless needed to support the detail view safely
+- if link generation is not part of this exact slice, that is okay — but ambassador profile creation/editing must work correctly
+
+Clarification:
+If existing create flow already generates default links safely and that behavior is tightly coupled, you may preserve it.
+But do NOT expand beyond Phase 1.
+
+==================================================
+2) AMBASSADOR LIST VIEW
+==================================================
+
+Build a clean list/table view for all ambassadors.
+
+Display at minimum:
+- display_name
+- code
+- email
+- region_type
+- region_value
+- status
+- total links
+- total clicks
+- last activity
+
+Requirements:
+- each row clickable
+- clicking opens Ambassador Detail View
+- designed for non-technical admin usability
+- should support future filters, but only basic view is required now
+
+Data source:
+- ambassadors = identity/profile
+- ambassador_links = link counts / click counts / last activity aggregation
+
+==================================================
+3) BASIC AMBASSADOR DETAIL VIEW
+==================================================
+
+Create a basic ambassador detail screen/view that shows:
+
+A. Profile summary
+- display_name
+- code
+- email
+- phone
+- region
+- status
+- notes if present
+
+B. Owned links summary
+For each link show at minimum:
+- link_name
+- short_url or full_url
+- click_count
+- first_clicked_at
+- last_clicked_at
+- active/inactive if available
+
+C. Basic activity summary
+At minimum:
+- total links
+- total clicks
+- first activity
+- last activity
+
+IMPORTANT:
+This is NOT the full reporting dashboard.
+This is only the first operational drill-down screen.
+
+==================================================
+DATA / LOGIC RULES
+==================================================
+
+1. Use ambassadors as the canonical profile table
+2. Use ambassador_links as the child table
+3. Preserve:
+- utm_id = raw evidence
+- ambassador_id = stable ownership key
+
+4. Do NOT rebuild attribution logic
+5. Do NOT rebuild commission logic
+6. Do NOT hardcode South Carolina logic
+7. Keep structure state-aware / territory-aware for future scaling
+
+==================================================
+IF ADDITIONAL BACKEND AGGREGATION IS NEEDED
+==================================================
+
+If the list/detail views require a lightweight aggregation endpoint or SQL view for:
+- total links
+- total clicks
+- last activity
+
+that is acceptable in this step.
+
+But keep it minimal and only for Phase 1 needs.
+
+==================================================
+TEST CASES
+==================================================
+
+Please test at minimum:
+
+1. Create ambassador with required fields
+2. Edit ambassador basic profile
+3. Ambassador appears in list immediately
+4. List shows total links, total clicks, and last activity
+5. Clicking ambassador row opens detail view
+6. Detail view shows profile + owned links + activity summary
+7. Test on desktop and mobile admin experience if applicable
+8. Confirm no attribution or commission behavior was changed
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After implementation, report back with:
+
+1. UI STRUCTURE
+- what screens/views were built
+- where Ambassador Management, List View, and Detail View live
+
+2. DATA FLOW
+- what tables are read
+- what tables are written
+- what aggregations are used
+
+3. FILES CHANGED
+- exact files
+
+4. TESTING PERFORMED
+- creation
+- editing
+- list rendering
+- detail rendering
+- links/activity summary
+
+5. CONFIRMATION
+Please explicitly confirm:
+a) Ambassador profile creation/editing works using ambassadors table
+b) Ambassador list view works
+c) Ambassador detail view works
+d) total links / clicks / last activity are visible
+e) no finance / payout / advanced reporting modules were built
+f) no attribution or commission logic was changed
+
+IMPORTANT:
+This is Phase 1 only.
+Do not continue into dashboards, finance, payouts, or advanced reporting in this step.

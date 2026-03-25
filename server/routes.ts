@@ -929,12 +929,13 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador_name, channels, audiences, campaigns, email, region, phone, first_name, last_name, notes } = req.body;
+    const { ambassador_name, channels, audiences, campaigns, email, region, region_type, phone, first_name, last_name, notes } = req.body;
     if (!ambassador_name || typeof ambassador_name !== "string") {
       return res.status(400).json({ error: "ambassador_name is required" });
     }
     const ambassadorEmail = (email && typeof email === "string") ? email.trim() : null;
     const ambassadorRegion = (region && typeof region === "string") ? region.trim() : null;
+    const ambassadorRegionType = (region_type && typeof region_type === "string") ? region_type.trim() : null;
     const ambassadorPhone = (phone && typeof phone === "string") ? phone.trim() : null;
     const ambassadorNotes = (notes && typeof notes === "string") ? notes.trim() : null;
 
@@ -967,12 +968,13 @@ export async function registerRoutes(
       }
 
       const ambRows = await pgQuery(
-        `INSERT INTO ambassadors (code, display_name, first_name, last_name, email, phone, region_value, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO ambassadors (code, display_name, first_name, last_name, email, phone, region_type, region_value, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (code) DO UPDATE SET
            display_name = COALESCE(EXCLUDED.display_name, ambassadors.display_name),
            email = COALESCE(EXCLUDED.email, ambassadors.email),
            phone = COALESCE(EXCLUDED.phone, ambassadors.phone),
+           region_type = COALESCE(EXCLUDED.region_type, ambassadors.region_type),
            region_value = COALESCE(EXCLUDED.region_value, ambassadors.region_value),
            notes = COALESCE(EXCLUDED.notes, ambassadors.notes),
            updated_at = NOW()
@@ -984,6 +986,7 @@ export async function registerRoutes(
           (last_name && typeof last_name === "string") ? last_name.trim() : null,
           ambassadorEmail,
           ambassadorPhone,
+          ambassadorRegionType,
           ambassadorRegion,
           ambassadorNotes,
         ]
@@ -1113,6 +1116,94 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[ambassador] list ambassadors error:", err.message);
       return res.status(500).json({ error: "Failed to list ambassadors" });
+    }
+  });
+
+  app.get("/api/admin/ambassadors/:id", requireAdmin, async (req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT id, code, display_name, first_name, last_name, email, phone,
+                region_type, region_value, status, notes,
+                created_at, updated_at
+         FROM ambassadors WHERE id = $1`,
+        [req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Ambassador not found" });
+      const amb = rows[0];
+
+      const links = await pgQuery(
+        `SELECT id, link_name, utm_id, full_url, audience_type, channel_type,
+                click_count, first_clicked_at, last_clicked_at, is_active, created_at
+         FROM ambassador_links
+         WHERE ambassador_id = $1
+         ORDER BY audience_type, channel_type`,
+        [amb.id]
+      );
+
+      const totalClicks = links.reduce((s: number, l: any) => s + (l.click_count || 0), 0);
+      const clickedLinks = links.filter((l: any) => l.first_clicked_at);
+      const firstActivity = clickedLinks.length > 0
+        ? clickedLinks.reduce((m: string, l: any) => l.first_clicked_at < m ? l.first_clicked_at : m, clickedLinks[0].first_clicked_at)
+        : null;
+      const lastActivity = clickedLinks.length > 0
+        ? clickedLinks.reduce((m: string, l: any) => l.last_clicked_at > m ? l.last_clicked_at : m, clickedLinks[0].last_clicked_at)
+        : null;
+
+      return res.json({
+        ...amb,
+        links,
+        activity: {
+          total_links: links.length,
+          active_links: links.filter((l: any) => l.is_active).length,
+          total_clicks: totalClicks,
+          first_activity: firstActivity,
+          last_activity: lastActivity,
+        },
+      });
+    } catch (err: any) {
+      console.log("[ambassador] detail error:", err.message);
+      return res.status(500).json({ error: "Failed to load ambassador" });
+    }
+  });
+
+  app.patch("/api/admin/ambassadors/:id", requireAdmin, async (req, res) => {
+    try {
+      const { display_name, first_name, last_name, email, phone, region_type, region_value, status, notes } = req.body;
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      const addField = (col: string, val: any) => {
+        if (val !== undefined) {
+          fields.push(`${col} = $${idx++}`);
+          values.push(typeof val === "string" ? val.trim() || null : val);
+        }
+      };
+
+      addField("display_name", display_name);
+      addField("first_name", first_name);
+      addField("last_name", last_name);
+      addField("email", email);
+      addField("phone", phone);
+      addField("region_type", region_type);
+      addField("region_value", region_value);
+      addField("status", status);
+      addField("notes", notes);
+
+      if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
+
+      fields.push(`updated_at = NOW()`);
+      values.push(req.params.id);
+
+      const rows = await pgQuery(
+        `UPDATE ambassadors SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+        values
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Ambassador not found" });
+      return res.json(rows[0]);
+    } catch (err: any) {
+      console.log("[ambassador] update error:", err.message);
+      return res.status(500).json({ error: "Failed to update ambassador" });
     }
   });
 
