@@ -1060,28 +1060,61 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador, audience, channel } = req.query;
+    const { ambassador, audience, channel, campaign, active, date_from, date_to } = req.query;
     try {
-      let sql = `SELECT * FROM ambassador_links WHERE 1=1`;
+      let sql = `SELECT al.*, a.display_name as ambassador_display_name
+        FROM ambassador_links al
+        LEFT JOIN ambassadors a ON a.id = al.ambassador_id
+        WHERE 1=1`;
       const params: any[] = [];
       let idx = 1;
 
       if (ambassador) {
-        sql += ` AND ambassador_code = $${idx++}`;
+        sql += ` AND al.ambassador_code = $${idx++}`;
         params.push(sanitizeCode(ambassador as string));
       }
       if (audience) {
-        sql += ` AND audience_type = $${idx++}`;
+        sql += ` AND al.audience_type = $${idx++}`;
         params.push(audience);
       }
       if (channel) {
-        sql += ` AND channel_type = $${idx++}`;
+        sql += ` AND al.channel_type = $${idx++}`;
         params.push(channel);
       }
+      if (campaign) {
+        sql += ` AND al.utm_campaign = $${idx++}`;
+        params.push(campaign);
+      }
+      if (active === "true") {
+        sql += ` AND al.is_active = true`;
+      } else if (active === "false") {
+        sql += ` AND al.is_active = false`;
+      }
+      if (date_from) {
+        sql += ` AND al.created_at >= $${idx++}`;
+        params.push(date_from);
+      }
+      if (date_to) {
+        sql += ` AND al.created_at < ($${idx++}::date + interval '1 day')`;
+        params.push(date_to);
+      }
 
-      sql += ` ORDER BY ambassador_code, audience_type, channel_type`;
+      sql += ` ORDER BY al.created_at DESC`;
       const rows = await pgQuery(sql, params);
-      return res.json({ links: rows, count: rows.length });
+
+      const filterOptions = await pgQuery(`
+        SELECT
+          ARRAY_AGG(DISTINCT ambassador_code) FILTER (WHERE ambassador_code IS NOT NULL) AS ambassadors,
+          ARRAY_AGG(DISTINCT channel_type) FILTER (WHERE channel_type IS NOT NULL) AS channels,
+          ARRAY_AGG(DISTINCT utm_campaign) FILTER (WHERE utm_campaign IS NOT NULL) AS campaigns
+        FROM ambassador_links
+      `);
+
+      return res.json({
+        links: rows,
+        count: rows.length,
+        filterOptions: filterOptions[0] || { ambassadors: [], channels: [], campaigns: [] },
+      });
     } catch (err: any) {
       console.log("[ambassador] list error:", err.message);
       return res.status(500).json({ error: "Failed to list ambassador links" });

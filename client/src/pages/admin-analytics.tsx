@@ -226,7 +226,7 @@ export default function AdminAnalytics() {
                   )}
                 </CardContent>
               </Card>
-              <Card className="border-indigo-100 bg-indigo-50/30">
+              <Card className="border-indigo-100 bg-indigo-50/30 cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setLocation("/admin/links")}>
                 <CardContent className="p-4 text-center">
                   <Link2 className="h-5 w-5 mx-auto mb-1 text-indigo-600" />
                   <p className="text-2xl font-bold text-indigo-700" data-testid="stat-active-links">{fmtNum(summary.links.active_links)}</p>
@@ -297,8 +297,8 @@ export default function AdminAnalytics() {
                     </p>
                     <p className="text-xs text-amber-600">These links have been generated but never used. Review in the Ambassadors panel.</p>
                   </div>
-                  <Button variant="outline" size="sm" className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => setLocation("/admin/ambassadors")} data-testid="button-view-ambassadors">
-                    View
+                  <Button variant="outline" size="sm" className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => setLocation("/admin/links?zero_clicks=1")} data-testid="button-view-zero-clicks">
+                    View Links
                   </Button>
                 </CardContent>
               </Card>

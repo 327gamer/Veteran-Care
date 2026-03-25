@@ -28,6 +28,7 @@ import VobDirectoryApply from "@/pages/vob-directory-apply";
 import VobStartupHelp from "@/pages/vob-startup-help";
 import AdminVob from "@/pages/admin-vob";
 import AdminAmbassadors from "@/pages/admin-ambassadors";
+import AdminLinks from "@/pages/admin-links";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
@@ -91,6 +92,7 @@ function Router() {
       <Route path="/admin/partner-prospects" component={AdminPartnerProspects} />
       <Route path="/admin/vob" component={AdminVob} />
       <Route path="/admin/ambassadors" component={AdminAmbassadors} />
+      <Route path="/admin/links" component={AdminLinks} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">
