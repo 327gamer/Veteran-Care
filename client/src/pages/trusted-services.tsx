@@ -557,7 +557,13 @@ export default function TrustedServices() {
               <Card
                 key={cat.id}
                 className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
-                onClick={() => setSelectedCategory(cat.slug)}
+                onClick={() => {
+                  if (cat.slug === "end-of-life-services") {
+                    setLocation("/end-of-life");
+                    return;
+                  }
+                  setSelectedCategory(cat.slug);
+                }}
                 data-testid={`card-trusted-category-${cat.slug}`}
               >
                 <CardContent className="p-4 text-center">

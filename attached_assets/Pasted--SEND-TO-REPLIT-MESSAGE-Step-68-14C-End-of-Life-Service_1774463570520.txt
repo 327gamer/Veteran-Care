@@ -1,0 +1,89 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 68.14C – End of Life Services Linkage Mismatch (Trusted Services Path)
+
+IMPORTANT:
+Treat this as one focused fix only.
+Do NOT move on to anything else until this linkage issue is corrected and verified.
+
+-------------------------------------
+ISSUE
+-------------------------------------
+
+We found a broken / inconsistent End of Life Services path.
+
+CURRENT BEHAVIOR:
+
+Path 1:
+- Home → End of Life Services
+OR
+- Resources → End of Life Services
+
+This path works correctly and shows:
+- End of Life categories
+- providers/content already completed
+
+Path 2:
+- Trusted Services → End of Life Services
+
+This path is broken and currently shows:
+- “Partners Coming Soon”
+
+That is incorrect because this section has already been completed elsewhere in the platform.
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+No matter how the user reaches End of Life Services, the platform should route to the correct completed experience.
+
+Trusted Services → End of Life Services should NOT show an outdated placeholder if the real content already exists.
+
+-------------------------------------
+LIKELY ROOT CAUSE
+-------------------------------------
+
+Please audit for:
+- wrong route target
+- wrong category mapping
+- trusted-services category still pointing to placeholder state
+- duplicate/legacy End of Life configuration
+- mismatch between trusted-services flow and resources flow
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+- Make Trusted Services → End of Life Services resolve to the correct live End of Life experience
+- Remove or bypass the outdated “Partners Coming Soon” path if it is no longer valid
+- Ensure the same content/data appears consistently regardless of entry point
+
+-------------------------------------
+TEST CASES
+-------------------------------------
+
+Please test all 3 paths:
+
+1. Home → End of Life Services
+2. Resources → End of Life Services
+3. Trusted Services → End of Life Services
+
+Expected:
+- all 3 routes resolve correctly
+- no outdated placeholder screen appears
+- consistent End of Life content/provider/category experience across entry points
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Please report back with:
+
+1. root cause
+2. exact files changed
+3. what route/category mapping was corrected
+4. confirmation all 3 entry points now match
+5. confirmation no unrelated trusted-services/resource logic was changed
+
+--- END ---
