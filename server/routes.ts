@@ -1259,6 +1259,7 @@ export async function registerRoutes(
           message_title: template?.message_title || `${r.audience_type} – ${r.channel_type}`,
           suggested_copy: suggestedCopy,
           click_count: r.click_count || 0,
+          last_clicked_at: r.last_clicked_at || null,
         };
 
         if (!byAudience[r.audience_type]) byAudience[r.audience_type] = [];

@@ -31,6 +31,19 @@ interface DistLink {
   message_title: string;
   suggested_copy: string | null;
   click_count: number;
+  last_clicked_at: string | null;
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }
 
 interface DistPack {
@@ -113,10 +126,17 @@ function LinkCard({ link }: { link: DistLink }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm truncate">{link.message_title}</span>
-            {link.click_count > 0 && (
-              <Badge variant="secondary" className="text-xs" data-testid={`clicks-${link.utm_id}`}>
-                {link.click_count} click{link.click_count !== 1 ? "s" : ""}
-              </Badge>
+            <Badge
+              variant={link.click_count > 0 ? "secondary" : "outline"}
+              className={`text-xs ${link.click_count === 0 ? "text-muted-foreground" : ""}`}
+              data-testid={`clicks-${link.utm_id}`}
+            >
+              {link.click_count} click{link.click_count !== 1 ? "s" : ""}
+            </Badge>
+            {link.last_clicked_at && (
+              <span className="text-xs text-muted-foreground" data-testid={`last-click-${link.utm_id}`}>
+                {timeAgo(link.last_clicked_at)}
+              </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">{link.link_name}</p>
