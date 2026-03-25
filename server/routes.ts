@@ -26,6 +26,7 @@ let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
 let hasNavLifecycleColumns = false;
+let hasNavUtmColumns = false;
 let hasNavAmbassadorId = false;
 let hasNotifyEmailColumn = false;
 
@@ -674,6 +675,21 @@ async function checkNavLifecycleColumns() {
   } else {
     hasNavLifecycleColumns = true;
     console.log("[schema] Navigator lifecycle columns detected");
+  }
+
+  const { error: utmErr } = await supabaseAdmin.from("navigator_requests").select("utm_source, utm_content, utm_id").limit(1);
+  if (utmErr && utmErr.message.includes("does not exist")) {
+    hasNavUtmColumns = false;
+    console.log("[schema] navigator_requests UTM columns not found. Run in Supabase SQL editor:");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_source TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_medium TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_campaign TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_content TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS utm_id TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS session_id TEXT;");
+  } else {
+    hasNavUtmColumns = true;
+    console.log("[schema] navigator_requests UTM columns detected");
   }
 
   const { error: routeErr } = await supabaseAdmin.from("navigator_requests").select("routed_to_partner_id, routed_at, delivery_status, partner_outcome, closed_at").limit(1);
@@ -3220,14 +3236,17 @@ export async function registerRoutes(
     if (hasNavLifecycleColumns) {
       const validUrgency = ["immediate", "same_week", "standard", "information"];
       if (source && typeof source === "string") baseRow.source = source.trim();
+      if (urgency && validUrgency.includes(urgency)) baseRow.urgency = urgency;
+      if (consent_followup === true) baseRow.consent_followup = true;
+    }
+
+    if (hasNavUtmColumns) {
       if (utm_source && typeof utm_source === "string") baseRow.utm_source = utm_source.trim();
       if (utm_medium && typeof utm_medium === "string") baseRow.utm_medium = utm_medium.trim();
       if (utm_campaign && typeof utm_campaign === "string") baseRow.utm_campaign = utm_campaign.trim();
       if (utm_content && typeof utm_content === "string") baseRow.utm_content = utm_content.trim();
       if (utm_id && typeof utm_id === "string") baseRow.utm_id = utm_id.trim();
       if (session_id && typeof session_id === "string") baseRow.session_id = session_id.trim();
-      if (urgency && validUrgency.includes(urgency)) baseRow.urgency = urgency;
-      if (consent_followup === true) baseRow.consent_followup = true;
     }
 
     if (hasNavAmbassadorId && (utm_content || utm_id)) {
@@ -3286,11 +3305,13 @@ export async function registerRoutes(
     };
     if (hasNavLifecycleColumns) {
       response.source = data.source ?? null;
+      response.urgency = data.urgency ?? null;
+      response.consent_followup = data.consent_followup ?? false;
+    }
+    if (hasNavUtmColumns) {
       response.utm_source = data.utm_source ?? null;
       response.utm_medium = data.utm_medium ?? null;
       response.utm_campaign = data.utm_campaign ?? null;
-      response.urgency = data.urgency ?? null;
-      response.consent_followup = data.consent_followup ?? false;
     }
     return res.status(201).json(response);
   });
