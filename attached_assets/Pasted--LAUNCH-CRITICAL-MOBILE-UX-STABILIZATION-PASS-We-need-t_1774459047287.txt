@@ -1,0 +1,125 @@
+--- LAUNCH-CRITICAL MOBILE UX STABILIZATION PASS ---
+
+We need to pause the next admin panel build slice briefly and fix a launch-critical mobile UX issue across the main Veteran Care experience.
+
+IMPORTANT:
+This is not a small visual polish item.
+This is now a mobile shell / layout / scrolling system issue affecting overall usability and launch quality.
+
+Follow ONE COMMAND RULE.
+Treat this as one focused stabilization task only.
+
+-------------------------------------
+CORE PROBLEM
+-------------------------------------
+
+The mobile experience is not behaving consistently across pages, detail views, forms, and overlays.
+
+Current issues include:
+
+1. Bottom nav overlap
+- the bottom navigation bar sometimes overlaps content
+- pages/modals are not always accounting for bottom nav height
+
+2. Broken scroll behavior
+- some overlays, forms, and detail pages do not scroll correctly
+- users cannot always reach top or bottom of content cleanly
+- some CTAs/forms get cut off
+
+3. Top bar inconsistency
+- top navigation/search/shell behavior is inconsistent across pages
+- on some screens the top shell disappears or does not behave like a stable app shell
+
+4. App shell inconsistency
+- pages do not feel like they are living inside one consistent mobile app frame
+- fixed top/bottom navigation and central scroll area are not behaving uniformly
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+The site should behave like a professional mobile web app with a consistent shell:
+
+- top bar remains visible and consistent where intended
+- bottom nav remains visible and stable
+- center content area scrolls independently
+- every page / modal / drawer / overlay fits within the viewport
+- no content gets hidden behind top or bottom bars
+- each open panel has its own proper scroll container when needed
+- users can always exit or navigate quickly and predictably
+
+-------------------------------------
+SPECIFIC FLOWS TO AUDIT
+-------------------------------------
+
+Audit and fix ALL major mobile page types, including:
+
+1. Homepage
+2. Resource category pages
+3. Resource results list pages
+4. Resource detail pages
+5. Request Support / Navigator modal
+6. Veteran Guide / AI modal
+7. Trusted Services pages
+8. Any overlay / drawer / detail panel opened from resource cards or partner cards
+9. My Saved / Community / Shop entry views if affected
+
+-------------------------------------
+KNOWN EXAMPLES TO FIX
+-------------------------------------
+
+- bottom nav shifts or overlaps during scroll
+- forms/modal content cut off at top or bottom
+- when clicking to contact/request help for a resource, page does not scroll correctly
+- top shell disappears on some views
+- users cannot move in/out of pages as quickly and consistently as expected
+
+-------------------------------------
+REQUIRED TECHNICAL GOAL
+-------------------------------------
+
+Create a single, consistent mobile layout pattern across the site:
+
+- fixed/stable top shell
+- fixed/stable bottom nav
+- safe-area aware layout for iPhone/mobile browsers
+- central content region handles scrolling
+- overlays/modals use correct max-height and internal overflow
+- no page-specific hacks that create new regressions elsewhere
+
+-------------------------------------
+IMPORTANT ARCHITECTURE REQUIREMENT
+-------------------------------------
+
+Please identify and standardize:
+
+1. the canonical mobile shell component
+2. the canonical mobile scroll container
+3. the canonical modal/drawer/overlay sizing pattern
+4. which current pages or flows are still outside that shared pattern
+
+The goal is to fix this at the shared layout/system level, not with scattered one-off page hacks.
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Please provide:
+
+1. root-cause explanation of the mobile shell/layout issue
+2. exact files/components affected
+3. unified fix approach
+4. list of audited page types
+5. confirmation of mobile testing completed across the affected flows
+6. identification of the shared layout components that now define the mobile shell standard
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT move forward with more admin-panel feature buildout until this launch-critical mobile fit/scroll/navigation issue is stabilized.
+
+Goal:
+Make the mobile experience feel clean, stable, consistent, and professional across the whole site before launch.
+
+--- END ---

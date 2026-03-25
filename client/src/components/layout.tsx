@@ -123,9 +123,9 @@ export default function Layout({ children }: LayoutProps) {
     : "JD";
 
   return (
-    <div className="min-h-screen bg-background font-sans overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background font-sans">
       {/* Top Bar - Persistent */}
-      <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
+      <header className="shrink-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Left: Logo */}
           <Link href="/home" className="flex items-center gap-2 group shrink-0">
@@ -275,8 +275,10 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
-        {children}
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
+          {children}
+        </div>
       </main>
 
       {/* AI Guide Modal */}
@@ -290,8 +292,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Bottom Navigation - Mobile First */}
       <nav
-        className="fixed bottom-0 left-0 right-0 w-full z-[100] border-t shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden"
-        style={{ backgroundColor: 'hsl(var(--background))', paddingBottom: 'env(safe-area-inset-bottom, 0px)', willChange: 'transform', transform: 'translateZ(0)' }}
+        className="shrink-0 w-full border-t bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex h-16 items-center justify-around px-2">
           <Link href="/resources" onClick={() => window.dispatchEvent(new CustomEvent("close-resource-detail"))} className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>

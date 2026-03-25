@@ -77,7 +77,7 @@ export default function GetHelp() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background">
 
       {/* Header */}
       <div className="bg-primary px-4 pt-10 pb-8 flex flex-col items-center text-center shrink-0">

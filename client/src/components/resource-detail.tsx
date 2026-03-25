@@ -62,6 +62,8 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
 
   useEffect(() => {
     if (open) {
+      const main = document.querySelector("main");
+      if (main) main.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo(0, 0);
@@ -75,7 +77,10 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
           state: resource.state || "",
         });
       }
-      return () => { document.body.style.overflow = ""; };
+      return () => {
+        if (main) main.style.overflow = "";
+        document.body.style.overflow = "";
+      };
     }
   }, [open, resource?.id]);
 
@@ -173,7 +178,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const hasAddress = resource.address || (resource.city && resource.state);
 
   return (
-    <div className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-background flex flex-col" data-testid="resource-detail-page">
+    <div className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-background flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="resource-detail-page">
       <div className="bg-primary px-4 sm:px-6 py-4 text-primary-foreground relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 p-2 opacity-10">
           <FileText className="h-24 w-24" />
@@ -217,7 +222,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="max-w-3xl lg:max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 pb-24 lg:pb-8">
+        <div className="max-w-3xl lg:max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 pb-8">
 
           <section data-testid="section-overview" className="space-y-2">
             <h3 className="font-bold text-base flex items-center gap-2 text-primary">
