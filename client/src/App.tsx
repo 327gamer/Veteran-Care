@@ -52,7 +52,11 @@ function Router() {
       <Route path="/get-help" component={GetHelp} />
       <Route path="/resource-center" component={ResourceCenter} />
       <Route path="/partners" component={PartnersLanding} />
-      <Route path="/end-of-life" component={EndOfLife} />
+      <Route path="/end-of-life">
+        <Layout>
+          <EndOfLife />
+        </Layout>
+      </Route>
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/enable-location" component={Onboarding} />
       

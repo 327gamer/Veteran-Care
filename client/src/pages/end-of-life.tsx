@@ -2,7 +2,6 @@ import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { trackEvent } from "@/lib/analytics";
-import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
 import { ChevronLeft, Flower2, ChevronRight, HeartHandshake } from "lucide-react";
 
 export default function EndOfLife() {
@@ -14,21 +13,25 @@ export default function EndOfLife() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="bg-primary px-4 pt-10 pb-8 flex flex-col items-center text-center">
-        <img
-          src={logoImg}
-          alt={platform.name}
-          className="h-32 w-auto object-contain drop-shadow-xl mb-4"
-          data-testid="eol-logo"
-        />
-        <div className="flex items-center gap-2 mb-1">
-          <Flower2 className="h-5 w-5 text-white/80" />
-          <h1 className="text-xl font-heading font-extrabold text-white tracking-tight">
+    <div className="flex flex-col">
+      <div className="px-4 pt-3">
+        <button
+          data-testid="eol-back-top"
+          onClick={() => setLocation("/resources")}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Resources
+        </button>
+      </div>
+      <div className="bg-primary/5 border-b px-4 pt-4 pb-6 flex flex-col items-center text-center rounded-b-2xl">
+        <div className="flex items-center gap-2 mb-2">
+          <Flower2 className="h-5 w-5 text-primary" />
+          <h1 className="text-xl font-heading font-extrabold text-foreground tracking-tight">
             End of Life Services
           </h1>
         </div>
-        <p className="text-white/70 text-sm leading-relaxed max-w-sm">
+        <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
           Support for veterans, family members, caregivers, and case managers navigating end-of-life care, hospice, final arrangements, family benefits, and legal planning.
         </p>
       </div>

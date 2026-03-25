@@ -77,10 +77,10 @@ export default function GetHelp() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="bg-primary px-4 pt-10 pb-8 flex flex-col items-center text-center">
+      <div className="bg-primary px-4 pt-10 pb-8 flex flex-col items-center text-center shrink-0">
         <img
           src={logoImg}
           alt={platform.name}
@@ -98,7 +98,7 @@ export default function GetHelp() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 px-4 py-6 max-w-lg mx-auto w-full space-y-6">
+      <div className="flex-1 min-h-0 px-4 py-6 max-w-lg mx-auto w-full space-y-6 overflow-y-auto overscroll-contain pb-8">
 
         {/* Category */}
         <div className="space-y-2">

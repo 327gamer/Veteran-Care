@@ -1,0 +1,106 @@
+Veteran Care Project
+Department: Dev Tasks & Replit
+
+STEP 57.25 – Mobile UX Regression Fixes (Freeze / Bottom Nav / End of Life Navigation)
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Do NOT continue with the next admin-panel step yet.
+Fix ONLY the 3 issues below first, test them, and report back.
+
+==================================================
+ISSUE 1 — MOBILE BOTTOM NAV MOVES UP WHILE SCROLLING
+==================================================
+
+CURRENT PROBLEM:
+On mobile, the bottom navigation bar (Resources / Trusted Services / Shop / My Saved / Community) is moving upward while scrolling again, and page content can be seen behind it.
+
+This was fixed before, but the regression is back.
+
+REQUIRED FIX:
+- Bottom nav must stay visually locked to the bottom of the mobile viewport at all times
+- It must not drift upward while scrolling
+- Page content must not bleed through behind it
+- Fix must work consistently across:
+  - homepage
+  - resources
+  - trusted services
+  - modals / overlays / detail pages
+
+CHECK:
+- solid background
+- proper z-index
+- safe-area handling
+- overscroll behavior
+- no transparency / blur issues causing bleed-through
+
+==================================================
+ISSUE 2 — “GET HELP NOW” PAGE / MODAL DOES NOT SCROLL ON MOBILE
+==================================================
+
+CURRENT PROBLEM:
+From the homepage, when the user clicks “Get Help Now” and the support/request flow opens, the page/modal becomes stuck and cannot scroll fully to the bottom, so the user cannot properly reach/submit the form.
+
+This is mobile only.
+
+REQUIRED FIX:
+- The Get Help Now flow must scroll fully on mobile
+- User must be able to reach the full bottom of the screen/form
+- Submit CTA must be reachable
+- No frozen scroll state
+- No body/overlay conflict
+- Must fit properly above the bottom mobile nav and safe-area
+
+IMPORTANT:
+Do NOT redesign the flow.
+Just make the current flow scroll and fit correctly on mobile.
+
+==================================================
+ISSUE 3 — END OF LIFE SERVICES PAGE HAS NO CLEAR WAY BACK
+==================================================
+
+CURRENT PROBLEM:
+When the user clicks into End of Life Services (from Resources or from the Home screen), they reach the page listing the End of Life Services categories, but:
+- the top/bottom tabs disappear
+- Back to results is missing
+- the only way out is scrolling all the way down and clicking back to Veteran Care
+
+That is not acceptable UX.
+
+REQUIRED FIX:
+- End of Life Services category page must follow the same navigation pattern as other resource category pages
+- Add a visible, reliable back/navigation option at the top
+- User should be able to return naturally without scrolling to the bottom
+- If this page is supposed to behave like a resource category page, make it match that pattern consistently
+
+IMPORTANT:
+Do NOT create a one-off hack.
+Apply the correct shared resource-category navigation behavior.
+
+==================================================
+TEST CASES REQUIRED
+==================================================
+
+Please test all 3 issues on mobile:
+
+1. Homepage scroll → bottom nav stays fixed
+2. Resources scroll → bottom nav stays fixed
+3. Open Get Help Now from homepage → full page/modal scrolls to bottom and submit area is reachable
+4. Open End of Life Services from Resources
+   - visible back/navigation at top
+   - easy return path
+5. Open End of Life Services from Home
+   - visible back/navigation at top
+   - easy return path
+
+==================================================
+DELIVERABLE REQUIRED
+==================================================
+
+After fixing, report back with:
+
+1. ROOT CAUSE for each of the 3 issues
+2. EXACT FIX for each issue
+3. FILES CHANGED
+4. TESTING PERFORMED
+5. CONFIRMATION that no unrelated admin-panel work was done

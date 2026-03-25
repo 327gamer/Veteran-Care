@@ -123,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
     : "JD";
 
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-0 font-sans overscroll-contain">
+    <div className="min-h-screen bg-background font-sans overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
       {/* Top Bar - Persistent */}
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -289,7 +289,10 @@ export default function Layout({ children }: LayoutProps) {
       <ProfileModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
 
       {/* Bottom Navigation - Mobile First */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full z-[100] border-t bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.08)] safe-area-bottom lg:hidden">
+      <nav
+        className="fixed bottom-0 left-0 right-0 w-full z-[100] border-t shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden"
+        style={{ backgroundColor: 'hsl(var(--background))', paddingBottom: 'env(safe-area-inset-bottom, 0px)', willChange: 'transform', transform: 'translateZ(0)' }}
+      >
         <div className="flex h-16 items-center justify-around px-2">
           <Link href="/resources" onClick={() => window.dispatchEvent(new CustomEvent("close-resource-detail"))} className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/resources') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <BookOpen className={`h-5 w-5 ${isActive('/resources') ? 'fill-current' : ''}`} />
