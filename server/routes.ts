@@ -1089,6 +1089,209 @@ export async function registerRoutes(
     }
   });
 
+  const MESSAGE_TEMPLATES: Record<string, Record<string, { message_title: string; suggested_copy: string }>> = {
+    general: {
+      facebook: {
+        message_title: "General Awareness – Facebook",
+        suggested_copy: "Know a veteran who needs help? Veteran Care connects SC veterans with housing, jobs, benefits, and more — all in one place. Click below to get started. {{short_url}}"
+      },
+      instagram: {
+        message_title: "General Awareness – Instagram",
+        suggested_copy: "SC veterans deserve better access to resources. Veteran Care puts housing, jobs, benefits & more at your fingertips. Link in bio 👆 {{short_url}}"
+      },
+      email: {
+        message_title: "General Awareness – Email",
+        suggested_copy: "Hi,\n\nI wanted to share a resource that's helping veterans across South Carolina. Veteran Care is a free platform connecting veterans with housing, jobs, benefits, and more.\n\nCheck it out here: {{short_url}}\n\nFeel free to share with anyone who might benefit."
+      },
+      linkedin: {
+        message_title: "General Awareness – LinkedIn",
+        suggested_copy: "Excited to share Veteran Care — a platform connecting South Carolina veterans with critical resources including housing, employment, benefits, and more. If you know veterans or organizations that could benefit: {{short_url}}"
+      },
+      text: {
+        message_title: "General Awareness – SMS",
+        suggested_copy: "Hey! Check out Veteran Care — free resource hub for SC veterans. Housing, jobs, benefits & more: {{short_url}}"
+      },
+      qr: {
+        message_title: "General Awareness – QR/Print",
+        suggested_copy: "Scan this QR code to access free veteran resources in South Carolina — housing, jobs, benefits, and more through Veteran Care."
+      },
+      flyer: {
+        message_title: "General Awareness – Flyer",
+        suggested_copy: "VETERAN CARE — Free Resources for SC Veterans\nHousing • Jobs • Benefits • Healthcare & More\nVisit: {{short_url}}\nOr scan the QR code to get started today."
+      }
+    },
+    veteran: {
+      facebook: {
+        message_title: "Veteran Help – Facebook",
+        suggested_copy: "If you're a veteran in SC looking for help with housing, jobs, benefits, or healthcare — Veteran Care can connect you with trusted local resources. Get started: {{short_url}}"
+      },
+      instagram: {
+        message_title: "Veteran Help – Instagram",
+        suggested_copy: "Veterans — need help with housing, jobs, or benefits? Veteran Care has your back. Free resources across SC. {{short_url}}"
+      },
+      email: {
+        message_title: "Veteran Help – Email",
+        suggested_copy: "Hi,\n\nIf you or someone you know is a veteran in South Carolina needing help — Veteran Care connects you directly with trusted local resources for housing, employment, benefits, healthcare, and more.\n\nGet help here: {{short_url}}\n\nYou're not alone."
+      },
+      linkedin: {
+        message_title: "Veteran Help – LinkedIn",
+        suggested_copy: "Veterans in South Carolina: if you need support with housing, employment, benefits, or healthcare, Veteran Care is a free resource hub built for you. Get connected: {{short_url}}"
+      },
+      text: {
+        message_title: "Veteran Help – SMS",
+        suggested_copy: "Need help? Veteran Care connects SC veterans with housing, jobs, benefits & more — free. {{short_url}}"
+      },
+      qr: {
+        message_title: "Veteran Help – QR/Print",
+        suggested_copy: "Scan this QR code to access free help for SC veterans — housing, jobs, benefits, healthcare, and more."
+      },
+      flyer: {
+        message_title: "Veteran Help – Flyer",
+        suggested_copy: "NEED HELP? You've Earned It.\nVeteran Care connects SC veterans with:\n• Housing • Jobs • Benefits • Healthcare\nVisit: {{short_url}}\nOr scan the QR code."
+      }
+    },
+    case_manager: {
+      facebook: {
+        message_title: "Case Manager Outreach – Facebook",
+        suggested_copy: "Case managers & nonprofits: Veteran Care is a free resource hub for SC veterans. Use it to connect your clients with housing, jobs, benefits & more. Explore: {{short_url}}"
+      },
+      instagram: {
+        message_title: "Case Manager Outreach – Instagram",
+        suggested_copy: "Serving veterans? Veteran Care is a free resource directory for SC — housing, jobs, benefits, healthcare. Share it with your clients. {{short_url}}"
+      },
+      email: {
+        message_title: "Case Manager Outreach – Email",
+        suggested_copy: "Hi,\n\nI wanted to share Veteran Care — a free resource platform designed to help case managers and nonprofits connect SC veterans with trusted local services.\n\nBrowse the resource center: {{short_url}}\n\nIt's a great tool for client referrals and outreach."
+      },
+      linkedin: {
+        message_title: "Case Manager Outreach – LinkedIn",
+        suggested_copy: "Attention case managers, social workers, and veteran-serving nonprofits: Veteran Care offers a free, searchable resource directory for South Carolina veterans. Explore: {{short_url}}"
+      },
+      text: {
+        message_title: "Case Manager Outreach – SMS",
+        suggested_copy: "Hi! Veteran Care is a free SC veteran resource directory — great for client referrals. Check it out: {{short_url}}"
+      },
+      qr: {
+        message_title: "Case Manager Outreach – QR/Print",
+        suggested_copy: "Scan this QR code to explore free veteran resources in SC — ideal for case managers, social workers, and nonprofit teams."
+      },
+      flyer: {
+        message_title: "Case Manager Outreach – Flyer",
+        suggested_copy: "CASE MANAGERS & NONPROFITS\nVeteran Care — Free SC Veteran Resource Directory\nConnect your clients with trusted services.\nVisit: {{short_url}}\nOr scan the QR code."
+      }
+    },
+    partner: {
+      facebook: {
+        message_title: "Partner Outreach – Facebook",
+        suggested_copy: "Local businesses & service providers: join Veteran Care's Trusted Services network to reach SC veterans who need your help. Learn more: {{short_url}}"
+      },
+      instagram: {
+        message_title: "Partner Outreach – Instagram",
+        suggested_copy: "Want to serve SC veterans? Join Veteran Care's Trusted Services directory and connect with those who need you most. {{short_url}}"
+      },
+      email: {
+        message_title: "Partner Outreach – Email",
+        suggested_copy: "Hi,\n\nI'd like to introduce you to Veteran Care — a growing platform connecting South Carolina veterans with trusted local services.\n\nIf your organization serves veterans, you can join as a Trusted Service partner. Learn more: {{short_url}}\n\nIt's a great way to grow your reach while supporting those who served."
+      },
+      linkedin: {
+        message_title: "Partner Outreach – LinkedIn",
+        suggested_copy: "Organizations serving veterans: Veteran Care is building South Carolina's trusted services network. Join as a partner to reach veterans who need your services. {{short_url}}"
+      },
+      text: {
+        message_title: "Partner Outreach – SMS",
+        suggested_copy: "Serve veterans? Join Veteran Care's Trusted Services network in SC. Learn more: {{short_url}}"
+      },
+      qr: {
+        message_title: "Partner Outreach – QR/Print",
+        suggested_copy: "Scan this QR code to learn how your organization can join Veteran Care's Trusted Services network in South Carolina."
+      },
+      flyer: {
+        message_title: "Partner Outreach – Flyer",
+        suggested_copy: "JOIN VETERAN CARE'S TRUSTED SERVICES NETWORK\nReach SC veterans who need your services.\nVisit: {{short_url}}\nOr scan the QR code to apply."
+      }
+    }
+  };
+
+  const COMMISSION_NOTES = {
+    how_tracking_works: "Every ambassador link contains a unique utm_id that tracks clicks, sessions, leads, and partner payments back to the ambassador who shared it.",
+    what_gets_credited: "When a veteran, case manager, or business clicks your link and later submits a lead or completes a partner payment, the revenue is attributed to your unique ambassador link.",
+    links_are_unique: "Each link in your pack is unique to you. Do not share your tracking links with other ambassadors — each person should have their own pack.",
+    attribution_rule: "First-touch attribution: the first ambassador link a user clicks is permanently credited. If they later click a different ambassador's link, the original ambassador keeps the credit."
+  };
+
+  app.get("/api/admin/ambassador-distribution/:code", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const code = sanitizeCode(req.params.code);
+    const format = (req.query.format as string) || "json";
+
+    try {
+      const rows = await pgQuery(
+        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
+         FROM ambassador_links WHERE ambassador_code = $1 AND is_active = true ORDER BY audience_type, channel_type`,
+        [code]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "No links found for this ambassador" });
+
+      const baseUrl = `https://veterancare.com`;
+      const ambassadorName = rows[0].ambassador_name;
+
+      const byAudience: Record<string, any[]> = {};
+
+      for (const r of rows) {
+        const shortUrl = `${baseUrl}/a/${r.utm_id}`;
+        const qrUrl = `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${r.utm_id}`;
+        const template = MESSAGE_TEMPLATES[r.audience_type]?.[r.channel_type];
+        const suggestedCopy = template
+          ? template.suggested_copy.replace(/\{\{short_url\}\}/g, shortUrl).replace(/\{\{ambassador_name\}\}/g, ambassadorName)
+          : null;
+
+        const entry = {
+          link_name: r.link_name,
+          utm_id: r.utm_id,
+          full_url: r.full_url,
+          short_url: shortUrl,
+          qr_url: qrUrl,
+          audience: r.audience_type,
+          channel: r.channel_type,
+          campaign: r.utm_campaign,
+          message_title: template?.message_title || `${r.audience_type} – ${r.channel_type}`,
+          suggested_copy: suggestedCopy,
+          click_count: r.click_count || 0,
+        };
+
+        if (!byAudience[r.audience_type]) byAudience[r.audience_type] = [];
+        byAudience[r.audience_type].push(entry);
+      }
+
+      if (format === "csv") {
+        const header = "link_name,utm_id,short_url,qr_url,audience,channel,message_title,suggested_copy";
+        const csvRows: string[] = [];
+        for (const audience of Object.keys(byAudience)) {
+          for (const entry of byAudience[audience]) {
+            const copy = (entry.suggested_copy || "").replace(/"/g, '""').replace(/\n/g, " ");
+            csvRows.push(`"${entry.link_name}","${entry.utm_id}","${entry.short_url}","${entry.qr_url}","${entry.audience}","${entry.channel}","${entry.message_title}","${copy}"`);
+          }
+        }
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="${code}_distribution_pack.csv"`);
+        return res.send([header, ...csvRows].join("\n"));
+      }
+
+      return res.json({
+        ambassador_code: code,
+        ambassador_name: ambassadorName,
+        total_links: rows.length,
+        audiences: byAudience,
+        commission_info: COMMISSION_NOTES,
+      });
+    } catch (err: any) {
+      console.log("[ambassador] distribution pack error:", err.message);
+      return res.status(500).json({ error: "Failed to generate distribution pack" });
+    }
+  });
+
   app.get("/api/categories", async (_req, res) => {
     const { data, error } = await supabase
       .from("categories")

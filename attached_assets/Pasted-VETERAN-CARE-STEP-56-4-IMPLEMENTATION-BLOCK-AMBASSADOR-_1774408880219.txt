@@ -1,0 +1,148 @@
+VETERAN CARE — STEP 56.4 IMPLEMENTATION BLOCK
+AMBASSADOR PACK DISTRIBUTION, MESSAGING, AND OUTREACH ASSETS
+
+IMPORTANT RULES:
+- DO NOT change locked UTM structure
+- DO NOT break attribution, link packs, short links, QR codes, or commission logic
+- DO NOT redesign major UI unnecessarily
+- Focus on operational rollout assets and admin-ready ambassador distribution support
+- Build only what is needed to make ambassador rollout clear, organized, and usable
+
+OBJECTIVE:
+Prepare the ambassador system for real-world rollout by creating structured distribution-ready messaging packs and outreach asset support tied to the already-built ambassador link system.
+
+========================================
+PART 1 — AMBASSADOR PACK STRUCTURE
+========================================
+
+For each ambassador, prepare a structured pack format that includes:
+
+1. ambassador identity
+2. available links by audience and channel
+3. human-readable labels
+4. short links
+5. QR links (where available)
+6. suggested message/use case
+
+This can be returned as JSON and/or CSV and should be easy to use operationally.
+
+========================================
+PART 2 — DEFAULT MESSAGE / OUTREACH CATEGORIES
+========================================
+
+Organize ambassador outreach assets by audience:
+
+1. General Public / Start
+2. Veterans / Get Help
+3. Case Managers / Nonprofits / Resource Center
+4. Businesses / Partners
+
+For each audience, support message slots by channel:
+
+- Facebook
+- Email
+- SMS/Text
+- LinkedIn
+- QR / Print use case
+
+========================================
+PART 3 — MESSAGE TEMPLATE SUPPORT
+========================================
+
+Add a lightweight structure for message templates tied to ambassador packs.
+
+This can be:
+- a database table
+- structured JSON
+- backend-generated default templates
+
+Goal:
+For each ambassador link, there should be a suggested message template or message slot.
+
+At minimum, support:
+- message_title
+- audience_type
+- channel_type
+- suggested_copy
+- associated utm_id or link_name
+
+If building storage is too much for this step, create a generated default output structure and explain how it is produced.
+
+========================================
+PART 4 — DEFAULT TEMPLATE CONTENT
+========================================
+
+Generate default operational messaging placeholders for each audience/channel combination.
+
+Examples:
+- General / Facebook
+- Veteran / Email
+- Case Manager / LinkedIn
+- Partner / Email
+- General / SMS
+
+The system does NOT need polished marketing copy written by AI inside the app unless easy.
+Priority is a clean structure that can hold and return message assets with the correct tracked links.
+
+========================================
+PART 5 — AMBASSADOR DISTRIBUTION OUTPUT
+========================================
+
+For each ambassador, the system should be able to return a rollout-ready pack containing:
+
+- ambassador_name
+- audience
+- channel
+- link_name
+- utm_id
+- full_url
+- short_url
+- qr_url (if applicable)
+- suggested_copy or message placeholder
+
+This should be retrievable in a practical export format.
+
+========================================
+PART 6 — COMMISSION EXPLANATION SUPPORT
+========================================
+
+If practical, add a simple informational field or export section describing:
+
+- how tracking works
+- what gets credited
+- that links are unique
+- that attribution is tied to the ambassador link
+
+This does NOT need to be a UI feature if not necessary.
+It can be part of export structure or generated pack notes.
+
+========================================
+PART 7 — VALIDATION
+========================================
+
+Validate for at least 1–2 ambassadors:
+
+1. retrieve distribution-ready link/message pack
+2. confirm links are correct
+3. confirm short links are correct
+4. confirm QR links are correct where applicable
+5. confirm message structures align to audience + channel
+6. confirm pack export is usable for real ambassador handoff
+
+========================================
+PART 8 — OUTPUT REQUIRED
+========================================
+
+Provide:
+1. what was built
+2. whether any new table/structure was added
+3. whether publish is required
+4. example output for one ambassador pack
+5. how this should be used operationally
+6. any manual steps required
+
+SUCCESS CRITERIA:
+- system can produce distribution-ready ambassador packs
+- each pack ties message/use-case structure to the correct tracked links
+- rollout is easier for ambassadors and admin
+- system is ready for ambassador onboarding and meeting preparation

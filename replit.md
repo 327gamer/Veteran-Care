@@ -184,6 +184,7 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `GET /api/admin/ambassador-links/:id/qr` — QR code PNG by link ID (admin-protected)
 - `GET /api/admin/ambassador-links/qr-by-utm/:utmId` — QR code PNG by utm_id (admin-protected). Filename uses kebab-case link_name
 - `GET /api/admin/commissions` — List commissions with optional `?ambassador=` and `?status=` filters. Returns commissions + summary by ambassador
+- `GET /api/admin/ambassador-distribution/:code` — Full distribution-ready pack with message templates by audience×channel. JSON (grouped by audience with suggested_copy + commission_info) or CSV (`?format=csv`). Templates auto-inject ambassador's short_url.
 
 ### Attribution Columns Added to Existing Tables
 - `trusted_service_leads` — utm_source, utm_medium, utm_campaign, utm_content, session_id
