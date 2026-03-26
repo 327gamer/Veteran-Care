@@ -1,0 +1,129 @@
+--- STEP 56.6B.6C – AMBASSADOR HANDOFF + CLEANUP LAYER ---
+
+We have identified two operational gaps in the admin panel that need to be resolved before the ambassador rollout.
+
+This is NOT a rebuild.
+This is a usability + operational clarity layer only.
+
+-------------------------------------
+GAP 1 – AMBASSADOR CLEANUP / ARCHIVE WORKFLOW
+-------------------------------------
+
+Current issue:
+- No clear lifecycle management for ambassadors
+- Test ambassadors accumulate
+- No clean way to remove from active use without risking data integrity
+
+REQUIRED IMPLEMENTATION:
+
+1) ARCHIVE (PRIMARY ACTION)
+- Add "Archive Ambassador" action
+- Behavior:
+  - sets status to "archived"
+  - removes from active lists and dropdowns
+  - preserves:
+    - links
+    - clicks
+    - leads
+    - commissions
+    - payouts
+
+2) DELETE (STRICTLY LIMITED)
+- Only allow delete if:
+  - no commissions
+  - no payouts
+  - no production-linked data
+
+- Require:
+  - confirmation modal:
+    "This will permanently delete this ambassador. This cannot be undone."
+
+- If data exists:
+  - disable delete
+  - show message:
+    "Cannot delete ambassador with linked activity. Please archive instead."
+
+-------------------------------------
+GAP 2 – AMBASSADOR HANDOFF / LINK PACK VISIBILITY
+-------------------------------------
+
+Current issue:
+- Link generation exists
+- But admin handoff flow is not clear or centralized
+
+REQUIRED IMPLEMENTATION:
+
+Add a clearly defined "Ambassador Assets" section in the ambassador detail view.
+
+This section must display:
+
+- Ambassador Code (clearly labeled and copyable)
+- All tracked links
+- utm_id values
+- Short links
+- QR codes (visible or accessible)
+- Copy buttons for each link
+- "Copy All Links" action (optional but recommended)
+
+-------------------------------------
+
+3) HANDOFF UX FLOW (IMPORTANT)
+
+After creating an ambassador:
+
+- auto-navigate to ambassador detail view
+- highlight "Ambassador Assets" section
+- optionally show helper text:
+
+"Share these links or QR codes with your ambassador to start tracking activity."
+
+-------------------------------------
+
+4) EXPORT / HANDOFF OPTION (OPTIONAL BUT HIGH VALUE)
+
+If simple to implement:
+
+- Add:
+  "Download Ambassador Pack"
+
+Contents:
+- ambassador name
+- ambassador code
+- list of links
+- short links
+
+No need for PDF design — simple export is fine.
+
+-------------------------------------
+
+IMPORTANT CONSTRAINTS
+
+- DO NOT change attribution logic
+- DO NOT change link generation logic
+- DO NOT change database structure unless absolutely required
+- Keep this lightweight and fast to implement
+
+-------------------------------------
+
+REQUIRED RESPONSE
+
+Please confirm:
+
+1. Where ambassador code is currently stored and displayed
+2. Where link packs are currently accessed
+3. Proposed archive vs delete logic implementation
+4. What UI changes will be added
+5. Estimated time to complete
+
+-------------------------------------
+
+GOAL
+
+Admin must be able to:
+
+- create ambassador
+- immediately access their assets
+- hand off links cleanly
+- manage lifecycle (archive/delete) safely
+
+--- END ---

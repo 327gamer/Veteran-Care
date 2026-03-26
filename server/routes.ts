@@ -1062,6 +1062,7 @@ export async function registerRoutes(
       return res.json({
         ambassador_name,
         ambassador_code: code,
+        ambassador_id: ambassadorId,
         links_generated: generated.length,
         links: generated,
       });
@@ -1141,6 +1142,8 @@ export async function registerRoutes(
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
     try {
+      const includeArchived = req.query.include_archived === "true";
+      const statusFilter = includeArchived ? "" : "WHERE a.status != 'archived'";
       const rows = await pgQuery(`
         SELECT a.id as ambassador_id, a.code as ambassador_code, a.display_name as ambassador_name,
                a.email, a.phone, a.region_value as region, a.status,
@@ -1161,6 +1164,7 @@ export async function registerRoutes(
           WHERE ambassador_id IS NOT NULL
           GROUP BY ambassador_id
         ) ls ON ls.ambassador_id = a.id
+        ${statusFilter}
         ORDER BY a.display_name
       `);
       return res.json({ ambassadors: rows });
@@ -1304,6 +1308,38 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[ambassador] update error:", err.message);
       return res.status(500).json({ error: "Failed to update ambassador" });
+    }
+  });
+
+  app.delete("/api/admin/ambassadors/:id", requireAdmin, async (req, res) => {
+    try {
+      const ambId = req.params.id;
+      const ambRow = await pgQuery(`SELECT code FROM ambassadors WHERE id = $1`, [ambId]);
+      if (ambRow.length === 0) return res.status(404).json({ error: "Ambassador not found" });
+      const ambCode = ambRow[0].code;
+
+      const commissions = await pgQuery(
+        `SELECT COUNT(*)::int as cnt FROM commissions WHERE ambassador_id = $1 OR ambassador_code = $2`,
+        [ambId, ambCode]
+      );
+      const payouts = await pgQuery(
+        `SELECT COUNT(*)::int as cnt FROM ambassador_payouts WHERE ambassador_id = $1`,
+        [ambId]
+      );
+      if ((commissions[0]?.cnt || 0) > 0 || (payouts[0]?.cnt || 0) > 0) {
+        return res.status(409).json({
+          error: "Cannot delete ambassador with linked activity. Please archive instead.",
+          has_commissions: commissions[0]?.cnt || 0,
+          has_payouts: payouts[0]?.cnt || 0,
+        });
+      }
+      await pgQuery(`DELETE FROM ambassador_links WHERE ambassador_id = $1 OR ambassador_code = $2`, [ambId, ambCode]);
+      const deleted = await pgQuery(`DELETE FROM ambassadors WHERE id = $1 RETURNING id`, [ambId]);
+      if (deleted.length === 0) return res.status(404).json({ error: "Ambassador not found" });
+      return res.json({ deleted: true });
+    } catch (err: any) {
+      console.log("[ambassador] delete error:", err.message);
+      return res.status(500).json({ error: "Failed to delete ambassador" });
     }
   });
 
@@ -2007,7 +2043,7 @@ export async function registerRoutes(
         ${where}
       `, params);
 
-      const ambassadorList = await pgQuery(`SELECT id, display_name AS full_name, code AS ambassador_code FROM ambassadors ORDER BY display_name`);
+      const ambassadorList = await pgQuery(`SELECT id, display_name AS full_name, code AS ambassador_code FROM ambassadors WHERE status != 'archived' ORDER BY display_name`);
 
       return res.json({ payouts, summary: summaryRows[0] || {}, ambassadors: ambassadorList });
     } catch (err: any) {

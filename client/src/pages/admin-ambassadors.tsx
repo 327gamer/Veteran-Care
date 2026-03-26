@@ -32,6 +32,13 @@ import {
   FileText,
   User,
   DollarSign,
+  Archive,
+  Trash2,
+  AlertTriangle,
+  Package,
+  ClipboardList,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -348,7 +355,25 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
   );
 }
 
-function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function CopyAllButton({ onCopy }: { onCopy: () => Promise<void> }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={handleCopy} data-testid="button-copy-all-links">
+      {copied ? (
+        <><Check className="h-3 w-3 text-green-600" /><span className="text-green-600">Copied All</span></>
+      ) : (
+        <><ClipboardList className="h-3 w-3" /> Copy All Links</>
+      )}
+    </Button>
+  );
+}
+
+function CreateAmbassadorForm({ onClose, onSuccess, onCreated }: { onClose: () => void; onSuccess: () => void; onCreated?: (id: string) => void }) {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -376,9 +401,12 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       onSuccess();
       onClose();
+      if (data?.ambassador_id && onCreated) {
+        onCreated(data.ambassador_id);
+      }
     },
   });
 
@@ -535,9 +563,11 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
   );
 }
 
-function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; onBack: () => void }) {
+function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambassadorId: string; onBack: () => void; isNewlyCreated?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const headers = getAdminHeaders();
   const queryClient = useQueryClient();
 
@@ -569,6 +599,87 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
       setEditing(false);
     },
   });
+
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/ambassadors/${ambassadorId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: "archived" }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Failed to archive"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassador-detail", ambassadorId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/ambassadors/${ambassadorId}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || "Failed to delete");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] });
+      onBack();
+    },
+    onError: (e: Error) => {
+      setDeleteError(e.message);
+    },
+  });
+
+  const downloadPack = () => {
+    if (!amb) return;
+    const lines: string[] = [
+      `Ambassador Pack`,
+      `================`,
+      `Name: ${amb.display_name}`,
+      `Code: ${amb.code}`,
+      `Status: ${amb.status}`,
+      amb.email ? `Email: ${amb.email}` : "",
+      amb.phone ? `Phone: ${amb.phone}` : "",
+      amb.commission_rate != null ? `Commission Rate: ${amb.commission_rate}%` : "",
+      ``,
+      `Tracking Links`,
+      `--------------`,
+      ...amb.links.filter(l => l.is_active).map((l, i) => {
+        const shortLink = l.short_url ? `${window.location.origin}${l.short_url}` : l.full_url;
+        return `${i + 1}. ${l.link_name}\n   Short Link: ${shortLink}\n   UTM ID: ${l.utm_id}\n   Full URL: ${l.full_url}`;
+      }),
+    ].filter(Boolean);
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ambassador-pack-${amb.code}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyAllLinks = async () => {
+    if (!amb) return;
+    const text = amb.links.filter(l => l.is_active).map(l => {
+      const url = l.short_url ? `${window.location.origin}${l.short_url}` : l.full_url;
+      return `${l.link_name}: ${url}`;
+    }).join("\n");
+    try { await navigator.clipboard.writeText(text); } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -644,7 +755,7 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                 </CardTitle>
                 <Badge
                   variant={amb.status === "active" ? "default" : "outline"}
-                  className={`text-xs ${amb.status !== "active" ? "text-orange-600 border-orange-300" : ""}`}
+                  className={`text-xs ${amb.status === "archived" ? "text-slate-500 border-slate-300 bg-slate-100" : amb.status !== "active" ? "text-orange-600 border-orange-300" : ""}`}
                   data-testid="badge-status"
                 >
                   {amb.status}
@@ -719,6 +830,7 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                     <option value="inactive">Inactive</option>
                     <option value="suspended">Suspended</option>
                     <option value="pending">Pending</option>
+                    <option value="archived">Archived</option>
                   </select>
                 </div>
                 <div>
@@ -980,15 +1092,36 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
           </Card>
         )}
 
-        <Card data-testid="card-owned-links">
+        <Card className={`mb-4 ${isNewlyCreated ? "ring-2 ring-blue-400" : ""}`} data-testid="card-ambassador-assets" id="ambassador-assets">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-1.5">
-                <Link2 className="h-4 w-4" /> Owned Links ({amb.links.length})
+                <Package className="h-4 w-4" /> Ambassador Assets
               </CardTitle>
+              <div className="flex items-center gap-1">
+                <CopyAllButton onCopy={copyAllLinks} />
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={downloadPack} data-testid="button-download-pack">
+                  <Download className="h-3 w-3" /> Download Pack
+                </Button>
+              </div>
             </div>
+            {isNewlyCreated && (
+              <p className="text-xs text-blue-600 mt-1" data-testid="text-handoff-hint">
+                Share these links or QR codes with your ambassador to start tracking activity.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
+            <div className="bg-slate-50 rounded-lg p-3 mb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Ambassador Code</span>
+                  <span className="font-mono font-bold text-lg" data-testid="text-ambassador-code">{amb.code}</span>
+                </div>
+                <CopyButton value={amb.code} label="ambassador-code" />
+              </div>
+            </div>
+
             {amb.links.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No links generated yet.</p>
             ) : (
@@ -1041,15 +1174,106 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                         <ExternalLink className="h-3 w-3" /> Test
                       </a>
                     </div>
-                    {link.first_clicked_at && (
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        First click: {formatDate(link.first_clicked_at)}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
+                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded" data-testid={`utm-id-${link.id}`}>
+                        utm_id: {link.utm_id}
+                      </span>
+                      {link.first_clicked_at && (
+                        <span>First click: {formatDate(link.first_clicked_at)}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-4 border-orange-200" data-testid="card-lifecycle">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5 text-orange-700">
+              <AlertTriangle className="h-4 w-4" /> Lifecycle Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {amb.status !== "archived" ? (
+              <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
+                <Archive className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Archive Ambassador</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Removes from active lists and dropdowns. All links, clicks, leads, commissions, and payouts are preserved.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 text-orange-700 border-orange-300 hover:bg-orange-100"
+                    onClick={() => archiveMutation.mutate()}
+                    disabled={archiveMutation.isPending}
+                    data-testid="button-archive-ambassador"
+                  >
+                    {archiveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Archive className="h-3.5 w-3.5 mr-1" />}
+                    Archive Ambassador
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                <Archive className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-700">This ambassador is archived</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    To restore, use the Edit button and change status back to Active.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+              <Trash2 className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-700">Delete Ambassador</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Permanently removes this ambassador and their links. Only available if no commissions or payouts are linked.
+                </p>
+                {!showDeleteConfirm ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 text-red-700 border-red-300 hover:bg-red-100"
+                    onClick={() => { setShowDeleteConfirm(true); setDeleteError(null); }}
+                    data-testid="button-delete-ambassador"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete Ambassador
+                  </Button>
+                ) : (
+                  <div className="mt-2 p-3 bg-white border border-red-200 rounded-lg" data-testid="modal-delete-confirm">
+                    <p className="text-sm font-medium text-red-700">This will permanently delete this ambassador. This cannot be undone.</p>
+                    {deleteError && (
+                      <p className="text-xs text-red-600 mt-2 flex items-center gap-1" data-testid="text-delete-error">
+                        <AlertTriangle className="h-3 w-3" />
+                        {deleteError}
+                      </p>
+                    )}
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteMutation.mutate()}
+                        disabled={deleteMutation.isPending}
+                        data-testid="button-confirm-delete"
+                      >
+                        {deleteMutation.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+                        Yes, Delete Permanently
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowDeleteConfirm(false)} data-testid="button-cancel-delete">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -1060,17 +1284,20 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
 export default function AdminAmbassadors() {
   const [, navigate] = useLocation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isNewlyCreated, setIsNewlyCreated] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
   const headers = getAdminHeaders();
   const queryClient = useQueryClient();
 
   const { data: ambassadors, isLoading: loadingList } = useQuery<{ ambassadors: AmbassadorSummary[] }>({
-    queryKey: ["admin-ambassadors"],
+    queryKey: ["admin-ambassadors", showArchived],
     queryFn: async () => {
-      const res = await fetch("/api/admin/ambassadors", { headers });
+      const url = showArchived ? "/api/admin/ambassadors?include_archived=true" : "/api/admin/ambassadors";
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error("Failed to load ambassadors");
       return res.json();
     },
@@ -1094,7 +1321,8 @@ export default function AdminAmbassadors() {
     return (
       <AmbassadorDetailView
         ambassadorId={selectedId}
-        onBack={() => setSelectedId(null)}
+        onBack={() => { setSelectedId(null); setIsNewlyCreated(false); }}
+        isNewlyCreated={isNewlyCreated}
       />
     );
   }
@@ -1129,18 +1357,31 @@ export default function AdminAmbassadors() {
           <CreateAmbassadorForm
             onClose={() => setShowAddForm(false)}
             onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] })}
+            onCreated={(id) => { setSelectedId(id); setIsNewlyCreated(true); }}
           />
         )}
 
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, code, email, or region..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-ambassador"
-          />
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, code, email, or region..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-ambassador"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 shrink-0"
+            onClick={() => setShowArchived(!showArchived)}
+            data-testid="button-toggle-archived"
+          >
+            {showArchived ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            {showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
         </div>
 
         {loadingList && <p className="text-center text-muted-foreground py-8">Loading ambassadors...</p>}
