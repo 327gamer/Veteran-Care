@@ -882,6 +882,15 @@ export default function AdminResources() {
               <DollarSign className="h-4 w-4 mr-1.5" /> Payouts
             </Button>
             <Button
+              data-testid="button-ambassadors"
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              onClick={() => setLocation("/admin/ambassadors")}
+            >
+              <Users className="h-4 w-4 mr-1.5" /> Ambassadors
+            </Button>
+            <Button
               data-testid="button-ai-insights"
               variant="ghost"
               size="sm"
