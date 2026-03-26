@@ -1,0 +1,122 @@
+--- MASTER ALIGNMENT: LAUNCH READINESS + SCALING + INFRASTRUCTURE ---
+
+We are preparing for live rollout and want to confirm final alignment on system readiness, stability, and scaling.
+
+-------------------------------------
+CURRENT STATUS (CONFIRMED)
+-------------------------------------
+
+The system is now:
+
+- fully operational end-to-end
+- attribution → commission → payout flow working
+- admin panel functional
+- ambassador onboarding + handoff complete
+- payout tracking + tax layer implemented
+
+We are now entering:
+→ final validation
+→ launch preparation
+→ scaling readiness
+
+-------------------------------------
+CRITICAL PRE-LAUNCH REQUIREMENTS
+-------------------------------------
+
+Please confirm the following are set:
+
+1) SUPABASE
+- running on Pro plan ($25/month minimum)
+- connection pooling readiness confirmed
+- automated backups enabled
+
+2) RESEND (EMAIL)
+- upgraded to paid plan
+- daily sending capacity confirmed for live usage
+
+3) REPLIT (IMPORTANT)
+- minimum instance count set to 1
+
+REQUIREMENT:
+→ at least 1 instance always running
+
+PURPOSE:
+→ avoid cold starts
+→ ensure consistent response time during demo and launch
+
+-------------------------------------
+PERFORMANCE + HARDENING (CONFIRMED)
+-------------------------------------
+
+We acknowledge the following are complete:
+
+- pagination added to major endpoints
+- rate limiting implemented
+- slow query logging enabled
+- indexing reviewed and confirmed
+
+-------------------------------------
+SCALING EXPECTATION (CONFIRMATION REQUEST)
+-------------------------------------
+
+Please confirm:
+
+- current Replit Autoscale setup is sufficient for:
+  → launch phase
+  → early growth (thousands of users)
+
+- provide clear upgrade triggers for:
+  → Replit compute
+  → Supabase scaling
+  → database connection limits
+
+-------------------------------------
+MIGRATION / FUTURE PROOFING
+-------------------------------------
+
+Please confirm:
+
+- system can be migrated without rebuild
+- database portability is preserved
+- no vendor lock-in risks exist
+
+-------------------------------------
+AUTOMATION (POST-LAUNCH – NOT IN SCOPE NOW)
+-------------------------------------
+
+Future phases will include:
+
+- Stripe Connect (automated payouts)
+- QuickBooks integration
+- tax/1099 workflows
+- payout reconciliation automation
+
+For now:
+→ ensure all required data is structured correctly
+→ do NOT build automation yet
+
+-------------------------------------
+FINAL GOAL
+-------------------------------------
+
+We need to confirm the system is:
+
+- stable
+- fast
+- reliable under load
+- free of cold start delays
+- not constrained by email limits
+- production-ready at the database level
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please confirm:
+
+1) Replit minimum instance = 1 is set  
+2) Supabase + Resend upgrades are confirmed  
+3) system is ready for live usage  
+4) no immediate performance risks remain  
+
+--- END ---
