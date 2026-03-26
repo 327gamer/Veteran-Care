@@ -338,6 +338,9 @@ export default function AdminPayouts() {
                 {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                 Create Payout Record
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                After creating, you'll be taken to the detail view where you can link approved commissions and manage status.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -450,6 +453,26 @@ export default function AdminPayouts() {
                   </div>
                 </CardContent>
               </Card>
+
+              {!isLocked && eligible.length === 0 && (
+                <Card>
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    <p className="text-sm">No eligible approved commissions available for this ambassador.</p>
+                    <p className="text-xs mt-1">Commissions must be in "approved" status and not already linked to another payout.</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {isLocked && (
+                <Card className="border-amber-200 bg-amber-50/50">
+                  <CardContent className="p-4 flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm text-amber-700">
+                      This payout is <strong>{p.payout_status}</strong> and locked. No further changes can be made.
+                    </span>
+                  </CardContent>
+                </Card>
+              )}
 
               {!isLocked && eligible.length > 0 && (
                 <Card>
