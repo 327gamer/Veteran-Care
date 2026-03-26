@@ -1,0 +1,186 @@
+--- SEND TO REPLIT ---
+MESSAGE:
+
+Step 56.6B.5 – Payout Tracking Basics
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+This is a focused operational admin build only.
+Do NOT build Stripe payout automation, banking integrations, batch payout automation, or advanced accounting workflows yet.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a basic payout tracking layer inside the admin panel so a non-technical admin can:
+
+- create payout records
+- link paid commissions to a payout record
+- view payout history
+- mark payout status manually
+- maintain a clean audit trail
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Build a simple payout tracking workflow using:
+
+- ambassador_payouts table
+- commissions table (existing payout_id linkage)
+
+-------------------------------------
+REQUIRED UI
+-------------------------------------
+
+1. PAYOUT LIST VIEW
+
+Display a table with:
+
+- payout id
+- ambassador name/code
+- payout period start
+- payout period end
+- total payout amount
+- payout method
+- payout status
+- external payout reference
+- paid date
+- created_at
+
+Status values:
+- draft
+- pending
+- paid
+- cancelled
+
+-------------------------------------
+
+2. CREATE PAYOUT RECORD
+
+Allow admin to create a new payout record with:
+
+- ambassador
+- payout period start
+- payout period end
+- payout method
+- notes (optional)
+
+Default status:
+- draft or pending
+
+-------------------------------------
+
+3. LINK COMMISSIONS TO PAYOUT
+
+Allow admin to select and attach commissions to a payout.
+
+Eligible commissions:
+- status = approved
+- payout_id is null
+
+Once linked:
+- commissions must store payout_id
+- payout total must update dynamically
+
+IMPORTANT:
+- commissions already linked to a payout must NOT be selectable again
+
+-------------------------------------
+
+4. PAYOUT DETAIL VIEW
+
+Display:
+
+- payout record details
+- included commissions
+- subtotal / total payout amount
+- ambassador reference
+- notes
+- external payout reference (optional)
+
+-------------------------------------
+
+5. STATUS ACTIONS
+
+Allow admin to:
+
+- mark payout as pending
+- mark payout as paid
+- cancel payout
+
+-------------------------------------
+
+CRITICAL RULE (LOCK THIS)
+
+When payout is marked as PAID:
+
+- ALL linked commissions MUST automatically update:
+  approved → paid
+
+This must be consistent across the system.
+
+-------------------------------------
+
+6. UI SAFETY RULES
+
+- once payout is marked as paid → lock record (no edits)
+- show live running total while selecting commissions
+
+-------------------------------------
+
+FILTERS
+
+- ambassador
+- payout status
+- date range
+
+-------------------------------------
+
+SUMMARY CARDS
+
+Display:
+
+- total payouts
+- pending payouts
+- paid payouts
+- total paid amount
+
+-------------------------------------
+
+IMPORTANT CONSTRAINTS
+
+- DO NOT build Stripe payout automation
+- DO NOT connect bank accounts
+- DO NOT build batch export workflows yet
+- DO NOT change commission generation logic
+- DO NOT change attribution logic
+
+-------------------------------------
+
+VALIDATION REQUIRED
+
+Confirm:
+
+- payout records can be created
+- approved commissions can be attached
+- payout totals calculate correctly
+- payout status changes persist
+- paid_date stores correctly
+- commissions update correctly when payout is marked paid
+- no regressions in commission ledger
+
+-------------------------------------
+
+DELIVERABLE REQUIRED
+
+Please report back with:
+
+1. UI structure
+2. endpoints/queries used
+3. commission linkage logic
+4. payout → commission status behavior
+5. files changed
+6. testing performed
+
+--- END ---

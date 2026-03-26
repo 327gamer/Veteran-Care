@@ -1907,6 +1907,227 @@ export async function registerRoutes(
     }
   });
 
+  // ── Payout Tracking ──────────────────────────────────────────────────
+  app.get("/api/admin/payouts", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { ambassador, status, date_from, date_to } = req.query as Record<string, string>;
+      const conditions: string[] = [];
+      const params: any[] = [];
+      let idx = 1;
+      if (ambassador) { conditions.push(`a.code = $${idx++}`); params.push(ambassador); }
+      if (status) { conditions.push(`p.payout_status = $${idx++}`); params.push(status); }
+      if (date_from) { conditions.push(`p.created_at >= $${idx++}`); params.push(date_from); }
+      if (date_to) { conditions.push(`p.created_at <= $${idx++}`); params.push(date_to); }
+      const where = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
+
+      const payouts = await pgQuery(`
+        SELECT p.*, a.display_name AS ambassador_name, a.code AS ambassador_code,
+          COALESCE((SELECT SUM(c.commission_amount) FROM commissions c WHERE c.payout_id = p.id), 0) AS computed_total,
+          COALESCE((SELECT COUNT(*) FROM commissions c WHERE c.payout_id = p.id), 0) AS commission_count
+        FROM ambassador_payouts p
+        JOIN ambassadors a ON a.id = p.ambassador_id
+        ${where}
+        ORDER BY p.created_at DESC
+        LIMIT 500
+      `, params);
+
+      const summaryRows = await pgQuery(`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE p.payout_status = 'pending')::int AS pending_count,
+          COUNT(*) FILTER (WHERE p.payout_status = 'paid')::int AS paid_count,
+          COALESCE(SUM(p.total_amount) FILTER (WHERE p.payout_status = 'paid'), 0) AS total_paid_amount,
+          COUNT(*) FILTER (WHERE p.payout_status = 'draft')::int AS draft_count,
+          COUNT(*) FILTER (WHERE p.payout_status = 'cancelled')::int AS cancelled_count
+        FROM ambassador_payouts p
+        JOIN ambassadors a ON a.id = p.ambassador_id
+        ${where}
+      `, params);
+
+      const ambassadorList = await pgQuery(`SELECT id, display_name AS full_name, code AS ambassador_code FROM ambassadors ORDER BY display_name`);
+
+      return res.json({ payouts, summary: summaryRows[0] || {}, ambassadors: ambassadorList });
+    } catch (err: any) {
+      console.log("[payouts-list] error:", err.message);
+      return res.status(500).json({ error: "Failed to fetch payouts" });
+    }
+  });
+
+  app.post("/api/admin/payouts", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { ambassador_id, payout_period_start, payout_period_end, payout_method, notes } = req.body;
+      if (!ambassador_id || !payout_period_start || !payout_period_end) {
+        return res.status(400).json({ error: "ambassador_id, payout_period_start, payout_period_end are required" });
+      }
+
+      const rows = await pgQuery(`
+        INSERT INTO ambassador_payouts (ambassador_id, payout_period_start, payout_period_end, payout_method, notes, payout_status)
+        VALUES ($1, $2, $3, $4, $5, 'draft')
+        RETURNING *
+      `, [ambassador_id, payout_period_start, payout_period_end, payout_method || null, notes || null]);
+
+      return res.json({ payout: rows[0] });
+    } catch (err: any) {
+      console.log("[payout-create] error:", err.message);
+      return res.status(500).json({ error: "Failed to create payout" });
+    }
+  });
+
+  app.get("/api/admin/payouts/:id", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { id } = req.params;
+      const payoutRows = await pgQuery(`
+        SELECT p.*, a.display_name AS ambassador_name, a.code AS ambassador_code
+        FROM ambassador_payouts p
+        JOIN ambassadors a ON a.id = p.ambassador_id
+        WHERE p.id = $1
+      `, [id]);
+
+      if (payoutRows.length === 0) return res.status(404).json({ error: "Payout not found" });
+
+      const commissions = await pgQuery(`
+        SELECT c.*, a.display_name AS ambassador_name
+        FROM commissions c
+        LEFT JOIN ambassadors a ON a.code = c.ambassador_code
+        WHERE c.payout_id = $1
+        ORDER BY c.created_at DESC
+      `, [id]);
+
+      const eligibleCommissions = await pgQuery(`
+        SELECT c.*, a.display_name AS ambassador_name
+        FROM commissions c
+        LEFT JOIN ambassadors a ON a.code = c.ambassador_code
+        WHERE c.status = 'approved' AND c.payout_id IS NULL
+          AND c.ambassador_code = (SELECT amb.code FROM ambassadors amb WHERE amb.id = $1)
+        ORDER BY c.created_at DESC
+      `, [payoutRows[0].ambassador_id]);
+
+      return res.json({ payout: payoutRows[0], commissions, eligibleCommissions });
+    } catch (err: any) {
+      console.log("[payout-detail] error:", err.message);
+      return res.status(500).json({ error: "Failed to fetch payout" });
+    }
+  });
+
+  app.post("/api/admin/payouts/:id/commissions", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { id } = req.params;
+      const { commission_ids } = req.body;
+      if (!Array.isArray(commission_ids) || commission_ids.length === 0) {
+        return res.status(400).json({ error: "commission_ids array required" });
+      }
+
+      const payout = await pgQuery("SELECT * FROM ambassador_payouts WHERE id = $1", [id]);
+      if (payout.length === 0) return res.status(404).json({ error: "Payout not found" });
+      if (payout[0].payout_status === "paid") return res.status(400).json({ error: "Cannot modify a paid payout" });
+      if (payout[0].payout_status === "cancelled") return res.status(400).json({ error: "Cannot modify a cancelled payout" });
+
+      const payoutAmbCode = await pgQuery("SELECT code FROM ambassadors WHERE id = $1", [payout[0].ambassador_id]);
+      const ambCode = payoutAmbCode.length > 0 ? payoutAmbCode[0].code : null;
+
+      const placeholders = commission_ids.map((_: string, i: number) => `$${i + 3}`).join(",");
+      const updated = await pgQuery(`
+        UPDATE commissions SET payout_id = $1
+        WHERE id IN (${placeholders})
+          AND status = 'approved'
+          AND payout_id IS NULL
+          AND ambassador_code = $2
+        RETURNING id
+      `, [id, ambCode, ...commission_ids]);
+
+      const newTotal = await pgQuery("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM commissions WHERE payout_id = $1", [id]);
+      await pgQuery("UPDATE ambassador_payouts SET total_amount = $1, updated_at = NOW() WHERE id = $2", [newTotal[0].total, id]);
+
+      return res.json({ linked: updated.length, total_amount: newTotal[0].total });
+    } catch (err: any) {
+      console.log("[payout-link] error:", err.message);
+      return res.status(500).json({ error: "Failed to link commissions" });
+    }
+  });
+
+  app.delete("/api/admin/payouts/:id/commissions/:commissionId", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { id, commissionId } = req.params;
+      const payout = await pgQuery("SELECT * FROM ambassador_payouts WHERE id = $1", [id]);
+      if (payout.length === 0) return res.status(404).json({ error: "Payout not found" });
+      if (payout[0].payout_status === "paid") return res.status(400).json({ error: "Cannot modify a paid payout" });
+      if (payout[0].payout_status === "cancelled") return res.status(400).json({ error: "Cannot modify a cancelled payout" });
+
+      await pgQuery("UPDATE commissions SET payout_id = NULL WHERE id = $1 AND payout_id = $2", [commissionId, id]);
+
+      const newTotal = await pgQuery("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM commissions WHERE payout_id = $1", [id]);
+      await pgQuery("UPDATE ambassador_payouts SET total_amount = $1, updated_at = NOW() WHERE id = $2", [newTotal[0].total, id]);
+
+      return res.json({ success: true, total_amount: newTotal[0].total });
+    } catch (err: any) {
+      console.log("[payout-unlink] error:", err.message);
+      return res.status(500).json({ error: "Failed to unlink commission" });
+    }
+  });
+
+  app.patch("/api/admin/payouts/:id/status", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const { id } = req.params;
+      const { status: newStatus } = req.body;
+
+      const validStatuses = ["draft", "pending", "paid", "cancelled"];
+      if (!validStatuses.includes(newStatus)) return res.status(400).json({ error: "Invalid status" });
+
+      const validTransitions: Record<string, string[]> = {
+        draft: ["pending", "cancelled"],
+        pending: ["paid", "cancelled"],
+        paid: [],
+        cancelled: [],
+      };
+
+      const rows = await pgQuery("SELECT * FROM ambassador_payouts WHERE id = $1", [id]);
+      if (rows.length === 0) return res.status(404).json({ error: "Payout not found" });
+
+      const current = rows[0].payout_status;
+      if (!(validTransitions[current] || []).includes(newStatus)) {
+        return res.status(400).json({ error: `Cannot transition from '${current}' to '${newStatus}'` });
+      }
+
+      if (newStatus === "paid") {
+        await pgQuery(`
+          UPDATE commissions SET status = 'paid' WHERE payout_id = $1 AND status = 'approved'
+        `, [id]);
+        await pgQuery(`
+          UPDATE ambassador_payouts SET payout_status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE id = $1
+        `, [id]);
+      } else if (newStatus === "cancelled") {
+        await pgQuery("UPDATE commissions SET payout_id = NULL WHERE payout_id = $1 AND status != 'paid'", [id]);
+        const newTotal = await pgQuery("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM commissions WHERE payout_id = $1", [id]);
+        await pgQuery("UPDATE ambassador_payouts SET payout_status = 'cancelled', total_amount = $1, updated_at = NOW() WHERE id = $2", [newTotal[0].total, id]);
+      } else {
+        await pgQuery("UPDATE ambassador_payouts SET payout_status = $1, updated_at = NOW() WHERE id = $2", [newStatus, id]);
+      }
+
+      return res.json({ success: true, id, status: newStatus });
+    } catch (err: any) {
+      console.log("[payout-status] error:", err.message);
+      return res.status(500).json({ error: "Failed to update payout status" });
+    }
+  });
+
   app.get("/a/:utmId", async (req, res) => {
     try {
       const rows = await pgQuery(
