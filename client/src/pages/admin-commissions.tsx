@@ -79,9 +79,23 @@ const TRANSITIONS: Record<string, string[]> = {
   void: [],
 };
 
-function AgingBadge({ createdAt, status }: { createdAt: string; status: string }) {
+function getAgingDays(createdAt: string | null | undefined): number | null {
+  if (!createdAt) return null;
+  const created = new Date(createdAt).getTime();
+  if (isNaN(created)) return null;
+  return Math.floor((Date.now() - created) / 86400000);
+}
+
+function AgingBadge({ createdAt, status }: { createdAt: string | null; status: string }) {
   if (status === "paid" || status === "void") return null;
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  const days = getAgingDays(createdAt);
+  if (days === null) {
+    return (
+      <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[9px] font-normal ml-1" data-testid="badge-aging-unknown">
+        Unknown
+      </Badge>
+    );
+  }
   let label: string, className: string;
   if (days <= 7) {
     label = `${days}d · New`;
@@ -221,7 +235,10 @@ export default function AdminCommissions() {
     }
     return [...rows].sort((a, b) => {
       let aVal: any, bVal: any;
-      if (sortBy === "commission_amount" || sortBy === "revenue_amount") {
+      if (sortBy === "days_since_created") {
+        aVal = getAgingDays(a.created_at) ?? -1;
+        bVal = getAgingDays(b.created_at) ?? -1;
+      } else if (sortBy === "commission_amount" || sortBy === "revenue_amount") {
         aVal = parseFloat((a as any)[sortBy]) || 0;
         bVal = parseFloat((b as any)[sortBy]) || 0;
       } else if (sortBy === "created_at") {
@@ -510,6 +527,9 @@ function CommissionTable({
             <th className="text-left p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("created_at")} data-testid="sort-date">
               <span className="inline-flex items-center gap-1">Date <SortIcon col="created_at" /></span>
             </th>
+            <th className="text-center p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("days_since_created")} data-testid="sort-age">
+              <span className="inline-flex items-center gap-1">Age <SortIcon col="days_since_created" /></span>
+            </th>
             <th className="text-center p-3 font-medium text-xs">Actions</th>
           </tr>
         </thead>
@@ -536,7 +556,9 @@ function CommissionTable({
                 </td>
                 <td className="p-3 text-center"><StatusBadge status={c.status} /></td>
                 <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                  <span>{new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </td>
+                <td className="p-3 text-center">
                   <AgingBadge createdAt={c.created_at} status={c.status} />
                 </td>
                 <td className="p-3">
@@ -587,7 +609,7 @@ function CommissionTable({
             );
           })}
           {commissions.length === 0 && (
-            <tr><td colSpan={showAmbassador ? 8 : 7} className="p-6 text-center text-muted-foreground">No commissions found</td></tr>
+            <tr><td colSpan={showAmbassador ? 9 : 8} className="p-6 text-center text-muted-foreground">No commissions found</td></tr>
           )}
         </tbody>
       </table>
