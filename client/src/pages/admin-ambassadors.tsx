@@ -49,55 +49,26 @@ const US_STATES: Record<string, string> = {
   DC: "District of Columbia",
 };
 
-const STATE_COUNTIES: Record<string, string[]> = {
-  SC: [
-    "Abbeville", "Aiken", "Allendale", "Anderson", "Bamberg", "Barnwell", "Beaufort",
-    "Berkeley", "Calhoun", "Charleston", "Cherokee", "Chester", "Chesterfield", "Clarendon",
-    "Colleton", "Darlington", "Dillon", "Dorchester", "Edgefield", "Fairfield", "Florence",
-    "Georgetown", "Greenville", "Greenwood", "Hampton", "Horry", "Jasper", "Kershaw",
-    "Lancaster", "Laurens", "Lee", "Lexington", "Marion", "Marlboro", "McCormick",
-    "Newberry", "Oconee", "Orangeburg", "Pickens", "Richland", "Saluda", "Spartanburg",
-    "Sumter", "Union", "Williamsburg", "York",
-  ],
-  GA: [
-    "Chatham", "Richmond", "Fulton", "DeKalb", "Gwinnett", "Cobb", "Clayton",
-    "Muscogee", "Bibb", "Clarke", "Columbia", "Glynn", "Houston", "Henry",
-  ],
-  NC: [
-    "Mecklenburg", "Wake", "Guilford", "Forsyth", "Cumberland", "Durham", "Buncombe",
-    "New Hanover", "Gaston", "Cabarrus", "Union", "Onslow", "Pitt", "Catawba",
-  ],
-};
+const SORTED_STATES = Object.entries(US_STATES)
+  .sort((a, b) => a[1].localeCompare(b[1]));
 
-const STATE_CITIES: Record<string, string[]> = {
-  SC: [
-    "Charleston", "Columbia", "North Charleston", "Mount Pleasant", "Rock Hill",
-    "Greenville", "Summerville", "Goose Creek", "Hilton Head Island", "Sumter",
-    "Florence", "Spartanburg", "Myrtle Beach", "Aiken", "Anderson",
-    "Mauldin", "Greer", "Bluffton", "Easley", "Simpsonville",
-    "Hanahan", "Lexington", "Conway", "West Columbia", "North Augusta",
-    "Clemson", "Seneca", "Fort Mill", "Beaufort", "Tega Cay",
-  ],
-  GA: [
-    "Atlanta", "Augusta", "Savannah", "Columbus", "Macon",
-    "Athens", "Sandy Springs", "Roswell", "Albany", "Johns Creek",
-  ],
-  NC: [
-    "Charlotte", "Raleigh", "Greensboro", "Durham", "Winston-Salem",
-    "Fayetteville", "Cary", "Wilmington", "High Point", "Asheville",
-  ],
-};
-
-function deriveStateFilter(value: string): string {
+function parseStateAbbr(value: string): string {
   if (!value) return "";
   const parts = value.split(",").map((s) => s.trim());
-  if (parts.length === 2) {
-    const abbr = parts[1];
-    if (US_STATES[abbr]) return abbr;
-    const found = Object.entries(US_STATES).find(([, v]) => v === abbr);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (US_STATES[last]) return last;
+    const found = Object.entries(US_STATES).find(([, v]) => v === last);
     if (found) return found[0];
   }
   return "";
+}
+
+function parseLocalPart(value: string): string {
+  if (!value) return "";
+  const commaIdx = value.lastIndexOf(",");
+  if (commaIdx === -1) return value;
+  return value.substring(0, commaIdx).trim();
 }
 
 function RegionValueInput({
@@ -111,14 +82,12 @@ function RegionValueInput({
   onChange: (val: string) => void;
   testId: string;
 }) {
-  const [stateFilter, setStateFilter] = useState(() => deriveStateFilter(value));
-  const [citySearch, setCitySearch] = useState("");
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [selectedState, setSelectedState] = useState(() => parseStateAbbr(value));
+  const [localPart, setLocalPart] = useState(() => parseLocalPart(value));
 
   useEffect(() => {
-    setStateFilter(deriveStateFilter(value));
-    setCitySearch("");
-    setShowCityDropdown(false);
+    setSelectedState(parseStateAbbr(value));
+    setLocalPart(parseLocalPart(value));
   }, [regionType]);
 
   useEffect(() => {
@@ -126,6 +95,24 @@ function RegionValueInput({
       onChange("USA");
     }
   }, [regionType, value, onChange]);
+
+  const stateDropdown = (tid: string) => (
+    <select
+      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+      value={selectedState}
+      onChange={(e) => {
+        setSelectedState(e.target.value);
+        setLocalPart("");
+        onChange("");
+      }}
+      data-testid={tid}
+    >
+      <option value="">Select state...</option>
+      {SORTED_STATES.map(([abbr, name]) => (
+        <option key={abbr} value={abbr}>{name}</option>
+      ))}
+    </select>
+  );
 
   if (regionType === "national") {
     return <Input value="USA" disabled data-testid={testId} />;
@@ -140,160 +127,49 @@ function RegionValueInput({
         data-testid={testId}
       >
         <option value="">Select state...</option>
-        {Object.entries(US_STATES)
-          .sort((a, b) => a[1].localeCompare(b[1]))
-          .map(([abbr, name]) => (
-            <option key={abbr} value={`${name} (${abbr})`}>
-              {name} ({abbr})
-            </option>
-          ))}
+        {SORTED_STATES.map(([abbr, name]) => (
+          <option key={abbr} value={`${name} (${abbr})`}>{name} ({abbr})</option>
+        ))}
       </select>
     );
   }
 
   if (regionType === "county") {
-    const counties = stateFilter && STATE_COUNTIES[stateFilter]
-      ? STATE_COUNTIES[stateFilter]
-      : [];
     return (
       <div className="flex flex-col gap-1.5">
-        <select
-          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-          value={stateFilter}
-          onChange={(e) => {
-            setStateFilter(e.target.value);
-            onChange("");
-          }}
-          data-testid={`${testId}-state`}
-        >
-          <option value="">Select state first...</option>
-          {Object.entries(US_STATES)
-            .sort((a, b) => a[1].localeCompare(b[1]))
-            .map(([abbr, name]) => (
-              <option key={abbr} value={abbr}>
-                {name}
-              </option>
-            ))}
-        </select>
-        {stateFilter && counties.length > 0 ? (
-          <select
-            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            data-testid={testId}
-          >
-            <option value="">Select county...</option>
-            {counties.map((c) => (
-              <option key={c} value={`${c} County, ${stateFilter}`}>
-                {c} County
-              </option>
-            ))}
-          </select>
-        ) : stateFilter ? (
+        {stateDropdown(`${testId}-state`)}
+        {selectedState && (
           <Input
-            placeholder={`Type county name (saved as "Name County, ${stateFilter}")`}
-            value={value}
+            placeholder="County name"
+            value={localPart}
             onChange={(e) => {
-              const raw = e.target.value;
-              if (raw && !raw.includes(",")) {
-                const normalized = raw.endsWith(" County") ? raw : raw;
-                onChange(`${normalized}, ${stateFilter}`);
-              } else {
-                onChange(raw);
-              }
+              const name = e.target.value;
+              setLocalPart(name);
+              onChange(name ? `${name}, ${selectedState}` : "");
             }}
             data-testid={testId}
           />
-        ) : null}
+        )}
       </div>
     );
   }
 
   if (regionType === "city") {
-    const cities = stateFilter && STATE_CITIES[stateFilter]
-      ? STATE_CITIES[stateFilter]
-      : [];
-    const filtered = citySearch
-      ? cities.filter((c) => c.toLowerCase().includes(citySearch.toLowerCase()))
-      : cities;
-    const displayValue = citySearch !== "" ? citySearch : (value ? value.split(",")[0].trim() : "");
     return (
       <div className="flex flex-col gap-1.5">
-        <select
-          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-          value={stateFilter}
-          onChange={(e) => {
-            setStateFilter(e.target.value);
-            onChange("");
-            setCitySearch("");
-            setShowCityDropdown(false);
-          }}
-          data-testid={`${testId}-state`}
-        >
-          <option value="">Select state first...</option>
-          {Object.entries(US_STATES)
-            .sort((a, b) => a[1].localeCompare(b[1]))
-            .map(([abbr, name]) => (
-              <option key={abbr} value={abbr}>
-                {name}
-              </option>
-            ))}
-        </select>
-        {stateFilter && cities.length > 0 ? (
-          <div className="relative">
-            <Input
-              placeholder={`Search cities in ${US_STATES[stateFilter] || stateFilter}...`}
-              value={displayValue}
-              onChange={(e) => {
-                const typed = e.target.value;
-                setCitySearch(typed);
-                setShowCityDropdown(true);
-                if (typed) {
-                  onChange(`${typed}, ${stateFilter}`);
-                } else {
-                  onChange("");
-                }
-              }}
-              onFocus={() => { if (citySearch || !value) setShowCityDropdown(true); }}
-              onBlur={() => { setTimeout(() => setShowCityDropdown(false), 200); }}
-              data-testid={`${testId}-search`}
-            />
-            {showCityDropdown && citySearch && filtered.length > 0 && (
-              <div className="absolute z-50 mt-1 w-full max-h-40 overflow-y-auto bg-white border border-input rounded-md shadow-lg">
-                {filtered.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-100"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      onChange(`${c}, ${stateFilter}`);
-                      setCitySearch("");
-                      setShowCityDropdown(false);
-                    }}
-                    data-testid={`${testId}-option-${c.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : stateFilter ? (
+        {stateDropdown(`${testId}-state`)}
+        {selectedState && (
           <Input
-            placeholder={`Enter city (saved as "City, ${stateFilter}")`}
-            value={value}
+            placeholder="City name"
+            value={localPart}
             onChange={(e) => {
-              const raw = e.target.value;
-              if (raw && !raw.includes(",")) {
-                onChange(`${raw}, ${stateFilter}`);
-              } else {
-                onChange(raw);
-              }
+              const name = e.target.value;
+              setLocalPart(name);
+              onChange(name ? `${name}, ${selectedState}` : "");
             }}
             data-testid={testId}
           />
-        ) : null}
+        )}
       </div>
     );
   }
