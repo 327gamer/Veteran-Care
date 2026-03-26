@@ -858,6 +858,10 @@ export async function registerRoutes(
     startEscalationTimer(5 * 60 * 1000);
   }
 
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   app.get("/api/reverse-geocode", async (req, res) => {
     const { lat, lon } = req.query;
     if (!lat || !lon) {
