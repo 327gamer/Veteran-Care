@@ -71,6 +71,10 @@ function parseLocalPart(value: string): string {
   return value.substring(0, commaIdx).trim();
 }
 
+function titleCase(str: string): string {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function RegionValueInput({
   regionType,
   value,
@@ -140,12 +144,31 @@ function RegionValueInput({
         {stateDropdown(`${testId}-state`)}
         {selectedState && (
           <Input
-            placeholder="County name"
+            placeholder="Enter county (e.g. Greenville County)"
             value={localPart}
             onChange={(e) => {
-              const name = e.target.value;
-              setLocalPart(name);
-              onChange(name ? `${name}, ${selectedState}` : "");
+              const raw = e.target.value.trimStart();
+              const cleaned = titleCase(raw);
+              setLocalPart(cleaned);
+              if (!cleaned.trim()) {
+                onChange("");
+              } else {
+                const withCounty = cleaned.trim().toLowerCase().endsWith("county")
+                  ? cleaned.trim()
+                  : `${cleaned.trim()} County`;
+                onChange(`${withCounty}, ${selectedState}`);
+              }
+            }}
+            onBlur={() => {
+              const trimmed = localPart.trim();
+              if (trimmed) {
+                const capitalized = titleCase(trimmed);
+                setLocalPart(capitalized);
+                const withCounty = capitalized.toLowerCase().endsWith("county")
+                  ? capitalized
+                  : `${capitalized} County`;
+                onChange(`${withCounty}, ${selectedState}`);
+              }
             }}
             data-testid={testId}
           />
@@ -160,12 +183,21 @@ function RegionValueInput({
         {stateDropdown(`${testId}-state`)}
         {selectedState && (
           <Input
-            placeholder="City name"
+            placeholder="Enter city (e.g. Charleston)"
             value={localPart}
             onChange={(e) => {
-              const name = e.target.value;
-              setLocalPart(name);
-              onChange(name ? `${name}, ${selectedState}` : "");
+              const raw = e.target.value.trimStart();
+              const cleaned = titleCase(raw);
+              setLocalPart(cleaned);
+              onChange(cleaned.trim() ? `${cleaned.trim()}, ${selectedState}` : "");
+            }}
+            onBlur={() => {
+              const trimmed = localPart.trim();
+              if (trimmed) {
+                const capitalized = titleCase(trimmed);
+                setLocalPart(capitalized);
+                onChange(`${capitalized}, ${selectedState}`);
+              }
             }}
             data-testid={testId}
           />
