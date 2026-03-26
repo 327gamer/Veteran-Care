@@ -396,9 +396,11 @@ export default function AdminPayouts() {
                         </Button>
                       )}
                       {transitions.includes("paid") && (
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={statusMutation.isPending || comms.length === 0} onClick={() => statusMutation.mutate({ id: p.id, status: "paid" })} data-testid="button-mark-paid">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Mark Paid
-                        </Button>
+                        <span title={comms.length === 0 ? "Link at least one commission before marking as paid" : ""}>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={statusMutation.isPending || comms.length === 0} onClick={() => statusMutation.mutate({ id: p.id, status: "paid" })} data-testid="button-mark-paid">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Mark Paid{comms.length === 0 ? " (no commissions)" : ""}
+                          </Button>
+                        </span>
                       )}
                       {transitions.includes("cancelled") && (
                         <Button size="sm" variant="destructive" disabled={statusMutation.isPending} onClick={() => statusMutation.mutate({ id: p.id, status: "cancelled" })} data-testid="button-cancel-payout">
