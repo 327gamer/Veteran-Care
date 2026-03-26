@@ -12,6 +12,15 @@ import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEve
 import express from "express";
 import QRCode from "qrcode";
 
+function parsePagination(req: { query: Record<string, any> }, defaultLimit = 100, maxLimit = 500): { limit: number; offset: number } {
+  const rawLimit = parseInt(req.query.limit as string, 10);
+  const rawOffset = parseInt(req.query.offset as string, 10);
+  return {
+    limit: Math.min(Math.max(rawLimit || defaultLimit, 1), maxLimit),
+    offset: Math.max(rawOffset || 0, 0),
+  };
+}
+
 function normalizeSearchTerm(q: string): string {
   return q
     .toLowerCase()
@@ -249,6 +258,11 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE ambassador_payouts ADD COLUMN IF NOT EXISTS confirmation_note TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_amb_id ON ambassador_payouts(ambassador_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_status ON ambassador_payouts(payout_status)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_payout_id ON commissions(payout_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_created_at ON commissions(created_at)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_created_at ON ambassador_payouts(created_at)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_created_at ON ambassador_links(created_at)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_created_at ON user_attribution_sessions(created_at)`);
 
     // === BACKFILL: Create ambassador profiles from existing link data ===
     await pgQuery(`
@@ -1115,7 +1129,8 @@ export async function registerRoutes(
         params.push(date_to);
       }
 
-      sql += ` ORDER BY al.created_at DESC`;
+      const { limit, offset } = parsePagination(req, 200, 1000);
+      sql += ` ORDER BY al.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
       const rows = await pgQuery(sql, params);
 
       const filterOptions = await pgQuery(`
@@ -1144,6 +1159,7 @@ export async function registerRoutes(
     try {
       const includeArchived = req.query.include_archived === "true";
       const statusFilter = includeArchived ? "" : "WHERE a.status != 'archived'";
+      const { limit, offset } = parsePagination(req, 200, 500);
       const rows = await pgQuery(`
         SELECT a.id as ambassador_id, a.code as ambassador_code, a.display_name as ambassador_name,
                a.email, a.phone, a.region_value as region, a.status,
@@ -1166,6 +1182,7 @@ export async function registerRoutes(
         ) ls ON ls.ambassador_id = a.id
         ${statusFilter}
         ORDER BY a.display_name
+        LIMIT ${limit} OFFSET ${offset}
       `);
       return res.json({ ambassadors: rows });
     } catch (err: any) {
@@ -1907,6 +1924,7 @@ export async function registerRoutes(
         pIdx++;
       }
 
+      const cPag = parsePagination(req, 200, 500);
       const commissions = await pgQuery(`
         SELECT
           c.id,
@@ -1924,7 +1942,7 @@ export async function registerRoutes(
         LEFT JOIN ambassadors a ON a.code = c.ambassador_code
         ${where}
         ORDER BY c.created_at DESC
-        LIMIT 500
+        LIMIT ${cPag.limit} OFFSET ${cPag.offset}
       `, params);
 
       const summary = await pgQuery(`
@@ -2019,6 +2037,7 @@ export async function registerRoutes(
       if (date_to) { conditions.push(`p.created_at <= $${idx++}`); params.push(date_to); }
       const where = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
 
+      const pPag = parsePagination(req, 200, 500);
       const payouts = await pgQuery(`
         SELECT p.*, a.display_name AS ambassador_name, a.code AS ambassador_code,
           COALESCE((SELECT SUM(c.commission_amount) FROM commissions c WHERE c.payout_id = p.id), 0) AS computed_total,
@@ -2027,7 +2046,7 @@ export async function registerRoutes(
         JOIN ambassadors a ON a.id = p.ambassador_id
         ${where}
         ORDER BY p.created_at DESC
-        LIMIT 500
+        LIMIT ${pPag.limit} OFFSET ${pPag.offset}
       `, params);
 
       const summaryRows = await pgQuery(`
@@ -3256,6 +3275,9 @@ export async function registerRoutes(
 
     query = query.order("created_at", { ascending: false });
 
+    const resPag = parsePagination(req, 200, 1000);
+    query = query.range(resPag.offset, resPag.offset + resPag.limit - 1);
+
     const { data, error } = await query;
 
     if (error) {
@@ -4304,23 +4326,25 @@ export async function registerRoutes(
 
   app.get("/api/admin/navigator-requests", requireAdmin, async (req, res) => {
     const { status } = req.query;
+    const { limit, offset } = parsePagination(req, 100, 500);
 
     let query = supabaseAdmin
       .from("navigator_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (status) {
       query = query.eq("status", status as string);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    return res.json(data || []);
+    return res.json({ requests: data || [], total: count || 0 });
   });
 
   app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
@@ -5083,12 +5107,14 @@ export async function registerRoutes(
       if (req.query.is_active === "true") conditions.push(`ts.is_active = true`);
       if (req.query.is_active === "false") conditions.push(`ts.is_active = false`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const tsPag = parsePagination(req, 200, 500);
       const rows = await pgQuery(
         `SELECT ts.*, json_build_object('id', tsc.id, 'slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories
          FROM trusted_services ts
          LEFT JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          ${where}
-         ORDER BY ts.display_order ASC NULLS LAST, ts.created_at DESC`,
+         ORDER BY ts.display_order ASC NULLS LAST, ts.created_at DESC
+         LIMIT ${tsPag.limit} OFFSET ${tsPag.offset}`,
         params
       );
       return res.json(rows);
@@ -5239,7 +5265,8 @@ export async function registerRoutes(
         conditions.push(`provider_id = $${params.length}`);
       }
       const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const rows = await pgQuery(`SELECT * FROM trusted_service_leads ${where} ORDER BY created_at DESC`, params);
+      const { limit, offset } = parsePagination(req, 200, 500);
+      const rows = await pgQuery(`SELECT * FROM trusted_service_leads ${where} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`, params);
       return res.json(rows);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -5323,7 +5350,8 @@ export async function registerRoutes(
         conditions.push(`pa.state = $${params.length}`);
       }
       if (conditions.length > 0) sql += ` WHERE ${conditions.join(" AND ")}`;
-      sql += ` ORDER BY pa.created_at DESC`;
+      const { limit, offset } = parsePagination(req, 200, 500);
+      sql += ` ORDER BY pa.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
       const rows = await pgQuery(sql, params);
       return res.json(rows);
     } catch (err: any) {
@@ -5526,11 +5554,13 @@ export async function registerRoutes(
         const normIdx = params.length;
         conditions.push(`(LOWER(vob.business_name) LIKE $${rawIdx} OR LOWER(vob.description) LIKE $${rawIdx} OR LOWER(vob.subcategory) LIKE $${rawIdx} OR LOWER(REGEXP_REPLACE(vob.business_name, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx} OR LOWER(REGEXP_REPLACE(vob.description, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx})`);
       }
+      const vobPag = parsePagination(req, 100, 500);
       const sql = `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
          FROM veteran_owned_businesses vob
          LEFT JOIN trusted_service_categories tsc ON vob.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
-         ORDER BY vob.is_nonprofit DESC, vob.created_at DESC`;
+         ORDER BY vob.is_nonprofit DESC, vob.created_at DESC
+         LIMIT ${vobPag.limit} OFFSET ${vobPag.offset}`;
       const rows = await pgQuery(sql, params);
       return res.json(rows);
     } catch (err: any) {
@@ -5565,15 +5595,17 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/vob", requireAdmin, async (_req, res) => {
+  app.get("/api/admin/vob", requireAdmin, async (req, res) => {
     try {
+      const { limit, offset } = parsePagination(req, 200, 500);
       const rows = await pgQuery(
         `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
          FROM veteran_owned_businesses vob
          LEFT JOIN trusted_service_categories tsc ON vob.category_id = tsc.id
          ORDER BY
            CASE vob.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 END,
-           vob.created_at DESC`
+           vob.created_at DESC
+         LIMIT ${limit} OFFSET ${offset}`
       );
       return res.json(rows);
     } catch (err: any) {

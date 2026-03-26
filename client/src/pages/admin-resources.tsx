@@ -218,15 +218,15 @@ export default function AdminResources() {
 
   const { data: navRequests = [], isLoading: navLoading } = useQuery<NavigatorRequest[]>({
     queryKey: ["/api/admin/navigator-requests", leadStatusFilter, adminKey],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (leadStatusFilter) params.set("status", leadStatusFilter);
-      return fetch(`/api/admin/navigator-requests?${params}`, {
+      const r = await fetch(`/api/admin/navigator-requests?${params}`, {
         headers: { "x-admin-key": adminKey },
-      }).then(r => {
-        if (!r.ok) throw new Error("Unauthorized");
-        return r.json();
       });
+      if (!r.ok) throw new Error("Unauthorized");
+      const body = await r.json();
+      return Array.isArray(body) ? body : (body.requests || []);
     },
     enabled: authenticated && activeTab === "leads",
   });
