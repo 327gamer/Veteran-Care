@@ -652,7 +652,7 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
       `Tracking Links`,
       `--------------`,
       ...amb.links.filter(l => l.is_active).map((l, i) => {
-        const shortLink = l.short_url ? `${window.location.origin}${l.short_url}` : l.full_url;
+        const shortLink = l.short_url ? `https://veterancare.com${l.short_url}` : l.full_url;
         return `${i + 1}. ${l.link_name}\n   Short Link: ${shortLink}\n   UTM ID: ${l.utm_id}\n   Full URL: ${l.full_url}`;
       }),
     ].filter(Boolean);
@@ -668,7 +668,7 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
   const copyAllLinks = async () => {
     if (!amb) return;
     const text = amb.links.filter(l => l.is_active).map(l => {
-      const url = l.short_url ? `${window.location.origin}${l.short_url}` : l.full_url;
+      const url = l.short_url ? `https://veterancare.com${l.short_url}` : l.full_url;
       return `${l.link_name}: ${url}`;
     }).join("\n");
     try { await navigator.clipboard.writeText(text); } catch {
@@ -1161,11 +1161,11 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
                     <div className="flex items-center gap-1 mt-2 flex-wrap">
                       <div className="flex items-center gap-1 bg-slate-50 rounded px-2 py-1 text-xs flex-1 min-w-0">
                         <Link2 className="h-3 w-3 shrink-0 text-slate-400" />
-                        <span className="truncate text-slate-600">{link.short_url || link.full_url}</span>
+                        <span className="truncate text-slate-600">{link.short_url ? `https://veterancare.com${link.short_url}` : link.full_url}</span>
                       </div>
-                      <CopyButton value={link.short_url || link.full_url} label={`link-${link.id}`} />
+                      <CopyButton value={link.short_url ? `https://veterancare.com${link.short_url}` : link.full_url} label={`link-${link.id}`} />
                       <a
-                        href={link.short_url || link.full_url}
+                        href={link.short_url ? `https://veterancare.com${link.short_url}` : link.full_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 h-7 px-2 text-xs rounded-md border hover:bg-slate-50"

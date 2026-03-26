@@ -199,8 +199,8 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Short URL</span>
                 <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border">
-                  <code className="text-xs flex-1 break-all" data-testid="text-short-url">{window.location.origin}{link.short_url}</code>
-                  <CopyButton value={`${window.location.origin}${link.short_url}`} label="short-url" />
+                  <code className="text-xs flex-1 break-all" data-testid="text-short-url">https://veterancare.com{link.short_url}</code>
+                  <CopyButton value={`https://veterancare.com${link.short_url}`} label="short-url" />
                 </div>
               </div>
             )}
