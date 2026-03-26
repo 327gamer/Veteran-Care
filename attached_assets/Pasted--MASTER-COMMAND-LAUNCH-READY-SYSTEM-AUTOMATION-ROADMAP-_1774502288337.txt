@@ -1,0 +1,130 @@
+--- MASTER COMMAND: LAUNCH-READY SYSTEM + AUTOMATION ROADMAP ---
+
+We have 4–5 days before the ambassador meeting/demo.
+
+We must complete a fully operational, reliable system for demonstration WITHOUT introducing instability.
+
+-------------------------------------
+CORE RULE
+-------------------------------------
+
+FOCUS ON:
+→ A clean, working, end-to-end system
+
+DO NOT:
+- overbuild automation
+- introduce risky integrations
+- expand scope beyond what is required for launch
+
+-------------------------------------
+PHASE 1 – LAUNCH-CRITICAL (BUILD + VALIDATE)
+-------------------------------------
+
+1) STEP 56.6B.6B – PAYMENT + TAX TRACKING LAYER
+
+Implement:
+
+- payout_method (on ambassador)
+- payout_details (on ambassador)
+- w9_status
+- tax_notes
+
+Display in:
+- ambassador detail view
+
+Enhance payout records to store:
+- payout method used
+- confirmation note
+
+-------------------------------------
+
+2) COMMISSION CONFIGURATION VALIDATION
+
+Confirm:
+
+- commission_rate is:
+  - visible
+  - editable
+  - correctly stored
+  - correctly used in all commission calculations and displays
+
+-------------------------------------
+
+3) AMBASSADOR ONBOARDING FLOW (FULLY WORKING)
+
+Confirm admin can:
+
+- create ambassador
+- assign region (new structured system)
+- assign commission_rate
+- auto-generate links (UTM / utm_id / short links / QR)
+- access ambassador detail view with:
+  - clicks
+  - leads
+  - revenue
+  - commissions
+  - payouts
+
+-------------------------------------
+
+4) END-TO-END SYSTEM VALIDATION (CRITICAL)
+
+You must verify a complete working flow:
+
+- create ambassador
+- generate link
+- simulate click
+- session is tracked
+- lead is created
+- commission is generated
+- commission appears in ledger
+- payout is created
+- commission is linked to payout
+- payout is marked paid
+
+No step in this chain can fail.
+
+-------------------------------------
+
+PHASE 1 GOAL:
+A stable, trustworthy, demo-ready system that works end-to-end without manual fixes.
+
+-------------------------------------
+
+PHASE 2 – AUTOMATION FEASIBILITY (NO BUILD YET)
+
+Provide a short, clear assessment ONLY:
+
+1) Is Stripe Connect payout automation realistic within 4–5 days? (Yes/No + why)
+2) Is QuickBooks integration realistic within 4–5 days? (Yes/No + why)
+3) What is the fastest SAFE post-launch path to automation?
+
+Do NOT build automation yet unless explicitly approved.
+
+-------------------------------------
+
+OUTPUT REQUIRED
+
+Reply with:
+
+1) Exact remaining tasks to complete Phase 1
+2) Confirmation when Phase 1 is fully complete and stable
+3) Results of end-to-end validation
+4) Automation feasibility answers (Stripe + QuickBooks)
+5) Recommended post-launch automation plan
+
+-------------------------------------
+
+IMPORTANT
+
+All data must be stored cleanly so automation can be layered later WITHOUT requiring refactoring.
+
+-------------------------------------
+
+FINAL GOAL
+
+Deliver:
+1) A fully operational system for the demo
+2) A clean foundation for immediate post-launch automation
+
+--- END ---

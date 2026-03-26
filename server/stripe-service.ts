@@ -248,7 +248,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
 
     if (app.utm_content && revenueAmount && revenueAmount > 0) {
       const ambassadorCode = app.utm_content;
-      const commissionPct = 10.00;
+      let commissionPct = 10.00;
+      if (resolvedAmbassadorId) {
+        try {
+          const rateRows = await pgQuery(
+            `SELECT commission_rate FROM ambassadors WHERE id = $1`,
+            [resolvedAmbassadorId]
+          );
+          if (rateRows.length > 0 && rateRows[0].commission_rate != null) {
+            commissionPct = parseFloat(rateRows[0].commission_rate);
+          }
+        } catch (err: any) {
+          console.log(`[stripe] Failed to fetch ambassador commission_rate, using default 10%:`, err.message);
+        }
+      }
       const commissionAmt = Math.round(revenueAmount * commissionPct) / 100;
       await pgQuery(
         `INSERT INTO commissions (ambassador_code, utm_id, application_id, revenue_amount, commission_percentage, commission_amount, status, ambassador_id)

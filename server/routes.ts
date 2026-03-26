@@ -104,6 +104,10 @@ async function ensureAttributionTables() {
       )
     `);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(5,2)`);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS payout_method TEXT`);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS payout_details TEXT`);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS w9_status TEXT DEFAULT 'not_submitted'`);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS tax_notes TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_code ON ambassadors(code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_status ON ambassadors(status)`);
 
@@ -242,6 +246,7 @@ async function ensureAttributionTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE ambassador_payouts ADD COLUMN IF NOT EXISTS confirmation_note TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_amb_id ON ambassador_payouts(ambassador_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_status ON ambassador_payouts(payout_status)`);
 
@@ -1170,6 +1175,7 @@ export async function registerRoutes(
       const rows = await pgQuery(
         `SELECT id, code, display_name, first_name, last_name, email, phone,
                 region_type, region_value, status, notes, commission_rate,
+                payout_method, payout_details, w9_status, tax_notes,
                 created_at, updated_at
          FROM ambassadors WHERE id = $1`,
         [req.params.id]
@@ -1247,7 +1253,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/ambassadors/:id", requireAdmin, async (req, res) => {
     try {
-      const { display_name, first_name, last_name, email, phone, region_type, region_value, status, notes, commission_rate } = req.body;
+      const { display_name, first_name, last_name, email, phone, region_type, region_value, status, notes, commission_rate, payout_method, payout_details, w9_status, tax_notes } = req.body;
       const fields: string[] = [];
       const values: any[] = [];
       let idx = 1;
@@ -1268,6 +1274,10 @@ export async function registerRoutes(
       addField("region_value", region_value);
       addField("status", status);
       addField("notes", notes);
+      addField("payout_method", payout_method);
+      addField("payout_details", payout_details);
+      addField("w9_status", w9_status);
+      addField("tax_notes", tax_notes);
       if (commission_rate !== undefined) {
         let parsedRate: number | null = null;
         if (commission_rate !== null && commission_rate !== "") {
@@ -2136,7 +2146,7 @@ export async function registerRoutes(
 
     try {
       const { id } = req.params;
-      const { status: newStatus } = req.body;
+      const { status: newStatus, confirmation_note, payout_method: payoutMethodUsed } = req.body;
 
       const validStatuses = ["draft", "pending", "paid", "cancelled"];
       if (!validStatuses.includes(newStatus)) return res.status(400).json({ error: "Invalid status" });
@@ -2160,9 +2170,14 @@ export async function registerRoutes(
         await pgQuery(`
           UPDATE commissions SET status = 'paid' WHERE payout_id = $1 AND status = 'approved'
         `, [id]);
+        const extraSets: string[] = [];
+        const extraVals: any[] = [id];
+        let pi = 2;
+        if (confirmation_note) { extraSets.push(`confirmation_note = $${pi++}`); extraVals.push(confirmation_note); }
+        if (payoutMethodUsed) { extraSets.push(`payout_method = $${pi++}`); extraVals.push(payoutMethodUsed); }
         await pgQuery(`
-          UPDATE ambassador_payouts SET payout_status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE id = $1
-        `, [id]);
+          UPDATE ambassador_payouts SET payout_status = 'paid', paid_at = NOW(), updated_at = NOW()${extraSets.length ? ", " + extraSets.join(", ") : ""} WHERE id = $1
+        `, extraVals);
       } else if (newStatus === "cancelled") {
         await pgQuery("UPDATE commissions SET payout_id = NULL WHERE payout_id = $1 AND status != 'paid'", [id]);
         const newTotal = await pgQuery("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM commissions WHERE payout_id = $1", [id]);

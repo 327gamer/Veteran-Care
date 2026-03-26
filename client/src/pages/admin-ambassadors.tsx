@@ -599,6 +599,10 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
       status: amb.status || "active",
       commission_rate: amb.commission_rate != null ? String(amb.commission_rate) : "",
       notes: amb.notes || "",
+      payout_method: amb.payout_method || "",
+      payout_details: amb.payout_details || "",
+      w9_status: amb.w9_status || "not_submitted",
+      tax_notes: amb.tax_notes || "",
     });
     setEditing(true);
   };
@@ -730,6 +734,61 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                     data-testid="edit-commission-rate"
                   />
                 </div>
+                <div className="border-t pt-3 mt-1">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Payment & Tax</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 mb-1 block">Payout Method</label>
+                      <select
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        value={editData.payout_method}
+                        onChange={(e) => setEditData({ ...editData, payout_method: e.target.value })}
+                        data-testid="edit-payout-method"
+                      >
+                        <option value="">Not set</option>
+                        <option value="check">Check</option>
+                        <option value="direct_deposit">Direct Deposit (ACH)</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="venmo">Venmo</option>
+                        <option value="zelle">Zelle</option>
+                        <option value="stripe">Stripe Connect</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 mb-1 block">W-9 Status</label>
+                      <select
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        value={editData.w9_status}
+                        onChange={(e) => setEditData({ ...editData, w9_status: e.target.value })}
+                        data-testid="edit-w9-status"
+                      >
+                        <option value="not_submitted">Not Submitted</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="verified">Verified</option>
+                        <option value="expired">Expired</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Payout Details</label>
+                    <Input
+                      placeholder="e.g. PayPal: john@email.com / Check: mail to 123 Main St"
+                      value={editData.payout_details}
+                      onChange={(e) => setEditData({ ...editData, payout_details: e.target.value })}
+                      data-testid="edit-payout-details"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Tax Notes</label>
+                    <Input
+                      placeholder="e.g. EIN on file, 1099 threshold notes"
+                      value={editData.tax_notes}
+                      onChange={(e) => setEditData({ ...editData, tax_notes: e.target.value })}
+                      data-testid="edit-tax-notes"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 mb-1 block">Notes</label>
                   <textarea
@@ -788,7 +847,37 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                       <p className="font-medium" data-testid="text-commission-rate">{amb.commission_rate}%</p>
                     </div>
                   )}
+                  {amb.payout_method && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">Payout Method</span>
+                      <p className="font-medium" data-testid="text-payout-method">
+                        {{check:"Check",direct_deposit:"Direct Deposit",paypal:"PayPal",venmo:"Venmo",zelle:"Zelle",stripe:"Stripe Connect",other:"Other"}[amb.payout_method] || amb.payout_method}
+                      </p>
+                    </div>
+                  )}
+                  {amb.w9_status && amb.w9_status !== "not_submitted" && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">W-9 Status</span>
+                      <p data-testid="text-w9-status">
+                        <Badge variant={amb.w9_status === "verified" ? "default" : "outline"} className={amb.w9_status === "verified" ? "bg-green-600" : amb.w9_status === "expired" ? "text-red-600 border-red-300" : ""}>
+                          {{not_submitted:"Not Submitted",submitted:"Submitted",verified:"Verified",expired:"Expired"}[amb.w9_status] || amb.w9_status}
+                        </Badge>
+                      </p>
+                    </div>
+                  )}
                 </div>
+                {amb.payout_details && (
+                  <div className="mt-2 text-sm">
+                    <span className="text-xs text-muted-foreground">Payout Details</span>
+                    <p className="text-slate-700" data-testid="text-payout-details">{amb.payout_details}</p>
+                  </div>
+                )}
+                {amb.tax_notes && (
+                  <div className="mt-2 text-sm">
+                    <span className="text-xs text-muted-foreground">Tax Notes</span>
+                    <p className="text-slate-700" data-testid="text-tax-notes">{amb.tax_notes}</p>
+                  </div>
+                )}
                 {amb.notes && (
                   <div className="mt-3 pt-3 border-t">
                     <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><FileText className="h-3 w-3" /> Notes</span>
