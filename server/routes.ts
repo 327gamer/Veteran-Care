@@ -932,7 +932,7 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador_name, channels, audiences, campaigns, email, region, region_type, phone, first_name, last_name, notes } = req.body;
+    const { ambassador_name, channels, audiences, campaigns, email, region, region_type, phone, first_name, last_name, notes, commission_rate } = req.body;
     if (!ambassador_name || typeof ambassador_name !== "string") {
       return res.status(400).json({ error: "ambassador_name is required" });
     }
@@ -970,9 +970,17 @@ export async function registerRoutes(
         }
       }
 
+      let parsedRate: number | null = null;
+      if (commission_rate !== undefined && commission_rate !== null && commission_rate !== "") {
+        parsedRate = parseFloat(commission_rate);
+        if (isNaN(parsedRate) || parsedRate < 0 || parsedRate > 100) {
+          return res.status(400).json({ error: "commission_rate must be a number between 0 and 100" });
+        }
+      }
+
       const ambRows = await pgQuery(
-        `INSERT INTO ambassadors (code, display_name, first_name, last_name, email, phone, region_type, region_value, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO ambassadors (code, display_name, first_name, last_name, email, phone, region_type, region_value, notes, commission_rate)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT (code) DO UPDATE SET
            display_name = COALESCE(EXCLUDED.display_name, ambassadors.display_name),
            email = COALESCE(EXCLUDED.email, ambassadors.email),
@@ -980,6 +988,7 @@ export async function registerRoutes(
            region_type = COALESCE(EXCLUDED.region_type, ambassadors.region_type),
            region_value = COALESCE(EXCLUDED.region_value, ambassadors.region_value),
            notes = COALESCE(EXCLUDED.notes, ambassadors.notes),
+           commission_rate = COALESCE(EXCLUDED.commission_rate, ambassadors.commission_rate),
            updated_at = NOW()
          RETURNING id`,
         [
@@ -992,6 +1001,7 @@ export async function registerRoutes(
           ambassadorRegionType,
           ambassadorRegion,
           ambassadorNotes,
+          parsedRate,
         ]
       );
       const ambassadorId = ambRows[0].id;
@@ -1185,6 +1195,34 @@ export async function registerRoutes(
         ? clickedLinks.reduce((m: string, l: any) => l.last_clicked_at > m ? l.last_clicked_at : m, clickedLinks[0].last_clicked_at)
         : null;
 
+      const perfRows = await pgQuery(`
+        SELECT
+          COUNT(*)::int AS total_commissions,
+          COALESCE(SUM(commission_amount), 0) AS total_commission_amount,
+          COALESCE(SUM(revenue_amount), 0) AS total_revenue,
+          COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_commissions,
+          COUNT(*) FILTER (WHERE status = 'approved')::int AS approved_commissions,
+          COUNT(*) FILTER (WHERE status = 'paid')::int AS paid_commissions
+        FROM commissions WHERE ambassador_code = $1
+      `, [amb.code]);
+
+      const payoutRows = await pgQuery(`
+        SELECT
+          COUNT(*)::int AS total_payouts,
+          COUNT(*) FILTER (WHERE payout_status = 'paid')::int AS paid_payouts,
+          COALESCE(SUM(total_amount) FILTER (WHERE payout_status = 'paid'), 0) AS total_paid_out
+        FROM ambassador_payouts WHERE ambassador_id = $1
+      `, [amb.id]);
+
+      let totalLeads = 0;
+      try {
+        const leadRows = await supabaseAdmin
+          .from("navigator_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("ambassador_id", amb.id);
+        totalLeads = leadRows.count || 0;
+      } catch {}
+
       return res.json({
         ...amb,
         links,
@@ -1194,6 +1232,11 @@ export async function registerRoutes(
           total_clicks: totalClicks,
           first_activity: firstActivity,
           last_activity: lastActivity,
+        },
+        performance: {
+          ...perfRows[0],
+          ...payoutRows[0],
+          total_leads: totalLeads,
         },
       });
     } catch (err: any) {
@@ -1226,8 +1269,15 @@ export async function registerRoutes(
       addField("status", status);
       addField("notes", notes);
       if (commission_rate !== undefined) {
+        let parsedRate: number | null = null;
+        if (commission_rate !== null && commission_rate !== "") {
+          parsedRate = parseFloat(commission_rate);
+          if (isNaN(parsedRate) || parsedRate < 0 || parsedRate > 100) {
+            return res.status(400).json({ error: "commission_rate must be a number between 0 and 100" });
+          }
+        }
         fields.push(`commission_rate = $${idx++}`);
-        values.push(commission_rate === null || commission_rate === "" ? null : parseFloat(commission_rate));
+        values.push(parsedRate);
       }
 
       if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });

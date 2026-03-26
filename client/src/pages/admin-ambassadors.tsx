@@ -31,6 +31,7 @@ import {
   BarChart3,
   FileText,
   User,
+  DollarSign,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -89,6 +90,18 @@ interface AmbassadorDetail {
     total_clicks: number;
     first_activity: string | null;
     last_activity: string | null;
+  };
+  performance?: {
+    total_commissions: number;
+    total_commission_amount: string;
+    total_revenue: string;
+    pending_commissions: number;
+    approved_commissions: number;
+    paid_commissions: number;
+    total_payouts: number;
+    paid_payouts: number;
+    total_paid_out: string;
+    total_leads: number;
   };
 }
 
@@ -163,6 +176,7 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
     phone: "",
     region_type: "",
     region_value: "",
+    commission_rate: "",
     notes: "",
   });
 
@@ -278,6 +292,19 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
           </div>
         </div>
         <div>
+          <label className="text-xs font-medium text-slate-600 mb-1 block">Commission Rate (%) *</label>
+          <Input
+            type="number"
+            step="0.5"
+            min="0"
+            max="100"
+            placeholder="10"
+            value={formData.commission_rate}
+            onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+            data-testid="input-commission-rate"
+          />
+        </div>
+        <div>
           <label className="text-xs font-medium text-slate-600 mb-1 block">Notes</label>
           <textarea
             className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
@@ -295,7 +322,7 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
         <div className="flex gap-2">
           <Button
             size="sm"
-            disabled={!(formData.ambassador_name.trim() || displayName.trim()) || createMutation.isPending}
+            disabled={!(formData.ambassador_name.trim() || displayName.trim()) || !formData.commission_rate.trim() || createMutation.isPending}
             onClick={() => {
               const payload: Record<string, string> = {
                 ambassador_name: formData.ambassador_name.trim() || displayName.trim(),
@@ -306,6 +333,7 @@ function CreateAmbassadorForm({ onClose, onSuccess }: { onClose: () => void; onS
               if (formData.phone.trim()) payload.phone = formData.phone.trim();
               if (formData.region_type) payload.region_type = formData.region_type;
               if (formData.region_value.trim()) payload.region = formData.region_value.trim();
+              if (formData.commission_rate.trim()) payload.commission_rate = formData.commission_rate.trim();
               if (formData.notes.trim()) payload.notes = formData.notes.trim();
               createMutation.mutate(payload);
             }}
@@ -388,6 +416,7 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
       region_type: amb.region_type || "",
       region_value: amb.region_value || "",
       status: amb.status || "active",
+      commission_rate: amb.commission_rate != null ? String(amb.commission_rate) : "",
       notes: amb.notes || "",
     });
     setEditing(true);
@@ -503,6 +532,19 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                   </select>
                 </div>
                 <div>
+                  <label className="text-xs font-medium text-slate-600 mb-1 block">Commission Rate (%)</label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="100"
+                    placeholder="10"
+                    value={editData.commission_rate}
+                    onChange={(e) => setEditData({ ...editData, commission_rate: e.target.value })}
+                    data-testid="edit-commission-rate"
+                  />
+                </div>
+                <div>
                   <label className="text-xs font-medium text-slate-600 mb-1 block">Notes</label>
                   <textarea
                     className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
@@ -607,6 +649,54 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
             )}
           </CardContent>
         </Card>
+
+        {amb.performance && (
+          <Card className="mb-4" data-testid="card-performance">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4" /> Performance Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600" data-testid="perf-total-leads">{amb.performance.total_leads}</p>
+                  <p className="text-xs text-muted-foreground">Total Leads</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-emerald-600" data-testid="perf-total-revenue">${parseFloat(amb.performance.total_revenue || "0").toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Total Revenue</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-purple-600" data-testid="perf-total-commissions">${parseFloat(amb.performance.total_commission_amount || "0").toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Total Commissions</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-green-600" data-testid="perf-total-paid">${parseFloat(amb.performance.total_paid_out || "0").toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Total Paid Out</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-3">
+                <div className="text-center text-sm">
+                  <span className="text-muted-foreground text-xs block">Commissions</span>
+                  <span className="font-medium">{amb.performance.total_commissions}</span>
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({amb.performance.pending_commissions}p / {amb.performance.approved_commissions}a / {amb.performance.paid_commissions}pd)
+                  </span>
+                </div>
+                <div className="text-center text-sm">
+                  <span className="text-muted-foreground text-xs block">Payouts</span>
+                  <span className="font-medium">{amb.performance.total_payouts}</span>
+                  <span className="text-xs text-muted-foreground ml-1">({amb.performance.paid_payouts} paid)</span>
+                </div>
+                <div className="text-center text-sm">
+                  <span className="text-muted-foreground text-xs block">Clicks</span>
+                  <span className="font-medium">{amb.activity.total_clicks}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card data-testid="card-owned-links">
           <CardHeader className="pb-2">

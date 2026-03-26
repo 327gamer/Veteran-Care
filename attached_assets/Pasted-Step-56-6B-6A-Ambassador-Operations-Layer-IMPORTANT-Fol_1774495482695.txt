@@ -1,0 +1,149 @@
+Step 56.6B.6A – Ambassador Operations Layer
+
+IMPORTANT:
+Follow ONE COMMAND RULE.
+Build ONLY the Ambassador Operations Layer in this step.
+Do NOT build payment/tax tracking yet.
+Do NOT build Stripe Connect, banking integrations, or tax automation.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make the ambassador system fully usable for real-world operations by allowing admin to:
+
+- create ambassadors with required operational fields
+- assign commission rates
+- generate default link packs automatically
+- manage ambassador status
+- view ambassador-level performance in one place
+
+This must be usable by a non-technical admin.
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Build only:
+
+1. Enhanced Ambassador Creation
+2. Auto Link Pack Generation on Create
+3. Ambassador Detail View Upgrade
+4. Edit Ambassador / Activate / Deactivate
+
+-------------------------------------
+1) ENHANCED CREATE AMBASSADOR
+-------------------------------------
+
+Create / update the ambassador create form so it includes:
+
+- name
+- email
+- region / territory
+- commission_rate (required)
+
+On creation:
+
+- create ambassador record
+- generate ambassador_id if not already handled by existing model
+- store commission_rate
+- preserve existing canonical ambassadors-table structure
+
+IMPORTANT:
+Do not rebuild ambassador architecture.
+Use the existing ambassadors table and current model.
+
+-------------------------------------
+2) AUTO LINK PACK GENERATION
+-------------------------------------
+
+On ambassador creation:
+
+- generate default ambassador link pack automatically
+- include:
+  - UTM links
+  - utm_id values
+  - short links
+  - QR codes
+
+If pieces of this already exist:
+- reuse them
+- tie them cleanly to ambassador creation
+
+Expected result:
+- admin creates ambassador
+- ambassador immediately has usable starter links
+
+-------------------------------------
+3) AMBASSADOR DETAIL VIEW UPGRADE
+-------------------------------------
+
+Upgrade ambassador detail view to display:
+
+- profile info
+- commission_rate
+- total clicks
+- total leads
+- total revenue
+- total commissions
+- payout history summary if already available from existing payout records
+
+IMPORTANT:
+Use existing data sources where possible.
+Do not invent placeholder numbers.
+
+If some metric is not yet fully available:
+- display clearly
+- do not fake it
+
+-------------------------------------
+4) EDIT AMBASSADOR / STATUS
+-------------------------------------
+
+Allow admin to:
+
+- update commission_rate
+- update region / territory
+- activate ambassador
+- deactivate ambassador
+
+Use simple, clean admin controls only.
+No role system expansion in this step.
+
+-------------------------------------
+IMPORTANT CONSTRAINTS
+-------------------------------------
+
+- DO NOT build payment + tax tracking in this step
+- DO NOT build Stripe Connect
+- DO NOT build banking integrations
+- DO NOT rebuild attribution logic
+- DO NOT rebuild commission logic
+- DO NOT introduce unrelated admin changes
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Please confirm:
+
+- ambassador can be created with commission_rate
+- default link pack is generated automatically
+- ambassador detail view shows upgraded operational summary
+- commission_rate can be edited
+- ambassador can be activated/deactivated
+- no regressions to attribution, links, commissions, or payouts
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Please report back with:
+
+1. UI structure
+2. exact fields added/used
+3. how auto link pack generation was tied into ambassador creation
+4. exact files changed
+5. testing performed
+
+--- END ---
