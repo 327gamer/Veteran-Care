@@ -19,6 +19,8 @@ import {
   CreditCard,
   Ban,
   ThumbsUp,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
@@ -139,6 +141,7 @@ export default function AdminCommissions() {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [groupByAmbassador, setGroupByAmbassador] = useState(false);
+  const [staleOnly, setStaleOnly] = useState(false);
 
   const queryString = useMemo(() => {
     const p = new URLSearchParams();
@@ -224,6 +227,13 @@ export default function AdminCommissions() {
 
   const sortedCommissions = useMemo(() => {
     let rows = data?.commissions || [];
+    if (staleOnly) {
+      rows = rows.filter((c) => {
+        if (c.status === "paid" || c.status === "void") return false;
+        const days = getAgingDays(c.created_at);
+        return days !== null && days > 30;
+      });
+    }
     if (searchInput.trim()) {
       const q = searchInput.toLowerCase();
       rows = rows.filter((c) =>
@@ -252,7 +262,7 @@ export default function AdminCommissions() {
       if (aVal > bVal) return sortDir === "desc" ? -1 : 1;
       return 0;
     });
-  }, [data?.commissions, searchInput, sortBy, sortDir]);
+  }, [data?.commissions, searchInput, sortBy, sortDir, staleOnly]);
 
   const groupedByAmbassador = useMemo(() => {
     if (!groupByAmbassador) return null;
@@ -305,6 +315,15 @@ export default function AdminCommissions() {
               data-testid="button-toggle-group"
             >
               Group by Ambassador
+            </Button>
+            <Button
+              variant={staleOnly ? "destructive" : "outline"}
+              size="sm"
+              onClick={() => setStaleOnly(!staleOnly)}
+              data-testid="button-toggle-stale"
+            >
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              Stale Only
             </Button>
             <Button
               variant={showFilters ? "default" : "outline"}
@@ -527,8 +546,8 @@ function CommissionTable({
             <th className="text-left p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("created_at")} data-testid="sort-date">
               <span className="inline-flex items-center gap-1">Date <SortIcon col="created_at" /></span>
             </th>
-            <th className="text-center p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("days_since_created")} data-testid="sort-age">
-              <span className="inline-flex items-center gap-1">Age <SortIcon col="days_since_created" /></span>
+            <th className="text-center p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("days_since_created")} data-testid="sort-age" title="Calculated in UTC to ensure consistency across devices">
+              <span className="inline-flex items-center gap-1">Age <Info className="h-3 w-3 text-muted-foreground" /> <SortIcon col="days_since_created" /></span>
             </th>
             <th className="text-center p-3 font-medium text-xs">Actions</th>
           </tr>
