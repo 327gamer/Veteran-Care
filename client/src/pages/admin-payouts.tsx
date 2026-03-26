@@ -99,6 +99,8 @@ const fmt = (v: string | number) => {
 };
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const PAYOUT_METHOD_LABELS: Record<string, string> = { check: "Check", direct_deposit: "Direct Deposit (ACH)", ach: "Direct Deposit (ACH)", wire: "Bank Wire", paypal: "PayPal", venmo: "Venmo", zelle: "Zelle", stripe: "Stripe Connect", other: "Other" };
+const fmtMethod = (m: string | null) => m ? (PAYOUT_METHOD_LABELS[m] || m) : "—";
 
 export default function AdminPayouts() {
   const [, navigate] = useLocation();
@@ -191,7 +193,7 @@ export default function AdminPayouts() {
       queryClient.invalidateQueries({ queryKey: ["admin-payouts"] });
       queryClient.invalidateQueries({ queryKey: ["admin-payout-detail"] });
       queryClient.invalidateQueries({ queryKey: ["admin-commissions"] });
-      toast({ title: `Payout marked as ${vars.status}` });
+      toast({ title: vars.status === "paid" ? "Payout marked as paid successfully." : `Payout status updated to ${vars.status}.` });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -313,8 +315,8 @@ export default function AdminPayouts() {
                 <select className="w-full border rounded-md p-2 text-sm" value={createMethod} onChange={e => setCreateMethod(e.target.value)} data-testid="select-method">
                   <option value="">Select method...</option>
                   <option value="check">Check</option>
-                  <option value="ach">ACH</option>
-                  <option value="wire">Wire</option>
+                  <option value="direct_deposit">Direct Deposit (ACH)</option>
+                  <option value="wire">Bank Wire</option>
                   <option value="paypal">PayPal</option>
                   <option value="other">Other</option>
                 </select>
@@ -331,14 +333,24 @@ export default function AdminPayouts() {
               </div>
               <Button
                 className="w-full"
-                disabled={!createAmbassadorId || !createPeriodStart || !createPeriodEnd || createMutation.isPending}
+                disabled={!createAmbassadorId || !createPeriodStart || !createPeriodEnd || !createMethod || createMutation.isPending}
                 onClick={() => createMutation.mutate()}
                 data-testid="button-create-payout"
               >
                 {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                 Create Payout Record
               </Button>
-              <p className="text-xs text-muted-foreground text-center mt-2">
+              {(!createAmbassadorId || !createPeriodStart || !createPeriodEnd || !createMethod) && (
+                <p className="text-xs text-orange-600 text-center mt-2" data-testid="text-create-validation">
+                  {[
+                    !createAmbassadorId && "ambassador",
+                    !createPeriodStart && "start date",
+                    !createPeriodEnd && "end date",
+                    !createMethod && "payout method",
+                  ].filter(Boolean).join(", ")} required
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground text-center mt-1">
                 After creating, you'll be taken to the detail view where you can link approved commissions and manage status.
               </p>
             </CardContent>
@@ -382,7 +394,7 @@ export default function AdminPayouts() {
                     <div><span className="text-muted-foreground block">Period</span>{fmtDate(p.payout_period_start)} — {fmtDate(p.payout_period_end)}</div>
                     <div><span className="text-muted-foreground block">Status</span><StatusBadge status={p.payout_status} /></div>
                     <div><span className="text-muted-foreground block">Total</span><strong className="text-lg">{fmt(linkedTotal)}</strong></div>
-                    {p.payout_method && <div><span className="text-muted-foreground block">Method</span>{p.payout_method}</div>}
+                    {p.payout_method && <div><span className="text-muted-foreground block">Method</span>{fmtMethod(p.payout_method)}</div>}
                     {p.external_payout_id && <div><span className="text-muted-foreground block">External Ref</span><span className="font-mono text-xs">{p.external_payout_id}</span></div>}
                     {p.paid_at && <div><span className="text-muted-foreground block">Paid Date</span>{fmtDate(p.paid_at)}</div>}
                     {p.notes && <div className="col-span-2"><span className="text-muted-foreground block">Notes</span>{p.notes}</div>}
@@ -651,7 +663,7 @@ export default function AdminPayouts() {
                         </td>
                         <td className="p-3 text-xs font-semibold text-right">{fmt(p.computed_total)}</td>
                         <td className="p-3 text-xs text-center">{p.commission_count}</td>
-                        <td className="p-3 text-xs">{p.payout_method || "—"}</td>
+                        <td className="p-3 text-xs">{fmtMethod(p.payout_method)}</td>
                         <td className="p-3 text-center"><StatusBadge status={p.payout_status} /></td>
                         <td className="p-3 text-xs font-mono truncate max-w-[80px]">{p.external_payout_id || "—"}</td>
                         <td className="p-3 text-xs text-muted-foreground">{p.paid_at ? fmtDate(p.paid_at) : "—"}</td>

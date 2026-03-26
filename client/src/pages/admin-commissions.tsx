@@ -535,7 +535,7 @@ function CommissionTable({
             <th className="text-right p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("revenue_amount")} data-testid="sort-revenue">
               <span className="inline-flex items-center gap-1">Revenue <SortIcon col="revenue_amount" /></span>
             </th>
-            <th className="text-right p-3 font-medium text-xs">Rate</th>
+            <th className="text-right p-3 font-medium text-xs" title="Rate at time of conversion">Rate</th>
             <th className="text-right p-3 font-medium text-xs cursor-pointer select-none" onClick={() => toggleSort("commission_amount")} data-testid="sort-amount">
               <span className="inline-flex items-center gap-1">Commission <SortIcon col="commission_amount" /></span>
             </th>

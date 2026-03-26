@@ -748,6 +748,7 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                         <option value="">Not set</option>
                         <option value="check">Check</option>
                         <option value="direct_deposit">Direct Deposit (ACH)</option>
+                        <option value="wire">Bank Wire</option>
                         <option value="paypal">PayPal</option>
                         <option value="venmo">Venmo</option>
                         <option value="zelle">Zelle</option>
@@ -851,7 +852,7 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                     <div>
                       <span className="text-xs text-muted-foreground">Payout Method</span>
                       <p className="font-medium" data-testid="text-payout-method">
-                        {{check:"Check",direct_deposit:"Direct Deposit",paypal:"PayPal",venmo:"Venmo",zelle:"Zelle",stripe:"Stripe Connect",other:"Other"}[amb.payout_method] || amb.payout_method}
+                        {{check:"Check",direct_deposit:"Direct Deposit (ACH)",ach:"Direct Deposit (ACH)",wire:"Bank Wire",paypal:"PayPal",venmo:"Venmo",zelle:"Zelle",stripe:"Stripe Connect",other:"Other"}[amb.payout_method] || amb.payout_method}
                       </p>
                     </div>
                   )}
@@ -951,24 +952,30 @@ function AmbassadorDetailView({ ambassadorId, onBack }: { ambassadorId: string; 
                   <p className="text-xs text-muted-foreground">Total Paid Out</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-3">
-                <div className="text-center text-sm">
-                  <span className="text-muted-foreground text-xs block">Commissions</span>
-                  <span className="font-medium">{amb.performance.total_commissions}</span>
-                  <span className="text-xs text-muted-foreground ml-1">
-                    ({amb.performance.pending_commissions}p / {amb.performance.approved_commissions}a / {amb.performance.paid_commissions}pd)
-                  </span>
+              {amb.performance.total_leads === 0 && parseFloat(amb.performance.total_revenue || "0") === 0 && amb.performance.total_commissions === 0 ? (
+                <p className="text-xs text-muted-foreground text-center mt-3 italic" data-testid="perf-empty-hint">
+                  No activity yet — share your links to start generating leads.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3 mt-3">
+                  <div className="text-center text-sm">
+                    <span className="text-muted-foreground text-xs block">Commissions</span>
+                    <span className="font-medium">{amb.performance.total_commissions}</span>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      ({amb.performance.pending_commissions}p / {amb.performance.approved_commissions}a / {amb.performance.paid_commissions}pd)
+                    </span>
+                  </div>
+                  <div className="text-center text-sm">
+                    <span className="text-muted-foreground text-xs block">Payouts</span>
+                    <span className="font-medium">{amb.performance.total_payouts}</span>
+                    <span className="text-xs text-muted-foreground ml-1">({amb.performance.paid_payouts} paid)</span>
+                  </div>
+                  <div className="text-center text-sm">
+                    <span className="text-muted-foreground text-xs block">Clicks</span>
+                    <span className="font-medium">{amb.activity.total_clicks}</span>
+                  </div>
                 </div>
-                <div className="text-center text-sm">
-                  <span className="text-muted-foreground text-xs block">Payouts</span>
-                  <span className="font-medium">{amb.performance.total_payouts}</span>
-                  <span className="text-xs text-muted-foreground ml-1">({amb.performance.paid_payouts} paid)</span>
-                </div>
-                <div className="text-center text-sm">
-                  <span className="text-muted-foreground text-xs block">Clicks</span>
-                  <span className="font-medium">{amb.activity.total_clicks}</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
