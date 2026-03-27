@@ -508,7 +508,11 @@ async function qualifyReferralForUser(referredUserId: string): Promise<{ qualifi
   }
 
   const now = new Date();
-  const entryMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const fallbackMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const activeMonthRows = await pgQuery(
+    `SELECT month FROM sweepstakes_months WHERE status = 'active' ORDER BY month DESC LIMIT 1`
+  );
+  const entryMonth = activeMonthRows.length > 0 ? activeMonthRows[0].month : fallbackMonth;
 
   const txResult = await pgQuery(
     `WITH updated AS (

@@ -1,0 +1,134 @@
+--- STEP 62.3 / STEP 63.2 – REFERRAL CAPTURE + QUALIFICATION + ENTRY CREATION ---
+
+We have completed:
+- Step 62.1 (referral + sweepstakes data model)
+- Step 62.2 (referral code + read flow already exists)
+
+This step introduces actual referral behavior.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Implement the referral lifecycle:
+
+1. referral link used
+2. pending referral created
+3. referral becomes qualified
+4. one monthly entry created on qualification
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) REFERRAL CAPTURE (PENDING STATE)
+
+When a user signs up using a referral link:
+
+- detect or persist referral code from URL (e.g. ?ref=ABC123) through the existing signup/onboarding/session flow
+- once the referred user is known, create a record in user_referrals with:
+  - referrer_user_id
+  - referred_user_id
+  - referral_code
+  - status = "pending"
+  - created_at
+
+IMPORTANT:
+- this must not award an entry yet
+- this must not mark as qualified yet
+- hook into the cleanest existing flow; do not invent a parallel signup architecture
+
+-------------------------------------
+
+2) REFERRAL QUALIFICATION LOGIC
+
+Define and implement the launch-safe qualification rule:
+
+- user account created
+AND
+- email verified
+AND
+- onboarding completed
+
+When qualification happens:
+
+- update user_referrals.status → "qualified"
+- set qualified_at timestamp
+
+IMPORTANT:
+- qualification must be idempotent
+- repeated qualification checks must not create duplicates
+
+-------------------------------------
+
+3) ENTRY CREATION ON QUALIFICATION
+
+When a referral becomes qualified:
+
+- create exactly ONE entry in referral_entries:
+  - user_id = referrer_user_id
+  - month bucket = current active sweepstakes month if available, otherwise fallback to current YYYY-MM
+  - source = "referral"
+  - linked referral_id
+
+IMPORTANT:
+- do NOT allow duplicate entries for same referral
+- enforce 1 referral = 1 entry
+
+-------------------------------------
+
+4) DUPLICATE / SAFETY HANDLING
+
+Must prevent:
+- same referred user generating multiple entries
+- duplicate referral records where possible
+- self-referrals if detectable
+- repeated qualification from duplicating entries
+
+-------------------------------------
+
+5) MONTH BUCKET LOGIC
+
+Ensure entry is assigned to:
+- current active sweepstakes month when present
+- fallback to current YYYY-MM if no active month record exists yet
+
+-------------------------------------
+
+IMPORTANT RULES
+-------------------------------------
+
+- consumer referrals only
+- do NOT build leaderboard yet
+- do NOT build UI yet
+- do NOT build winner selection yet
+- do NOT build partner/business referral logic
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. how referral code is captured/persisted from URL
+2. how pending referrals are stored
+3. qualification rule implemented
+4. how duplicate entry prevention is enforced
+5. how month bucket is determined
+6. exact hook point used for capture
+7. exact hook point used for qualification
+8. any required Supabase/manual steps
+9. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Have a working backend flow:
+
+Referral link used
+→ pending referral created
+→ qualification triggered
+→ entry created (1 per referral, correct month)
+
+--- END ---
