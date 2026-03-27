@@ -77,28 +77,42 @@ export default function GetHelp() {
   };
 
   return (
-    <div className="flex flex-col bg-background" style={{ height: '100dvh', minHeight: '100dvh' }}>
+    <div className="flex flex-col bg-background md:bg-muted/30" style={{ height: '100dvh', minHeight: '100dvh' }}>
 
-      {/* Header */}
-      <div className="bg-primary px-4 pt-6 pb-5 md:pt-12 md:pb-10 flex flex-col items-center text-center shrink-0">
+      {/* Mobile Header — green hero, hidden on desktop */}
+      <div className="bg-primary px-4 pt-6 pb-5 flex flex-col items-center text-center shrink-0 md:hidden">
         <img
           src={logoImg}
           alt={platform.name}
-          className="h-24 md:h-44 w-auto object-contain drop-shadow-xl mb-3 md:mb-6"
+          className="h-24 w-auto object-contain drop-shadow-xl mb-3"
         />
-        <div className="flex items-center gap-2 mb-1 md:mb-2">
+        <div className="flex items-center gap-2 mb-1">
           <Compass className="h-5 w-5 text-white/80" />
-          <h1 className="text-lg md:text-xl font-heading font-extrabold text-white tracking-tight">
+          <h1 className="text-lg font-heading font-extrabold text-white tracking-tight">
             How can we help you?
           </h1>
         </div>
-        <p className="text-white/70 text-xs md:text-sm leading-relaxed max-w-sm">
+        <p className="text-white/70 text-xs leading-relaxed max-w-sm">
           Tell us what you need and we'll connect you to the right support near you.
         </p>
       </div>
 
-      {/* Form */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 md:pt-8 pb-16 max-w-lg mx-auto w-full space-y-5 md:space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Form — mobile: scrollable below hero / desktop: centered card */}
+      <div className="flex-1 min-h-0 overflow-y-auto md:flex md:items-start md:justify-center md:pt-12" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="px-4 pt-4 pb-16 max-w-lg mx-auto w-full space-y-5 md:bg-background md:rounded-2xl md:shadow-lg md:border md:border-border/50 md:p-8 md:my-0 md:space-y-6">
+
+        {/* Desktop card header — hidden on mobile */}
+        <div className="hidden md:block space-y-1">
+          <div className="flex items-center gap-2">
+            <Compass className="h-5 w-5 text-primary" />
+            <h1 className="text-xl font-heading font-extrabold text-foreground tracking-tight">
+              How can we help?
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Tell us what you need and we'll point you in the right direction.
+          </p>
+        </div>
 
         {/* Category */}
         <div className="space-y-2">
@@ -224,6 +238,7 @@ export default function GetHelp() {
         <p className="text-[11px] text-muted-foreground text-center pb-6">
           Free to use. No account required. Your information is private and secure.
         </p>
+        </div>
       </div>
 
       <NavigatorModal
