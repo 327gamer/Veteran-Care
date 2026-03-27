@@ -74,3 +74,18 @@ CREATE TABLE IF NOT EXISTS sweepstakes_winners (
 
 CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_month ON sweepstakes_winners(month);
 CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_user ON sweepstakes_winners(user_id);
+
+-- 5) user_referral_profiles — permanent referral code per user (Step 62.2)
+CREATE TABLE IF NOT EXISTS user_referral_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL UNIQUE,
+  referral_code TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_urp_user_id ON user_referral_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_urp_referral_code ON user_referral_profiles(referral_code);
+
+-- 6) Add source column to referral_entries (Step 62.2)
+ALTER TABLE referral_entries ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'referral';

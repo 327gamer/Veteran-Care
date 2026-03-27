@@ -415,10 +415,66 @@ async function ensureReferralSweepstakesTables() {
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_month ON sweepstakes_winners(month)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_user ON sweepstakes_winners(user_id)`);
 
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS user_referral_profiles (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT NOT NULL UNIQUE,
+        referral_code TEXT NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_urp_user_id ON user_referral_profiles(user_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_urp_referral_code ON user_referral_profiles(referral_code)`);
+
+    await pgQuery(`ALTER TABLE referral_entries ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'referral'`);
+
     console.log("[schema] referral + sweepstakes tables ready");
   } catch (err: any) {
     console.log("[schema] referral + sweepstakes tables setup error:", err.message);
   }
+}
+
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 7; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function ensureUserReferralCode(userId: string): Promise<string> {
+  const existing = await pgQuery(
+    `SELECT referral_code FROM user_referral_profiles WHERE user_id = $1`,
+    [userId]
+  );
+  if (existing.length > 0) return existing[0].referral_code;
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateReferralCode();
+    try {
+      const rows = await pgQuery(
+        `INSERT INTO user_referral_profiles (user_id, referral_code)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id) DO NOTHING
+         RETURNING referral_code`,
+        [userId, code]
+      );
+      if (rows.length > 0) return rows[0].referral_code;
+      const recheck = await pgQuery(
+        `SELECT referral_code FROM user_referral_profiles WHERE user_id = $1`,
+        [userId]
+      );
+      if (recheck.length > 0) return recheck[0].referral_code;
+    } catch (err: any) {
+      if (err.code === "23505" && err.constraint?.includes("referral_code")) {
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("Failed to generate unique referral code after 10 attempts");
 }
 
 async function backfillNavAmbassadorId() {
@@ -2866,6 +2922,51 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
     return res.json(normalizeResourceList(data || []));
+  });
+
+  app.get("/api/referral/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+    try {
+      const referralCode = await ensureUserReferralCode(user.id);
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+      const entryRows = await pgQuery(
+        `SELECT COALESCE(SUM(entry_count), 0)::int AS total
+         FROM referral_entries WHERE user_id = $1 AND entry_month = $2`,
+        [user.id, currentMonth]
+      );
+
+      const qualifiedRows = await pgQuery(
+        `SELECT COUNT(*)::int AS total
+         FROM user_referrals
+         WHERE referrer_user_id = $1
+           AND status = 'qualified'
+           AND qualified_at >= $2::date
+           AND qualified_at < ($2::date + interval '1 month')`,
+        [user.id, `${currentMonth}-01`]
+      );
+
+      return res.json({
+        userId: user.id,
+        referralCode,
+        referralLink: `https://veterancare.com/start?ref=${referralCode}`,
+        currentMonth,
+        currentMonthEntryCount: entryRows[0]?.total || 0,
+        currentMonthQualifiedReferralCount: qualifiedRows[0]?.total || 0,
+      });
+    } catch (err: any) {
+      console.log("[referral] /me error:", err.message);
+      return res.status(500).json({ error: "Failed to load referral info" });
+    }
   });
 
   app.get("/api/saved-resources", async (req, res) => {

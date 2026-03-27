@@ -1,0 +1,84 @@
+Step 62.2 — add permanent user referral code storage + minimal referral read endpoint.
+
+IMPORTANT RULES:
+- Keep this step narrow and safe.
+- Do NOT touch ambassador, attribution, commission, payout, or admin logic.
+- Do NOT build qualification automation yet.
+- Do NOT build UI yet.
+- Do NOT build leaderboard yet.
+- Do NOT build partner/business referral logic.
+
+GOAL:
+Add a permanent referral code per user and expose a minimal authenticated endpoint so the frontend can later show the user their referral link and basic stats.
+
+TASK A — determine the cleanest place for permanent referral codes
+1. Inspect the current user/account/profile structure.
+2. If there is an existing stable app profile/user record that is the right home for user-level metadata, add:
+   - referral_code text unique null initially, then backfill/populate
+3. If there is NOT a clean existing place for this, create a very small dedicated table:
+   - user_referral_profiles
+     - id uuid primary key default gen_random_uuid()
+     - user_id text not null unique
+     - referral_code text not null unique
+     - created_at timestamptz not null default now()
+     - updated_at timestamptz not null default now()
+
+IMPORTANT:
+- Choose the launch-safe option that best matches the current architecture.
+- Tell us explicitly which option you chose and why.
+
+TASK B — referral code generation
+Implement a safe deterministic helper/service to ensure every user can have a referral code.
+
+Requirements:
+- referral code should be short, readable, and URL-safe
+- uppercase letters + numbers only
+- target length around 6–8 chars
+- must retry on collision
+- do not overwrite an existing referral code
+- include a helper like ensureUserReferralCode(userId)
+
+TASK C — referral_entries source support
+Check whether referral_entries already has a source column.
+- If missing, add:
+  - source text not null default 'referral'
+- Keep it migration-safe
+- Do NOT rebuild the table
+
+TASK D — minimal authenticated endpoint
+Add a minimal endpoint:
+
+GET /api/referral/me
+
+Behavior:
+- authenticated user only
+- ensures the current user has a referral code
+- returns:
+  - userId
+  - referralCode
+  - referralLink using current app base path pattern /start?ref=CODE
+  - currentMonth
+  - currentMonthEntryCount
+  - currentMonthQualifiedReferralCount
+
+Implementation notes:
+- use the existing auth/session pattern already used in this app
+- do not create frontend yet
+- keep queries efficient
+- if there is already a standard route/service pattern, follow it
+
+TASK E — validation
+Verify:
+- existing user gets a referral code generated
+- endpoint returns expected payload
+- app remains healthy
+- no existing systems regress
+
+DELIVERABLES:
+1. exact files changed
+2. whether referral_code was added to an existing table or a new table was created
+3. if any backfill ran
+4. sample response shape from GET /api/referral/me
+5. any manual steps needed from me
+
+Keep this as one controlled slice only.
