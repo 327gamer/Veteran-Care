@@ -1,0 +1,74 @@
+UI POLISH FIX — Reduce Hero Height on Referral / New-User Get-Help Flow So It Matches Homepage Experience More Closely
+
+IMPORTANT:
+This is a focused layout polish fix only.
+Do NOT change referral tracking logic.
+Do NOT change qualification logic.
+Do NOT change backend behavior.
+Do NOT redesign the page structure.
+Do NOT remove the referral attachment behavior.
+
+ISSUE:
+The referral/new-user get-help page is now functioning better, but the top hero section still takes up too much vertical space compared to the normal homepage flow.
+
+Based on screenshots:
+- the logo is too large / positioned too low
+- the “How can we help you?” heading block sits too low
+- too much vertical green hero space is being used
+- users do not see enough of the actual help options immediately
+- the page still does not feel visually equivalent to the normal homepage path
+
+OBJECTIVE:
+Tighten the hero/header area on the referral/new-user get-help page so more of the actual questionnaire/options are visible above the fold, especially on mobile.
+
+REQUIREMENTS:
+
+1) Reduce vertical height used by the hero section on the referral/new-user get-help page
+- pull the content upward
+- reduce top/bottom padding
+- reduce excess empty green space
+
+2) Scale down hero elements appropriately on mobile
+- logo should be smaller
+- heading/subheading block should sit higher
+- spacing between logo, heading, and form section should be tightened
+
+3) Keep visual consistency with the homepage experience
+- same overall tone
+- same branding
+- but more compact so users reach the actionable content faster
+
+4) Prioritize above-the-fold usefulness on mobile
+Target result:
+- users should see substantially more of the category/help options without needing as much scrolling
+- first actionable section should begin higher on screen
+
+5) Preserve:
+- responsive layout
+- no horizontal scroll
+- no bottom nav overlap
+- no broken spacing on desktop
+- no broken referral path behavior
+
+6) Compare both flows directly:
+- normal homepage get-help flow
+- referral/new-user get-help flow
+
+The referral/new-user version does NOT have to be pixel-identical, but it should feel clearly aligned and should not waste vertical space.
+
+SUGGESTED AREAS TO REVIEW:
+- hero min-height / fixed height
+- logo size classes
+- hero padding-top / padding-bottom
+- spacing below heading/subheading
+- margin before first questionnaire section
+- mobile breakpoint-specific spacing rules
+
+DELIVERABLES:
+1. exact files changed
+2. root cause of excess vertical spacing
+3. exact layout adjustments made
+4. confirmation that more of the help form is now visible above the fold on mobile
+5. publish/restart requirements
+
+This is a visual compaction/polish fix only.
