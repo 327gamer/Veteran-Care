@@ -1,0 +1,92 @@
+DESKTOP BEHAVIOR FIX — /get-help Should Behave Like Homepage Modal, Not Just Look Similar
+
+IMPORTANT:
+We are close, but the desktop behavior is still wrong.
+
+The current desktop version of /get-help now looks more like the homepage modal, but it still behaves like a separate page/screen.
+That is NOT the target.
+
+TARGET BEHAVIOR ON DESKTOP:
+The /get-help experience should behave like the homepage modal/dialog flow:
+- centered modal/card experience
+- internal scrollable content area
+- clear close/exit behavior
+- should not feel like a dead-end full page
+
+MOBILE:
+- leave mobile behavior as-is
+- do NOT break the current mobile version
+
+-------------------------------------
+ISSUE TO FIX
+-------------------------------------
+
+Current desktop problem:
+- /get-help is rendering as a separate page-like screen
+- user cannot exit it the same way as the homepage modal flow
+- modal-style internal scroll behavior is missing or not equivalent
+- behavior is not matching the normal homepage get-help experience
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+On desktop/tablet, make /get-help functionally match the homepage get-help modal flow as closely as possible.
+
+This means:
+1. modal/dialog style presentation
+2. internal scroll area for content
+3. proper close/dismiss or back behavior
+4. preserve ability to reach the same next steps/actions
+
+-------------------------------------
+REQUIREMENTS
+-------------------------------------
+
+1) Reuse the same modal/dialog container pattern used by the homepage get-help flow if possible
+- same overlay/dialog structure
+- same internal scroll behavior
+- same close/X behavior or equivalent exit control
+
+2) If exact reuse is not possible, then replicate the homepage modal behavior closely:
+- centered dialog/card
+- constrained max height
+- overflow-y auto inside the content area
+- header stays accessible
+- user can close/exit clearly
+
+3) Preserve referral/new-user path behavior
+- do NOT break referral context
+- do NOT break routing/state needed for referral flow
+- do NOT remove any data needed later in the get-help process
+
+4) Desktop only
+- apply this behavior to md/lg desktop/tablet presentation
+- keep current mobile implementation intact
+
+5) Validate:
+- open regular homepage get-help flow on desktop
+- open referral/new-user get-help flow on desktop
+- confirm both now feel behaviorally equivalent
+- confirm internal scroll works
+- confirm user can exit cleanly
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This is not just a styling task now.
+This is a behavior/parity task.
+
+We need desktop /get-help to POP UP and behave like the homepage dialog flow, not simply render as another standalone page.
+
+-------------------------------------
+DELIVERABLES
+-------------------------------------
+
+1. exact files changed
+2. whether the homepage modal/dialog component was reused or replicated
+3. how internal scrolling was implemented
+4. what close/exit behavior was added
+5. confirmation referral flow still works
+6. publish/restart requirements
