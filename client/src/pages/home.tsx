@@ -244,9 +244,7 @@ export default function Home() {
         </div>
         <Button
           data-testid="button-referral-cta"
-          variant="outline"
-          size="sm"
-          className="mt-3 w-full border-primary/20 text-primary font-semibold hover:bg-primary/10"
+          className="mt-3 w-full rounded-full"
           onClick={(e) => { e.stopPropagation(); setLocation("/referral"); }}
         >
           <Gift className="h-3.5 w-3.5 mr-1.5" />
