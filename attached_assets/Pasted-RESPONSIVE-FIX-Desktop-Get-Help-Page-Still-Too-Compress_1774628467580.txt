@@ -1,0 +1,83 @@
+RESPONSIVE FIX — Desktop Get-Help Page Still Too Compressed After Mobile Hero Optimization
+
+IMPORTANT:
+Mobile fix is GOOD — do NOT change mobile behavior.
+This task is DESKTOP/TABLET ONLY.
+
+ISSUE:
+After the recent mobile compaction fix, the desktop version of /get-help is now too vertically compressed.
+
+Screenshots show:
+- hero section feels too tight on desktop
+- not enough spacing between logo, heading, and form
+- form content starts too high
+- page feels visually cramped compared to proper desktop layout
+
+OBJECTIVE:
+Restore proper spacing and visual balance on desktop/tablet while keeping mobile compact.
+
+-------------------------------------
+REQUIREMENTS
+-------------------------------------
+
+1) Apply breakpoint-specific spacing (do NOT use mobile values globally)
+
+Ensure proper use of responsive classes:
+- mobile: current compact values (KEEP)
+- md / lg+: restore larger spacing
+
+2) Adjust these elements ONLY for desktop/tablet:
+
+Hero section:
+- increase vertical padding on md/lg (e.g. md:pt-10 md:pb-10 or similar)
+- increase spacing below logo
+- increase spacing below heading/subheading
+
+Logo:
+- ensure desktop size feels balanced (h-40 may be OK, but spacing around it is too tight)
+
+Form section:
+- increase top spacing before "What do you need help with?"
+- restore visual separation between hero and content
+
+3) Do NOT affect mobile
+
+Mobile must remain:
+- compact
+- above-the-fold optimized
+- improved from previous fix
+
+4) Validate BOTH:
+
+Mobile:
+- still compact
+- no regression
+
+Desktop:
+- balanced spacing
+- no cramped layout
+- clear separation between hero and form
+
+-------------------------------------
+TARGET RESULT
+-------------------------------------
+
+Mobile:
+- compact, efficient, usable
+
+Desktop:
+- breathable layout
+- proper visual hierarchy
+- no “jammed” feeling
+
+-------------------------------------
+DELIVERABLES
+-------------------------------------
+
+1. exact responsive classes updated
+2. confirmation mobile unchanged
+3. confirmation desktop spacing improved
+4. files modified
+5. republish requirements
+
+This is a breakpoint-specific spacing correction ONLY.

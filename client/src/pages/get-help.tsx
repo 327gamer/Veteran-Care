@@ -80,25 +80,25 @@ export default function GetHelp() {
     <div className="flex flex-col bg-background" style={{ height: '100dvh', minHeight: '100dvh' }}>
 
       {/* Header */}
-      <div className="bg-primary px-4 pt-6 pb-5 sm:pt-10 sm:pb-8 flex flex-col items-center text-center shrink-0">
+      <div className="bg-primary px-4 pt-6 pb-5 md:pt-12 md:pb-10 flex flex-col items-center text-center shrink-0">
         <img
           src={logoImg}
           alt={platform.name}
-          className="h-24 sm:h-40 w-auto object-contain drop-shadow-xl mb-3 sm:mb-5"
+          className="h-24 md:h-44 w-auto object-contain drop-shadow-xl mb-3 md:mb-6"
         />
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 md:mb-2">
           <Compass className="h-5 w-5 text-white/80" />
-          <h1 className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight">
+          <h1 className="text-lg md:text-xl font-heading font-extrabold text-white tracking-tight">
             How can we help you?
           </h1>
         </div>
-        <p className="text-white/70 text-xs sm:text-sm leading-relaxed max-w-sm">
+        <p className="text-white/70 text-xs md:text-sm leading-relaxed max-w-sm">
           Tell us what you need and we'll connect you to the right support near you.
         </p>
       </div>
 
       {/* Form */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 sm:pt-6 pb-16 max-w-lg mx-auto w-full space-y-5 sm:space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 md:pt-8 pb-16 max-w-lg mx-auto w-full space-y-5 md:space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
 
         {/* Category */}
         <div className="space-y-2">
