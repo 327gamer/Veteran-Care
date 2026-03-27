@@ -1,0 +1,113 @@
+Step 62.3 / Step 63.2 — implement referral capture + qualification + monthly entry creation.
+
+IMPORTANT RULES:
+- Keep this step narrow and safe.
+- Do NOT build homepage UI yet.
+- Do NOT build dashboard UI yet.
+- Do NOT build leaderboard yet.
+- Do NOT build winner selection yet.
+- Do NOT build partner/business referral logic.
+- Do NOT modify ambassador, attribution, commission, payout, or existing admin systems.
+
+OBJECTIVE:
+Implement the minimum backend flow so a consumer referral can be:
+1. captured
+2. stored as pending
+3. later marked qualified
+4. rewarded with exactly 1 monthly entry
+
+LAUNCH QUALIFICATION RULE:
+Use this launch-safe rule:
+- referred user creates an account
+AND
+- email is verified
+AND
+- onboarding is completed
+
+TASK A — referral capture from referral code
+Implement backend logic to support incoming referral code usage.
+
+Requirements:
+- when a new user lands/signs up using a referral code, the system must be able to associate that referral code with the newly created user
+- store a pending referral record in user_referrals
+- fields should include:
+  - referrer_user_id
+  - referred_user_id
+  - referral_code
+  - status = pending initially
+- prevent self-referral where possible
+- prevent duplicate rewarded referral relationships
+- if there is already an existing session/onboarding/start flow pattern, hook into it cleanly instead of inventing a new architecture
+
+IMPORTANT:
+If exact signup timing makes immediate referred_user_id capture difficult, implement the cleanest launch-safe backend pattern already compatible with the current auth/onboarding flow, and explain what hook point was used.
+
+TASK B — qualification helper/service
+Create a helper/service function that can be called once the referred user meets launch qualification.
+
+Suggested name:
+- qualifyReferralForUser(userId) or equivalent
+
+Behavior:
+- find pending referral tied to the referred user
+- verify it is not already qualified/invalid
+- verify user is not self-referring
+- mark referral as qualified
+- set qualified_at timestamp
+- create exactly one row in referral_entries
+- set:
+  - user_id = referrer user
+  - referral_id = qualifying user_referrals.id
+  - entry_month = current YYYY-MM
+  - entry_count = 1
+  - source = 'referral'
+- must be idempotent:
+  - if called multiple times, do not create duplicate entries
+
+TASK C — qualification trigger integration
+Wire the qualification helper into the cleanest existing post-auth / onboarding-complete backend point available in the app.
+
+Launch rule again:
+qualified only after:
+- account exists
+- email verified
+- onboarding completed
+
+If email verification status is not easily available in the same place, use the cleanest reliable check already available in the current auth pattern and document it.
+
+TASK D — minimal internal/admin-safe visibility
+Without building admin UI yet, add one minimal backend read capability for validation if needed.
+
+Choose one:
+- either a small internal helper used in logs/tests
+- or a minimal protected endpoint for validation only
+
+This should let us confirm:
+- pending referral created
+- qualified referral updated
+- referral entry created once
+
+Keep it minimal and safe.
+
+TASK E — validation
+Verify the following flow end-to-end in backend:
+1. referrer has a referral code
+2. referred user signs up / is associated to that code
+3. pending referral record exists
+4. referred user completes qualification conditions
+5. referral becomes qualified
+6. exactly one referral_entries row is created
+7. repeated qualification call does not duplicate entry
+
+DELIVERABLES:
+1. exact files changed
+2. exact hook point used for referral capture
+3. exact hook point used for qualification
+4. any manual steps required from me
+5. whether republish/restart is needed
+6. sample record flow for:
+   - pending referral
+   - qualified referral
+   - created entry
+
+Keep this as one controlled slice only.

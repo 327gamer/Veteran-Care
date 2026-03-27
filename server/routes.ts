@@ -477,6 +477,62 @@ async function ensureUserReferralCode(userId: string): Promise<string> {
   throw new Error("Failed to generate unique referral code after 10 attempts");
 }
 
+async function qualifyReferralForUser(referredUserId: string): Promise<{ qualified: boolean; reason: string; referralId?: string; entryId?: string }> {
+  const pending = await pgQuery(
+    `SELECT id, referrer_user_id, referral_code
+     FROM user_referrals
+     WHERE referred_user_id = $1 AND status = 'pending'
+     LIMIT 1`,
+    [referredUserId]
+  );
+  if (pending.length === 0) {
+    return { qualified: false, reason: "no_pending_referral" };
+  }
+
+  const referral = pending[0];
+
+  if (referral.referrer_user_id === referredUserId) {
+    await pgQuery(
+      `UPDATE user_referrals SET status = 'invalid', updated_at = NOW() WHERE id = $1`,
+      [referral.id]
+    );
+    return { qualified: false, reason: "self_referral" };
+  }
+
+  const existingEntry = await pgQuery(
+    `SELECT id FROM referral_entries WHERE referral_id = $1`,
+    [referral.id]
+  );
+  if (existingEntry.length > 0) {
+    return { qualified: false, reason: "already_qualified" };
+  }
+
+  const now = new Date();
+  const entryMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const txResult = await pgQuery(
+    `WITH updated AS (
+       UPDATE user_referrals
+       SET status = 'qualified', qualified_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND status = 'pending'
+       RETURNING id, referrer_user_id
+     )
+     INSERT INTO referral_entries (user_id, referral_id, entry_month, entry_count, source)
+     SELECT updated.referrer_user_id, updated.id, $2, 1, 'referral'
+     FROM updated
+     ON CONFLICT (referral_id) DO NOTHING
+     RETURNING id`,
+    [referral.id, entryMonth]
+  );
+
+  const entryId = txResult.length > 0 ? txResult[0].id : null;
+  if (entryId) {
+    console.log(`[referral] Qualified: referral=${referral.id}, referrer=${referral.referrer_user_id}, entry=${entryId}`);
+    return { qualified: true, reason: "qualified", referralId: referral.id, entryId };
+  }
+  return { qualified: false, reason: "already_qualified" };
+}
+
 async function backfillNavAmbassadorId() {
   if (!hasNavAmbassadorId) return;
   try {
@@ -2969,6 +3025,92 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/referral/capture", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid session" });
+    }
+    try {
+      const { referral_code } = req.body;
+      if (!referral_code || typeof referral_code !== "string" || referral_code.trim().length < 4) {
+        return res.status(400).json({ error: "Valid referral_code is required" });
+      }
+      const code = referral_code.trim().toUpperCase();
+
+      const referrer = await pgQuery(
+        `SELECT user_id FROM user_referral_profiles WHERE referral_code = $1`,
+        [code]
+      );
+      if (referrer.length === 0) {
+        return res.status(404).json({ error: "Referral code not found" });
+      }
+      if (referrer[0].user_id === user.id) {
+        return res.status(400).json({ error: "Cannot use your own referral code" });
+      }
+
+      const existing = await pgQuery(
+        `SELECT id FROM user_referrals WHERE referred_user_id = $1`,
+        [user.id]
+      );
+      if (existing.length > 0) {
+        return res.json({ captured: false, reason: "already_referred" });
+      }
+
+      let rows: any[];
+      try {
+        rows = await pgQuery(
+          `INSERT INTO user_referrals (referrer_user_id, referred_user_id, referral_code, status, ip_address, user_agent)
+           VALUES ($1, $2, $3, 'pending', $4, $5)
+           RETURNING id`,
+          [
+            referrer[0].user_id,
+            user.id,
+            code,
+            req.ip || null,
+            (req.headers["user-agent"] || "").substring(0, 500) || null,
+          ]
+        );
+      } catch (insertErr: any) {
+        if (insertErr.code === "23505") {
+          return res.json({ captured: false, reason: "already_referred" });
+        }
+        throw insertErr;
+      }
+      console.log(`[referral] Captured: referral=${rows[0].id}, referrer=${referrer[0].user_id}, referred=${user.id}, code=${code}`);
+      return res.json({ captured: true, referralId: rows[0].id });
+    } catch (err: any) {
+      console.log("[referral] capture error:", err.message);
+      return res.status(500).json({ error: "Failed to capture referral" });
+    }
+  });
+
+  app.get("/api/admin/referrals", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!adminKey || !process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { limit, offset } = parsePagination(req, 100, 500);
+      const statusFilter = req.query.status as string | undefined;
+      let sql = `SELECT ur.*, re.id AS entry_id, re.entry_month, re.entry_count
+        FROM user_referrals ur
+        LEFT JOIN referral_entries re ON re.referral_id = ur.id`;
+      const params: any[] = [];
+      if (statusFilter && ["pending", "qualified", "invalid"].includes(statusFilter)) {
+        params.push(statusFilter);
+        sql += ` WHERE ur.status = $${params.length}`;
+      }
+      sql += ` ORDER BY ur.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      const rows = await pgQuery(sql, params);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/saved-resources", async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -3165,6 +3307,12 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
 
+    if (data?.profile_complete && user.email_confirmed_at) {
+      qualifyReferralForUser(user.id).catch((err) =>
+        console.log("[referral] qualification check error (non-blocking):", err.message)
+      );
+    }
+
     return res.json({ profile: data });
   });
 
@@ -3207,6 +3355,13 @@ export async function registerRoutes(
     if (error) {
       return res.status(500).json({ error: error.message });
     }
+
+    if (data?.profile_complete && user.email_confirmed_at) {
+      qualifyReferralForUser(user.id).catch((err) =>
+        console.log("[referral] qualification check error (non-blocking):", err.message)
+      );
+    }
+
     return res.json({ profile: data });
   });
 
