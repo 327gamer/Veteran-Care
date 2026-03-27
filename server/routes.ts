@@ -507,12 +507,7 @@ async function qualifyReferralForUser(referredUserId: string): Promise<{ qualifi
     return { qualified: false, reason: "already_qualified" };
   }
 
-  const now = new Date();
-  const fallbackMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const activeMonthRows = await pgQuery(
-    `SELECT month FROM sweepstakes_months WHERE status = 'active' ORDER BY month DESC LIMIT 1`
-  );
-  const entryMonth = activeMonthRows.length > 0 ? activeMonthRows[0].month : fallbackMonth;
+  const entryMonth = await getCurrentSweepstakesMonth();
 
   const txResult = await pgQuery(
     `WITH updated AS (
@@ -535,6 +530,15 @@ async function qualifyReferralForUser(referredUserId: string): Promise<{ qualifi
     return { qualified: true, reason: "qualified", referralId: referral.id, entryId };
   }
   return { qualified: false, reason: "already_qualified" };
+}
+
+async function getCurrentSweepstakesMonth(): Promise<string> {
+  const activeRows = await pgQuery(
+    `SELECT month FROM sweepstakes_months WHERE status = 'active' ORDER BY month DESC LIMIT 1`
+  );
+  if (activeRows.length > 0) return activeRows[0].month;
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 async function backfillNavAmbassadorId() {
@@ -2996,8 +3000,7 @@ export async function registerRoutes(
     }
     try {
       const referralCode = await ensureUserReferralCode(user.id);
-      const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const currentMonth = await getCurrentSweepstakesMonth();
 
       const entryRows = await pgQuery(
         `SELECT COALESCE(SUM(entry_count), 0)::int AS total
@@ -3015,6 +3018,22 @@ export async function registerRoutes(
         [user.id, `${currentMonth}-01`]
       );
 
+      const rankRows = await pgQuery(
+        `SELECT rank FROM (
+           SELECT user_id,
+             RANK() OVER (
+               ORDER BY SUM(entry_count) DESC,
+                        MAX(created_at) ASC,
+                        user_id ASC
+             ) AS rank
+           FROM referral_entries
+           WHERE entry_month = $1
+           GROUP BY user_id
+         ) ranked
+         WHERE user_id = $2`,
+        [currentMonth, user.id]
+      );
+
       return res.json({
         userId: user.id,
         referralCode,
@@ -3022,6 +3041,7 @@ export async function registerRoutes(
         currentMonth,
         currentMonthEntryCount: entryRows[0]?.total || 0,
         currentMonthQualifiedReferralCount: qualifiedRows[0]?.total || 0,
+        leaderboardRank: rankRows.length > 0 ? parseInt(rankRows[0].rank) : null,
       });
     } catch (err: any) {
       console.log("[referral] /me error:", err.message);
@@ -3112,6 +3132,146 @@ export async function registerRoutes(
       return res.json(rows);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/referral/leaderboard", async (req, res) => {
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const topN = Math.min(parseInt(req.query.limit as string) || 25, 100);
+
+      const rows = await pgQuery(
+        `SELECT
+           re.user_id,
+           SUM(re.entry_count)::int AS entries,
+           MAX(re.created_at) AS last_entry_at,
+           RANK() OVER (
+             ORDER BY SUM(re.entry_count) DESC,
+                      MAX(re.created_at) ASC,
+                      re.user_id ASC
+           ) AS rank
+         FROM referral_entries re
+         WHERE re.entry_month = $1
+         GROUP BY re.user_id
+         ORDER BY rank ASC
+         LIMIT $2`,
+        [currentMonth, topN]
+      );
+
+      if (rows.length === 0) {
+        return res.json({ month: currentMonth, leaderboard: [] });
+      }
+
+      const userIds = rows.map((r: any) => r.user_id);
+      let profileMap: Record<string, { first_name?: string; last_name?: string }> = {};
+      try {
+        const { data: profiles } = await supabaseAdmin
+          .from("user_profiles")
+          .select("id, first_name, last_name")
+          .in("id", userIds);
+        if (profiles) {
+          for (const p of profiles) {
+            profileMap[p.id] = { first_name: p.first_name, last_name: p.last_name };
+          }
+        }
+      } catch {}
+
+      const leaderboard = rows.map((r: any, idx: number) => {
+        const profile = profileMap[r.user_id];
+        let displayName: string;
+        if (profile?.first_name && profile?.last_name) {
+          displayName = `${profile.first_name} ${profile.last_name.charAt(0).toUpperCase()}.`;
+        } else {
+          const hash = r.user_id.replace(/-/g, "").substring(0, 4).toUpperCase();
+          displayName = `Veteran #${hash}`;
+        }
+        return {
+          rank: parseInt(r.rank),
+          displayName,
+          entries: r.entries,
+        };
+      });
+
+      return res.json({ month: currentMonth, leaderboard });
+    } catch (err: any) {
+      console.log("[referral] leaderboard error:", err.message);
+      return res.status(500).json({ error: "Failed to load leaderboard" });
+    }
+  });
+
+  app.get("/api/admin/leaderboard", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!adminKey || !process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const { limit, offset } = parsePagination(req, 50, 200);
+
+      const rows = await pgQuery(
+        `SELECT
+           re.user_id,
+           SUM(re.entry_count)::int AS entries,
+           COUNT(re.id)::int AS qualified_referrals,
+           MAX(re.created_at) AS last_entry_at,
+           RANK() OVER (
+             ORDER BY SUM(re.entry_count) DESC,
+                      MAX(re.created_at) ASC,
+                      re.user_id ASC
+           ) AS rank
+         FROM referral_entries re
+         WHERE re.entry_month = $1
+         GROUP BY re.user_id
+         ORDER BY rank ASC
+         LIMIT $2 OFFSET $3`,
+        [currentMonth, limit, offset]
+      );
+
+      if (rows.length === 0) {
+        return res.json({ month: currentMonth, leaderboard: [] });
+      }
+
+      const userIds = rows.map((r: any) => r.user_id);
+      let profileMap: Record<string, any> = {};
+      try {
+        const { data: profiles } = await supabaseAdmin
+          .from("user_profiles")
+          .select("id, first_name, last_name, email, state, city")
+          .in("id", userIds);
+        if (profiles) {
+          for (const p of profiles) profileMap[p.id] = p;
+        }
+      } catch {}
+
+      const suspiciousRows = await pgQuery(
+        `SELECT referrer_user_id, COUNT(*)::int AS flagged
+         FROM user_referrals
+         WHERE referrer_user_id = ANY($1) AND suspicion_flags != '[]'::jsonb
+         GROUP BY referrer_user_id`,
+        [userIds]
+      );
+      const suspiciousMap: Record<string, number> = {};
+      for (const s of suspiciousRows) suspiciousMap[s.referrer_user_id] = s.flagged;
+
+      const leaderboard = rows.map((r: any) => {
+        const profile = profileMap[r.user_id] || {};
+        return {
+          rank: parseInt(r.rank),
+          userId: r.user_id,
+          firstName: profile.first_name || null,
+          lastName: profile.last_name || null,
+          email: profile.email || null,
+          state: profile.state || null,
+          city: profile.city || null,
+          entries: r.entries,
+          qualifiedReferrals: r.qualified_referrals,
+          lastEntryAt: r.last_entry_at,
+          suspiciousFlags: suspiciousMap[r.user_id] || 0,
+        };
+      });
+
+      return res.json({ month: currentMonth, leaderboard });
+    } catch (err: any) {
+      console.log("[admin] leaderboard error:", err.message);
+      return res.status(500).json({ error: "Failed to load admin leaderboard" });
     }
   });
 

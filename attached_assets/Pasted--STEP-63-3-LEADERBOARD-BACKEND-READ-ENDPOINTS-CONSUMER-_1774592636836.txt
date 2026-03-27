@@ -1,0 +1,142 @@
+--- STEP 63.3 – LEADERBOARD BACKEND + READ ENDPOINTS (CONSUMER ONLY) ---
+
+We have completed the referral lifecycle backend:
+
+- referral capture
+- pending → qualified progression
+- one monthly entry created on qualification
+
+Next step is leaderboard/backend visibility only.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Build the lightweight monthly leaderboard backend and read endpoints for the consumer referral sweepstakes system.
+
+This step must remain backend-focused, current-month-only, and launch-safe.
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) MONTHLY LEADERBOARD AGGREGATION
+
+Create backend logic to return current-month leaderboard standings based on qualified referral entries.
+
+Ranking basis:
+- primary sort: total referral_entries for current month DESC
+- tie-breaker 1: earliest last qualifying referral timestamp ASC
+- tie-breaker 2: user_id ASC for deterministic ordering
+
+Use:
+- active sweepstakes_months record first
+- fallback to current YYYY-MM if needed
+
+Keep this scoped to:
+- consumer referrals only
+- current month only
+
+-------------------------------------
+
+2) CURRENT USER REFERRAL SUMMARY ENDPOINT
+
+Review the existing authenticated referral read endpoint first.
+
+If possible:
+- extend the existing endpoint cleanly
+instead of creating duplicate overlapping functionality.
+
+Return for authenticated user:
+- referral code
+- referral link
+- current month entry count
+- total qualified referrals
+- current leaderboard rank (if available)
+- current month identifier
+
+Do NOT duplicate logic if /api/referral/me already exists and can be safely extended.
+
+-------------------------------------
+
+3) TOP LEADERBOARD READ ENDPOINT
+
+Add a lightweight current-month leaderboard read endpoint.
+
+Return:
+- rank
+- privacy-safe display label
+- entry count
+
+Privacy-safe display rule:
+- never expose email
+- use first name + last initial only if already safely available in the current user/profile model
+- otherwise use a safe fallback label such as Veteran #XXXX
+- keep this consistent and deterministic
+
+Do NOT expose unnecessary personal information.
+
+-------------------------------------
+
+4) ADMIN LEADERBOARD VIEW DATA ENDPOINT
+
+Add or extend an admin-safe leaderboard endpoint returning:
+- user/referrer identity
+- total qualified referrals
+- total entries
+- suspicious flags if available
+- current month scope
+- ranking position
+
+Reuse existing admin patterns where possible.
+Do not build winner draw logic yet.
+
+-------------------------------------
+
+5) MONTH SCOPING
+
+Use:
+- active sweepstakes_months record first
+- fallback to current YYYY-MM if needed
+
+This logic should be shared/reused across leaderboard and summary reads where possible.
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- consumer referral only
+- current month leaderboard only
+- no public shaming / over-gamification
+- no winner draw yet
+- no homepage UI yet
+- no dashboard card UI yet
+- no partner/business referral logic
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. leaderboard ranking logic
+2. endpoints added or extended
+3. privacy-safe display approach
+4. tie-breaker logic
+5. whether existing /api/referral/me was extended or a new endpoint was added
+6. any manual setup required
+7. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Have the backend ready to support:
+
+- user referral summary
+- current month leaderboard
+- admin leaderboard review
+
+without building the final UI yet.
+
+--- END ---
