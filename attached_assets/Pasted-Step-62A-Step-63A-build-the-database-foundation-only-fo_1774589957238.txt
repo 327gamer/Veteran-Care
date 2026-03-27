@@ -1,0 +1,116 @@
+Step 62A / Step 63A — build the database foundation only for the consumer referral loop and monthly sweepstakes.
+
+IMPORTANT RULES:
+- Do NOT modify any existing ambassador, attribution, commission, payout, or admin logic.
+- Do NOT rebuild any user/account systems.
+- This is an additive schema step only.
+- Keep changes narrow and migration-safe.
+
+TASK:
+Create a new database migration and wire up server types/models for the following new tables:
+
+1) user_referrals
+Purpose:
+Track consumer-to-consumer referrals tied to platform users.
+
+Columns:
+- id uuid primary key default gen_random_uuid()
+- referrer_user_id uuid not null
+- referred_user_id uuid null
+- referral_code text not null
+- status text not null default 'pending'
+  allowed values: pending, qualified, invalid
+- qualified_at timestamptz null
+- created_at timestamptz not null default now()
+- updated_at timestamptz not null default now()
+- ip_address inet null
+- user_agent text null
+- suspicion_flags jsonb not null default '[]'::jsonb
+
+Constraints / indexes:
+- foreign key referrer_user_id -> users(id) or current platform user table if different
+- foreign key referred_user_id -> users(id) or current platform user table if different
+- index on referrer_user_id
+- index on referred_user_id
+- index on referral_code
+- index on status
+- unique constraint so one referred_user_id can only be rewarded once when present
+
+2) referral_entries
+Purpose:
+Store earned sweepstakes entries from qualified referrals.
+
+Columns:
+- id uuid primary key default gen_random_uuid()
+- user_id uuid not null
+- referral_id uuid not null
+- entry_month text not null   -- format YYYY-MM
+- entry_count integer not null default 1
+- created_at timestamptz not null default now()
+
+Constraints / indexes:
+- foreign key user_id -> users(id) or current platform user table if different
+- foreign key referral_id -> user_referrals(id) on delete cascade
+- index on user_id
+- index on entry_month
+- unique(referral_id) so one qualified referral only creates one rewarded entry row
+
+3) sweepstakes_months
+Purpose:
+Track monthly contest windows.
+
+Columns:
+- id uuid primary key default gen_random_uuid()
+- month text not null unique   -- format YYYY-MM
+- status text not null default 'active'
+  allowed values: active, closed, archived
+- start_date date not null
+- end_date date not null
+- notes text null
+- sponsor_notes text null
+- created_at timestamptz not null default now()
+- updated_at timestamptz not null default now()
+
+Indexes:
+- index on status
+
+4) sweepstakes_winners
+Purpose:
+Log winner selections for audit.
+
+Columns:
+- id uuid primary key default gen_random_uuid()
+- month text not null
+- user_id uuid not null
+- entry_id uuid null
+- selected_by_admin_id uuid null
+- selection_method text not null default 'random'
+  allowed values: random, manual
+- prize_notes text null
+- sponsor_notes text null
+- notified boolean not null default false
+- notified_at timestamptz null
+- created_at timestamptz not null default now()
+
+Constraints / indexes:
+- foreign key user_id -> users(id) or current platform user table if different
+- foreign key entry_id -> referral_entries(id) null on delete set null
+- index on month
+- index on user_id
+
+ADDITIONAL REQUIREMENTS:
+- Use the platform’s existing user table name if it is not literally “users”.
+- Add updated_at trigger behavior if the project already uses a shared updated_at trigger pattern; otherwise keep it simple and consistent.
+- Add check constraints for allowed status values where appropriate.
+- Do not create any cron job, email job, or UI in this step.
+- If there is an existing shared DB types file, update it.
+- If there is an existing schema/types generation workflow, follow it.
+- Keep naming consistent with current project conventions.
+
+DELIVERABLES:
+1. migration file created
+2. any schema/types updates created
+3. brief summary of files changed
+4. note any manual Supabase action needed, if any
+
+Do not implement endpoints or frontend yet.
