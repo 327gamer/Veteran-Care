@@ -39,6 +39,7 @@ import GetHelp from "@/pages/get-help";
 import ResourceCenter from "@/pages/resource-center";
 import PartnersLanding from "@/pages/partners-landing";
 import EndOfLife from "@/pages/end-of-life";
+import Referral from "@/pages/referral";
 
 function PageViewTracker() {
   const [location] = useLocation();
@@ -152,6 +153,12 @@ function Router() {
       <Route path="/near-me">
         <Layout>
           <NearMe />
+        </Layout>
+      </Route>
+
+      <Route path="/referral">
+        <Layout>
+          <Referral />
         </Layout>
       </Route>
 

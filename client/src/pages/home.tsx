@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Store,
   Rocket,
+  Gift,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -220,6 +221,38 @@ export default function Home() {
           </button>
         </section>
       )}
+
+      {/* Referral CTA */}
+      <section
+        data-testid="section-referral-cta"
+        className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/15 rounded-xl p-4 cursor-pointer group"
+        onClick={() => setLocation("/referral")}
+      >
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <Gift className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0 space-y-1">
+            <h3 className="text-sm font-heading font-bold text-primary group-hover:text-primary/80 transition-colors">
+              Help support more veterans by spreading the word
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Every qualified referral earns you entries into this month's giveaway.
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-primary/40 group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
+        </div>
+        <Button
+          data-testid="button-referral-cta"
+          variant="outline"
+          size="sm"
+          className="mt-3 w-full border-primary/20 text-primary font-semibold hover:bg-primary/10"
+          onClick={(e) => { e.stopPropagation(); setLocation("/referral"); }}
+        >
+          <Gift className="h-3.5 w-3.5 mr-1.5" />
+          Refer & Enter
+        </Button>
+      </section>
 
       {/* Location Badge */}
       <section className="flex items-center justify-between">

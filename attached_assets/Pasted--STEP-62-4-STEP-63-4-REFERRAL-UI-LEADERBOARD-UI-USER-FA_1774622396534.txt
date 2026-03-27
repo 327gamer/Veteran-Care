@@ -1,0 +1,140 @@
+--- STEP 62.4 / STEP 63.4 – REFERRAL UI + LEADERBOARD UI (USER-FACING) ---
+
+We have completed the full backend for:
+
+- referral lifecycle
+- entry creation
+- leaderboard aggregation
+
+This step activates the system for users.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Expose the referral + sweepstakes system to users through a clean, simple, mobile-first UI.
+
+Reuse existing app shell, account/dashboard patterns, and mobile layout conventions.
+Do not invent a parallel UI pattern.
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) HOMEPAGE REFERRAL CTA
+
+Add a section under “Create Account”.
+
+Text:
+“Help support more veterans by spreading the word.
+Every qualified referral earns you entries into this month’s giveaway.”
+
+CTA button:
+“Refer & Enter”
+
+Behavior:
+- if user is not signed in, route them into the existing signup/account flow
+- preserve compatibility with the referral system already built
+- keep styling clean, mission-aligned, and non-salesy
+
+-------------------------------------
+
+2) ACCOUNT / DASHBOARD REFERRAL CARD
+
+Create a referral card inside the existing user account/dashboard.
+
+Use:
+GET /api/referral/me
+
+Display:
+- referral link
+- copy button
+- current month entries
+- total qualified referrals
+- leaderboard rank (if available)
+
+Requirements:
+- copy action should be one tap / minimal friction
+- keep layout simple and mobile-first
+- handle empty/null values gracefully
+- do not overbuild sharing features yet unless already easy to support
+
+-------------------------------------
+
+3) LEADERBOARD UI
+
+Create a simple current-month leaderboard view using:
+GET /api/referral/leaderboard
+
+Display:
+- rank
+- display name (privacy-safe)
+- entry count
+
+Requirements:
+- clean layout
+- mobile-first
+- no clutter
+- no heavy gamification
+- empty state if no entries yet
+- keep this current-month only
+
+Placement:
+- add from the referral card via a clear “View Leaderboard” style entry point
+- keep navigation consistent with existing shell
+
+-------------------------------------
+
+4) UX RULES
+
+- must be extremely simple
+- no confusion
+- no extra clicks to copy link
+- must render correctly on mobile (primary)
+- must not break existing top/bottom navigation behavior
+- must not introduce horizontal scroll, cut-off text, or bottom-nav overlap
+
+-------------------------------------
+
+5) VALIDATION REQUIREMENTS
+
+Before marking complete, verify:
+- homepage CTA renders correctly
+- referral card renders correctly on mobile
+- copy button works
+- leaderboard loads correctly
+- empty states render cleanly
+- existing shell/navigation remains stable
+- no regressions in account/dashboard flow
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- do NOT build winner selection yet
+- do NOT build partner referral system
+- do NOT over-design or over-style
+- do NOT introduce heavy gamification
+- do NOT break existing mobile shell behavior
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. components/pages added or changed
+2. where homepage block was inserted
+3. how referral card is structured
+4. how leaderboard UI is rendered
+5. any styling constraints applied
+6. any mobile adjustments required
+7. publish/restart steps
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make the referral + sweepstakes system visible, usable, and understandable for users before launch.
+
+--- END ---
