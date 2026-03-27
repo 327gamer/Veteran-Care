@@ -1,0 +1,67 @@
+UI BUG FIX — Help Flow Modal/Page Rendering Inconsistency From Referral / New-User Signup Path
+
+IMPORTANT:
+This is a focused UI/UX bug fix only.
+Do NOT change referral tracking logic, qualification logic, or leaderboard logic.
+Do NOT redesign the page.
+Do NOT change copy/content unless required for layout consistency.
+
+ISSUE:
+When a new user comes in through the referral flow and clicks the help/get-help flow, the “How can we help?” screen does NOT render the same way it does when launched from the normal homepage flow.
+
+Observed problem from mobile screenshots:
+- content appears cut off
+- modal/page height is constrained incorrectly
+- scrolling is not behaving correctly
+- bottom content is not fully accessible
+- rendering differs from the standard homepage entry path
+
+OBJECTIVE:
+Make the “How can we help?” experience render consistently regardless of entry point:
+1. normal homepage launch
+2. referral/new-user launch
+
+REQUIREMENTS:
+1) Identify the component/page/modal used for:
+- homepage “How can we help?” flow
+- referral/new-user “How can we help?” flow
+
+2) Ensure both entry points use the SAME rendering container behavior where appropriate:
+- same height rules
+- same overflow rules
+- same scroll behavior
+- same mobile spacing / bottom spacing
+- same close/back behavior if applicable
+
+3) Fix mobile layout so that:
+- no content is cut off
+- modal body scrolls correctly
+- full questionnaire/options remain accessible
+- bottom nav does not overlap content
+- no hidden content below fold
+- no horizontal scroll
+
+4) If this is a modal:
+- ensure the modal content area has proper max-height and internal overflow-y auto
+- ensure header stays visible if intended
+- ensure body scrolls independently
+- ensure safe bottom padding
+
+5) If different components are being used between entry points:
+- consolidate to the shared component if possible
+- or make the referral path use the exact same layout rules as the homepage path
+
+6) Validate specifically on mobile:
+- open from homepage
+- open from referral/new-user flow
+- compare both
+- confirm they now match visually and behaviorally
+
+DELIVERABLES:
+1. exact files changed
+2. root cause found
+3. what was changed to unify behavior
+4. confirmation that mobile scrolling/cutoff issue is resolved
+5. publish/restart requirements
+
+Keep this narrow and fix-only.

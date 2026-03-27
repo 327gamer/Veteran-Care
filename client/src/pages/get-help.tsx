@@ -77,7 +77,7 @@ export default function GetHelp() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background" style={{ height: '100dvh' }}>
+    <div className="flex flex-col bg-background" style={{ height: '100dvh', minHeight: '100dvh' }}>
 
       {/* Header */}
       <div className="bg-primary px-4 pt-10 pb-8 flex flex-col items-center text-center shrink-0">
@@ -98,7 +98,7 @@ export default function GetHelp() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 min-h-0 px-4 py-6 max-w-lg mx-auto w-full space-y-6 overflow-y-scroll pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-6 pb-16 max-w-lg mx-auto w-full space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
 
         {/* Category */}
         <div className="space-y-2">
