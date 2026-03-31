@@ -1,0 +1,152 @@
+--- STEP 63.6 – SHARE ENGINE (LAUNCH-SAFE GROWTH BOOST) ---
+
+We are now implementing the share layer for the referral system.
+
+This must remain:
+- lightweight
+- reliable
+- mobile-first
+- conversion-focused
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make it extremely easy for users to share their referral link using:
+
+- copy message
+- SMS
+- WhatsApp
+
+WITHOUT adding complexity or breaking layout.
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) COPY MESSAGE BUTTON
+
+Add a “Copy Message” button directly under the referral link section.
+
+Behavior:
+- copies a pre-written message INCLUDING the user’s referral link
+- MUST dynamically inject referral link (no hardcoded URLs)
+
+-------------------------------------
+
+2) SMS SHARE
+
+Add an SMS share button.
+
+Behavior:
+- uses device SMS app when supported
+- pre-fills message + referral link
+
+Implementation:
+- use:
+  sms:?&body=ENCODED_MESSAGE
+
+Must:
+- properly encode message
+- support iOS + Android behavior
+
+-------------------------------------
+
+3) WHATSAPP SHARE
+
+Add WhatsApp share button.
+
+Behavior:
+- opens WhatsApp with pre-filled message
+
+Implementation:
+- use:
+  https://wa.me/?text=ENCODED_MESSAGE
+
+-------------------------------------
+
+4) SHARE MESSAGE VARIANTS
+
+Provide MAX 3 options:
+
+Variant 1 (friendly):
+"Veteran Care helps veterans and families find real support in one place. If you know someone who could use it, here’s my link: {referral_link}"
+
+Variant 2 (mission-focused):
+"This platform helps connect veterans to real resources and support. Sharing in case it helps someone you know: {referral_link}"
+
+Variant 3 (direct):
+"If you or someone you know needs support, this is worth checking out: {referral_link}"
+
+-------------------------------------
+
+5) UI PLACEMENT (CRITICAL)
+
+Place share actions:
+
+- directly under referral link + copy button
+- NOT in a separate section
+- NOT on a new page
+
+Layout:
+[ Referral Link ]
+[ Copy Link Button ]
+[ Copy Message | SMS | WhatsApp ]
+
+Keep horizontal or stacked depending on mobile width.
+
+-------------------------------------
+
+6) FALLBACK BEHAVIOR
+
+If:
+- SMS not supported → hide OR fallback to copy message
+- WhatsApp not available → open web version OR fallback
+
+DO NOT show broken buttons.
+
+-------------------------------------
+
+7) LINK INTEGRITY (CRITICAL)
+
+Referral link must:
+- be absolute (https://...)
+- include ?ref=CODE
+- match exactly what /api/referral/me returns
+
+-------------------------------------
+
+8) GUARDRAILS
+
+DO NOT:
+- modify referral logic
+- modify leaderboard logic
+- modify winner system
+- add new pages
+- add animations
+- add clutter
+
+-------------------------------------
+
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. buttons/actions added
+2. final share message variants implemented
+3. how SMS share is handled (iOS + Android)
+4. how WhatsApp share is handled
+5. fallback handling
+6. files changed
+7. publish/restart requirements
+
+-------------------------------------
+
+GOAL
+-------------------------------------
+
+Turn referral system into a frictionless sharing experience
+without increasing complexity.
+
+--- END ---

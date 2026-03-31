@@ -16,6 +16,9 @@ import {
   Crown,
   Medal,
   Star,
+  MessageSquare,
+  Phone,
+  Send,
 } from "lucide-react";
 import AuthModal from "@/components/auth-modal";
 
@@ -71,8 +74,10 @@ export default function Referral() {
   const { user, session, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
+  const [msgCopied, setMsgCopied] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [view, setView] = useState<"card" | "leaderboard">("card");
+  const [msgVariant, setMsgVariant] = useState(0);
 
   const token = session?.access_token;
 
@@ -97,6 +102,19 @@ export default function Referral() {
       }),
   });
 
+  const shareMessages = [
+    (link: string) => `Veteran Care helps veterans and families find real support in one place. If you know someone who could use it, here's my link: ${link}`,
+    (link: string) => `This platform helps connect veterans to real resources and support. Sharing in case it helps someone you know: ${link}`,
+    (link: string) => `If you or someone you know needs support, this is worth checking out: ${link}`,
+  ];
+
+  const shareLabels = ["Friendly", "Mission", "Direct"];
+
+  const getShareMessage = () => {
+    if (!referralData?.referralLink) return "";
+    return shareMessages[msgVariant](referralData.referralLink);
+  };
+
   const handleCopy = async () => {
     if (!referralData?.referralLink) return;
     try {
@@ -113,6 +131,37 @@ export default function Referral() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleCopyMessage = async () => {
+    const msg = getShareMessage();
+    if (!msg) return;
+    try {
+      await navigator.clipboard.writeText(msg);
+      setMsgCopied(true);
+      setTimeout(() => setMsgCopied(false), 2000);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = msg;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setMsgCopied(true);
+      setTimeout(() => setMsgCopied(false), 2000);
+    }
+  };
+
+  const handleSms = () => {
+    const msg = getShareMessage();
+    if (!msg) return;
+    window.open(`sms:?&body=${encodeURIComponent(msg)}`, "_self");
+  };
+
+  const handleWhatsApp = () => {
+    const msg = getShareMessage();
+    if (!msg) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   if (loading) {
@@ -271,6 +320,63 @@ export default function Referral() {
                         Copy
                       </>
                     )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex gap-1.5">
+                  {shareLabels.map((label, i) => (
+                    <button
+                      key={label}
+                      data-testid={`button-msg-variant-${i}`}
+                      onClick={() => setMsgVariant(i)}
+                      className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                        msgVariant === i
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/40 text-muted-foreground border-transparent hover:border-muted-foreground/20"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed bg-muted/30 rounded-lg px-3 py-2 border border-dashed">
+                  {getShareMessage() || "Loading..."}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    data-testid="button-copy-message"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-9"
+                    onClick={handleCopyMessage}
+                  >
+                    {msgCopied ? (
+                      <><Check className="h-3.5 w-3.5 mr-1" />Copied</>
+                    ) : (
+                      <><MessageSquare className="h-3.5 w-3.5 mr-1" />Copy Msg</>
+                    )}
+                  </Button>
+                  <Button
+                    data-testid="button-share-sms"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-9"
+                    onClick={handleSms}
+                  >
+                    <Phone className="h-3.5 w-3.5 mr-1" />
+                    SMS
+                  </Button>
+                  <Button
+                    data-testid="button-share-whatsapp"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-9"
+                    onClick={handleWhatsApp}
+                  >
+                    <Send className="h-3.5 w-3.5 mr-1" />
+                    WhatsApp
                   </Button>
                 </div>
               </div>
