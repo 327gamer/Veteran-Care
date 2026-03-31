@@ -131,7 +131,7 @@ export default function Referral() {
             <Gift className="h-8 w-8 text-primary" />
           </div>
           <h1 data-testid="text-referral-title" className="text-2xl font-heading font-extrabold text-primary tracking-tight">
-            Refer & Enter to Win
+            Refer & Earn Entries to Win
           </h1>
           <p data-testid="text-referral-description" className="text-muted-foreground text-sm max-w-xs leading-relaxed">
             Help support more veterans by spreading the word. Every qualified referral earns you entries into this month's giveaway.
@@ -227,7 +227,7 @@ export default function Referral() {
     <div className="space-y-5 animate-in fade-in duration-500">
       <div>
         <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight">
-          Refer & Enter to Win
+          Refer & Earn Entries to Win
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Share your link. When someone signs up and completes their profile, you earn a sweepstakes entry.
@@ -311,8 +311,11 @@ export default function Referral() {
                 </div>
               </div>
 
+              <p className="text-[11px] text-center text-muted-foreground/60">
+                Entries are earned when a referral signs up and completes their profile.
+              </p>
               {referralData.currentMonth && (
-                <p className="text-xs text-center text-muted-foreground/70">
+                <p className="text-xs text-center text-muted-foreground/70 mt-1">
                   {formatMonth(referralData.currentMonth)} Sweepstakes
                 </p>
               )}
@@ -340,14 +343,14 @@ export default function Referral() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent mt-2">
             <CardContent className="p-4 space-y-2">
               <h3 className="text-sm font-semibold flex items-center gap-1.5">
                 <Gift className="h-4 w-4 text-primary" />
                 This Month's Giveaway
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Qualified referrals earn entries into this month's giveaway. Final prize details will be announced here.
+                Qualified referrals earn entries into this month's giveaway. Final prize details will be announced soon.
               </p>
               <p className="text-[11px] text-muted-foreground/60">
                 The more veterans you help connect to resources, the more entries you earn.
