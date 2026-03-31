@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getCategoryConfig } from "@/lib/category-config";
 import NavigatorModal from "@/components/navigator-modal";
+import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import { platform } from "@shared/platform";
 import {
   Dialog,
   DialogContent,
@@ -243,25 +245,34 @@ export default function GetHelp() {
           </DialogContent>
         </Dialog>
       ) : (
-        <div className="space-y-5">
-          <div className="flex items-center gap-2">
-            <Compass className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-heading font-extrabold text-foreground tracking-tight">
-              How can we help you?
-            </h1>
+        <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6 lg:-mx-8 lg:-mt-8">
+          <div className="bg-primary px-4 pt-5 pb-4 flex flex-col items-center text-center">
+            <img
+              src={logoImg}
+              alt={platform.name}
+              className="h-20 w-auto object-contain drop-shadow-xl mb-2"
+            />
+            <div className="flex items-center gap-2 mb-1">
+              <Compass className="h-4 w-4 text-white/80" />
+              <h1 className="text-base font-heading font-extrabold text-white tracking-tight">
+                How can we help you?
+              </h1>
+            </div>
+            <p className="text-white/70 text-xs leading-relaxed max-w-sm">
+              Tell us what you need and we'll connect you to the right support near you.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground -mt-3">
-            Tell us what you need and we'll connect you to the right support near you.
-          </p>
-          <GetHelpContent {...sharedProps} />
-          <button
-            data-testid="get-help-back"
-            onClick={handleClose}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Back to Home
-          </button>
+          <div className="px-4 pt-4 pb-4">
+            <GetHelpContent {...sharedProps} />
+            <button
+              data-testid="get-help-back"
+              onClick={handleClose}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-3"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Back to Home
+            </button>
+          </div>
         </div>
       )}
 
