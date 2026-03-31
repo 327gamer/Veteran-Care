@@ -1,0 +1,115 @@
+--- CRITICAL GLOBAL UI RULE RE-ENFORCEMENT + GET-HELP FINAL PARITY FIX ---
+
+We are now seeing repeated UI inconsistencies again, specifically around the Get Help flow.
+
+This indicates that the previous GLOBAL UI / APP SHELL STANDARD we implemented earlier is no longer being enforced consistently.
+
+This must be corrected immediately.
+
+-------------------------------------
+GLOBAL RULE (RE-ENFORCE)
+-------------------------------------
+
+We previously established a platform-wide rule:
+
+ALL pages, modals, and flows must:
+
+- conform to the shared app shell
+- respect top navigation and bottom navigation
+- use consistent layout behavior across mobile and desktop
+- use internal scroll where required
+- never introduce independent page layouts that break consistency
+- never duplicate flows (modal vs page versions)
+- never introduce alternate navigation patterns
+
+This rule fixed the entire platform previously.
+
+It must now be re-applied to ALL new work, including referral flows.
+
+-------------------------------------
+CURRENT ISSUE (GET-HELP)
+-------------------------------------
+
+We still have behavior drift between:
+
+1) Homepage Get Help (correct baseline)
+2) Referral Get Help (still not fully matching)
+
+Remaining issues include:
+- inconsistent exit behavior
+- extra “Back to Home” link in one flow but not the other
+- slight differences in shell behavior between mobile and desktop
+- evidence of page-level logic instead of shared modal system
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+1) TRUE PARITY (MANDATORY)
+
+Referral Get Help must match Homepage Get Help EXACTLY:
+
+- same modal/dialog behavior
+- same close (X) behavior
+- same scroll behavior
+- same visible controls
+- no extra navigation elements (remove “Back to Home” if not part of homepage flow)
+
+-------------------------------------
+
+2) SINGLE SYSTEM ONLY
+
+Get Help must exist as ONE system:
+
+- one shared component
+- one behavior model
+- one interaction pattern
+
+NO:
+- page version
+- alternate layout
+- duplicated logic
+
+-------------------------------------
+
+3) RE-APPLY GLOBAL UI STANDARD
+
+Audit and ensure this implementation follows the previously established rule:
+
+- no layout drift
+- no duplicate containers
+- no conflicting scroll systems
+- no viewport misalignment
+- full mobile + desktop consistency
+
+-------------------------------------
+
+4) FUTURE PREVENTION (IMPORTANT)
+
+Going forward, ALL new pages/components must:
+
+- follow the shared Layout pattern
+- follow the modal/dialog system where applicable
+- pass full mobile + desktop validation BEFORE completion
+- match existing UI behavior — not approximate it
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1. root cause of why this new implementation bypassed the global UI standard
+2. confirmation that duplicate behavior (page vs modal) is fully removed
+3. confirmation that “Back to Home” is removed if not part of baseline flow
+4. confirmation that referral Get Help now EXACTLY matches homepage Get Help
+5. confirmation that global UI standard is now re-applied
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+- ONE unified Get Help system
+- NO inconsistencies between flows
+- NO repeated UI regressions going forward
+
+--- END ---

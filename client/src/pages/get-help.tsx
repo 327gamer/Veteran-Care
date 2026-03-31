@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getCategoryConfig } from "@/lib/category-config";
 import NavigatorModal from "@/components/navigator-modal";
-import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
-import { platform } from "@shared/platform";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +19,6 @@ import {
   Phone,
   ArrowRight,
   Compass,
-  ChevronLeft,
 } from "lucide-react";
 
 const GUIDED_CATEGORIES = [
@@ -48,144 +45,12 @@ const URGENCY_OPTIONS = [
   { value: "information", label: "Just exploring", desc: "Looking for information", icon: Info, color: "border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-400", selected: "border-slate-500 bg-slate-100 ring-2 ring-slate-200" },
 ];
 
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return isDesktop;
-}
-
-interface GetHelpContentProps {
-  selectedCategory: string | null;
-  setSelectedCategory: (slug: string) => void;
-  selectedUrgency: string | null;
-  setSelectedUrgency: (val: string) => void;
-  onFindResources: () => void;
-  onRequestNavigator: () => void;
-}
-
-function GetHelpContent({
-  selectedCategory,
-  setSelectedCategory,
-  selectedUrgency,
-  setSelectedUrgency,
-  onFindResources,
-  onRequestNavigator,
-}: GetHelpContentProps) {
-  return (
-    <div className="space-y-4 py-1">
-      <div className="space-y-2">
-        <Label className="text-xs font-medium">What do you need help with?</Label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {GUIDED_CATEGORIES.map((cat) => {
-            const config = getCategoryConfig(cat.slug);
-            const CatIcon = config.icon;
-            const isSelected = selectedCategory === cat.slug;
-            return (
-              <button
-                key={cat.slug}
-                data-testid={`get-help-category-${cat.slug}`}
-                type="button"
-                onClick={() => { trackEvent("get_help_category_selected", { category: cat.slug }); setSelectedCategory(cat.slug); }}
-                className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
-                  isSelected
-                    ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
-                    : "border-border hover:border-primary/40 hover:bg-primary/5"
-                }`}
-              >
-                <CatIcon className="h-3.5 w-3.5 shrink-0" />
-                <span className="leading-tight">{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs font-medium">How soon do you need help?</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {URGENCY_OPTIONS.map((opt) => {
-            const UrgIcon = opt.icon;
-            const isSelected = selectedUrgency === opt.value;
-            return (
-              <button
-                key={opt.value}
-                data-testid={`get-help-urgency-${opt.value}`}
-                type="button"
-                onClick={() => { trackEvent("get_help_urgency_selected", { urgency: opt.value }); setSelectedUrgency(opt.value); }}
-                className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all ${
-                  isSelected ? opt.selected + " " + opt.color.split(" ").slice(1).join(" ") : opt.color
-                }`}
-              >
-                <UrgIcon className="h-4 w-4 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-semibold leading-tight">{opt.label}</p>
-                  <p className="text-[10px] opacity-75 leading-tight mt-0.5">{opt.desc}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {selectedUrgency === "immediate" && (
-        <div
-          data-testid="get-help-crisis-banner"
-          className="rounded-lg border border-red-300 bg-red-50 p-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300"
-        >
-          <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            If you are in crisis right now:
-          </p>
-          <a href="tel:988" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
-            <Phone className="h-3.5 w-3.5" /> Call 988 (Suicide & Crisis Lifeline)
-          </a>
-          <a href="tel:18002738255" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
-            <Phone className="h-3.5 w-3.5" /> Veterans Crisis Line: 1-800-273-8255 (Press 1)
-          </a>
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <Button
-          data-testid="get-help-find-resources"
-          className="flex-1 h-10"
-          disabled={!selectedCategory}
-          onClick={onFindResources}
-        >
-          Find Resources
-          <ArrowRight className="ml-1.5 h-4 w-4" />
-        </Button>
-        <Button
-          data-testid="get-help-request-navigator"
-          variant="outline"
-          className="h-10 border-primary/30 text-primary"
-          onClick={onRequestNavigator}
-        >
-          <Phone className="mr-1.5 h-4 w-4" />
-          Request Support
-        </Button>
-      </div>
-
-      <p className="text-[11px] text-muted-foreground text-center pt-1">
-        Free to use. No account required. Your information is private and secure.
-      </p>
-    </div>
-  );
-}
-
 export default function GetHelp() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUrgency, setSelectedUrgency] = useState<string | null>(null);
   const [showNavigator, setShowNavigator] = useState(false);
-  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -218,63 +83,116 @@ export default function GetHelp() {
     setLocation("/home");
   };
 
-  const sharedProps: GetHelpContentProps = {
-    selectedCategory,
-    setSelectedCategory,
-    selectedUrgency,
-    setSelectedUrgency,
-    onFindResources: handleFindResources,
-    onRequestNavigator: handleRequestNavigator,
-  };
-
   return (
     <>
-      {isDesktop ? (
-        <Dialog open={true} onOpenChange={(v) => { if (!v) handleClose(); }}>
-          <DialogContent className="sm:max-w-[440px] max-h-[85dvh] overflow-y-auto pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Compass className="h-5 w-5 text-primary" />
-                How can we help?
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Tell us what you need and we'll point you in the right direction.
-              </p>
-            </DialogHeader>
-            <GetHelpContent {...sharedProps} />
-          </DialogContent>
-        </Dialog>
-      ) : (
-        <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6 lg:-mx-8 lg:-mt-8">
-          <div className="bg-primary px-4 pt-5 pb-4 flex flex-col items-center text-center">
-            <img
-              src={logoImg}
-              alt={platform.name}
-              className="h-20 w-auto object-contain drop-shadow-xl mb-2"
-            />
-            <div className="flex items-center gap-2 mb-1">
-              <Compass className="h-4 w-4 text-white/80" />
-              <h1 className="text-base font-heading font-extrabold text-white tracking-tight">
-                How can we help you?
-              </h1>
-            </div>
-            <p className="text-white/70 text-xs leading-relaxed max-w-sm">
-              Tell us what you need and we'll connect you to the right support near you.
+      <Dialog open={true} onOpenChange={(v) => { if (!v) handleClose(); }}>
+        <DialogContent className="sm:max-w-[440px] max-h-[85dvh] overflow-y-auto pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Compass className="h-5 w-5 text-primary" />
+              How can we help?
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Tell us what you need and we'll point you in the right direction.
             </p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">What do you need help with?</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {GUIDED_CATEGORIES.map((cat) => {
+                  const config = getCategoryConfig(cat.slug);
+                  const CatIcon = config.icon;
+                  const isSelected = selectedCategory === cat.slug;
+                  return (
+                    <button
+                      key={cat.slug}
+                      data-testid={`get-help-category-${cat.slug}`}
+                      type="button"
+                      onClick={() => { trackEvent("get_help_category_selected", { category: cat.slug }); setSelectedCategory(cat.slug); }}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
+                          : "border-border hover:border-primary/40 hover:bg-primary/5"
+                      }`}
+                    >
+                      <CatIcon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="leading-tight">{cat.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">How soon do you need help?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {URGENCY_OPTIONS.map((opt) => {
+                  const UrgIcon = opt.icon;
+                  const isSelected = selectedUrgency === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      data-testid={`get-help-urgency-${opt.value}`}
+                      type="button"
+                      onClick={() => { trackEvent("get_help_urgency_selected", { urgency: opt.value }); setSelectedUrgency(opt.value); }}
+                      className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all ${
+                        isSelected ? opt.selected + " " + opt.color.split(" ").slice(1).join(" ") : opt.color
+                      }`}
+                    >
+                      <UrgIcon className="h-4 w-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold leading-tight">{opt.label}</p>
+                        <p className="text-[10px] opacity-75 leading-tight mt-0.5">{opt.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {selectedUrgency === "immediate" && (
+              <div
+                data-testid="get-help-crisis-banner"
+                className="rounded-lg border border-red-300 bg-red-50 p-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  If you are in crisis right now:
+                </p>
+                <a href="tel:988" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <Phone className="h-3.5 w-3.5" /> Call 988 (Suicide & Crisis Lifeline)
+                </a>
+                <a href="tel:18002738255" className="flex items-center gap-2 text-xs font-bold text-red-700 hover:underline">
+                  <Phone className="h-3.5 w-3.5" /> Veterans Crisis Line: 1-800-273-8255 (Press 1)
+                </a>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                data-testid="get-help-find-resources"
+                className="flex-1 h-10"
+                disabled={!selectedCategory}
+                onClick={handleFindResources}
+              >
+                Find Resources
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+              <Button
+                data-testid="get-help-request-navigator"
+                variant="outline"
+                className="h-10 border-primary/30 text-primary"
+                onClick={handleRequestNavigator}
+              >
+                <Phone className="mr-1.5 h-4 w-4" />
+                Request Support
+              </Button>
+            </div>
           </div>
-          <div className="px-4 pt-4 pb-4">
-            <GetHelpContent {...sharedProps} />
-            <button
-              data-testid="get-help-back"
-              onClick={handleClose}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-3"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Back to Home
-            </button>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <NavigatorModal
         open={showNavigator}
