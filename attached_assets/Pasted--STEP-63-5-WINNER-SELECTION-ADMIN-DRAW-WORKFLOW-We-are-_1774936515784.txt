@@ -1,0 +1,163 @@
+--- STEP 63.5 – WINNER SELECTION + ADMIN DRAW WORKFLOW ---
+
+We are now moving to the next correct step in sequence.
+
+IMPORTANT:
+Step 63.5 is NOT the share engine.
+Do NOT build sharing features in this step.
+
+Current completed scope:
+- referral capture
+- qualification
+- monthly entry creation
+- leaderboard backend
+- referral UI
+- leaderboard UI
+
+Next step is:
+
+STEP 63.5 – WINNER SELECTION + ADMIN DRAW WORKFLOW
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to:
+
+- select winner(s) for the current month
+- record winner(s)
+- lock/archive the month
+- maintain audit trail
+- support simple, deterministic launch-safe selection
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) ADMIN WINNER SELECTION TOOL
+
+Create a simple admin workflow to select winner(s) from the current month entry pool.
+
+Support:
+- 1st place
+- 2nd place
+- 3rd place
+
+If current schema already supports more generic placement handling, keep it flexible, but launch UI/workflow should stay simple.
+
+-------------------------------------
+
+2) WINNER RECORD STORAGE
+
+Use the existing sweepstakes_winners table if it already exists and extend only if needed.
+
+Each winner record should support:
+- month
+- user_id
+- placement
+- entry_count_at_draw (or equivalent snapshot if appropriate)
+- selected_at timestamp
+- selected_by_admin_id
+- selection_method
+- prize_notes (if already supported)
+- sponsor_notes (if already supported)
+
+Do NOT overbuild if most of this already exists.
+Extend minimally and safely.
+
+-------------------------------------
+
+3) DRAW METHOD + AUDITABILITY
+
+Support two admin selection methods:
+- random draw
+- manual selection
+
+Both must be logged.
+
+Requirements:
+- every winner selection must record:
+  - selection_method = random or manual
+  - selected_by_admin_id
+  - selected_at
+- if random is used, keep it launch-safe and deterministic/auditable enough for review
+- do NOT build a complex RNG framework; keep it simple and traceable
+
+Please explain in final reply exactly how random selection is implemented.
+
+-------------------------------------
+
+4) MONTH LOCKING / ARCHIVE
+
+Once winners are finalized for a month:
+- month should be marked closed/archived appropriately
+- prevent further winner changes through normal admin flow unless explicitly reopened later (do not build reopen flow now unless required internally)
+- prevent accidental duplicate draw submissions for the same placement/month
+
+Use the existing sweepstakes_months table/status pattern if already present.
+
+Preferred statuses if already aligned:
+- active
+- closed
+- archived
+
+Keep this simple and launch-safe.
+
+-------------------------------------
+
+5) ADMIN VIEW
+
+Add a basic admin view/workflow for:
+- current month draw
+- selected winners
+- past winners/history
+
+Do NOT overbuild UI.
+This can be:
+- a small admin page
+- or an admin section inside existing leaderboard/admin tooling
+
+Admin should be able to see:
+- month
+- placement
+- winner identity
+- selection method
+- selected_at
+- selected_by_admin
+- entry count snapshot if available
+
+-------------------------------------
+
+6) GUARDRAILS
+
+- do NOT build share engine yet
+- do NOT build public winner announcement UI yet
+- do NOT build email notification automation yet
+- do NOT overbuild styling
+- keep admin flow simple, reliable, and auditable
+- do NOT break current referral/leaderboard logic
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. how winners are selected
+2. what existing tables/fields were reused
+3. what new fields/tables were added if any
+4. how audit logging works
+5. how month locking works
+6. what admin UI/workflow was added
+7. any manual steps required
+8. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Complete the sweepstakes loop so the system is:
+- real
+- trusted
+- demonstrable
+
+--- END ---

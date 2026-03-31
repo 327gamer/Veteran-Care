@@ -32,6 +32,7 @@ import AdminLinks from "@/pages/admin-links";
 import AdminAttribution from "@/pages/admin-attribution";
 import AdminCommissions from "@/pages/admin-commissions";
 import AdminPayouts from "@/pages/admin-payouts";
+import AdminSweepstakes from "@/pages/admin-sweepstakes";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
@@ -104,6 +105,7 @@ function Router() {
       <Route path="/admin/attribution" component={AdminAttribution} />
       <Route path="/admin/commissions" component={AdminCommissions} />
       <Route path="/admin/payouts" component={AdminPayouts} />
+      <Route path="/admin/sweepstakes" component={AdminSweepstakes} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">

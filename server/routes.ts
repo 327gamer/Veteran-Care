@@ -401,6 +401,8 @@ async function ensureReferralSweepstakesTables() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         month TEXT NOT NULL,
         user_id TEXT NOT NULL,
+        placement INTEGER NOT NULL DEFAULT 1,
+        entry_count_at_draw INTEGER,
         entry_id UUID REFERENCES referral_entries(id) ON DELETE SET NULL,
         selected_by_admin_id TEXT,
         selection_method TEXT NOT NULL DEFAULT 'random'
@@ -414,6 +416,9 @@ async function ensureReferralSweepstakesTables() {
     `);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_month ON sweepstakes_winners(month)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_user ON sweepstakes_winners(user_id)`);
+    await pgQuery(`ALTER TABLE sweepstakes_winners ADD COLUMN IF NOT EXISTS placement INTEGER NOT NULL DEFAULT 1`);
+    await pgQuery(`ALTER TABLE sweepstakes_winners ADD COLUMN IF NOT EXISTS entry_count_at_draw INTEGER`);
+    await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_sweepstakes_winners_month_placement ON sweepstakes_winners(month, placement)`);
 
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS user_referral_profiles (
@@ -6146,6 +6151,318 @@ export async function registerRoutes(
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ── Admin Sweepstakes Draw Endpoints ──
+
+  app.get("/api/admin/sweepstakes/current", requireAdmin, async (_req, res) => {
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const monthRows = await pgQuery(
+        `SELECT * FROM sweepstakes_months WHERE month = $1`,
+        [currentMonth]
+      );
+      const monthRecord = monthRows.length > 0 ? monthRows[0] : null;
+      const status = monthRecord?.status || "active";
+
+      const entryPool = await pgQuery(
+        `SELECT re.user_id, SUM(re.entry_count)::int AS entries
+         FROM referral_entries re
+         WHERE re.entry_month = $1
+         GROUP BY re.user_id
+         ORDER BY entries DESC`,
+        [currentMonth]
+      );
+
+      let profileMap: Record<string, any> = {};
+      if (entryPool.length > 0) {
+        const userIds = entryPool.map((e: any) => e.user_id);
+        try {
+          const { data: profiles } = await supabaseAdmin
+            .from("user_profiles")
+            .select("id, first_name, last_name, email")
+            .in("id", userIds);
+          if (profiles) {
+            for (const p of profiles) profileMap[p.id] = p;
+          }
+        } catch {}
+      }
+
+      const pool = entryPool.map((e: any) => {
+        const p = profileMap[e.user_id] || {};
+        return {
+          userId: e.user_id,
+          displayName: [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || e.user_id.slice(0, 8),
+          email: p.email || null,
+          entries: e.entries,
+        };
+      });
+
+      const winners = await pgQuery(
+        `SELECT * FROM sweepstakes_winners WHERE month = $1 ORDER BY placement ASC`,
+        [currentMonth]
+      );
+
+      const winnerList = winners.map((w: any) => {
+        const p = profileMap[w.user_id] || {};
+        return {
+          id: w.id,
+          placement: w.placement,
+          userId: w.user_id,
+          displayName: [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || w.user_id.slice(0, 8),
+          email: p.email || null,
+          entryCountAtDraw: w.entry_count_at_draw,
+          selectionMethod: w.selection_method,
+          selectedByAdminId: w.selected_by_admin_id,
+          prizeNotes: w.prize_notes,
+          createdAt: w.created_at,
+        };
+      });
+
+      return res.json({
+        month: currentMonth,
+        status,
+        totalEntries: pool.reduce((s: number, p: any) => s + p.entries, 0),
+        totalParticipants: pool.length,
+        entryPool: pool,
+        winners: winnerList,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/sweepstakes/draw", requireAdmin, async (req, res) => {
+    try {
+      const { placement, selectionMethod, userId, prizeNotes } = req.body;
+      if (!placement || ![1, 2, 3].includes(placement)) {
+        return res.status(400).json({ error: "placement must be 1, 2, or 3" });
+      }
+      if (!selectionMethod || !["random", "manual"].includes(selectionMethod)) {
+        return res.status(400).json({ error: "selectionMethod must be 'random' or 'manual'" });
+      }
+
+      const currentMonth = await getCurrentSweepstakesMonth();
+
+      const monthRows = await pgQuery(
+        `SELECT status FROM sweepstakes_months WHERE month = $1`,
+        [currentMonth]
+      );
+      if (monthRows.length > 0 && monthRows[0].status !== "active") {
+        return res.status(400).json({ error: `Month ${currentMonth} is ${monthRows[0].status} — cannot draw` });
+      }
+
+      const existing = await pgQuery(
+        `SELECT id FROM sweepstakes_winners WHERE month = $1 AND placement = $2`,
+        [currentMonth, placement]
+      );
+      if (existing.length > 0) {
+        return res.status(409).json({ error: `Placement ${placement} already assigned for ${currentMonth}` });
+      }
+
+      const entryPool = await pgQuery(
+        `SELECT re.user_id, SUM(re.entry_count)::int AS entries
+         FROM referral_entries re
+         WHERE re.entry_month = $1
+         GROUP BY re.user_id
+         ORDER BY entries DESC`,
+        [currentMonth]
+      );
+
+      if (entryPool.length === 0) {
+        return res.status(400).json({ error: "No entries in pool for this month" });
+      }
+
+      const existingWinnerIds = await pgQuery(
+        `SELECT user_id FROM sweepstakes_winners WHERE month = $1`,
+        [currentMonth]
+      );
+      const alreadyWon = new Set(existingWinnerIds.map((r: any) => r.user_id));
+      const eligible = entryPool.filter((e: any) => !alreadyWon.has(e.user_id));
+
+      if (eligible.length === 0) {
+        return res.status(400).json({ error: "No eligible participants remaining (all already selected as winners)" });
+      }
+
+      let selectedUserId: string;
+      let selectedEntries: number;
+
+      if (selectionMethod === "manual") {
+        if (!userId) {
+          return res.status(400).json({ error: "userId required for manual selection" });
+        }
+        const match = eligible.find((e: any) => e.user_id === userId);
+        if (!match) {
+          return res.status(400).json({ error: "User not in eligible entry pool" });
+        }
+        selectedUserId = match.user_id;
+        selectedEntries = match.entries;
+      } else {
+        const weightedPool: any[] = [];
+        for (const e of eligible) {
+          for (let i = 0; i < e.entries; i++) {
+            weightedPool.push(e);
+          }
+        }
+        const randomIndex = Math.floor(Math.random() * weightedPool.length);
+        const picked = weightedPool[randomIndex];
+        selectedUserId = picked.user_id;
+        selectedEntries = picked.entries;
+      }
+
+      const adminKey = req.headers["x-admin-key"] as string;
+
+      const rows = await pgQuery(
+        `INSERT INTO sweepstakes_winners (month, user_id, placement, entry_count_at_draw, selected_by_admin_id, selection_method, prize_notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [currentMonth, selectedUserId, placement, selectedEntries, adminKey ? "admin" : null, selectionMethod, prizeNotes || null]
+      );
+
+      console.log(`[sweepstakes] Winner drawn: month=${currentMonth} placement=${placement} user=${selectedUserId} method=${selectionMethod} entries=${selectedEntries}`);
+
+      return res.json({
+        winner: rows[0],
+        message: `Placement ${placement} winner selected for ${currentMonth}`,
+      });
+    } catch (err: any) {
+      if (err.message?.includes("idx_sweepstakes_winners_month_placement")) {
+        return res.status(409).json({ error: "Placement already assigned for this month" });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/sweepstakes/close-month", requireAdmin, async (_req, res) => {
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+
+      const winners = await pgQuery(
+        `SELECT id FROM sweepstakes_winners WHERE month = $1`,
+        [currentMonth]
+      );
+      if (winners.length === 0) {
+        return res.status(400).json({ error: "Cannot close month with no winners selected" });
+      }
+
+      const existing = await pgQuery(
+        `SELECT id, status FROM sweepstakes_months WHERE month = $1`,
+        [currentMonth]
+      );
+      if (existing.length > 0) {
+        if (existing[0].status === "closed" || existing[0].status === "archived") {
+          return res.status(400).json({ error: `Month is already ${existing[0].status}` });
+        }
+        await pgQuery(
+          `UPDATE sweepstakes_months SET status = 'closed', updated_at = NOW() WHERE month = $1`,
+          [currentMonth]
+        );
+      } else {
+        const [y, m] = currentMonth.split("-").map(Number);
+        const startDate = `${y}-${String(m).padStart(2, "0")}-01`;
+        const endDate = new Date(y, m, 0).toISOString().split("T")[0];
+        await pgQuery(
+          `INSERT INTO sweepstakes_months (month, status, start_date, end_date)
+           VALUES ($1, 'closed', $2, $3)`,
+          [currentMonth, startDate, endDate]
+        );
+      }
+
+      console.log(`[sweepstakes] Month ${currentMonth} closed with ${winners.length} winner(s)`);
+      return res.json({ message: `Month ${currentMonth} closed`, winnersCount: winners.length });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/admin/sweepstakes/winner/:id", requireAdmin, async (req, res) => {
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const monthRows = await pgQuery(
+        `SELECT status FROM sweepstakes_months WHERE month = $1`,
+        [currentMonth]
+      );
+      if (monthRows.length > 0 && monthRows[0].status !== "active") {
+        return res.status(400).json({ error: `Month ${currentMonth} is ${monthRows[0].status} — cannot remove winner` });
+      }
+
+      const rows = await pgQuery(
+        `DELETE FROM sweepstakes_winners WHERE id = $1 AND month = $2 RETURNING *`,
+        [req.params.id, currentMonth]
+      );
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "Winner not found for current month" });
+      }
+      console.log(`[sweepstakes] Winner removed: ${rows[0].user_id} placement=${rows[0].placement}`);
+      return res.json({ message: "Winner removed", removed: rows[0] });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/sweepstakes/history", requireAdmin, async (_req, res) => {
+    try {
+      const months = await pgQuery(
+        `SELECT sm.month, sm.status, sm.notes, sm.sponsor_notes, sm.created_at,
+                COUNT(sw.id)::int AS winner_count
+         FROM sweepstakes_months sm
+         LEFT JOIN sweepstakes_winners sw ON sw.month = sm.month
+         WHERE sm.status IN ('closed', 'archived')
+         GROUP BY sm.month, sm.status, sm.notes, sm.sponsor_notes, sm.created_at
+         ORDER BY sm.month DESC`
+      );
+
+      const allWinners = await pgQuery(
+        `SELECT sw.*, sm.status AS month_status
+         FROM sweepstakes_winners sw
+         JOIN sweepstakes_months sm ON sm.month = sw.month
+         WHERE sm.status IN ('closed', 'archived')
+         ORDER BY sw.month DESC, sw.placement ASC`
+      );
+
+      let profileMap: Record<string, any> = {};
+      if (allWinners.length > 0) {
+        const userIds = [...new Set(allWinners.map((w: any) => w.user_id))];
+        try {
+          const { data: profiles } = await supabaseAdmin
+            .from("user_profiles")
+            .select("id, first_name, last_name, email")
+            .in("id", userIds as string[]);
+          if (profiles) {
+            for (const p of profiles) profileMap[p.id] = p;
+          }
+        } catch {}
+      }
+
+      const history = months.map((m: any) => ({
+        month: m.month,
+        status: m.status,
+        notes: m.notes,
+        sponsorNotes: m.sponsor_notes,
+        winnerCount: m.winner_count,
+        winners: allWinners
+          .filter((w: any) => w.month === m.month)
+          .map((w: any) => {
+            const p = profileMap[w.user_id] || {};
+            return {
+              id: w.id,
+              placement: w.placement,
+              userId: w.user_id,
+              displayName: [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || w.user_id.slice(0, 8),
+              email: p.email || null,
+              entryCountAtDraw: w.entry_count_at_draw,
+              selectionMethod: w.selection_method,
+              selectedByAdminId: w.selected_by_admin_id,
+              prizeNotes: w.prize_notes,
+              createdAt: w.created_at,
+            };
+          }),
+      }));
+
+      return res.json({ history });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
     }
   });
 
