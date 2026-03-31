@@ -53,6 +53,20 @@ function RankIcon({ rank }: { rank: number }) {
   return <span className="text-xs font-bold text-muted-foreground w-4 text-center">{rank}</span>;
 }
 
+function getRankStyle(rank: number): string {
+  if (rank === 1) return "border-amber-300/60 bg-amber-50/40";
+  if (rank === 2) return "border-slate-300/60 bg-slate-50/40";
+  if (rank === 3) return "border-amber-600/30 bg-amber-50/20";
+  return "";
+}
+
+function getRankBadgeStyle(rank: number): string {
+  if (rank === 1) return "bg-amber-100 text-amber-800 border-amber-200";
+  if (rank === 2) return "bg-slate-100 text-slate-700 border-slate-200";
+  if (rank === 3) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "";
+}
+
 export default function Referral() {
   const { user, session, loading } = useAuth();
   const [, setLocation] = useLocation();
@@ -177,18 +191,26 @@ export default function Referral() {
               <Card
                 key={entry.rank}
                 data-testid={`leaderboard-entry-${entry.rank}`}
-                className={entry.rank <= 3 ? "border-primary/20 bg-primary/[0.02]" : ""}
+                className={getRankStyle(entry.rank)}
               >
                 <CardContent className="p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                    entry.rank === 1 ? "bg-amber-100" :
+                    entry.rank === 2 ? "bg-slate-100" :
+                    entry.rank === 3 ? "bg-amber-50" : "bg-muted/50"
+                  }`}>
                     <RankIcon rank={entry.rank} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" data-testid={`text-leaderboard-name-${entry.rank}`}>
+                    <p className={`text-sm truncate ${entry.rank <= 3 ? "font-semibold" : "font-medium"}`} data-testid={`text-leaderboard-name-${entry.rank}`}>
                       {entry.displayName}
                     </p>
                   </div>
-                  <Badge data-testid={`text-leaderboard-entries-${entry.rank}`} variant="secondary" className="shrink-0 text-xs">
+                  <Badge
+                    data-testid={`text-leaderboard-entries-${entry.rank}`}
+                    variant="secondary"
+                    className={`shrink-0 text-xs ${getRankBadgeStyle(entry.rank)}`}
+                  >
                     {entry.entries} {entry.entries === 1 ? "entry" : "entries"}
                   </Badge>
                 </CardContent>
@@ -318,6 +340,21 @@ export default function Referral() {
             </CardContent>
           </Card>
 
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardContent className="p-4 space-y-2">
+              <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                <Gift className="h-4 w-4 text-primary" />
+                This Month's Giveaway
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Qualified referrals earn entries into this month's giveaway. Final prize details will be announced here.
+              </p>
+              <p className="text-[11px] text-muted-foreground/60">
+                The more veterans you help connect to resources, the more entries you earn.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card className="bg-muted/30 border-dashed">
             <CardContent className="p-4 space-y-2">
               <h3 className="text-sm font-semibold flex items-center gap-1.5">
@@ -325,10 +362,11 @@ export default function Referral() {
                 How It Works
               </h3>
               <ol className="text-xs text-muted-foreground space-y-1.5 ml-5 list-decimal">
-                <li>Share your referral link with a veteran or supporter</li>
-                <li>They create an account and complete their profile</li>
-                <li>You earn one sweepstakes entry for each qualified referral</li>
-                <li>More entries = better chances in this month's giveaway</li>
+                <li>Share your referral link</li>
+                <li>A veteran, family member, or supporter signs up</li>
+                <li>They complete the required steps</li>
+                <li>You earn an entry into this month's giveaway</li>
+                <li>Your standing updates on the leaderboard</li>
               </ol>
             </CardContent>
           </Card>

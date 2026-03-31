@@ -1,0 +1,124 @@
+--- STEP 63.4A – REFERRAL PAGE CONTEXT + GIVEAWAY DISPLAY ---
+
+We need to improve clarity and motivation on the referral page.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add clear context so users understand:
+- what they are earning entries for
+- how the system works
+- why they should participate
+
+Keep this lightweight, clear, and mission-aligned.
+
+-------------------------------------
+BUILD SCOPE
+-------------------------------------
+
+1) GIVEAWAY SECTION
+
+Add a section on the referral page above or near the leaderboard.
+
+Title:
+“This Month’s Giveaway”
+
+Behavior:
+- if approved prize content already exists in the current implementation/config, display it cleanly
+- if prize content is not finalized, show a generic placeholder message about monthly rewards/giveaways
+
+Do NOT hardcode fake or speculative prize details.
+
+If prizes are confirmed, support a simple structure such as:
+- 1st place
+- 2nd place
+- 3rd place
+- short description
+
+If prizes are not confirmed, use clean placeholder copy such as:
+“Qualified referrals earn entries into this month’s giveaway. Final prize details will be announced here.”
+
+-------------------------------------
+
+2) HOW IT WORKS (REFINEMENT)
+
+Review and refine the existing How It Works section so it is:
+- short
+- scannable
+- no long paragraphs
+- maximum 4–5 steps
+
+It should reflect the actual live referral flow, for example:
+1. Share your referral link
+2. A veteran, family member, or supporter signs up
+3. They complete the required steps
+4. You earn an entry into this month’s giveaway
+5. Your standing updates on the leaderboard
+
+Keep wording simple and mission-aligned.
+
+-------------------------------------
+
+3) LEADERBOARD VISUAL POLISH
+
+For the top 3 leaderboard positions:
+- add subtle gold / silver / bronze visual styling
+- keep it clean and professional
+- avoid heavy gamification
+
+IMPORTANT:
+- no oversized badges
+- no flashy gradients
+- no animations
+- no cartoon trophy treatment
+
+Acceptable polish:
+- subtle accent border
+- subtle background tint
+- subtle text/icon emphasis
+
+-------------------------------------
+
+4) MOBILE-FIRST SAFETY
+
+Ensure:
+- no layout shifts
+- no horizontal scroll
+- no bottom-nav overlap
+- no overflow issues
+- giveaway section and How It Works remain easy to scan on mobile
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- keep UI lightweight
+- do NOT add new pages
+- do NOT add all-time leaderboard yet
+- do NOT add animations or complex visuals
+- maintain mobile-first layout
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. where giveaway section was added
+2. how it behaves if prizes are not set
+3. how How It Works was refined
+4. how top-3 styling was implemented
+5. confirmation no layout issues were introduced
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make the referral page:
+- clear
+- motivating
+- easy to understand
+- aligned with mission
+
+--- END ---
