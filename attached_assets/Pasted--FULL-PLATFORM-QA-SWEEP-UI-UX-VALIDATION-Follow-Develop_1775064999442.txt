@@ -1,0 +1,133 @@
+--- FULL PLATFORM QA SWEEP – UI / UX VALIDATION ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is NOT a fix task.
+This is a FULL PLATFORM AUDIT.
+
+Do NOT change code yet.
+First identify issues.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Audit the entire platform for UI/UX consistency and violations of the established system.
+
+We want a COMPLETE list of issues before making any fixes.
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Audit ALL major flows:
+
+1) Onboarding
+- Welcome page
+- Create Account
+- Enable Location
+
+2) Core Navigation
+- Home
+- Resources
+- Trusted Services
+- Shop
+- My Saved
+- Community
+
+3) Get Help Flow
+- homepage modal
+- referral-triggered modal
+- all entry points
+
+4) Referral System
+- referral dashboard
+- leaderboard
+- giveaway section
+- share section
+
+5) Profile / Account Pages
+- create profile
+- edit profile (if exists)
+
+6) Any modal/dialog components across the platform
+
+-------------------------------------
+CHECKPOINTS (REQUIRED)
+-------------------------------------
+
+MOBILE (PRIMARY):
+- page fits within viewport (no unwanted scrolling)
+- no content hidden behind bottom nav
+- no horizontal scroll
+- all CTAs fully visible
+- proper safe-area spacing
+- no forced overscroll needed
+
+DESKTOP:
+- consistent modal/dialog behavior
+- no page vs modal inconsistencies
+- proper centering and max widths
+- no awkward spacing or overflow
+
+SCROLL:
+- single scroll container where expected
+- no nested/competing scroll areas
+- full access to top and bottom content
+
+NAVIGATION:
+- top bar consistent
+- bottom nav stable
+- no broken back/exit flows
+
+MODALS:
+- proper overlay behavior
+- internal scroll only
+- background does NOT scroll
+- close (X) works consistently
+- ESC support (desktop)
+
+CTA / FLOW:
+- primary CTA always at logical end
+- secondary actions visible
+- no mid-form CTA interruptions
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return a structured report:
+
+1) PAGE / COMPONENT NAME
+2) ISSUE TYPE (layout / scroll / CTA / modal / nav)
+3) DESCRIPTION
+4) SEVERITY:
+   - CRITICAL (breaks usability)
+   - HIGH (hurts UX)
+   - MEDIUM (polish)
+5) RECOMMENDED FIX (short)
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- DO NOT FIX ANYTHING YET
+- DO NOT CHANGE CODE
+- DO NOT REFACTOR
+- DO NOT GUESS
+
+Only report issues.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Produce a complete issue list so we can fix the platform in controlled batches instead of piecemeal.
+
+--- END ---
