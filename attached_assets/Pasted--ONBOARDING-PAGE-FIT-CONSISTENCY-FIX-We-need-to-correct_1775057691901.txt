@@ -1,0 +1,95 @@
+--- ONBOARDING PAGE FIT CONSISTENCY FIX ---
+
+We need to correct the next 2 onboarding pages after the landing page so they follow the same global fit/page rule as the welcome page.
+
+Pages affected:
+1. Create Your Free Account
+2. Enable Location
+
+IMPORTANT:
+These pages should feel visually consistent with the corrected landing/welcome page.
+
+-------------------------------------
+PROBLEM
+-------------------------------------
+
+The welcome page now fits cleanly as a single-screen mobile experience.
+
+However, the next 2 onboarding pages are not matching that same standard:
+- logo size is not consistent
+- vertical spacing is not aligned with the landing page
+- pages do not feel equally “fit” and balanced
+- unnecessary scrolling / vertical waste may still exist
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make both onboarding pages follow the same fit and spacing rule as the welcome page:
+
+- clean single-screen feel on mobile
+- same logo scale and prominence
+- balanced vertical spacing
+- CTA visible cleanly
+- no wasted space
+- no unnecessary scroll if possible
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+1) MATCH LOGO SCALE
+- use the same logo size as the corrected landing page
+- align logo treatment consistently across:
+  - landing page
+  - create account page
+  - enable location page
+
+2) MATCH VERTICAL SPACING RHYTHM
+- reduce/adjust top whitespace as needed
+- use the same general spacing pattern established on the landing page
+- content should feel centered and intentional, not floating too low
+
+3) MOBILE SINGLE-SCREEN FIT
+- both pages should fit more cleanly on mobile
+- primary CTA should remain visible without unnecessary scrolling where possible
+
+4) KEEP PAGE STRUCTURE
+Do NOT redesign:
+- keep page flow
+- keep copy
+- keep buttons
+- keep icons
+- keep functionality
+
+5) APPLY GLOBAL FIT RULE
+These pages must follow the same previously established rule:
+- mobile-first fit
+- no wasted vertical space
+- no hidden CTA
+- no unnecessary scrolling on short onboarding screens
+- visual consistency across the sequence
+
+-------------------------------------
+PAGES TO REVIEW
+-------------------------------------
+
+Please review and update the relevant onboarding page files for:
+- create account screen
+- enable location screen
+
+Use the corrected landing page as the visual benchmark.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. exact files changed
+2. spacing classes adjusted
+3. confirmation logo size now matches landing page
+4. confirmation both pages fit more cleanly on mobile
+5. confirmation global fit rule was applied
+6. publish/restart requirements
+
+--- END ---

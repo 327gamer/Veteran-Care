@@ -169,27 +169,27 @@ export default function Onboarding() {
         )}
 
         {step === 2 && (
-          <div className="w-full flex flex-col items-center space-y-6">
-            <div className="h-36 w-full max-w-[220px] flex items-center justify-center drop-shadow-2xl">
+          <div className="w-full flex flex-col items-center flex-1 justify-center -mt-4">
+            <div className="h-48 w-full max-w-[300px] flex items-center justify-center drop-shadow-2xl mb-3">
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
-            <div className="space-y-3">
+            <div>
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Create Your Free Account
               </h1>
-              <p className="text-primary/80 text-sm font-semibold leading-relaxed px-2">
+              <p className="text-sm font-semibold text-foreground/85 mt-2">
                 {platform.onboardingAccountSubtitle}
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed px-2">
+              <p className="text-[13px] text-gray-600 leading-relaxed px-4 mt-2 max-w-xs mx-auto">
                 {platform.onboardingAccountBody}
               </p>
-              <p className="text-muted-foreground text-xs leading-relaxed px-2 italic">
+              <p className="text-[13px] text-gray-500 leading-relaxed px-4 mt-2 italic max-w-xs mx-auto">
                 {platform.onboardingAccountPrivacy}
               </p>
             </div>
 
-            <div className="w-full space-y-2 pt-2">
+            <div className="w-full space-y-2 mt-5">
               <Button
                 data-testid="button-create-account"
                 className="w-full h-11 text-base font-bold rounded-full shadow-lg"
@@ -211,35 +211,35 @@ export default function Onboarding() {
         )}
 
         {step === 3 && (
-          <div className="w-full flex flex-col items-center space-y-6">
-            <div className="h-40 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
+          <div className="w-full flex flex-col items-center flex-1 justify-center -mt-4">
+            <div className="h-48 w-full max-w-[300px] flex items-center justify-center drop-shadow-2xl mb-3">
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
-            <div className="relative flex items-center justify-center">
-              <div className="h-16 w-16 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MapPin className="h-6 w-6 text-primary fill-primary" />
+            <div className="relative flex items-center justify-center mb-2">
+              <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-primary fill-primary" />
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Enable Location
               </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed px-4">
+              <p className="text-[13px] text-gray-600 leading-relaxed px-4 mt-2 max-w-xs mx-auto">
                 Allow location so we can show resources and services near you.
               </p>
             </div>
 
             {locStatus && (
-              <p className="text-xs text-muted-foreground animate-in fade-in duration-300 px-4" data-testid="text-loc-status">
+              <p className="text-xs text-gray-500 animate-in fade-in duration-300 px-4 mt-2" data-testid="text-loc-status">
                 {locStatus}
               </p>
             )}
 
-            <div className="w-full space-y-2 pt-2">
+            <div className="w-full space-y-2 mt-5">
               <Button
                 data-testid="button-allow-location"
                 className="w-full h-11 text-base font-bold rounded-full shadow-lg"
