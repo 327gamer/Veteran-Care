@@ -279,7 +279,7 @@ export default function Home() {
                   <SelectTrigger id="state">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px] z-[200]">
+                  <SelectContent className="max-h-[200px]">
                     {US_STATES.map((state) => (
                       <SelectItem key={state} value={state}>{state}</SelectItem>
                     ))}
@@ -292,7 +292,7 @@ export default function Home() {
                   <SelectTrigger id="city">
                     <SelectValue placeholder="Select city" />
                   </SelectTrigger>
-                  <SelectContent className="z-[200]">
+                  <SelectContent>
                     {getCities(selectedState).map((city) => (
                       <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}

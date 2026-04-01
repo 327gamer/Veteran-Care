@@ -1,0 +1,99 @@
+--- PLATFORM UI STANDARDIZATION UPDATE + CONTINUE QA SWEEP BATCHES ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This task has 2 parts:
+1. add a small reusable layering standard
+2. continue the next controlled QA batch
+
+Do NOT overengineer this.
+Do NOT refactor unrelated UI.
+Do just enough to make layering explicit and reusable.
+
+-------------------------------------
+PART 1 – ADD GLOBAL LAYERING STANDARD
+-------------------------------------
+
+GOAL:
+Stop future z-index guessing and make modal/floating UI layering explicit.
+
+Recommended approach:
+Create a small shared layering standard using the most project-consistent lightweight option available, for example:
+- shared constants
+- theme tokens
+- utility export
+- centralized class mapping
+
+Suggested baseline:
+- MODAL_LAYER = 100
+- FLOATING_LAYER = 200
+
+Applies to:
+- Dialog overlays
+- Dialog content where relevant
+- SelectContent
+- PopoverContent
+- Dropdown/floating menus
+- Date pickers
+- Command menus
+- any future floating UI inside dialogs
+
+IMPORTANT:
+- use the simplest maintainable approach already aligned with the project
+- do NOT build a heavy token system
+- do NOT rename/refactor unrelated styling
+- update current modal/floating components to use the shared layering rule where appropriate
+
+OUTPUT REQUIRED FOR PART 1:
+1. where the shared layering standard was added
+2. how current modal/floating components now reference it
+3. files changed
+
+-------------------------------------
+PART 2 – CONTINUE QA SWEEP (NEXT BATCH)
+-------------------------------------
+
+After the layering standard is added, continue the next QA batch.
+
+PRIORITY:
+Focus on remaining MEDIUM-priority issues from the audit that affect:
+- shell consistency
+- spacing consistency
+- modal consistency
+- hidden content
+- nav overlap
+- awkward completion zones
+- dead or misleading controls
+- mobile regressions
+
+IMPORTANT:
+- fix root-system issues where possible
+- avoid page-by-page cosmetic hacks
+- keep changes controlled and testable
+- preserve launch-ready behavior
+
+-------------------------------------
+REPORTING REQUIRED
+-------------------------------------
+
+After implementation, provide:
+1. what was standardized globally
+2. what pages/components were fixed in this batch
+3. what still remains for later batches, if anything
+4. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+1. Permanently encode the modal/floating layering rule into the system
+2. Continue QA sweep cleanup in controlled batches
+3. Reduce repeat regressions before launch
+
+--- END ---

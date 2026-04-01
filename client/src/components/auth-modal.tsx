@@ -404,7 +404,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                   <SelectTrigger data-testid="select-signup-user-type" className="w-full h-9 text-sm">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent className="z-[200]">
+                  <SelectContent>
                     {USER_TYPES.map(t => (
                       <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                     ))}
@@ -424,7 +424,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                         <SelectTrigger data-testid="select-signup-branch" className="w-full h-9 text-sm">
                           <SelectValue placeholder="Select branch" />
                         </SelectTrigger>
-                        <SelectContent className="z-[200]">
+                        <SelectContent>
                           {BRANCHES.map(b => (
                             <SelectItem key={b} value={b}>{b}</SelectItem>
                           ))}
@@ -437,7 +437,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                         <SelectTrigger data-testid="select-signup-era" className="w-full h-9 text-sm">
                           <SelectValue placeholder="Select era" />
                         </SelectTrigger>
-                        <SelectContent className="z-[200]">
+                        <SelectContent>
                           {SERVICE_ERAS.map(e => (
                             <SelectItem key={e} value={e}>{e}</SelectItem>
                           ))}
@@ -477,7 +477,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                       <SelectTrigger data-testid="select-signup-contact-method" className="w-full h-9 text-sm">
                         <SelectValue placeholder="How should we reach you?" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200]">
+                      <SelectContent>
                         {CONTACT_METHODS.map(m => (
                           <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                         ))}
@@ -495,7 +495,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                             <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="p-0 z-[200]" align="start">
+                        <PopoverContent className="p-0" align="start">
                           <Command>
                             <CommandInput placeholder="Search state..." />
                             <CommandList>

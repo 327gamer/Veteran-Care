@@ -283,7 +283,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent overlayClassName="z-[110]" className="sm:max-w-[440px] max-h-[90dvh] overflow-y-auto z-[110]">
+      <DialogContent className="sm:max-w-[440px] max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -407,7 +407,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 <SelectTrigger data-testid="select-nav-modal-contact" className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[200]">
+                <SelectContent>
                   <SelectItem value="phone">Phone call</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="either">Either is fine</SelectItem>
@@ -434,7 +434,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                     <SelectTrigger data-testid="select-nav-modal-category" className="h-9 text-sm">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
-                    <SelectContent className="z-[200]">
+                    <SelectContent>
                       {HELP_CATEGORIES.map(cat => (
                         <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                       ))}
@@ -452,7 +452,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                       <SelectTrigger data-testid="select-nav-modal-subcategory" className="h-9 text-sm">
                         <SelectValue placeholder="Select a subcategory" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200]">
+                      <SelectContent>
                         {currentSubcategories.map(sub => (
                           <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
                         ))}

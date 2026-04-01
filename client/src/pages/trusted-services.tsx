@@ -215,7 +215,7 @@ export default function TrustedServices() {
 
   const connectModal = (
     <Dialog open={!!connectService} onOpenChange={(v) => { if (!v) closeModal(); }}>
-      <DialogContent overlayClassName="z-[110]" className="sm:max-w-md max-h-[85dvh] overflow-y-auto z-[110]">
+      <DialogContent className="sm:max-w-md max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Handshake className="h-5 w-5 text-primary" />
@@ -268,7 +268,7 @@ export default function TrustedServices() {
                   <SelectTrigger className="h-9 text-sm" data-testid="select-lead-role">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
-                  <SelectContent className="z-[200]">
+                  <SelectContent>
                     {ROLE_OPTIONS.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
