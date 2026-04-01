@@ -132,16 +132,16 @@ export default function Onboarding() {
               <p className="text-lg font-semibold text-foreground/85 mt-2">
                 {platform.onboardingPrimary}
               </p>
-              <p className="text-sm text-muted-foreground mt-2 px-2">
+              <p className="text-sm text-gray-600 mt-2 px-2">
                 Get the help you need —
               </p>
-              <p className="text-sm text-muted-foreground px-2">
+              <p className="text-sm text-gray-600 px-2">
                 quickly, simply, and locally.
               </p>
-              <p className="text-[13px] text-muted-foreground/80 leading-relaxed px-4 mt-2 max-w-xs mx-auto">
+              <p className="text-[13px] text-gray-600 leading-relaxed px-4 mt-2 max-w-xs mx-auto">
                 {platform.onboardingBody}
               </p>
-              <p className="text-[13px] text-muted-foreground/65 leading-relaxed px-4 mt-2.5 italic max-w-xs mx-auto">
+              <p className="text-[13px] text-gray-500 leading-relaxed px-4 mt-2.5 italic max-w-xs mx-auto">
                 {platform.onboardingCta}
               </p>
             </div>
