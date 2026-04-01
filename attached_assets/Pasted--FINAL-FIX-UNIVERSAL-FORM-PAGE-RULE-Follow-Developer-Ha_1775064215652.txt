@@ -1,0 +1,102 @@
+--- FINAL FIX + UNIVERSAL FORM PAGE RULE ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is BOTH:
+1) a final fix for the Create Profile page
+2) a universal rule that must be applied to all long form / signup / profile pages going forward
+
+-------------------------------------
+CURRENT ISSUE
+-------------------------------------
+
+The Create Profile page is improved, but still not fully correct.
+
+Current problem:
+- the main CTA is now at the bottom (good)
+- but the secondary action:
+  "Already have an account? Sign in"
+  is still too low / too close to the bottom navigation
+- it is not naturally visible unless the user forces extra scrolling
+
+This means the page still fails full completion usability.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Fix the Create Profile page so the final secondary action is comfortably visible and reachable after the CTA.
+
+Then apply this as a universal rule for all long form pages.
+
+-------------------------------------
+REQUIRED FIX – THIS PAGE
+-------------------------------------
+
+1) Add more bottom-safe spacing AFTER the final secondary action
+- enough room so:
+  - CTA is fully visible
+  - sign-in link is fully visible
+  - nothing feels trapped against the bottom navigation
+
+2) Ensure the end of the form has a comfortable completion zone:
+- consent
+- CTA
+- sign-in link
+- bottom breathing room
+
+3) Do NOT move the CTA back upward
+- CTA should remain at the bottom of the form flow
+
+-------------------------------------
+UNIVERSAL RULE TO APPLY GOING FORWARD
+-------------------------------------
+
+For ALL long forms / signup pages / profile pages / application pages:
+
+- final CTA must be fully visible
+- final secondary action must also be fully visible
+- bottom nav must never crowd the final action area
+- add proper safe-area / end-of-form padding by default
+- users should not have to force-scroll to expose final links/actions
+
+This should become the standard implementation pattern for all future long-form pages.
+
+-------------------------------------
+DO NOT CHANGE
+-------------------------------------
+
+- no field removal
+- no redesign
+- no logic changes
+- no validation changes
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. exact file(s) changed
+2. exact bottom spacing/safe-area fix added
+3. confirmation sign-in link now displays naturally below CTA
+4. confirmation this bottom-action-area rule will be applied to all future long-form pages
+5. any additional pages already identified that may need the same treatment
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+The Create Profile page should feel truly finished:
+- full bottom visibility
+- comfortable completion flow
+- no forced overscroll
+- reusable as the standard for all long-form pages
+
+--- END ---

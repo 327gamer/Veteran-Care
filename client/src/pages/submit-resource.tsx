@@ -242,6 +242,8 @@ export default function SubmitResource() {
           {(submitMutation.error as Error).message}
         </p>
       )}
+
+      <div className="h-16" aria-hidden="true" />
     </div>
   );
 }

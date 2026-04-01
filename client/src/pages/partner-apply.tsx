@@ -443,6 +443,8 @@ export default function PartnerApply() {
             </p>
           </CardContent>
         </Card>
+
+        <div className="h-16" aria-hidden="true" />
       </div>
     </div>
   );

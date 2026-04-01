@@ -289,6 +289,8 @@ export default function VobDirectoryApply() {
         <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
           All submissions are reviewed by our team before being published. This listing is completely free.
         </p>
+
+        <div className="h-16" aria-hidden="true" />
       </div>
     </div>
   );

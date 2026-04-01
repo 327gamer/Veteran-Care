@@ -567,7 +567,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </Button>
               </div>
 
-              <div className="text-center pb-4">
+              <div className="text-center pb-20">
                 <button type="button" data-testid="button-auth-toggle" className="text-[11px] text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
                   Already have an account? Sign in
                 </button>
