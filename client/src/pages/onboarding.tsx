@@ -120,30 +120,33 @@ export default function Onboarding() {
       <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500">
 
         {step === 1 && (
-          <div className="w-full flex flex-col items-center space-y-6">
-            <div className="h-48 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+          <div className="w-full flex flex-col items-center space-y-4">
+            <div className="h-36 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
-            <div className="space-y-0">
+            <div>
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Welcome to {platform.name}
               </h1>
-              <p className="text-lg font-semibold text-foreground/85 mt-3">
+              <p className="text-lg font-semibold text-foreground/85 mt-2.5">
                 {platform.onboardingPrimary}
               </p>
-              <p className="text-sm text-muted-foreground mt-3 px-2">
-                {platform.onboardingSubtitle}
+              <p className="text-sm text-muted-foreground mt-2.5 px-2">
+                Get the help you need —
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-3 max-w-md mx-auto">
+              <p className="text-sm text-muted-foreground px-2">
+                quickly, simply, and locally.
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-2.5 max-w-md mx-auto">
                 {platform.onboardingBody}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-4 italic">
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-3 italic">
                 {platform.onboardingCta}
               </p>
             </div>
 
-            <div className="w-full space-y-2 pt-4">
+            <div className="w-full space-y-2 pt-2">
               <Button
                 data-testid="button-get-started"
                 className="w-full h-11 text-base font-bold rounded-full shadow-lg"
