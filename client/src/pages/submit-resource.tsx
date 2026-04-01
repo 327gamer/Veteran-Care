@@ -104,7 +104,7 @@ export default function SubmitResource() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Button
@@ -243,7 +243,6 @@ export default function SubmitResource() {
         </p>
       )}
 
-      <div className="h-16" aria-hidden="true" />
     </div>
   );
 }

@@ -601,10 +601,6 @@ export default function Home() {
         </div>
       </section>
 
-      
-      {/* Spacer for bottom nav */}
-      <div className="h-8"></div>
-
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}

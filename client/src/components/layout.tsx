@@ -5,7 +5,6 @@ import { platform, t } from "@shared/platform";
 import { 
   Search, 
   User, 
-  Settings, 
   Home, 
   BookOpen, 
   MessageSquare, 
@@ -52,7 +51,6 @@ const TOP_HEADER_ITEMS = [
   { icon: Sparkles, label: platform.ai.assistantName, desc: "An AI-powered assistant that helps find resources, get guidance, and navigate support services based on needs and location." },
   { icon: Bell, label: "Notifications", desc: "View updates about saved resources, messages and responses." },
   { icon: UserCircle, label: "Profile", desc: "Manage your account and service information." },
-  { icon: Settings, label: "Settings", desc: "Control your preferences and account options." },
 ];
 
 interface LayoutProps {
@@ -207,7 +205,6 @@ export default function Layout({ children }: LayoutProps) {
 
             <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5 relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 bg-orange-500 rounded-full border-2 border-primary"></span>
             </Button>
 
             {/* Profile / Auth Dropdown */}
@@ -267,9 +264,6 @@ export default function Layout({ children }: LayoutProps) {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <Button variant="ghost" size="icon" className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5">
-              <Settings className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </header>

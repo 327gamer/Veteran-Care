@@ -1,0 +1,137 @@
+--- BATCH FIX 1 – CRITICAL / HIGH PRIORITY ONLY ---
+
+Follow strictly:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+- Fix ONLY items listed below
+- Do NOT touch medium/low issues
+- Do NOT refactor beyond scope
+- Do NOT introduce regressions
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Resolve all HIGH priority issues identified in QA audit with ONE controlled update.
+
+-------------------------------------
+FIX SCOPE
+-------------------------------------
+
+1) GLOBAL BOTTOM SPACING STANDARDIZATION (X-1)
+
+RULE:
+- Layout handles ALL bottom spacing
+
+IMPLEMENT:
+- Keep Layout pb-20 (mobile)
+- Remove ALL page-level spacers:
+  - h-8
+  - h-16
+  - pb-8
+  - duplicate padding blocks
+
+APPLY TO:
+- Home
+- Referral (all views)
+- Resources
+- Trusted Services
+- Saved
+- End-of-Life
+- VOB Directory
+- any other page with manual spacers
+
+RESULT:
+- no content hidden behind bottom nav
+- consistent spacing across entire app
+
+-------------------------------------
+
+2) FIX HIDDEN CONTENT ISSUES
+
+HOME (H-2):
+- remove h-8 spacer
+- rely on Layout spacing
+
+REFERRAL (RF-1/2/3):
+- remove h-8 spacers
+- rely on Layout spacing
+
+TRUSTED SERVICES (TS-3):
+- add proper bottom spacing via Layout only (no local spacer)
+
+END OF LIFE (EOL-2):
+- remove need for spacer by relying on Layout
+
+VOB DIRECTORY (VOB-1):
+- same fix (no manual spacer)
+
+-------------------------------------
+
+3) REMOVE MISLEADING / DEAD UI (L-2, L-3)
+
+NOTIFICATIONS DOT:
+- remove orange dot entirely (until real data exists)
+
+SETTINGS ICON:
+- remove OR disable (no click handler)
+- must NOT appear interactive
+
+-------------------------------------
+
+4) FIX END-OF-LIFE DOUBLE PADDING (EOL-1)
+
+- remove inner px-4 container padding
+- rely on Layout padding only
+
+-------------------------------------
+
+5) TRUSTED SERVICES MODAL (TS-1)
+
+- convert Connect modal to use Dialog component
+- ensure:
+  - ESC key closes
+  - focus trap active
+  - consistent with other modals
+
+DO NOT redesign UI
+
+-------------------------------------
+
+6) VALIDATION (MANDATORY)
+
+After fixes:
+
+MOBILE:
+- no content hidden behind nav
+- no extra whitespace stacking
+- no horizontal scroll
+- clean bottom alignment
+
+DESKTOP:
+- modals behave consistently
+- layout intact
+
+-------------------------------------
+
+OUTPUT REQUIRED
+-------------------------------------
+
+1. pages/components updated
+2. confirmation spacing is now centralized in Layout
+3. confirmation no content is hidden behind nav anywhere
+4. confirmation no regressions introduced
+5. republish requirement
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Stabilize layout system across entire platform so future changes are faster and cheaper.
+
+--- END ---

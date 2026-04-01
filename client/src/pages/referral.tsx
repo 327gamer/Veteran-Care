@@ -193,7 +193,6 @@ export default function Referral() {
             Create Account to Start
           </Button>
         </div>
-        <div className="h-8"></div>
         <AuthModal open={showAuth} onOpenChange={setShowAuth} defaultMode="signup" />
       </div>
     );
@@ -267,7 +266,6 @@ export default function Referral() {
             ))}
           </div>
         )}
-        <div className="h-8"></div>
       </div>
     );
   }
@@ -488,7 +486,6 @@ export default function Referral() {
         </Card>
       )}
 
-      <div className="h-8"></div>
     </div>
   );
 }

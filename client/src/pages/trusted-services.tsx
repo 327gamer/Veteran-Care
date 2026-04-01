@@ -15,6 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ShieldCheck,
   Home,
   Scale,
@@ -207,18 +213,15 @@ export default function TrustedServices() {
 
   const selectedCat = categories.find(c => c.slug === selectedCategory);
 
-  const connectModal = connectService ? (
-    <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
-      <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-md mx-auto p-5 pb-8 space-y-4 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 shadow-2xl" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+  const connectModal = (
+    <Dialog open={!!connectService} onOpenChange={(v) => { if (!v) closeModal(); }}>
+      <DialogContent overlayClassName="z-[110]" className="sm:max-w-md max-h-[85dvh] overflow-y-auto z-[110]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Handshake className="h-5 w-5 text-primary" />
-            <h3 className="font-heading font-bold text-base text-primary">Connect With Provider</h3>
-          </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeModal} data-testid="button-close-connect-modal">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+            Connect With Provider
+          </DialogTitle>
+        </DialogHeader>
 
         {submitted ? (
           <div className="text-center py-6 space-y-3">
@@ -231,7 +234,7 @@ export default function TrustedServices() {
               Done
             </Button>
           </div>
-        ) : (
+        ) : connectService ? (
           <>
             <Card className="bg-muted/30">
               <CardContent className="p-3">
@@ -342,10 +345,10 @@ export default function TrustedServices() {
               </Button>
             </div>
           </>
-        )}
-      </div>
-    </div>
-  ) : null;
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
 
   if (selectedCategory && selectedCat) {
     return (

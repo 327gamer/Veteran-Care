@@ -24,7 +24,7 @@ export default function EndOfLife() {
           Back to Resources
         </button>
       </div>
-      <div className="bg-primary/5 border-b px-4 pt-3 pb-4 flex flex-col items-center text-center rounded-b-2xl mt-2">
+      <div className="bg-primary/5 border-b pt-3 pb-4 flex flex-col items-center text-center rounded-b-2xl mt-2">
         <div className="flex items-center gap-2 mb-2">
           <Flower2 className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-heading font-extrabold text-foreground tracking-tight">
@@ -36,7 +36,7 @@ export default function EndOfLife() {
         </p>
       </div>
 
-      <div className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
+      <div className="flex-1 py-6 max-w-lg mx-auto w-full">
         <div className="mb-6 px-1" data-testid="eol-intro">
           <p className="text-sm text-muted-foreground leading-relaxed text-center">
             If you're not sure where to start, begin with{" "}
