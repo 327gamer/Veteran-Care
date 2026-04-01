@@ -1,0 +1,140 @@
+--- BATCH 2 – CRITICAL FUNCTIONAL FIX (REQUEST SUPPORT FLOW) ---
+
+Follow strictly:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Component Library v1
+
+IMPORTANT:
+- This is a FUNCTIONAL fix (not visual)
+- Do NOT change UI layout
+- Fix interaction + state + validation only
+
+-------------------------------------
+ISSUE SUMMARY
+-------------------------------------
+
+Request Support flow is broken:
+
+1. Dropdowns do not open or update:
+   - "How should we contact you?"
+   - "What do you need help with?"
+
+2. Submit button remains disabled:
+   - "Request Support" is greyed out
+   - user cannot proceed
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Restore full working flow:
+
+User must be able to:
+- select contact method
+- select category
+- submit request successfully
+
+-------------------------------------
+FIX SCOPE
+-------------------------------------
+
+1) FIX SELECT / DROPDOWN INTERACTION
+
+Check all Select / Popover components:
+
+- ensure they are NOT blocked by Dialog layering
+- ensure they render using portal (if required)
+- ensure z-index is above DialogContent
+
+Verify:
+- dropdown opens on tap
+- options selectable
+- value updates visually
+
+-------------------------------------
+
+2) FIX FORM STATE BINDING
+
+Ensure:
+
+- contact_method is properly stored in state
+- category is properly stored in state
+
+Check:
+- onValueChange handlers
+- controlled component bindings
+
+-------------------------------------
+
+3) FIX VALIDATION LOGIC
+
+Review submit button logic:
+
+- confirm required fields:
+  - name
+  - (phone OR email)
+  - category
+
+Ensure:
+
+- validation reflects actual state
+- button enables when valid
+
+-------------------------------------
+
+4) FIX DISABLED BUTTON STATE
+
+- remove incorrect blocking conditions
+- ensure button activates when:
+  - category selected
+  - contact method selected (if required)
+  - contact info present
+
+-------------------------------------
+
+5) VERIFY END-TO-END FLOW
+
+Test:
+
+- Home → Get Help → Request Support
+- Fill form
+- Submit
+
+Confirm:
+- submission succeeds
+- no blocked interaction
+- no console errors
+
+-------------------------------------
+
+6) REGRESSION CHECK
+
+Ensure:
+
+- homepage modal version still works
+- referral entry flow unaffected
+- admin routing still intact
+
+-------------------------------------
+
+OUTPUT REQUIRED
+-------------------------------------
+
+1. root cause identified (state / validation / layering)
+2. components fixed
+3. confirmation dropdowns now work
+4. confirmation button enables correctly
+5. confirmation submission completes successfully
+6. publish requirement
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Restore full functionality of the core "Request Support" flow.
+
+This is a critical user path and must be 100% operational.
+
+--- END ---

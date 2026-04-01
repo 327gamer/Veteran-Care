@@ -407,7 +407,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 <SelectTrigger data-testid="select-nav-modal-contact" className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="phone">Phone call</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="either">Either is fine</SelectItem>
@@ -434,7 +434,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                     <SelectTrigger data-testid="select-nav-modal-category" className="h-9 text-sm">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[200]">
                       {HELP_CATEGORIES.map(cat => (
                         <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                       ))}
@@ -452,7 +452,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                       <SelectTrigger data-testid="select-nav-modal-subcategory" className="h-9 text-sm">
                         <SelectValue placeholder="Select a subcategory" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[200]">
                         {currentSubcategories.map(sub => (
                           <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
                         ))}
