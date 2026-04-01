@@ -103,7 +103,7 @@ export default function AdminVob() {
   const rejected = entries.filter(e => e.status === "rejected");
 
   return (
-    <div className="p-4 space-y-5 max-w-3xl mx-auto pb-20">
+    <div className="p-4 space-y-5 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin")} data-testid="button-back-admin">

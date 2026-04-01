@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Z } from "@/lib/layers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ export default function AdminAiInsights() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center gap-3 sticky top-0 z-50">
+      <div className={`bg-primary text-primary-foreground px-4 py-3 flex items-center gap-3 sticky top-0 ${Z.STICKY}`}>
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 h-8 w-8" onClick={() => setLocation("/admin")}>
           <ChevronLeft className="h-5 w-5" />
         </Button>

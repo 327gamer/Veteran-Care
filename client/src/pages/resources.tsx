@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Z } from "@/lib/layers";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -195,7 +196,7 @@ function AutocompleteInput({
         )}
       </div>
       {showDropdown && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-background border rounded-md shadow-lg max-h-[160px] overflow-y-auto">
+        <div className={`absolute ${Z.STICKY} top-full mt-1 w-full bg-background border rounded-md shadow-lg max-h-[160px] overflow-y-auto`}>
           {filtered.map((item) => (
             <button
               key={item}

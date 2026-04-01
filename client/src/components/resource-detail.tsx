@@ -1,5 +1,6 @@
 
 import { platform, t } from "@shared/platform";
+import { Z } from "@/lib/layers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -178,7 +179,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const hasAddress = resource.address || (resource.city && resource.state);
 
   return (
-    <div className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-background flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="resource-detail-page">
+    <div className={`fixed top-16 left-0 right-0 bottom-0 ${Z.PANEL} bg-background flex flex-col`}  style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="resource-detail-page">
       <div className="bg-primary px-4 sm:px-6 py-4 text-primary-foreground relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 p-2 opacity-10">
           <FileText className="h-24 w-24" />

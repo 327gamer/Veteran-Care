@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { platform, t } from "@shared/platform";
+import { Z } from "@/lib/layers";
 import { 
   Search, 
   User, 
@@ -286,7 +287,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Bottom Navigation - Mobile First */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-[100] border-t bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden"
+        className={`fixed bottom-0 left-0 right-0 ${Z.MODAL_CONTENT} border-t bg-background shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex h-16 items-center justify-around px-2">
@@ -318,7 +319,7 @@ export default function Layout({ children }: LayoutProps) {
       </nav>
 
       {showTutorial && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-300">
+        <div className={`fixed inset-0 ${Z.MODAL_OVERLAY} bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center animate-in fade-in duration-300`}>
           <div className="bg-background rounded-t-2xl md:rounded-2xl w-full max-w-sm mx-auto p-4 pb-6 md:mb-0 space-y-2 max-h-[85dvh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-500 shadow-2xl" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="flex items-center justify-between">
               <h3 className="font-heading font-bold text-lg text-primary">Quick Navigation Guide</h3>
