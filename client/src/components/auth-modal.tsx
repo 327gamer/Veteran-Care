@@ -272,7 +272,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetState(); }}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6">
 
         {mode === "login" && (
           <>
@@ -324,82 +324,84 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
         {mode === "signup" && (
           <>
-            <DialogHeader>
-              <DialogTitle className="text-xl font-heading text-primary">Create Your Profile</DialogTitle>
-              <p className="text-sm text-muted-foreground">Create your profile and preferences for more personalized support.</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <Shield className="h-3.5 w-3.5 text-primary/60" />
-                <p className="text-xs text-primary/60 font-medium">Your information is private and confidential.</p>
+            <DialogHeader className="pb-0">
+              <DialogTitle className="text-lg font-heading text-primary">Create Your Profile</DialogTitle>
+              <p className="text-xs text-muted-foreground">Personalized support starts here.</p>
+              <div className="flex items-center gap-1.5">
+                <Shield className="h-3 w-3 text-primary/60" />
+                <p className="text-[11px] text-primary/60 font-medium">Private and confidential.</p>
               </div>
             </DialogHeader>
 
-            <form onSubmit={handleSignup} className="space-y-3 mt-2">
+            <form onSubmit={handleSignup} className="space-y-2.5 mt-1">
               {error && (
-                <div data-testid="text-auth-error" className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>
+                <div data-testid="text-auth-error" className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-1.5">{error}</div>
               )}
 
               <div className="text-center">
-                <button type="button" data-testid="button-auth-toggle-top" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
+                <button type="button" data-testid="button-auth-toggle-top" className="text-[11px] text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
                   Already have an account? Sign in
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="signup-first" className="text-xs">First Name *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-first" className="text-[11px]">First Name *</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input data-testid="input-signup-first" id="signup-first" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="pl-9" autoComplete="given-name" />
+                    <User className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input data-testid="input-signup-first" id="signup-first" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="pl-8 h-9 text-sm" autoComplete="given-name" />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="signup-last" className="text-xs">Last Name *</Label>
-                  <Input data-testid="input-signup-last" id="signup-last" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-last" className="text-[11px]">Last Name *</Label>
+                  <Input data-testid="input-signup-last" id="signup-last" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-9 text-sm" autoComplete="family-name" />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="signup-email" className="text-xs">Email *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input data-testid="input-signup-email" id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9" autoComplete="email" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-email" className="text-[11px]">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input data-testid="input-signup-email" id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-8 h-9 text-sm" autoComplete="email" />
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-phone" className="text-[11px]">Phone *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input data-testid="input-signup-phone" id="signup-phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-8 h-9 text-sm" autoComplete="tel" />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="signup-phone" className="text-xs">Phone Number *</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input data-testid="input-signup-phone" id="signup-phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-9" autoComplete="tel" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-password" className="text-[11px]">Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input data-testid="input-signup-password" id="signup-password" type={showSignupPw ? "text" : "password"} placeholder="Min 6 chars" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-8 pr-8 h-9 text-sm" autoComplete="new-password" />
+                    <button type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupPw(!showSignupPw)} data-testid="button-toggle-signup-pw">
+                      {showSignupPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="signup-confirm-password" className="text-[11px]">Confirm *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input data-testid="input-signup-confirm-password" id="signup-confirm-password" type={showConfirmPw ? "text" : "password"} placeholder="Re-enter" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-8 pr-8 h-9 text-sm" autoComplete="new-password" />
+                    <button type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPw(!showConfirmPw)} data-testid="button-toggle-confirm-pw">
+                      {showConfirmPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="signup-password" className="text-xs">Password *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input data-testid="input-signup-password" id="signup-password" type={showSignupPw ? "text" : "password"} placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9 pr-9" autoComplete="new-password" />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupPw(!showSignupPw)} data-testid="button-toggle-signup-pw">
-                    {showSignupPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="signup-confirm-password" className="text-xs">Confirm Password *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input data-testid="input-signup-confirm-password" id="signup-confirm-password" type={showConfirmPw ? "text" : "password"} placeholder="Re-enter your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9 pr-9" autoComplete="new-password" />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPw(!showConfirmPw)} data-testid="button-toggle-confirm-pw">
-                    {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs">I am a... *</Label>
+              <div className="space-y-0.5">
+                <Label className="text-[11px]">I am a... *</Label>
                 <Select value={userType} onValueChange={setUserType}>
-                  <SelectTrigger data-testid="select-signup-user-type" className="w-full">
+                  <SelectTrigger data-testid="select-signup-user-type" className="w-full h-9 text-sm">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -410,29 +412,34 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </Select>
               </div>
 
-              <div className="flex items-start space-x-2 pt-1">
+              <div className="flex items-start space-x-2">
                 <Checkbox
                   id="signup-consent"
                   data-testid="checkbox-signup-consent"
                   checked={consentContact}
                   onCheckedChange={(checked) => setConsentContact(checked === true)}
-                  className="mt-0.5"
+                  className="mt-0.5 h-3.5 w-3.5"
                 />
-                <Label htmlFor="signup-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                <Label htmlFor="signup-consent" className="text-[11px] text-muted-foreground leading-relaxed cursor-pointer">
                   {t(platform.consentText)}
                 </Label>
               </div>
 
-              <div className="border-t pt-3 mt-1">
-                <p className="text-xs font-semibold text-primary mb-0.5">Optional — Tell us more for better personalization</p>
-                <p className="text-[10px] text-muted-foreground mb-3">Fill out as much or as little as you'd like. You can always update these later.</p>
+              <Button data-testid="button-signup-submit" type="submit" className="w-full h-10 text-sm font-bold" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                {loading ? "Creating Account..." : "Create Free Account"}
+              </Button>
 
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Branch of Service</Label>
+              <div className="border-t pt-2.5">
+                <p className="text-[11px] font-semibold text-primary mb-0.5">Optional — Better personalization</p>
+                <p className="text-[10px] text-muted-foreground mb-2">Fill out as much or as little as you'd like.</p>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
+                      <Label className="text-[11px]">Branch of Service</Label>
                       <Select value={branch} onValueChange={setBranch}>
-                        <SelectTrigger data-testid="select-signup-branch" className="w-full">
+                        <SelectTrigger data-testid="select-signup-branch" className="w-full h-9 text-sm">
                           <SelectValue placeholder="Select branch" />
                         </SelectTrigger>
                         <SelectContent>
@@ -442,10 +449,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Service Era</Label>
+                    <div className="space-y-0.5">
+                      <Label className="text-[11px]">Service Era</Label>
                       <Select value={serviceEra} onValueChange={setServiceEra}>
-                        <SelectTrigger data-testid="select-signup-era" className="w-full">
+                        <SelectTrigger data-testid="select-signup-era" className="w-full h-9 text-sm">
                           <SelectValue placeholder="Select era" />
                         </SelectTrigger>
                         <SelectContent>
@@ -457,35 +464,35 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="signup-rank" className="text-xs">Rank</Label>
+                        <Label htmlFor="signup-rank" className="text-[11px]">Rank</Label>
                         <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setRank("N/A / Not Applicable")} data-testid="button-rank-na">N/A</button>
                       </div>
-                      <Input data-testid="input-signup-rank" id="signup-rank" placeholder="e.g. SGT, CPL" value={rank} onChange={(e) => setRank(e.target.value)} />
+                      <Input data-testid="input-signup-rank" id="signup-rank" placeholder="e.g. SGT, CPL" value={rank} onChange={(e) => setRank(e.target.value)} className="h-9 text-sm" />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="signup-mos" className="text-xs">MOS / Specialty</Label>
+                        <Label htmlFor="signup-mos" className="text-[11px]">MOS / Specialty</Label>
                         <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setMos("N/A / Not Applicable")} data-testid="button-mos-na">N/A</button>
                       </div>
-                      <Input data-testid="input-signup-mos" id="signup-mos" placeholder="e.g. 11B, 68W" value={mos} onChange={(e) => setMos(e.target.value)} />
+                      <Input data-testid="input-signup-mos" id="signup-mos" placeholder="e.g. 11B, 68W" value={mos} onChange={(e) => setMos(e.target.value)} className="h-9 text-sm" />
                     </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="signup-deployment" className="text-xs">Deployment / Operational Background</Label>
+                      <Label htmlFor="signup-deployment" className="text-[11px]">Deployment Background</Label>
                       <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setDeploymentBackground("N/A / Not Applicable")} data-testid="button-deployment-na">N/A</button>
                     </div>
-                    <Input data-testid="input-signup-deployment" id="signup-deployment" placeholder="e.g. OEF, OIF, OND" value={deploymentBackground} onChange={(e) => setDeploymentBackground(e.target.value)} />
+                    <Input data-testid="input-signup-deployment" id="signup-deployment" placeholder="e.g. OEF, OIF, OND" value={deploymentBackground} onChange={(e) => setDeploymentBackground(e.target.value)} className="h-9 text-sm" />
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs">Preferred Contact Method</Label>
+                  <div className="space-y-0.5">
+                    <Label className="text-[11px]">Preferred Contact</Label>
                     <Select value={preferredContact} onValueChange={setPreferredContact}>
-                      <SelectTrigger data-testid="select-signup-contact-method" className="w-full">
+                      <SelectTrigger data-testid="select-signup-contact-method" className="w-full h-9 text-sm">
                         <SelectValue placeholder="How should we reach you?" />
                       </SelectTrigger>
                       <SelectContent>
@@ -496,12 +503,12 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">State</Label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="space-y-0.5">
+                      <Label className="text-[11px]">State</Label>
                       <Popover open={stateOpen} onOpenChange={setStateOpen}>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox" aria-expanded={stateOpen} className="w-full justify-between font-normal h-9 px-3 text-sm" data-testid="select-signup-state">
+                          <Button variant="outline" role="combobox" aria-expanded={stateOpen} className="w-full justify-between font-normal h-9 px-2 text-sm" data-testid="select-signup-state">
                             {userState || <span className="text-muted-foreground">State</span>}
                             <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
@@ -524,32 +531,32 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-city" className="text-xs">City</Label>
-                      <Input data-testid="input-signup-city" id="signup-city" placeholder="City" value={userCity} onChange={(e) => setUserCity(e.target.value)} />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="signup-city" className="text-[11px]">City</Label>
+                      <Input data-testid="input-signup-city" id="signup-city" placeholder="City" value={userCity} onChange={(e) => setUserCity(e.target.value)} className="h-9 text-sm" />
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-zip" className="text-xs">ZIP</Label>
-                      <Input data-testid="input-signup-zip" id="signup-zip" placeholder="ZIP" value={userZip} onChange={(e) => setUserZip(e.target.value)} />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="signup-zip" className="text-[11px]">ZIP</Label>
+                      <Input data-testid="input-signup-zip" id="signup-zip" placeholder="ZIP" value={userZip} onChange={(e) => setUserZip(e.target.value)} className="h-9 text-sm" />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs">Areas of Interest / Support Needs</Label>
-                    <div className="grid grid-cols-2 gap-1.5">
+                  <div className="space-y-1">
+                    <Label className="text-[11px]">Areas of Interest</Label>
+                    <div className="grid grid-cols-2 gap-1">
                       {INTEREST_OPTIONS.map((item) => {
                         const isSelected = selectedInterests.includes(item);
                         return (
                           <div
                             key={item}
                             data-testid={`interest-signup-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                            className={`flex items-center space-x-2 border p-2 rounded-lg cursor-pointer transition-all ${
+                            className={`flex items-center space-x-1.5 border px-2 py-1.5 rounded-md cursor-pointer transition-all ${
                               isSelected ? "bg-primary/10 border-primary/40 shadow-sm" : "hover:bg-muted/50"
                             }`}
                             onClick={() => toggleInterest(item)}
                           >
-                            <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0 pointer-events-none" />
-                            <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
+                            <Checkbox checked={isSelected} className="h-3 w-3 shrink-0 pointer-events-none" />
+                            <Label className="cursor-pointer font-medium text-[11px] leading-tight">{item}</Label>
                           </div>
                         );
                       })}
@@ -558,13 +565,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </div>
               </div>
 
-              <Button data-testid="button-signup-submit" type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
-                {loading ? "Creating Account..." : "Create Free Account"}
-              </Button>
-
-              <div className="text-center">
-                <button type="button" data-testid="button-auth-toggle" className="text-xs text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
+              <div className="text-center pt-1">
+                <button type="button" data-testid="button-auth-toggle" className="text-[11px] text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
                   Already have an account? Sign in
                 </button>
               </div>

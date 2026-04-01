@@ -14,7 +14,7 @@ export default function EndOfLife() {
 
   return (
     <div className="flex flex-col">
-      <div className="px-4 pt-3">
+      <div className="pt-1">
         <button
           data-testid="eol-back-top"
           onClick={() => setLocation("/resources")}
@@ -24,7 +24,7 @@ export default function EndOfLife() {
           Back to Resources
         </button>
       </div>
-      <div className="bg-primary/5 border-b px-4 pt-4 pb-6 flex flex-col items-center text-center rounded-b-2xl">
+      <div className="bg-primary/5 border-b px-4 pt-3 pb-4 flex flex-col items-center text-center rounded-b-2xl mt-2">
         <div className="flex items-center gap-2 mb-2">
           <Flower2 className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-heading font-extrabold text-foreground tracking-tight">

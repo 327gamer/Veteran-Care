@@ -1,0 +1,97 @@
+--- GLOBAL UI QUALITY CONTROL + PAGE FIT ENFORCEMENT ---
+
+We need to implement a platform-wide UI/UX consistency pass — not just fix individual pages.
+
+-------------------------------------
+PROBLEM
+-------------------------------------
+
+We are still finding pages that do NOT follow the established UI rules:
+
+- inconsistent vertical spacing
+- poor mobile fit (scrolling when not needed)
+- CTA placement not optimized
+- inconsistent layout vs onboarding screens
+- components not respecting app-shell standards
+
+Example:
+The "Create Account" page (accessed from homepage CTA) is not following the same fit and spacing system as onboarding.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Run a FULL SITE UI QUALITY CONTROL PASS and enforce ONE consistent layout system across ALL pages.
+
+-------------------------------------
+GLOBAL RULES (MANDATORY)
+-------------------------------------
+
+ALL pages must follow:
+
+1) MOBILE-FIRST FIT
+- avoid unnecessary scrolling where possible
+- ensure clean vertical balance
+- CTA visible without excessive scroll
+
+2) CONSISTENT SPACING SYSTEM
+- eliminate excessive top whitespace
+- maintain consistent spacing rhythm across pages
+
+3) CTA POSITIONING
+- primary actions must be clearly visible
+- avoid burying key buttons below long forms without structure
+
+4) COMPONENT CONSISTENCY
+- inputs, buttons, cards must follow same design system
+- no isolated layout patterns
+
+5) APP-SHELL COMPLIANCE
+- respect top + bottom navigation boundaries
+- no overlap or hidden content
+
+-------------------------------------
+SPECIFIC FIX – CREATE ACCOUNT PAGE
+-------------------------------------
+
+The Create Account page (full form version) must be improved:
+
+- reduce vertical density
+- improve section spacing
+- group fields more cleanly
+- ensure CTA is more accessible
+- improve mobile usability (less scrolling fatigue)
+
+DO NOT remove fields — improve layout only.
+
+-------------------------------------
+REQUIRED ACTION
+-------------------------------------
+
+1) Audit ALL pages
+2) Identify any page not following the standard
+3) Fix layout inconsistencies
+4) Apply unified spacing + fit system everywhere
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. list of pages updated
+2. what layout issues were found
+3. what changes were applied
+4. confirmation global UI rules now enforced site-wide
+5. any remaining pages needing review
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+A fully consistent, professional, mobile-first platform where every page feels part of the same system.
+
+No more one-off layouts.
+
+--- END ---

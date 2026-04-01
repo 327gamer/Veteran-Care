@@ -129,7 +129,7 @@ export default function VobDirectoryApply() {
   }
 
   return (
-    <div className="p-4 space-y-5 animate-in fade-in duration-300 pb-24">
+    <div className="space-y-5 animate-in fade-in duration-300 pb-4">
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"

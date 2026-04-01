@@ -349,7 +349,7 @@ export default function TrustedServices() {
 
   if (selectedCategory && selectedCat) {
     return (
-      <div className="p-4 space-y-4 animate-in fade-in duration-300">
+      <div className="space-y-4 animate-in fade-in duration-300">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -515,7 +515,7 @@ export default function TrustedServices() {
   }
 
   return (
-    <div className="p-4 space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <div className="text-center mb-2">
         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
           <ShieldCheck className="h-6 w-6 text-primary" />

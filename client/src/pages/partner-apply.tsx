@@ -167,7 +167,7 @@ export default function PartnerApply() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+      <div className="max-w-2xl mx-auto px-4 py-6 pb-8">
         <button
           data-testid="button-back"
           onClick={() => setLocation("/trusted-services")}
