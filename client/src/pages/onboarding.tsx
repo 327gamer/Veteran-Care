@@ -116,12 +116,12 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
-      <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500">
+    <div className="min-h-screen flex flex-col items-center justify-between p-6 pt-8 pb-6 bg-background relative overflow-hidden">
+      <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500 flex-1 justify-center">
 
         {step === 1 && (
           <div className="w-full flex flex-col items-center space-y-4">
-            <div className="h-36 w-full max-w-[240px] flex items-center justify-center drop-shadow-2xl">
+            <div className="h-44 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
