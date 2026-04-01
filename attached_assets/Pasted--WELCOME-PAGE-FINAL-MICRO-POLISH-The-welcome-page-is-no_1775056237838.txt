@@ -1,0 +1,66 @@
+--- WELCOME PAGE FINAL MICRO-POLISH ---
+
+The welcome page is now very close and looks strong.
+
+We want one final lightweight polish pass only.
+
+IMPORTANT:
+- do NOT change layout
+- do NOT change buttons
+- do NOT change copy
+- do NOT reintroduce scrolling
+- do NOT move the logo/header structure again
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make the text block feel just a little more premium and easier to scan by subtly improving body-text contrast against the stronger headline hierarchy.
+
+-------------------------------------
+REQUESTED POLISH
+-------------------------------------
+
+1) BODY PARAGRAPH WIDTH
+- tighten the width of the main body paragraph slightly
+- reduce line length just a bit so it reads cleaner and feels more premium
+- keep centered alignment
+
+Suggested approach:
+- if currently using something like max-w-lg, reduce slightly to max-w-md or equivalent
+- do not over-tighten
+
+2) BODY TEXT SIZE / HIERARCHY
+- if needed, reduce the main body paragraph text size by one small step OR slightly lighten its emphasis relative to the headline + primary support line
+- keep readability strong
+- the goal is just slightly stronger contrast between:
+  - headline
+  - primary support line
+  - body paragraph
+
+3) FINAL SUPPORT LINE
+- keep as-is unless slight spacing or width refinement is needed for visual balance
+- do not make it stronger than the body or primary line
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- page still fits as a clean single-screen welcome page on mobile
+- hierarchy feels even more premium
+- body text feels a little cleaner and less wide
+- no layout regressions
+- no new scrolling introduced
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. exact file changed
+2. width class adjustment made
+3. whether body text size/class changed
+4. confirmation no scrolling/regression was introduced
+5. publish/restart requirements
+
+--- END ---
