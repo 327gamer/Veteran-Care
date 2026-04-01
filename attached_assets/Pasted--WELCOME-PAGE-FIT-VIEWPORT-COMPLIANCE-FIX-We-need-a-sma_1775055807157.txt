@@ -1,0 +1,73 @@
+--- WELCOME PAGE FIT + VIEWPORT COMPLIANCE FIX ---
+
+We need a small but important correction to the welcome / launch page.
+
+IMPORTANT:
+This page should feel like a clean single-screen welcome experience on mobile.
+Right now there is too much unused space at the top, which is forcing unnecessary scrolling.
+
+This must follow the previously established global page-fit rule:
+- pages must fit properly on mobile first
+- avoid unnecessary vertical overflow on simple landing/welcome pages
+- respect viewport height
+- keep primary CTAs visible without wasted space
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make the welcome page fit more cleanly on mobile so it feels like one screen, without redesigning the page.
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+1) REDUCE TOP DEAD SPACE
+- reduce vertical space above the logo
+- tighten the top spacing so content starts higher
+
+2) LOGO ADJUSTMENT
+- slightly increase logo size
+- center the logo more naturally between the top of the page and the “Welcome to Veteran Care” headline
+
+3) KEEP SINGLE-SCREEN FEEL
+- reduce enough vertical waste so the page feels like a one-page welcome screen
+- primary CTA area should remain visible cleanly on mobile without unnecessary scrolling if possible
+
+4) DO NOT CHANGE
+- page structure
+- copy
+- buttons
+- button order
+- overall flow
+
+-------------------------------------
+IMPLEMENTATION GUIDANCE
+-------------------------------------
+
+Please review:
+- top padding / margin on the main container
+- logo wrapper spacing
+- logo size classes
+- spacing between logo and headline
+- total viewport fit on mobile
+
+Use the existing global mobile-fit rule that was previously applied across the platform:
+- no wasted space
+- no unnecessary scroll for short/simple pages
+- clean viewport usage
+- CTA visibility prioritized
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. exact file changed
+2. spacing classes adjusted
+3. logo size change made
+4. confirmation page now fits more cleanly on mobile
+5. confirmation global page-fit rule was applied
+6. publish/restart requirements
+
+--- END ---

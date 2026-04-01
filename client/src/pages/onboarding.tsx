@@ -116,12 +116,12 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between p-6 pt-8 pb-6 bg-background relative overflow-hidden">
-      <div className="w-full max-w-md flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-500 flex-1 justify-center">
+    <div className="min-h-[100dvh] flex flex-col items-center p-6 bg-background relative overflow-hidden">
+      <div className="w-full max-w-md flex flex-col items-center text-center animate-in fade-in zoom-in duration-500 flex-1">
 
         {step === 1 && (
-          <div className="w-full flex flex-col items-center space-y-4">
-            <div className="h-44 w-full max-w-[280px] flex items-center justify-center drop-shadow-2xl">
+          <div className="w-full flex flex-col items-center flex-1 justify-center -mt-4">
+            <div className="h-48 w-full max-w-[300px] flex items-center justify-center drop-shadow-2xl mb-3">
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
@@ -129,24 +129,24 @@ export default function Onboarding() {
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Welcome to {platform.name}
               </h1>
-              <p className="text-lg font-semibold text-foreground/85 mt-2.5">
+              <p className="text-lg font-semibold text-foreground/85 mt-2">
                 {platform.onboardingPrimary}
               </p>
-              <p className="text-sm text-muted-foreground mt-2.5 px-2">
+              <p className="text-sm text-muted-foreground mt-2 px-2">
                 Get the help you need —
               </p>
               <p className="text-sm text-muted-foreground px-2">
                 quickly, simply, and locally.
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-2.5 max-w-md mx-auto">
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-2 max-w-md mx-auto">
                 {platform.onboardingBody}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-3 italic">
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-2.5 italic">
                 {platform.onboardingCta}
               </p>
             </div>
 
-            <div className="w-full space-y-2 pt-2">
+            <div className="w-full space-y-2 mt-5">
               <Button
                 data-testid="button-get-started"
                 className="w-full h-11 text-base font-bold rounded-full shadow-lg"
