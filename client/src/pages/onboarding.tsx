@@ -125,17 +125,20 @@ export default function Onboarding() {
               <img src={logoImg} alt={platform.name} className="h-full w-full object-contain" />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-0">
               <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">
                 Welcome to {platform.name}
               </h1>
-              <p className="text-primary/80 text-sm font-semibold leading-relaxed px-2">
+              <p className="text-lg font-semibold text-foreground/85 mt-3">
+                {platform.onboardingPrimary}
+              </p>
+              <p className="text-sm text-muted-foreground mt-3 px-2">
                 {platform.onboardingSubtitle}
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed px-2">
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-3 max-w-md mx-auto">
                 {platform.onboardingBody}
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed px-2 italic">
+              <p className="text-sm text-muted-foreground leading-relaxed px-2 mt-4 italic">
                 {platform.onboardingCta}
               </p>
             </div>

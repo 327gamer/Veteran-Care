@@ -1,0 +1,111 @@
+--- COPY TO REPLIT ---
+
+TASK:
+Refine welcome / launch page copy and visual hierarchy.
+NO layout changes. NO new components.
+
+-------------------------------------
+FILE TO UPDATE
+-------------------------------------
+
+client/src/pages/welcome.tsx  (or equivalent welcome/landing file)
+
+-------------------------------------
+COPY UPDATE (REPLACE EXISTING TEXT)
+-------------------------------------
+
+HEADLINE:
+Welcome to Veteran Care
+
+PRIMARY SUPPORT LINE (new line directly under headline):
+Support for Veterans. All in One Place.
+
+SECONDARY HELPER LINE:
+Get the help you need — quickly, simply, and locally.
+
+BODY COPY:
+Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, and more.
+
+FINAL SUPPORT LINE:
+Tell us what you need, and we’ll guide you to the right support near you.
+
+-------------------------------------
+VISUAL HIERARCHY (TAILWIND GUIDANCE)
+-------------------------------------
+
+HEADLINE:
+- keep existing size (likely text-2xl / text-3xl)
+- keep bold
+
+PRIMARY SUPPORT LINE (IMPORTANT):
+- text-lg or text-xl
+- font-semibold
+- slightly darker color than body
+- should visually stand out
+
+SECONDARY HELPER LINE:
+- text-sm or text-base
+- text-muted-foreground
+
+BODY COPY:
+- text-sm
+- max-w-md (or similar constraint)
+- leading-relaxed
+
+FINAL SUPPORT LINE:
+- text-sm
+- italic
+- lighter color (text-muted-foreground)
+
+-------------------------------------
+SPACING ADJUSTMENTS
+-------------------------------------
+
+- add mt-3 or mt-4 below headline
+- add mt-3 below primary support line
+- add mt-3 below secondary helper line
+- add mt-4 before final support line
+
+Goal:
+tight, premium, easy-to-scan block
+
+-------------------------------------
+WIDTH / READABILITY
+-------------------------------------
+
+- wrap body copy in max-w-md or max-w-lg
+- center align (if already centered)
+- avoid full-width paragraph
+
+-------------------------------------
+DO NOT CHANGE
+-------------------------------------
+
+- logo
+- button styles
+- button positions
+- page layout structure
+- navigation/shell
+- routing
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- page reads clearly in 2–3 seconds
+- primary support line stands out immediately
+- no layout shift
+- mobile remains clean and balanced
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Confirm:
+1. file updated
+2. typography classes used
+3. spacing classes applied
+4. layout unchanged
+5. ready for republish
+
+--- END ---
