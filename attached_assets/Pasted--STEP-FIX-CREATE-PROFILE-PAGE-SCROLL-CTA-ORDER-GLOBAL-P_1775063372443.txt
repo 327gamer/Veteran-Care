@@ -1,0 +1,98 @@
+--- STEP FIX – CREATE PROFILE PAGE SCROLL / CTA ORDER + GLOBAL PROCEDURE ENFORCEMENT ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+Use the full procedure stack above for this task.
+Do NOT treat this as a one-off page fix.
+Apply the established system rules before marking complete.
+
+-------------------------------------
+CURRENT ISSUE
+-------------------------------------
+
+The Create Profile page still has a usability problem on mobile:
+
+1) The page allows scrolling, but the very bottom is not fully accessible/visible.
+2) The current "Create Free Account" button is placed too early in the flow.
+3) Because the primary CTA appears in the middle of the form, it interrupts the completion flow instead of supporting it.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Fix the Create Profile page so it:
+
+- scrolls fully to the true bottom
+- respects bottom navigation and safe-area spacing
+- keeps the form usable on mobile
+- places the primary CTA at the bottom of the overall application flow, not in the middle
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+1) SCROLL / BOTTOM ACCESS FIX
+- ensure the page can scroll fully to the bottom
+- no content should be hidden behind the bottom navigation
+- no CTA or final fields should be partially inaccessible
+- add proper bottom padding / safe-area spacing if needed
+
+2) CTA ORDER FIX
+- move the main "Create Free Account" button to the bottom of the full form flow
+- required and optional sections should come first
+- CTA should come after users finish the form, not midway through it
+
+3) KEEP STRUCTURE CLEAN
+- do NOT remove fields
+- do NOT redesign the page
+- do NOT add new steps/pages
+- do NOT break current form logic/validation
+
+4) APPLY GLOBAL RULES
+This page must comply with:
+- mobile-first fit
+- app-shell compliance
+- CTA visibility
+- proper scroll behavior
+- clean grouping and section order
+
+-------------------------------------
+EXPECTED FORM FLOW
+-------------------------------------
+
+Suggested order:
+- core required fields
+- optional personalization fields
+- final consent / acknowledgement if applicable
+- primary CTA at bottom
+- any secondary action below or near final CTA as appropriate
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. exact file(s) changed
+2. how bottom scroll/access was fixed
+3. what spacing/safe-area adjustment was added
+4. confirmation CTA was moved to bottom
+5. confirmation page now passes UI Rules Checklist
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make the Create Profile page:
+- fully usable
+- fully scrollable
+- completion-friendly
+- consistent with the system standards
+
+--- END ---

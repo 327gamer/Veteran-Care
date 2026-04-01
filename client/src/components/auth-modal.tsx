@@ -272,7 +272,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetState(); }}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
 
         {mode === "login" && (
           <>
@@ -412,24 +412,6 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </Select>
               </div>
 
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="signup-consent"
-                  data-testid="checkbox-signup-consent"
-                  checked={consentContact}
-                  onCheckedChange={(checked) => setConsentContact(checked === true)}
-                  className="mt-0.5 h-3.5 w-3.5"
-                />
-                <Label htmlFor="signup-consent" className="text-[11px] text-muted-foreground leading-relaxed cursor-pointer">
-                  {t(platform.consentText)}
-                </Label>
-              </div>
-
-              <Button data-testid="button-signup-submit" type="submit" className="w-full h-10 text-sm font-bold" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
-                {loading ? "Creating Account..." : "Create Free Account"}
-              </Button>
-
               <div className="border-t pt-2.5">
                 <p className="text-[11px] font-semibold text-primary mb-0.5">Optional — Better personalization</p>
                 <p className="text-[10px] text-muted-foreground mb-2">Fill out as much or as little as you'd like.</p>
@@ -565,7 +547,27 @@ export default function AuthModal({ open, onOpenChange, onSuccess, defaultMode }
                 </div>
               </div>
 
-              <div className="text-center pt-1">
+              <div className="flex items-start space-x-2 pt-1">
+                <Checkbox
+                  id="signup-consent"
+                  data-testid="checkbox-signup-consent"
+                  checked={consentContact}
+                  onCheckedChange={(checked) => setConsentContact(checked === true)}
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <Label htmlFor="signup-consent" className="text-[11px] text-muted-foreground leading-relaxed cursor-pointer">
+                  {t(platform.consentText)}
+                </Label>
+              </div>
+
+              <div className="pt-1 pb-2">
+                <Button data-testid="button-signup-submit" type="submit" className="w-full h-11 text-sm font-bold" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                  {loading ? "Creating Account..." : "Create Free Account"}
+                </Button>
+              </div>
+
+              <div className="text-center pb-4">
                 <button type="button" data-testid="button-auth-toggle" className="text-[11px] text-muted-foreground hover:text-primary transition-colors" onClick={() => { setMode("login"); setError(null); setSuccessMsg(null); }}>
                   Already have an account? Sign in
                 </button>
