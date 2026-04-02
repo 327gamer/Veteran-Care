@@ -1,0 +1,193 @@
+--- VETERAN DISCOUNT SERVICES – BUILD + UI COPY (UNIFIED COMMAND) ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is NOT a new task.
+This is a continuation of the current Veteran Discount Services build.
+
+Do NOT restart or restructure work already in progress.
+Apply the UI copy and structure below within the existing implementation.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a new high-visibility section:
+
+Veteran Discount Services
+
+This is a monetization + discovery layer for:
+- businesses offering veteran discounts
+- businesses offering services/products to veterans
+
+-------------------------------------
+HOMEPAGE PLACEMENT (MANDATORY)
+-------------------------------------
+
+Add a featured homepage block:
+
+Placement:
+- BELOW Create Account
+- BELOW Crisis Line
+- ABOVE all existing resource categories
+
+-------------------------------------
+HOMEPAGE BLOCK COPY
+-------------------------------------
+
+TITLE:
+Veteran Discount Services
+
+PRIMARY LINE:
+Save money. Find trusted local services.
+
+SUPPORT LINE:
+Explore businesses offering discounts and services for veterans and their families.
+
+CTA BUTTON:
+Browse Discounts & Services
+
+-------------------------------------
+MAIN PAGE HEADER COPY
+-------------------------------------
+
+PAGE TITLE:
+Veteran Discount Services
+
+SUBHEADLINE:
+Save money and connect with businesses that support veterans.
+
+SUPPORT TEXT:
+Browse local services and businesses offering veteran discounts or support. From everyday savings to professional services, everything is in one place.
+
+-------------------------------------
+STRUCTURE
+-------------------------------------
+
+Two primary groupings:
+
+1) SERVICES  
+2) PRODUCTS
+
+-------------------------------------
+SECTION COPY
+-------------------------------------
+
+SERVICES:
+Title: Services  
+Description: Professional services designed to support veterans and their families.
+
+PRODUCTS:
+Title: Products & Local Offers  
+Description: Everyday discounts and offers from local businesses near you.
+
+-------------------------------------
+LISTING STRUCTURE
+-------------------------------------
+
+Each listing must support:
+
+- business name
+- category
+- group_type:
+  - service
+  - product
+- location
+- listing_type:
+  - discount
+  - lead
+- discount_value (optional)
+- discount_description (optional)
+- description (1–2 lines max)
+- CTA button
+
+-------------------------------------
+CTA LOGIC
+-------------------------------------
+
+- discount → “Claim Offer”
+- lead → “Connect”
+
+-------------------------------------
+BADGE LOGIC
+-------------------------------------
+
+Discount:
+- “Veteran Discount Available”
+
+Lead:
+- “Veteran Support Service”
+
+-------------------------------------
+EMPTY STATE
+-------------------------------------
+
+TITLE:
+Nothing nearby yet
+
+TEXT:
+We’re adding new veteran-friendly businesses in your area. Check back soon or explore nearby locations.
+
+-------------------------------------
+SEARCH + GEO
+-------------------------------------
+
+- must integrate with existing search
+- must support “near me”
+- must use existing geolocation system
+- do NOT break existing resource search
+
+-------------------------------------
+DATA MODEL (EXTEND EXISTING SYSTEM)
+-------------------------------------
+
+Add:
+
+- program_area = veteran_discount_services
+- group_type (service | product)
+- listing_type (discount | lead)
+- discount_value (optional)
+- discount_description (optional)
+
+-------------------------------------
+ADMIN SUPPORT (REQUIRED)
+-------------------------------------
+
+Admin must be able to:
+- create/edit listings
+- assign listing_type and group_type
+- add discount or service info
+
+-------------------------------------
+UI RULES
+-------------------------------------
+
+- mobile-first
+- card-based layout
+- short text only
+- no clutter
+- CTA always visible
+- consistent with existing UI system
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+- do NOT build affiliate shop
+- do NOT redesign existing resource system
+- do NOT overbuild filters
+- do NOT change billing system
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Launch a high-visibility, revenue-generating section that integrates cleanly with the existing platform.
+
+--- END ---

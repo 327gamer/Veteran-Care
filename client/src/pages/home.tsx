@@ -26,6 +26,7 @@ import {
   Store,
   Rocket,
   Gift,
+  Percent,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
@@ -501,6 +502,35 @@ export default function Home() {
           <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-website" className="block w-full text-center rounded-full bg-white text-red-600 font-bold text-xs py-1.5 hover:bg-white/90 transition-colors">
             VeteransCrisisLine.net
           </a>
+        </section>
+
+        <section
+          data-testid="section-veteran-discounts-cta"
+          className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 cursor-pointer group"
+          onClick={() => setLocation("/discounts")}
+        >
+          <div className="flex items-start gap-3">
+            <div className="h-11 w-11 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
+              <Percent className="h-5 w-5 text-green-700" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              <h3 className="text-sm font-heading font-bold text-green-800 group-hover:text-green-900 transition-colors">
+                Veteran Discount Services
+              </h3>
+              <p className="text-xs text-green-700/80 leading-relaxed">
+                Exclusive discounts, deals, and services for veterans and military families.
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-green-600/40 group-hover:text-green-700 shrink-0 mt-0.5 transition-colors" />
+          </div>
+          <Button
+            data-testid="button-discounts-cta"
+            className="mt-3 w-full rounded-full bg-green-700 hover:bg-green-800 text-white"
+            onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
+          >
+            <Percent className="h-3.5 w-3.5 mr-1.5" />
+            Browse Discounts
+          </Button>
         </section>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

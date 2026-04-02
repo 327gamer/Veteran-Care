@@ -1,0 +1,229 @@
+--- NEW REVENUE LAYER: VETERAN DISCOUNT SERVICES (LAUNCH-READY VERSION) ---
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is a NEW revenue + discovery layer.
+It is NOT:
+- the affiliate shop
+- a replacement for trusted resources
+- a redesign of the existing resource system
+
+This must be added cleanly and launch quickly without disrupting current flows.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a dedicated high-visibility section:
+
+Veteran Discount Services
+
+This section supports businesses that:
+- offer veteran discounts
+OR
+- offer services/products to veterans without a discount
+
+-------------------------------------
+HOMEPAGE PLACEMENT (MANDATORY)
+-------------------------------------
+
+Add a featured homepage entry block:
+
+Placement:
+- BELOW Create Account
+- BELOW Crisis Line
+- ABOVE all existing resource categories
+
+This is a featured entry point and should be visually prominent, but still consistent with the system.
+
+-------------------------------------
+IMPLEMENTATION APPROACH (IMPORTANT)
+-------------------------------------
+
+Use:
+- a NEW frontend module/page for this section
+- but EXTEND the existing listing/resource system underneath where practical
+
+Goal:
+- new homepage block
+- new dedicated page
+- reuse existing cards, geolocation, search, connect flow, and billing model where possible
+
+Do NOT build this as an entirely separate disconnected system if the existing listing architecture can be extended safely.
+
+-------------------------------------
+STRUCTURE
+-------------------------------------
+
+Inside this new section, create TWO primary groupings:
+
+1) SERVICES
+2) PRODUCTS
+
+Examples:
+
+SERVICES:
+- Legal Help
+- Mortgage / Loans
+- Insurance
+- Healthcare Providers
+- Auto Services
+- Financial Services
+- Travel Services
+
+PRODUCTS:
+- Restaurants
+- Retail Discounts
+- Hotels
+- Car Dealerships
+- Gyms / Fitness
+- Local Businesses
+
+-------------------------------------
+LISTING MODEL
+-------------------------------------
+
+Each listing should support:
+
+- business_name
+- category
+- group_type:
+  - service
+  - product
+- location / geo support
+- listing_type:
+  - discount
+  - lead
+  - hybrid (optional later, no need to fully build now)
+- discount_value (optional)
+- discount_description (optional)
+- description
+- contact_method
+- CTA label
+- Connect / Claim Offer behavior
+
+IMPORTANT:
+Keep “group_type” and “listing_type” as separate concepts.
+
+-------------------------------------
+PROGRAM / CLASSIFICATION
+-------------------------------------
+
+Add a clean top-level classification so these listings can be identified separately from the current resource categories.
+
+Recommended:
+- program_area = veteran_discount_services
+
+This helps with:
+- homepage block
+- page routing
+- search inclusion
+- future reporting
+- admin filtering
+
+-------------------------------------
+CTA BEHAVIOR
+-------------------------------------
+
+Support flexible CTA text.
+
+Default behavior:
+- discount listings → “Claim Offer”
+- lead listings → “Connect”
+
+If the current system supports a configurable CTA label, reuse that.
+
+-------------------------------------
+SEARCH + DISCOVERY
+-------------------------------------
+
+Integrate with existing search and geolocation.
+
+Requirements:
+- searchable from existing search bar
+- eligible for near-me behavior
+- location-aware sorting where applicable
+
+Examples:
+- restaurants near me
+- car dealership
+- mortgage help
+
+IMPORTANT:
+Do this additively.
+Do NOT break or redesign the current resource search experience.
+
+-------------------------------------
+MONETIZATION
+-------------------------------------
+
+Use the SAME current billing model:
+- $99/month state
+- $499/month national
+
+Do NOT create a new billing system.
+
+-------------------------------------
+AMBASSADOR ALIGNMENT
+-------------------------------------
+
+This new section must work with the current ambassador model.
+
+Ambassadors should be able to sell:
+- discount providers
+- lead providers
+- local businesses
+- service businesses
+
+Reuse the current attribution/billing/provider workflow where possible.
+
+-------------------------------------
+PHASE 1 (BUILD NOW)
+-------------------------------------
+
+1. homepage featured entry block
+2. new Veteran Discount Services page/module
+3. services/products grouping structure
+4. listing support for:
+   - discount listings
+   - lead listings
+5. basic search integration
+6. geo / near-me compatibility
+7. admin support for creating/editing these listings
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT build affiliate shop here
+- do NOT overbuild advanced filters yet
+- do NOT redesign all existing resources
+- do NOT create a new billing system
+- do NOT break current resource/discovery flows
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. recommended implementation approach actually used (extend vs new module)
+2. schema/data model updates
+3. UI structure plan
+4. homepage placement confirmation
+5. admin support included
+6. files changed
+7. deployment/publish steps
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Launch a high-value, high-visibility revenue section quickly, cleanly, and in a way that fits the current platform architecture.
+
+--- END ---

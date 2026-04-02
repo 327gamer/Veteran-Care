@@ -611,6 +611,15 @@ async function checkTrustedServicesTable() {
       await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS is_national BOOLEAN DEFAULT false`);
       console.log("[schema] Added is_national column to trusted_services");
     }
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS program_area TEXT DEFAULT 'trusted_services'`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS group_type TEXT DEFAULT 'service'`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS listing_type TEXT DEFAULT 'lead'`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_value TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_description TEXT`);
+    await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS program_area TEXT DEFAULT 'trusted_services'`);
+    await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS group_type TEXT DEFAULT 'service'`);
+    console.log("[schema] veteran_discount_services columns ensured on trusted_services + categories");
+    await seedDiscountCategories();
     await ensureVobTable();
   } catch (err: any) {
     if (err.message?.includes("does not exist")) {
@@ -686,6 +695,36 @@ async function seedTrustedServiceCategoriesIfEmpty() {
     await repairOrphanedServices();
   } catch (err: any) {
     console.log("[seed] Failed to seed trusted_service_categories:", err.message);
+  }
+}
+
+async function seedDiscountCategories() {
+  try {
+    const existing = await pgQuery(
+      `SELECT id FROM trusted_service_categories WHERE program_area = 'veteran_discount_services' LIMIT 1`
+    );
+    if (existing.length > 0) return;
+    console.log("[seed] Seeding veteran discount service categories...");
+    await pgQuery(`
+      INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type) VALUES
+        ('Legal Help', 'discount-legal', 'Legal services offering veteran discounts', 'scale', 101, true, 'veteran_discount_services', 'service'),
+        ('Mortgage & Loans', 'discount-mortgage', 'Mortgage and lending services for veterans', 'home', 102, true, 'veteran_discount_services', 'service'),
+        ('Insurance', 'discount-insurance', 'Insurance providers with veteran-friendly rates', 'shield', 103, true, 'veteran_discount_services', 'service'),
+        ('Healthcare Providers', 'discount-healthcare', 'Healthcare providers offering veteran discounts', 'heart-pulse', 104, true, 'veteran_discount_services', 'service'),
+        ('Auto Services', 'discount-auto', 'Automotive services and discounts for veterans', 'car', 105, true, 'veteran_discount_services', 'service'),
+        ('Financial Services', 'discount-financial', 'Financial advisory and services for veterans', 'dollar-sign', 106, true, 'veteran_discount_services', 'service'),
+        ('Travel Services', 'discount-travel', 'Travel services and discounts for veterans', 'plane', 107, true, 'veteran_discount_services', 'service'),
+        ('Restaurants', 'discount-restaurants', 'Restaurants offering veteran discounts', 'utensils', 201, true, 'veteran_discount_services', 'product'),
+        ('Retail Discounts', 'discount-retail', 'Retail stores with veteran discount programs', 'shopping-bag', 202, true, 'veteran_discount_services', 'product'),
+        ('Hotels', 'discount-hotels', 'Hotels and lodging with veteran rates', 'bed', 203, true, 'veteran_discount_services', 'product'),
+        ('Car Dealerships', 'discount-car-dealers', 'Car dealerships with veteran pricing programs', 'car', 204, true, 'veteran_discount_services', 'product'),
+        ('Gyms & Fitness', 'discount-gyms', 'Gyms and fitness centers with veteran memberships', 'dumbbell', 205, true, 'veteran_discount_services', 'product'),
+        ('Local Businesses', 'discount-local', 'Local businesses supporting veterans', 'store', 206, true, 'veteran_discount_services', 'product')
+      ON CONFLICT (slug) DO UPDATE SET program_area = 'veteran_discount_services', group_type = EXCLUDED.group_type
+    `);
+    console.log("[seed] 13 veteran discount categories seeded successfully");
+  } catch (err: any) {
+    console.log("[seed] Failed to seed discount categories:", err.message);
   }
 }
 
@@ -5490,11 +5529,59 @@ export async function registerRoutes(
     return res.json(data || []);
   });
 
+  app.get("/api/veteran-discounts/categories", async (_req, res) => {
+    if (!hasTrustedServicesTable) return res.json([]);
+    try {
+      const rows = await pgQuery(
+        `SELECT * FROM trusted_service_categories WHERE program_area = 'veteran_discount_services' AND is_active IS NOT false ORDER BY group_type, display_order`
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/veteran-discounts", async (req, res) => {
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    if (!hasTrustedServicesTable) return res.json([]);
+    try {
+      const conditions = [`ts.is_active IS NOT false`, `tsc.program_area = 'veteran_discount_services'`];
+      const params: any[] = [];
+      if (req.query.category) {
+        params.push(req.query.category);
+        conditions.push(`tsc.slug = $${params.length}`);
+      }
+      if (req.query.group_type) {
+        params.push(req.query.group_type);
+        conditions.push(`tsc.group_type = $${params.length}`);
+      }
+      if (req.query.state) {
+        params.push((req.query.state as string).toUpperCase());
+        conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
+      }
+      if (req.query.q) {
+        const term = `%${(req.query.q as string).toLowerCase()}%`;
+        params.push(term);
+        conditions.push(`(LOWER(ts.name) LIKE $${params.length} OR LOWER(ts.short_description) LIKE $${params.length} OR LOWER(ts.discount_description) LIKE $${params.length})`);
+      }
+      const sql = `SELECT ts.*, 
+             json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
+         FROM trusted_services ts
+         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+      const rows = await pgQuery(sql, params);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/trusted-services/categories", async (_req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
     try {
       const rows = await pgQuery(
-        `SELECT * FROM trusted_service_categories WHERE is_active IS NOT false ORDER BY display_order`
+        `SELECT * FROM trusted_service_categories WHERE (program_area IS NULL OR program_area = 'trusted_services') AND is_active IS NOT false ORDER BY display_order`
       );
       return res.json(rows);
     } catch (err: any) {
@@ -5637,10 +5724,10 @@ export async function registerRoutes(
     try {
       const b = req.body;
       const rows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, is_national, verification_status, notes_internal)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
          RETURNING *`,
-        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null]
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null]
       );
       return res.json(rows[0]);
     } catch (err: any) {
@@ -5654,7 +5741,7 @@ export async function registerRoutes(
       const updates = req.body;
       const setClauses: string[] = [];
       const params: any[] = [];
-      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order'];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text'];
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
           params.push(updates[field]);
