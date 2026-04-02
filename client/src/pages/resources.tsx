@@ -369,6 +369,16 @@ export default function Resources() {
     enabled: locationMode === "state" && !!stateParam,
   });
 
+  const { data: discountSearchResults = [] } = useQuery<any[]>({
+    queryKey: ["/api/veteran-discounts", "search", searchParam],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (searchParam) params.set("search", searchParam);
+      return fetch(`/api/veteran-discounts?${params}`).then(r => r.json());
+    },
+    enabled: !!searchParam,
+  });
+
   const isFallingBack = needsFallback && fallbackResources.length > 0;
   const displayResources = isFallingBack ? fallbackResources : apiResources;
   const isNearMeActive = isNearMeQuery;
@@ -1305,6 +1315,44 @@ export default function Resources() {
               </CardContent>
             </Card>
           ))}
+
+          {discountSearchResults.length > 0 && (
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-green-700">Veteran Discounts & Services</p>
+                <Button variant="link" size="sm" className="text-xs h-6 text-green-700" onClick={() => setLocation("/discounts")} data-testid="link-view-all-discounts">
+                  View All
+                </Button>
+              </div>
+              {discountSearchResults.slice(0, 3).map((listing: any) => (
+                <Card
+                  key={`discount-${listing.id}`}
+                  data-testid={`card-discount-search-${listing.id}`}
+                  className="group hover:border-green-300 transition-colors cursor-pointer border-green-100 bg-green-50/30"
+                  onClick={() => setLocation("/discounts")}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-sm group-hover:text-green-700 transition-colors line-clamp-1">{listing.name}</h3>
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-green-100 text-green-800 border-green-200 shrink-0">
+                            Veteran Discount
+                          </Badge>
+                        </div>
+                        {listing.short_description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{listing.short_description}</p>
+                        )}
+                        {listing.discount_value && (
+                          <p className="text-xs font-semibold text-green-700 mt-0.5">{listing.discount_value}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

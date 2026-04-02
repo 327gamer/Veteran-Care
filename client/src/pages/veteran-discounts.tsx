@@ -170,7 +170,7 @@ export default function VeteranDiscounts() {
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
-      if (filterState) params.set("state", filterState);
+      if (filterState && filterState !== "all") params.set("state", filterState);
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       const qs = params.toString();
       return fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts").then(r => r.json());
@@ -349,9 +349,13 @@ export default function VeteranDiscounts() {
           <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight" data-testid="heading-discounts">
             Veteran Discount Services
           </h1>
-          <p className="text-xs text-muted-foreground">Exclusive discounts and services for veterans</p>
+          <p className="text-xs font-medium text-foreground">Save money and connect with businesses that support veterans.</p>
         </div>
       </div>
+
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Browse local services and businesses offering veteran discounts or support. From everyday savings to professional services, everything is in one place.
+      </p>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -379,9 +383,15 @@ export default function VeteranDiscounts() {
               onClick={() => setActiveTab("product")}
               data-testid="tab-products"
             >
-              Products
+              Products & Local Offers
             </button>
           </div>
+
+          <p className="text-xs text-muted-foreground">
+            {activeTab === "service"
+              ? "Professional services designed to support veterans and their families."
+              : "Everyday discounts and offers from local businesses near you."}
+          </p>
 
           {!selectedCategory ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -454,9 +464,9 @@ export default function VeteranDiscounts() {
                 </div>
               ) : listings.length === 0 ? (
                 <div className="text-center py-12 space-y-2">
-                  <Tag className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                  <p className="text-sm text-muted-foreground">No listings in this category yet.</p>
-                  <p className="text-xs text-muted-foreground">Check back soon — we're adding new providers regularly.</p>
+                  <MapPin className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                  <p className="text-sm font-medium text-muted-foreground">Nothing nearby yet</p>
+                  <p className="text-xs text-muted-foreground">We're adding new veteran-friendly businesses in your area. Check back soon or explore nearby locations.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -561,21 +571,31 @@ function ListingCard({
           </button>
         </div>
 
+        <div className="flex flex-wrap items-center gap-1.5">
+          {listing.listing_type === "discount" ? (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 border-green-200">
+              <Percent className="h-3 w-3 mr-0.5" />
+              Veteran Discount Available
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+              <CheckCircle2 className="h-3 w-3 mr-0.5" />
+              Veteran Support Service
+            </Badge>
+          )}
+          {listing.verification_label && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-green-200 text-green-700 bg-green-50">
+              <CheckCircle2 className="h-3 w-3 mr-0.5" />
+              {listing.verification_label}
+            </Badge>
+          )}
+        </div>
+
         {listing.discount_value && (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-            <Percent className="h-3 w-3 mr-1" />
-            {listing.discount_value}
-          </Badge>
+          <p className="text-xs font-semibold text-green-700">{listing.discount_value}</p>
         )}
         {listing.discount_description && (
-          <p className="text-xs text-green-700 font-medium">{listing.discount_description}</p>
-        )}
-
-        {listing.verification_label && (
-          <Badge variant="outline" className="text-[10px] border-green-200 text-green-700 bg-green-50">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            {listing.verification_label}
-          </Badge>
+          <p className="text-xs text-green-700/80">{listing.discount_description}</p>
         )}
 
         {listing.short_description && (

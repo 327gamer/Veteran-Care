@@ -517,8 +517,9 @@ export default function Home() {
               <h3 className="text-sm font-heading font-bold text-green-800 group-hover:text-green-900 transition-colors">
                 Veteran Discount Services
               </h3>
+              <p className="text-xs font-medium text-green-700">Save money. Find trusted local services.</p>
               <p className="text-xs text-green-700/80 leading-relaxed">
-                Exclusive discounts, deals, and services for veterans and military families.
+                Explore businesses offering discounts and services for veterans and their families.
               </p>
             </div>
             <ChevronRight className="h-5 w-5 text-green-600/40 group-hover:text-green-700 shrink-0 mt-0.5 transition-colors" />
@@ -529,7 +530,7 @@ export default function Home() {
             onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
           >
             <Percent className="h-3.5 w-3.5 mr-1.5" />
-            Browse Discounts
+            Browse Discounts & Services
           </Button>
         </section>
 

@@ -65,6 +65,11 @@ interface TrustedService {
   is_active: boolean;
   display_order: number;
   notes_internal: string | null;
+  program_area: string | null;
+  group_type: string | null;
+  listing_type: string | null;
+  discount_value: string | null;
+  discount_description: string | null;
   created_at: string;
   trusted_service_categories: { id: string; slug: string; name: string } | null;
 }
@@ -88,6 +93,11 @@ type PartnerForm = {
   is_active: boolean;
   display_order: number;
   notes_internal: string;
+  program_area: string;
+  group_type: string;
+  listing_type: string;
+  discount_value: string;
+  discount_description: string;
 };
 
 const emptyForm: PartnerForm = {
@@ -109,6 +119,11 @@ const emptyForm: PartnerForm = {
   is_active: true,
   display_order: 0,
   notes_internal: "",
+  program_area: "trusted_services",
+  group_type: "service",
+  listing_type: "lead",
+  discount_value: "",
+  discount_description: "",
 };
 
 export default function AdminTrustedServices() {
@@ -117,6 +132,7 @@ export default function AdminTrustedServices() {
   const queryClient = useQueryClient();
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterProgram, setFilterProgram] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<PartnerForm>({ ...emptyForm });
@@ -233,6 +249,11 @@ export default function AdminTrustedServices() {
       is_active: service.is_active,
       display_order: service.display_order,
       notes_internal: service.notes_internal || "",
+      program_area: service.program_area || "trusted_services",
+      group_type: service.group_type || "service",
+      listing_type: service.listing_type || "lead",
+      discount_value: service.discount_value || "",
+      discount_description: service.discount_description || "",
     });
   };
 
@@ -447,6 +468,71 @@ export default function AdminTrustedServices() {
           Featured
         </label>
       </div>
+      <div className="border-t pt-3 mt-1">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Discount / Listing Settings</Label>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <Label className="text-xs">Program Area</Label>
+          <select
+            data-testid="select-partner-program-area"
+            value={form.program_area}
+            onChange={e => setForm(f => ({ ...f, program_area: e.target.value }))}
+            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+          >
+            <option value="trusted_services">Trusted Services</option>
+            <option value="veteran_discount_services">Veteran Discount Services</option>
+          </select>
+        </div>
+        <div>
+          <Label className="text-xs">Group Type</Label>
+          <select
+            data-testid="select-partner-group-type"
+            value={form.group_type}
+            onChange={e => setForm(f => ({ ...f, group_type: e.target.value }))}
+            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+          >
+            <option value="service">Service</option>
+            <option value="product">Product</option>
+          </select>
+        </div>
+        <div>
+          <Label className="text-xs">Listing Type</Label>
+          <select
+            data-testid="select-partner-listing-type"
+            value={form.listing_type}
+            onChange={e => setForm(f => ({ ...f, listing_type: e.target.value }))}
+            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+          >
+            <option value="lead">Lead (Connect)</option>
+            <option value="discount">Discount (Claim Offer)</option>
+          </select>
+        </div>
+      </div>
+      {form.program_area === "veteran_discount_services" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Discount Value (e.g. "10% off", "$50 credit")</Label>
+            <Input
+              data-testid="input-partner-discount-value"
+              value={form.discount_value}
+              onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))}
+              className="h-8 text-xs"
+              placeholder="e.g. 10% off all services"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Discount Description</Label>
+            <Input
+              data-testid="input-partner-discount-desc"
+              value={form.discount_description}
+              onChange={e => setForm(f => ({ ...f, discount_description: e.target.value }))}
+              className="h-8 text-xs"
+              placeholder="Brief note about the discount"
+            />
+          </div>
+        </div>
+      )}
       <div>
         <Label className="text-xs">Internal Notes (not shown publicly)</Label>
         <Textarea
@@ -543,6 +629,16 @@ export default function AdminTrustedServices() {
       </div>
 
       <div className="flex gap-2">
+        <Select value={filterProgram} onValueChange={setFilterProgram}>
+          <SelectTrigger className="h-8 text-xs w-[160px]" data-testid="select-filter-program">
+            <SelectValue placeholder="All Programs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Programs</SelectItem>
+            <SelectItem value="trusted_services">Trusted Services</SelectItem>
+            <SelectItem value="veteran_discount_services">Veteran Discounts</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-8 text-xs flex-1" data-testid="select-filter-category">
             <SelectValue placeholder="All Categories" />
@@ -577,21 +673,30 @@ export default function AdminTrustedServices() {
         </Card>
       )}
 
-      {isLoading ? (
-        <div className="text-center py-10">
-          <p className="text-sm text-muted-foreground">Loading partners...</p>
-        </div>
-      ) : services.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No partners yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Click "Add Partner" to add your first trusted service provider.</p>
-          </CardContent>
-        </Card>
-      ) : (
+      {(() => {
+        const filteredServices = filterProgram === "all"
+          ? services
+          : services.filter(s => (s.program_area || "trusted_services") === filterProgram);
+
+        if (isLoading) return (
+          <div className="text-center py-10">
+            <p className="text-sm text-muted-foreground">Loading partners...</p>
+          </div>
+        );
+
+        if (filteredServices.length === 0) return (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">No partners found</p>
+              <p className="text-xs text-muted-foreground mt-1">Click "Add Partner" to add your first trusted service provider.</p>
+            </CardContent>
+          </Card>
+        );
+
+        return (
         <div className="space-y-2">
-          {services.map(service => (
+          {filteredServices.map(service => (
             <Card
               key={service.id}
               data-testid={`card-admin-partner-${service.id}`}
@@ -685,6 +790,14 @@ export default function AdminTrustedServices() {
                           )}
                         </div>
                         {service.verification_label && <p className="text-green-600">Label: {service.verification_label}</p>}
+                        {service.program_area === "veteran_discount_services" && (
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">Discount Program</Badge>
+                            {service.group_type && <Badge variant="outline" className="text-[10px]">{service.group_type}</Badge>}
+                            {service.listing_type && <Badge variant="outline" className="text-[10px]">{service.listing_type}</Badge>}
+                            {service.discount_value && <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-800">{service.discount_value}</Badge>}
+                          </div>
+                        )}
                         {service.notes_internal && <p className="italic text-amber-600">Notes: {service.notes_internal}</p>}
                         <p className="text-[10px]">Order: {service.display_order} | Created: {new Date(service.created_at).toLocaleDateString()}</p>
                       </div>
@@ -695,7 +808,8 @@ export default function AdminTrustedServices() {
             </Card>
           ))}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

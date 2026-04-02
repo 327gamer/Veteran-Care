@@ -5559,8 +5559,9 @@ export async function registerRoutes(
         params.push((req.query.state as string).toUpperCase());
         conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
       }
-      if (req.query.q) {
-        const term = `%${(req.query.q as string).toLowerCase()}%`;
+      const searchTerm = (req.query.q || req.query.search) as string | undefined;
+      if (searchTerm) {
+        const term = `%${searchTerm.toLowerCase()}%`;
         params.push(term);
         conditions.push(`(LOWER(ts.name) LIKE $${params.length} OR LOWER(ts.short_description) LIKE $${params.length} OR LOWER(ts.discount_description) LIKE $${params.length})`);
       }
