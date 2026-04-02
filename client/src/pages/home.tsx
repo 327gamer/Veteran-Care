@@ -464,6 +464,60 @@ export default function Home() {
       </Dialog>
 
 
+      <section data-testid="crisis-line-banner" className="rounded-xl bg-red-600 text-white p-2.5 shadow-lg overflow-hidden">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Phone className="h-4 w-4 shrink-0" />
+          <h3 className="font-heading font-bold text-sm">Veterans Crisis Line — 24/7 Support</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          <a href="tel:988" data-testid="link-crisis-call" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[11px] font-semibold leading-tight">Call 988, Press 1</span>
+          </a>
+          <a href="sms:838255" data-testid="link-crisis-text" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[11px] font-semibold leading-tight">Text 838255</span>
+          </a>
+          <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-chat" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
+            <Globe className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[11px] font-semibold leading-tight">Chat Online</span>
+          </a>
+        </div>
+        <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-website" className="block w-full text-center rounded-full bg-white text-red-600 font-bold text-xs py-1.5 hover:bg-white/90 transition-colors">
+          VeteransCrisisLine.net
+        </a>
+      </section>
+
+      <section
+        data-testid="section-veteran-discounts-cta"
+        className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border border-green-300 rounded-xl p-4 cursor-pointer group shadow-sm"
+        onClick={() => setLocation("/discounts")}
+      >
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 rounded-full bg-red-100 flex items-center justify-center shrink-0 border border-red-200">
+            <Percent className="h-5 w-5 text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0 space-y-1">
+            <h3 className="text-sm font-heading font-bold text-green-800 group-hover:text-green-900 transition-colors">
+              Veteran Discount Services
+            </h3>
+            <p className="text-xs font-medium text-green-700">Save money. Find trusted local services.</p>
+            <p className="text-xs text-green-700/80 leading-relaxed">
+              Explore businesses offering discounts and services for veterans and their families.
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-green-600/40 group-hover:text-green-700 shrink-0 mt-0.5 transition-colors" />
+        </div>
+        <Button
+          data-testid="button-discounts-cta"
+          className="mt-3 w-full rounded-full bg-green-700 hover:bg-green-800 text-white"
+          onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
+        >
+          <Percent className="h-3.5 w-3.5 mr-1.5" />
+          Browse Discounts & Services
+        </Button>
+      </section>
+
       {/* Resources Grid */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -479,60 +533,6 @@ export default function Home() {
             Search resources (VA benefits, housing, jobs...)
           </div>
         </div>
-
-        <section data-testid="crisis-line-banner" className="rounded-xl bg-red-600 text-white p-2.5 shadow-lg overflow-hidden">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Phone className="h-4 w-4 shrink-0" />
-            <h3 className="font-heading font-bold text-sm">Veterans Crisis Line — 24/7 Support</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 mb-2">
-            <a href="tel:988" data-testid="link-crisis-call" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
-              <Phone className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px] font-semibold leading-tight">Call 988, Press 1</span>
-            </a>
-            <a href="sms:838255" data-testid="link-crisis-text" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
-              <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px] font-semibold leading-tight">Text 838255</span>
-            </a>
-            <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-chat" className="flex items-center justify-center gap-0.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors py-1.5 px-1 text-center">
-              <Globe className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px] font-semibold leading-tight">Chat Online</span>
-            </a>
-          </div>
-          <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer" data-testid="link-crisis-website" className="block w-full text-center rounded-full bg-white text-red-600 font-bold text-xs py-1.5 hover:bg-white/90 transition-colors">
-            VeteransCrisisLine.net
-          </a>
-        </section>
-
-        <section
-          data-testid="section-veteran-discounts-cta"
-          className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 cursor-pointer group"
-          onClick={() => setLocation("/discounts")}
-        >
-          <div className="flex items-start gap-3">
-            <div className="h-11 w-11 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
-              <Percent className="h-5 w-5 text-green-700" />
-            </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <h3 className="text-sm font-heading font-bold text-green-800 group-hover:text-green-900 transition-colors">
-                Veteran Discount Services
-              </h3>
-              <p className="text-xs font-medium text-green-700">Save money. Find trusted local services.</p>
-              <p className="text-xs text-green-700/80 leading-relaxed">
-                Explore businesses offering discounts and services for veterans and their families.
-              </p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-green-600/40 group-hover:text-green-700 shrink-0 mt-0.5 transition-colors" />
-          </div>
-          <Button
-            data-testid="button-discounts-cta"
-            className="mt-3 w-full rounded-full bg-green-700 hover:bg-green-800 text-white"
-            onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
-          >
-            <Percent className="h-3.5 w-3.5 mr-1.5" />
-            Browse Discounts & Services
-          </Button>
-        </section>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {categories.map((cat) => {

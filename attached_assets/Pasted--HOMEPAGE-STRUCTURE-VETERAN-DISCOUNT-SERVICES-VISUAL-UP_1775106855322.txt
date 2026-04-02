@@ -1,0 +1,103 @@
+--- HOMEPAGE STRUCTURE + VETERAN DISCOUNT SERVICES VISUAL UPDATE ---
+
+Follow:
+- UI Rules Checklist
+- Design Playbook v1
+- Component Library v1
+
+IMPORTANT:
+This is a layout refinement and visual polish.
+Do NOT redesign the page.
+Do NOT change functionality.
+
+-------------------------------------
+PART 1 – HOMEPAGE ORDER UPDATE
+-------------------------------------
+
+Update homepage section order:
+
+1) Keep:
+“How can we help you today?” section (no change)
+
+2) MOVE:
+Veterans Crisis Line (red bar)
+→ place directly BELOW the top section
+
+3) KEEP:
+Veteran Discount Services block
+→ place BELOW the crisis line
+
+4) MOVE:
+Search bar
+→ place BELOW Veteran Discount Services
+→ ABOVE Resources
+
+5) KEEP:
+Resources section BELOW search bar
+
+-------------------------------------
+PART 2 – VETERAN DISCOUNT SERVICES VISUAL UPDATE
+-------------------------------------
+
+GOAL:
+Make the section stand out more while staying consistent with the site design.
+
+-------------------------------------
+
+1) ICON UPDATE
+
+- use a percent (%) icon
+- color: RED (to clearly signal “discount”)
+- keep icon style consistent with existing UI
+
+-------------------------------------
+
+2) BACKGROUND + CARD
+
+- keep green theme
+- slightly increase contrast so the block stands out more than standard cards
+- do NOT use bright or off-brand colors
+- keep clean, premium feel
+
+-------------------------------------
+
+3) CTA BUTTON
+
+- keep existing button styling
+- no changes required
+
+-------------------------------------
+
+4) TEXT
+
+- keep current copy
+- no changes required
+
+-------------------------------------
+
+IMPORTANT RULES
+-------------------------------------
+
+- no layout breakage
+- no spacing regressions
+- no mobile overflow
+- maintain consistent padding with other homepage sections
+- maintain app shell consistency
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1. confirmation of new homepage order
+2. confirmation of icon update
+3. confirmation of visual adjustments
+4. files changed
+5. publish/restart required
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Improve homepage flow and make the Veteran Discount Services section more visually distinct without breaking design consistency.
+
+--- END ---
