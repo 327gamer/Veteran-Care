@@ -12,7 +12,6 @@ import {
   Heart,
   Share2,
   Flag,
-  Navigation,
   Mail,
   Shield,
   ArrowRight,
@@ -22,6 +21,7 @@ import {
   ChevronLeft,
   Compass,
 } from "lucide-react";
+import GetDirectionsButton from "@/components/get-directions-button";
 import { ResourceItem } from "@/lib/resources-data";
 import { useSavedResources } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
@@ -121,10 +121,16 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
   const handleDirectionsClick = () => {
     trackClick(resource.id, "directions_click", fb);
     trackEventDedup("resource_contact_click", `${resource.id}:directions`, { ...evParams, contact_type: "directions" });
-    const q = resource.address || [resource.city, resource.state].filter(Boolean).join(", ");
-    if (q) {
-      window.open(`https://maps.google.com/maps?q=${encodeURIComponent(q)}`, "_blank");
-    }
+  };
+
+  const resourceLocation = {
+    latitude: resource.latitude,
+    longitude: resource.longitude,
+    address: resource.address,
+    city: resource.city,
+    state: resource.state,
+    zip: resource.zip,
+    name: resource.title,
   };
 
   const handleGuideClick = () => {
@@ -322,15 +328,17 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
                     : `Contact this organization for help in ${locationLabel}.`}
                 </p>
                 {hasAddress && (
-                  <Button
-                    data-testid="button-directions-local"
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 w-full h-8 text-xs border-primary/20 text-primary"
-                    onClick={handleDirectionsClick}
-                  >
-                    <Navigation className="h-3 w-3 mr-2" /> Get Directions
-                  </Button>
+                  <div className="mt-2" onClick={handleDirectionsClick}>
+                    <GetDirectionsButton
+                      location={resourceLocation}
+                      listingType="resource"
+                      listingId={resource.id}
+                      listingName={resource.title}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs border-primary/20 text-primary"
+                    />
+                  </div>
                 )}
               </div>
             ) : (
@@ -421,13 +429,17 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
               )}
 
               {hasAddress && (
-                <Button
-                  data-testid="button-directions"
-                  className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                  onClick={handleDirectionsClick}
-                >
-                  <Navigation className="h-4 w-4" /> Get Directions
-                </Button>
+                <div onClick={handleDirectionsClick}>
+                  <GetDirectionsButton
+                    location={resourceLocation}
+                    listingType="resource"
+                    listingId={resource.id}
+                    listingName={resource.title}
+                    variant="default"
+                    size="default"
+                    className="h-11 bg-blue-600 hover:bg-blue-700 text-white"
+                  />
+                </div>
               )}
 
               {(resource.website_url || resource.affiliate_url) && (

@@ -19,6 +19,8 @@ import { useSavedResources } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { trackEvent } from "@/lib/analytics";
+import GetDirectionsButton from "@/components/get-directions-button";
+import { hasDirectionsData } from "@/lib/directions";
 
 export interface TrustedServiceItem {
   id: string;
@@ -28,8 +30,12 @@ export interface TrustedServiceItem {
   website_url: string;
   phone: string;
   email: string;
+  address?: string;
   city: string;
   state: string;
+  zip?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   verification_status: string;
   verification_label: string;
   cta_text: string;
@@ -199,6 +205,22 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-medium">Located in {location}</span>
               </div>
+              {service.address && (
+                <p className="text-xs text-muted-foreground pl-6">
+                  {[service.address, service.city, service.state, service.zip].filter(Boolean).join(", ")}
+                </p>
+              )}
+              {hasDirectionsData({ latitude: service.latitude, longitude: service.longitude, address: service.address, city: service.city, state: service.state, zip: service.zip }) && (
+                <GetDirectionsButton
+                  location={{ latitude: service.latitude, longitude: service.longitude, address: service.address, city: service.city, state: service.state, zip: service.zip, name: service.name }}
+                  listingType="trusted-service"
+                  listingId={service.id}
+                  listingName={service.name}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border-primary/20 text-primary"
+                />
+              )}
             </section>
           )}
 

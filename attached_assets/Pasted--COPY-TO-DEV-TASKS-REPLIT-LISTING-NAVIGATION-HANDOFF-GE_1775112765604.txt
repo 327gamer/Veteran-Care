@@ -1,0 +1,122 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### LISTING NAVIGATION HANDOFF – GET DIRECTIONS / MAP APP INTEGRATION
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+We are NOT building our own navigation system.
+We are leveraging existing map/navigation apps.
+
+This must be implemented as ONE reusable helper/component across the platform.
+Do NOT create separate navigation logic per section.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow users to tap a “Get Directions” action on any eligible address-based listing and be handed off to an appropriate map/navigation app.
+
+Applies to:
+- resources
+- trusted services
+- veteran discount services
+- products
+- service partners
+- any listing with a usable physical location
+
+-------------------------------------
+LAUNCH APPROACH
+-------------------------------------
+
+Implement a launch-safe version first:
+
+1) Add a reusable Get Directions helper
+2) Prefer:
+   - latitude / longitude when available
+   - otherwise fallback to formatted address
+3) Use smart platform-based handoff
+
+Launch priority:
+- make it work reliably first
+- do NOT overbuild a heavy chooser if not practical for launch
+
+-------------------------------------
+PLATFORM BEHAVIOR
+-------------------------------------
+
+Please implement best-available behavior by platform:
+
+IPHONE / IOS:
+- preferred default: Apple Maps handoff
+- if app-choice support is practical, structure helper so Google Maps / Waze support can be added or included cleanly
+
+ANDROID:
+- preferred default: Google Maps / device default map app
+
+DESKTOP:
+- open Google Maps in browser
+
+-------------------------------------
+BUTTON PLACEMENT
+-------------------------------------
+
+Launch recommendation:
+Add “Get Directions” to listing/detail views first where location exists.
+
+Do NOT clutter compact cards unless it fits cleanly.
+
+Eligible views include:
+- resource detail
+- trusted service detail
+- veteran discount listing detail
+- other address-based detail views
+
+-------------------------------------
+IMPLEMENTATION REQUIREMENTS
+-------------------------------------
+
+1) ONE reusable directions helper
+2) Reuse across all listing types
+3) Prefer lat/lng over text address
+4) Fallback safely to formatted address if coordinates missing
+5) Keep UI clean and platform-consistent
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT build embedded maps
+- do NOT build custom routing UI
+- do NOT create section-specific navigation systems
+- do NOT overengineer app chooser behavior if not practical for launch
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. recommended implementation actually used
+2. whether app chooser is realistic for launch
+3. fallback behavior by:
+   - iPhone
+   - Android
+   - desktop
+4. where reusable helper/component lives
+5. which detail/listing components received the button
+6. files changed
+7. risks or limitations
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make address-based listings immediately more useful and conversion-friendly by handing users off to trusted map/navigation apps.
+
+--- END ---
