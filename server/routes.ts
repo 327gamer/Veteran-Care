@@ -616,9 +616,13 @@ async function checkTrustedServicesTable() {
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS listing_type TEXT DEFAULT 'lead'`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_value TEXT`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_description TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS geocoded_at TIMESTAMPTZ`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS geo_source TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS program_area TEXT DEFAULT 'trusted_services'`);
     await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS group_type TEXT DEFAULT 'service'`);
-    console.log("[schema] veteran_discount_services columns ensured on trusted_services + categories");
+    console.log("[schema] veteran_discount_services columns + geo columns ensured on trusted_services + categories");
     await seedDiscountCategories();
     await ensureVobTable();
   } catch (err: any) {
@@ -5545,6 +5549,15 @@ export async function registerRoutes(
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
     if (!hasTrustedServicesTable) return res.json([]);
     try {
+      let userLat = req.query.user_lat ? parseFloat(req.query.user_lat as string) : undefined;
+      let userLng = req.query.user_lng ? parseFloat(req.query.user_lng as string) : undefined;
+      let radiusMiles = req.query.radius_miles ? parseFloat(req.query.radius_miles as string) : undefined;
+      if (userLat !== undefined && (isNaN(userLat) || userLat < -90 || userLat > 90)) userLat = undefined;
+      if (userLng !== undefined && (isNaN(userLng) || userLng < -180 || userLng > 180)) userLng = undefined;
+      if (radiusMiles !== undefined && (isNaN(radiusMiles) || radiusMiles <= 0)) radiusMiles = undefined;
+      if (radiusMiles !== undefined && radiusMiles > 500) radiusMiles = 500;
+      const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined;
+
       const conditions = [`ts.is_active IS NOT false`, `tsc.program_area = 'veteran_discount_services'`];
       const params: any[] = [];
       if (req.query.category) {
@@ -5555,9 +5568,16 @@ export async function registerRoutes(
         params.push(req.query.group_type);
         conditions.push(`tsc.group_type = $${params.length}`);
       }
-      if (req.query.state) {
+      if (!nearMeMode && req.query.state) {
         params.push((req.query.state as string).toUpperCase());
         conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
+      }
+      if (nearMeMode) {
+        const latDelta = radiusMiles! / 69.0;
+        const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
+        params.push(userLat! - latDelta, userLat! + latDelta, userLng! - lngDelta, userLng! + lngDelta);
+        const latMinIdx = params.length - 3;
+        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true)`);
       }
       const searchTerm = (req.query.q || req.query.search) as string | undefined;
       if (searchTerm) {
@@ -5571,7 +5591,19 @@ export async function registerRoutes(
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
          ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
-      const rows = await pgQuery(sql, params);
+      let rows = await pgQuery(sql, params);
+
+      if (nearMeMode) {
+        rows = rows.map((r: any) => {
+          if (r.latitude != null && r.longitude != null) {
+            const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
+            return { ...r, distance_miles: Math.round(dist * 10) / 10 };
+          }
+          return { ...r, distance_miles: r.is_national ? 99999 : null };
+        }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+          .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+      }
+
       return res.json(rows);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -5597,22 +5629,38 @@ export async function registerRoutes(
       return res.json([]);
     }
     try {
+      let userLat = req.query.user_lat ? parseFloat(req.query.user_lat as string) : undefined;
+      let userLng = req.query.user_lng ? parseFloat(req.query.user_lng as string) : undefined;
+      let radiusMiles = req.query.radius_miles ? parseFloat(req.query.radius_miles as string) : undefined;
+      if (userLat !== undefined && (isNaN(userLat) || userLat < -90 || userLat > 90)) userLat = undefined;
+      if (userLng !== undefined && (isNaN(userLng) || userLng < -180 || userLng > 180)) userLng = undefined;
+      if (radiusMiles !== undefined && (isNaN(radiusMiles) || radiusMiles <= 0)) radiusMiles = undefined;
+      if (radiusMiles !== undefined && radiusMiles > 500) radiusMiles = 500;
+      const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined;
+
       const conditions = [`ts.is_active IS NOT false`];
       const params: any[] = [];
       if (req.query.category) {
         params.push(req.query.category);
         conditions.push(`tsc.slug = $${params.length}`);
       }
-      if (req.query.state) {
+      if (!nearMeMode && req.query.state) {
         params.push((req.query.state as string).toUpperCase());
         conditions.push(`(ts.state = $${params.length} OR ts.is_national = true OR ts.state IS NULL)`);
+      }
+      if (nearMeMode) {
+        const latDelta = radiusMiles! / 69.0;
+        const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
+        params.push(userLat! - latDelta, userLat! + latDelta, userLng! - lngDelta, userLng! + lngDelta);
+        const latMinIdx = params.length - 3;
+        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true)`);
       }
       const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`];
       const vobParams = [...params];
       if (req.query.category) {
         vobConditions.push(`tsc2.slug = $${vobParams.length > 0 ? '1' : '1'}`);
       }
-      if (req.query.state) {
+      if (!nearMeMode && req.query.state) {
         const stateIdx = req.query.category ? 2 : 1;
         vobConditions.push(`vob.state = $${stateIdx}`);
       }
@@ -5621,6 +5669,7 @@ export async function registerRoutes(
              ts.address, ts.city, ts.state, ts.zip, ts.logo_url, ts.verification_status, ts.verification_label,
              ts.cta_text, ts.cta_url, ts.is_featured, ts.is_active, ts.display_order, ts.notes_internal, ts.created_at,
              COALESCE(ts.is_national, false) AS is_national,
+             ts.latitude, ts.longitude,
              json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories,
              'trusted_service' AS source_type
          FROM trusted_services ts
@@ -5633,6 +5682,7 @@ export async function registerRoutes(
              NULL AS cta_text, NULL AS cta_url, false AS is_featured, true AS is_active, 999 AS display_order,
              NULL AS notes_internal, vob.created_at,
              false AS is_national,
+             NULL::double precision AS latitude, NULL::double precision AS longitude,
              json_build_object('slug', tsc2.slug, 'name', tsc2.name) AS trusted_service_categories,
              'vob' AS source_type
          FROM veteran_owned_businesses vob
@@ -5641,8 +5691,20 @@ export async function registerRoutes(
 
       const sql = `${mainSql} UNION ALL ${vobSql}
          ORDER BY is_featured DESC, display_order ASC NULLS LAST, created_at DESC`;
-      const rows = await pgQuery(sql, params);
-      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'})`);
+      let rows = await pgQuery(sql, params);
+
+      if (nearMeMode) {
+        rows = rows.map((r: any) => {
+          if (r.latitude != null && r.longitude != null) {
+            const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
+            return { ...r, distance_miles: Math.round(dist * 10) / 10 };
+          }
+          return { ...r, distance_miles: r.is_national ? 99999 : null };
+        }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+          .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+      }
+
+      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'}, nearMe=${nearMeMode})`);
       return res.json(rows);
     } catch (err: any) {
       console.log(`[trusted-services] query error: ${err.message}`);
@@ -5724,11 +5786,18 @@ export async function registerRoutes(
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
     try {
       const b = req.body;
+      let lat = b.latitude != null ? parseFloat(b.latitude) : null;
+      let lng = b.longitude != null ? parseFloat(b.longitude) : null;
+      let geoSrc: string | null = b.geo_source || null;
+      if ((lat == null || lng == null) && (b.address || b.city || b.state || b.zip)) {
+        const geo = await geocodeAddress(b.address || null, b.city || null, b.state || null, b.zip || null);
+        if (geo) { lat = geo.latitude; lng = geo.longitude; geoSrc = geo.geo_source; }
+      }
       const rows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, address, city, state, zip, is_active, is_featured, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description, latitude, longitude, geocoded_at, geo_source)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
          RETURNING *`,
-        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.city || null, b.state || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null]
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.address || null, b.city || null, b.state || null, b.zip || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null, lat, lng, lat != null ? new Date().toISOString() : null, geoSrc]
       );
       return res.json(rows[0]);
     } catch (err: any) {
@@ -5740,9 +5809,28 @@ export async function registerRoutes(
     if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
     try {
       const updates = req.body;
+      const addressChanged = updates.address !== undefined || updates.city !== undefined || updates.state !== undefined || updates.zip !== undefined;
+      if (addressChanged && updates.latitude === undefined && updates.longitude === undefined) {
+        const existing = await pgQuery(`SELECT address, city, state, zip FROM trusted_services WHERE id = $1`, [req.params.id]);
+        if (existing.length > 0) {
+          const merged = {
+            address: updates.address ?? existing[0].address,
+            city: updates.city ?? existing[0].city,
+            state: updates.state ?? existing[0].state,
+            zip: updates.zip ?? existing[0].zip,
+          };
+          const geo = await geocodeAddress(merged.address, merged.city, merged.state, merged.zip);
+          if (geo) {
+            updates.latitude = geo.latitude;
+            updates.longitude = geo.longitude;
+            updates.geo_source = geo.geo_source;
+            updates.geocoded_at = new Date().toISOString();
+          }
+        }
+      }
       const setClauses: string[] = [];
       const params: any[] = [];
-      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'city', 'state', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text'];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'address', 'city', 'state', 'zip', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text', 'latitude', 'longitude', 'geocoded_at', 'geo_source'];
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
           params.push(updates[field]);
@@ -5759,6 +5847,33 @@ export async function registerRoutes(
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/trusted-services/batch-geocode", requireAdmin, async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(503).json({ error: "Trusted services tables not available" });
+    try {
+      const rows = await pgQuery(
+        `SELECT id, address, city, state, zip FROM trusted_services WHERE (latitude IS NULL OR longitude IS NULL) AND (city IS NOT NULL OR address IS NOT NULL OR zip IS NOT NULL)`
+      );
+      let success = 0;
+      let failed = 0;
+      for (const row of rows) {
+        const geo = await geocodeAddress(row.address, row.city, row.state, row.zip);
+        if (geo) {
+          await pgQuery(
+            `UPDATE trusted_services SET latitude = $1, longitude = $2, geocoded_at = NOW(), geo_source = $3 WHERE id = $4`,
+            [geo.latitude, geo.longitude, geo.geo_source, row.id]
+          );
+          success++;
+        } else {
+          failed++;
+        }
+      }
+      console.log(`[geocode] Batch geocoded trusted_services: ${success} success, ${failed} failed out of ${rows.length} total`);
+      return res.json({ total: rows.length, success, failed });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
     }
   });
 
@@ -6096,9 +6211,16 @@ export async function registerRoutes(
       if (application.converted_provider_id) return res.status(400).json({ error: "Already converted to a provider" });
       if (!application.category_id) return res.status(400).json({ error: "Application must have a category before converting" });
 
+      let convLat: number | null = null;
+      let convLng: number | null = null;
+      let convGeoSrc: string | null = null;
+      if (application.address || application.city || application.state) {
+        const geo = await geocodeAddress(application.address || null, application.city || null, application.state || null, null);
+        if (geo) { convLat = geo.latitude; convLng = geo.longitude; convGeoSrc = geo.geo_source; }
+      }
       const providerRows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, city, state, is_active, is_featured, verification_status, notes_internal, latitude, longitude, geocoded_at, geo_source)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING *`,
         [
           application.category_id,
@@ -6113,6 +6235,10 @@ export async function registerRoutes(
           false,
           'verified',
           `Converted from partner application ${application.id}`,
+          convLat,
+          convLng,
+          convLat != null ? new Date().toISOString() : null,
+          convGeoSrc,
         ]
       );
       const provider = providerRows[0];

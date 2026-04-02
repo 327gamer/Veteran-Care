@@ -1,0 +1,134 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### SHARED GEOLOCATION ENGINE UPGRADE – TRUSTED SERVICES + VETERAN DISCOUNTS
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+Proceed with the shared geolocation upgrade.
+
+This should be implemented as a root-system improvement for the trusted_services data source, not as a one-off patch for Veteran Discounts only.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Unify location behavior so both:
+
+- Trusted Services
+- Veteran Discount Services
+
+use the SAME true geolocation engine already used by Resources:
+- latitude / longitude
+- radius filtering
+- distance calculation
+- closest-to-furthest sorting
+
+-------------------------------------
+WHY THIS IS REQUIRED
+-------------------------------------
+
+Current state:
+- Resources = true lat/lng distance logic
+- Trusted Services = state/city text filtering only
+- Veteran Discounts = state/city text filtering only
+
+This must be unified.
+
+-------------------------------------
+IMPLEMENTATION SCOPE
+-------------------------------------
+
+1) SCHEMA UPGRADE
+Add to trusted_services table:
+- latitude
+- longitude
+- geocoded_at
+- geo_source
+
+2) GEOCODE EXISTING DATA
+Batch geocode existing trusted_services records using:
+- address
+- city
+- state
+- zip
+
+Use the same geocoding pattern already used for resources where possible.
+
+3) AUTO-GEOCODE ON SAVE
+When trusted service / discount listings are created or edited:
+- geocode if lat/lng missing or address changed
+
+4) API UPGRADE
+Upgrade both endpoints:
+- /api/trusted-services
+- /api/veteran-discounts
+
+to support:
+- user_lat
+- user_lng
+- radius_miles
+
+Use the same proximity logic pattern already used by /api/resources:
+- bounding box
+- haversine distance calculation
+- distance sorting
+
+5) CLIENT INTEGRATION
+Update client behavior so these sections pass actual lat/lng coordinates when available, not just state code.
+
+6) KEEP TRACKING SAFE
+Do NOT break:
+- ambassador attribution
+- UTM tracking
+- lead source tracking
+- provider attribution
+- admin/provider flows
+
+-------------------------------------
+SEARCH / UX GOAL
+-------------------------------------
+
+Users should be able to get true local results for:
+- restaurants near me
+- legal help near me
+- mortgage help near me
+- hotels near me
+- dealerships near me
+
+and results should sort:
+- closest first
+- furthest after
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. exact schema changes made
+2. how existing trusted_services records were geocoded
+3. how auto-geocoding now works on save/edit
+4. endpoints updated
+5. how distance sorting now works
+6. confirmation both Trusted Services and Veteran Discounts now use the same true geo engine
+7. any manual steps required
+8. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create one unified true geolocation engine across:
+- Resources
+- Trusted Services
+- Veteran Discount Services
+
+so local discovery works consistently across the entire platform.
+
+--- END ---

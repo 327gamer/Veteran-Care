@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { trackEvent, getUTMParams } from "@/lib/analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +45,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useGeolocation } from "@/lib/use-geolocation";
 import { platform } from "@shared/platform";
 import { useSavedResources } from "@/lib/store";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
@@ -137,7 +138,19 @@ export default function TrustedServices() {
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<TrustedService | null>(null);
+  const [nearMeActive, setNearMeActive] = useState(false);
+  const [nearMeRadius] = useState(50);
+  const [geoApplied, setGeoApplied] = useState(false);
   const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
+  const geo = useGeolocation();
+
+  useEffect(() => {
+    if (geo.location?.lat && !geoApplied) {
+      setNearMeActive(true);
+      if (geo.location.stateCode) setFilterState(geo.location.stateCode);
+      setGeoApplied(true);
+    }
+  }, [geo.location, geoApplied]);
 
   const { data: categories = [], isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/trusted-services/categories"],
@@ -148,17 +161,27 @@ export default function TrustedServices() {
     retry: 2,
   });
 
+  const nearMeLat = nearMeActive && geo.location?.lat ? geo.location.lat : undefined;
+  const nearMeLng = nearMeActive && geo.location?.lng ? geo.location.lng : undefined;
+  const isNearMeQuery = nearMeActive && nearMeLat !== undefined && nearMeLng !== undefined;
+
   const { data: services = [] } = useQuery<TrustedService[]>({
-    queryKey: ["/api/trusted-services", selectedCategory, filterState],
+    queryKey: ["/api/trusted-services", selectedCategory, filterState, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
-      if (filterState) params.set("state", filterState);
+      if (isNearMeQuery) {
+        params.set("user_lat", String(nearMeLat));
+        params.set("user_lng", String(nearMeLng));
+        params.set("radius_miles", String(nearMeRadius));
+      } else if (filterState) {
+        params.set("state", filterState);
+      }
       const qs = params.toString();
       const url = qs ? `/api/trusted-services?${qs}` : "/api/trusted-services";
       return fetch(url).then(r => r.json());
     },
-    enabled: !!selectedCategory,
+    enabled: !!selectedCategory && (!nearMeActive || isNearMeQuery),
   });
 
   const leadMutation = useMutation({

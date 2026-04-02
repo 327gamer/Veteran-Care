@@ -71,6 +71,7 @@ interface DiscountListing {
   email: string;
   city: string;
   state: string;
+  distance_miles?: number | null;
   verification_status: string;
   verification_label: string;
   cta_text: string;
@@ -149,14 +150,15 @@ export default function VeteranDiscounts() {
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<DiscountListing | null>(null);
   const [locationMode, setLocationMode] = useState<"all" | "nearme" | "state">("all");
+  const [nearMeRadius, setNearMeRadius] = useState(50);
   const [geoApplied, setGeoApplied] = useState(false);
   const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
   const geo = useGeolocation();
 
   useEffect(() => {
-    if (geo.location?.stateCode && !geoApplied) {
-      setFilterState(geo.location.stateCode);
+    if (geo.location?.lat && !geoApplied) {
       setLocationMode("nearme");
+      if (geo.location.stateCode) setFilterState(geo.location.stateCode);
       setGeoApplied(true);
     }
   }, [geo.location, geoApplied]);
@@ -174,18 +176,27 @@ export default function VeteranDiscounts() {
   const activeCats = activeTab === "service" ? serviceCategories : productCategories;
 
   const effectiveState = locationMode === "all" ? "" : filterState;
+  const nearMeLat = locationMode === "nearme" && geo.location?.lat ? geo.location.lat : undefined;
+  const nearMeLng = locationMode === "nearme" && geo.location?.lng ? geo.location.lng : undefined;
+  const isNearMeQuery = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
 
   const { data: listings = [], isLoading: listingsLoading } = useQuery<DiscountListing[]>({
-    queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery],
+    queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
-      if (effectiveState && effectiveState !== "all") params.set("state", effectiveState);
+      if (isNearMeQuery) {
+        params.set("user_lat", String(nearMeLat));
+        params.set("user_lng", String(nearMeLng));
+        params.set("radius_miles", String(nearMeRadius));
+      } else if (effectiveState && effectiveState !== "all") {
+        params.set("state", effectiveState);
+      }
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       const qs = params.toString();
       return fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts").then(r => r.json());
     },
-    enabled: !!selectedCategory || !!searchQuery.trim(),
+    enabled: (!!selectedCategory || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
   const leadMutation = useMutation({
@@ -441,9 +452,20 @@ export default function VeteranDiscounts() {
       </div>
 
       {locationMode === "nearme" && geo.location && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
           <MapPin className="h-3 w-3" />
-          <span>Showing results near {locationLabel}</span>
+          <span>Showing results within</span>
+          <Select value={String(nearMeRadius)} onValueChange={v => setNearMeRadius(parseInt(v))}>
+            <SelectTrigger className="h-6 w-[70px] text-[10px] px-1.5" data-testid="select-radius">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 25, 50, 100, 250].map(r => (
+                <SelectItem key={r} value={String(r)}>{r} mi</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span>of {locationLabel}</span>
           <button onClick={() => { setLocationMode("all"); setFilterState(""); }} className="ml-auto text-primary text-[10px] font-medium hover:underline" data-testid="button-clear-location">
             Clear
           </button>
@@ -631,6 +653,9 @@ function ListingCard({
               ) : listing.state ? (
                 <><MapPin className="h-3 w-3" /><span>{listing.state}</span></>
               ) : null}
+              {listing.distance_miles != null && listing.distance_miles < 99999 && (
+                <span className="text-primary font-medium">{listing.distance_miles} mi</span>
+              )}
             </div>
           </div>
           <button
