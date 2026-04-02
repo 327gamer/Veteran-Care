@@ -1,0 +1,97 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### CLARIFICATION + UPGRADE REQUEST – SHARED GEOLOCATION / SEARCH ENGINE ACROSS WHOLE PLATFORM
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+We need to confirm whether Veteran Discount Services is using the SAME true geolocation + search system already used elsewhere on the platform.
+
+This is critical.
+
+-------------------------------------
+QUESTION TO ANSWER FIRST
+-------------------------------------
+
+Please confirm clearly:
+
+1. Is Veteran Discount Services currently using the SAME underlying location engine as the existing trusted services / near me system?
+2. Is it using true latitude / longitude distance logic?
+3. Or is it currently using only state/city context filtering?
+
+We need a direct answer before proceeding.
+
+-------------------------------------
+PRODUCT REQUIREMENT
+-------------------------------------
+
+We want ONE shared geolocation + discovery system across the whole platform.
+
+Users should be able to search by keyword and near-me intent from anywhere, and see relevant results across:
+
+- resources
+- trusted services
+- veteran discount services
+- product listings
+- lead providers
+
+Examples:
+- restaurant near me
+- legal help near me
+- loans near me
+- mortgage help near me
+- hotel discounts near me
+- car dealerships near me
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Do NOT create a weaker or separate “near me” behavior for Veteran Discount Services.
+
+If the platform already has true lat/lng location logic, the discount/services section should reuse that same engine.
+
+-------------------------------------
+REQUIRED
+-------------------------------------
+
+1. Confirm whether the discount section is already using:
+- true latitude/longitude proximity logic
+OR
+- state/city approximation only
+
+2. If it is not yet using the shared true geo engine:
+- provide the cleanest implementation approach to make Veteran Discount Services use the SAME location and search behavior already used elsewhere
+
+3. Ensure the same keyword search logic can surface discount/services results across the site, not only inside the discount section
+
+4. Preserve:
+- ambassador attribution
+- UTM tracking
+- lead source tracking
+- provider/partner attribution
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. current geo/search implementation status for Veteran Discount Services
+2. whether it matches the existing trusted services/resources system exactly
+3. what is missing, if anything
+4. recommended implementation path to unify the geo/search engine across the platform
+5. any schema/data requirements for true lat/lng support if needed
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+One unified search + near-me system across the entire platform.
+
+--- END ---
