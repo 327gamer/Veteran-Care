@@ -488,35 +488,36 @@ export default function Home() {
         </a>
       </section>
 
-      <section
+      <Card
         data-testid="section-veteran-discounts-cta"
-        className="bg-white border border-green-200 rounded-xl p-4 cursor-pointer group shadow-md"
+        className="cursor-pointer group shadow-sm hover:shadow-md hover:border-primary/50 transition-all"
         onClick={() => setLocation("/discounts")}
       >
-        <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-full bg-red-100 flex items-center justify-center shrink-0 border border-red-200">
-            <Percent className="h-5 w-5 text-red-600" />
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+              <Percent className="h-5 w-5 text-red-600" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-primary transition-colors">
+                Veteran Discount Services
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Save money and connect with businesses offering discounts for veterans and their families.
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
           </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="text-sm font-heading font-bold text-green-800 group-hover:text-green-900 transition-colors">
-              Veteran Discount Services
-            </h3>
-            <p className="text-xs font-medium text-green-700">Save money. Find trusted local services.</p>
-            <p className="text-xs text-green-700/80 leading-relaxed">
-              Explore businesses offering discounts and services for veterans and their families.
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-green-600/40 group-hover:text-green-700 shrink-0 mt-0.5 transition-colors" />
-        </div>
-        <Button
-          data-testid="button-discounts-cta"
-          className="mt-3 w-full rounded-full bg-green-700 hover:bg-green-800 text-white"
-          onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
-        >
-          <Percent className="h-3.5 w-3.5 mr-1.5" />
-          Browse Discounts & Services
-        </Button>
-      </section>
+          <Button
+            data-testid="button-discounts-cta"
+            className="w-full"
+            onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
+          >
+            <Percent className="h-3.5 w-3.5 mr-1.5" />
+            Browse Discounts & Services
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Resources Grid */}
       <section className="space-y-3">

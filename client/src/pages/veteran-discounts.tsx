@@ -35,10 +35,7 @@ import {
   Store,
   ChevronLeft,
   Globe,
-  Phone,
   MapPin,
-  Mail,
-  Star,
   Handshake,
   CheckCircle2,
   Send,
@@ -46,13 +43,13 @@ import {
   Tag,
   Percent,
   Heart,
-  X,
+  Locate,
+  Loader2,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { platform } from "@shared/platform";
 import { useSavedResources } from "@/lib/store";
+import { useGeolocation } from "@/lib/use-geolocation";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
-import { toast } from "@/hooks/use-toast";
 
 interface DiscountCategory {
   id: string;
@@ -151,7 +148,18 @@ export default function VeteranDiscounts() {
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<DiscountListing | null>(null);
+  const [locationMode, setLocationMode] = useState<"all" | "nearme" | "state">("all");
+  const [geoApplied, setGeoApplied] = useState(false);
   const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
+  const geo = useGeolocation();
+
+  useEffect(() => {
+    if (geo.location?.stateCode && !geoApplied) {
+      setFilterState(geo.location.stateCode);
+      setLocationMode("nearme");
+      setGeoApplied(true);
+    }
+  }, [geo.location, geoApplied]);
 
   const { data: categories = [], isLoading: catsLoading } = useQuery<DiscountCategory[]>({
     queryKey: ["/api/veteran-discounts/categories"],
@@ -165,12 +173,14 @@ export default function VeteranDiscounts() {
   const productCategories = categories.filter(c => c.group_type === "product");
   const activeCats = activeTab === "service" ? serviceCategories : productCategories;
 
+  const effectiveState = locationMode === "all" ? "" : filterState;
+
   const { data: listings = [], isLoading: listingsLoading } = useQuery<DiscountListing[]>({
-    queryKey: ["/api/veteran-discounts", selectedCategory, filterState, searchQuery],
+    queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
-      if (filterState && filterState !== "all") params.set("state", filterState);
+      if (effectiveState && effectiveState !== "all") params.set("state", effectiveState);
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       const qs = params.toString();
       return fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts").then(r => r.json());
@@ -230,6 +240,27 @@ export default function VeteranDiscounts() {
   }, [activeTab]);
 
   const selectedCat = categories.find(c => c.slug === selectedCategory);
+
+  const handleBack = () => {
+    if (detailService) {
+      setDetailService(null);
+    } else if (selectedCategory) {
+      setSelectedCategory(null);
+    } else {
+      setLocation("/home");
+    }
+  };
+
+  const locationLabel = (() => {
+    if (locationMode === "nearme" && geo.location) {
+      const parts = [geo.location.city, geo.location.stateCode].filter(Boolean);
+      return parts.length > 0 ? parts.join(", ") : "Near Me";
+    }
+    if (locationMode === "state" && filterState) {
+      return US_STATES.find(s => s.value === filterState)?.label || filterState;
+    }
+    return "All Locations";
+  })();
 
   const connectModal = (
     <Dialog open={!!connectService} onOpenChange={(v) => { if (!v) closeModal(); }}>
@@ -327,35 +358,29 @@ export default function VeteranDiscounts() {
     </Dialog>
   );
 
-  if (detailService) {
-    return (
-      <TrustedServiceDetail
-        service={detailService as any}
-        onBack={() => setDetailService(null)}
-        onConnect={(svc: any) => { setDetailService(null); setConnectService(svc); }}
-      />
-    );
-  }
+  const detailOpen = !!detailService;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {connectModal}
+      <TrustedServiceDetail
+        service={detailService as any}
+        open={detailOpen}
+        onOpenChange={(open) => { if (!open) setDetailService(null); }}
+        onConnect={(svc: any) => { setDetailService(null); setConnectService(svc); }}
+      />
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/home")} data-testid="button-back-home">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack} data-testid="button-back-home">
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight" data-testid="heading-discounts">
             Veteran Discount Services
           </h1>
-          <p className="text-xs font-medium text-foreground">Save money and connect with businesses that support veterans.</p>
+          <p className="text-xs text-muted-foreground">Save money and connect with businesses that support veterans.</p>
         </div>
       </div>
-
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Browse local services and businesses offering veteran discounts or support. From everyday savings to professional services, everything is in one place.
-      </p>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -363,10 +388,67 @@ export default function VeteranDiscounts() {
           placeholder="Search discounts (restaurants, mortgage, auto...)"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9 h-10"
+          className="pl-9 h-10 rounded-lg border bg-background"
           data-testid="input-discount-search"
         />
       </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant={locationMode === "nearme" ? "default" : "outline"}
+          size="sm"
+          className="h-8 text-xs gap-1.5"
+          onClick={() => {
+            if (locationMode === "nearme") {
+              setLocationMode("all");
+              setFilterState("");
+            } else {
+              geo.requestLocation();
+              setLocationMode("nearme");
+              if (geo.location?.stateCode) setFilterState(geo.location.stateCode);
+            }
+          }}
+          data-testid="button-nearme"
+        >
+          {geo.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Locate className="h-3.5 w-3.5" />}
+          Near Me
+        </Button>
+        <Select
+          value={locationMode === "state" ? filterState : locationMode === "nearme" ? "nearme" : "all"}
+          onValueChange={(v) => {
+            if (v === "all") { setLocationMode("all"); setFilterState(""); }
+            else if (v === "nearme") {
+              geo.requestLocation();
+              setLocationMode("nearme");
+              if (geo.location?.stateCode) setFilterState(geo.location.stateCode);
+            } else {
+              setLocationMode("state");
+              setFilterState(v);
+            }
+          }}
+        >
+          <SelectTrigger className="h-8 text-xs flex-1" data-testid="select-discount-location">
+            <SelectValue placeholder="All Locations" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Locations</SelectItem>
+            <SelectItem value="nearme">Near Me</SelectItem>
+            {US_STATES.map(s => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {locationMode === "nearme" && geo.location && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3" />
+          <span>Showing results near {locationLabel}</span>
+          <button onClick={() => { setLocationMode("all"); setFilterState(""); }} className="ml-auto text-primary text-[10px] font-medium hover:underline" data-testid="button-clear-location">
+            Clear
+          </button>
+        </div>
+      )}
 
       {!searchQuery.trim() && (
         <>
@@ -397,7 +479,7 @@ export default function VeteranDiscounts() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {catsLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card key={i} className="animate-pulse shadow-sm">
                     <CardContent className="p-4 flex flex-col items-center gap-2">
                       <div className="h-10 w-10 rounded-full bg-muted" />
                       <div className="h-4 w-20 bg-muted rounded" />
@@ -414,7 +496,7 @@ export default function VeteranDiscounts() {
                   return (
                     <Card
                       key={cat.id}
-                      className="hover:border-primary/50 transition-colors cursor-pointer group"
+                      className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
                       onClick={() => setSelectedCategory(cat.slug)}
                       data-testid={`card-discount-cat-${cat.slug}`}
                     >
@@ -433,28 +515,17 @@ export default function VeteranDiscounts() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); setFilterState(""); }} data-testid="button-back-categories">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); }} data-testid="button-back-categories">
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   {selectedCat?.name || "Back"}
                 </Button>
-                <Select value={filterState} onValueChange={setFilterState}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs" data-testid="select-discount-state">
-                    <SelectValue placeholder="All States" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All States</SelectItem>
-                    {US_STATES.map(s => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {listingsLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i} className="animate-pulse">
+                    <Card key={i} className="animate-pulse shadow-sm">
                       <CardContent className="p-4 space-y-2">
                         <div className="h-5 w-48 bg-muted rounded" />
                         <div className="h-4 w-full bg-muted rounded" />
@@ -492,7 +563,7 @@ export default function VeteranDiscounts() {
           {listingsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i} className="animate-pulse shadow-sm">
                   <CardContent className="p-4 space-y-2">
                     <div className="h-5 w-48 bg-muted rounded" />
                     <div className="h-4 w-full bg-muted rounded" />
@@ -544,7 +615,7 @@ function ListingCard({
     : (listing.cta_text && listing.cta_text !== "Learn More" ? listing.cta_text : "Connect");
 
   return (
-    <Card className="overflow-hidden" data-testid={`card-discount-${listing.id}`}>
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow" data-testid={`card-discount-${listing.id}`}>
       <CardContent className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">

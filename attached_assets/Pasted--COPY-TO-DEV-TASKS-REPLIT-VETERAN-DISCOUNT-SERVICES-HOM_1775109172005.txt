@@ -1,0 +1,254 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### VETERAN DISCOUNT SERVICES – HOMEPAGE CONSISTENCY + BACK NAVIGATION + GEO / NEAR ME + TRACKING READINESS
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is a refinement + functional consistency pass for the new Veteran Discount Services system.
+
+Do NOT break:
+- current homepage layout
+- search
+- attribution
+- ambassador tracking
+- referral logic
+- existing resource / trusted service flows
+
+This task has multiple parts. Complete ALL parts below.
+
+-------------------------------------
+PART 1 – HOMEPAGE VISUAL CONSISTENCY FIX
+-------------------------------------
+
+GOAL:
+Make the Veteran Discount Services homepage block match the platform design system while still standing out.
+
+CURRENT ISSUE:
+The block still feels visually different from the rest of the site.
+
+REQUIRED:
+
+1) BACKGROUND
+- remove the light green / tinted block background
+- use the same background treatment as the rest of the site cards / sections
+- keep the card clean and premium-looking
+
+2) CARD STYLE
+- match the standard system card style:
+  - same border treatment
+  - same corner radius
+  - same shadow level
+  - same padding rhythm
+
+3) ICON
+- KEEP the red percent (%) discount icon
+- use:
+  - subtle red circular background
+  - red icon
+- this should remain the visual differentiator
+
+4) CTA BUTTON
+- keep the green primary CTA
+- match all other primary buttons exactly
+
+5) TYPOGRAPHY
+- align title, body copy, and spacing with the rest of the site
+- no one-off typography treatment
+
+EXPECTED RESULT:
+- the section blends into the platform
+- but still stands out via the red discount icon and placement
+
+-------------------------------------
+PART 2 – BACK NAVIGATION FIX (CRITICAL)
+-------------------------------------
+
+CURRENT ISSUE:
+When user enters Veteran Discount Services and clicks into a category, pressing back takes them all the way to the homepage instead of back to the main discount page.
+
+THIS IS WRONG.
+
+REQUIRED:
+Implement proper route hierarchy / back behavior.
+
+EXPECTED FLOW:
+
+- /discounts
+  → /discounts/category
+    → /discounts/category/item (later if applicable)
+
+BACK BEHAVIOR:
+- item → category
+- category → discounts main page
+- discounts main page → home
+
+DO NOT hard-route back to homepage from nested discount pages.
+
+IMPORTANT:
+Apply this as a reusable route/back pattern for nested sections where appropriate across the platform:
+- discounts
+- resources
+- trusted services
+- similar nested page flows
+
+OUTPUT:
+- confirm exact route/back behavior implemented
+
+-------------------------------------
+PART 3 – GEOLOCATION / NEAR ME IN DISCOUNT SERVICES
+-------------------------------------
+
+GOAL:
+Make Veteran Discount Services location-aware like the rest of the platform.
+
+REQUIRED:
+
+1) ADD LOCATION / NEAR ME SUPPORT
+- reuse the existing geolocation/location selector pattern already used elsewhere in the platform
+- this should work like the current “near me” behavior
+
+2) USER EXPERIENCE
+Support:
+- automatic location detection where allowed
+- manual location selection fallback
+
+3) SORTING
+For local results:
+- closest first
+- furthest after
+
+4) DISPLAY
+If available, show:
+- distance
+OR
+- city / state
+
+5) SEARCH INTEGRATION
+The discount/services section must support search terms like:
+- restaurants near me
+- car dealerships near me
+- legal help near me
+- mortgage help near me
+
+These results should:
+- use location awareness
+- sort by proximity where applicable
+
+IMPORTANT:
+Do this without breaking the current search experience.
+
+-------------------------------------
+PART 4 – TRACKING / LEAD READINESS
+-------------------------------------
+
+IMPORTANT:
+This section must remain ready for:
+
+- ambassador attribution
+- UTM / campaign attribution
+- geo-based lead origin
+- tracking where leads/clicks came from
+- future monetization reporting
+
+DO NOT remove, break, or bypass:
+- attribution hooks
+- ambassador tracking
+- referral tracking
+- provider lead source tracking
+
+If any new route or CTA is added, make sure tracking remains compatible.
+
+-------------------------------------
+PART 5 – DISCOUNT PAGE UI CLEANUP
+-------------------------------------
+
+GOAL:
+Make the Veteran Discount Services page feel like part of the existing system, not like a separate mini-site.
+
+REQUIRED:
+
+1) PAGE SPACING
+- match spacing rhythm used across the rest of the app
+- no awkward oversized gaps
+- no special-case layout feel
+
+2) TABS
+- Services / Products & Local Offers
+- tabs must match the platform toggle style exactly
+
+3) CARDS
+- category cards should match resource card style as closely as possible
+- keep consistency in:
+  - shadows
+  - borders
+  - icon circles
+  - spacing
+  - typography
+
+4) SEARCH BAR
+- match the rest of the platform search styling
+- no one-off appearance
+
+-------------------------------------
+PART 6 – VALIDATION CHECKLIST (MANDATORY)
+-------------------------------------
+
+Before marking complete, validate:
+
+MOBILE:
+- no cutoff content
+- no nav overlap
+- no horizontal scroll
+- no hidden CTA
+
+NAVIGATION:
+- back flow works correctly
+- no broken routes
+- no forced jump back to homepage from nested discount pages
+
+FUNCTIONAL:
+- geo / near me works
+- search works
+- category navigation works
+
+CONSISTENCY:
+- homepage block matches overall platform style
+- discount page matches app design system
+- no one-off UI treatments remain
+
+TRACKING:
+- attribution compatibility preserved
+- lead origin readiness preserved
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. exact files changed
+2. exact routes / route behavior updated
+3. how back navigation now works
+4. how geolocation / near me was integrated
+5. how search / proximity sorting works
+6. confirmation tracking compatibility was preserved
+7. any risks / edge cases
+8. publish / restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+1. Make Veteran Discount Services visually consistent with the platform
+2. Fix broken back navigation
+3. Add location-aware discovery / near me behavior
+4. Preserve tracking + monetization readiness
+5. Keep the whole experience clean, mobile-first, and scalable
+
+--- END ---
