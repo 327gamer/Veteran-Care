@@ -510,7 +510,7 @@ export default function Home() {
           </div>
           <Button
             data-testid="button-discounts-cta"
-            className="w-full"
+            className="w-full rounded-full"
             onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
           >
             <Percent className="h-3.5 w-3.5 mr-1.5" />
