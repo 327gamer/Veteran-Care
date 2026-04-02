@@ -490,7 +490,7 @@ export default function Home() {
 
       <section
         data-testid="section-veteran-discounts-cta"
-        className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border border-green-300 rounded-xl p-4 cursor-pointer group shadow-sm"
+        className="bg-white border border-green-200 rounded-xl p-4 cursor-pointer group shadow-md"
         onClick={() => setLocation("/discounts")}
       >
         <div className="flex items-start gap-3">
