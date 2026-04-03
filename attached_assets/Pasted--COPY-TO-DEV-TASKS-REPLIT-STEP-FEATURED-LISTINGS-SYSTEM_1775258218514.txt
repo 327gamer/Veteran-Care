@@ -1,0 +1,188 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### STEP – FEATURED LISTINGS SYSTEM (PHASE 1 MONETIZATION LAYER)
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is a lightweight monetization layer.
+Do NOT overbuild it.
+Do NOT redesign the listing system.
+Do NOT build advanced sponsorship/ads yet.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add a simple Featured Listings system so certain businesses/providers can receive premium placement and visual emphasis.
+
+Initial scope:
+- Veteran Discount Services
+- structure it so Trusted Services can use the same pattern later if needed
+
+-------------------------------------
+FEATURED LISTING LOGIC
+-------------------------------------
+
+Add support for:
+
+- featured = true/false
+- featured_rank (optional numeric ordering field)
+
+Behavior:
+- featured listings appear above standard listings
+- if multiple featured listings exist, sort by:
+  1. featured_rank ascending (if provided)
+  2. distance / relevance logic after that
+  3. then normal listing order
+
+If featured_rank is not set, featured listings can still appear above standard listings using a stable fallback order.
+
+-------------------------------------
+DATA MODEL
+-------------------------------------
+
+Extend the existing trusted_services / Veteran Discount listing model with:
+
+- featured (boolean, default false)
+- featured_rank (integer, nullable)
+
+Do this in the cleanest way consistent with the current data model.
+
+-------------------------------------
+ADMIN SUPPORT
+-------------------------------------
+
+In admin create/edit flow, allow admin to:
+
+- mark listing as Featured
+- optionally set Featured Rank
+
+Requirements:
+- keep UI simple
+- checkbox/toggle for Featured
+- small numeric field for Featured Rank
+- no heavy admin redesign
+
+Also allow admin list view to:
+- filter or visually identify featured listings
+- confirm which listings are premium
+
+-------------------------------------
+PUBLIC UI REQUIREMENTS
+-------------------------------------
+
+Featured listings should stand out, but stay consistent with the platform.
+
+Use subtle emphasis only:
+- badge: “Featured”
+- slightly stronger border OR subtle tint OR subtle elevation
+- no flashy gradients
+- no oversized styling
+- no clutter
+
+IMPORTANT:
+Featured listings must still match the system and feel trustworthy.
+
+-------------------------------------
+PLACEMENT / SORTING
+-------------------------------------
+
+On Veteran Discount Services page:
+
+- Featured listings should appear first within relevant results
+- then regular listings follow
+
+This should work with:
+- category view
+- near me / geo sorting
+- search results
+
+Important:
+Do NOT break the existing geo and search logic.
+Featured placement should layer cleanly on top of current sorting.
+
+Recommended sorting model:
+1. featured first
+2. featured_rank
+3. distance / relevance
+4. standard ordering
+
+-------------------------------------
+BADGE / LABEL
+-------------------------------------
+
+Use:
+- “Featured”
+
+Optional future labels can come later (do not build now):
+- Sponsored
+- Top Provider
+- Premium
+
+For now keep only:
+- Featured
+
+-------------------------------------
+MONETIZATION READINESS
+-------------------------------------
+
+This is the first monetization UI layer.
+
+Structure it so later we can support:
+- featured upsells
+- category dominance
+- sponsored placements
+- ads
+
+But do NOT build those yet.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT build a new pricing system
+- do NOT build AdButler placements yet
+- do NOT build complex filtering
+- do NOT redesign cards from scratch
+- do NOT break existing attribution / ambassador tracking / lead logic
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Before marking complete, verify:
+
+1. admin can mark listing as featured
+2. featured listings render first
+3. featured badge displays correctly
+4. styling remains platform-consistent
+5. geo sorting still works
+6. search still works
+7. no mobile layout regressions
+8. attribution/tracking remains intact
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+1. schema changes
+2. admin UI changes
+3. public UI changes
+4. sorting logic used
+5. files changed
+6. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Launch a clean Featured Listings system that creates immediate premium upsell potential without overbuilding the platform.
+
+--- END ---

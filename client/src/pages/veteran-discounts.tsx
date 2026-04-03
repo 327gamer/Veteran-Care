@@ -45,6 +45,7 @@ import {
   Heart,
   Locate,
   Loader2,
+  Star,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
@@ -637,13 +638,18 @@ function ListingCard({
     : (listing.cta_text && listing.cta_text !== "Learn More" ? listing.cta_text : "Connect");
 
   return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow" data-testid={`card-discount-${listing.id}`}>
+    <Card className={`overflow-hidden transition-shadow ${listing.is_featured ? "shadow-md border-amber-200/60 ring-1 ring-amber-100" : "shadow-sm hover:shadow-md"}`} data-testid={`card-discount-${listing.id}`}>
       <CardContent className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-heading font-bold text-sm" data-testid={`text-discount-name-${listing.id}`}>{listing.name}</h3>
-              {listing.is_featured && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Featured</Badge>}
+              {listing.is_featured && (
+                <Badge className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                  <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500 text-amber-500" />
+                  Featured
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
               {listing.is_national ? (

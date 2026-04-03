@@ -614,6 +614,7 @@ async function checkTrustedServicesTable() {
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS program_area TEXT DEFAULT 'trusted_services'`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS group_type TEXT DEFAULT 'service'`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS listing_type TEXT DEFAULT 'lead'`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS featured_rank INTEGER`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_value TEXT`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_description TEXT`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION`);
@@ -5590,7 +5591,7 @@ export async function registerRoutes(
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
-         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
       let rows = await pgQuery(sql, params);
 
       if (nearMeMode) {
@@ -5601,7 +5602,17 @@ export async function registerRoutes(
           }
           return { ...r, distance_miles: r.is_national ? 99999 : null };
         }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
-          .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+          .sort((a: any, b: any) => {
+            const aFeat = a.is_featured ? 0 : 1;
+            const bFeat = b.is_featured ? 0 : 1;
+            if (aFeat !== bFeat) return aFeat - bFeat;
+            if (a.is_featured && b.is_featured) {
+              const aRank = a.featured_rank ?? 9999;
+              const bRank = b.featured_rank ?? 9999;
+              if (aRank !== bRank) return aRank - bRank;
+            }
+            return (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999);
+          });
       }
 
       return res.json(rows);
@@ -5667,7 +5678,7 @@ export async function registerRoutes(
 
       const mainSql = `SELECT ts.id, ts.category_id, ts.name, ts.short_description, ts.website_url, ts.phone, ts.email,
              ts.address, ts.city, ts.state, ts.zip, ts.logo_url, ts.verification_status, ts.verification_label,
-             ts.cta_text, ts.cta_url, ts.is_featured, ts.is_active, ts.display_order, ts.notes_internal, ts.created_at,
+             ts.cta_text, ts.cta_url, ts.is_featured, ts.featured_rank, ts.is_active, ts.display_order, ts.notes_internal, ts.created_at,
              COALESCE(ts.is_national, false) AS is_national,
              ts.latitude, ts.longitude,
              json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories,
@@ -5679,7 +5690,7 @@ export async function registerRoutes(
       const vobSql = `SELECT vob.id, vob.category_id, vob.business_name AS name, vob.description AS short_description,
              vob.website AS website_url, vob.phone, vob.email, vob.address, vob.city, vob.state, vob.zip,
              vob.logo_url, 'verified' AS verification_status, 'Veteran-Owned' AS verification_label,
-             NULL AS cta_text, NULL AS cta_url, false AS is_featured, true AS is_active, 999 AS display_order,
+             NULL AS cta_text, NULL AS cta_url, false AS is_featured, NULL::integer AS featured_rank, true AS is_active, 999 AS display_order,
              NULL AS notes_internal, vob.created_at,
              false AS is_national,
              NULL::double precision AS latitude, NULL::double precision AS longitude,
@@ -5690,7 +5701,7 @@ export async function registerRoutes(
          WHERE ${vobConditions.join(" AND ")}`;
 
       const sql = `${mainSql} UNION ALL ${vobSql}
-         ORDER BY is_featured DESC, display_order ASC NULLS LAST, created_at DESC`;
+         ORDER BY is_featured DESC, featured_rank ASC NULLS LAST, display_order ASC NULLS LAST, created_at DESC`;
       let rows = await pgQuery(sql, params);
 
       if (nearMeMode) {
@@ -5701,7 +5712,17 @@ export async function registerRoutes(
           }
           return { ...r, distance_miles: r.is_national ? 99999 : null };
         }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
-          .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+          .sort((a: any, b: any) => {
+            const aFeat = a.is_featured ? 0 : 1;
+            const bFeat = b.is_featured ? 0 : 1;
+            if (aFeat !== bFeat) return aFeat - bFeat;
+            if (a.is_featured && b.is_featured) {
+              const aRank = a.featured_rank ?? 9999;
+              const bRank = b.featured_rank ?? 9999;
+              if (aRank !== bRank) return aRank - bRank;
+            }
+            return (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999);
+          });
       }
 
       console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'}, nearMe=${nearMeMode})`);
@@ -5735,7 +5756,7 @@ export async function registerRoutes(
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ts.is_active IS NOT false AND tsc.slug = $1
-         ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST`,
+         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST`,
         [trustedSlug]
       );
       return res.json(rows);
@@ -5794,10 +5815,10 @@ export async function registerRoutes(
         if (geo) { lat = geo.latitude; lng = geo.longitude; geoSrc = geo.geo_source; }
       }
       const rows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, address, city, state, zip, is_active, is_featured, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description, latitude, longitude, geocoded_at, geo_source)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, address, city, state, zip, is_active, is_featured, featured_rank, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description, latitude, longitude, geocoded_at, geo_source)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
          RETURNING *`,
-        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.address || null, b.city || null, b.state || null, b.zip || null, b.is_active ?? true, b.is_featured ?? false, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null, lat, lng, lat != null ? new Date().toISOString() : null, geoSrc]
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.address || null, b.city || null, b.state || null, b.zip || null, b.is_active ?? true, b.is_featured ?? false, b.featured_rank != null ? parseInt(b.featured_rank) : null, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null, lat, lng, lat != null ? new Date().toISOString() : null, geoSrc]
       );
       return res.json(rows[0]);
     } catch (err: any) {
@@ -5828,9 +5849,13 @@ export async function registerRoutes(
           }
         }
       }
+      if (updates.featured_rank !== undefined) {
+        const parsed = parseInt(updates.featured_rank);
+        updates.featured_rank = isNaN(parsed) ? null : parsed;
+      }
       const setClauses: string[] = [];
       const params: any[] = [];
-      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'address', 'city', 'state', 'zip', 'is_active', 'is_featured', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text', 'latitude', 'longitude', 'geocoded_at', 'geo_source'];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'address', 'city', 'state', 'zip', 'is_active', 'is_featured', 'featured_rank', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text', 'latitude', 'longitude', 'geocoded_at', 'geo_source'];
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
           params.push(updates[field]);

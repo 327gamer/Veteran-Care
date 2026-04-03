@@ -62,6 +62,7 @@ interface TrustedService {
   cta_text: string;
   cta_url: string | null;
   is_featured: boolean;
+  featured_rank: number | null;
   is_active: boolean;
   display_order: number;
   notes_internal: string | null;
@@ -90,6 +91,7 @@ type PartnerForm = {
   cta_text: string;
   cta_url: string;
   is_featured: boolean;
+  featured_rank: string;
   is_active: boolean;
   display_order: number;
   notes_internal: string;
@@ -116,6 +118,7 @@ const emptyForm: PartnerForm = {
   cta_text: "Learn More",
   cta_url: "",
   is_featured: false,
+  featured_rank: "",
   is_active: true,
   display_order: 0,
   notes_internal: "",
@@ -174,6 +177,7 @@ export default function AdminTrustedServices() {
       const body: any = { ...data };
       Object.keys(body).forEach(k => { if (body[k] === "") delete body[k]; });
       body.is_featured = data.is_featured;
+      body.featured_rank = data.featured_rank ? parseInt(data.featured_rank) : null;
       body.is_active = data.is_active;
       body.display_order = data.display_order;
       body.category_id = data.category_id;
@@ -246,6 +250,7 @@ export default function AdminTrustedServices() {
       cta_text: service.cta_text || "Learn More",
       cta_url: service.cta_url || "",
       is_featured: service.is_featured,
+      featured_rank: service.featured_rank != null ? String(service.featured_rank) : "",
       is_active: service.is_active,
       display_order: service.display_order,
       notes_internal: service.notes_internal || "",
@@ -467,6 +472,20 @@ export default function AdminTrustedServices() {
           />
           Featured
         </label>
+        {form.is_featured && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Rank</Label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="—"
+              value={form.featured_rank}
+              onChange={e => setForm(f => ({ ...f, featured_rank: e.target.value }))}
+              className="h-7 w-16 text-xs"
+              data-testid="input-featured-rank"
+            />
+          </div>
+        )}
       </div>
       <div className="border-t pt-3 mt-1">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Discount / Listing Settings</Label>
@@ -713,7 +732,7 @@ export default function AdminTrustedServices() {
                           <h3 className="font-semibold text-sm">{service.name}</h3>
                           {service.is_featured && (
                             <Badge className="text-[9px] h-4 px-1 bg-amber-100 text-amber-700 border-amber-200">
-                              <Star className="h-2.5 w-2.5 mr-0.5" /> Featured
+                              <Star className="h-2.5 w-2.5 mr-0.5" /> Featured{service.featured_rank != null ? ` #${service.featured_rank}` : ""}
                             </Badge>
                           )}
                           <Badge
