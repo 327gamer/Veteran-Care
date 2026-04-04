@@ -5578,7 +5578,7 @@ export async function registerRoutes(
         const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
         params.push(userLat! - latDelta, userLat! + latDelta, userLng! - lngDelta, userLng! + lngDelta);
         const latMinIdx = params.length - 3;
-        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true)`);
+        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true OR ts.latitude IS NULL OR ts.longitude IS NULL)`);
       }
       const searchTerm = (req.query.q || req.query.search) as string | undefined;
       if (searchTerm) {
@@ -5600,8 +5600,8 @@ export async function registerRoutes(
             const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
             return { ...r, distance_miles: Math.round(dist * 10) / 10 };
           }
-          return { ...r, distance_miles: r.is_national ? 99999 : null };
-        }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+          return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
+        }).filter((r: any) => r.is_national || r.latitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
           .sort((a: any, b: any) => {
             const aFeat = a.is_featured ? 0 : 1;
             const bFeat = b.is_featured ? 0 : 1;
@@ -5664,7 +5664,7 @@ export async function registerRoutes(
         const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
         params.push(userLat! - latDelta, userLat! + latDelta, userLng! - lngDelta, userLng! + lngDelta);
         const latMinIdx = params.length - 3;
-        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true)`);
+        conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true OR ts.latitude IS NULL OR ts.longitude IS NULL)`);
       }
       const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`];
       const vobParams = [...params];
@@ -5710,8 +5710,8 @@ export async function registerRoutes(
             const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
             return { ...r, distance_miles: Math.round(dist * 10) / 10 };
           }
-          return { ...r, distance_miles: r.is_national ? 99999 : null };
-        }).filter((r: any) => r.is_national || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+          return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
+        }).filter((r: any) => r.is_national || r.latitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
           .sort((a: any, b: any) => {
             const aFeat = a.is_featured ? 0 : 1;
             const bFeat = b.is_featured ? 0 : 1;
