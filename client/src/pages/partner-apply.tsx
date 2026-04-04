@@ -138,7 +138,7 @@ export default function PartnerApply() {
               Application Received
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Thank you for your interest in becoming a {platform.name} Trusted Services & Products partner.
+              Thank you for your interest in becoming a {platform.name} Trusted Services partner.
               Our team will review your application and reach out within 2-3 business days.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -156,7 +156,7 @@ export default function PartnerApply() {
                 data-testid="button-view-services"
                 onClick={() => setLocation("/trusted-services")}
               >
-                View Trusted Services & Products
+                View Trusted Services
               </Button>
             </div>
           </CardContent>
@@ -174,13 +174,13 @@ export default function PartnerApply() {
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Trusted Services & Products
+          Back to Trusted Services
         </button>
 
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-medium mb-3">
             <ShieldCheck className="h-4 w-4" />
-            Trusted Services & Products Partner Program
+            Trusted Services Partner Program
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground" data-testid="text-partner-apply-title">
             Become a Trusted Partner

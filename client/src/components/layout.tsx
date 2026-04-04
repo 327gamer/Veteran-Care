@@ -40,7 +40,7 @@ import { useAuth } from "@/lib/use-auth";
 
 const BOTTOM_NAV_ITEMS = [
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
-  { icon: ShieldCheck, label: "Trusted Services & Products", desc: "Vetted professionals and providers for veterans." },
+  { icon: ShieldCheck, label: "Trusted Services", desc: "Vetted professionals and providers for veterans." },
   { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
   { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
   { icon: MessageSquare, label: "Community", desc: "Connect with others." },

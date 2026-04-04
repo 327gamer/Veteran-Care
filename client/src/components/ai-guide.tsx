@@ -390,7 +390,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                   className="text-[11px] text-green-700 hover:text-green-600 font-medium text-center py-1"
                   onClick={(e) => { e.preventDefault(); onOpenChange(false); window.location.href = '/trusted-services'; }}
                 >
-                  View all Trusted Services & Products →
+                  View all Trusted Services →
                 </a>
               </div>
             )}

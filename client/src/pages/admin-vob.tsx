@@ -149,7 +149,7 @@ export default function AdminVob() {
                       <h3 className="font-semibold text-sm">{entry.business_name}</h3>
                       {entry.show_in_trusted_services && (
                         <Badge variant="outline" className="text-[9px] h-4 px-1 bg-emerald-50 text-emerald-700 border-emerald-200">
-                          <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> In Trusted Services & Products
+                          <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> In Trusted Services
                         </Badge>
                       )}
                       {entry.is_nonprofit && (
@@ -225,9 +225,9 @@ export default function AdminVob() {
                         />
                         <label htmlFor={`ts-toggle-${entry.id}`} className="text-xs leading-relaxed cursor-pointer">
                           <span className="font-semibold flex items-center gap-1 mb-0.5">
-                            <ShieldCheck className="h-3 w-3 text-emerald-600" /> Show in Trusted Services & Products
+                            <ShieldCheck className="h-3 w-3 text-emerald-600" /> Show in Trusted Services
                           </span>
-                          Also display this business under <strong>{entry.category.name}</strong> in the Trusted Services & Products directory with a "Veteran-Owned" verification badge.
+                          Also display this business under <strong>{entry.category.name}</strong> in the Trusted Services directory with a "Veteran-Owned" verification badge.
                         </label>
                       </div>
                     )}

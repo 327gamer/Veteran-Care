@@ -1460,7 +1460,7 @@ export default function Resources() {
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">Trusted Services & Products</CardTitle>
+                <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">Trusted Services</CardTitle>
               </div>
             </CardHeader>
             <CardContent>

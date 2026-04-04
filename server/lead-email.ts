@@ -337,11 +337,11 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
   });
 
   const headerText = isAdminCopy
-    ? `New Trusted Services & Products Lead — ${escapeHtml(lead.providerName)}`
+    ? `New Trusted Services Lead — ${escapeHtml(lead.providerName)}`
     : `New Connection Request via ${platform.name}`;
 
   const headerSubtext = isAdminCopy
-    ? `A user is requesting to connect with a Trusted Services & Products partner.`
+    ? `A user is requesting to connect with a Trusted Services partner.`
     : `A user is requesting to connect with your services.`;
 
   const roleLabel = lead.leadRole || "Not specified";
@@ -428,7 +428,7 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
   </div>
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
-    <p>This lead was submitted via ${platform.name} Trusted Services & Products.</p>
+    <p>This lead was submitted via ${platform.name} Trusted Services.</p>
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
@@ -488,7 +488,7 @@ export async function sendTrustedServiceLeadNotification(
     const { error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [DEFAULT_NOTIFY_EMAIL],
-      subject: `[Trusted Services & Products Lead] ${providerData.name} — ${leadData.name}`,
+      subject: `[Trusted Services Lead] ${providerData.name} — ${leadData.name}`,
       html: adminHtml,
     });
     if (emailErr) {
@@ -528,7 +528,7 @@ export async function sendPartnerPaymentEmail(
   <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
 
   <p style="font-size: 15px; line-height: 1.6;">
-    Great news! Your application to join the <strong>${platform.name} Trusted Services & Products</strong> network has been approved.
+    Great news! Your application to join the <strong>${platform.name} Trusted Services</strong> network has been approved.
   </p>
 
   <p style="font-size: 15px; line-height: 1.6;">
@@ -548,7 +548,7 @@ export async function sendPartnerPaymentEmail(
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin: 24px 0;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
-      <strong>What happens next:</strong> Once payment is complete, your business will be listed in our Trusted Services & Products directory and you'll begin receiving veteran referrals in your service area.
+      <strong>What happens next:</strong> Once payment is complete, your business will be listed in our Trusted Services directory and you'll begin receiving veteran referrals in your service area.
     </p>
   </div>
 

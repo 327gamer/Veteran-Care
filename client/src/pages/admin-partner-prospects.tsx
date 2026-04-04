@@ -158,7 +158,7 @@ export default function AdminPartnerProspects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/partner-applications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/trusted-services"] });
-      toast({ title: "Converted", description: "Partner application has been converted to an active Trusted Services & Products provider." });
+      toast({ title: "Converted", description: "Partner application has been converted to an active Trusted Services provider." });
     },
     onError: (err: any) => {
       toast({ title: "Conversion Failed", description: err.message, variant: "destructive" });
@@ -548,7 +548,7 @@ export default function AdminPartnerProspects() {
                               data-testid={`button-convert-${app.id}`}
                               disabled={convertMutation.isPending}
                               onClick={() => {
-                                if (confirm(`Convert "${app.company_name}" into an active Trusted Services & Products provider? This will create a new provider listing.`)) {
+                                if (confirm(`Convert "${app.company_name}" into an active Trusted Services provider? This will create a new provider listing.`)) {
                                   convertMutation.mutate(app.id);
                                 }
                               }}
