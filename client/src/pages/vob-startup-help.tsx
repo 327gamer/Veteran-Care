@@ -419,7 +419,7 @@ export default function VobStartupHelp() {
                                       variant="outline"
                                       size="sm"
                                       className="h-6 text-[10px] px-2 shrink-0"
-                                      onClick={() => setLocation(`/trusted-services?highlight=${partner.id}`)}
+                                      onClick={() => setLocation(`/discounts?highlight=${partner.id}`)}
                                       data-testid={`button-view-partner-${partner.id}`}
                                     >
                                       View <ExternalLink className="h-2.5 w-2.5 ml-1" />
@@ -429,7 +429,7 @@ export default function VobStartupHelp() {
                                 {livePartners.length > 3 && (
                                   <button
                                     className="text-[10px] text-emerald-700 hover:text-emerald-600 font-medium w-full text-center py-1"
-                                    onClick={() => setLocation(`/trusted-services?category=${uniqueSlugs[0]}`)}
+                                    onClick={() => setLocation(`/discounts?category=${uniqueSlugs[0]}`)}
                                     data-testid="link-view-all-step-partners"
                                   >
                                     View all {livePartners.length} partners →

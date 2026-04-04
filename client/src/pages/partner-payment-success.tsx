@@ -76,7 +76,7 @@ export default function PartnerPaymentSuccess() {
               <div className="pt-4">
                 <Button
                   data-testid="button-view-listing"
-                  onClick={() => setLocation("/trusted-services")}
+                  onClick={() => setLocation("/discounts")}
                 >
                   View Trusted Services
                 </Button>

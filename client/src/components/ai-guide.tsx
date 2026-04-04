@@ -385,10 +385,10 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                   </div>
                 ))}
                 <a
-                  href="/trusted-services"
+                  href="/discounts"
                   data-testid="link-view-all-trusted"
                   className="text-[11px] text-green-700 hover:text-green-600 font-medium text-center py-1"
-                  onClick={(e) => { e.preventDefault(); onOpenChange(false); window.location.href = '/trusted-services'; }}
+                  onClick={(e) => { e.preventDefault(); onOpenChange(false); window.location.href = '/discounts'; }}
                 >
                   View all Trusted Services →
                 </a>

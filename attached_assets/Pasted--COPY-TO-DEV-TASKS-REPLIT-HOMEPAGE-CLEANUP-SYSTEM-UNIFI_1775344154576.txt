@@ -1,0 +1,297 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### HOMEPAGE CLEANUP + SYSTEM UNIFICATION + INTERNAL LISTING STRUCTURE
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is a structure / clarity / system-alignment update.
+It is NOT a full redesign.
+Do NOT rebuild database or break APIs unless absolutely necessary.
+Do NOT break Stripe, attribution, or partner flows.
+
+-------------------------------------
+CORE PRODUCT DIRECTION
+-------------------------------------
+
+We are unifying the commercial side of the platform.
+
+We do NOT want:
+- a separate Trusted Services listing system
+AND
+- a separate Veteran Discount Services listing system
+
+We want ONE unified system:
+
+👉 Veteran Discount Services & Products
+
+This becomes the single browse/discovery ecosystem for:
+- trusted partners (paid)
+- discount providers
+- products
+- services
+- local offers
+
+-------------------------------------
+PART 1 – HOMEPAGE CLEANUP
+-------------------------------------
+
+1) RENAME FEATURE CARD
+
+Change:
+
+Veteran Discount Services
+
+To:
+
+Veteran Discount Services & Products
+
+Use:
+
+TITLE:
+Veteran Discount Services & Products
+
+PRIMARY:
+Save money and connect with trusted businesses.
+
+SUPPORT:
+Browse discounts, products, and services for veterans and their families.
+
+CTA:
+Browse Discounts, Products & Services
+
+-------------------------------------
+
+2) ADD TRUSTED PARTNER APPLY CARD BELOW
+
+Add directly below the featured card:
+
+TITLE:
+Interested in becoming a Trusted Services partner?
+
+SUPPORT:
+Join our vetted network and connect with veterans who need your services and products.
+
+CTA:
+Apply Now
+
+This becomes the PRIMARY conversion entry for businesses.
+
+-------------------------------------
+
+3) REMOVE RESOURCE GRID REDUNDANCY
+
+Trusted Services should NOT remain as a generic tile in the Resources grid.
+
+It is already:
+- in top nav
+- in bottom nav
+- part of monetization system
+- part of homepage conversion flow
+
+Remove or safely de-emphasize it.
+
+-------------------------------------
+
+4) KEEP NAV ACCESS
+
+DO NOT remove Trusted Services from:
+- top nav
+- bottom nav
+
+-------------------------------------
+
+PART 2 – SYSTEM UNIFICATION (CRITICAL)
+-------------------------------------
+
+BUSINESS FLOW (UNCHANGED):
+- Apply Now
+- Choose $99 / $499
+- Submit application
+- Admin approves
+- Stripe + attribution unchanged
+
+CHANGE:
+
+👉 Approved listings DO NOT go into a separate Trusted Services system
+
+👉 ALL approved listings populate into:
+
+Veteran Discount Services & Products
+
+-------------------------------------
+
+PART 3 – TRUSTED SERVICES NAV BEHAVIOR
+-------------------------------------
+
+When user clicks:
+
+Trusted Services (top or bottom nav)
+
+👉 ROUTE TO:
+Veteran Discount Services & Products page
+
+NOT a separate listing page
+
+-------------------------------------
+
+PART 4 – INTERNAL LISTING STRUCTURE (IMPORTANT)
+-------------------------------------
+
+Inside:
+Veteran Discount Services & Products
+
+We support ONE system with internal tiers using flags/badges.
+
+-------------------------------------
+TIER 1 – TRUSTED PARTNERS (PRIMARY / PAID)
+-------------------------------------
+
+Source:
+- $99 / $499 partner flow
+
+Must:
+- display badge: “Trusted Partner”
+
+Behavior:
+- higher ranking in listings
+- eligible for featured placement
+- priority visibility
+
+-------------------------------------
+TIER 2 – DISCOUNT / OFFER LISTINGS
+-------------------------------------
+
+Source:
+- businesses offering veteran discounts
+
+Must:
+- display: “Discount Available” indicator
+
+Behavior:
+- appear in normal listing flow
+- no need for premium positioning unless upgraded
+
+-------------------------------------
+TIER 3 – STANDARD LISTINGS (FUTURE)
+-------------------------------------
+
+- do NOT implement now
+- only if already supported
+
+-------------------------------------
+
+DISPLAY RULES
+-------------------------------------
+
+- ONE unified listing system
+- NO separate pages for tiers
+- use:
+  - badges
+  - ordering priority
+  - optional featured flag
+- NO duplication of listings across systems
+
+-------------------------------------
+
+WHY THIS MATTERS
+-------------------------------------
+
+- protects premium positioning for paying partners
+- avoids platform feeling like “just discounts”
+- supports upsell + ambassador sales
+- keeps UX clean and scalable
+
+-------------------------------------
+
+PART 5 – STRUCTURE INSIDE THE PAGE
+-------------------------------------
+
+Keep existing structure:
+
+- Services tab
+- Products & Local Offers tab
+- categories
+- near me / geo sorting
+- search
+
+Listings populate based on category selection during onboarding.
+
+-------------------------------------
+
+PART 6 – DATA / LOGIC RULES
+-------------------------------------
+
+KEEP:
+- pricing tiers
+- application flow
+- approval flow
+- Stripe billing
+- attribution / ambassador tracking
+- lead routing
+
+CHANGE:
+- destination of listings = unified system
+
+-------------------------------------
+
+PART 7 – UI RULES
+-------------------------------------
+
+- mobile-first
+- strong spacing
+- no overcrowding
+- native card system
+- no bottom nav overlap
+- no visual drift
+
+-------------------------------------
+
+DO NOT DO
+-------------------------------------
+
+- no new routes
+- no duplicate systems
+- no redesign of entire sections
+- no breaking existing logic
+
+-------------------------------------
+
+OUTPUT REQUIRED
+-------------------------------------
+
+Please confirm:
+
+1. homepage cleanup completed
+2. featured card renamed correctly
+3. apply card added below it
+4. Trusted Services removed/de-emphasized from Resources grid
+5. Trusted Services nav now routes to unified page
+6. no separate Trusted Services listing system remains
+7. internal tier logic applied via badges:
+   - Trusted Partner
+   - Discount Available
+8. listing priority working correctly (trusted > others)
+9. pricing / approval / Stripe / attribution untouched
+10. files changed
+11. publish/restart requirements
+
+-------------------------------------
+
+GOAL
+-------------------------------------
+
+One unified marketplace experience:
+
+- veterans browse everything in one place
+- businesses apply through one path
+- trusted partners stand out
+- monetization is clear and scalable
+- no confusion, no duplication
+
+--- END ---

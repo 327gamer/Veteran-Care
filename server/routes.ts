@@ -5661,7 +5661,7 @@ export async function registerRoutes(
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
-         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, CASE WHEN tsc.program_area = 'trusted_services' THEN 0 ELSE 1 END, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
       let rows = await pgQuery(sql, params);
 
       if (nearMeMode) {
@@ -5681,6 +5681,9 @@ export async function registerRoutes(
               const bRank = b.featured_rank ?? 9999;
               if (aRank !== bRank) return aRank - bRank;
             }
+            const aTier = a.program_area === 'trusted_services' ? 0 : 1;
+            const bTier = b.program_area === 'trusted_services' ? 0 : 1;
+            if (aTier !== bTier) return aTier - bTier;
             return (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999);
           });
       }
