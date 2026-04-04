@@ -5740,6 +5740,7 @@ export async function registerRoutes(
     "va-benefits": "benefits-assistance",
     "substance-recovery": "wellness-recovery",
     "healthcare": "insurance",
+    "end-of-life-services": "end-of-life-services",
   };
 
   app.get("/api/trusted-partners-for-category/:resourceSlug", async (req, res) => {
