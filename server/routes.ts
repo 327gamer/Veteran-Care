@@ -5754,7 +5754,8 @@ export async function registerRoutes(
         });
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
-      const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`];
+      const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`,
+        `NOT EXISTS (SELECT 1 FROM trusted_services ts_dup WHERE LOWER(ts_dup.name) = LOWER(vob.business_name))`];
       const vobParams = [...params];
       if (req.query.category) {
         vobConditions.push(`tsc2.slug = $${vobParams.length > 0 ? '1' : '1'}`);

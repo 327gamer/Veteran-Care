@@ -149,7 +149,6 @@ export default function TrustedServices() {
 
   useEffect(() => {
     if (geo.location?.lat && !geoApplied) {
-      setNearMeActive(true);
       if (geo.location.stateCode) setFilterState(geo.location.stateCode);
       setGeoApplied(true);
     }
