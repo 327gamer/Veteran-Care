@@ -2833,6 +2833,51 @@ export async function registerRoutes(
     return res.json(sorted);
   });
 
+  async function searchTrustedServicesForResources(q: string, userLat?: number, userLng?: number, radiusMiles?: number): Promise<any[]> {
+    try {
+      const normalized = normalizeSearchTerm(q);
+      const raw = q.toLowerCase();
+      const patterns = new Set([normalized, raw]);
+      const orClauses = [...patterns].flatMap(p => [
+        `LOWER(ts.name) LIKE '%${p.replace(/'/g, "''")}%'`,
+        `LOWER(ts.short_description) LIKE '%${p.replace(/'/g, "''")}%'`,
+        `LOWER(ts.city) LIKE '%${p.replace(/'/g, "''")}%'`,
+      ]);
+      const rows = await pgQuery(
+        `SELECT ts.id, ts.name AS title, ts.short_description, ts.website_url, ts.phone, ts.email,
+                ts.address, ts.city, ts.state, ts.zip, ts.is_featured AS sponsored, ts.is_featured,
+                ts.latitude, ts.longitude, ts.is_national,
+                json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories,
+                'trusted_service' AS source_type
+         FROM trusted_services ts
+         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         WHERE ts.is_active IS NOT false AND (${orClauses.join(" OR ")})
+         ORDER BY ts.is_featured DESC, ts.name ASC
+         LIMIT 20`
+      );
+      return rows.map((r: any) => {
+        let distance_miles: number | null = null;
+        if (userLat != null && userLng != null && radiusMiles != null) {
+          if (r.latitude != null && r.longitude != null) {
+            distance_miles = Math.round(haversineDistance(userLat, userLng, r.latitude, r.longitude) * 10) / 10;
+          } else {
+            distance_miles = r.is_national ? 99999 : 99998;
+          }
+        }
+        return {
+          ...r,
+          id: `ts-${r.id}`,
+          _trusted_service_id: r.id,
+          distance_miles,
+          source_type: "trusted_service",
+        };
+      });
+    } catch (err: any) {
+      console.log(`[searchTrustedServicesForResources] error: ${err.message}`);
+      return [];
+    }
+  }
+
   app.get("/api/resources", async (req, res) => {
     const { category, state, q, sub } = req.query;
 
@@ -2932,10 +2977,24 @@ export async function registerRoutes(
         .filter((r: any) => !localIds.has(r.id))
         .map((r: any) => ({ ...r, distance_miles: 99999, is_national: true }));
 
-      return res.json({ results: normalizeAllFieldsList([...localResults, ...nationalResults]), local_count: localResults.length });
+      let trustedMatches: any[] = [];
+      if (q && hasTrustedServicesTable) {
+        trustedMatches = await searchTrustedServicesForResources(q as string, userLat, userLng, radiusMiles);
+      }
+      const allResults = [...localResults, ...trustedMatches, ...nationalResults]
+        .sort((a, b) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+      return res.json({ results: normalizeAllFieldsList(allResults), local_count: localResults.length });
     }
 
-    return res.json(normalizeAllFieldsList(data || []));
+    let trustedMatches: any[] = [];
+    if (q && hasTrustedServicesTable) {
+      trustedMatches = await searchTrustedServicesForResources(q as string);
+    }
+    const baseResults = normalizeAllFieldsList(data || []);
+    if (trustedMatches.length > 0) {
+      return res.json([...baseResults, ...trustedMatches]);
+    }
+    return res.json(baseResults);
   });
 
   app.get("/api/locations/cities", async (req, res) => {

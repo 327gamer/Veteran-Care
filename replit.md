@@ -97,7 +97,7 @@ Resources can belong to multiple subcategories via normalized junction tables in
 
 ## API Endpoints
 - `GET /api/categories` - Returns categories from Supabase (id, name, slug)
-- `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>&sub=<subcategory>` - Returns approved resources filtered by category slug, state, city, ZIP, search query, and/or subcategory; uses `resource_categories` junction table for multi-category support; search matches title, short_description, city, state, eligibility, source_name via ILIKE
+- `GET /api/resources?category=<slug>&state=<state>&city=<city>&zip=<zip>&q=<search>&sub=<subcategory>` - Returns approved resources filtered by category slug, state, city, ZIP, search query, and/or subcategory; uses `resource_categories` junction table for multi-category support; search matches title, short_description, city, state, eligibility, source_name via ILIKE. **Unified search**: when `q` is provided, also searches trusted_services table (pgQuery) and merges results with `source_type: "trusted_service"` + `_trusted_service_id` fields. Search uses `normalizeSearchTerm()` for dash/apostrophe/space tolerance. In nearMe mode, merged results are sorted by distance.
 - `GET /api/resources/:id` - Returns a single resource by UUID
 - `GET /api/locations/cities?state=<code>&category=<slug>` - Returns distinct city names from approved resources
 - `GET /api/locations/zips?state=<code>&city=<name>&category=<slug>` - Returns distinct ZIP codes from approved resources

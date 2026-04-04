@@ -93,6 +93,8 @@ interface SupabaseResource {
   is_national?: boolean;
   created_at: string;
   categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null;
+  _trusted_service_id?: string;
+  trusted_service_categories?: { slug: string; name: string };
 }
 
 function getCategoryName(cats: SupabaseResource["categories"]): string {
@@ -105,10 +107,10 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
   return {
     id: r.id,
     title: r.title,
-    category: getCategoryName(r.categories),
+    category: r.source_type === 'trusted_service' && r.trusted_service_categories ? r.trusted_service_categories.name : getCategoryName(r.categories),
     description: r.short_description || "",
     source: r.source_name || "",
-    type: (r.source_type as ResourceItem["type"]) || "guide",
+    type: (r.source_type === 'trusted_service' ? 'service' : r.source_type as ResourceItem["type"]) || "guide",
     isLocal: !!r.state || !!r.city,
     state: r.state || undefined,
     city: r.city || undefined,
@@ -126,6 +128,9 @@ function toResourceItem(r: SupabaseResource): ResourceItem {
     latitude: r.latitude,
     longitude: r.longitude,
     service_priority: r.service_priority || undefined,
+    source_type: r.source_type || undefined,
+    _trusted_service_id: r._trusted_service_id,
+    trusted_service_categories: r.trusted_service_categories,
   };
 }
 
@@ -1178,8 +1183,35 @@ export default function Resources() {
               <Card 
                 key={resource.id} 
                 data-testid={`card-resource-${resource.id}`}
-                className="group hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => setSelectedResource(resource)}
+                className={`group hover:border-primary/50 transition-colors cursor-pointer ${resource.source_type === 'trusted_service' ? 'border-emerald-200 bg-emerald-50/30' : ''}`}
+                onClick={() => {
+                  if (resource.source_type === 'trusted_service' && resource._trusted_service_id) {
+                    const tsCat = resource.trusted_service_categories || { slug: '', name: '' };
+                    setSelectedPartner({
+                      id: resource._trusted_service_id,
+                      name: resource.title,
+                      short_description: resource.short_description,
+                      website_url: resource.website_url || '',
+                      phone: resource.phone || '',
+                      email: resource.email || '',
+                      address: resource.address || '',
+                      city: resource.city || '',
+                      state: resource.state || '',
+                      zip: resource.zip || '',
+                      is_featured: resource.sponsored || false,
+                      is_national: resource.is_national || false,
+                      verification_status: 'verified',
+                      verification_label: 'Verified Partner',
+                      cta_text: '',
+                      cta_url: '',
+                      trusted_service_categories: tsCat,
+                      latitude: resource.latitude,
+                      longitude: resource.longitude,
+                    });
+                  } else {
+                    setSelectedResource(resource);
+                  }
+                }}
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start gap-3">
@@ -1189,7 +1221,12 @@ export default function Resources() {
                         {!selectedSlug && resource.category && (
                           <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0">{resource.category}</Badge>
                         )}
-                        {resource.sponsored && (
+                        {resource.source_type === 'trusted_service' && (
+                          <Badge className="text-[10px] h-5 px-1.5 bg-emerald-600 text-white border-none shrink-0">
+                            <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Verified
+                          </Badge>
+                        )}
+                        {resource.sponsored && resource.source_type !== 'trusted_service' && (
                           <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">
                             Sponsored
                           </Badge>
@@ -1280,8 +1317,35 @@ export default function Resources() {
             <Card
               key={resource.id}
               data-testid={`card-resource-${resource.id}`}
-              className="group hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => setSelectedResource(resource)}
+              className={`group hover:border-primary/50 transition-colors cursor-pointer ${resource.source_type === 'trusted_service' ? 'border-emerald-200 bg-emerald-50/30' : ''}`}
+              onClick={() => {
+                if (resource.source_type === 'trusted_service' && resource._trusted_service_id) {
+                  const tsCat = resource.trusted_service_categories || { slug: '', name: '' };
+                  setSelectedPartner({
+                    id: resource._trusted_service_id,
+                    name: resource.title,
+                    short_description: resource.description,
+                    website_url: resource.website_url || '',
+                    phone: resource.phone || '',
+                    email: resource.email || '',
+                    address: resource.address || '',
+                    city: resource.city || '',
+                    state: resource.state || '',
+                    zip: resource.zip || '',
+                    is_featured: resource.sponsored || false,
+                    is_national: resource.is_national || false,
+                    verification_status: 'verified',
+                    verification_label: 'Verified Partner',
+                    cta_text: '',
+                    cta_url: '',
+                    trusted_service_categories: tsCat,
+                    latitude: resource.latitude,
+                    longitude: resource.longitude,
+                  });
+                } else {
+                  setSelectedResource(resource);
+                }
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex justify-between items-start gap-3">
@@ -1289,7 +1353,12 @@ export default function Resources() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1">{resource.title}</h3>
                       <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0">{resource.category}</Badge>
-                      {resource.sponsored && (
+                      {resource.source_type === 'trusted_service' && (
+                        <Badge className="text-[10px] h-5 px-1.5 bg-emerald-600 text-white border-none shrink-0">
+                          <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Verified
+                        </Badge>
+                      )}
+                      {resource.sponsored && resource.source_type !== 'trusted_service' && (
                         <Badge className="text-[10px] h-5 px-1.5 bg-amber-500 text-white border-none shrink-0">Sponsored</Badge>
                       )}
                       {resource.isLocal && (

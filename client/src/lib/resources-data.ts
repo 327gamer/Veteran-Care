@@ -23,6 +23,9 @@ export interface ResourceItem {
   latitude?: number | null;
   longitude?: number | null;
   service_priority?: string;
+  source_type?: string;
+  _trusted_service_id?: string;
+  trusted_service_categories?: { slug: string; name: string };
 }
 
 export const resourcesData: Record<string, ResourceItem[]> = {
