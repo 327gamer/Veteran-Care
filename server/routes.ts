@@ -2857,11 +2857,9 @@ export async function registerRoutes(
     if (nearMeMode && hasGeoColumns) {
       const latDelta = radiusMiles! / 69.0;
       const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
-      query = query
-        .gte("latitude", userLat! - latDelta)
-        .lte("latitude", userLat! + latDelta)
-        .gte("longitude", userLng! - lngDelta)
-        .lte("longitude", userLng! + lngDelta);
+      query = query.or(
+        `and(latitude.gte.${userLat! - latDelta},latitude.lte.${userLat! + latDelta},longitude.gte.${userLng! - lngDelta},longitude.lte.${userLng! + lngDelta}),latitude.is.null,longitude.is.null`
+      );
     } else {
       const city = req.query.city as string | undefined;
       const zip = req.query.zip as string | undefined;
@@ -2913,10 +2911,10 @@ export async function registerRoutes(
             const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
             return { ...r, distance_miles: Math.round(dist * 10) / 10 };
           }
-          return { ...r, distance_miles: null };
+          return { ...r, distance_miles: 99998 };
         })
-        .filter((r: any) => r.distance_miles !== null && r.distance_miles <= radiusMiles!)
-        .sort((a: any, b: any) => a.distance_miles - b.distance_miles);
+        .filter((r: any) => r.latitude == null || r.longitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+        .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
 
       let nationalQuery = supabase.from("resources").select(resourceSelectFields(!!category, !!sub))
         .eq("status", "approved").is("state", null);
@@ -2932,7 +2930,7 @@ export async function registerRoutes(
       const localIds = new Set(localResults.map((r: any) => r.id));
       const nationalResults = (nationalData || [])
         .filter((r: any) => !localIds.has(r.id))
-        .map((r: any) => ({ ...r, distance_miles: null, is_national: true }));
+        .map((r: any) => ({ ...r, distance_miles: 99999, is_national: true }));
 
       return res.json({ results: normalizeAllFieldsList([...localResults, ...nationalResults]), local_count: localResults.length });
     }
@@ -5601,7 +5599,7 @@ export async function registerRoutes(
             return { ...r, distance_miles: Math.round(dist * 10) / 10 };
           }
           return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
-        }).filter((r: any) => r.is_national || r.latitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+        }).filter((r: any) => r.is_national || r.latitude == null || r.longitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
           .sort((a: any, b: any) => {
             const aFeat = a.is_featured ? 0 : 1;
             const bFeat = b.is_featured ? 0 : 1;
@@ -5711,7 +5709,7 @@ export async function registerRoutes(
             return { ...r, distance_miles: Math.round(dist * 10) / 10 };
           }
           return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
-        }).filter((r: any) => r.is_national || r.latitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
+        }).filter((r: any) => r.is_national || r.latitude == null || r.longitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
           .sort((a: any, b: any) => {
             const aFeat = a.is_featured ? 0 : 1;
             const bFeat = b.is_featured ? 0 : 1;

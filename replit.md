@@ -229,6 +229,29 @@ Resources can belong to multiple subcategories via normalized junction tables in
 - `/shop` - Shop page (coming soon)
 - `/near-me` - Location-based nearby resources
 
+## Geo-Filtering Universal Rule (MUST follow for ALL endpoints)
+**Non-geocoded records (null lat/lng) must NEVER be filtered out by near-me or bounding box queries.**
+This rule applies to every endpoint that supports geo/near-me filtering: `/api/resources`, `/api/trusted-services`, `/api/veteran-discounts`, and any future listing endpoints.
+
+### Implementation Pattern
+1. **SQL layer**: Any bounding box condition MUST include `OR ts.latitude IS NULL OR ts.longitude IS NULL` so non-geocoded records pass through the WHERE clause.
+   - Supabase: Use `.or(...)` with `latitude.is.null,longitude.is.null` alternatives
+   - Raw pg: Append `OR ts.latitude IS NULL OR ts.longitude IS NULL` to bounding box condition
+2. **Post-query filter**: When filtering by `distance_miles <= radius`, ALWAYS also keep records where `latitude == null`. Non-geocoded records get `distance_miles: 99998` (sorts after real distances but before nationals at 99999).
+3. **Sort order**: Featured first → featured_rank → distance (nulls sort to end via 99998/99999).
+4. **National records**: Always included (`is_national = true` bypasses all geo filters, distance = 99999).
+5. **Non-geocoded records**: Always included (null lat/lng bypasses geo filters, distance = 99998). They appear after geo-sorted local results but before national results.
+
+### Why
+Without this rule, adding a new resource that hasn't been geocoded yet causes it to silently disappear from near-me results — the bounding box filter drops null coordinates and the post-query distance filter removes null distances.
+
+### Checklist for new listing endpoints
+- [ ] SQL/Supabase query includes null lat/lng passthrough
+- [ ] Post-query `.filter()` keeps records where `r.latitude == null || r.longitude == null`
+- [ ] Non-geocoded records assigned `distance_miles: 99998`
+- [ ] National records assigned `distance_miles: 99999`
+- [ ] Sort handles nulls via `?? 99999` fallback
+
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts
 - Logo: `Veteran_Care_-_Shadow_-_PNG_1772598034200.png` (metallic dog tag)
