@@ -46,6 +46,7 @@ import {
   Locate,
   Loader2,
   Star,
+  ShieldCheck,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
@@ -82,6 +83,7 @@ interface DiscountListing {
   listing_type: string;
   discount_value: string | null;
   discount_description: string | null;
+  program_area?: string;
   trusted_service_categories: { slug: string; name: string; group_type: string };
 }
 
@@ -388,9 +390,9 @@ export default function VeteranDiscounts() {
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight" data-testid="heading-discounts">
-            Veteran Discount Services
+            Veteran Discount Services & Products
           </h1>
-          <p className="text-xs text-muted-foreground">Save money and connect with businesses that support veterans.</p>
+          <p className="text-xs text-muted-foreground">Browse discounts, products, and services for veterans and their families.</p>
         </div>
       </div>
 
@@ -683,6 +685,12 @@ function ListingCard({
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
               <CheckCircle2 className="h-3 w-3 mr-0.5" />
               Veteran Support Service
+            </Badge>
+          )}
+          {listing.program_area === "trusted_services" && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700 bg-emerald-50">
+              <ShieldCheck className="h-3 w-3 mr-0.5" />
+              Trusted Partner
             </Badge>
           )}
           {listing.verification_label && (

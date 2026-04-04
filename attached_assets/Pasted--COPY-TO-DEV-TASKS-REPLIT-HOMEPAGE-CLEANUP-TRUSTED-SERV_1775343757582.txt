@@ -1,0 +1,303 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### HOMEPAGE CLEANUP + TRUSTED SERVICES / VETERAN DISCOUNT SERVICES UNIFICATION
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+This is a structure / clarity cleanup and a system unification step.
+It is NOT a full redesign.
+Do NOT rebuild taxonomy or database structure unless absolutely necessary.
+Do NOT break routing, attribution, partner logic, Stripe, or approval flow.
+
+We need the homepage and section structure cleaned up so this area of the platform feels like ONE clear ecosystem, not multiple overlapping systems.
+
+-------------------------------------
+CORE PRODUCT DIRECTION
+-------------------------------------
+
+We are simplifying the platform so users and businesses are NOT dealing with two separate commercial systems.
+
+We do NOT want:
+- a separate Trusted Services listing page/system
+AND
+- a separate Veteran Discount Services listing page/system
+
+We want ONE unified browsing system:
+
+👉 Veteran Discount Services & Products
+
+This becomes the main browse/discovery destination for:
+- paid partners
+- trusted partners
+- discount providers
+- products
+- local offers
+- service providers
+
+Trusted / Verified / Featured status should still exist, but as listing flags / badges inside this unified system — NOT as a separate public listing ecosystem.
+
+-------------------------------------
+PART 1 – HOMEPAGE CLEANUP / CLARITY
+-------------------------------------
+
+GOAL:
+Make the homepage feel clearer, less redundant, and more monetization-focused.
+
+CURRENT PROBLEM:
+- Trusted Services already exists in top/bottom nav
+- Trusted Services also appears buried in the Resources grid
+- Veteran Discount Services is featured separately
+- partner conversion path feels too far away from the actual commercial discovery section
+
+This makes the experience feel split and redundant.
+
+-------------------------------------
+PART 2 – HOMEPAGE FEATURED CARD RENAME
+-------------------------------------
+
+Update homepage featured card title from:
+
+Veteran Discount Services
+
+to:
+
+Veteran Discount Services & Products
+
+Use the following homepage featured card copy:
+
+TITLE:
+Veteran Discount Services & Products
+
+PRIMARY LINE:
+Save money and connect with trusted businesses.
+
+SUPPORT TEXT:
+Browse discounts, products, and services for veterans and their families.
+
+CTA:
+Browse Discounts, Products & Services
+
+Keep styling aligned with the current homepage card system.
+
+-------------------------------------
+PART 3 – ADD TRUSTED PARTNER APPLY CARD DIRECTLY BELOW
+-------------------------------------
+
+Place a dedicated Trusted Services partner apply card directly BELOW the Veteran Discount Services & Products homepage card.
+
+This becomes the primary homepage conversion block for businesses/providers.
+
+Use copy similar to:
+
+TITLE:
+Interested in becoming a Trusted Services partner?
+
+SUPPORT TEXT:
+Join our vetted network and connect with veterans who need your services and products.
+
+CTA:
+Apply Now
+
+Keep the card native to the current design system:
+- same card language
+- same spacing rhythm
+- same mobile-first structure
+- no visual drift
+
+-------------------------------------
+PART 4 – REMOVE / DE-EMPHASIZE REDUNDANT TRUSTED SERVICES TILE
+-------------------------------------
+
+Trusted Services should NOT remain buried as just another generic tile inside the Resources category grid if it is already:
+
+- in top nav
+- in bottom nav
+- featured in homepage partner/apply flow
+- part of the commercial / partner ecosystem
+
+Please remove or safely de-emphasize the redundant Trusted Services tile from the generic Resources grid.
+
+IMPORTANT:
+If there are routing or dependency risks, use the safest implementation path.
+But the visible homepage result should be:
+Trusted Services is featured intentionally, not hidden as a generic resource tile.
+
+-------------------------------------
+PART 5 – KEEP TRUSTED SERVICES IN NAV
+-------------------------------------
+
+Do NOT remove Trusted Services from:
+- top navigation
+- bottom navigation
+
+These nav entry points should remain.
+
+BUT their behavior is changing (see below).
+
+-------------------------------------
+PART 6 – TRUSTED SERVICES + DISCOUNT SERVICES UNIFICATION
+-------------------------------------
+
+This is the critical logic change.
+
+BUSINESS / PARTNER FLOW STAYS THE SAME:
+- business clicks Apply Now
+- selects:
+  - $99 plan
+  - $499 plan
+- fills out application
+- admin reviews / approves
+- Stripe / attribution / partner logic remain intact
+
+WHAT CHANGES:
+Once a business/provider is approved, their listing should NOT go into a separate public Trusted Services listing system.
+
+Instead:
+
+👉 ALL approved commercial / partner listings populate inside the unified:
+Veteran Discount Services & Products section
+
+-------------------------------------
+PART 7 – TRUSTED SERVICES NAV BEHAVIOR
+-------------------------------------
+
+When a user clicks:
+
+Trusted Services
+(from top nav or bottom nav)
+
+It should ROUTE to the unified:
+
+👉 Veteran Discount Services & Products page
+
+NOT to a separate old-style Trusted Services public listing page/system.
+
+This means:
+- top nav Trusted Services remains
+- bottom nav Trusted Services remains
+- but both now route into the unified commercial discovery section
+
+-------------------------------------
+PART 8 – SECTION STRUCTURE INSIDE THE UNIFIED PAGE
+-------------------------------------
+
+Inside Veteran Discount Services & Products, keep and use the existing structure:
+
+- Services tab
+- Products & Local Offers tab
+- categories
+- near me / location logic
+- search
+- geo sorting
+- featured / verified badges as needed
+
+Approved listings should populate under the correct tab/category based on the data they chose during signup / approval.
+
+Examples:
+- Legal / loans / insurance → Services
+- Restaurants / retail / hotels → Products & Local Offers
+
+Trusted / Verified / Featured should remain:
+- as badges / flags / placement logic
+- not as separate pages/systems
+
+-------------------------------------
+PART 9 – RELATIONSHIP CLARITY
+-------------------------------------
+
+The homepage and nav should make the relationship clear:
+
+1. Veteran Discount Services & Products
+   = the browse-facing marketplace / discovery system for veterans
+
+2. Trusted Services partner flow
+   = the vetted onboarding / approval path for businesses/providers
+
+These should feel connected, not separate.
+
+Do NOT over-explain.
+Use light helper text only where needed.
+
+-------------------------------------
+PART 10 – DATA / LOGIC RULES
+-------------------------------------
+
+KEEP:
+- pricing tiers ($99 / $499)
+- application flow
+- approval flow
+- Stripe billing logic
+- attribution / ambassador logic
+- lead routing
+- existing geo/search logic where possible
+
+CHANGE:
+- destination of approved listings = unified Veteran Discount Services & Products experience
+
+Do NOT break:
+- tracking
+- attribution
+- partner workflows
+- routing
+- approved provider visibility
+
+-------------------------------------
+PART 11 – UI / LAYOUT RULES
+-------------------------------------
+
+Requirements:
+- mobile-first
+- strong spacing rhythm
+- no overcrowding
+- cards must feel native to the current system
+- no bottom nav overlap
+- no awkward stacked padding
+- no new styling drift
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT redesign the full Trusted Services section from scratch
+- do NOT rebuild the database structure unless absolutely necessary
+- do NOT break APIs
+- do NOT break application/payment flow
+- do NOT add unnecessary complexity
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. how homepage hierarchy was cleaned up
+2. whether the Trusted Services tile was removed or de-emphasized from the Resources grid
+3. exact updated homepage card titles / CTA copy
+4. confirmation that Trusted Services nav now routes into the unified Veteran Discount Services & Products page
+5. confirmation that there is no longer a separate public Trusted Services listing page/system
+6. confirmation that approved partners populate correctly under:
+   - Services tab
+   - Products & Local Offers tab
+7. confirmation that pricing / approval / Stripe / attribution flows remain intact
+8. files changed
+9. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create one cleaner, more intuitive commercial ecosystem where:
+
+- veterans clearly browse discounts, products, and services in one place
+- businesses clearly apply through the trusted partner path
+- approved providers populate into the unified browse system
+- monetization pathways are more obvious
+- homepage no longer feels redundant in this area
+
+--- END ---

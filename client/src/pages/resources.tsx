@@ -1450,23 +1450,6 @@ export default function Resources() {
               </Card>
             );
           })}
-          <Card
-            data-testid="card-category-trusted-services"
-            className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
-            onClick={() => setLocation("/trusted-services")}
-          >
-            <CardHeader className="flex flex-row items-center gap-4 pb-2">
-              <div className="p-2.5 rounded-lg transition-colors bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-base font-heading group-hover:text-primary transition-colors">Trusted Services</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground leading-snug">Vetted professionals and service providers supporting veterans and families.</p>
-            </CardContent>
-          </Card>
         </div>
       )}
 

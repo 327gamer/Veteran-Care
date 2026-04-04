@@ -500,10 +500,13 @@ export default function Home() {
             </div>
             <div className="flex-1 min-w-0 space-y-0.5">
               <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-primary transition-colors">
-                Veteran Discount Services
+                Veteran Discount Services & Products
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Save money and connect with businesses offering discounts for veterans and their families.
+                Save money and connect with trusted businesses.
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Browse discounts, products, and services for veterans and their families.
               </p>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
@@ -514,7 +517,31 @@ export default function Home() {
             onClick={(e) => { e.stopPropagation(); setLocation("/discounts"); }}
           >
             <Percent className="h-3.5 w-3.5 mr-1.5" />
-            Browse Discounts & Services
+            Browse Discounts, Products & Services
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card
+        data-testid="section-partner-apply-cta"
+        className="shadow-sm hover:shadow-md hover:border-green-400/50 transition-all border-green-200/50"
+      >
+        <CardContent className="p-4 text-center space-y-2">
+          <ShieldCheck className="h-6 w-6 text-green-600 mx-auto" />
+          <h3 className="text-sm font-heading font-bold text-foreground">
+            Interested in becoming a Trusted Services partner?
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
+            Join our vetted network and connect with veterans who need your services and products.
+          </p>
+          <Button
+            data-testid="button-partner-apply-home"
+            size="sm"
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => setLocation("/partner-apply")}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
+            Apply Now
           </Button>
         </CardContent>
       </Card>
@@ -556,20 +583,6 @@ export default function Home() {
               </Card>
             );
           })}
-          <Card 
-            data-testid="card-category-trusted-services"
-            className="hover:border-primary/50 transition-colors cursor-pointer h-full group"
-            onClick={() => setLocation("/trusted-services")}
-          >
-            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                Trusted Services
-              </span>
-            </CardContent>
-          </Card>
         </div>
       </section>
 

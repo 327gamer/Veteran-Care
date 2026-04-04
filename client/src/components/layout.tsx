@@ -40,7 +40,7 @@ import { useAuth } from "@/lib/use-auth";
 
 const BOTTOM_NAV_ITEMS = [
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
-  { icon: ShieldCheck, label: "Trusted Services", desc: "Vetted professionals and providers for veterans." },
+  { icon: ShieldCheck, label: "Trusted Services", desc: "Browse discounts, products, and services for veterans." },
   { icon: ShoppingBag, label: "Shop", desc: "Explore trusted partners and services." },
   { icon: Heart, label: "My Saved", desc: "Resources you mark as favorites." },
   { icon: MessageSquare, label: "Community", desc: "Connect with others." },
@@ -142,7 +142,7 @@ export default function Layout({ children }: LayoutProps) {
               <BookOpen className="h-4 w-4" />
               Resources
             </Link>
-            <Link href="/trusted-services" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/trusted-services') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/discounts" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/discounts') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
               <ShieldCheck className="h-4 w-4" />
               Trusted Services
             </Link>
@@ -296,8 +296,8 @@ export default function Layout({ children }: LayoutProps) {
             <span className="text-[10px] font-medium">Resources</span>
           </Link>
 
-          <Link href="/trusted-services" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/trusted-services') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-            <ShieldCheck className={`h-5 w-5 ${isActive('/trusted-services') ? 'fill-current' : ''}`} />
+          <Link href="/discounts" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/discounts') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+            <ShieldCheck className={`h-5 w-5 ${isActive('/discounts') ? 'fill-current' : ''}`} />
             <span className="text-[9px] font-medium text-center leading-tight">Trusted<br/>Services</span>
           </Link>
 

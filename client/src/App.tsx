@@ -116,9 +116,10 @@ function Router() {
       </Route>
 
       <Route path="/trusted-services">
-        <Layout>
-          <TrustedServices />
-        </Layout>
+        {() => {
+          window.location.replace("/discounts");
+          return null;
+        }}
       </Route>
 
       <Route path="/partner-apply">

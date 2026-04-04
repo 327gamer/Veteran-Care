@@ -5595,7 +5595,7 @@ export async function registerRoutes(
     if (!hasTrustedServicesTable) return res.json([]);
     try {
       const rows = await pgQuery(
-        `SELECT * FROM trusted_service_categories WHERE program_area = 'veteran_discount_services' AND is_active IS NOT false ORDER BY group_type, display_order`
+        `SELECT * FROM trusted_service_categories WHERE program_area IN ('veteran_discount_services', 'trusted_services') AND is_active IS NOT false ORDER BY group_type, display_order`
       );
       return res.json(rows);
     } catch (err: any) {
@@ -5616,7 +5616,7 @@ export async function registerRoutes(
       if (radiusMiles !== undefined && radiusMiles > 500) radiusMiles = 500;
       const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined;
 
-      const conditions = [`ts.is_active IS NOT false`, `tsc.program_area = 'veteran_discount_services'`];
+      const conditions = [`ts.is_active IS NOT false`, `tsc.program_area IN ('veteran_discount_services', 'trusted_services')`];
       const params: any[] = [];
       if (req.query.category) {
         params.push(req.query.category);
@@ -5656,7 +5656,7 @@ export async function registerRoutes(
         });
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
-      const sql = `SELECT ts.*, 
+      const sql = `SELECT ts.*, tsc.program_area,
              json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
