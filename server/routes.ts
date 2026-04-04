@@ -5639,9 +5639,22 @@ export async function registerRoutes(
       }
       const searchTerm = (req.query.q || req.query.search) as string | undefined;
       if (searchTerm) {
-        const term = `%${searchTerm.toLowerCase()}%`;
-        params.push(term);
-        conditions.push(`(LOWER(ts.name) LIKE $${params.length} OR LOWER(ts.short_description) LIKE $${params.length} OR LOWER(ts.discount_description) LIKE $${params.length})`);
+        const raw = `%${searchTerm.toLowerCase()}%`;
+        const normalized = `%${normalizeSearchTerm(searchTerm)}%`;
+        const terms = [...new Set([raw, normalized])];
+        const searchOr = terms.flatMap(t => {
+          params.push(t);
+          const idx = params.length;
+          return [
+            `LOWER(ts.name) LIKE $${idx}`,
+            `LOWER(ts.short_description) LIKE $${idx}`,
+            `LOWER(ts.discount_description) LIKE $${idx}`,
+            `LOWER(ts.city) LIKE $${idx}`,
+            `LOWER(ts.state) LIKE $${idx}`,
+            `LOWER(tsc.name) LIKE $${idx}`,
+          ];
+        });
+        conditions.push(`(${searchOr.join(" OR ")})`);
       }
       const sql = `SELECT ts.*, 
              json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
@@ -5723,6 +5736,24 @@ export async function registerRoutes(
         const latMinIdx = params.length - 3;
         conditions.push(`((ts.latitude >= $${latMinIdx} AND ts.latitude <= $${latMinIdx + 1} AND ts.longitude >= $${latMinIdx + 2} AND ts.longitude <= $${latMinIdx + 3}) OR ts.is_national = true OR ts.latitude IS NULL OR ts.longitude IS NULL)`);
       }
+      const tsSearchTerm = (req.query.q || req.query.search) as string | undefined;
+      if (tsSearchTerm) {
+        const raw = `%${tsSearchTerm.toLowerCase()}%`;
+        const normalized = `%${normalizeSearchTerm(tsSearchTerm)}%`;
+        const terms = [...new Set([raw, normalized])];
+        const searchOr = terms.flatMap(t => {
+          params.push(t);
+          const idx = params.length;
+          return [
+            `LOWER(ts.name) LIKE $${idx}`,
+            `LOWER(ts.short_description) LIKE $${idx}`,
+            `LOWER(ts.city) LIKE $${idx}`,
+            `LOWER(ts.state) LIKE $${idx}`,
+            `LOWER(tsc.name) LIKE $${idx}`,
+          ];
+        });
+        conditions.push(`(${searchOr.join(" OR ")})`);
+      }
       const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`];
       const vobParams = [...params];
       if (req.query.category) {
@@ -5782,7 +5813,17 @@ export async function registerRoutes(
           });
       }
 
-      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'}, nearMe=${nearMeMode})`);
+      if (tsSearchTerm && rows.length > 0) {
+        const raw = tsSearchTerm.toLowerCase();
+        const norm = normalizeSearchTerm(tsSearchTerm);
+        rows = rows.filter((r: any) => {
+          if (r.source_type !== 'vob') return true;
+          const fields = [r.name, r.short_description, r.city, r.state, r.trusted_service_categories?.name].filter(Boolean).map((f: string) => f.toLowerCase());
+          return fields.some((f: string) => f.includes(raw) || f.includes(norm));
+        });
+      }
+
+      console.log(`[trusted-services] query returned ${rows.length} rows (category=${req.query.category || 'all'}, state=${req.query.state || 'all'}, nearMe=${nearMeMode}${tsSearchTerm ? `, q=${tsSearchTerm}` : ''})`);
       return res.json(rows);
     } catch (err: any) {
       console.log(`[trusted-services] query error: ${err.message}`);

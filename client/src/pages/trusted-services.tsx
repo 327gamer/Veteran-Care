@@ -43,6 +43,7 @@ import {
   Send,
   Filter,
   Heart,
+  Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useGeolocation } from "@/lib/use-geolocation";
@@ -141,6 +142,8 @@ export default function TrustedServices() {
   const [nearMeActive, setNearMeActive] = useState(false);
   const [nearMeRadius] = useState(50);
   const [geoApplied, setGeoApplied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
   const geo = useGeolocation();
 
@@ -151,6 +154,11 @@ export default function TrustedServices() {
       setGeoApplied(true);
     }
   }, [geo.location, geoApplied]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   const { data: categories = [], isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/trusted-services/categories"],
@@ -165,11 +173,14 @@ export default function TrustedServices() {
   const nearMeLng = nearMeActive && geo.location?.lng ? geo.location.lng : undefined;
   const isNearMeQuery = nearMeActive && nearMeLat !== undefined && nearMeLng !== undefined;
 
-  const { data: services = [] } = useQuery<TrustedService[]>({
-    queryKey: ["/api/trusted-services", selectedCategory, filterState, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
+  const searchParam = debouncedSearch.trim() || undefined;
+
+  const { data: services = [], isLoading: servicesLoading } = useQuery<TrustedService[]>({
+    queryKey: ["/api/trusted-services", selectedCategory, filterState, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : "", searchParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
+      if (searchParam) params.set("q", searchParam);
       if (isNearMeQuery) {
         params.set("user_lat", String(nearMeLat));
         params.set("user_lng", String(nearMeLng));
@@ -181,7 +192,7 @@ export default function TrustedServices() {
       const url = qs ? `/api/trusted-services?${qs}` : "/api/trusted-services";
       return fetch(url).then(r => r.json());
     },
-    enabled: !!selectedCategory && (!nearMeActive || isNearMeQuery),
+    enabled: (!!selectedCategory || !!searchParam) && (!nearMeActive || isNearMeQuery),
   });
 
   const leadMutation = useMutation({
@@ -552,6 +563,73 @@ export default function TrustedServices() {
         </p>
       </div>
 
+      <div className="relative">
+        <Input
+          data-testid="input-trusted-search"
+          placeholder="Search by name, city, or category..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="h-10 text-sm pl-9"
+        />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {searchQuery && (
+          <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearchQuery("")}>
+            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+          </button>
+        )}
+      </div>
+
+      {searchParam && !selectedCategory ? (
+        <div className="space-y-3">
+          {servicesLoading ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Searching...</p>
+          ) : (
+          <p className="text-sm text-muted-foreground">
+            {services.length > 0 ? `${services.length} result${services.length !== 1 ? 's' : ''} for "${searchParam}"` : `No results for "${searchParam}"`}
+          </p>
+          )}
+          {services.map(service => {
+            const isSaved = isTrustedServiceSaved(service.id);
+            return (
+              <Card
+                key={service.id}
+                data-testid={`card-search-result-${service.id}`}
+                className="group hover:border-primary/30 transition-colors cursor-pointer"
+                onClick={() => setDetailService(service)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm">{service.name}</h3>
+                        {service.trusted_service_categories?.name && (
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{service.trusted_service_categories.name}</Badge>
+                        )}
+                      </div>
+                      {(service.city || service.state) && (
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3" />
+                          {[service.city, service.state].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                      {service.short_description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.short_description}</p>
+                      )}
+                    </div>
+                    <button
+                      className="p-1.5 rounded-full hover:bg-muted transition-colors shrink-0"
+                      onClick={(e) => { e.stopPropagation(); toggleSaveTrustedService(service.id); }}
+                    >
+                      <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : !selectedCategory ? (
+        <>
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-3 flex items-center gap-3">
           <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
@@ -626,6 +704,22 @@ export default function TrustedServices() {
           </CardContent>
         </Card>
       </div>
+        </>
+      ) : null}
+
+      {detailService && (
+        <TrustedServiceDetail
+          service={detailService}
+          open={!!detailService}
+          onOpenChange={(open) => { if (!open) setDetailService(null); }}
+          onConnect={(svc) => {
+            setDetailService(null);
+            setConnectService(svc);
+          }}
+        />
+      )}
+
+      {connectModal}
     </div>
   );
 }
