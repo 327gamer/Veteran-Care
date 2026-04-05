@@ -1,0 +1,290 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### FULL SYSTEM ALIGNMENT – BILLING + ADD-ONS + ADS + AUTOMATION + OWNER SETUP WALKTHROUGH
+
+IMPORTANT — READ FIRST:
+
+We are CONTINUING an existing system.
+
+We ALREADY HAVE:
+- State Plan ($99/month)
+- National Plan ($499/month)
+- Stripe integration working
+- Partner application + approval flow working
+- Checkout + subscription creation working
+
+DO NOT recreate, replace, or duplicate the existing $99 / $499 base plans.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+We are finalizing a full monetization system that includes:
+
+1. Stripe subscriptions (base plans + add-ons)
+2. Automated billing + lifecycle control
+3. Grace period + failed payment email automation
+4. Marketplace behavior driven by billing
+5. Sponsored Ads system foundation (already designed, future integration later)
+6. Geo-targeted monetization (Near Me)
+7. Owner setup walkthrough for Stripe / Replit secrets / webhook / portal
+
+This must all work together cleanly.
+
+-------------------------------------
+PART 1 – VERIFY CURRENT STRIPE BASE PLAN SETUP (NO REBUILD)
+-------------------------------------
+
+Please confirm:
+
+1. Current env variables:
+- STRIPE_PARTNER_PRICE_ID_STATE
+- STRIPE_PARTNER_PRICE_ID_NATIONAL
+
+2. Confirm:
+- they match the already-created Stripe products/prices
+- no duplicate products should be created
+- current checkout/subscription flow is using the correct existing IDs
+
+3. Explain clearly where these values are used in code.
+
+-------------------------------------
+PART 2 – ADD-ONS (NEW ITEMS ONLY)
+-------------------------------------
+
+We are ADDING these recurring add-ons:
+
+- Featured Listing → $49/month
+- Near Me Boost → $29/month
+- Sponsored Top → $79/month
+- Sponsored Inline → $39/month
+
+IMPORTANT:
+These are NEW add-ons only.
+Do NOT recreate the existing State/National plans.
+
+-------------------------------------
+PART 3 – OWNER SETUP WALKTHROUGH (CRITICAL)
+-------------------------------------
+
+I am NOT a programmer and NOT a developer.
+
+I need a true owner-friendly, step-by-step walkthrough for everything I must do manually in Stripe and Replit.
+
+Do NOT assume I know anything.
+Do NOT skip steps.
+Do NOT use vague instructions.
+
+I need instructions written like this:
+- log in here
+- click this
+- create this
+- copy this value
+- go here
+- paste it there
+- save
+- move to next step
+
+-------------------------------------
+PART 4 – STEP-BY-STEP STRIPE ADD-ON CREATION
+-------------------------------------
+
+Walk me through, step by step, how to create ONLY these new add-ons in Stripe:
+
+- Featured Listing → $49/month
+- Near Me Boost → $29/month
+- Sponsored Top → $79/month
+- Sponsored Inline → $39/month
+
+For EACH add-on, tell me exactly:
+- where I click in Stripe
+- what product name to use
+- what price name to use if needed
+- what recurring billing setting to use
+- what ID/value I need to copy at the end
+
+Again:
+DO NOT tell me to recreate the $99 / $499 plans.
+
+-------------------------------------
+PART 5 – REPLIT SECRETS / ENV VARS (ADD-ONS ONLY)
+-------------------------------------
+
+After I create those add-ons, walk me step by step through Replit:
+
+- where I click
+- how I open secrets / environment variables
+- what secret name to create
+- what Stripe value to paste into each one
+
+ONLY ADD THESE NEW ONES:
+- STRIPE_ADDON_PRICE_FEATURED
+- STRIPE_ADDON_PRICE_NEAR_ME_BOOST
+- STRIPE_ADDON_PRICE_SPONSORED_TOP
+- STRIPE_ADDON_PRICE_SPONSORED_INLINE
+
+Also confirm whether any of these already exist before I add them.
+
+-------------------------------------
+PART 6 – WEBHOOK + BILLING BEHAVIOR (CONFIRM + WALKTHROUGH)
+-------------------------------------
+
+You already implemented:
+- 7-day grace period
+- payment failure handling
+- billing warning emails
+- escalation timer
+- approval guard
+
+Now I need:
+
+1. Confirmation that the webhook endpoint is correct
+2. Confirmation that these events are required and registered:
+- checkout.session.completed
+- customer.subscription.created
+- customer.subscription.updated
+- customer.subscription.deleted
+- invoice.paid
+- invoice.payment_failed
+
+3. A step-by-step walkthrough for me in Stripe:
+- where to click
+- what webhook URL to enter
+- which events to select
+- where I copy the signing secret from
+- where I put that signing secret in Replit
+
+4. Confirm signature validation is active in production
+
+-------------------------------------
+PART 7 – FAILED PAYMENT EMAILS (CONFIRM)
+-------------------------------------
+
+Please confirm the exact email automation now implemented:
+
+1. Immediate failed payment email
+2. Grace warning email before grace expires
+3. Whether Stripe native dunning emails should also be enabled
+
+Then tell me step by step where in Stripe I go to enable any useful built-in billing emails such as:
+- failed payment emails
+- invoice / receipt emails
+- card expiring reminders
+- other useful billing emails
+
+I want the exact clicks and settings.
+
+-------------------------------------
+PART 8 – CUSTOMER PORTAL (STEP-BY-STEP)
+-------------------------------------
+
+Walk me through exactly how to configure Stripe Customer Portal so partners can:
+- update payment method
+- cancel subscription
+- view invoices / billing history
+
+Optional if supported:
+- switch plans
+- manage add-ons
+
+Keep it simple and explain every click.
+
+-------------------------------------
+PART 9 – MARKETPLACE + BILLING CONNECTION (CONFIRM)
+-------------------------------------
+
+Please confirm these are live and working:
+
+- featured_active → controls featured placement
+- near_me_boost_active → affects geo ranking
+- sponsored_top_active / sponsored_inline_active → stored as entitlements for future ad-slot use
+- cancellation → removes visibility / premium status correctly
+- past_due → removes premium boosts but keeps listing during grace period
+- successful payment after failure → restores billing entitlements correctly
+
+-------------------------------------
+PART 10 – SPONSORED ADS SYSTEM (ALIGNMENT)
+-------------------------------------
+
+We have already designed sponsored ad placements:
+
+- Top Featured Ad
+- In-Feed Ad
+- Local Boost Ad
+
+Confirm:
+
+1. ad-slot.tsx is wired correctly
+2. placement hooks exist
+3. slots are currently empty / future-ready
+4. actual ad population is NOT yet active
+5. the system is ready later for AdButler or internal ad injection
+
+IMPORTANT CLARIFICATION:
+
+Featured Listings ≠ Sponsored Ads
+
+Featured Listings:
+- part of listing system
+- controlled by billing flags / ranking
+
+Sponsored Ads:
+- separate placement system
+- injected into ad slots
+- not part of normal listing ranking
+
+-------------------------------------
+PART 11 – OWNER TEST CHECKLIST
+-------------------------------------
+
+Give me a simple test checklist in plain English for:
+
+1. partner applies
+2. admin approves
+3. checkout works
+4. add-ons appear correctly in Stripe subscription
+5. listing activates
+6. featured / near me / sponsored entitlements behave correctly
+7. payment fails → grace period starts
+8. emails send
+9. grace expires → listing deactivates
+10. customer portal works
+11. cancellation works correctly
+
+-------------------------------------
+PART 12 – RISKS / GAPS
+-------------------------------------
+
+Tell me clearly:
+- anything missing
+- anything fragile
+- anything I need to be careful not to do wrong in Stripe or Replit
+- anything that still needs future build work
+
+-------------------------------------
+FORMAT REQUIRED
+-------------------------------------
+
+Please answer in this format:
+
+STEP 1
+STEP 2
+STEP 3
+
+Explain everything for a non-technical owner.
+
+If your response is too long, then give me PHASE 1 ONLY first:
+- verify current base plan setup
+- create the 4 add-ons
+- copy the correct IDs
+- add the Replit secrets
+
+Then stop and wait for me.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+I want a foolproof, owner-friendly setup process so I can do my side correctly without mistakes while keeping the existing $99 / $499 plans intact.
+
+--- END ---
