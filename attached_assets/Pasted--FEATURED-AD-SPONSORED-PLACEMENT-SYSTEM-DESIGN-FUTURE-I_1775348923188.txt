@@ -1,0 +1,210 @@
+--- FEATURED AD / SPONSORED PLACEMENT SYSTEM – DESIGN + FUTURE INTEGRATION ---
+
+We are NOT building full ad integration yet.
+
+We are designing and preparing the platform for:
+→ Featured Ad Placements
+→ Future AdButler integration
+→ Geo-targeted ads (Near Me)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Prepare the platform UI + structure so we can:
+
+1) Insert sponsored ads naturally into listing flows
+2) Support future AdButler integration
+3) Enable geo-targeted advertising (local + national)
+4) Monetize high-traffic pages without clutter
+
+-------------------------------------
+CORE PRINCIPLE
+-------------------------------------
+
+Ads must feel like:
+→ part of the experience (like Instagram / Facebook feed)
+→ NOT banners slapped randomly
+
+-------------------------------------
+PHASE 1 – DESIGN ONLY (DO NOW)
+-------------------------------------
+
+We are NOT integrating AdButler yet.
+
+We ARE:
+
+1) defining ad placement slots
+2) creating reusable UI components
+3) structuring placement logic
+4) preparing geo-targeting hooks
+
+-------------------------------------
+AD PLACEMENT STRUCTURE
+-------------------------------------
+
+Within:
+Veteran Discount Services & Products page
+
+Create 3 placement types:
+
+-------------------------------------
+
+1) TOP FEATURED AD SLOT
+-------------------------------------
+
+Location:
+- directly below category header
+
+Example:
+[ Category Title ]
+[ Sponsored Ad Card ]
+[ Listings Begin ]
+
+Behavior:
+- always visible
+- 1 slot only
+- premium placement
+
+-------------------------------------
+
+2) IN-FEED AD SLOT
+-------------------------------------
+
+Location:
+- after every 5–7 listings
+
+Example:
+Listing
+Listing
+Listing
+Listing
+Listing
+→ Sponsored Ad
+Listing
+Listing
+
+Behavior:
+- repeatable
+- non-intrusive
+- mobile friendly
+
+-------------------------------------
+
+3) FEATURED LOCAL BOOST (NEAR ME)
+-------------------------------------
+
+Location:
+- inside Near Me results
+
+Behavior:
+- boosted placement for local advertisers
+- appears near top of results
+- geo-aware
+
+-------------------------------------
+
+-------------------------------------
+AD CARD DESIGN
+-------------------------------------
+
+Must follow existing card system.
+
+Style:
+- same card UI as listings
+- subtle difference
+
+Include:
+- “Sponsored” badge (small + clean)
+- optional “Veteran Discount Available”
+- business name
+- short description
+- CTA button (Visit / Call / Claim Offer)
+
+IMPORTANT:
+Do NOT make ads look spammy
+
+-------------------------------------
+DATA STRUCTURE (PREP ONLY)
+-------------------------------------
+
+Add support fields (no heavy backend yet):
+
+ad_type:
+- sponsored_top
+- sponsored_inline
+- sponsored_local
+
+geo_scope:
+- national
+- state
+- city
+- radius (future)
+
+priority:
+- integer (for ranking ads)
+
+-------------------------------------
+GEO TARGETING PREP
+-------------------------------------
+
+Design logic only:
+
+If user is in Near Me:
+→ prioritize local ads first
+
+If no local ads:
+→ fallback to national ads
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This must integrate later with:
+→ AdButler (or similar ad server)
+
+-------------------------------------
+QUESTIONS FOR REPLIT
+-------------------------------------
+
+Please confirm:
+
+1) Do you have experience integrating AdButler?
+2) Can you support:
+   - geo-targeted ads
+   - rotation of ads
+   - tracking impressions + clicks
+3) Best approach for:
+   - local vs national ad targeting
+4) Can we plug AdButler into these slots later without redesign?
+
+-------------------------------------
+CONSTRAINTS
+-------------------------------------
+
+- do NOT integrate AdButler yet
+- do NOT build full ad backend
+- do NOT break current listings
+- do NOT slow performance
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1) placement implementation approach
+2) components created
+3) where ads will render
+4) how future AdButler will plug in
+5) files changed
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Prepare the platform NOW so:
+
+→ ads can be turned on instantly later
+→ no redesign needed
+→ monetization scales cleanly
+
+--- END ---

@@ -52,6 +52,13 @@ import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
 import { useGeolocation } from "@/lib/use-geolocation";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
+import {
+  AdSlot,
+  AdSlotPlaceholder,
+  resolveAds,
+  interleaveAdsInListings,
+  type SponsoredAd,
+} from "@/components/ad-slot";
 
 interface DiscountCategory {
   id: string;
@@ -201,6 +208,17 @@ export default function VeteranDiscounts() {
     },
     enabled: (!!selectedCategory || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
   });
+
+  const sponsoredAds: SponsoredAd[] = [];
+  const geoContext = {
+    lat: nearMeLat,
+    lng: nearMeLng,
+    state: filterState || undefined,
+    city: geo.location?.city || undefined,
+  };
+  const topAds = resolveAds(sponsoredAds, "sponsored_top", geoContext);
+  const inlineAds = resolveAds(sponsoredAds, "sponsored_inline", geoContext);
+  const localBoostAds = resolveAds(sponsoredAds, "sponsored_local", geoContext);
 
   const leadMutation = useMutation({
     mutationFn: async (data: { service: DiscountListing; form: LeadForm }) => {
@@ -566,16 +584,30 @@ export default function VeteranDiscounts() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {listings.map((listing) => (
-                    <ListingCard
-                      key={listing.id}
-                      listing={listing}
-                      isSaved={isTrustedServiceSaved(listing.id)}
-                      onToggleSave={() => toggleSaveTrustedService(listing.id)}
-                      onViewDetails={() => setDetailService(listing)}
-                      onConnect={() => setConnectService(listing)}
-                    />
-                  ))}
+                  {topAds[0] ? (
+                    <AdSlot ad={topAds[0]} placement="sponsored_top" />
+                  ) : (
+                    <AdSlotPlaceholder placement="sponsored_top" />
+                  )}
+
+                  {(() => {
+                    const activeInlineAds = isNearMeQuery && localBoostAds.length > 0 ? localBoostAds : inlineAds;
+                    const feed = interleaveAdsInListings(listings, activeInlineAds, { interval: 6, boostFirst: isNearMeQuery && localBoostAds.length > 0 });
+                    return feed.map((item, idx) =>
+                      item.type === "ad" ? (
+                        <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement={isNearMeQuery ? "sponsored_local" : "sponsored_inline"} />
+                      ) : (
+                        <ListingCard
+                          key={item.data.id}
+                          listing={item.data}
+                          isSaved={isTrustedServiceSaved(item.data.id)}
+                          onToggleSave={() => toggleSaveTrustedService(item.data.id)}
+                          onViewDetails={() => setDetailService(item.data)}
+                          onConnect={() => setConnectService(item.data)}
+                        />
+                      )
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -604,16 +636,23 @@ export default function VeteranDiscounts() {
           ) : (
             <>
               <p className="text-xs text-muted-foreground">{listings.length} result{listings.length !== 1 ? "s" : ""} found</p>
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isSaved={isTrustedServiceSaved(listing.id)}
-                  onToggleSave={() => toggleSaveTrustedService(listing.id)}
-                  onViewDetails={() => setDetailService(listing)}
-                  onConnect={() => setConnectService(listing)}
-                />
-              ))}
+              {(() => {
+                const feed = interleaveAdsInListings(listings, inlineAds, { interval: 6 });
+                return feed.map((item, idx) =>
+                  item.type === "ad" ? (
+                    <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement="sponsored_inline" />
+                  ) : (
+                    <ListingCard
+                      key={item.data.id}
+                      listing={item.data}
+                      isSaved={isTrustedServiceSaved(item.data.id)}
+                      onToggleSave={() => toggleSaveTrustedService(item.data.id)}
+                      onViewDetails={() => setDetailService(item.data)}
+                      onConnect={() => setConnectService(item.data)}
+                    />
+                  )
+                );
+              })()}
             </>
           )}
         </div>
