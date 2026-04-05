@@ -524,21 +524,28 @@ export default function Home() {
 
       <Card
         data-testid="section-partner-apply-cta"
-        className="shadow-sm hover:shadow-md hover:border-green-400/50 transition-all border-green-200/50"
+        className="cursor-pointer group shadow-sm hover:shadow-md hover:border-green-600/50 transition-all"
+        onClick={() => setLocation("/partner-apply")}
       >
-        <CardContent className="p-4 text-center space-y-2">
-          <ShieldCheck className="h-6 w-6 text-green-600 mx-auto" />
-          <h3 className="text-sm font-heading font-bold text-foreground">
-            Interested in becoming a Trusted Services partner?
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
-            Join our vetted network and connect with veterans who need your services and products.
-          </p>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-green-700 transition-colors">
+                Become a Trusted Services Partner
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Join our vetted network and connect with veterans who need your services and products.
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-green-600 shrink-0 mt-0.5 transition-colors" />
+          </div>
           <Button
             data-testid="button-partner-apply-home"
-            size="sm"
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => setLocation("/partner-apply")}
+            className="w-full rounded-full bg-green-600 hover:bg-green-700"
+            onClick={(e) => { e.stopPropagation(); setLocation("/partner-apply"); }}
           >
             <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
             Apply Now

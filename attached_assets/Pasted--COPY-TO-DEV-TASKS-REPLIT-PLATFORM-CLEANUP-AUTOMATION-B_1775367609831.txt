@@ -1,0 +1,227 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PLATFORM CLEANUP + AUTOMATION + BRAND UPDATE (FIX NOW + BACKLOG)
+
+IMPORTANT:
+Please read this as one combined implementation / planning message.
+
+We have several platform cleanup and automation items.
+Some should be fixed NOW.
+Some should be logged as BACKLOG / NEXT PHASE so they are not forgotten.
+
+Please separate your reply into:
+
+1. FIX NOW
+2. NEEDS DESIGN / BACKEND WORK
+3. BACK BURNER / NEXT PHASE
+
+Do NOT lose any item below.
+
+-------------------------------------
+FIX NOW – PRIORITY ITEMS
+-------------------------------------
+
+### 1) HOMEPAGE PARTNER APPLY CARD CLEANUP
+The “Interested in becoming a Trusted Services partner?” card on the homepage under Veteran Discount Services & Products does NOT look right.
+
+Problems:
+- button styling does not match the rest of the platform
+- content is too centered
+- layout feels inconsistent with surrounding UI
+- overall card does not feel native to the rest of the app
+
+Please update this card so it matches the platform design system:
+
+Requirements:
+- same visual style as the rest of the platform
+- Apply Now button should match the main platform green CTA style
+- text/content alignment should feel consistent with nearby cards
+- no awkward centered layout if left-aligned layout is more consistent
+- clean spacing / mobile-first
+
+Please fix this now.
+
+-------------------------------------
+
+### 2) REPLACE LOGO EVERYWHERE WITH NEW TM VERSION
+Attached is the updated logo with the TM mark that we now own.
+
+Please replace the old logo everywhere it appears across the platform with the new TM logo.
+
+IMPORTANT:
+- keep the SAME sizing patterns already in place
+- do NOT start over
+- do NOT rework all layout sizing from scratch
+- just swap the image asset cleanly into all current placements
+
+Likely locations include:
+- onboarding
+- app header / home button
+- login / landing flow
+- anywhere else current logo appears
+
+Please identify all placements and update them consistently.
+
+-------------------------------------
+
+### 3) EMAILS MUST HAVE UNSUBSCRIBE OPTION
+Any email correspondence going out from the system should include an unsubscribe option where appropriate.
+
+Please:
+- confirm which outbound email types should include unsubscribe
+- implement unsubscribe where appropriate
+- do not break required transactional emails if those must remain exempt
+
+At minimum, I want this reviewed and applied properly now.
+
+-------------------------------------
+
+### 4) REQUEST SUPPORT ROUTING – INVESTIGATE / FIX NOW IF POSSIBLE
+Request Support applications are currently going to:
+- colin@veterancare.com
+
+That is NOT the intended long-term behavior.
+
+Intended behavior:
+- requests should route to the relevant resource or partner the user is asking for
+- those resources/partners should receive the request
+- they should confirm outreach / response
+- this should update status in admin
+- manual handling by Colin should be eliminated
+
+Please do the following now:
+- investigate current Request Support routing logic
+- tell me exactly why it is still routing to Colin
+- fix immediately if there is already enough structure in place
+- if full automation is not yet possible, provide the shortest path to implement it next
+
+This is a priority operational issue because manual admin handling is not scalable.
+
+-------------------------------------
+
+### 5) TRUSTED PARTNER SUBCATEGORIES – REVIEW / PLAN
+Trusted partners need more usable subcategory structure.
+
+Example:
+- Legal Services → multiple attorney types
+- Insurance → multiple insurance types
+- Lenders / mortgage → multiple loan types
+
+Please:
+- review current trusted partner category structure
+- recommend the cleanest next-step subcategory expansion
+- do NOT overbuild
+- give a practical rollout approach
+
+If this is fast and safe, implement the structure now.
+If not, put it in the next-phase section with a clean plan.
+
+-------------------------------------
+NEEDS DESIGN / BACKEND WORK
+-------------------------------------
+
+### 6) REFER A VETERAN / LEADERBOARD GIVEAWAY SYSTEM
+We need the referral / leaderboard area to show:
+- what the giveaway actually is
+- clear rules
+- how winner is selected
+- how winner is notified
+
+We also need a system for:
+- emailing the winner
+- sending an electronic gift card / certificate
+- documenting the process properly
+
+Please assess:
+- what is already in place
+- what needs to be added
+- what can be implemented quickly now vs later
+
+-------------------------------------
+
+### 7) REFER A BUSINESS SYSTEM FOR TRUSTED PARTNERS
+Trusted partners should be able to refer a business and receive:
+- 1 free month
+AFTER the referred business completes its first paid billing cycle
+
+This must eventually work with:
+- Stripe
+- referral attribution
+- billing logic
+- free-month credit logic
+- rules / eligibility
+
+Please do not build blindly.
+Please assess and propose the proper implementation path.
+
+-------------------------------------
+
+### 8) AI CHAT → EMAIL / NOTIFICATION HANDOFF
+We eventually need the AI chat to send requested info into:
+- emails
+- notifications
+- possibly messages
+
+But:
+- notifications/messages are not fully built yet
+
+Please assess:
+- current state
+- dependencies
+- best phased implementation path
+
+-------------------------------------
+BACK BURNER / NEXT PHASE
+-------------------------------------
+
+### 9) LEAD GENERATION MONETIZATION FOR CERTAIN BUSINESS TYPES
+For some businesses such as:
+- mortgage companies
+- insurance companies
+- possibly other high-value services
+
+We may want dual monetization:
+1. monthly listing / subscription
+2. per-lead billing
+
+We do NOT want to lose revenue by sending valuable direct leads without monetizing them.
+
+Please log this as an important future monetization layer and outline the cleanest path later.
+
+-------------------------------------
+
+### 10) ADMIN PANEL CLEANUP / REORGANIZATION
+The admin panel is too busy and needs better structure.
+
+Examples:
+- Analytics + attribution grouped together
+- ambassadors / commissions / payouts grouped together
+- resources / navigation / content grouped together
+- trusted partners grouped together
+
+Please:
+- review current admin panel structure
+- propose a cleaner grouped navigation / organization system
+- do not overdesign
+- give a practical cleanup plan
+
+If some cleanup can be done now without disruption, do it.
+If not, stage it properly.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with these sections:
+
+1. FIX NOW – what you can correct immediately
+2. NEEDS DESIGN / BACKEND WORK – what requires additional implementation
+3. BACK BURNER / NEXT PHASE – what should be logged for later
+4. files changed / likely to change
+5. publish / restart requirements
+
+IMPORTANT:
+Do NOT lose any item from this list.
+If something cannot be completed immediately, explicitly preserve it for the backlog / next phase.
+
+--- END ---
