@@ -92,13 +92,28 @@ export default function PartnerPaymentSuccess() {
                   ? "Your subscription is active and your business listing is now live in our Trusted Services directory. Veterans in your area can connect with you directly."
                   : "Your payment has been received. Your listing will be activated shortly. If it doesn't appear within a few minutes, please contact us."}
               </p>
-              <p className="text-xs text-muted-foreground">
-                You will receive lead notifications at the email address on your application.
-                For any questions, contact <a href="mailto:info@veterancare.com" className="text-primary underline">info@veterancare.com</a>.
-              </p>
+
+              {verified && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">Next Step: Create Your Partner Account</p>
+                  <p className="text-xs text-blue-800 leading-relaxed">
+                    Set up your account to access your Partner Portal — where you can track leads, refer businesses to earn free months, and manage your listing.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                {verified && (
+                  <Button
+                    data-testid="button-create-partner-account"
+                    onClick={() => setLocation("/partner-portal?setup=1")}
+                  >
+                    Create My Account
+                  </Button>
+                )}
                 <Button
                   data-testid="button-view-listing"
+                  variant={verified ? "outline" : "default"}
                   onClick={() => setLocation("/discounts")}
                 >
                   View Trusted Services

@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { query as pgQuery } from "./pg-client";
 import { platform } from "../shared/platform";
-import { sendPaymentFailedEmail, sendGraceExpiringEmail } from "./lead-email";
+import { sendPaymentFailedEmail, sendGraceExpiringEmail, sendPartnerWelcomeEmail } from "./lead-email";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -312,6 +312,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
      WHERE id = $3`,
     [customerId, subscriptionId, applicationId]
   );
+
+  if (!app.welcome_email_sent) {
+    try {
+      await sendPartnerWelcomeEmail(app.email, app.company_name, app.contact_name || null);
+      await pgQuery(`UPDATE partner_applications SET welcome_email_sent = true WHERE id = $1`, [applicationId]);
+    } catch (err: any) {
+      console.log(`[stripe] Welcome email send failed:`, err.message);
+    }
+  }
 
   if (app.converted_provider_id) {
     try {

@@ -255,12 +255,16 @@ Without this rule, adding a new resource that hasn't been geocoded yet causes it
 
 ## Partner Account/Login System
 - **Auth model**: Email + password (bcrypt-hashed), Bearer token sessions stored in `partner_sessions` table (30-day expiry)
-- **Registration**: Only allowed for partners with `status = 'approved'` in `partner_applications`; atomic password set prevents race conditions
+- **Registration**: Only allowed for partners with `status = 'approved'` (or `active`) in `partner_applications`; atomic password set prevents race conditions
 - **Login**: Rate-limited (5 attempts per 15 min per email); requires approved status + valid password
 - **Token storage**: `localStorage.partner_token` on client; `Authorization: Bearer <token>` header on all partner-facing API calls
 - **Secured endpoints**: `/api/partner-referral/me`, `/api/partner/lead-billing`, `/api/partner/lead-dispute`, `/api/partner/me` — all use `resolvePartnerFromToken()` middleware
-- **Frontend**: `/partner-referrals` page with Login/Create Account tabs, password field with show/hide toggle
+- **Frontend**: `/partner-portal` is the main partner entry point (Login/Create Account tabs). `/partner-referrals` redirects to `/partner-portal`
+- **Partner Portal**: Dashboard hub with cards for Referral Tools, Lead Activity, Leaderboard. Sub-views for each tool
+- **Partner onboarding flow**: Apply → Admin approves → Stripe payment → Welcome email with "Create My Account" CTA → `/partner-portal?setup=1` → Create Account tab auto-selected
+- **Emails**: `sendPartnerPaymentEmail()` = approval + Stripe link; `sendPartnerWelcomeEmail()` = post-payment with account creation link
 - **DB additions**: `password_hash TEXT` column on `partner_applications`, `partner_sessions` table with token + expiry
+- **Key files**: `client/src/pages/partner-portal.tsx`, `server/routes.ts` (auth endpoints), `server/lead-email.ts` (welcome email), `server/stripe-service.ts` (triggers welcome email)
 
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts

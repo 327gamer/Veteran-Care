@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -41,7 +41,7 @@ import ResourceCenter from "@/pages/resource-center";
 import PartnersLanding from "@/pages/partners-landing";
 import EndOfLife from "@/pages/end-of-life";
 import Referral from "@/pages/referral";
-import PartnerReferral from "@/pages/partner-referral";
+import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
 import AmbassadorDashboard from "@/pages/ambassador-dashboard";
 
@@ -136,10 +136,14 @@ function Router() {
         </Layout>
       </Route>
 
-      <Route path="/partner-referrals">
+      <Route path="/partner-portal">
         <Layout>
-          <PartnerReferral />
+          <PartnerPortal />
         </Layout>
+      </Route>
+
+      <Route path="/partner-referrals">
+        <Redirect to="/partner-portal" />
       </Route>
 
       <Route path="/vob">

@@ -421,6 +421,7 @@ async function ensurePartnerReferrals() {
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_app_referral_code ON partner_applications(referral_code) WHERE referral_code IS NOT NULL`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS referred_by_partner_id UUID`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS password_hash TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS welcome_email_sent BOOLEAN DEFAULT false`);
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS partner_sessions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -7570,7 +7571,7 @@ export async function registerRoutes(
     }
     try {
       const partner = await pgQuery(
-        `SELECT id, password_hash, status FROM partner_applications WHERE LOWER(email) = $1 AND status = 'approved' ORDER BY created_at DESC LIMIT 1`,
+        `SELECT id, password_hash, status FROM partner_applications WHERE LOWER(email) = $1 AND status IN ('approved', 'active') ORDER BY created_at DESC LIMIT 1`,
         [normalizedEmail]
       );
       if (partner.length === 0) return res.status(404).json({ error: "No approved application found for this email. Your application must be approved before you can create an account." });
@@ -7609,7 +7610,7 @@ export async function registerRoutes(
         [normalizedEmail]
       );
       if (partner.length === 0) return res.status(404).json({ error: "No account found for this email" });
-      if (partner[0].status !== 'approved') return res.status(403).json({ error: "Your application is not yet approved" });
+      if (!['approved', 'active'].includes(partner[0].status)) return res.status(403).json({ error: "Your application is not yet approved" });
       if (!partner[0].password_hash) return res.status(400).json({ error: "Account not yet created. Please create your account first." });
       const valid = await bcrypt.compare(password, partner[0].password_hash);
       if (!valid) return res.status(401).json({ error: "Incorrect password" });
@@ -7647,7 +7648,7 @@ export async function registerRoutes(
   app.get("/api/partner-referral/me", async (req, res) => {
     const partner = await resolvePartnerFromToken(req);
     if (!partner) return res.status(401).json({ error: "Not authenticated" });
-    if (partner.status !== 'approved') return res.status(403).json({ error: "Partner not yet approved" });
+    if (!['approved', 'active'].includes(partner.status)) return res.status(403).json({ error: "Partner not yet approved" });
     try {
       const partnerId = partner.id;
       const referralCode = await getOrCreatePartnerReferralCode(partnerId);
