@@ -52,6 +52,21 @@ export default function PartnerApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+
+  const [form, setForm] = useState({
+    company_name: "",
+    contact_name: "",
+    email: "",
+    phone: "",
+    website: "",
+    city: "",
+    state: "",
+    category_id: "",
+    service_description: "",
+    pricing_interest: "both",
+    plan_type: "" as "state" | "national" | "",
+  });
+
   const [addons, setAddons] = useState({
     featured: false,
     near_me_boost: false,
@@ -75,20 +90,6 @@ export default function PartnerApply() {
   useEffect(() => {
     trackEvent("partner_apply_started");
   }, []);
-
-  const [form, setForm] = useState({
-    company_name: "",
-    contact_name: "",
-    email: "",
-    phone: "",
-    website: "",
-    city: "",
-    state: "",
-    category_id: "",
-    service_description: "",
-    pricing_interest: "both",
-    plan_type: "" as "state" | "national" | "",
-  });
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/partner-categories"],
