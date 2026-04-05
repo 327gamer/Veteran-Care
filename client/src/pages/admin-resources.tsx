@@ -1225,6 +1225,23 @@ export default function AdminResources() {
                       </div>
                     )}
 
+                    {!req.routed_to_partner_id && req.delivery_status !== "fallback_manual" && (
+                      <div className="text-[10px] bg-teal-50 text-teal-800 rounded p-2 border border-teal-200 flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span>Self-Serve — Veteran shown resources</span>
+                        </div>
+                        {(req.status === "new" || req.status === "in_progress") && (
+                          <button
+                            className="text-teal-700 underline whitespace-nowrap hover:text-teal-900"
+                            onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); }}
+                          >
+                            Assign partner
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {req.delivery_status === "fallback_manual" && !req.routed_to_partner_id && (
                       <div className="text-[10px] bg-amber-50 text-amber-800 rounded p-2 border border-amber-200 flex items-start justify-between gap-2">
                         <div>

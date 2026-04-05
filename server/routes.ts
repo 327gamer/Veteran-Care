@@ -5089,22 +5089,71 @@ export async function registerRoutes(
             .limit(1)
             .single();
           if (catRow) {
-            const { data: resources, error: resErr } = await supabase
-              .from("resources")
-              .select("id, title, phone, website_url, email, address, city, state")
-              .eq("category_id", catRow.id)
-              .eq("status", "approved")
-              .limit(5);
-            if (resources && resources.length > 0) {
-              selfServeResources = resources.map(r => ({
-                title: r.title,
-                phone: r.phone,
-                website: r.website_url,
-                email: r.email,
-                address: r.address,
-                city: r.city,
-                state: r.state,
-              }));
+            const mapResource = (r: any) => ({
+              title: r.title,
+              phone: r.phone,
+              website: r.website_url,
+              email: r.email,
+              address: r.address,
+              city: r.city,
+              state: r.state,
+            });
+            const MAX_RESULTS = 5;
+            const seenIds = new Set<string>();
+            const vetCity = data.user_city?.trim().toLowerCase();
+            const vetState = data.user_state?.trim().toUpperCase();
+
+            if (vetCity && vetState) {
+              const { data: local } = await supabase
+                .from("resources")
+                .select("id, title, phone, website_url, email, address, city, state")
+                .eq("category_id", catRow.id)
+                .eq("status", "approved")
+                .ilike("city", vetCity)
+                .eq("state", vetState)
+                .limit(MAX_RESULTS);
+              if (local) {
+                for (const r of local) {
+                  if (seenIds.size >= MAX_RESULTS) break;
+                  seenIds.add(r.id);
+                  selfServeResources.push(mapResource(r));
+                }
+              }
+            }
+
+            if (seenIds.size < MAX_RESULTS && vetState) {
+              const { data: stateLevel } = await supabase
+                .from("resources")
+                .select("id, title, phone, website_url, email, address, city, state")
+                .eq("category_id", catRow.id)
+                .eq("status", "approved")
+                .eq("state", vetState)
+                .limit(MAX_RESULTS);
+              if (stateLevel) {
+                for (const r of stateLevel) {
+                  if (seenIds.size >= MAX_RESULTS) break;
+                  if (seenIds.has(r.id)) continue;
+                  seenIds.add(r.id);
+                  selfServeResources.push(mapResource(r));
+                }
+              }
+            }
+
+            if (seenIds.size < MAX_RESULTS) {
+              const { data: broader } = await supabase
+                .from("resources")
+                .select("id, title, phone, website_url, email, address, city, state")
+                .eq("category_id", catRow.id)
+                .eq("status", "approved")
+                .limit(MAX_RESULTS);
+              if (broader) {
+                for (const r of broader) {
+                  if (seenIds.size >= MAX_RESULTS) break;
+                  if (seenIds.has(r.id)) continue;
+                  seenIds.add(r.id);
+                  selfServeResources.push(mapResource(r));
+                }
+              }
             }
           }
         }
