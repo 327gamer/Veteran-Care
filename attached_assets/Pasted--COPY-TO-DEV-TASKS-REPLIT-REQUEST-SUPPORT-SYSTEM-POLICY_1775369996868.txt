@@ -1,0 +1,84 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### REQUEST SUPPORT SYSTEM – POLICY CLARIFICATION (NO MANUAL COLIN ROUTING)
+
+We need to stop mixing directory resources with routed support destinations.
+
+Right now the conversation is getting confusing, so I want to lock the system behavior clearly.
+
+-------------------------------------
+CORE RULE
+-------------------------------------
+
+A resource being listed in the platform does NOT automatically mean it should receive a routed Request Support email.
+
+We need two clearly different things:
+
+1. DIRECTORY RESOURCES
+- searchable / browsable
+- shown with phone / website / email / address
+- user can contact directly
+
+2. ROUTED SUPPORT DESTINATIONS
+- only partners/resources with a real intake contact
+- must have a real contact email (or other real intake workflow)
+- must have routing enabled
+- must be suitable for automated lead/request delivery
+
+-------------------------------------
+IMPORTANT POLICY
+-------------------------------------
+
+I do NOT want Request Support submissions routing to Colin / info inbox as a manual fallback.
+
+Manual Colin routing is not scalable and should not be the operational model.
+
+If a category does NOT yet have a valid routed destination, then the system should NOT dump that request into my inbox.
+
+Instead, the platform should fall back to a self-serve model such as:
+- showing the best resource contact info immediately
+- encouraging direct contact by phone / website / email
+- optionally emailing the user a summary of those resources
+- but NOT creating manual routing labor for me
+
+-------------------------------------
+WHAT I NEED FROM YOU
+-------------------------------------
+
+Please define the Request Support system in 3 buckets:
+
+1. ROUTABLE NOW
+Categories that already have a real intake destination and can be truly auto-routed
+
+2. SELF-SERVE ONLY FOR NOW
+Categories/resources that should surface contact info directly but should NOT send routed support emails yet
+
+3. MISSING INTAKE DESTINATION
+Categories where a partner/resource exists but cannot receive routed requests because no real intake email/contact workflow is configured
+
+-------------------------------------
+NEXT ACTION
+-------------------------------------
+
+Please do NOT ask me one category at a time for an email address yet.
+
+Instead, give me a structured answer:
+
+1. which categories are truly routable right now
+2. which categories are self-serve only right now
+3. which categories are blocked only because the intake email/contact field is missing
+4. what exact system rule should replace the current Colin/info fallback
+5. shortest path to making Request Support fully automated without manual labor
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+I want a clean system where:
+
+- routable categories auto-route correctly
+- non-routable categories stay self-serve
+- no request is manually dumped into Colin’s inbox
+- the platform scales without manual intervention
+
+--- END ---

@@ -1,5 +1,20 @@
 import { supabase, supabaseAdmin } from "./supabase";
 import { sendLeadNotification } from "./lead-email";
+import { platform } from "../shared/platform";
+
+const ADMIN_EMAILS = [
+  platform.email.defaultNotifyEmail.toLowerCase(),
+];
+
+function isExternalEmail(email: string | null): boolean {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  if (!lower || !lower.includes("@")) return false;
+  if (ADMIN_EMAILS.includes(lower)) return false;
+  const domain = lower.split("@")[1];
+  if (domain === "veterancare.com" || domain.endsWith(".veterancare.com")) return false;
+  return true;
+}
 
 interface RoutingRule {
   id: string;
@@ -17,6 +32,7 @@ interface RoutingRule {
     name: string;
     is_active: boolean;
     is_lead_enabled: boolean;
+    contact_email: string | null;
     state: string | null;
     cities: string[] | null;
   };
@@ -114,7 +130,7 @@ export async function findCandidatePartners(
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
-    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities)")
     .eq("is_active", true);
 
   if (error || !rules || rules.length === 0) return [];
@@ -150,7 +166,7 @@ export async function findBestPartner(
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
-    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, state, cities)")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities)")
     .eq("is_active", true);
 
   if (error || !rules || rules.length === 0) return null;
@@ -165,6 +181,10 @@ export async function findBestPartner(
   });
 
   for (const rule of candidates) {
+    if (!isExternalEmail(rule.partner.contact_email)) {
+      console.log(`[router] Skipping ${rule.partner.name} — no external intake email`);
+      continue;
+    }
     if (rule.max_leads_per_day) {
       const todayCount = await countTodayLeadsForPartner(rule.partner.id);
       if (todayCount >= rule.max_leads_per_day) continue;
@@ -262,13 +282,15 @@ export async function routeLead(leadId: string): Promise<{
   return { routed: true, partnerId: match.partnerId, partnerName: match.partnerName };
 }
 
-export async function autoRouteNewLead(leadId: string): Promise<void> {
+export async function autoRouteNewLead(leadId: string): Promise<{ routed: boolean; partnerId?: string; partnerName?: string }> {
   try {
     const result = await routeLead(leadId);
     if (!result.routed) {
-      console.log(`[router] Lead ${leadId} unmatched — stays in manual queue`);
+      console.log(`[router] Lead ${leadId} unmatched — self-serve fallback`);
     }
+    return result;
   } catch (err: any) {
     console.log(`[router] Auto-route error for ${leadId}:`, err?.message);
+    return { routed: false };
   }
 }

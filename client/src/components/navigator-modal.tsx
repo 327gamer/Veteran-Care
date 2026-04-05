@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, CheckCircle2, AlertTriangle, Clock, CalendarDays, Info, Phone as PhoneIcon } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertTriangle, Clock, CalendarDays, Info, Phone as PhoneIcon, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSavedResources } from "@/lib/store";
 
@@ -173,6 +173,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [submitResult, setSubmitResult] = useState<{ routed: boolean; self_serve_resources?: any[] } | null>(null);
   const [form, setForm] = useState({
     veteran_name: "",
     veteran_phone: "",
@@ -209,6 +210,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
       preferred_contact: "either", category: "", subcategory: "", urgency: "",
     });
     setSubmitted(false);
+    setSubmitResult(null);
     setError("");
     setSubmitting(false);
   };
@@ -259,14 +261,21 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit");
+      setSubmitResult({ routed: data.routed ?? false, self_serve_resources: data.self_serve_resources });
       setSubmitted(true);
       trackEvent("lead_submit", {
         category: form.category || "",
         subcategory: subcategoryLabel || "",
         urgency: form.urgency || "",
         source: source || (context?.resource_id ? "resource_page" : ""),
+        routed: data.routed ? "true" : "false",
       });
-      toast({ description: "Request submitted! A navigator will contact you soon.", duration: 4000 });
+      toast({
+        description: data.routed
+          ? "Request submitted! A local partner will reach out to you soon."
+          : "Request received! See the resource contacts below.",
+        duration: 4000,
+      });
     } catch (err: any) {
       const msg = err.message?.toLowerCase().includes("relation") || err.message?.toLowerCase().includes("does not exist")
         ? "Navigator system is being enabled — please try again shortly."
@@ -301,12 +310,44 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 <CheckCircle2 className="h-6 w-6 text-green-600" />
               </div>
               <div className="flex-1">
-                <h4 className="font-bold text-sm text-green-700">Request Submitted</h4>
+                <h4 className="font-bold text-sm text-green-700">
+                  {submitResult?.routed ? "Request Submitted" : "Request Received"}
+                </h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t(platform.navigatorConfirmation)}
+                  {submitResult?.routed
+                    ? t(platform.navigatorConfirmation)
+                    : "We've logged your request. In the meantime, reach out directly to these resources for help."}
                 </p>
               </div>
             </div>
+
+            {!submitResult?.routed && submitResult?.self_serve_resources && submitResult.self_serve_resources.length > 0 && (
+              <div data-testid="self-serve-resources" className="space-y-2">
+                <p className="text-xs font-semibold text-foreground">Recommended Resources:</p>
+                {submitResult.self_serve_resources.map((r: any, i: number) => (
+                  <div key={i} data-testid={`self-serve-resource-${i}`} className="rounded-lg border p-3 space-y-1.5 bg-muted/30">
+                    <p className="text-sm font-semibold text-foreground">{r.title}</p>
+                    {r.city && r.state && (
+                      <p className="text-xs text-muted-foreground">{r.city}, {r.state}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {r.phone && (
+                        <a href={`tel:${r.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                          <PhoneIcon className="h-3 w-3" /> {r.phone}
+                        </a>
+                      )}
+                      {r.website && (
+                        <a href={r.website.startsWith("http") ? r.website : `https://${r.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                          <Globe className="h-3 w-3" /> Website
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {form.urgency === "immediate" && (
               <div data-testid="crisis-resources-post-submit" className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
                 <p className="text-xs font-semibold text-red-800">If you are in immediate danger, please call:</p>

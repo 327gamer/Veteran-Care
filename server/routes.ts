@@ -5060,23 +5060,70 @@ export async function registerRoutes(
       return res.status(500).json({ error: msg });
     }
 
+    let routed = false;
     if (hasPartnerTable && hasRoutingColumns) {
-      autoRouteNewLead(data.id).catch(() => {});
+      try {
+        const routeResult = await autoRouteNewLead(data.id);
+        routed = routeResult.routed;
+        if (routed) {
+          console.log(`[router] Lead ${data.id} auto-routed to partner — no admin email needed`);
+        }
+      } catch {
+        routed = false;
+      }
     }
 
-    sendNavigatorNotification(data.id, data.resource_id || null).then(result => {
-      if (!result.sent) {
-        console.log(`[email] Notification not sent for lead ${data.id}: ${result.error}`);
+    if (!routed) {
+      console.log(`[router] Lead ${data.id} not routed — self-serve mode, no admin email`);
+    }
+
+    let selfServeResources: any[] = [];
+    if (!routed) {
+      try {
+        const catFilter = data.category || catStr;
+        if (catFilter) {
+          const { data: catRow } = await supabase
+            .from("categories")
+            .select("id, slug")
+            .or(`slug.eq.${catFilter},name.ilike.%${catFilter}%`)
+            .limit(1)
+            .single();
+          if (catRow) {
+            const { data: resources, error: resErr } = await supabase
+              .from("resources")
+              .select("id, title, phone, website_url, email, address, city, state")
+              .eq("category_id", catRow.id)
+              .eq("status", "approved")
+              .limit(5);
+            if (resources && resources.length > 0) {
+              selfServeResources = resources.map(r => ({
+                title: r.title,
+                phone: r.phone,
+                website: r.website_url,
+                email: r.email,
+                address: r.address,
+                city: r.city,
+                state: r.state,
+              }));
+            }
+          }
+        }
+      } catch (err: any) {
+        console.log(`[self-serve] Error fetching resources for lead ${data.id}:`, err?.message);
       }
-    }).catch(err => {
-      console.log(`[email] Notification error for lead ${data.id}:`, err?.message);
-    });
+    }
 
     const response: Record<string, any> = {
       id: data.id,
       status: data.status,
-      message: "Your request has been submitted. A navigator will reach out to you soon.",
+      routed,
+      message: routed
+        ? "Your request has been submitted and routed to a local partner who will reach out to you soon."
+        : "Your request has been received. Here are resources that can help you directly.",
     };
+    if (!routed && selfServeResources.length > 0) {
+      response.self_serve_resources = selfServeResources;
+    }
     if (hasNavLifecycleColumns) {
       response.source = data.source ?? null;
       response.urgency = data.urgency ?? null;
