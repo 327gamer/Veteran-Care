@@ -281,7 +281,7 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
       if (!v && abortRef.current) abortRef.current.abort();
       onOpenChange(v);
     }}>
-      <DialogContent className="sm:max-w-[425px] h-[80dvh] max-h-[80dvh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20">
+      <DialogContent className="sm:max-w-[425px] h-[80dvh] max-h-[80dvh] flex flex-col p-0 gap-0 overflow-hidden border-2 border-primary/20 [&>button.absolute]:text-white [&>button.absolute]:opacity-100">
         <DialogHeader className="px-6 py-4 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center border-2 border-white/20 overflow-hidden p-1">

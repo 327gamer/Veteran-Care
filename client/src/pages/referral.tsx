@@ -183,6 +183,14 @@ export default function Referral() {
   if (!user) {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
+        <button
+          data-testid="link-back-to-home-referral"
+          onClick={() => setLocation("/home")}
+          className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </button>
         <div data-testid="section-referral-unauth" className="flex flex-col items-center justify-center min-h-[50vh] px-6 text-center space-y-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <Gift className="h-8 w-8 text-primary" />
@@ -280,6 +288,14 @@ export default function Referral() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
+      <button
+        data-testid="link-back-to-home-referral-auth"
+        onClick={() => setLocation("/home")}
+        className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </button>
       <div>
         <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight">
           Refer & Earn Entries to Win

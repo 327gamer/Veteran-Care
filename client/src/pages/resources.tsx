@@ -599,6 +599,17 @@ export default function Resources() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
+      {!selectedSlug && (
+        <button
+          data-testid="link-back-to-home-resources"
+          onClick={() => setLocation("/home")}
+          className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Home
+        </button>
+      )}
+
       <ResourceDetail 
         resource={selectedResource} 
         open={!!selectedResource} 

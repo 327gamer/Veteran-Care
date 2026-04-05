@@ -1,0 +1,131 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PLATFORM POLISH – BACK BUTTONS + VETERAN GUIDE CLOSE ICON + REFER A BUSINESS VISIBILITY
+
+IMPORTANT:
+This is a scoped UX cleanup pass.
+
+Do NOT redesign pages.
+Do NOT rewrite page layouts.
+Do NOT change business logic unless explicitly requested below.
+
+We are fixing navigation polish and surfacing a missing partner referral feature.
+
+-------------------------------------
+1) BACK BUTTONS ON MAJOR TOP-LEVEL PAGES
+-------------------------------------
+
+The following pages need a visible top-level back link/button that reads exactly:
+
+Back to Home
+
+Reason:
+Right now users have to use:
+- phone browser back button
+or
+- top-left home icon
+
+That is not clear enough.
+
+Please add a consistent, visible back link/button near the top of these pages:
+
+- Resources page
+- Refer page
+- Shop page
+- Community page
+
+Requirements:
+- text should read exactly: Back to Home
+- should route back to homepage cleanly
+- styling should match the rest of the platform
+- keep it mobile-friendly
+- do not clutter the layout
+
+If there are other similar top-level pages missing this same pattern, please flag them too.
+
+-------------------------------------
+2) VETERAN GUIDE – CLOSE X ICON COLOR
+-------------------------------------
+
+Issue:
+On the Veteran Guide page / modal, the close X is green and hard to see against the green header.
+
+Required fix:
+- make the X icon white
+- ensure visibility and contrast are strong
+- do not change positioning or layout
+
+-------------------------------------
+3) REFER A BUSINESS – PARTNER-FACING ENTRY POINT / VISIBILITY
+-------------------------------------
+
+We need clarification and likely UI work here.
+
+Question:
+Where, exactly, on the current platform can a trusted partner/business see:
+
+- Refer a Business
+- instructions on how it works
+- free month eligibility
+- rules / timing
+- how the Stripe credit is earned
+
+Right now this is not obvious enough.
+
+Please do the following:
+
+A. Confirm current state
+- tell me where this feature currently appears, if anywhere
+- tell me whether it is backend-only right now
+
+B. If it is not clearly surfaced yet:
+please propose the cleanest place to surface it for partners.
+
+IMPORTANT CLARIFICATION:
+This should NOT go on the home screen.
+
+This needs to be placed inside the Trusted Partner sign-up / application flow.
+
+Specifically:
+- On the page where a business applies to become a Trusted Partner
+- Where they select their plan
+
+There should be a section that clearly shows:
+
+Refer a Business & Get 1 Free Month
+
+This section should include:
+- short explanation
+- rules
+- what qualifies as a referral
+- when the free month is applied
+- how to submit a referral
+
+This is where businesses are already in decision mode, so it is the correct place to present this benefit.
+
+-------------------------------------
+
+C. Recommend the cleanest minimal version to implement next, including:
+- CTA/title
+- short explanation
+- rules
+- what counts as successful referral
+- when the free month is applied
+
+IMPORTANT:
+I do NOT want this feature hidden if the backend exists.
+Partners need to be able to find and understand it easily.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. files changed for the back button + Veteran Guide X fix
+2. confirmation of whether publish is required
+3. exact current status of “Refer a Business”
+4. confirmation it will be added to the partner sign-up / plan selection page
+5. if fast to implement, whether you can surface a minimal version now
+
+--- END ---
