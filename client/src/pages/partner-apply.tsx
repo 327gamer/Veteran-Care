@@ -257,6 +257,46 @@ export default function PartnerApply() {
           </div>
         </div>
 
+        <div className="mb-5 rounded-xl border-2 border-primary/30 bg-green-50/60 p-4" data-testid="section-refer-a-business">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Gift className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="text-sm font-bold text-foreground">Refer a Business & Get 1 Free Month</h3>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+            Know another business that would be a great fit for {platform.name}? Once you are approved as a Trusted Partner, you can refer a new business and earn one free month after their first paid billing cycle is completed.
+          </p>
+          <p className="text-xs font-semibold text-foreground mb-1.5">How it works:</p>
+          <div className="space-y-1 text-xs text-foreground/80 mb-3">
+            <p className="flex items-start gap-1.5">
+              <span className="font-semibold text-primary shrink-0">1.</span>
+              Apply and become an approved Trusted Partner
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="font-semibold text-primary shrink-0">2.</span>
+              Refer a new business to {platform.name}
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="font-semibold text-primary shrink-0">3.</span>
+              They activate a paid plan
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="font-semibold text-primary shrink-0">4.</span>
+              After their first successful paid billing cycle is completed
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="font-semibold text-primary shrink-0">5.</span>
+              You receive 100% off your next monthly invoice
+            </p>
+          </div>
+          <div className="border-t border-primary/10 pt-2">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              One free month per qualified referral. Referred business must be new, not an existing partner. Credit is applied after the referred business completes its first paid billing cycle. Referral credit applies to a future invoice only and cannot be exchanged for cash.
+            </p>
+          </div>
+        </div>
+
         {/* Plan Selection */}
         <div className="mb-5">
           <h2 className="text-sm font-semibold text-foreground mb-1">
@@ -409,38 +449,6 @@ export default function PartnerApply() {
           </div>
         )}
 
-        {form.plan_type && (
-          <div className="mb-5 rounded-xl border-2 border-amber-300/60 bg-amber-50/50 p-4" data-testid="section-refer-a-business">
-            <div className="flex items-center gap-2 mb-2">
-              <Gift className="h-5 w-5 text-amber-600" />
-              <h3 className="text-sm font-bold text-foreground">Refer a Business & Get 1 Free Month</h3>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-              Know another business that should be a Veteran Care Trusted Partner? Refer them and earn a free month of your subscription when they sign up.
-            </p>
-            <div className="space-y-1.5 text-xs text-foreground/80">
-              <p className="flex items-start gap-1.5">
-                <span className="font-semibold text-amber-700 shrink-0">1.</span>
-                Submit the business name, contact name, and email after you become an approved partner.
-              </p>
-              <p className="flex items-start gap-1.5">
-                <span className="font-semibold text-amber-700 shrink-0">2.</span>
-                The referred business must apply and be approved as a Trusted Partner.
-              </p>
-              <p className="flex items-start gap-1.5">
-                <span className="font-semibold text-amber-700 shrink-0">3.</span>
-                Once they complete their first billing cycle, a 100% credit is applied to your next invoice automatically.
-              </p>
-              <p className="flex items-start gap-1.5">
-                <span className="font-semibold text-amber-700 shrink-0">4.</span>
-                No limit on referrals — each successful referral earns you one free month.
-              </p>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-3 italic">
-              You'll be able to submit referrals from your partner dashboard once approved.
-            </p>
-          </div>
-        )}
 
         <Card>
           <CardHeader className="pb-3">

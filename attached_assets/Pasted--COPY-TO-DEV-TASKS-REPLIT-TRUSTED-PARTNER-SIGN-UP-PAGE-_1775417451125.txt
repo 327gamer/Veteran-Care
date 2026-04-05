@@ -1,0 +1,92 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### TRUSTED PARTNER SIGN-UP PAGE – ADD REFERRAL BENEFIT SECTION VISIBLY ON PAGE
+
+IMPORTANT:
+I want to clarify the “Refer a Business” benefit because it is not visible enough right now.
+
+The issue is:
+Even if the backend exists and the live referral workflow is only available after approval, the BUSINESS still needs to SEE THIS BENEFIT during the sign-up/application process.
+
+Right now, on the “Become a Trusted Partner” page, I do NOT clearly see:
+- Refer a Business
+- Get 1 Free Month
+- how it works
+- why it matters
+
+This needs to be visible directly on the Trusted Partner sign-up/application page itself.
+
+-------------------------------------
+WHAT I WANT ADDED
+-------------------------------------
+
+Please add a clearly visible referral benefit section on the “Become a Trusted Partner” page.
+
+This should appear in the sign-up/application area, near the plan / value / application section.
+
+The goal is that a business immediately understands:
+
+“I can sign up, and if I refer another business later, I can earn a free month.”
+
+-------------------------------------
+PREFERRED COPY / STRUCTURE
+-------------------------------------
+
+SECTION TITLE:
+Refer a Business & Get 1 Free Month
+
+SUPPORTING COPY:
+Know another business that would be a great fit for Veteran Care? Once you are approved as a Trusted Partner, you can refer a new business and earn one free month after their first paid billing cycle is completed.
+
+HOW IT WORKS:
+1. Apply and become an approved Trusted Partner
+2. Refer a new business to Veteran Care
+3. They activate a paid plan
+4. After their first successful paid billing cycle is completed
+5. You receive 100% off your next monthly invoice
+
+RULES / FINE PRINT:
+- One free month per qualified business referral
+- Referred business must be new, not an existing partner
+- Credit is applied after the referred business completes its first paid billing cycle
+- Referral credit applies to a future invoice only and cannot be exchanged for cash
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This section should:
+- be visible BEFORE a business submits the application
+- feel like a partner perk / incentive
+- help conversion
+- not be hidden behind approval or dashboard access
+
+I understand the actual referral submission workflow may only be available after approval.
+That is fine.
+
+But the referral BENEFIT must still be marketed on the sign-up page now.
+
+-------------------------------------
+VISUAL DIRECTION
+-------------------------------------
+
+- use the same card style / visual language as the rest of the page
+- keep it mobile-friendly
+- do not overdesign
+- use a reward / referral style icon such as:
+  - Gift
+  - Users
+  - Megaphone
+- keep it in the same green family as the rest of the platform
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+1. where exactly this section will be placed on the Trusted Partner page
+2. what file(s) will be updated
+3. whether publish is required
+4. confirmation that this is only surfacing the benefit early, not changing the backend referral logic
+
+--- END ---
