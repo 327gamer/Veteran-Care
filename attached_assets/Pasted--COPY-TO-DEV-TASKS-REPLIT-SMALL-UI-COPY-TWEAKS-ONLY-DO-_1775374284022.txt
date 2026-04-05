@@ -1,0 +1,83 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### SMALL UI / COPY TWEAKS ONLY – DO NOT REWRITE PAGE LAYOUTS
+
+IMPORTANT:
+This is a very small scoped cleanup.
+
+Do NOT redesign either page.
+Do NOT rewrite multiple paragraphs.
+Do NOT change layout structure.
+Do NOT remove any existing sections.
+Do NOT touch headings or CTA structure unless explicitly stated below.
+
+We are ONLY making:
+1. one homepage partner-card button/icon consistency fix
+2. one landing page paragraph text update
+3. one homepage paragraph text update
+
+-------------------------------------
+1) HOMEPAGE – TRUSTED PARTNER CARD BUTTON / ICON
+-------------------------------------
+
+On the homepage, the card:
+“Become a Trusted Services Partner”
+
+Needs two small visual fixes only:
+
+A. APPLY NOW BUTTON
+- Make the green “Apply Now” button match the other main green CTA buttons on the homepage
+- Same visual styling as the “Browse Discounts, Products & Services” button
+- Do NOT change the card layout otherwise
+
+B. ICON
+- Replace the current shield icon with a better “partner / connection / helping hands / handshake” style icon
+- Keep icon size and spacing consistent with the current card
+- Do NOT oversize it
+- Do NOT change the layout structure
+
+-------------------------------------
+2) LANDING PAGE – PARAGRAPH TEXT ONLY
+-------------------------------------
+
+On the Landing Page:
+
+Keep the existing heading:
+- “Welcome to Veteran Care”
+
+Only replace the support-description paragraph text with this exact copy:
+
+Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, discounts on products & services and more.
+
+IMPORTANT:
+- Do NOT rewrite the whole landing page
+- Do NOT remove other sections
+- Do NOT change button layout
+- Do NOT change hero structure
+- ONLY replace the relevant paragraph text
+
+-------------------------------------
+3) HOMEPAGE – PARAGRAPH TEXT ONLY
+-------------------------------------
+
+On the Homepage:
+
+Only update the main intro/support paragraph text to this exact copy:
+
+Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, veteran discounts on products & services and other local resources, all in one place.
+
+IMPORTANT:
+- Do NOT rewrite the full homepage intro block
+- Do NOT remove any existing cards or sections
+- ONLY replace the existing paragraph text with the updated version above
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+1. exact files changed
+2. confirmation that only the scoped text/button/icon changes were made
+3. whether publish is required
+
+--- END ---

@@ -27,6 +27,7 @@ import {
   Rocket,
   Gift,
   Percent,
+  Handshake,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
@@ -530,7 +531,7 @@ export default function Home() {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <ShieldCheck className="h-5 w-5 text-green-600" />
+              <Handshake className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0 space-y-0.5">
               <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-green-700 transition-colors">
@@ -544,10 +545,10 @@ export default function Home() {
           </div>
           <Button
             data-testid="button-partner-apply-home"
-            className="w-full rounded-full bg-green-600 hover:bg-green-700"
+            className="w-full rounded-full"
             onClick={(e) => { e.stopPropagation(); setLocation("/partner-apply"); }}
           >
-            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
+            <Handshake className="h-3.5 w-3.5 mr-1.5" />
             Apply Now
           </Button>
         </CardContent>

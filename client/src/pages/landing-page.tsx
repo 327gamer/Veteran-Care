@@ -94,9 +94,7 @@ export default function LandingPage() {
             Get the Help You Need —<br />Fast, Local, and Trusted
           </h1>
           <p className="text-white/80 text-sm leading-relaxed mb-8 px-1">
-            {platform.name} connects veterans, families, and loved ones with
-            trusted local support for benefits, healthcare, housing, employment,
-            food assistance, and more.
+            Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, discounts on products & services and more.
           </p>
 
           <div className="w-full flex flex-col gap-3">
