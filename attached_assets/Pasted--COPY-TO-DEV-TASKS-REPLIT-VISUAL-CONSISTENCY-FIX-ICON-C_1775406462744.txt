@@ -1,0 +1,78 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### VISUAL CONSISTENCY FIX – ICON COLORS / PARTNER PAGE BADGE
+
+IMPORTANT:
+This is a small UI consistency cleanup only.
+
+Do NOT redesign the cards or page layout.
+Do NOT change spacing structure unless required for icon consistency.
+Do NOT alter copy or CTA behavior.
+
+We only want to normalize the icon / badge styling so it matches the established Veteran Care visual system.
+
+-------------------------------------
+1) HOMEPAGE – VETERAN DISCOUNT SERVICES & PRODUCTS ICON
+-------------------------------------
+
+Current issue:
+The red/pink discount icon treatment does NOT match the rest of the site and feels visually off.
+
+Required fix:
+- change the icon circle/background treatment to use the same green family already used throughout the platform
+- use a green icon circle with a white percent/discount symbol inside
+- match the same green styling language used elsewhere on the site
+- keep icon size and spacing consistent with the current card
+
+Goal:
+The Veteran Discount Services & Products card should still stand out, but it must feel native to the rest of the site.
+
+-------------------------------------
+2) HOMEPAGE – TRUSTED SERVICES PARTNER CARD ICON
+-------------------------------------
+
+Current issue:
+The handshake icon concept is good, but the color treatment needs to match the same site green more cleanly.
+
+Required fix:
+- keep the handshake / partnership icon
+- make the icon circle/background match the same green-family styling used throughout the platform
+- keep icon sizing/spacing consistent with the card
+- do NOT change card layout or CTA structure
+
+-------------------------------------
+3) TRUSTED PARTNER PAGE – TOP BADGE / ICON CONSISTENCY
+-------------------------------------
+
+On the “Become a Trusted Partner” page, the top badge / icon treatment currently uses a green that does not match the rest of the site.
+
+Required fix:
+- use the SAME handshake / partnership icon concept as the homepage partner card
+- normalize the green color treatment so it matches the established platform green
+- make the top badge/header treatment feel visually consistent with the homepage partner card and broader site system
+- remove the “weird different green” look
+- keep overall page structure and layout intact
+
+Goal:
+Homepage partner card + trusted partner page should feel like part of the same visual system.
+
+-------------------------------------
+RULES
+-------------------------------------
+
+- no redesign
+- no copy changes
+- no layout rebuild
+- just icon / badge color and consistency cleanup
+- maintain mobile-first appearance
+- no regressions
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1. files changed
+2. confirmation that only visual consistency adjustments were made
+3. whether publish is required
+
+--- END ---

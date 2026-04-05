@@ -205,8 +205,8 @@ export default function PartnerApply() {
         </button>
 
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-medium mb-3">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-3">
+            <Handshake className="h-4 w-4" />
             Trusted Services Partner Program
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground" data-testid="text-partner-apply-title">
