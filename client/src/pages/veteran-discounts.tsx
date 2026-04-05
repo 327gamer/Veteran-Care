@@ -60,6 +60,7 @@ import {
   type SponsoredAd,
   type SponsoredType,
 } from "@/components/ad-slot";
+import PartnerSignupModal from "@/components/partner-signup-modal";
 
 interface DiscountCategory {
   id: string;
@@ -160,6 +161,7 @@ export default function VeteranDiscounts() {
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<DiscountListing | null>(null);
+  const [showPartnerLogin, setShowPartnerLogin] = useState(false);
   const [locationMode, setLocationMode] = useState<"all" | "nearme" | "state">("all");
   const [nearMeRadius, setNearMeRadius] = useState(50);
   const [geoApplied, setGeoApplied] = useState(false);
@@ -419,7 +421,7 @@ export default function VeteranDiscounts() {
         <button
           data-testid="link-partner-login-discounts"
           className="text-xs text-primary font-medium hover:underline transition-colors"
-          onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+          onClick={() => setShowPartnerLogin(true)}
         >
           Partner Login
         </button>
@@ -668,6 +670,13 @@ export default function VeteranDiscounts() {
           )}
         </div>
       )}
+
+      <PartnerSignupModal
+        open={showPartnerLogin}
+        onOpenChange={setShowPartnerLogin}
+        defaultMode="login"
+        onSuccess={() => setLocation("/partner-portal")}
+      />
     </div>
   );
 }

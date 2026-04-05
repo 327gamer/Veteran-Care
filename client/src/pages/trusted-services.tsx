@@ -52,6 +52,7 @@ import { platform } from "@shared/platform";
 import { useSavedResources } from "@/lib/store";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
 import { toast } from "@/hooks/use-toast";
+import PartnerSignupModal from "@/components/partner-signup-modal";
 
 interface TrustedCategory {
   id: string;
@@ -140,6 +141,7 @@ export default function TrustedServices() {
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<TrustedService | null>(null);
+  const [showPartnerLogin, setShowPartnerLogin] = useState(false);
   const [nearMeActive, setNearMeActive] = useState(false);
   const [nearMeRadius] = useState(50);
   const [geoApplied, setGeoApplied] = useState(false);
@@ -715,7 +717,7 @@ export default function TrustedServices() {
               <button
                 data-testid="link-partner-login-trusted"
                 className="text-primary font-medium underline hover:text-primary/80 transition-colors"
-                onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } })); }}
+                onClick={(e) => { e.stopPropagation(); setShowPartnerLogin(true); }}
               >
                 Log in here
               </button>
@@ -739,6 +741,13 @@ export default function TrustedServices() {
       )}
 
       {connectModal}
+
+      <PartnerSignupModal
+        open={showPartnerLogin}
+        onOpenChange={setShowPartnerLogin}
+        defaultMode="login"
+        onSuccess={() => setLocation("/partner-portal")}
+      />
     </div>
   );
 }

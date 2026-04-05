@@ -180,6 +180,7 @@ export default function PartnerPaymentSuccess() {
         open={showPartnerSignup}
         onOpenChange={setShowPartnerSignup}
         prefillEmail={partnerEmail || ""}
+        stripeSessionId={checkoutSessionId || undefined}
         onSuccess={() => setLocation("/partner-portal")}
       />
     </div>

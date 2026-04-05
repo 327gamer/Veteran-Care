@@ -1,0 +1,120 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PARTNER AUTH / ACCOUNT CREATION FLOW IS STILL BROKEN – FIX CONSISTENCY NOW
+
+I just tested the full Trusted Partner flow again with a brand new business from start to finish.
+
+Some pieces look much better:
+- approval email looks good
+- payment success page looks better
+- the account creation link appears to recognize the business from the link
+- overall direction is correct
+
+However, the partner account/login flow is STILL not working consistently.
+
+-------------------------------------
+ISSUES FOUND
+-------------------------------------
+
+### 1) PARTNER ACCOUNT CREATION STILL SOMETIMES DROPS INTO THE WRONG GENERIC PROFILE FLOW
+
+From testing/screenshots, after clicking “Create My Account” I am still seeing the generic “Create Your Profile” / standard user onboarding flow in some places.
+
+That generic flow includes the wrong fields for a trusted business partner.
+
+This means the partner-specific signup flow is NOT consistently wired across all entry points.
+
+IMPORTANT:
+Trusted business partners should NEVER fall into the veteran/general profile setup flow.
+
+Partner account creation must stay in the dedicated partner-specific flow only.
+
+-------------------------------------
+
+### 2) LOGIN IS STILL FAILING AFTER ACCOUNT CREATION
+
+I created the account using the same email as the partner application.
+
+After that:
+- login returned “Invalid login credentials”
+- the “Already a Trusted Partner? Login here” path also did not work correctly
+- the flow is still not seamless after account creation
+
+This is the most important issue.
+
+Please investigate and fix the full sequence:
+
+1. partner applies
+2. admin approves
+3. partner pays
+4. partner clicks Create My Account
+5. partner creates account successfully
+6. partner can immediately log in again from:
+   - the partner login link
+   - the main platform login
+   - the trusted services login entry point
+7. partner is recognized and routed to the correct partner dashboard / tools
+
+Right now that sequence is not reliable.
+
+-------------------------------------
+
+### 3) CATEGORY DROPDOWN HAS DUPLICATES
+
+I noticed duplicate / overlapping category naming in the partner application category dropdown.
+
+Example:
+- Insurance
+- Insurance Services
+
+Please clean up category naming so the dropdown is consistent and does not confuse businesses or routing logic.
+
+Review for duplicate / overlapping labels across the partner category list.
+
+-------------------------------------
+REQUIRED FIXES
+-------------------------------------
+
+Please fix and confirm all of the following:
+
+1. Partner-specific account creation flow is the ONLY flow used for trusted partners
+2. Generic veteran/general profile modal is no longer triggered anywhere in the partner create-account flow
+3. Account creation successfully completes in Supabase auth
+4. Login works immediately afterward with the same credentials
+5. Main login and partner login entry points both recognize the same partner account
+6. Partner is routed correctly to partner tools/dashboard after login
+7. Category dropdown duplicates / inconsistent labels are cleaned up
+
+-------------------------------------
+IMPORTANT QA / VALIDATION REQUEST
+-------------------------------------
+
+Please personally test the exact full partner flow again end-to-end after the fix:
+
+- submit new business application
+- approve in admin
+- receive approval email
+- complete payment
+- click Create My Account
+- create partner account
+- log out
+- log back in from partner login entry point
+- log back in from main platform login
+- confirm dashboard / referral tools are accessible
+
+I need this flow fully stable and consistent.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. exact root cause of the login failure
+2. exact root cause of the wrong generic profile modal appearing
+3. what you changed
+4. files changed
+5. whether publish is required
+6. confirmation that you personally tested the full partner flow end-to-end after the fix
+
+--- END ---

@@ -18,9 +18,10 @@ interface PartnerSignupModalProps {
   onSuccess?: () => void;
   prefillEmail?: string;
   defaultMode?: "signup" | "login";
+  stripeSessionId?: string;
 }
 
-export default function PartnerSignupModal({ open, onOpenChange, onSuccess, prefillEmail, defaultMode }: PartnerSignupModalProps) {
+export default function PartnerSignupModal({ open, onOpenChange, onSuccess, prefillEmail, defaultMode, stripeSessionId }: PartnerSignupModalProps) {
   const [mode, setMode] = useState<"signup" | "login">(defaultMode || "signup");
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function PartnerSignupModal({ open, onOpenChange, onSuccess, pref
   const [loading, setLoading] = useState(false);
   const [prefillLoaded, setPrefillLoaded] = useState(false);
 
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
 
   useEffect(() => {
     if (prefillEmail && open) {
@@ -75,58 +76,45 @@ export default function PartnerSignupModal({ open, onOpenChange, onSuccess, pref
     if (!password.trim() || password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
     if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
 
-    const { error: signUpError } = await signUp(email, password);
-    if (signUpError) {
-      if (signUpError.toLowerCase().includes("already registered") || signUpError.toLowerCase().includes("already been registered")) {
-        setError("This email is already registered. Please sign in instead.");
+    try {
+      const createRes = await fetch("/api/partner/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password, sessionId: stripeSessionId || undefined }),
+      });
+      const createData = await createRes.json();
+
+      if (!createRes.ok) {
+        if (createRes.status === 409) {
+          setError("This email is already registered. Please sign in instead.");
+          setMode("login");
+          setPassword("");
+          setConfirmPassword("");
+        } else {
+          setError(createData.error || "Failed to create account");
+        }
+        setLoading(false);
+        return;
+      }
+
+      const { error: signInError } = await signIn(email.trim(), password);
+      if (signInError) {
+        setError("Account created but sign-in failed. Please try signing in manually.");
         setMode("login");
         setPassword("");
         setConfirmPassword("");
-      } else {
-        setError(signUpError);
+        setLoading(false);
+        return;
       }
+
+      await new Promise(resolve => setTimeout(resolve, 300));
       setLoading(false);
-      return;
-    }
-
-    const { error: signInError } = await signIn(email, password);
-    if (signInError) {
-      setError("Account created! Please check your email to confirm, then sign in.");
-      setMode("login");
-      setPassword("");
-      setConfirmPassword("");
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (err: any) {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-      return;
     }
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const currentSession = (await import("@/lib/supabase")).supabase;
-    if (currentSession) {
-      const { data: { session: freshSession } } = await currentSession.auth.getSession();
-      if (freshSession?.access_token) {
-        try {
-          await fetch("/api/profile", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${freshSession.access_token}`,
-            },
-            body: JSON.stringify({
-              first_name: contactName.split(" ")[0] || "",
-              last_name: contactName.split(" ").slice(1).join(" ") || "",
-              email: email.trim(),
-              user_type: "nonprofit_rep",
-              consent_contact: true,
-            }),
-          });
-        } catch {}
-      }
-    }
-
-    setLoading(false);
-    onOpenChange(false);
-    onSuccess?.();
   };
 
   const handleLogin = async (e: React.FormEvent) => {

@@ -6665,7 +6665,7 @@ export async function registerRoutes(
   app.get("/api/partner-categories", async (_req, res) => {
     try {
       const rows = await pgQuery(
-        `SELECT id, name, slug FROM trusted_service_categories WHERE is_active = true ORDER BY display_order ASC`
+        `SELECT id, name, slug FROM trusted_service_categories WHERE is_active = true AND slug NOT LIKE 'discount-%' ORDER BY display_order ASC`
       );
       return res.json(rows);
     } catch (err: any) {
@@ -7657,6 +7657,91 @@ export async function registerRoutes(
     const partner = await resolvePartnerFromToken(req);
     if (!partner) return res.status(401).json({ error: "Not authenticated" });
     return res.json(partner);
+  });
+
+  const partnerCreateAccountLimiter = new Map<string, { count: number; resetAt: number }>();
+  app.post("/api/partner/create-account", async (req, res) => {
+    const clientIp = (req.headers["x-forwarded-for"] as string || req.ip || "unknown").split(",")[0].trim();
+    const now = Date.now();
+    const limiter = partnerCreateAccountLimiter.get(clientIp);
+    if (limiter && limiter.resetAt > now && limiter.count >= 5) {
+      return res.status(429).json({ error: "Too many attempts. Please try again later." });
+    }
+    if (!limiter || limiter.resetAt <= now) {
+      partnerCreateAccountLimiter.set(clientIp, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    } else {
+      limiter.count++;
+    }
+
+    const { email, password, sessionId } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+    if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      const partners = await pgQuery(
+        `SELECT id, company_name, contact_name, status, stripe_subscription_id FROM partner_applications WHERE LOWER(email) = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+        [normalizedEmail]
+      );
+      if (partners.length === 0) {
+        return res.status(403).json({ error: "No active paid partner found for this email. Please complete payment first." });
+      }
+
+      const partner = partners[0];
+
+      if (!partner.stripe_subscription_id) {
+        return res.status(403).json({ error: "Payment has not been completed for this partner application. Please complete payment first." });
+      }
+
+      if (sessionId && stripe) {
+        try {
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          const sessionEmail = (session.customer_email || session.customer_details?.email || "").toLowerCase();
+          if (sessionEmail && sessionEmail !== normalizedEmail) {
+            return res.status(403).json({ error: "Email does not match the payment session." });
+          }
+        } catch {
+        }
+      }
+
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        password: password,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        console.log(`[partner-create-account] Supabase createUser error:`, createError.message);
+        if (createError.message.includes("already been registered") || createError.message.includes("already exists")) {
+          return res.status(409).json({ error: "An account with this email already exists. Please sign in instead." });
+        }
+        return res.status(500).json({ error: "Unable to create account. Please try again." });
+      }
+
+      if (newUser?.user?.id) {
+        try {
+          const firstName = partner.contact_name?.split(" ")[0] || "";
+          const lastName = partner.contact_name?.split(" ").slice(1).join(" ") || "";
+          await supabaseAdmin.from("user_profiles").upsert({
+            id: newUser.user.id,
+            email: normalizedEmail,
+            first_name: firstName,
+            last_name: lastName,
+            user_type: "nonprofit_rep",
+            consent_contact: true,
+          }, { onConflict: "id" });
+        } catch (profileErr: any) {
+          console.log(`[partner-create-account] Profile creation warning:`, profileErr.message);
+        }
+      }
+
+      console.log(`[partner-create-account] Account created for ${normalizedEmail} (partner: ${partner.company_name})`);
+      return res.json({ success: true, message: "Account created successfully. You can now sign in." });
+    } catch (err: any) {
+      console.log(`[partner-create-account] Error:`, err.message);
+      return res.status(500).json({ error: "Failed to create account. Please try again." });
+    }
   });
 
   app.get("/api/partner/prefill-public", async (req, res) => {

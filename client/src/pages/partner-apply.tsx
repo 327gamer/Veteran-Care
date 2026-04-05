@@ -35,6 +35,7 @@ import {
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { useToast } from "@/hooks/use-toast";
+import PartnerSignupModal from "@/components/partner-signup-modal";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -61,6 +62,7 @@ export default function PartnerApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [showPartnerLogin, setShowPartnerLogin] = useState(false);
 
   const refCode = new URLSearchParams(window.location.search).get("ref") || "";
   const { data: referrerData } = useQuery<{ referrerName: string }>({
@@ -264,7 +266,7 @@ export default function PartnerApply() {
             <button
               data-testid="link-partner-login"
               className="text-primary font-semibold underline hover:text-primary/80 transition-colors"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+              onClick={() => setShowPartnerLogin(true)}
             >
               Log in here
             </button>
@@ -670,6 +672,13 @@ export default function PartnerApply() {
         </Card>
 
       </div>
+
+      <PartnerSignupModal
+        open={showPartnerLogin}
+        onOpenChange={setShowPartnerLogin}
+        defaultMode="login"
+        onSuccess={() => setLocation("/partner-portal")}
+      />
     </div>
   );
 }
