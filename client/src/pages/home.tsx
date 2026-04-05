@@ -193,7 +193,7 @@ export default function Home() {
         <div className="space-y-2 px-6">
           <h1 className="text-xl lg:text-2xl font-heading font-extrabold text-primary tracking-tight">Welcome to {platform.name}</h1>
           <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-sm lg:max-w-lg mx-auto">{platform.longDescription}</p>
-          <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-sm lg:max-w-lg mx-auto">Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, veteran discounts on products & services, and other local resources in one place.</p>
+          <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-sm lg:max-w-lg mx-auto">Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, veteran discounts on products & services, and other local resources, all in one place.</p>
         </div>
       </section>
 
