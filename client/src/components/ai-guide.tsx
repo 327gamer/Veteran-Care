@@ -14,7 +14,7 @@ import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, Exte
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
-import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import { trackEvent } from "@/lib/analytics";
 
 interface MatchedResourceCard {

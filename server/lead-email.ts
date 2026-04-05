@@ -16,6 +16,15 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/'/g, "&#39;");
 }
 
+function buildUnsubscribeFooter(recipientEmail: string): string {
+  const unsubMailto = `mailto:${platform.email.defaultNotifyEmail}?subject=Unsubscribe&body=Please%20unsubscribe%20${encodeURIComponent(recipientEmail)}%20from%20${encodeURIComponent(platform.name)}%20lead%20notifications.`;
+  return `
+  <div style="text-align: center; padding: 12px 0 4px 0; color: #9CA3AF; font-size: 11px;">
+    <p style="margin: 0;">You are receiving this because your business is listed on ${platform.name}.</p>
+    <p style="margin: 4px 0 0 0;"><a href="${unsubMailto}" style="color: #6B7280; text-decoration: underline;">Unsubscribe</a> from lead notifications.</p>
+  </div>`;
+}
+
 interface LeadEmailData {
   leadId: string;
   veteranName: string;
@@ -137,6 +146,8 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
+  ${buildUnsubscribeFooter(partner.contactEmail)}
+
 </body>
 </html>`;
 }
@@ -219,6 +230,8 @@ function buildResourceNotificationHtml(lead: LeadEmailData, resourceTitle: strin
     <p>This inquiry was sent via ${platform.name} — ${escapeHtml(resourceTitle)}</p>
     <p>Lead ID: ${lead.leadId}</p>
   </div>
+
+  ${notifyEmail !== platform.email.defaultNotifyEmail ? buildUnsubscribeFooter(notifyEmail) : ""}
 
 </body>
 </html>`;
@@ -329,7 +342,7 @@ interface TrustedServiceLeadData {
   createdAt: string;
 }
 
-function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: boolean): string {
+function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: boolean, partnerEmail?: string): string {
   const timestamp = new Date(lead.createdAt).toLocaleString("en-US", {
     timeZone: "America/New_York",
     dateStyle: "medium",
@@ -432,6 +445,8 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
+  ${!isAdminCopy && partnerEmail ? buildUnsubscribeFooter(partnerEmail) : ""}
+
 </body>
 </html>`;
 }
@@ -461,7 +476,7 @@ export async function sendTrustedServiceLeadNotification(
 
   if (providerData.email) {
     try {
-      const partnerHtml = buildTrustedServiceLeadHtml(data, false);
+      const partnerHtml = buildTrustedServiceLeadHtml(data, false, providerData.email || undefined);
       const { error: emailErr } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [providerData.email],

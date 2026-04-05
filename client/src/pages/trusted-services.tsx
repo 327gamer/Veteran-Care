@@ -31,6 +31,7 @@ import {
   Award,
   HeartPulse,
   ChevronLeft,
+  ChevronRight,
   Globe,
   Phone,
   ExternalLink,
@@ -682,20 +683,29 @@ export default function TrustedServices() {
       )}
 
       <div className="pt-2 pb-4">
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4 text-center">
-            <ShieldCheck className="h-6 w-6 text-green-600 mx-auto mb-1.5" />
-            <p className="text-sm font-semibold text-foreground">
-              Interested in becoming a Trusted Services partner?
-            </p>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">
-              Join our vetted network and connect with veterans who need your services.
-            </p>
+        <Card
+          className="cursor-pointer group shadow-sm hover:shadow-md hover:border-green-600/50 transition-all"
+          onClick={() => window.location.href = "/partner-apply"}
+        >
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <ShieldCheck className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <p className="text-sm font-heading font-bold text-foreground group-hover:text-green-700 transition-colors">
+                  Become a Trusted Services Partner
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Join our vetted network and connect with veterans who need your services.
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-green-600 shrink-0 mt-0.5 transition-colors" />
+            </div>
             <Button
               data-testid="button-become-partner"
-              size="sm"
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => window.location.href = "/partner-apply"}
+              className="w-full rounded-full bg-green-600 hover:bg-green-700"
+              onClick={(e) => { e.stopPropagation(); window.location.href = "/partner-apply"; }}
             >
               <Handshake className="h-4 w-4 mr-1.5" />
               Apply Now

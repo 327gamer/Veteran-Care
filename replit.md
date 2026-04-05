@@ -255,7 +255,7 @@ Without this rule, adding a new resource that hasn't been geocoded yet causes it
 
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts
-- Logo: `Veteran_Care_-_Shadow_-_PNG_1772598034200.png` (metallic dog tag)
+- Logo: `Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png` (metallic dog tag with TM mark)
 - Green color scheme throughout
 - Mobile-first, single-screen layouts for onboarding
 - Crisis Help always shown first in resource lists

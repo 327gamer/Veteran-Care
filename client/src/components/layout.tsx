@@ -34,7 +34,7 @@ import {
 import AiGuide from "./ai-guide";
 import AuthModal from "./auth-modal";
 import ProfileModal from "./profile-modal";
-import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import { useSavedResources, syncSavedOnLogin, fetchSavedFromServer } from "@/lib/store";
 import { useAuth } from "@/lib/use-auth";
 

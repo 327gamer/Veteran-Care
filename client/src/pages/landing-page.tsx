@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
 import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
-import logoImg from "@assets/Veteran_Care_-_Shadow_-_PNG_1772598034200.png";
+import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import {
   Home,
   Briefcase,
