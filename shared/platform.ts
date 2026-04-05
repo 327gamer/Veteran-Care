@@ -6,7 +6,7 @@ export const platform = {
   longDescription: "Welcome to Veteran Care — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services.",
   onboardingPrimary: "Support for Veterans. All in One Place.",
   onboardingSubtitle: "Get the help you need — quickly, simply, and locally.",
-  onboardingBody: "Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, and more.",
+  onboardingBody: "Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, discounts on products & services, and more.",
   onboardingCta: "Tell us what you need, and we'll guide you to the right support near you.",
   onboardingAccountSubtitle: "Save your preferences and get faster access to the support you need.",
   onboardingAccountBody: "Get personalized resources, track your requests, and stay connected with trusted local support — all in one place.",
