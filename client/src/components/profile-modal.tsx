@@ -31,9 +31,11 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Loader2, Shield, Save, UserCircle, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, Shield, Save, UserCircle, Trash2, Check, ChevronsUpDown, Copy, Gift, Trophy, Users, ChevronRight, Send, Phone as PhoneIcon, MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { useSavedResources } from "@/lib/store";
+import { useLocation } from "wouter";
 
 const STATE_NAMES: Record<string, string> = {
   AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
@@ -131,6 +133,55 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   const [deleting, setDeleting] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+  const [refCopied, setRefCopied] = useState(false);
+
+  const token = session?.access_token;
+  const { data: referralData } = useQuery<{
+    referralCode: string;
+    referralLink: string;
+    currentMonthEntryCount: number;
+    currentMonthQualifiedReferralCount: number;
+    leaderboardRank: number | null;
+  }>({
+    queryKey: ["/api/referral/me"],
+    queryFn: () =>
+      fetch("/api/referral/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.ok ? r.json() : null),
+    enabled: !!token && open,
+  });
+
+  const { data: prizeData } = useQuery<{
+    prizeTitle: string | null;
+    prizeValue: number | null;
+  }>({
+    queryKey: ["/api/sweepstakes/current-prize"],
+    queryFn: () => fetch("/api/sweepstakes/current-prize").then(r => r.ok ? r.json() : null),
+    enabled: open,
+  });
+
+  const handleCopyReferralLink = async () => {
+    if (!referralData?.referralLink) return;
+    try {
+      await navigator.clipboard.writeText(referralData.referralLink);
+    } catch {
+      const input = document.createElement("input");
+      input.value = referralData.referralLink;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+    }
+    setRefCopied(true);
+    setTimeout(() => setRefCopied(false), 2000);
+  };
+
+  const handleShareSms = () => {
+    if (!referralData?.referralLink) return;
+    const msg = `Veteran Care helps veterans and families find real support in one place. Check it out: ${referralData.referralLink}`;
+    window.open(`sms:?&body=${encodeURIComponent(msg)}`, "_self");
+  };
 
   useEffect(() => {
     if (open && session?.access_token) {
@@ -506,6 +557,89 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 </div>
               </div>
             </div>
+
+            {referralData && (
+              <div className="border rounded-xl p-4 bg-gradient-to-br from-green-50/80 to-emerald-50/60 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <Gift className="h-4 w-4 text-green-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-900">Refer & Earn</h3>
+                    <p className="text-[10px] text-green-700">Help more veterans and earn giveaway entries</p>
+                  </div>
+                </div>
+
+                {prizeData?.prizeTitle && (
+                  <div className="flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 border border-green-200/60">
+                    <Trophy className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[11px] text-green-800">
+                      This month's giveaway: <span className="font-semibold">{prizeData.prizeTitle}</span>
+                      {prizeData.prizeValue ? ` ($${prizeData.prizeValue} value)` : ""}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
+                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-entries">{referralData.currentMonthEntryCount}</p>
+                    <p className="text-[9px] text-green-600 leading-tight">Entries</p>
+                  </div>
+                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
+                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-count">{referralData.currentMonthQualifiedReferralCount}</p>
+                    <p className="text-[9px] text-green-600 leading-tight">Referrals</p>
+                  </div>
+                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
+                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-rank">{referralData.leaderboardRank || "—"}</p>
+                    <p className="text-[9px] text-green-600 leading-tight">Rank</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-lg p-2.5 border border-green-200/40">
+                  <Label className="text-[10px] text-green-700 font-medium mb-1 block">Your Referral Link</Label>
+                  <div className="flex gap-1.5">
+                    <Input
+                      data-testid="input-profile-referral-link"
+                      readOnly
+                      value={referralData.referralLink}
+                      className="text-[11px] h-8 bg-white font-mono flex-1"
+                    />
+                    <Button
+                      data-testid="button-profile-copy-referral"
+                      size="sm"
+                      variant={refCopied ? "default" : "outline"}
+                      className={`h-8 px-2.5 shrink-0 ${refCopied ? "bg-green-600 hover:bg-green-600" : ""}`}
+                      onClick={handleCopyReferralLink}
+                    >
+                      {refCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    data-testid="button-profile-share-sms"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-[11px] gap-1"
+                    onClick={handleShareSms}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    Text
+                  </Button>
+                  <Button
+                    data-testid="button-profile-view-leaderboard"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-[11px] gap-1"
+                    onClick={() => { onOpenChange(false); setLocation("/referral"); }}
+                  >
+                    <Trophy className="h-3 w-3" />
+                    Leaderboard
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Button data-testid="button-profile-save" className="w-full" onClick={handleSave} disabled={saving || deleting}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}

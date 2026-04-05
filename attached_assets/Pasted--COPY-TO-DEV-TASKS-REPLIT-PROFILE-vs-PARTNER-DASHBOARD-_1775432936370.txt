@@ -1,0 +1,153 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PROFILE vs PARTNER DASHBOARD – STRUCTURE + REFERRAL CONSOLIDATION
+
+The system is now working end-to-end, but there is a UX clarity issue we need to clean up.
+
+-------------------------------------
+CURRENT BEHAVIOR
+-------------------------------------
+
+After login, the user menu shows:
+- My Profile
+- Partner Dashboard
+- Sign Out
+
+Behavior today:
+- "My Profile" → shows personal/veteran-style profile (intake-style fields)
+- "Partner Dashboard" → shows:
+  - company name
+  - refer a business
+  - lead activity
+  - partner leaderboard
+- Referral tools are primarily inside Partner Dashboard
+
+-------------------------------------
+PROBLEM
+-------------------------------------
+
+The experience feels split and confusing:
+
+1. Referral system is NOT centralized
+   - Partner dashboard has referral tools
+   - Personal profile does NOT show referral tools clearly
+   - Homepage has referral CTA
+   → This creates fragmentation
+
+2. “My Profile” feels incomplete
+   - A user (even a normal consumer) should see:
+     - their referral link
+     - their ability to refer others
+     - leaderboard access
+   - Right now that only exists clearly in partner dashboard
+
+3. We need a clearer distinction between:
+   - Personal Profile (user identity)
+   - Business / Partner Dashboard (company tools)
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make the platform feel like:
+👉 ONE LOGIN  
+👉 ONE ACCOUNT  
+👉 EVERYTHING IN ONE PLACE  
+
+-------------------------------------
+REQUIRED CHANGES
+-------------------------------------
+
+### 1. Keep separation of profile types (IMPORTANT)
+
+Do NOT merge flows.
+
+Keep:
+- My Profile = personal / user profile (veteran, spouse, etc.)
+- Partner Dashboard = business / company tools
+
+-------------------------------------
+### 2. ADD REFERRAL SYSTEM INTO "MY PROFILE"
+
+This is critical.
+
+Inside "My Profile", add a section:
+
+"Refer & Earn / Help More Veterans"
+
+This should include:
+- user referral link/code
+- copy/share buttons
+- leaderboard entry CTA
+- messaging like:
+  "Help more veterans and earn entries into this month’s giveaway"
+
+This should mirror the homepage referral section.
+
+-------------------------------------
+### 3. KEEP PARTNER DASHBOARD AS-IS (BUSINESS SIDE)
+
+Partner Dashboard should continue to show:
+- company name
+- refer a business
+- lead activity
+- partner leaderboard
+- billing access
+
+This is correct for business users.
+
+-------------------------------------
+### 4. UNIFY REFERRAL VISIBILITY
+
+Referral capability should exist in BOTH:
+
+- My Profile (for all users)
+- Partner Dashboard (for partners/businesses)
+
+But:
+- Same system
+- Same code
+- Same leaderboard
+
+No duplication of logic, just different entry points.
+
+-------------------------------------
+### 5. IMPROVE NAV CLARITY (LIGHT TOUCH)
+
+Do NOT redesign yet.
+
+But ensure:
+- "My Profile" = personal account
+- "Partner Dashboard" = business tools
+
+Clear distinction in labeling/UX.
+
+-------------------------------------
+EXPECTED RESULT
+-------------------------------------
+
+After this change:
+
+- Every user (even non-partners) can:
+  - access their referral link from profile
+  - understand how to refer others
+  - see leaderboard connection
+
+- Partners can:
+  - still manage business tools in Partner Dashboard
+  - ALSO access referral tools from profile if needed
+
+- Platform feels unified instead of split
+
+-------------------------------------
+OUTPUT REQUEST
+-------------------------------------
+
+Please respond with:
+
+1. where the referral section will live inside My Profile
+2. whether this reuses existing referral components or needs a new one
+3. files impacted
+4. whether this is a light UI addition or requires backend changes
+
+--- END ---
