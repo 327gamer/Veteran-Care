@@ -58,6 +58,7 @@ import {
   resolveAds,
   interleaveAdsInListings,
   type SponsoredAd,
+  type SponsoredType,
 } from "@/components/ad-slot";
 
 interface DiscountCategory {
@@ -216,9 +217,9 @@ export default function VeteranDiscounts() {
     state: filterState || undefined,
     city: geo.location?.city || undefined,
   };
-  const topAds = resolveAds(sponsoredAds, "sponsored_top", geoContext);
-  const inlineAds = resolveAds(sponsoredAds, "sponsored_inline", geoContext);
-  const localBoostAds = resolveAds(sponsoredAds, "sponsored_local", geoContext);
+  const topAds = resolveAds(sponsoredAds, "top", geoContext, selectedCategory);
+  const inlineAds = resolveAds(sponsoredAds, "inline", geoContext, selectedCategory);
+  const localBoostAds = resolveAds(sponsoredAds, "local", geoContext, selectedCategory);
 
   const leadMutation = useMutation({
     mutationFn: async (data: { service: DiscountListing; form: LeadForm }) => {
@@ -585,9 +586,9 @@ export default function VeteranDiscounts() {
               ) : (
                 <div className="space-y-3">
                   {topAds[0] ? (
-                    <AdSlot ad={topAds[0]} placement="sponsored_top" />
+                    <AdSlot ad={topAds[0]} placement="top" />
                   ) : (
-                    <AdSlotPlaceholder placement="sponsored_top" />
+                    <AdSlotPlaceholder placement="top" />
                   )}
 
                   {(() => {
@@ -595,7 +596,7 @@ export default function VeteranDiscounts() {
                     const feed = interleaveAdsInListings(listings, activeInlineAds, { interval: 6, boostFirst: isNearMeQuery && localBoostAds.length > 0 });
                     return feed.map((item, idx) =>
                       item.type === "ad" ? (
-                        <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement={isNearMeQuery ? "sponsored_local" : "sponsored_inline"} />
+                        <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement={isNearMeQuery ? "local" : "inline"} />
                       ) : (
                         <ListingCard
                           key={item.data.id}
@@ -640,7 +641,7 @@ export default function VeteranDiscounts() {
                 const feed = interleaveAdsInListings(listings, inlineAds, { interval: 6 });
                 return feed.map((item, idx) =>
                   item.type === "ad" ? (
-                    <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement="sponsored_inline" />
+                    <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement="inline" />
                   ) : (
                     <ListingCard
                       key={item.data.id}

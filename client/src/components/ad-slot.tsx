@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, MapPin, Globe, Percent } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
-export type AdPlacementType = "sponsored_top" | "sponsored_inline" | "sponsored_local";
+export type SponsoredType = "top" | "inline" | "local";
 
 export type GeoScope = "national" | "state" | "city" | "radius";
 
 export interface SponsoredAd {
   id: string;
-  ad_type: AdPlacementType;
+  is_sponsored: boolean;
+  sponsored_type: SponsoredType;
+  sponsored_rank: number;
+  category_slug?: string | null;
   business_name: string;
   short_description: string;
   cta_text: string;
@@ -21,13 +24,12 @@ export interface SponsoredAd {
   state?: string | null;
   is_national?: boolean;
   geo_scope: GeoScope;
-  priority: number;
   image_url?: string | null;
 }
 
 interface AdSlotProps {
   ad: SponsoredAd;
-  placement: AdPlacementType;
+  placement: SponsoredType;
 }
 
 function isSafeUrl(url: string): boolean {
@@ -78,7 +80,7 @@ export function AdSlot({ ad, placement }: AdSlotProps) {
   return (
     <Card
       ref={cardRef}
-      className={`overflow-hidden transition-shadow shadow-sm hover:shadow-md border-blue-100/60 bg-gradient-to-r from-blue-50/30 to-white ${placement === "sponsored_top" ? "ring-1 ring-blue-100/50" : ""}`}
+      className={`overflow-hidden transition-shadow shadow-sm hover:shadow-md border-blue-100/60 bg-gradient-to-r from-blue-50/30 to-white ${placement === "top" ? "ring-1 ring-blue-100/50" : ""}`}
       data-testid={`ad-slot-${placement}-${ad.id}`}
       data-ad-id={ad.id}
       data-ad-type={placement}
@@ -133,7 +135,7 @@ export function AdSlot({ ad, placement }: AdSlotProps) {
   );
 }
 
-export function AdSlotPlaceholder({ placement }: { placement: AdPlacementType }) {
+export function AdSlotPlaceholder({ placement }: { placement: SponsoredType }) {
   return (
     <div
       className="hidden"
@@ -146,10 +148,17 @@ export function AdSlotPlaceholder({ placement }: { placement: AdPlacementType })
 
 export function resolveAds(
   ads: SponsoredAd[],
-  placement: AdPlacementType,
-  geo?: { lat?: number; lng?: number; state?: string; city?: string }
+  placement: SponsoredType,
+  geo?: { lat?: number; lng?: number; state?: string; city?: string },
+  categorySlug?: string | null
 ): SponsoredAd[] {
-  let filtered = ads.filter(a => a.ad_type === placement);
+  let filtered = ads.filter(a => a.is_sponsored && a.sponsored_type === placement);
+
+  if (categorySlug) {
+    const catAds = filtered.filter(a => a.category_slug === categorySlug);
+    const generalAds = filtered.filter(a => !a.category_slug);
+    filtered = catAds.length > 0 ? [...catAds, ...generalAds] : generalAds;
+  }
 
   if (geo?.state) {
     const localAds = filtered.filter(
@@ -166,7 +175,7 @@ export function resolveAds(
     filtered = localAds.length > 0 ? [...localAds, ...nationalAds] : nationalAds;
   }
 
-  return filtered.sort((a, b) => a.priority - b.priority);
+  return filtered.sort((a, b) => a.sponsored_rank - b.sponsored_rank);
 }
 
 export function interleaveAdsInListings<T>(
