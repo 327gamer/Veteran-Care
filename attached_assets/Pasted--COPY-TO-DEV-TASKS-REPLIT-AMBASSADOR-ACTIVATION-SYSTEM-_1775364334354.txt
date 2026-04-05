@@ -1,0 +1,204 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+--- AMBASSADOR ACTIVATION SYSTEM – CLEANUP + OUTREACH PACK (IMPLEMENTATION) ---
+
+We are now moving into the SALES / ACTIVATION phase of the platform.
+
+This is a HIGH PRIORITY SYSTEM.
+
+IMPORTANT:
+This must be built SIMPLE, CLEAN, and SCALABLE.
+
+No over-engineering.
+
+-------------------------------------
+PART 1 – AMBASSADOR CLEANUP (ADMIN)
+-------------------------------------
+
+Remove ALL test / dummy ambassadors.
+
+Keep ONLY:
+
+- Colin Slaven (100%)
+- Debbie Slaven (100%)
+- Tracy Robertson
+- Michelle Keef
+- Kelsey Reese
+
+REQUIREMENTS:
+- no orphaned links
+- no broken attribution
+- existing tracking must remain intact
+- do NOT break referral or UTM logic
+
+-------------------------------------
+PART 2 – AMBASSADOR TRACKING STRUCTURE
+-------------------------------------
+
+Each ambassador must have:
+
+- unique ambassador_id
+- persistent referral link base
+- campaign-specific tracking links
+
+Colin + Debbie:
+- must be included as ambassadors
+- must track at 100%
+- same structure as all other ambassadors
+
+-------------------------------------
+PART 3 – CAMPAIGN SYSTEM (CORE BUILD)
+-------------------------------------
+
+We are implementing THREE campaign types:
+
+1) VETERAN OUTREACH
+Purpose:
+→ drive veterans to platform
+
+2) CASE MANAGEMENT OUTREACH (HIGH PRIORITY)
+Purpose:
+→ drive organizations (case managers, nonprofits, etc.)
+→ multiplier effect
+
+3) PARTNER / BUSINESS OUTREACH
+Purpose:
+→ recruit paying partners
+
+-------------------------------------
+PART 4 – OUTREACH PACK SYSTEM
+-------------------------------------
+
+For EACH campaign type, create pre-built templates:
+
+- Email
+- SMS / text
+- Facebook post
+- Instagram caption
+- LinkedIn message
+
+These must be:
+
+- pre-written
+- copy-ready (one click copy)
+- include ambassador tracking link
+- include campaign-specific UTM parameters
+
+NO editing required by ambassadors
+
+-------------------------------------
+PART 5 – CENTRAL DASHBOARD (VERY IMPORTANT)
+-------------------------------------
+
+Create ONE central access area for ambassadors:
+
+Example route:
+→ /ambassador-dashboard
+
+Dashboard must show:
+
+SECTION 1:
+Veteran Outreach
+
+SECTION 2:
+Case Management Outreach
+
+SECTION 3:
+Partner Outreach
+
+Each section must have:
+
+- copy buttons for templates
+- tracking links
+- QR codes
+
+NO scattered pages
+NO confusion
+
+-------------------------------------
+PART 6 – TRACKING + UTM STRUCTURE
+-------------------------------------
+
+ALL links must include:
+
+- ambassador_id
+- utm_source = ambassador
+- utm_medium = outreach
+- utm_campaign =
+    - veteran
+    - case_management
+    - partner
+
+CRITICAL:
+Each campaign must be trackable independently.
+
+-------------------------------------
+PART 7 – QR CODE SYSTEM
+-------------------------------------
+
+Generate QR codes per ambassador for:
+
+- veteran campaign
+- case management campaign
+- partner campaign
+
+Each QR must:
+- embed full tracking URL
+- route correctly
+- preserve attribution
+
+-------------------------------------
+PART 8 – SIMPLICITY RULE (NON-NEGOTIABLE)
+-------------------------------------
+
+Ambassador workflow must be:
+
+1. login
+2. open dashboard
+3. choose campaign
+4. tap copy
+5. send
+
+NO friction
+NO confusion
+
+-------------------------------------
+PART 9 – VALIDATION REQUIRED
+-------------------------------------
+
+Before completion, confirm:
+
+- ambassadors cleaned up correctly
+- all 3 campaign types implemented
+- templates are usable + copy-ready
+- QR codes generate + track properly
+- attribution preserved across flows
+- no admin / API regressions
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1) ambassador cleanup summary
+2) campaign system structure
+3) ambassador dashboard location + behavior
+4) tracking + UTM implementation details
+5) files created / updated
+6) publish / deploy steps
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create a system where ambassadors can:
+
+- reach veterans
+- activate organizations
+- recruit partners
+
+WITH:
+- zero confusion
+- zero manual work
+- full tracking
+
+--- END ---

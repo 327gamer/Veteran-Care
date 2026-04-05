@@ -2626,6 +2626,147 @@ export async function registerRoutes(
     }
   });
 
+  const ambassadorDashboardAttempts = new Map<string, { count: number; resetAt: number }>();
+  app.get("/api/ambassador/dashboard/:code", async (req, res) => {
+    const ip = req.ip || "unknown";
+    const now = Date.now();
+    const entry = ambassadorDashboardAttempts.get(ip);
+    if (entry && entry.resetAt > now) {
+      if (entry.count >= 20) {
+        return res.status(429).json({ error: "Too many requests" });
+      }
+      entry.count++;
+    } else {
+      ambassadorDashboardAttempts.set(ip, { count: 1, resetAt: now + 60_000 });
+    }
+
+    const code = sanitizeCode(req.params.code);
+    if (!code) return res.status(400).json({ error: "Invalid code" });
+
+    try {
+      const ambRows = await pgQuery(
+        `SELECT id, code, display_name, first_name, last_name, email, commission_rate, status
+         FROM ambassadors WHERE code = $1 AND status = 'active'`,
+        [code]
+      );
+      if (ambRows.length === 0) return res.status(404).json({ error: "Invalid code" });
+
+      const ambassador = ambRows[0];
+
+      const links = await pgQuery(
+        `SELECT id, link_name, utm_id, full_url, audience_type, channel_type, utm_campaign, click_count, is_active
+         FROM ambassador_links WHERE ambassador_code = $1 AND is_active = true
+         ORDER BY audience_type, channel_type`,
+        [code]
+      );
+
+      const baseUrl = "https://veterancare.com";
+      const campaigns: Record<string, { links: any[]; templates: Record<string, any> }> = {};
+
+      const CAMPAIGN_META: Record<string, { title: string; description: string; audience: string }> = {
+        veteran: { title: "Veteran Outreach", description: "Drive veterans to the platform for help and resources", audience: "veteran" },
+        case_manager: { title: "Case Management Outreach", description: "Recruit organizations, case managers, and nonprofits", audience: "case_manager" },
+        partner: { title: "Partner / Business Outreach", description: "Recruit paying business partners for the directory", audience: "partner" },
+      };
+
+      const OUTREACH_TEMPLATES: Record<string, Record<string, { subject?: string; body: string }>> = {
+        veteran: {
+          email: {
+            subject: "Free Resources for Veterans — Veteran Care",
+            body: "Hi,\n\nI wanted to share a great resource for veterans in our area. Veteran Care connects veterans with housing, employment, benefits assistance, mental health support, and more — all in one place, completely free.\n\nCheck it out here: {{link}}\n\nIf you know any veterans who could use help, please share this with them.\n\nThank you for supporting our veterans!"
+          },
+          text: { body: "Hey! Check out Veteran Care — it connects veterans with free resources for housing, jobs, benefits, mental health & more. Share with any veteran who needs help: {{link}}" },
+          facebook: { body: "🇺🇸 Know a veteran who needs help? Veteran Care connects veterans with housing, jobs, benefits, mental health support, and more — all FREE. Share this with someone who served. {{link}} #VeteranCare #SupportOurVeterans" },
+          instagram: { body: "🇺🇸 Veterans deserve better access to resources. Veteran Care connects them with housing, jobs, benefits & more — all in one place, totally free.\n\nLink in bio or visit: {{link}}\n\n#VeteranCare #Veterans #SupportOurVets #MilitaryFamily" },
+          linkedin: { body: "I'm proud to support Veteran Care — a platform that connects U.S. military veterans with critical resources including housing, employment, benefits assistance, and mental health support.\n\nIf you know a veteran who could use help, please share this link: {{link}}\n\nTogether we can make sure no veteran falls through the cracks." },
+        },
+        case_manager: {
+          email: {
+            subject: "Partner with Veteran Care — Free Resource Platform for Your Clients",
+            body: "Hi,\n\nI'm reaching out because Veteran Care is a free resource platform designed specifically for U.S. military veterans. We connect veterans with 14+ categories of support including housing, employment, benefits, mental health, and more.\n\nAs a case manager or social services organization, you can use Veteran Care as a referral tool for your veteran clients at no cost.\n\nLearn more here: {{link}}\n\nI'd love to discuss how we can work together to better serve veterans in our community."
+          },
+          text: { body: "Hi! Veteran Care is a free platform connecting veterans with 14+ categories of resources. Great referral tool for case managers & nonprofits. Check it out: {{link}}" },
+          facebook: { body: "📋 Attention case managers, social workers & nonprofit leaders! Veteran Care is a FREE platform connecting veterans with 14+ categories of support. Use it as a referral tool for your clients. Learn more: {{link}}" },
+          instagram: { body: "📋 Case managers & social workers — Veteran Care is a free referral tool connecting veterans with housing, jobs, benefits, mental health & more.\n\n14+ resource categories. Zero cost.\n\nLearn more: {{link}}\n\n#CaseManagement #VeteranServices #SocialWork #Nonprofits" },
+          linkedin: { body: "Attention case managers, social workers, and nonprofit leaders:\n\nVeteran Care is a free resource platform connecting U.S. military veterans with 14+ categories of critical support — housing, employment, benefits, mental health, legal services, and more.\n\nIt's an invaluable referral tool for anyone working with veteran populations. Learn more: {{link}}" },
+        },
+        partner: {
+          email: {
+            subject: "Grow Your Business with Veteran Care — Trusted Services Partner Program",
+            body: "Hi,\n\nI'm reaching out because Veteran Care is building a network of trusted business partners who serve the veteran community.\n\nAs a Trusted Services Partner, your business gets listed in our directory, receives direct referrals from veterans in your area, and gains access to a growing audience of veterans and their families.\n\nPlans start at $99/month with optional add-ons for premium placement.\n\nApply here: {{link}}\n\nLet me know if you have any questions!"
+          },
+          text: { body: "Hi! Want to reach more veteran customers? Veteran Care's Trusted Services Partner program gets your business in front of veterans in your area. Plans from $99/mo. Apply: {{link}}" },
+          facebook: { body: "🏢 Business owners — want to reach the veteran community? Join Veteran Care's Trusted Services Partner network! Get listed in our directory and receive direct referrals from veterans. Apply today: {{link}}" },
+          instagram: { body: "🏢 Grow your business by serving those who served.\n\nJoin Veteran Care's Trusted Services Partner network and get your business in front of veterans in your area.\n\n✅ Directory listing\n✅ Direct referrals\n✅ Premium placement options\n\nApply: {{link}}\n\n#VeteranCare #SmallBusiness #VeteranOwned #BusinessGrowth" },
+          linkedin: { body: "Looking to grow your business while supporting veterans?\n\nVeteran Care's Trusted Services Partner program connects your business directly with the veteran community through our trusted directory.\n\nBenefits include directory listing, direct referrals, and premium placement options.\n\nApply here: {{link}}" },
+        },
+      };
+
+      const audienceMap: Record<string, string> = { veteran: "veteran", case_manager: "case_manager", partner: "partner" };
+
+      for (const [campaignKey, meta] of Object.entries(CAMPAIGN_META)) {
+        const audience = meta.audience;
+        const campaignLinks = links
+          .filter((l: any) => l.audience_type === audience)
+          .map((l: any) => ({
+            id: l.id,
+            channel: l.channel_type,
+            utm_id: l.utm_id,
+            full_url: l.full_url,
+            short_url: `${baseUrl}/a/${l.utm_id}`,
+            qr_url: `${baseUrl}/api/ambassador/qr/${l.utm_id}`,
+            click_count: l.click_count || 0,
+          }));
+
+        const templates: Record<string, any> = {};
+        const channelTemplates = OUTREACH_TEMPLATES[campaignKey] || {};
+        for (const [channel, tmpl] of Object.entries(channelTemplates)) {
+          const matchingLink = campaignLinks.find((l: any) => l.channel === channel)
+            || campaignLinks.find((l: any) => l.channel === "email")
+            || campaignLinks[0];
+          if (!matchingLink) continue;
+          const link = matchingLink.short_url;
+          templates[channel] = {
+            subject: (tmpl as any).subject || null,
+            body: (tmpl as any).body.replace(/\{\{link\}\}/g, link),
+            tracking_link: link,
+          };
+        }
+
+        campaigns[campaignKey] = { links: campaignLinks, templates };
+      }
+
+      return res.json({
+        ambassador: {
+          code: ambassador.code,
+          name: ambassador.display_name,
+          first_name: ambassador.first_name,
+        },
+        campaigns,
+      });
+    } catch (err: any) {
+      console.log("[ambassador] dashboard error:", err.message);
+      return res.status(500).json({ error: "Failed to load dashboard" });
+    }
+  });
+
+  app.get("/api/ambassador/qr/:utmId", async (req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT full_url, utm_id FROM ambassador_links WHERE utm_id = $1 AND is_active = true`,
+        [req.params.utmId]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
+
+      const png = await QRCode.toBuffer(rows[0].full_url, { width: 400, margin: 2, type: "png" });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", `inline; filename="${rows[0].utm_id}.png"`);
+      return res.send(png);
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to generate QR code" });
+    }
+  });
+
   const MESSAGE_TEMPLATES: Record<string, Record<string, { message_title: string; suggested_copy: string }>> = {
     general: {
       facebook: {

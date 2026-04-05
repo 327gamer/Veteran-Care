@@ -42,6 +42,7 @@ import PartnersLanding from "@/pages/partners-landing";
 import EndOfLife from "@/pages/end-of-life";
 import Referral from "@/pages/referral";
 import VeteranDiscounts from "@/pages/veteran-discounts";
+import AmbassadorDashboard from "@/pages/ambassador-dashboard";
 
 function PageViewTracker() {
   const [location] = useLocation();
@@ -175,6 +176,8 @@ function Router() {
           <VeteranDiscounts />
         </Layout>
       </Route>
+
+      <Route path="/ambassador-dashboard" component={AmbassadorDashboard} />
 
       <Route component={NotFound} />
     </Switch>
