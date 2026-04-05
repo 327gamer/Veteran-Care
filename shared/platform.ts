@@ -3,7 +3,7 @@ export const platform = {
   domain: "veterancare.com",
   tagline: "Trusted Veteran Support",
   description: "Your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services.",
-  longDescription: "Veteran Care helps you quickly find benefits, healthcare, housing assistance, employment programs, legal help, veteran discounts on products & services and other local resources, all in one place.",
+  longDescription: "Welcome to Veteran Care — your comprehensive resource center connecting veterans, their families, and loved ones to trusted support and services.",
   onboardingPrimary: "Support for Veterans. All in One Place.",
   onboardingSubtitle: "Get the help you need — quickly, simply, and locally.",
   onboardingBody: "Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, and more.",
