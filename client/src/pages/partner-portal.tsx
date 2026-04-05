@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { platform } from "@shared/platform";
 import { useAuth } from "@/lib/use-auth";
+import PartnerSignupModal from "@/components/partner-signup-modal";
 
 interface PartnerReferralData {
   partnerId: string;
@@ -86,6 +87,8 @@ export default function PartnerPortal() {
   const [msgCopied, setMsgCopied] = useState(false);
   const [view, setView] = useState<"dashboard" | "referrals" | "leaderboard">("dashboard");
   const [msgVariant, setMsgVariant] = useState(0);
+  const [showPartnerSignup, setShowPartnerSignup] = useState(false);
+  const [partnerSignupMode, setPartnerSignupMode] = useState<"signup" | "login">("login");
 
   useEffect(() => {
     if (localStorage.getItem("partner_token")) {
@@ -227,20 +230,17 @@ export default function PartnerPortal() {
           <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
             Log in to access your partner dashboard, referral tools, and lead activity.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Use the same account you created on {platform.name}.
-          </p>
           <Button
             data-testid="button-partner-login-cta"
             className="rounded-full px-8"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+            onClick={() => { setPartnerSignupMode("login"); setShowPartnerSignup(true); }}
           >
             Log In
           </Button>
           <Button
             variant="outline"
             className="rounded-full px-8"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "signup" } }))}
+            onClick={() => { setPartnerSignupMode("signup"); setShowPartnerSignup(true); }}
           >
             Create Account
           </Button>
@@ -251,6 +251,11 @@ export default function PartnerPortal() {
             </button>
           </p>
         </div>
+        <PartnerSignupModal
+          open={showPartnerSignup}
+          onOpenChange={setShowPartnerSignup}
+          defaultMode={partnerSignupMode}
+        />
       </div>
     );
   }

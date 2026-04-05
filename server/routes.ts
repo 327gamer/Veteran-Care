@@ -7659,6 +7659,63 @@ export async function registerRoutes(
     return res.json(partner);
   });
 
+  app.get("/api/partner/prefill-public", async (req, res) => {
+    const email = (req.query.email as string || "").trim().toLowerCase();
+    if (!email) return res.json({ found: false });
+    try {
+      const partners = await pgQuery(
+        `SELECT company_name, contact_name, category_id FROM partner_applications WHERE LOWER(email) = $1 AND status IN ('approved', 'active') ORDER BY created_at DESC LIMIT 1`,
+        [email]
+      );
+      if (partners.length === 0) return res.json({ found: false });
+      const p = partners[0];
+      let categoryName = null;
+      if (p.category_id) {
+        const cats = await pgQuery(`SELECT name FROM trusted_service_categories WHERE id = $1`, [p.category_id]);
+        if (cats.length > 0) categoryName = cats[0].name;
+      }
+      return res.json({
+        found: true,
+        companyName: p.company_name,
+        contactName: p.contact_name,
+        categoryName: categoryName || "",
+      });
+    } catch {
+      return res.json({ found: false });
+    }
+  });
+
+  app.get("/api/partner/prefill", async (req, res) => {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return res.json({ found: false });
+    try {
+      const token = authHeader.slice(7);
+      if (!supabaseAdmin) return res.json({ found: false });
+      const { data: { user: supaUser } } = await supabaseAdmin.auth.getUser(token);
+      if (!supaUser?.email) return res.json({ found: false });
+      const email = supaUser.email.toLowerCase();
+      const partners = await pgQuery(
+        `SELECT company_name, contact_name, category_id FROM partner_applications WHERE LOWER(email) = $1 AND status IN ('approved', 'active') ORDER BY created_at DESC LIMIT 1`,
+        [email]
+      );
+      if (partners.length === 0) return res.json({ found: false });
+      const p = partners[0];
+      let categoryName = null;
+      if (p.category_id) {
+        const cats = await pgQuery(`SELECT name FROM trusted_service_categories WHERE id = $1`, [p.category_id]);
+        if (cats.length > 0) categoryName = cats[0].name;
+      }
+      return res.json({
+        found: true,
+        companyName: p.company_name,
+        contactName: p.contact_name,
+        categoryName: categoryName || "",
+      });
+    } catch {
+      return res.json({ found: false });
+    }
+  });
+
   app.get("/api/partner/role-check", async (req, res) => {
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) return res.json({ isPartner: false });

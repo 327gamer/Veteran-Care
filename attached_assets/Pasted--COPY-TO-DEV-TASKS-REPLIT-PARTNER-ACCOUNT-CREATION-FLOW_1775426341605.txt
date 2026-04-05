@@ -1,0 +1,103 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PARTNER ACCOUNT CREATION FLOW – REMOVE VETERAN PROFILE FORM + FIX PAYMENT SUCCESS BUTTON LAYOUT
+
+I tested the full Trusted Partner flow again end-to-end.
+
+Good news:
+- approval email works
+- payment flow works
+- partner portal / referral dashboard works
+- billing page works
+- same-email instruction is showing correctly
+
+However, there are 2 important UX problems that need to be fixed now.
+
+-------------------------------------
+1) PARTNER “CREATE MY ACCOUNT” IS USING THE WRONG PROFILE FLOW
+-------------------------------------
+
+Current issue:
+When a trusted business partner clicks Create My Account, it opens the same profile creation flow used for veterans / case managers / general platform users.
+
+That flow asks for things like:
+- veteran role
+- branch of service
+- service era
+- rank
+- MOS / specialty
+- deployment background
+- areas of interest
+
+This is wrong for a trusted business partner and will be confusing.
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+Trusted Partners need a partner-specific account setup flow, not the veteran profile flow.
+
+When a partner clicks Create My Account, it should open a much simpler setup flow that is appropriate for a business/service provider.
+
+Preferred logic:
+
+- use the same approved application email automatically
+- let them create password
+- confirm password
+- prefill or confirm company/business name if already available
+- prefill or confirm contact name if already available
+- prefill or confirm service category / subcategory if already available
+- optionally confirm phone / website if needed
+
+IMPORTANT:
+Do NOT ask trusted business partners for veteran/military profile questions.
+
+This should be a clean partner onboarding flow, not the veteran account onboarding flow.
+
+-------------------------------------
+2) PAYMENT SUCCESS PAGE – BUTTON ROW LAYOUT
+-------------------------------------
+
+Current issue:
+On the “Welcome to Veteran Care Trusted Services” payment success page, the bottom button row does not fit the card well.
+
+Buttons:
+- Create My Account
+- View Trusted Services
+- Manage Billing
+
+The buttons feel too wide / crowded and the card layout looks off.
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+Please tighten the button layout so it fits cleanly inside the card.
+
+Requirements:
+- buttons should fit comfortably inside the card/container
+- maintain mobile responsiveness
+- reduce crowding
+- keep the same actions
+- preserve clear CTA priority
+- no awkward overflow / cramped look
+
+If needed:
+- slightly reduce button width
+- allow cleaner wrapping/stacking on smaller viewports
+- maintain visual hierarchy with Create My Account as primary CTA
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. how you will replace the veteran profile flow for partners
+2. what fields the new partner account setup will use
+3. files changed
+4. confirmation that veteran onboarding remains untouched
+5. confirmation that payment success button layout is fixed
+6. whether publish is required
+
+--- END ---
