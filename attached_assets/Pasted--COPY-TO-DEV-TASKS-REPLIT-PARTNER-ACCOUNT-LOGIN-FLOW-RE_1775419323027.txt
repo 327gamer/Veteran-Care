@@ -1,0 +1,82 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PARTNER ACCOUNT / LOGIN FLOW – REQUIRED FOR REFERRAL DASHBOARD + PARTNER TOOLS
+
+One important logistical gap we need to fix before the partner referral dashboard is finalized:
+
+Trusted Partners need their own real account/login flow, similar to how veterans create an account and then log in to access referral tools and other features.
+
+Right now the partner application / approval / payment flow appears to handle:
+- application submission
+- admin approval
+- payment activation
+
+But it is still unclear how the business creates and uses a real account with login credentials.
+
+-------------------------------------
+REQUIREMENT
+-------------------------------------
+
+Trusted Partners must have a proper account/login system so that once approved and active, they can log in and access their partner tools.
+
+This needs to work similarly to the user/veteran account concept, but for partners.
+
+-------------------------------------
+WHAT NEEDS TO BE CLARIFIED / BUILT
+-------------------------------------
+
+Please confirm and implement the cleanest version of this flow:
+
+1. During the Trusted Partner sign-up/application process, does the business create:
+- an email/login
+- a password
+- a real account record
+
+2. If not, this needs to be added.
+
+3. After approval + payment, that same account should be the account they use to log in and access:
+- partner referral dashboard
+- unique partner referral link
+- referral rewards / free month tracking
+- future partner tools / lead dashboard / billing visibility
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+The partner experience should work logically like this:
+
+1. Business creates account + submits application
+2. Admin approves application
+3. Business completes payment
+4. Business logs in using their partner account
+5. Business sees partner-only tools
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+We do NOT want a disconnected system where:
+- businesses apply
+- get approved
+- pay
+- but have no real account/login tied to their partner tools
+
+The login/account layer is essential because this is how the system will know:
+- who the partner is
+- which referral link is theirs
+- which rewards belong to them
+- which partner dashboard/tools to show them
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. current state of partner account/login flow
+2. whether partner accounts already exist or not
+3. what needs to be added so this works like the veteran account system
+4. recommended implementation path before/alongside the referral dashboard build
+
+--- END ---

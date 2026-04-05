@@ -41,6 +41,7 @@ import ResourceCenter from "@/pages/resource-center";
 import PartnersLanding from "@/pages/partners-landing";
 import EndOfLife from "@/pages/end-of-life";
 import Referral from "@/pages/referral";
+import PartnerReferral from "@/pages/partner-referral";
 import VeteranDiscounts from "@/pages/veteran-discounts";
 import AmbassadorDashboard from "@/pages/ambassador-dashboard";
 
@@ -132,6 +133,12 @@ function Router() {
       <Route path="/partner-payment-success">
         <Layout>
           <PartnerPaymentSuccess />
+        </Layout>
+      </Route>
+
+      <Route path="/partner-referrals">
+        <Layout>
+          <PartnerReferral />
         </Layout>
       </Route>
 

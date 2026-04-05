@@ -1,0 +1,141 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### PARTNER REFERRAL SYSTEM – MATCH VETERAN REFERRAL SYSTEM (NO FORMS)
+
+We are NOT building a manual referral form system.
+
+We are building a referral system for Trusted Partners that works EXACTLY like the existing Veteran referral system — but for businesses instead of users.
+
+-------------------------------------
+CORE REQUIREMENT
+-------------------------------------
+
+The Partner Referral System must be:
+
+- 100% LINK-BASED (NO forms)
+- fast, simple, mobile-friendly
+- fully trackable
+- identical UX to the current veteran referral system
+
+-------------------------------------
+PARTNER EXPERIENCE (AFTER APPROVAL)
+-------------------------------------
+
+Once a business is approved as a Trusted Partner and logs in, they must see:
+
+### "Refer a Business & Earn Free Months"
+
+This page/section should mirror the current user referral screen.
+
+-------------------------------------
+FEATURES REQUIRED
+-------------------------------------
+
+1. UNIQUE REFERRAL LINK
+
+Each partner gets a unique referral link:
+
+Example:
+https://veterancare.com/partners/apply?ref=PARTNER_ID
+
+Must include:
+- Copy button
+- Visible input field with link
+
+-------------------------------------
+
+2. PRE-WRITTEN SHARE MESSAGES (VERY IMPORTANT)
+
+We need message templates (same as veteran system style):
+
+Tabs:
+- Friendly
+- Professional
+- Direct
+
+Each message must include:
+- short introduction
+- explanation of Veteran Care
+- referral link auto-inserted
+
+Example:
+
+"We’ve partnered with Veteran Care to help veterans connect with trusted services. If your business works with veterans or wants to, I highly recommend checking this out: [REFERRAL LINK]"
+
+Buttons:
+- Copy Message
+- SMS
+- Email
+- WhatsApp
+
+This removes the need for partners to “sell” — they just send.
+
+-------------------------------------
+
+3. TRACKING DASHBOARD
+
+Display:
+
+- Referrals count
+- Free months earned
+- Pending rewards
+- (optional) conversion status
+
+-------------------------------------
+
+4. LEADERBOARD SYSTEM (IMPORTANT ADDITION)
+
+Add a partner leaderboard similar to the referral system:
+
+- Top referring partners
+- Ranked by successful business referrals
+- Visible inside partner referral section
+
+This drives engagement and competition.
+
+-------------------------------------
+
+5. CREDIT LOGIC (NO CHANGE)
+
+Keep existing backend logic:
+
+- referred business must sign up
+- must complete first billing cycle
+- then apply 100% credit to referring partner’s next invoice
+
+-------------------------------------
+
+6. SIGNUP PAGE (ALREADY DONE – CONFIRM)
+
+Keep referral explanation on partner signup page.
+
+Ensure this line is present:
+
+"Once approved, you’ll gain access to your partner referral dashboard where you can share your referral link and track your rewards."
+
+-------------------------------------
+
+IMPORTANT:
+
+DO NOT BUILD:
+- manual referral forms
+- admin-driven referral entry
+
+This must be:
+- link-driven
+- automated
+- scalable
+- identical to user referral UX
+
+-------------------------------------
+
+GOAL:
+
+Make referrals:
+- instant
+- frictionless
+- shareable in 1 click
+- trackable
+- scalable for growth
+
+--- END ---

@@ -253,6 +253,15 @@ Without this rule, adding a new resource that hasn't been geocoded yet causes it
 - [ ] National records assigned `distance_miles: 99999`
 - [ ] Sort handles nulls via `?? 99999` fallback
 
+## Partner Account/Login System
+- **Auth model**: Email + password (bcrypt-hashed), Bearer token sessions stored in `partner_sessions` table (30-day expiry)
+- **Registration**: Only allowed for partners with `status = 'approved'` in `partner_applications`; atomic password set prevents race conditions
+- **Login**: Rate-limited (5 attempts per 15 min per email); requires approved status + valid password
+- **Token storage**: `localStorage.partner_token` on client; `Authorization: Bearer <token>` header on all partner-facing API calls
+- **Secured endpoints**: `/api/partner-referral/me`, `/api/partner/lead-billing`, `/api/partner/lead-dispute`, `/api/partner/me` — all use `resolvePartnerFromToken()` middleware
+- **Frontend**: `/partner-referrals` page with Login/Create Account tabs, password field with show/hide toggle
+- **DB additions**: `password_hash TEXT` column on `partner_applications`, `partner_sessions` table with token + expiry
+
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts
 - Logo: `Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png` (metallic dog tag with TM mark)

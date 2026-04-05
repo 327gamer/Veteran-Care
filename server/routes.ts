@@ -8,6 +8,8 @@ import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
 import express from "express";
 import QRCode from "qrcode";
@@ -404,8 +406,7 @@ async function ensurePartnerReferrals() {
         referred_company_name TEXT NOT NULL,
         referred_contact_name TEXT NOT NULL,
         referred_email TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending'
-          CHECK (status IN ('pending', 'signed_up', 'first_cycle_complete', 'credit_applied', 'expired', 'rejected')),
+        status TEXT NOT NULL DEFAULT 'pending',
         referred_application_id UUID,
         credit_coupon_id TEXT,
         credit_applied_at TIMESTAMPTZ,
@@ -416,10 +417,51 @@ async function ensurePartnerReferrals() {
     `);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_referrer ON partner_referrals(referrer_partner_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_email ON partner_referrals(referred_email)`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS referral_code TEXT`);
+    await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_app_referral_code ON partner_applications(referral_code) WHERE referral_code IS NOT NULL`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS referred_by_partner_id UUID`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS password_hash TEXT`);
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS partner_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        partner_id UUID NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days')
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_sessions_token ON partner_sessions(token)`);
     console.log("[schema] partner_referrals table ready");
   } catch (err: any) {
     console.log("[schema] partner_referrals error:", err.message);
   }
+}
+
+function generatePartnerReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "VC-";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function getOrCreatePartnerReferralCode(partnerId: string): Promise<string> {
+  const existing = await pgQuery(
+    `SELECT referral_code FROM partner_applications WHERE id = $1`,
+    [partnerId]
+  );
+  if (existing.length > 0 && existing[0].referral_code) return existing[0].referral_code;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generatePartnerReferralCode();
+    try {
+      await pgQuery(
+        `UPDATE partner_applications SET referral_code = $1 WHERE id = $2 AND referral_code IS NULL`,
+        [code, partnerId]
+      );
+      const check = await pgQuery(`SELECT referral_code FROM partner_applications WHERE id = $1`, [partnerId]);
+      if (check.length > 0 && check[0].referral_code) return check[0].referral_code;
+    } catch {}
+  }
+  throw new Error("Failed to generate unique referral code");
 }
 
 async function ensurePartnerSubcategories() {
@@ -6646,7 +6688,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, referred_by_code } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
@@ -6657,9 +6699,17 @@ export async function registerRoutes(
     try {
       const paAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
       const cleanSubcategoryIds = Array.isArray(subcategory_ids) ? subcategory_ids.filter((s: string) => s).join(',') : (subcategory_ids || null);
+      let referredByPartnerId: string | null = null;
+      if (referred_by_code && typeof referred_by_code === 'string') {
+        const referrer = await pgQuery(
+          `SELECT id FROM partner_applications WHERE referral_code = $1`,
+          [referred_by_code.toUpperCase()]
+        );
+        if (referrer.length > 0) referredByPartnerId = referrer[0].id;
+      }
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'prospect', $14, $15, $16, $17, $18, $19, $20)
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id, referred_by_partner_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'prospect', $14, $15, $16, $17, $18, $19, $20, $21)
          RETURNING *`,
         [
           company_name, contact_name, email,
@@ -6671,8 +6721,22 @@ export async function registerRoutes(
           cleanAddons.length > 0 ? JSON.stringify(cleanAddons) : null,
           utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null,
           paAmbassadorId,
+          referredByPartnerId,
         ]
       );
+      if (referredByPartnerId && rows.length > 0) {
+        try {
+          await pgQuery(
+            `INSERT INTO partner_referrals (referrer_partner_id, referred_company_name, referred_contact_name, referred_email, status, referred_application_id)
+             VALUES ($1, $2, $3, $4, 'signed_up', $5)
+             ON CONFLICT DO NOTHING`,
+            [referredByPartnerId, company_name, contact_name, email.toLowerCase(), rows[0].id]
+          );
+          console.log(`[partner-referral] Auto-tracked referral: ${referredByPartnerId} → ${email}`);
+        } catch (refErr: any) {
+          console.log(`[partner-referral] Auto-track failed:`, refErr.message);
+        }
+      }
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
@@ -7463,76 +7527,215 @@ export async function registerRoutes(
     }
   });
 
-  // ── Partner Referral System ──
+  // ── Partner Auth System ──
 
-  app.post("/api/partner-referrals", async (req, res) => {
-    const { partnerEmail, referredCompanyName, referredContactName, referredEmail } = req.body;
-    if (!partnerEmail || !referredCompanyName || !referredContactName || !referredEmail) {
-      return res.status(400).json({ error: "All fields are required" });
+  async function resolvePartnerFromToken(req: any): Promise<{ id: string; email: string; company_name: string; status: string } | null> {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7);
+    try {
+      const sessions = await pgQuery(
+        `SELECT partner_id FROM partner_sessions WHERE token = $1 AND expires_at > NOW()`,
+        [token]
+      );
+      if (sessions.length === 0) return null;
+      const partners = await pgQuery(
+        `SELECT id, email, company_name, status FROM partner_applications WHERE id = $1`,
+        [sessions[0].partner_id]
+      );
+      return partners.length > 0 ? partners[0] : null;
+    } catch { return null; }
+  }
+
+  const partnerAuthAttempts = new Map<string, { count: number; resetAt: number }>();
+  function checkPartnerRateLimit(key: string, maxAttempts = 5, windowMs = 15 * 60 * 1000): boolean {
+    const now = Date.now();
+    const entry = partnerAuthAttempts.get(key);
+    if (!entry || now > entry.resetAt) {
+      partnerAuthAttempts.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (entry.count >= maxAttempts) return false;
+    entry.count++;
+    return true;
+  }
+
+  app.post("/api/partner/register", async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+    if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!checkPartnerRateLimit(`register:${normalizedEmail}`)) {
+      return res.status(429).json({ error: "Too many attempts. Please try again later." });
     }
     try {
       const partner = await pgQuery(
-        `SELECT id, email FROM partner_applications WHERE LOWER(email) = $1 AND status = 'approved'`,
-        [partnerEmail.toLowerCase()]
+        `SELECT id, password_hash, status FROM partner_applications WHERE LOWER(email) = $1 AND status = 'approved' ORDER BY created_at DESC LIMIT 1`,
+        [normalizedEmail]
       );
-      if (partner.length === 0) {
-        return res.status(403).json({ error: "Partner not found or not approved" });
-      }
-      const referrerPartnerId = partner[0].id;
-      if (partner[0].email.toLowerCase() === referredEmail.toLowerCase()) {
-        return res.status(400).json({ error: "You cannot refer yourself" });
-      }
-      const existing = await pgQuery(
-        `SELECT id FROM partner_referrals WHERE referrer_partner_id = $1 AND referred_email = $2`,
-        [referrerPartnerId, referredEmail.toLowerCase()]
+      if (partner.length === 0) return res.status(404).json({ error: "No approved application found for this email. Your application must be approved before you can create an account." });
+      if (partner[0].password_hash) return res.status(409).json({ error: "Account already exists. Please log in." });
+      const hash = await bcrypt.hash(password, 10);
+      const updated = await pgQuery(
+        `UPDATE partner_applications SET password_hash = $1 WHERE id = $2 AND password_hash IS NULL RETURNING id`,
+        [hash, partner[0].id]
       );
-      if (existing.length > 0) {
-        return res.status(409).json({ error: "You have already referred this business" });
-      }
-      const rows = await pgQuery(
-        `INSERT INTO partner_referrals (referrer_partner_id, referred_company_name, referred_contact_name, referred_email)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [referrerPartnerId, referredCompanyName, referredContactName, referredEmail.toLowerCase()]
+      if (updated.length === 0) return res.status(409).json({ error: "Account already exists. Please log in." });
+      const token = crypto.randomBytes(32).toString("hex");
+      await pgQuery(
+        `INSERT INTO partner_sessions (partner_id, token) VALUES ($1, $2)`,
+        [partner[0].id, token]
       );
-      return res.json(rows[0]);
+      const full = await pgQuery(
+        `SELECT id, email, company_name, status FROM partner_applications WHERE id = $1`,
+        [partner[0].id]
+      );
+      return res.json({ token, partner: full[0] });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   });
 
-  app.get("/api/partner-referrals", async (req, res) => {
-    const { email } = req.query;
-    if (!email || typeof email !== 'string') return res.status(400).json({ error: "Email required" });
+  app.post("/api/partner/login", async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!checkPartnerRateLimit(`login:${normalizedEmail}`)) {
+      return res.status(429).json({ error: "Too many login attempts. Please try again later." });
+    }
     try {
       const partner = await pgQuery(
-        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
-        [email.toLowerCase()]
+        `SELECT id, email, company_name, status, password_hash FROM partner_applications WHERE LOWER(email) = $1 ORDER BY created_at DESC LIMIT 1`,
+        [normalizedEmail]
       );
-      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
+      if (partner.length === 0) return res.status(404).json({ error: "No account found for this email" });
+      if (partner[0].status !== 'approved') return res.status(403).json({ error: "Your application is not yet approved" });
+      if (!partner[0].password_hash) return res.status(400).json({ error: "Account not yet created. Please create your account first." });
+      const valid = await bcrypt.compare(password, partner[0].password_hash);
+      if (!valid) return res.status(401).json({ error: "Incorrect password" });
+      const token = crypto.randomBytes(32).toString("hex");
+      await pgQuery(
+        `INSERT INTO partner_sessions (partner_id, token) VALUES ($1, $2)`,
+        [partner[0].id, token]
+      );
+      return res.json({
+        token,
+        partner: { id: partner[0].id, email: partner[0].email, company_name: partner[0].company_name, status: partner[0].status },
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/partner/logout", async (req, res) => {
+    const authHeader = req.headers["authorization"];
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      await pgQuery(`DELETE FROM partner_sessions WHERE token = $1`, [token]).catch(() => {});
+    }
+    return res.json({ success: true });
+  });
+
+  app.get("/api/partner/me", async (req, res) => {
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
+    return res.json(partner);
+  });
+
+  // ── Partner Referral System (Link-Based) ──
+
+  app.get("/api/partner-referral/me", async (req, res) => {
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
+    if (partner.status !== 'approved') return res.status(403).json({ error: "Partner not yet approved" });
+    try {
+      const partnerId = partner.id;
+      const referralCode = await getOrCreatePartnerReferralCode(partnerId);
+      const referralLink = `https://veterancare.com/partner-apply?ref=${referralCode}`;
+      const referrals = await pgQuery(
+        `SELECT status, COUNT(*)::int AS count FROM partner_referrals WHERE referrer_partner_id = $1 GROUP BY status`,
+        [partnerId]
+      );
+      let totalReferrals = 0, signedUp = 0, freeMonthsEarned = 0, pending = 0;
+      for (const r of referrals) {
+        totalReferrals += r.count;
+        if (r.status === 'signed_up') signedUp += r.count;
+        if (r.status === 'first_cycle_complete' || r.status === 'credit_applied') freeMonthsEarned += r.count;
+        if (r.status === 'pending' || r.status === 'signed_up') pending += r.count;
+      }
+      const rankRows = await pgQuery(
+        `SELECT referrer_partner_id, COUNT(*)::int AS total
+         FROM partner_referrals 
+         WHERE status IN ('signed_up', 'first_cycle_complete', 'credit_applied')
+         GROUP BY referrer_partner_id
+         ORDER BY total DESC`
+      );
+      let rank: number | null = null;
+      for (let i = 0; i < rankRows.length; i++) {
+        if (rankRows[i].referrer_partner_id === partnerId) { rank = i + 1; break; }
+      }
+      return res.json({
+        partnerId,
+        companyName: partner.company_name,
+        referralCode,
+        referralLink,
+        totalReferrals,
+        signedUp,
+        freeMonthsEarned,
+        pendingRewards: pending,
+        rank,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/partner-referral/leaderboard", async (_req, res) => {
+    try {
       const rows = await pgQuery(
-        `SELECT * FROM partner_referrals WHERE referrer_partner_id = $1 ORDER BY created_at DESC`,
-        [partner[0].id]
+        `SELECT pa.company_name, COUNT(pr.id)::int AS successful_referrals
+         FROM partner_referrals pr
+         JOIN partner_applications pa ON pa.id = pr.referrer_partner_id
+         WHERE pr.status IN ('signed_up', 'first_cycle_complete', 'credit_applied')
+         GROUP BY pa.id, pa.company_name
+         ORDER BY successful_referrals DESC
+         LIMIT 20`
       );
-      return res.json(rows);
+      const leaderboard = rows.map((r: any, i: number) => ({
+        rank: i + 1,
+        companyName: r.company_name,
+        referrals: r.successful_referrals,
+      }));
+      return res.json({ leaderboard });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/partner-referral/resolve/:code", async (req, res) => {
+    try {
+      const partner = await pgQuery(
+        `SELECT id, company_name FROM partner_applications WHERE referral_code = $1`,
+        [req.params.code.toUpperCase()]
+      );
+      if (partner.length === 0) return res.status(404).json({ error: "Invalid referral code" });
+      return res.json({ referrerName: partner[0].company_name });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   });
 
   app.post("/api/partner/lead-dispute", async (req, res) => {
-    const { partnerEmail, billingRecordId, reason } = req.body;
-    if (!partnerEmail || !billingRecordId || !reason) {
-      return res.status(400).json({ error: "Partner email, billing record ID, and reason required" });
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
+    const { billingRecordId, reason } = req.body;
+    if (!billingRecordId || !reason) {
+      return res.status(400).json({ error: "Billing record ID and reason required" });
     }
     try {
-      const partner = await pgQuery(
-        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
-        [partnerEmail.toLowerCase()]
-      );
-      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
       const record = await pgQuery(
         `SELECT * FROM lead_billing_records WHERE id = $1 AND partner_id = $2`,
-        [billingRecordId, partner[0].id]
+        [billingRecordId, partner.id]
       );
       if (record.length === 0) return res.status(404).json({ error: "Billing record not found" });
       if (record[0].status !== 'pending') {
@@ -7554,17 +7757,12 @@ export async function registerRoutes(
   });
 
   app.get("/api/partner/lead-billing", async (req, res) => {
-    const { email } = req.query;
-    if (!email || typeof email !== 'string') return res.status(400).json({ error: "Email required" });
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
     try {
-      const partner = await pgQuery(
-        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
-        [email.toLowerCase()]
-      );
-      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
       const rows = await pgQuery(
         `SELECT * FROM lead_billing_records WHERE partner_id = $1 ORDER BY created_at DESC LIMIT 100`,
-        [partner[0].id]
+        [partner.id]
       );
       return res.json(rows);
     } catch (err: any) {

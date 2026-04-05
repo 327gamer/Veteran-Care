@@ -62,6 +62,13 @@ export default function PartnerApply() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
 
+  const refCode = new URLSearchParams(window.location.search).get("ref") || "";
+  const { data: referrerData } = useQuery<{ referrerName: string }>({
+    queryKey: ["/api/partner-referral/resolve", refCode],
+    queryFn: () => fetch(`/api/partner-referral/resolve/${refCode}`).then(r => r.ok ? r.json() : null),
+    enabled: !!refCode,
+  });
+
   const [form, setForm] = useState({
     company_name: "",
     contact_name: "",
@@ -139,6 +146,7 @@ export default function PartnerApply() {
           utm_content: utm.utm_content || null,
           utm_id: utm.utm_id || null,
           session_id: sessionStorage.getItem("vc_session_id") || null,
+          referred_by_code: refCode || null,
         }),
       });
       if (!res.ok) {
@@ -190,6 +198,9 @@ export default function PartnerApply() {
               Thank you for your interest in becoming a {platform.name} Trusted Services partner.
               Our team will review your application and reach out within 2-3 business days.
             </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Once approved, you'll gain access to your partner referral dashboard where you can share your referral link and track your rewards.
+            </p>
             <p className="text-xs text-muted-foreground">
               Questions? Contact us at <a href="mailto:info@veterancare.com" className="text-primary underline">info@veterancare.com</a>
             </p>
@@ -225,6 +236,17 @@ export default function PartnerApply() {
           <ArrowLeft className="h-4 w-4" />
           Back to Trusted Services
         </button>
+
+        {refCode && referrerData && (
+          <div className="mb-4 rounded-xl border-2 border-primary/30 bg-green-50 p-3 flex items-center gap-3" data-testid="section-referred-banner">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Handshake className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-xs text-foreground">
+              You were referred by <span className="font-semibold">{referrerData.referrerName}</span>
+            </p>
+          </div>
+        )}
 
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-3">
@@ -292,7 +314,7 @@ export default function PartnerApply() {
           </div>
           <div className="border-t border-primary/10 pt-2">
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              One free month per qualified referral. Referred business must be new, not an existing partner. Credit is applied after the referred business completes its first paid billing cycle. Referral credit applies to a future invoice only and cannot be exchanged for cash.
+              One free month per qualified referral. Referred business must be new, not an existing partner. Credit is applied after the referred business completes its first paid billing cycle. Referral credit applies to a future invoice only and cannot be exchanged for cash. Once approved, you'll gain access to your partner referral dashboard where you can share your referral link and track your rewards.
             </p>
           </div>
         </div>
