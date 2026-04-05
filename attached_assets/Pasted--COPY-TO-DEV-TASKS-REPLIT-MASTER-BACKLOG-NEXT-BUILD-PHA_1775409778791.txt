@@ -1,0 +1,117 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### MASTER BACKLOG + NEXT BUILD PHASE (DO NOT LOSE ITEMS)
+
+IMPORTANT:
+We are transitioning into SALES / ACTIVATION phase.
+
+However, the following systems MUST be preserved, tracked, and built in order.
+
+DO NOT LOSE ANY ITEM.
+DO NOT REMOVE FROM BACKLOG.
+
+Organize your response into:
+1. CAN BUILD NOW (quick wins)
+2. NEEDS BACKEND DESIGN
+3. PHASED BUILD PLAN
+
+-------------------------------------
+1) TRUSTED PARTNER SUBCATEGORIES (HIGH PRIORITY)
+-------------------------------------
+
+We need structured subcategories under trusted partners.
+
+Examples:
+- Legal → VA Claims, Family Law, Criminal, Estate Planning
+- Insurance → Life, Health, Auto, Home
+- Mortgage/Lenders → VA Loans, Refinance, First-Time Buyers
+
+Requirements:
+- selectable during partner onboarding
+- stored in database (structured, not text)
+- used for:
+  - lead routing
+  - filtering
+  - future ad targeting
+
+-------------------------------------
+2) LEADERBOARD GIVEAWAY SYSTEM
+-------------------------------------
+
+We need:
+
+- visible giveaway section (what the prize is)
+- rules display
+- winner selection logic
+- automated winner email
+- ability to send digital gift card or certificate
+
+-------------------------------------
+3) REFER A BUSINESS (FREE MONTH SYSTEM)
+-------------------------------------
+
+Trusted partners must be able to:
+
+- refer another business
+- receive 1 free month AFTER first billing cycle completes
+
+Needs:
+- referral tracking
+- Stripe integration
+- billing delay / credit logic
+- validation rules (no abuse)
+
+-------------------------------------
+4) AI CHAT → EMAIL / NOTIFICATION HANDOFF
+-------------------------------------
+
+We need:
+
+- AI chat to send results via email
+- future notification system (not yet built)
+- ability to push contact info to user
+
+Provide:
+- phased approach (email first, notifications later)
+
+-------------------------------------
+5) LEAD MONETIZATION (HIGH VALUE CATEGORIES)
+-------------------------------------
+
+For categories like:
+- mortgage
+- insurance
+- legal
+
+We need:
+
+- optional per-lead billing
+- tracking per partner
+- ability to charge per lead OR subscription + lead hybrid
+
+-------------------------------------
+6) ADMIN PANEL CLEANUP
+-------------------------------------
+
+Reorganize admin into:
+
+- Analytics + Attribution
+- Ambassadors + Commissions + Payouts
+- Resources
+- Trusted Partners
+
+Keep it simple and structured.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+1. what can be built immediately
+2. what needs backend planning
+3. phased roadmap (ordered)
+4. estimated effort for each
+
+IMPORTANT:
+We are entering SALES phase, so execution must be efficient and structured.
+
+--- END ---
