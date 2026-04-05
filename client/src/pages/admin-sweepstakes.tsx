@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   Trophy,
@@ -18,6 +20,10 @@ import {
   History,
   ChevronDown,
   ChevronUp,
+  Mail,
+  CheckCircle2,
+  Edit3,
+  Save,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
@@ -49,6 +55,11 @@ interface CurrentData {
   totalParticipants: number;
   entryPool: PoolEntry[];
   winners: Winner[];
+  prizeTitle: string | null;
+  prizeDescription: string | null;
+  prizeValue: number | null;
+  prizeImageUrl: string | null;
+  rulesText: string | null;
 }
 
 interface HistoryMonth {
@@ -91,6 +102,10 @@ export default function AdminSweepstakes() {
   const [prizeNotes, setPrizeNotes] = useState("");
   const [showPool, setShowPool] = useState(false);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
+  const [editPrize, setEditPrize] = useState(false);
+  const [prizeForm, setPrizeForm] = useState({
+    prizeTitle: "", prizeDescription: "", prizeValue: "", prizeImageUrl: "", rulesText: "",
+  });
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -178,6 +193,45 @@ export default function AdminSweepstakes() {
     },
   });
 
+  const prizeMutation = useMutation({
+    mutationFn: (body: any) =>
+      fetch("/api/admin/sweepstakes/prize", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(body),
+      }).then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error || "Failed");
+        return r.json();
+      }),
+    onSuccess: () => {
+      toast({ title: "Prize Updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sweepstakes/current"] });
+      setEditPrize(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const notifyMutation = useMutation({
+    mutationFn: (winnerId: string) =>
+      fetch(`/api/admin/sweepstakes/notify-winner/${winnerId}`, {
+        method: "POST",
+        headers,
+      }).then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "Notification failed");
+        return data;
+      }),
+    onSuccess: (data) => {
+      toast({ title: "Winner Notified", description: `Email sent to ${data.email}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sweepstakes/current"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Notification Failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleDraw = () => {
     const body: any = { placement: drawPlacement, selectionMethod: drawMethod };
     if (drawMethod === "manual") body.userId = manualUserId;
@@ -261,6 +315,98 @@ export default function AdminSweepstakes() {
                 </CardContent>
               </Card>
 
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-green-600" />
+                      Monthly Prize
+                    </CardTitle>
+                    <Button
+                      data-testid="button-edit-prize"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setEditPrize(!editPrize);
+                        setPrizeForm({
+                          prizeTitle: current.prizeTitle || "",
+                          prizeDescription: current.prizeDescription || "",
+                          prizeValue: current.prizeValue?.toString() || "",
+                          prizeImageUrl: current.prizeImageUrl || "",
+                          rulesText: current.rulesText || "",
+                        });
+                      }}
+                    >
+                      <Edit3 className="h-3 w-3 mr-1" /> {editPrize ? "Cancel" : "Edit"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {editPrize ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Prize Title</Label>
+                        <Input data-testid="input-prize-title" value={prizeForm.prizeTitle} onChange={(e) => setPrizeForm(p => ({ ...p, prizeTitle: e.target.value }))} placeholder="e.g. $50 Amazon Gift Card" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Description</Label>
+                        <Textarea data-testid="input-prize-desc" value={prizeForm.prizeDescription} onChange={(e) => setPrizeForm(p => ({ ...p, prizeDescription: e.target.value }))} placeholder="Details about the prize..." rows={2} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Value ($)</Label>
+                          <Input data-testid="input-prize-value" type="number" value={prizeForm.prizeValue} onChange={(e) => setPrizeForm(p => ({ ...p, prizeValue: e.target.value }))} placeholder="50" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Image URL</Label>
+                          <Input data-testid="input-prize-image" value={prizeForm.prizeImageUrl} onChange={(e) => setPrizeForm(p => ({ ...p, prizeImageUrl: e.target.value }))} placeholder="https://..." />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Rules Text</Label>
+                        <Textarea data-testid="input-rules" value={prizeForm.rulesText} onChange={(e) => setPrizeForm(p => ({ ...p, rulesText: e.target.value }))} placeholder="Official rules..." rows={3} />
+                      </div>
+                      <Button
+                        data-testid="button-save-prize"
+                        size="sm"
+                        className="w-full"
+                        disabled={prizeMutation.isPending}
+                        onClick={() => prizeMutation.mutate({
+                          prizeTitle: prizeForm.prizeTitle || null,
+                          prizeDescription: prizeForm.prizeDescription || null,
+                          prizeValue: prizeForm.prizeValue ? parseInt(prizeForm.prizeValue) : null,
+                          prizeImageUrl: prizeForm.prizeImageUrl || null,
+                          rulesText: prizeForm.rulesText || null,
+                        })}
+                      >
+                        {prizeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Save Prize</>}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {current.prizeTitle ? (
+                        <>
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                            <p className="font-bold text-lg">{current.prizeTitle}</p>
+                            {current.prizeValue && <p className="text-green-700 font-bold text-xl mt-1">${current.prizeValue}</p>}
+                            {current.prizeDescription && <p className="text-sm text-muted-foreground mt-1">{current.prizeDescription}</p>}
+                          </div>
+                          {current.rulesText && (
+                            <div className="text-[10px] text-muted-foreground bg-muted/30 rounded p-2">
+                              <p className="font-medium uppercase tracking-wider mb-1">Rules</p>
+                              <p className="whitespace-pre-wrap">{current.rulesText}</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-3">No prize set yet. Click Edit to configure.</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {current.winners.length > 0 && (
                 <Card>
                   <CardHeader className="pb-2">
@@ -285,18 +431,32 @@ export default function AdminSweepstakes() {
                           </p>
                           {w.prizeNotes && <p className="text-xs text-muted-foreground/70 mt-0.5">{w.prizeNotes}</p>}
                         </div>
-                        {!isClosed && (
-                          <Button
-                            data-testid={`button-remove-winner-${w.placement}`}
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-destructive/60 hover:text-destructive"
-                            onClick={() => removeMutation.mutate(w.id)}
-                            disabled={removeMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
+                        <div className="flex gap-1">
+                          {w.email && (
+                            <Button
+                              data-testid={`button-notify-winner-${w.placement}`}
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => notifyMutation.mutate(w.id)}
+                              disabled={notifyMutation.isPending}
+                            >
+                              <Mail className="h-3 w-3" /> Notify
+                            </Button>
+                          )}
+                          {!isClosed && (
+                            <Button
+                              data-testid={`button-remove-winner-${w.placement}`}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive/60 hover:text-destructive"
+                              onClick={() => removeMutation.mutate(w.id)}
+                              disabled={removeMutation.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </CardContent>

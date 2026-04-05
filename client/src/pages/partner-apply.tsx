@@ -48,6 +48,14 @@ interface Category {
   slug: string;
 }
 
+interface Subcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+}
+
 export default function PartnerApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -62,6 +70,7 @@ export default function PartnerApply() {
     city: "",
     state: "",
     category_id: "",
+    subcategory_ids: [] as string[],
     service_description: "",
     pricing_interest: "both",
     plan_type: "" as "state" | "national" | "",
@@ -100,6 +109,17 @@ export default function PartnerApply() {
     },
   });
 
+  const { data: subcategories = [] } = useQuery<Subcategory[]>({
+    queryKey: ["/api/partner-subcategories", form.category_id],
+    queryFn: async () => {
+      if (!form.category_id) return [];
+      const res = await fetch(`/api/partner-subcategories?category_id=${form.category_id}`);
+      if (!res.ok) throw new Error("Failed to load subcategories");
+      return res.json();
+    },
+    enabled: !!form.category_id,
+  });
+
   const submitMutation = useMutation({
     mutationFn: async () => {
       const utm = getUTMParams();
@@ -108,6 +128,7 @@ export default function PartnerApply() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          subcategory_ids: form.subcategory_ids.length > 0 ? form.subcategory_ids : null,
           category_id: form.category_id || null,
           state: form.plan_type === "national" ? null : (form.state || null),
           addons: Object.entries(addons).filter(([, v]) => v).map(([k]) => k),
@@ -491,7 +512,9 @@ export default function PartnerApply() {
 
             <div>
               <Label htmlFor="category" className="text-xs">Service Category</Label>
-              <Select value={form.category_id} onValueChange={(v) => updateField("category_id", v)}>
+              <Select value={form.category_id} onValueChange={(v) => {
+                setForm(prev => ({ ...prev, category_id: v, subcategory_ids: [] }));
+              }}>
                 <SelectTrigger data-testid="select-category">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
@@ -502,6 +525,40 @@ export default function PartnerApply() {
                 </SelectContent>
               </Select>
             </div>
+
+            {subcategories.length > 0 && (
+              <div>
+                <Label className="text-xs">Service Specialties</Label>
+                <p className="text-xs text-muted-foreground mb-2">Select all that apply</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {subcategories.map((sc) => {
+                    const checked = form.subcategory_ids.includes(sc.id);
+                    return (
+                      <label
+                        key={sc.id}
+                        data-testid={`checkbox-subcategory-${sc.slug}`}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setForm(prev => ({
+                              ...prev,
+                              subcategory_ids: checked
+                                ? prev.subcategory_ids.filter(id => id !== sc.id)
+                                : [...prev.subcategory_ids, sc.id]
+                            }));
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium">{sc.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="service_description" className="text-xs">Describe Your Services</Label>

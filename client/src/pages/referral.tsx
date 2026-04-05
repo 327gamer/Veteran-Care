@@ -93,6 +93,14 @@ export default function Referral() {
     enabled: !!token,
   });
 
+  const { data: prizeData } = useQuery<{
+    month: string; prizeTitle: string | null; prizeDescription: string | null;
+    prizeValue: number | null; prizeImageUrl: string | null; rulesText: string | null;
+  }>({
+    queryKey: ["/api/sweepstakes/current-prize"],
+    queryFn: () => fetch("/api/sweepstakes/current-prize").then(r => r.ok ? r.json() : null),
+  });
+
   const { data: leaderboardData, isLoading: lbLoading } = useQuery<LeaderboardData>({
     queryKey: ["/api/referral/leaderboard"],
     queryFn: () =>
@@ -453,14 +461,41 @@ export default function Referral() {
                 <Gift className="h-4 w-4 text-primary" />
                 This Month's Giveaway
               </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Qualified referrals earn entries into this month's giveaway. Final prize details will be announced soon.
-              </p>
-              <p className="text-[11px] text-muted-foreground/60">
-                The more veterans you help connect to resources, the more entries you earn.
-              </p>
+              {prizeData?.prizeTitle ? (
+                <>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <p className="font-bold text-base" data-testid="text-prize-title">{prizeData.prizeTitle}</p>
+                    {prizeData.prizeValue && <p className="text-green-700 font-bold text-lg mt-1" data-testid="text-prize-value">${prizeData.prizeValue}</p>}
+                    {prizeData.prizeDescription && <p className="text-xs text-muted-foreground mt-1">{prizeData.prizeDescription}</p>}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    The more veterans you help connect to resources, the more entries you earn.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Qualified referrals earn entries into this month's giveaway. Prize details coming soon!
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    The more veterans you help connect to resources, the more entries you earn.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
+
+          {prizeData?.rulesText && (
+            <Card className="bg-muted/30 border-dashed mt-2">
+              <CardContent className="p-4 space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Star className="h-4 w-4 text-primary" />
+                  Official Rules
+                </h3>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{prizeData.rulesText}</p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="bg-muted/30 border-dashed">
             <CardContent className="p-4 space-y-2">

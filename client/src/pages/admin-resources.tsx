@@ -29,6 +29,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import {
   CheckCircle2,
@@ -61,6 +69,10 @@ import {
   DollarSign,
   Handshake,
   TrendingUp,
+  Link2,
+  Trophy,
+  Store,
+  Menu,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -844,70 +856,75 @@ export default function AdminResources() {
             <ShieldCheck className="h-5 w-5" />
             <span className="font-heading font-bold">Admin — Resource Review</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              data-testid="button-analytics"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/analytics")}
-            >
-              <BarChart3 className="h-4 w-4 mr-1.5" /> Analytics
-            </Button>
-            <Button
-              data-testid="button-attribution"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/attribution")}
-            >
-              <TrendingUp className="h-4 w-4 mr-1.5" /> Attribution
-            </Button>
-            <Button
-              data-testid="button-commissions"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/commissions")}
-            >
-              <DollarSign className="h-4 w-4 mr-1.5" /> Commissions
-            </Button>
-            <Button
-              data-testid="button-payouts"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/payouts")}
-            >
-              <DollarSign className="h-4 w-4 mr-1.5" /> Payouts
-            </Button>
-            <Button
-              data-testid="button-ambassadors"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/ambassadors")}
-            >
-              <Users className="h-4 w-4 mr-1.5" /> Ambassadors
-            </Button>
-            <Button
-              data-testid="button-ai-insights"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/ai-insights")}
-            >
-              <Brain className="h-4 w-4 mr-1.5" /> AI Insights
-            </Button>
-            <Button
-              data-testid="button-partner-leads"
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
-              onClick={() => setLocation("/admin/trusted-service-leads")}
-            >
-              <Handshake className="h-4 w-4 mr-1.5" /> Trusted Partner Leads
-            </Button>
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button data-testid="menu-analytics" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                  <BarChart3 className="h-4 w-4 mr-1.5" /> Analytics <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem data-testid="nav-analytics" onClick={() => setLocation("/admin/analytics")}>
+                  <BarChart3 className="h-4 w-4 mr-2" /> Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-attribution" onClick={() => setLocation("/admin/attribution")}>
+                  <TrendingUp className="h-4 w-4 mr-2" /> Attribution
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-ai-insights" onClick={() => setLocation("/admin/ai-insights")}>
+                  <Brain className="h-4 w-4 mr-2" /> AI Insights
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button data-testid="menu-ambassadors" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                  <Users className="h-4 w-4 mr-1.5" /> Ambassadors <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem data-testid="nav-ambassadors" onClick={() => setLocation("/admin/ambassadors")}>
+                  <Users className="h-4 w-4 mr-2" /> Manage Ambassadors
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-links" onClick={() => setLocation("/admin/links")}>
+                  <Link2 className="h-4 w-4 mr-2" /> Link Management
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem data-testid="nav-commissions" onClick={() => setLocation("/admin/commissions")}>
+                  <DollarSign className="h-4 w-4 mr-2" /> Commissions
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-payouts" onClick={() => setLocation("/admin/payouts")}>
+                  <DollarSign className="h-4 w-4 mr-2" /> Payouts
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button data-testid="menu-partners" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                  <Handshake className="h-4 w-4 mr-1.5" /> Partners <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem data-testid="nav-partner-prospects" onClick={() => setLocation("/admin/partner-prospects")}>
+                  <Building2 className="h-4 w-4 mr-2" /> Partner Prospects
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-trusted-services" onClick={() => setLocation("/admin/trusted-services")}>
+                  <Handshake className="h-4 w-4 mr-2" /> Trusted Services
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-trusted-leads" onClick={() => setLocation("/admin/trusted-service-leads")}>
+                  <Mail className="h-4 w-4 mr-2" /> Trusted Partner Leads
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem data-testid="nav-vob" onClick={() => setLocation("/admin/vob")}>
+                  <Store className="h-4 w-4 mr-2" /> Veteran-Owned Business
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-sweepstakes" onClick={() => setLocation("/admin/sweepstakes")}>
+                  <Trophy className="h-4 w-4 mr-2" /> Sweepstakes
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); localStorage.removeItem("adminKey"); }}>
               Sign Out
             </Button>

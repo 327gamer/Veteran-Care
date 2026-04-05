@@ -1,6 +1,7 @@
 import { supabase, supabaseAdmin } from "./supabase";
 import { sendLeadNotification } from "./lead-email";
 import { platform } from "../shared/platform";
+import { query as pgQuery } from "./pg-client";
 
 const ADMIN_EMAILS = [
   platform.email.defaultNotifyEmail.toLowerCase(),
@@ -279,7 +280,44 @@ export async function routeLead(leadId: string): Promise<{
     console.log(`[router] Email notification failed for lead ${leadId}:`, err?.message);
   });
 
+  createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
+    console.log(`[router] Lead billing record creation failed for lead ${leadId}:`, err?.message);
+  });
+
   return { routed: true, partnerId: match.partnerId, partnerName: match.partnerName };
+}
+
+async function createLeadBillingRecord(leadId: string, partnerId: string, category: string | null) {
+  try {
+    const partnerRows = await pgQuery(
+      `SELECT billing_model, lead_price_cents FROM partner_applications WHERE id = $1`,
+      [partnerId]
+    );
+    const partner = partnerRows[0];
+    if (!partner || partner.billing_model === 'subscription_only' || !partner.billing_model) {
+      return;
+    }
+    let priceCents = partner.lead_price_cents;
+    if (!priceCents && category) {
+      const catSlug = category.toLowerCase().replace(/\s+/g, '-');
+      const catPricing = await pgQuery(
+        `SELECT price_cents FROM lead_category_pricing WHERE category_slug = $1 AND is_active = true`,
+        [catSlug]
+      );
+      if (catPricing.length > 0) priceCents = catPricing[0].price_cents;
+    }
+    if (!priceCents) priceCents = 2500;
+    const now = new Date();
+    const billingPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    await pgQuery(
+      `INSERT INTO lead_billing_records (partner_id, navigator_request_id, lead_category, price_cents, billing_period)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [partnerId, leadId, category, priceCents, billingPeriod]
+    );
+    console.log(`[billing] Lead billing record created for partner ${partnerId}, lead ${leadId}, $${(priceCents / 100).toFixed(2)}`);
+  } catch (err: any) {
+    console.log(`[billing] Failed to create billing record:`, err.message);
+  }
 }
 
 export async function autoRouteNewLead(leadId: string): Promise<{ routed: boolean; partnerId?: string; partnerName?: string }> {

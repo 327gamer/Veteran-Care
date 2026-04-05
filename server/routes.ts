@@ -342,6 +342,149 @@ async function ensureAttributionTables() {
   }
 }
 
+async function ensureLeadBilling() {
+  try {
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS billing_model TEXT DEFAULT 'subscription_only'`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS lead_price_cents INTEGER`);
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS lead_billing_records (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        partner_id UUID NOT NULL,
+        navigator_request_id UUID,
+        lead_category TEXT,
+        price_cents INTEGER NOT NULL,
+        billing_period TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'billed', 'disputed', 'waived', 'credited')),
+        dispute_reason TEXT,
+        dispute_filed_at TIMESTAMPTZ,
+        dispute_resolved_at TIMESTAMPTZ,
+        dispute_resolution TEXT,
+        stripe_invoice_item_id TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_partner ON lead_billing_records(partner_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_period ON lead_billing_records(billing_period)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_status ON lead_billing_records(status)`);
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS lead_category_pricing (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category_slug TEXT NOT NULL UNIQUE,
+        category_name TEXT NOT NULL,
+        price_cents INTEGER NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    const defaultPrices = await pgQuery(`SELECT id FROM lead_category_pricing LIMIT 1`);
+    if (defaultPrices.length === 0) {
+      await pgQuery(`
+        INSERT INTO lead_category_pricing (category_slug, category_name, price_cents) VALUES
+          ('financial-credit', 'Mortgage / Lending', 5000),
+          ('insurance', 'Insurance Services', 2500),
+          ('legal-services', 'Legal Services', 3500)
+        ON CONFLICT (category_slug) DO NOTHING
+      `);
+      console.log("[seed] Default lead category pricing seeded");
+    }
+    console.log("[schema] lead billing tables ready");
+  } catch (err: any) {
+    console.log("[schema] lead billing setup:", err.message);
+  }
+}
+
+async function ensurePartnerReferrals() {
+  try {
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS partner_referrals (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        referrer_partner_id UUID NOT NULL,
+        referred_company_name TEXT NOT NULL,
+        referred_contact_name TEXT NOT NULL,
+        referred_email TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'signed_up', 'first_cycle_complete', 'credit_applied', 'expired', 'rejected')),
+        referred_application_id UUID,
+        credit_coupon_id TEXT,
+        credit_applied_at TIMESTAMPTZ,
+        admin_notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_referrer ON partner_referrals(referrer_partner_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_email ON partner_referrals(referred_email)`);
+    console.log("[schema] partner_referrals table ready");
+  } catch (err: any) {
+    console.log("[schema] partner_referrals error:", err.message);
+  }
+}
+
+async function ensurePartnerSubcategories() {
+  try {
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS partner_subcategories (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category_id UUID NOT NULL REFERENCES trusted_service_categories(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE(category_id, slug)
+      )
+    `);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS subcategory_ids TEXT`);
+    const existing = await pgQuery(`SELECT id FROM partner_subcategories LIMIT 1`);
+    if (existing.length === 0) {
+      const catMap = await pgQuery(`SELECT id, slug FROM trusted_service_categories`);
+      const findCat = (slug: string) => catMap.find((c: any) => c.slug === slug)?.id;
+      const legal = findCat('legal-services');
+      const insurance = findCat('insurance');
+      const financial = findCat('financial-credit');
+      const inserts: string[] = [];
+      const params: any[] = [];
+      let idx = 1;
+      const add = (catId: string | undefined, name: string, slug: string, order: number) => {
+        if (!catId) return;
+        inserts.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++})`);
+        params.push(catId, name, slug, order);
+      };
+      if (legal) {
+        add(legal, 'VA Claims', 'va-claims', 1);
+        add(legal, 'Disability Appeals', 'disability-appeals', 2);
+        add(legal, 'Family Law', 'family-law', 3);
+        add(legal, 'Criminal Defense', 'criminal-defense', 4);
+        add(legal, 'Estate Planning', 'estate-planning', 5);
+      }
+      if (insurance) {
+        add(insurance, 'Life Insurance', 'life-insurance', 1);
+        add(insurance, 'Health Insurance', 'health-insurance', 2);
+        add(insurance, 'Auto Insurance', 'auto-insurance', 3);
+        add(insurance, 'Home Insurance', 'home-insurance', 4);
+      }
+      if (financial) {
+        add(financial, 'VA Loans', 'va-loans', 1);
+        add(financial, 'Refinance', 'refinance', 2);
+        add(financial, 'First-Time Buyers', 'first-time-buyers', 3);
+        add(financial, 'Debt Consolidation', 'debt-consolidation', 4);
+      }
+      if (inserts.length > 0) {
+        await pgQuery(
+          `INSERT INTO partner_subcategories (category_id, name, slug, display_order) VALUES ${inserts.join(', ')} ON CONFLICT (category_id, slug) DO NOTHING`,
+          params
+        );
+        console.log(`[seed] ${inserts.length} partner subcategories seeded`);
+      }
+    }
+    console.log("[schema] partner_subcategories table ready");
+  } catch (err: any) {
+    console.log("[schema] partner_subcategories error:", err.message);
+  }
+}
+
 async function ensureReferralSweepstakesTables() {
   try {
     await pgQuery(`
@@ -419,6 +562,11 @@ async function ensureReferralSweepstakesTables() {
     await pgQuery(`ALTER TABLE sweepstakes_winners ADD COLUMN IF NOT EXISTS placement INTEGER NOT NULL DEFAULT 1`);
     await pgQuery(`ALTER TABLE sweepstakes_winners ADD COLUMN IF NOT EXISTS entry_count_at_draw INTEGER`);
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_sweepstakes_winners_month_placement ON sweepstakes_winners(month, placement)`);
+    await pgQuery(`ALTER TABLE sweepstakes_months ADD COLUMN IF NOT EXISTS prize_title TEXT`);
+    await pgQuery(`ALTER TABLE sweepstakes_months ADD COLUMN IF NOT EXISTS prize_description TEXT`);
+    await pgQuery(`ALTER TABLE sweepstakes_months ADD COLUMN IF NOT EXISTS prize_value INTEGER`);
+    await pgQuery(`ALTER TABLE sweepstakes_months ADD COLUMN IF NOT EXISTS prize_image_url TEXT`);
+    await pgQuery(`ALTER TABLE sweepstakes_months ADD COLUMN IF NOT EXISTS rules_text TEXT`);
 
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS user_referral_profiles (
@@ -1114,6 +1262,9 @@ export async function registerRoutes(
   await checkTrustedServicesTable();
   await ensureAttributionTables();
   await ensureReferralSweepstakesTables();
+  await ensurePartnerSubcategories();
+  await ensurePartnerReferrals();
+  await ensureLeadBilling();
   await backfillNavAmbassadorId();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
@@ -4011,6 +4162,82 @@ export async function registerRoutes(
 
   app.post("/api/ai/chat", (req, res) => handleAiChat(req, res));
 
+  app.post("/api/ai/email-results", async (req, res) => {
+    const { email, resources, trustedServices, conversationSummary } = req.body;
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Valid email is required" });
+    }
+    const hasContent = (resources?.length > 0) || (trustedServices?.length > 0);
+    if (!hasContent) {
+      return res.status(400).json({ error: "No results to email" });
+    }
+    try {
+      const { Resend } = await import("resend");
+      const resendClient = new Resend(process.env.RESEND_API_KEY);
+      const fromEmail = process.env.RESEND_FROM_EMAIL || `Veteran Care <onboarding@resend.dev>`;
+
+      let resourcesHtml = "";
+      if (resources?.length > 0) {
+        resourcesHtml = `<h2 style="color:#1a1a2e;font-size:18px;margin:24px 0 12px;">Matched Resources</h2>`;
+        for (const r of resources.slice(0, 10)) {
+          const esc = (s: string) => (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          resourcesHtml += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px;">
+            <p style="font-weight:600;margin:0;">${esc(r.title)}</p>
+            <p style="color:#6b7280;font-size:13px;margin:4px 0;">${esc(r.category)}${r.city ? ` · ${esc(r.city)}` : ''}${r.state ? `, ${esc(r.state)}` : ''}</p>
+            <div style="margin-top:8px;">
+              ${r.website_url ? `<a href="${esc(r.website_url)}" style="color:#16a34a;text-decoration:none;font-size:13px;margin-right:16px;">Visit Website</a>` : ''}
+              ${r.phone ? `<a href="tel:${esc(r.phone)}" style="color:#16a34a;text-decoration:none;font-size:13px;">${esc(r.phone)}</a>` : ''}
+            </div>
+          </div>`;
+        }
+      }
+
+      let trustedHtml = "";
+      if (trustedServices?.length > 0) {
+        trustedHtml = `<h2 style="color:#1a1a2e;font-size:18px;margin:24px 0 12px;">Trusted Partners</h2>`;
+        for (const s of trustedServices.slice(0, 5)) {
+          const esc = (str: string) => (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          trustedHtml += `<div style="border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:8px;background:#f0fdf4;">
+            <p style="font-weight:600;margin:0;">${esc(s.name)}${s.is_featured ? ' ⭐ Featured' : ''}</p>
+            ${s.description ? `<p style="color:#6b7280;font-size:13px;margin:4px 0;">${esc(s.description)}</p>` : ''}
+            <p style="color:#6b7280;font-size:13px;margin:4px 0;">${esc(s.category_name)}${s.city ? ` · ${esc(s.city)}` : ''}${s.state ? `, ${esc(s.state)}` : ''}</p>
+            <div style="margin-top:8px;">
+              ${s.website ? `<a href="${esc(s.website)}" style="color:#16a34a;text-decoration:none;font-size:13px;margin-right:16px;">Website</a>` : ''}
+              ${s.phone ? `<a href="tel:${esc(s.phone)}" style="color:#16a34a;text-decoration:none;font-size:13px;margin-right:16px;">${esc(s.phone)}</a>` : ''}
+              ${s.email ? `<a href="mailto:${esc(s.email)}" style="color:#16a34a;text-decoration:none;font-size:13px;">Email</a>` : ''}
+            </div>
+          </div>`;
+        }
+      }
+
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          <div style="text-align:center;padding:24px 0;border-bottom:2px solid #16a34a;">
+            <h1 style="color:#1a1a2e;font-size:24px;margin:0;">Veteran Care</h1>
+            <p style="color:#6b7280;font-size:14px;margin:8px 0 0;">Your Resource Results</p>
+          </div>
+          ${conversationSummary ? `<p style="color:#374151;font-size:14px;margin:20px 0;padding:12px;background:#f9fafb;border-radius:8px;">${(conversationSummary || '').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>` : ''}
+          ${resourcesHtml}
+          ${trustedHtml}
+          <div style="text-align:center;padding:24px 0;margin-top:24px;border-top:1px solid #e5e7eb;">
+            <p style="color:#6b7280;font-size:12px;margin:0;">Need more help? Visit <a href="https://veterancare.com" style="color:#16a34a;">veterancare.com</a> or talk to our AI Guide.</p>
+          </div>
+        </div>`;
+
+      await resendClient.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: "Your Veteran Care Resource Results",
+        html,
+      });
+
+      return res.json({ success: true });
+    } catch (err: any) {
+      console.error("[ai-email] Failed to send results email:", err.message);
+      return res.status(500).json({ error: "Failed to send email" });
+    }
+  });
+
   app.get("/api/admin/resources", requireAdmin, async (req, res) => {
     const { status, q, state: stateFilter } = req.query;
 
@@ -6403,8 +6630,23 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/partner-subcategories", async (req, res) => {
+    try {
+      const { category_id } = req.query;
+      const where = category_id ? `WHERE category_id = $1 AND is_active = true` : `WHERE is_active = true`;
+      const params = category_id ? [category_id] : [];
+      const rows = await pgQuery(
+        `SELECT id, category_id, name, slug, display_order FROM partner_subcategories ${where} ORDER BY display_order ASC`,
+        params
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
@@ -6414,14 +6656,16 @@ export async function registerRoutes(
     const cleanAddons = Array.isArray(addons) ? [...new Set(addons.filter((a: string) => validAddons.includes(a)))] : [];
     try {
       const paAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
+      const cleanSubcategoryIds = Array.isArray(subcategory_ids) ? subcategory_ids.filter((s: string) => s).join(',') : (subcategory_ids || null);
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'prospect', $13, $14, $15, $16, $17, $18, $19)
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'prospect', $14, $15, $16, $17, $18, $19, $20)
          RETURNING *`,
         [
           company_name, contact_name, email,
           phone || null, website || null, city || null, state || null,
-          category_id || null, service_description || null,
+          category_id || null, cleanSubcategoryIds,
+          service_description || null,
           validPricing.includes(pricing_interest) ? pricing_interest : "both",
           validPlanTypes.includes(plan_type) ? plan_type : null,
           cleanAddons.length > 0 ? JSON.stringify(cleanAddons) : null,
@@ -6875,6 +7119,11 @@ export async function registerRoutes(
         totalParticipants: pool.length,
         entryPool: pool,
         winners: winnerList,
+        prizeTitle: monthRecord?.prize_title || null,
+        prizeDescription: monthRecord?.prize_description || null,
+        prizeValue: monthRecord?.prize_value || null,
+        prizeImageUrl: monthRecord?.prize_image_url || null,
+        rulesText: monthRecord?.rules_text || null,
       });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -7109,6 +7358,388 @@ export async function registerRoutes(
       }));
 
       return res.json({ history });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Lead Billing System ──
+
+  app.get("/api/admin/lead-pricing", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await pgQuery(`SELECT * FROM lead_category_pricing ORDER BY category_name ASC`);
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/admin/lead-pricing/:id", requireAdmin, async (req, res) => {
+    const { price_cents, is_active } = req.body;
+    try {
+      await pgQuery(
+        `UPDATE lead_category_pricing SET price_cents = COALESCE($1, price_cents), is_active = COALESCE($2, is_active) WHERE id = $3`,
+        [price_cents ?? null, is_active ?? null, req.params.id]
+      );
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/lead-billing", requireAdmin, async (req, res) => {
+    const { partner_id, status, billing_period } = req.query;
+    try {
+      let sql = `SELECT lb.*, pa.company_name AS partner_name
+                 FROM lead_billing_records lb
+                 LEFT JOIN partner_applications pa ON pa.id = lb.partner_id
+                 WHERE 1=1`;
+      const params: any[] = [];
+      let idx = 1;
+      if (partner_id) { sql += ` AND lb.partner_id = $${idx++}`; params.push(partner_id); }
+      if (status) { sql += ` AND lb.status = $${idx++}`; params.push(status); }
+      if (billing_period) { sql += ` AND lb.billing_period = $${idx++}`; params.push(billing_period); }
+      sql += ` ORDER BY lb.created_at DESC LIMIT 200`;
+      const rows = await pgQuery(sql, params);
+      const summary = await pgQuery(
+        `SELECT 
+           COUNT(*)::int AS total_leads,
+           SUM(CASE WHEN status = 'pending' THEN price_cents ELSE 0 END)::int AS pending_revenue,
+           SUM(CASE WHEN status = 'billed' THEN price_cents ELSE 0 END)::int AS billed_revenue,
+           SUM(CASE WHEN status = 'disputed' THEN price_cents ELSE 0 END)::int AS disputed_revenue,
+           COUNT(CASE WHEN status = 'disputed' THEN 1 END)::int AS dispute_count
+         FROM lead_billing_records
+         ${billing_period ? `WHERE billing_period = $1` : ''}`,
+        billing_period ? [billing_period] : []
+      );
+      return res.json({ records: rows, summary: summary[0] || {} });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/lead-billing/:id/dispute", requireAdmin, async (req, res) => {
+    const { action, resolution } = req.body;
+    if (!action || !['waive', 'reject_dispute'].includes(action)) {
+      return res.status(400).json({ error: "Action must be 'waive' or 'reject_dispute'" });
+    }
+    try {
+      const record = await pgQuery(`SELECT id, status FROM lead_billing_records WHERE id = $1`, [req.params.id]);
+      if (record.length === 0) return res.status(404).json({ error: "Billing record not found" });
+      if (action === 'waive') {
+        await pgQuery(
+          `UPDATE lead_billing_records SET status = 'waived', dispute_resolved_at = NOW(), dispute_resolution = $1, updated_at = NOW() WHERE id = $2`,
+          [resolution || 'Admin waived', req.params.id]
+        );
+      } else if (action === 'reject_dispute') {
+        await pgQuery(
+          `UPDATE lead_billing_records SET status = 'pending', dispute_resolved_at = NOW(), dispute_resolution = $1, updated_at = NOW() WHERE id = $2`,
+          [resolution || 'Dispute rejected', req.params.id]
+        );
+      }
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/admin/partner-applications/:id/billing-model", requireAdmin, async (req, res) => {
+    const { billing_model, lead_price_cents } = req.body;
+    const valid = ['subscription_only', 'per_lead', 'hybrid'];
+    if (billing_model && !valid.includes(billing_model)) return res.status(400).json({ error: "Invalid billing model" });
+    if (lead_price_cents !== undefined && lead_price_cents !== null && (typeof lead_price_cents !== 'number' || lead_price_cents < 0)) {
+      return res.status(400).json({ error: "lead_price_cents must be a non-negative integer" });
+    }
+    try {
+      const partner = await pgQuery(`SELECT id FROM partner_applications WHERE id = $1`, [req.params.id]);
+      if (partner.length === 0) return res.status(404).json({ error: "Partner not found" });
+      await pgQuery(
+        `UPDATE partner_applications SET billing_model = COALESCE($1, billing_model), lead_price_cents = $2, updated_at = NOW() WHERE id = $3`,
+        [billing_model || null, lead_price_cents ?? null, req.params.id]
+      );
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Partner Referral System ──
+
+  app.post("/api/partner-referrals", async (req, res) => {
+    const { partnerEmail, referredCompanyName, referredContactName, referredEmail } = req.body;
+    if (!partnerEmail || !referredCompanyName || !referredContactName || !referredEmail) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+    try {
+      const partner = await pgQuery(
+        `SELECT id, email FROM partner_applications WHERE LOWER(email) = $1 AND status = 'approved'`,
+        [partnerEmail.toLowerCase()]
+      );
+      if (partner.length === 0) {
+        return res.status(403).json({ error: "Partner not found or not approved" });
+      }
+      const referrerPartnerId = partner[0].id;
+      if (partner[0].email.toLowerCase() === referredEmail.toLowerCase()) {
+        return res.status(400).json({ error: "You cannot refer yourself" });
+      }
+      const existing = await pgQuery(
+        `SELECT id FROM partner_referrals WHERE referrer_partner_id = $1 AND referred_email = $2`,
+        [referrerPartnerId, referredEmail.toLowerCase()]
+      );
+      if (existing.length > 0) {
+        return res.status(409).json({ error: "You have already referred this business" });
+      }
+      const rows = await pgQuery(
+        `INSERT INTO partner_referrals (referrer_partner_id, referred_company_name, referred_contact_name, referred_email)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [referrerPartnerId, referredCompanyName, referredContactName, referredEmail.toLowerCase()]
+      );
+      return res.json(rows[0]);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/partner-referrals", async (req, res) => {
+    const { email } = req.query;
+    if (!email || typeof email !== 'string') return res.status(400).json({ error: "Email required" });
+    try {
+      const partner = await pgQuery(
+        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
+        [email.toLowerCase()]
+      );
+      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
+      const rows = await pgQuery(
+        `SELECT * FROM partner_referrals WHERE referrer_partner_id = $1 ORDER BY created_at DESC`,
+        [partner[0].id]
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/partner/lead-dispute", async (req, res) => {
+    const { partnerEmail, billingRecordId, reason } = req.body;
+    if (!partnerEmail || !billingRecordId || !reason) {
+      return res.status(400).json({ error: "Partner email, billing record ID, and reason required" });
+    }
+    try {
+      const partner = await pgQuery(
+        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
+        [partnerEmail.toLowerCase()]
+      );
+      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
+      const record = await pgQuery(
+        `SELECT * FROM lead_billing_records WHERE id = $1 AND partner_id = $2`,
+        [billingRecordId, partner[0].id]
+      );
+      if (record.length === 0) return res.status(404).json({ error: "Billing record not found" });
+      if (record[0].status !== 'pending') {
+        return res.status(400).json({ error: `Cannot dispute a record with status '${record[0].status}'` });
+      }
+      const createdAt = new Date(record[0].created_at);
+      const hoursElapsed = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+      if (hoursElapsed > 48) {
+        return res.status(400).json({ error: "Dispute window has closed (48 hours)" });
+      }
+      await pgQuery(
+        `UPDATE lead_billing_records SET status = 'disputed', dispute_reason = $1, dispute_filed_at = NOW(), updated_at = NOW() WHERE id = $2`,
+        [reason, billingRecordId]
+      );
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/partner/lead-billing", async (req, res) => {
+    const { email } = req.query;
+    if (!email || typeof email !== 'string') return res.status(400).json({ error: "Email required" });
+    try {
+      const partner = await pgQuery(
+        `SELECT id FROM partner_applications WHERE LOWER(email) = $1`,
+        [email.toLowerCase()]
+      );
+      if (partner.length === 0) return res.status(403).json({ error: "Partner not found" });
+      const rows = await pgQuery(
+        `SELECT * FROM lead_billing_records WHERE partner_id = $1 ORDER BY created_at DESC LIMIT 100`,
+        [partner[0].id]
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/partner-referrals", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await pgQuery(
+        `SELECT pr.*, pa.company_name AS referrer_company_name
+         FROM partner_referrals pr
+         LEFT JOIN partner_applications pa ON pa.id = pr.referrer_partner_id
+         ORDER BY pr.created_at DESC`
+      );
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/partner-referrals/:id/apply-credit", requireAdmin, async (req, res) => {
+    try {
+      const referral = await pgQuery(`SELECT * FROM partner_referrals WHERE id = $1`, [req.params.id]);
+      if (referral.length === 0) return res.status(404).json({ error: "Referral not found" });
+      if (referral[0].status === 'credit_applied') return res.status(400).json({ error: "Credit already applied" });
+      const referrerPartner = await pgQuery(
+        `SELECT stripe_customer_id FROM partner_applications WHERE id = $1`,
+        [referral[0].referrer_partner_id]
+      );
+      if (!referrerPartner.length || !referrerPartner[0].stripe_customer_id) {
+        return res.status(400).json({ error: "Referring partner has no Stripe customer ID" });
+      }
+      if (!stripe) return res.status(503).json({ error: "Stripe not configured" });
+      const coupon = await stripe.coupons.create({
+        percent_off: 100,
+        duration: "once",
+        name: `Referral credit - ${referral[0].referred_company_name}`,
+        max_redemptions: 1,
+      });
+      const subs = await stripe.subscriptions.list({
+        customer: referrerPartner[0].stripe_customer_id,
+        status: "active",
+        limit: 1,
+      });
+      if (subs.data.length === 0) {
+        return res.status(400).json({ error: "Referring partner has no active subscription" });
+      }
+      await stripe.subscriptions.update(subs.data[0].id, {
+        coupon: coupon.id,
+      });
+      await pgQuery(
+        `UPDATE partner_referrals SET status = 'credit_applied', credit_coupon_id = $1, credit_applied_at = NOW(), updated_at = NOW() WHERE id = $2`,
+        [coupon.id, req.params.id]
+      );
+      return res.json({ success: true, couponId: coupon.id });
+    } catch (err: any) {
+      console.error("[partner-referral] Credit apply error:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/admin/partner-referrals/:id/status", requireAdmin, async (req, res) => {
+    const { status } = req.body;
+    const valid = ['pending', 'signed_up', 'first_cycle_complete', 'credit_applied', 'expired', 'rejected'];
+    if (!valid.includes(status)) return res.status(400).json({ error: "Invalid status" });
+    try {
+      await pgQuery(`UPDATE partner_referrals SET status = $1, updated_at = NOW() WHERE id = $2`, [status, req.params.id]);
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/admin/sweepstakes/prize", requireAdmin, async (req, res) => {
+    try {
+      const { prizeTitle, prizeDescription, prizeValue, prizeImageUrl, rulesText } = req.body;
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const existing = await pgQuery(`SELECT id FROM sweepstakes_months WHERE month = $1`, [currentMonth]);
+      if (existing.length === 0) {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        await pgQuery(
+          `INSERT INTO sweepstakes_months (month, status, start_date, end_date, prize_title, prize_description, prize_value, prize_image_url, rules_text)
+           VALUES ($1, 'active', $2, $3, $4, $5, $6, $7, $8)`,
+          [currentMonth, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10),
+           prizeTitle || null, prizeDescription || null, prizeValue || null, prizeImageUrl || null, rulesText || null]
+        );
+      } else {
+        await pgQuery(
+          `UPDATE sweepstakes_months SET prize_title = $1, prize_description = $2, prize_value = $3, prize_image_url = $4, rules_text = $5, updated_at = NOW() WHERE month = $6`,
+          [prizeTitle || null, prizeDescription || null, prizeValue || null, prizeImageUrl || null, rulesText || null, currentMonth]
+        );
+      }
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/sweepstakes/notify-winner/:winnerId", requireAdmin, async (req, res) => {
+    try {
+      const { winnerId } = req.params;
+      const winners = await pgQuery(`SELECT * FROM sweepstakes_winners WHERE id = $1`, [winnerId]);
+      if (winners.length === 0) return res.status(404).json({ error: "Winner not found" });
+      const winner = winners[0];
+      let email: string | null = null;
+      try {
+        const { data: profile } = await supabaseAdmin.from("user_profiles").select("email, first_name").eq("id", winner.user_id).single();
+        email = profile?.email || null;
+      } catch {}
+      if (!email) return res.status(400).json({ error: "Winner has no email on file" });
+      const monthRows = await pgQuery(`SELECT * FROM sweepstakes_months WHERE month = $1`, [winner.month]);
+      const monthData = monthRows[0];
+      const prizeTitle = monthData?.prize_title || "Monthly Prize";
+      const prizeDesc = monthData?.prize_description || "";
+      const { Resend } = await import("resend");
+      const resendClient = new Resend(process.env.RESEND_API_KEY);
+      const fromEmail = process.env.RESEND_FROM_EMAIL || `Veteran Care <onboarding@resend.dev>`;
+      const [y, m] = winner.month.split("-");
+      const monthName = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      await resendClient.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: `Congratulations! You won the ${monthName} Veteran Care Giveaway!`,
+        html: `
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+            <div style="text-align:center;padding:24px 0;border-bottom:2px solid #16a34a;">
+              <h1 style="color:#1a1a2e;font-size:28px;margin:0;">🎉 Congratulations!</h1>
+              <p style="color:#16a34a;font-size:16px;margin:8px 0 0;font-weight:600;">You're a ${monthName} Giveaway Winner!</p>
+            </div>
+            <div style="padding:24px 0;">
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">
+                <p style="font-size:20px;font-weight:700;color:#1a1a2e;margin:0;">🏆 ${esc(prizeTitle)}</p>
+                ${prizeDesc ? `<p style="color:#374151;font-size:14px;margin:8px 0 0;">${esc(prizeDesc)}</p>` : ''}
+                ${monthData?.prize_value ? `<p style="color:#16a34a;font-size:24px;font-weight:700;margin:12px 0 0;">$${monthData.prize_value}</p>` : ''}
+              </div>
+              ${winner.prize_notes ? `<p style="color:#374151;font-size:14px;margin:16px 0;">${esc(winner.prize_notes)}</p>` : ''}
+              <p style="color:#374151;font-size:14px;">A member of our team will be in touch with prize delivery details. Thank you for being part of the Veteran Care community!</p>
+            </div>
+            <div style="text-align:center;padding:20px 0;border-top:1px solid #e5e7eb;">
+              <p style="color:#6b7280;font-size:12px;">Veteran Care &middot; <a href="https://veterancare.com" style="color:#16a34a;">veterancare.com</a></p>
+            </div>
+          </div>`,
+      });
+      await pgQuery(`UPDATE sweepstakes_winners SET notified = true, notified_at = NOW() WHERE id = $1`, [winnerId]);
+      return res.json({ success: true, email });
+    } catch (err: any) {
+      console.error("[sweepstakes] Winner notification error:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/sweepstakes/current-prize", async (_req, res) => {
+    try {
+      const currentMonth = await getCurrentSweepstakesMonth();
+      const rows = await pgQuery(
+        `SELECT month, prize_title, prize_description, prize_value, prize_image_url, rules_text, status FROM sweepstakes_months WHERE month = $1`,
+        [currentMonth]
+      );
+      if (rows.length === 0) {
+        return res.json({ month: currentMonth, prizeTitle: null, prizeDescription: null, prizeValue: null, prizeImageUrl: null, rulesText: null, status: 'active' });
+      }
+      const r = rows[0];
+      return res.json({
+        month: currentMonth,
+        prizeTitle: r.prize_title,
+        prizeDescription: r.prize_description,
+        prizeValue: r.prize_value,
+        prizeImageUrl: r.prize_image_url,
+        rulesText: r.rules_text,
+        status: r.status,
+      });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }

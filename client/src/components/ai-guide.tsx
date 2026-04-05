@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink, Mail, Globe, Star, ShieldCheck } from "lucide-react";
+import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink, Mail, Globe, Star, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
 import { platform, t } from "@shared/platform";
@@ -60,6 +60,9 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
   const [matchedResources, setMatchedResources] = useState<MatchedResourceCard[]>([]);
   const [trustedServices, setTrustedServices] = useState<TrustedServiceCard[]>([]);
   const [trustedServiceCategory, setTrustedServiceCategory] = useState<string>("");
+  const [emailInput, setEmailInput] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -211,6 +214,32 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     setMatchedResources([]);
     setTrustedServices([]);
     setTrustedServiceCategory("");
+  };
+
+  const handleEmailResults = async () => {
+    if (!emailInput.trim() || !emailInput.includes("@") || emailSending) return;
+    setEmailSending(true);
+    try {
+      const lastAssistantMsg = [...chatHistory].reverse().find(m => m.role === 'assistant');
+      const res = await fetch("/api/ai/email-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailInput.trim(),
+          resources: matchedResources,
+          trustedServices,
+          conversationSummary: lastAssistantMsg?.content?.slice(0, 300) || "",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setEmailSent(true);
+      trackEvent("ai_results_emailed");
+      setTimeout(() => setEmailSent(false), 5000);
+    } catch {
+      setEmailSent(false);
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const handleNavigatorClick = () => {
@@ -392,6 +421,44 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
                 >
                   View all Trusted Services →
                 </a>
+              </div>
+            )}
+
+            {!isTyping && (matchedResources.length > 0 || trustedServices.length > 0) && (
+              <div className="mx-1 bg-white border border-primary/20 rounded-xl p-3 shadow-sm" data-testid="email-results-section">
+                {emailSent ? (
+                  <div className="flex items-center gap-2 text-green-700 text-xs font-medium justify-center py-1">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Results sent to {emailInput}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      <Mail className="h-3 w-3 inline mr-1" />
+                      Email me these results
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        data-testid="input-email-results"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        className="h-8 text-xs flex-1"
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEmailResults(); } }}
+                      />
+                      <Button
+                        data-testid="button-email-results"
+                        size="sm"
+                        className="h-8 text-xs px-3"
+                        disabled={!emailInput.includes("@") || emailSending}
+                        onClick={handleEmailResults}
+                      >
+                        {emailSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Mail className="h-3 w-3 mr-1" /> Send</>}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

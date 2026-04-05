@@ -47,6 +47,7 @@ interface PartnerApplication {
   city: string | null;
   state: string | null;
   category_id: string | null;
+  subcategory_ids: string | null;
   service_description: string | null;
   plan_type: string | null;
   status: string;
@@ -100,6 +101,18 @@ export default function AdminPartnerProspects() {
     },
     enabled: isAdmin,
   });
+
+  const { data: allSubcategories = [] } = useQuery<{id: string; name: string; category_id: string}[]>({
+    queryKey: ["/api/partner-subcategories"],
+    queryFn: async () => {
+      const res = await fetch(`/api/partner-subcategories`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isAdmin,
+  });
+
+  const subcategoryMap = Object.fromEntries(allSubcategories.map(s => [s.id, s.name]));
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status, admin_notes }: { id: string; status?: string; admin_notes?: string }) => {
@@ -426,6 +439,14 @@ export default function AdminPartnerProspects() {
                             </div>
                           )}
                         </div>
+
+                        {app.subcategory_ids && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {app.subcategory_ids.split(',').map(id => subcategoryMap[id]).filter(Boolean).map((name, i) => (
+                              <Badge key={i} variant="outline" className="text-[10px] bg-primary/5 border-primary/20">{name}</Badge>
+                            ))}
+                          </div>
+                        )}
 
                         {app.service_description && (
                           <div className="bg-white border rounded-lg p-3 mb-3">
