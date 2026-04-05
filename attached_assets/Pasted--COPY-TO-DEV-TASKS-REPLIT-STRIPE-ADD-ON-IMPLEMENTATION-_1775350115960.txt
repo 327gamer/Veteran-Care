@@ -1,0 +1,304 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### STRIPE + ADD-ON IMPLEMENTATION SYSTEM (AUTOMATED PARTNER BILLING)
+
+Follow:
+- Developer Handoff SOP
+- UI Rules Checklist
+- Design Playbook v1
+- Page Template Library v1
+- Component Library v1
+
+IMPORTANT:
+We want a fully automated recurring billing system for partner listings.
+
+GOAL:
+- customers can subscribe
+- add/remove upgrades
+- upgrade/downgrade plans
+- cancel anytime
+- everything updates automatically
+- no manual customer service required
+
+DO NOT overcomplicate this.
+
+-------------------------------------
+CORE BILLING MODEL
+-------------------------------------
+
+Use:
+
+ONE Stripe subscription
+with MULTIPLE subscription items
+
+Example:
+- State Plan → $99/month
+- National Plan → $499/month
+- Featured Listing add-on
+- Near Me Boost add-on
+- Sponsored placement add-on(s)
+
+Do NOT create separate subscriptions for each feature.
+
+-------------------------------------
+PART 1 – BASE PLANS
+-------------------------------------
+
+Keep the two base plans:
+
+1. State Plan
+- $99/month
+
+2. National Plan
+- $499/month
+
+These remain the required entry-level subscription options.
+
+-------------------------------------
+PART 2 – ADD-ONS
+-------------------------------------
+
+Implement add-ons as Stripe subscription items.
+
+Initial add-ons to support:
+
+1. Featured Listing
+2. Near Me Boost
+3. Top Sponsored Placement
+4. In-Feed Sponsored Placement
+
+Do NOT overbuild pricing tiers in the UI yet.
+Just make the add-on structure work cleanly.
+
+-------------------------------------
+PART 3 – PARTNER APPLICATION PAGE / PLAN SELECTION UI
+-------------------------------------
+
+On the partner application / subscription step:
+
+Keep:
+- State Plan
+- National Plan
+
+Add:
+a simple “Boost Your Visibility” section with optional add-ons
+
+Use checkbox/toggle style options such as:
+- Feature my listing
+- Boost my business in Near Me
+- Top Sponsored Placement
+- In-Feed Sponsored Placement
+
+Each option should:
+- show short plain-English explanation
+- show monthly add-on amount
+- feel simple, not overwhelming
+
+Add a live summary box:
+- selected base plan
+- selected add-ons
+- total monthly cost
+
+-------------------------------------
+PART 4 – STRIPE CHECKOUT / SUBSCRIPTION CREATION
+-------------------------------------
+
+When user checks out:
+- create ONE Stripe customer
+- create ONE Stripe subscription
+- attach:
+  - base plan item
+  - selected add-on items
+
+Use metadata to persist:
+- ambassador_id
+- utm_id
+- session_id
+- listing/application id
+- any relevant source attribution
+
+IMPORTANT:
+Tracking must stay intact through checkout.
+
+-------------------------------------
+PART 5 – STRIPE CUSTOMER PORTAL (MANDATORY)
+-------------------------------------
+
+Set up Stripe Customer Portal so businesses can self-serve:
+
+- upgrade/downgrade plan
+- add/remove add-ons
+- update payment method
+- cancel subscription
+- see billing history
+
+This is critical because we do NOT want manual billing support.
+
+-------------------------------------
+PART 6 – WEBHOOK AUTOMATION (CRITICAL)
+-------------------------------------
+
+Use Stripe webhooks as the source of truth.
+
+Handle at minimum:
+
+- customer.subscription.created
+- customer.subscription.updated
+- customer.subscription.deleted
+- invoice.paid
+- invoice.payment_failed
+
+System behavior:
+
+When subscription becomes active:
+- listing stays live
+- plan and add-ons activate
+
+When subscription is updated:
+- plan/add-ons update automatically in database
+- listing features update automatically
+
+When subscription is cancelled or becomes inactive:
+- listing is deactivated/hidden
+- paid boosts are removed
+- premium placements are removed
+
+When payment fails:
+- use safe inactive / grace-state logic if appropriate
+- do NOT leave premium placements active indefinitely
+
+-------------------------------------
+PART 7 – DATABASE / STATUS MODEL
+-------------------------------------
+
+Update listing/provider data model to support automated billing state.
+
+At minimum track:
+
+- stripe_customer_id
+- stripe_subscription_id
+- subscription_status
+- base_plan_type
+- featured_active
+- near_me_boost_active
+- sponsored_top_active
+- sponsored_inline_active
+- current_period_end (if useful)
+- billing_active / is_active flag
+
+Use the simplest consistent structure that fits the existing system.
+
+-------------------------------------
+PART 8 – LISTING DISPLAY LOGIC
+-------------------------------------
+
+Listing visibility and boosts should come from Stripe-driven subscription state.
+
+Examples:
+
+If subscription active:
+- listing remains visible
+
+If featured add-on active:
+- listing gets Featured treatment
+
+If Near Me boost active:
+- listing receives that boost logic
+
+If sponsored placement active:
+- sponsored slots can use that business content when those placements are turned on
+
+If subscription inactive/cancelled:
+- listing no longer appears as active paid placement
+
+-------------------------------------
+PART 9 – AMBASSADOR / ATTRIBUTION / COMMISSION INTEGRITY
+-------------------------------------
+
+This system must preserve and connect:
+
+- ambassador attribution
+- UTM attribution
+- session attribution
+- partner application source
+- subscription ownership
+- commissions / payout logic
+
+We must be able to know:
+- which ambassador drove the signup
+- which subscription/add-ons they bought
+- what recurring revenue belongs to that relationship
+
+Do NOT break any of the attribution foundation already built.
+
+-------------------------------------
+PART 10 – CANCELLATION / DOWNGRADE RULES
+-------------------------------------
+
+Businesses must be able to:
+- cancel anytime
+- downgrade anytime
+- remove add-ons anytime
+
+This should be automated through Stripe portal + webhook sync.
+
+No contracts.
+No manual intervention.
+No support tickets required for standard billing actions.
+
+-------------------------------------
+PART 11 – FUTURE COMPATIBILITY
+-------------------------------------
+
+This billing structure must remain compatible with:
+
+- Featured Listings (already built)
+- Sponsored placements (foundation already designed)
+- future AdButler integration
+- category dominance packages later
+
+Do NOT build AdButler now.
+Just make sure the billing/add-on model can support that future layer.
+
+-------------------------------------
+PART 12 – DO NOT DO
+-------------------------------------
+
+- do NOT create separate subscriptions for each feature
+- do NOT create lots of separate checkout pages
+- do NOT require manual admin toggles as primary billing workflow
+- do NOT break existing partner apply flow
+- do NOT break attribution/tracking
+- do NOT build an overly complex pricing UI yet
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please provide:
+
+1. recommended Stripe structure (products / prices / subscription items)
+2. database fields added or updated
+3. webhook events handled
+4. partner page UI changes
+5. how Customer Portal is used
+6. how cancellation/downgrade is automated
+7. how ambassador attribution is preserved through checkout + recurring billing
+8. files changed
+9. any manual Stripe setup steps required
+10. publish/restart requirements
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create a fully automated partner subscription system where:
+
+- businesses choose a base plan
+- optionally add upgrades
+- everything bills through Stripe
+- upgrades/downgrades/cancellations are self-serve
+- listing visibility and premium features update automatically
+- ambassador tracking and commissions remain intact
+
+--- END ---

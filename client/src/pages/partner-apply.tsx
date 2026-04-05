@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   ShieldCheck,
   Building2,
@@ -24,6 +26,10 @@ import {
   Handshake,
   MapPin,
   Globe,
+  Sparkles,
+  Navigation,
+  Megaphone,
+  LayoutList,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -46,6 +52,25 @@ export default function PartnerApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [addons, setAddons] = useState({
+    featured: false,
+    near_me_boost: false,
+    sponsored_top: false,
+    sponsored_inline: false,
+  });
+
+  const ADDON_INFO = [
+    { key: "featured" as const, label: "Featured Listing", icon: Sparkles, price: 49, desc: "Appear at the top of category results with a highlighted badge" },
+    { key: "near_me_boost" as const, label: "Near Me Boost", icon: Navigation, price: 29, desc: "Priority placement in location-based searches" },
+    { key: "sponsored_top" as const, label: "Sponsored Top Slot", icon: Megaphone, price: 79, desc: "Premium banner placement at the top of the directory" },
+    { key: "sponsored_inline" as const, label: "Sponsored Inline", icon: LayoutList, price: 39, desc: "Promoted listing woven into search results" },
+  ];
+
+  const basePrices = { state: 99, national: 499 };
+  const selectedAddons = ADDON_INFO.filter(a => addons[a.key]);
+  const addonTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
+  const basePrice = form.plan_type ? basePrices[form.plan_type] : 0;
+  const monthlyTotal = basePrice + addonTotal;
 
   useEffect(() => {
     trackEvent("partner_apply_started");
@@ -84,6 +109,7 @@ export default function PartnerApply() {
           ...form,
           category_id: form.category_id || null,
           state: form.plan_type === "national" ? null : (form.state || null),
+          addons: Object.entries(addons).filter(([, v]) => v).map(([k]) => k),
           utm_source: utm.utm_source || null,
           utm_medium: utm.utm_medium || null,
           utm_campaign: utm.utm_campaign || null,
@@ -292,6 +318,73 @@ export default function PartnerApply() {
             </div>
           )}
         </div>
+
+        {form.plan_type && (
+          <div className="mb-5">
+            <h2 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Boost Your Visibility
+              <Badge variant="secondary" className="text-[10px]">Optional</Badge>
+            </h2>
+            <p className="text-xs text-muted-foreground mb-3">
+              Add premium placement options to maximize your exposure to veterans.
+            </p>
+            <div className="space-y-2">
+              {ADDON_INFO.map((addon) => {
+                const Icon = addon.icon;
+                return (
+                  <div
+                    key={addon.key}
+                    data-testid={`addon-${addon.key}`}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      addons[addon.key]
+                        ? "border-primary bg-green-50"
+                        : "border-border bg-white"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{addon.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{addon.desc}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">+${addon.price}/mo</span>
+                    <Switch
+                      data-testid={`switch-addon-${addon.key}`}
+                      checked={addons[addon.key]}
+                      onCheckedChange={(checked) =>
+                        setAddons((prev) => ({ ...prev, [addon.key]: checked }))
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {form.plan_type && (
+          <div className="mb-5 rounded-xl border-2 border-primary/30 bg-green-50/50 p-4" data-testid="pricing-summary">
+            <h3 className="text-sm font-semibold text-foreground mb-2">Monthly Summary</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {form.plan_type === "state" ? "State Plan" : "National Plan"} (base)
+                </span>
+                <span className="font-medium">${basePrice}/mo</span>
+              </div>
+              {selectedAddons.map((a) => (
+                <div key={a.key} className="flex justify-between">
+                  <span className="text-muted-foreground">{a.label}</span>
+                  <span className="font-medium">+${a.price}/mo</span>
+                </div>
+              ))}
+              <div className="border-t pt-1 mt-1 flex justify-between text-base font-bold text-foreground">
+                <span>Total</span>
+                <span>${monthlyTotal}/mo</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Card>
           <CardHeader className="pb-3">

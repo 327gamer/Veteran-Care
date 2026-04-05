@@ -8,7 +8,7 @@ import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { query as pgQuery } from "./pg-client";
-import { stripe, isStripeEnabled, createPartnerCheckoutSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
+import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
 import express from "express";
 import QRCode from "qrcode";
 
@@ -623,7 +623,20 @@ async function checkTrustedServicesTable() {
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS geo_source TEXT`);
     await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS program_area TEXT DEFAULT 'trusted_services'`);
     await pgQuery(`ALTER TABLE trusted_service_categories ADD COLUMN IF NOT EXISTS group_type TEXT DEFAULT 'service'`);
-    console.log("[schema] veteran_discount_services columns + geo columns ensured on trusted_services + categories");
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS featured_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS near_me_boost_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS sponsored_top_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS sponsored_inline_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS subscription_status TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS base_plan_type TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS featured_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS near_me_boost_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS sponsored_top_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS sponsored_inline_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS billing_active BOOLEAN DEFAULT false`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS requested_addons TEXT`);
+    console.log("[schema] veteran_discount_services columns + geo columns + billing add-on columns ensured");
     await seedDiscountCategories();
     await ensureVobTable();
   } catch (err: any) {
@@ -5657,11 +5670,16 @@ export async function registerRoutes(
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
       const sql = `SELECT ts.*, tsc.program_area,
+             CASE WHEN (ts.is_featured = true AND (ts.featured_active = true OR ts.featured_active IS NULL)) THEN true ELSE false END AS effective_featured,
+             CASE WHEN ts.near_me_boost_active = true THEN true ELSE false END AS effective_near_me_boost,
              json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
          FROM trusted_services ts
          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
          WHERE ${conditions.join(" AND ")}
-         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, CASE WHEN tsc.program_area = 'trusted_services' THEN 0 ELSE 1 END, ts.display_order ASC NULLS LAST, ts.created_at DESC`;
+         ORDER BY (ts.is_featured = true AND (ts.featured_active = true OR ts.featured_active IS NULL)) DESC,
+                  ts.featured_rank ASC NULLS LAST,
+                  CASE WHEN tsc.program_area = 'trusted_services' THEN 0 ELSE 1 END,
+                  ts.display_order ASC NULLS LAST, ts.created_at DESC`;
       let rows = await pgQuery(sql, params);
 
       if (nearMeMode) {
@@ -5673,10 +5691,13 @@ export async function registerRoutes(
           return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
         }).filter((r: any) => r.is_national || r.latitude == null || r.longitude == null || (r.distance_miles !== null && r.distance_miles <= radiusMiles!))
           .sort((a: any, b: any) => {
-            const aFeat = a.is_featured ? 0 : 1;
-            const bFeat = b.is_featured ? 0 : 1;
+            const aBoost = a.effective_near_me_boost ? 0 : 1;
+            const bBoost = b.effective_near_me_boost ? 0 : 1;
+            if (aBoost !== bBoost) return aBoost - bBoost;
+            const aFeat = a.effective_featured ? 0 : 1;
+            const bFeat = b.effective_featured ? 0 : 1;
             if (aFeat !== bFeat) return aFeat - bFeat;
-            if (a.is_featured && b.is_featured) {
+            if (a.effective_featured && b.effective_featured) {
               const aRank = a.featured_rank ?? 9999;
               const bRank = b.featured_rank ?? 9999;
               if (aRank !== bRank) return aRank - bRank;
@@ -6144,17 +6165,19 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
     const validPricing = ["monthly", "lead-based", "both"];
     const validPlanTypes = ["state", "national"];
+    const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+    const cleanAddons = Array.isArray(addons) ? [...new Set(addons.filter((a: string) => validAddons.includes(a)))] : [];
     try {
       const paAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'prospect', $12, $13, $14, $15, $16, $17, $18)
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'prospect', $13, $14, $15, $16, $17, $18, $19)
          RETURNING *`,
         [
           company_name, contact_name, email,
@@ -6162,6 +6185,7 @@ export async function registerRoutes(
           category_id || null, service_description || null,
           validPricing.includes(pricing_interest) ? pricing_interest : "both",
           validPlanTypes.includes(plan_type) ? plan_type : null,
+          cleanAddons.length > 0 ? JSON.stringify(cleanAddons) : null,
           utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null,
           paAmbassadorId,
         ]
@@ -6254,7 +6278,13 @@ export async function registerRoutes(
       if (application.status === "active") return res.status(400).json({ error: "Partner is already active" });
       if (!application.category_id) return res.status(400).json({ error: "Application must have a category before approval" });
 
-      const { url, sessionId } = await createPartnerCheckoutSession(req.params.id);
+      let addons = req.body.addons || [];
+      if (addons.length === 0 && application.requested_addons) {
+        try { addons = JSON.parse(application.requested_addons); } catch {}
+      }
+      const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+      addons = [...new Set((addons as string[]).filter((a: string) => validAddons.includes(a)))];
+      const { url, sessionId } = await createPartnerCheckoutSession({ applicationId: req.params.id, addons });
 
       let emailSent = false;
       let emailError: string | undefined;
@@ -6320,6 +6350,43 @@ export async function registerRoutes(
 
     try {
       const result = await verifyAndActivateCheckoutSession(sessionId);
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/stripe/customer-portal", async (req, res) => {
+    const { stripe_customer_id, checkout_session_id } = req.body;
+    if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe not configured" });
+
+    try {
+      let customerId = stripe_customer_id;
+      if (!customerId && checkout_session_id) {
+        const session = await stripe!.checkout.sessions.retrieve(checkout_session_id);
+        if (session.customer) {
+          customerId = typeof session.customer === "string" ? session.customer : session.customer.id;
+        }
+      }
+      if (!customerId) return res.status(400).json({ error: "No Stripe customer found. Please contact support." });
+
+      const result = await createCustomerPortalSession(customerId);
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/partner-checkout", async (req, res) => {
+    const { application_id, addons } = req.body;
+    if (!application_id) return res.status(400).json({ error: "application_id required" });
+    if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe not configured" });
+
+    try {
+      const result = await createPartnerCheckoutSession({
+        applicationId: application_id,
+        addons: addons || [],
+      });
       return res.json(result);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });

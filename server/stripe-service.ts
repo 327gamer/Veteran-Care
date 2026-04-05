@@ -14,14 +14,36 @@ export const stripe = stripeSecretKey
 const PARTNER_PRICE_ID_STATE    = process.env.STRIPE_PARTNER_PRICE_ID_STATE    || null;
 const PARTNER_PRICE_ID_NATIONAL = process.env.STRIPE_PARTNER_PRICE_ID_NATIONAL || null;
 const PARTNER_PRICE_ID_LEGACY   = process.env.STRIPE_PARTNER_PRICE_ID          || null;
+
+const ADDON_PRICE_FEATURED      = process.env.STRIPE_ADDON_PRICE_FEATURED      || null;
+const ADDON_PRICE_NEAR_ME_BOOST = process.env.STRIPE_ADDON_PRICE_NEAR_ME_BOOST || null;
+const ADDON_PRICE_SPONSORED_TOP = process.env.STRIPE_ADDON_PRICE_SPONSORED_TOP || null;
+const ADDON_PRICE_SPONSORED_INLINE = process.env.STRIPE_ADDON_PRICE_SPONSORED_INLINE || null;
+
+const ADDON_PRICE_MAP: Record<string, string | null> = {
+  featured: ADDON_PRICE_FEATURED,
+  near_me_boost: ADDON_PRICE_NEAR_ME_BOOST,
+  sponsored_top: ADDON_PRICE_SPONSORED_TOP,
+  sponsored_inline: ADDON_PRICE_SPONSORED_INLINE,
+};
+
 const DEFAULT_NOTIFY_EMAIL = "info@veterancare.com";
 
 export function isStripeEnabled(): boolean {
   return !!stripe;
 }
 
-export async function createPartnerCheckoutSession(applicationId: string): Promise<{ url: string; sessionId: string }> {
+export type AddonKey = "featured" | "near_me_boost" | "sponsored_top" | "sponsored_inline";
+
+export interface CheckoutOptions {
+  applicationId: string;
+  addons?: AddonKey[];
+}
+
+export async function createPartnerCheckoutSession(options: CheckoutOptions): Promise<{ url: string; sessionId: string }> {
   if (!stripe) throw new Error("Stripe is not configured");
+
+  const { applicationId, addons = [] } = options;
 
   const rows = await pgQuery(
     `SELECT pa.*, tsc.name AS category_name
@@ -55,7 +77,6 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
     );
   }
 
-  // Determine price ID: admin override → plan_type tier → legacy fallback
   let resolvedPriceId: string | null = app.stripe_price_id || null;
   if (!resolvedPriceId) {
     if (app.plan_type === "national") {
@@ -76,25 +97,48 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
     throw new Error(`No Stripe price configured for ${app.plan_type || "unknown"} plan. Set the ${missing} environment variable.`);
   }
 
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    { price: resolvedPriceId, quantity: 1 },
+  ];
+
+  const selectedAddons: string[] = [];
+  const uniqueAddons = [...new Set(addons)];
+  for (const addonKey of uniqueAddons) {
+    const priceId = ADDON_PRICE_MAP[addonKey];
+    if (priceId) {
+      lineItems.push({ price: priceId, quantity: 1 });
+      selectedAddons.push(addonKey);
+    }
+  }
+
   const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
-    line_items: [{ price: resolvedPriceId, quantity: 1 }],
+    line_items: lineItems,
     success_url: `${appUrl}/partner-payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/partner-apply`,
     metadata: {
       application_id: applicationId,
       company_name: app.company_name,
       plan_type: app.plan_type || "unknown",
+      addons: selectedAddons.join(","),
+      ambassador_id: app.ambassador_id || "",
+      utm_source: app.utm_source || "",
+      utm_medium: app.utm_medium || "",
+      utm_campaign: app.utm_campaign || "",
+      utm_content: app.utm_content || "",
+      utm_id: app.utm_id || "",
+      session_id: app.session_id || "",
     },
     subscription_data: {
       metadata: {
         application_id: applicationId,
         company_name: app.company_name,
         plan_type: app.plan_type || "unknown",
+        addons: selectedAddons.join(","),
       },
     },
   });
@@ -109,22 +153,114 @@ export async function createPartnerCheckoutSession(applicationId: string): Promi
   return { url: session.url!, sessionId: session.id };
 }
 
+export async function createCustomerPortalSession(stripeCustomerId: string, returnUrl?: string): Promise<{ url: string }> {
+  if (!stripe) throw new Error("Stripe is not configured");
+
+  const appUrl = returnUrl || process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    return_url: `${appUrl}/discounts`,
+  });
+
+  return { url: portalSession.url };
+}
+
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed":
       await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
       break;
+    case "customer.subscription.created":
+      await handleSubscriptionSync(event.data.object as Stripe.Subscription);
+      break;
+    case "customer.subscription.updated":
+      await handleSubscriptionSync(event.data.object as Stripe.Subscription);
+      break;
     case "customer.subscription.deleted":
       await handleSubscriptionCanceled(event.data.object as Stripe.Subscription);
       break;
-    case "customer.subscription.updated":
-      await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+    case "invoice.paid":
+      await handleInvoicePaid(event.data.object as Stripe.Invoice);
       break;
     case "invoice.payment_failed":
       await handlePaymentFailed(event.data.object as Stripe.Invoice);
       break;
     default:
       console.log(`[stripe] Unhandled event type: ${event.type}`);
+  }
+}
+
+function detectAddonsFromItems(subscription: Stripe.Subscription): {
+  basePlan: string | null;
+  featured: boolean;
+  nearMeBoost: boolean;
+  sponsoredTop: boolean;
+  sponsoredInline: boolean;
+} {
+  let basePlan: string | null = null;
+  let featured = false;
+  let nearMeBoost = false;
+  let sponsoredTop = false;
+  let sponsoredInline = false;
+
+  for (const item of subscription.items.data) {
+    const priceId = item.price.id;
+    if (priceId === PARTNER_PRICE_ID_STATE) {
+      basePlan = "state";
+    } else if (priceId === PARTNER_PRICE_ID_NATIONAL) {
+      basePlan = "national";
+    } else if (priceId === PARTNER_PRICE_ID_LEGACY) {
+      basePlan = basePlan || "state";
+    } else if (priceId === ADDON_PRICE_FEATURED) {
+      featured = true;
+    } else if (priceId === ADDON_PRICE_NEAR_ME_BOOST) {
+      nearMeBoost = true;
+    } else if (priceId === ADDON_PRICE_SPONSORED_TOP) {
+      sponsoredTop = true;
+    } else if (priceId === ADDON_PRICE_SPONSORED_INLINE) {
+      sponsoredInline = true;
+    }
+  }
+
+  return { basePlan, featured, nearMeBoost, sponsoredTop, sponsoredInline };
+}
+
+async function syncAddonFlags(appId: string, providerId: string | null, subscription: Stripe.Subscription): Promise<void> {
+  const { basePlan, featured, nearMeBoost, sponsoredTop, sponsoredInline } = detectAddonsFromItems(subscription);
+  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null;
+
+  await pgQuery(
+    `UPDATE partner_applications
+     SET subscription_status = $1,
+         base_plan_type = $2,
+         featured_active = $3,
+         near_me_boost_active = $4,
+         sponsored_top_active = $5,
+         sponsored_inline_active = $6,
+         current_period_end = $7,
+         billing_active = $8,
+         updated_at = NOW()
+     WHERE id = $9`,
+    [subscription.status, basePlan, featured, nearMeBoost, sponsoredTop, sponsoredInline, periodEnd, isActive, appId]
+  );
+
+  if (providerId) {
+    await pgQuery(
+      `UPDATE trusted_services
+       SET is_active = $1,
+           is_featured = $2,
+           featured_active = $2,
+           near_me_boost_active = $3,
+           sponsored_top_active = $4,
+           sponsored_inline_active = $5
+       WHERE id = $6`,
+      [isActive, featured && isActive, nearMeBoost && isActive, sponsoredTop && isActive, sponsoredInline && isActive, providerId]
+    );
+    console.log(`[stripe] Synced add-on flags for provider ${providerId}: featured=${featured}, nearMe=${nearMeBoost}, sponsoredTop=${sponsoredTop}, sponsoredInline=${sponsoredInline}, active=${isActive}`);
   }
 }
 
@@ -165,6 +301,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
      SET status = 'active',
          stripe_customer_id = $1,
          stripe_subscription_id = $2,
+         billing_active = true,
          updated_at = NOW()
      WHERE id = $3`,
     [customerId, subscriptionId, applicationId]
@@ -206,6 +343,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
       console.log(`[stripe] Provider ${providerId} created and linked to application ${applicationId}`);
     } catch (err: any) {
       console.log(`[stripe] Failed to create provider:`, err.message);
+    }
+  }
+
+  if (stripe) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const updatedRows = await pgQuery(`SELECT converted_provider_id FROM partner_applications WHERE id = $1`, [applicationId]);
+      const provId = updatedRows[0]?.converted_provider_id || null;
+      await syncAddonFlags(applicationId, provId, subscription);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to sync add-on flags on checkout:`, err.message);
     }
   }
 
@@ -275,7 +423,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   }
 }
 
-export async function verifyAndActivateCheckoutSession(sessionId: string): Promise<{ status: string; applicationId?: string; error?: string }> {
+export async function verifyAndActivateCheckoutSession(sessionId: string): Promise<{ status: string; applicationId?: string; email?: string; error?: string }> {
   if (!stripe) return { status: "error", error: "Stripe not configured" };
 
   try {
@@ -298,22 +446,72 @@ export async function verifyAndActivateCheckoutSession(sessionId: string): Promi
     const app = rows[0];
 
     if (app.status === "active" && app.converted_provider_id) {
-      return { status: "already_active", applicationId };
+      return { status: "already_active", applicationId, email: app.email || undefined };
     }
 
     console.log(`[stripe] Verify endpoint: activating application ${applicationId} from session ${sessionId}`);
     await handleCheckoutCompleted(session);
 
-    return { status: "activated", applicationId };
+    return { status: "activated", applicationId, email: app.email || undefined };
   } catch (err: any) {
     console.log(`[stripe] Verify session error:`, err.message);
     return { status: "error", error: err.message };
   }
 }
 
-async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Promise<void> {
-  const applicationId = subscription.metadata?.application_id;
+async function handleSubscriptionSync(subscription: Stripe.Subscription): Promise<void> {
   const subscriptionId = subscription.id;
+  const status = subscription.status;
+  const applicationId = subscription.metadata?.application_id;
+
+  const rows = applicationId
+    ? await pgQuery(`SELECT * FROM partner_applications WHERE id = $1`, [applicationId])
+    : await pgQuery(`SELECT * FROM partner_applications WHERE stripe_subscription_id = $1`, [subscriptionId]);
+
+  if (rows.length === 0) {
+    console.log(`[stripe] No application found for subscription ${subscriptionId}`);
+    return;
+  }
+  const app = rows[0];
+
+  if (!app.stripe_subscription_id) {
+    await pgQuery(
+      `UPDATE partner_applications SET stripe_subscription_id = $1, updated_at = NOW() WHERE id = $2`,
+      [subscriptionId, app.id]
+    );
+  }
+
+  const isActive = status === "active" || status === "trialing";
+
+  await syncAddonFlags(app.id, app.converted_provider_id, subscription);
+
+  if (isActive && app.status !== "active") {
+    await pgQuery(
+      `UPDATE partner_applications SET status = 'active', updated_at = NOW() WHERE id = $1`,
+      [app.id]
+    );
+    if (app.converted_provider_id) {
+      await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
+    }
+    console.log(`[stripe] Subscription ${subscriptionId} reactivated → application ${app.id} active`);
+  } else if (!isActive && (status === "past_due" || status === "unpaid" || status === "canceled")) {
+    await pgQuery(
+      `UPDATE partner_applications SET status = 'inactive', billing_active = false, updated_at = NOW() WHERE id = $1`,
+      [app.id]
+    );
+    if (app.converted_provider_id) {
+      await pgQuery(
+        `UPDATE trusted_services SET is_active = false, is_featured = false, featured_active = false, near_me_boost_active = false, sponsored_top_active = false, sponsored_inline_active = false WHERE id = $1`,
+        [app.converted_provider_id]
+      );
+    }
+    console.log(`[stripe] Subscription ${subscriptionId} status ${status} → application ${app.id} inactive`);
+  }
+}
+
+async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Promise<void> {
+  const subscriptionId = subscription.id;
+  const applicationId = subscription.metadata?.application_id;
 
   console.log(`[stripe] Subscription ${subscriptionId} canceled`);
 
@@ -328,43 +526,72 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
   const app = rows[0];
 
   await pgQuery(
-    `UPDATE partner_applications SET status = 'inactive', updated_at = NOW() WHERE id = $1`,
+    `UPDATE partner_applications
+     SET status = 'inactive',
+         billing_active = false,
+         subscription_status = 'canceled',
+         featured_active = false,
+         near_me_boost_active = false,
+         sponsored_top_active = false,
+         sponsored_inline_active = false,
+         updated_at = NOW()
+     WHERE id = $1`,
     [app.id]
   );
 
   if (app.converted_provider_id) {
     try {
-      await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
-      console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (subscription canceled)`);
+      await pgQuery(
+        `UPDATE trusted_services
+         SET is_active = false,
+             is_featured = false,
+             featured_active = false,
+             near_me_boost_active = false,
+             sponsored_top_active = false,
+             sponsored_inline_active = false
+         WHERE id = $1`,
+        [app.converted_provider_id]
+      );
+      console.log(`[stripe] Provider ${app.converted_provider_id} fully deactivated (subscription canceled)`);
     } catch (err: any) {
       console.log(`[stripe] Failed to deactivate provider:`, err.message);
     }
   }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
-  const subscriptionId = subscription.id;
-  const status = subscription.status;
+async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  const subscriptionId = typeof invoice.subscription === "string"
+    ? invoice.subscription
+    : (invoice.subscription as any)?.id;
 
-  if (status === "active" || status === "trialing") return;
+  if (!subscriptionId) return;
 
-  if (status === "past_due" || status === "unpaid" || status === "canceled") {
-    console.log(`[stripe] Subscription ${subscriptionId} status changed to ${status}`);
-    const rows = await pgQuery(
-      `SELECT * FROM partner_applications WHERE stripe_subscription_id = $1`,
-      [subscriptionId]
-    );
-    if (rows.length === 0) return;
-    const app = rows[0];
+  console.log(`[stripe] Invoice paid for subscription ${subscriptionId}`);
 
+  const rows = await pgQuery(
+    `SELECT * FROM partner_applications WHERE stripe_subscription_id = $1`,
+    [subscriptionId]
+  );
+  if (rows.length === 0) return;
+  const app = rows[0];
+
+  if (app.status === "inactive" || app.billing_active === false) {
     await pgQuery(
-      `UPDATE partner_applications SET status = 'inactive', updated_at = NOW() WHERE id = $1`,
+      `UPDATE partner_applications SET status = 'active', billing_active = true, updated_at = NOW() WHERE id = $1`,
       [app.id]
     );
-
     if (app.converted_provider_id) {
-      await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
-      console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (status: ${status})`);
+      await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
+      console.log(`[stripe] Provider ${app.converted_provider_id} reactivated (invoice paid)`);
+    }
+  }
+
+  if (stripe) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      await syncAddonFlags(app.id, app.converted_provider_id, subscription);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to sync add-ons on invoice.paid:`, err.message);
     }
   }
 }
@@ -386,12 +613,27 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   const app = rows[0];
 
   await pgQuery(
-    `UPDATE partner_applications SET status = 'inactive', updated_at = NOW() WHERE id = $1`,
+    `UPDATE partner_applications
+     SET status = 'inactive',
+         billing_active = false,
+         subscription_status = 'past_due',
+         updated_at = NOW()
+     WHERE id = $1`,
     [app.id]
   );
 
   if (app.converted_provider_id) {
-    await pgQuery(`UPDATE trusted_services SET is_active = false WHERE id = $1`, [app.converted_provider_id]);
+    await pgQuery(
+      `UPDATE trusted_services
+       SET is_active = false,
+           is_featured = false,
+           featured_active = false,
+           near_me_boost_active = false,
+           sponsored_top_active = false,
+           sponsored_inline_active = false
+       WHERE id = $1`,
+      [app.converted_provider_id]
+    );
     console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (payment failed)`);
   }
 }

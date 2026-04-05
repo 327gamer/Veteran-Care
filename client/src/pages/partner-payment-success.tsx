@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ShieldCheck, Loader2 } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Loader2, CreditCard } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
@@ -10,6 +10,8 @@ export default function PartnerPaymentSuccess() {
   const [, setLocation] = useLocation();
   const [verifying, setVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -18,6 +20,7 @@ export default function PartnerPaymentSuccess() {
       setVerifying(false);
       return;
     }
+    setCheckoutSessionId(sessionId);
 
     fetch("/api/stripe/verify-session", {
       method: "POST",
@@ -35,6 +38,26 @@ export default function PartnerPaymentSuccess() {
         setVerifying(false);
       });
   }, []);
+
+  const openCustomerPortal = async () => {
+    if (!checkoutSessionId) return;
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/customer-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkout_session_id: checkoutSessionId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setPortalLoading(false);
+      }
+    } catch {
+      setPortalLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
@@ -73,12 +96,25 @@ export default function PartnerPaymentSuccess() {
                 You will receive lead notifications at the email address on your application.
                 For any questions, contact <a href="mailto:info@veterancare.com" className="text-primary underline">info@veterancare.com</a>.
               </p>
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   data-testid="button-view-listing"
                   onClick={() => setLocation("/discounts")}
                 >
                   View Trusted Services
+                </Button>
+                <Button
+                  data-testid="button-manage-billing"
+                  variant="outline"
+                  disabled={portalLoading}
+                  onClick={openCustomerPortal}
+                >
+                  {portalLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CreditCard className="h-4 w-4 mr-2" />
+                  )}
+                  Manage Billing
                 </Button>
               </div>
             </>
