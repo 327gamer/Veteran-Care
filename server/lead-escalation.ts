@@ -155,6 +155,12 @@ export function startEscalationTimer(intervalMs: number = 5 * 60 * 1000): void {
     } catch (err: any) {
       console.log("[escalation] Timer error:", err?.message);
     }
+    try {
+      const { checkGracePeriodExpirations } = await import("./stripe-service");
+      await checkGracePeriodExpirations();
+    } catch (err: any) {
+      console.log("[grace] Timer error:", err?.message);
+    }
   }, intervalMs);
 
   console.log(`[escalation] Timer started — checking every ${Math.round(intervalMs / 60000)} minutes`);

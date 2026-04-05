@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { query as pgQuery } from "./pg-client";
 import { platform } from "../shared/platform";
+import { sendPaymentFailedEmail, sendGraceExpiringEmail } from "./lead-email";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -296,6 +297,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   }
   const app = rows[0];
 
+  if (app.status !== "approved_pending_payment" && app.status !== "active") {
+    console.log(`[stripe] Application ${applicationId} has status '${app.status}' — expected 'approved_pending_payment'. Skipping activation.`);
+    return;
+  }
+
   await pgQuery(
     `UPDATE partner_applications
      SET status = 'active',
@@ -487,7 +493,7 @@ async function handleSubscriptionSync(subscription: Stripe.Subscription): Promis
 
   if (isActive && app.status !== "active") {
     await pgQuery(
-      `UPDATE partner_applications SET status = 'active', updated_at = NOW() WHERE id = $1`,
+      `UPDATE partner_applications SET status = 'active', grace_period_end = NULL, grace_warning_sent = false, updated_at = NOW() WHERE id = $1`,
       [app.id]
     );
     if (app.converted_provider_id) {
@@ -575,14 +581,14 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   if (rows.length === 0) return;
   const app = rows[0];
 
-  if (app.status === "inactive" || app.billing_active === false) {
+  if (app.status === "inactive" || app.billing_active === false || app.subscription_status === "past_due") {
     await pgQuery(
-      `UPDATE partner_applications SET status = 'active', billing_active = true, updated_at = NOW() WHERE id = $1`,
+      `UPDATE partner_applications SET status = 'active', billing_active = true, subscription_status = 'active', grace_period_end = NULL, grace_warning_sent = false, updated_at = NOW() WHERE id = $1`,
       [app.id]
     );
     if (app.converted_provider_id) {
       await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
-      console.log(`[stripe] Provider ${app.converted_provider_id} reactivated (invoice paid)`);
+      console.log(`[stripe] Provider ${app.converted_provider_id} reactivated (invoice paid, grace period cleared)`);
     }
   }
 
@@ -612,21 +618,27 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   if (rows.length === 0) return;
   const app = rows[0];
 
+  const graceDays = 7;
+  const graceEnd = new Date(Date.now() + graceDays * 24 * 60 * 60 * 1000).toISOString();
+
   await pgQuery(
     `UPDATE partner_applications
-     SET status = 'inactive',
-         billing_active = false,
-         subscription_status = 'past_due',
+     SET subscription_status = 'past_due',
+         featured_active = false,
+         near_me_boost_active = false,
+         sponsored_top_active = false,
+         sponsored_inline_active = false,
+         grace_period_end = $1,
+         grace_warning_sent = false,
          updated_at = NOW()
-     WHERE id = $1`,
-    [app.id]
+     WHERE id = $2`,
+    [graceEnd, app.id]
   );
 
   if (app.converted_provider_id) {
     await pgQuery(
       `UPDATE trusted_services
-       SET is_active = false,
-           is_featured = false,
+       SET is_featured = false,
            featured_active = false,
            near_me_boost_active = false,
            sponsored_top_active = false,
@@ -634,6 +646,72 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
        WHERE id = $1`,
       [app.converted_provider_id]
     );
-    console.log(`[stripe] Provider ${app.converted_provider_id} deactivated (payment failed)`);
+    console.log(`[stripe] Provider ${app.converted_provider_id}: premium boosts removed, base listing stays active during ${graceDays}-day grace period (until ${graceEnd})`);
+  }
+
+  if (app.email) {
+    try {
+      const portalUrl = `https://${process.env.APP_URL?.replace(/^https?:\/\//, '') || 'veterancare.com'}/discounts`;
+      await sendPaymentFailedEmail(app.email, app.company_name, app.contact_name, portalUrl, graceDays);
+    } catch (err: any) {
+      console.log(`[stripe] Failed to send payment-failed email:`, err.message);
+    }
+  }
+}
+
+export async function checkGracePeriodExpirations(): Promise<void> {
+  try {
+    const warningRows = await pgQuery(
+      `SELECT * FROM partner_applications
+       WHERE grace_period_end IS NOT NULL
+         AND grace_period_end > NOW()
+         AND grace_period_end <= NOW() + INTERVAL '2 days'
+         AND grace_warning_sent IS NOT true
+         AND status = 'active'
+         AND subscription_status = 'past_due'`
+    );
+
+    for (const app of warningRows) {
+      if (app.email) {
+        try {
+          const daysLeft = Math.max(1, Math.ceil((new Date(app.grace_period_end).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+          await sendGraceExpiringEmail(app.email, app.company_name, app.contact_name, daysLeft);
+          await pgQuery(`UPDATE partner_applications SET grace_warning_sent = true WHERE id = $1`, [app.id]);
+          console.log(`[grace] Final warning sent to ${app.email} — ${daysLeft} day(s) remaining`);
+        } catch (err: any) {
+          console.log(`[grace] Warning email failed for ${app.id}:`, err.message);
+        }
+      }
+    }
+
+    const expiredRows = await pgQuery(
+      `SELECT * FROM partner_applications
+       WHERE grace_period_end IS NOT NULL
+         AND grace_period_end <= NOW()
+         AND status = 'active'
+         AND subscription_status = 'past_due'`
+    );
+
+    for (const app of expiredRows) {
+      await pgQuery(
+        `UPDATE partner_applications
+         SET status = 'inactive',
+             billing_active = false,
+             grace_period_end = NULL,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [app.id]
+      );
+
+      if (app.converted_provider_id) {
+        await pgQuery(
+          `UPDATE trusted_services SET is_active = false WHERE id = $1`,
+          [app.converted_provider_id]
+        );
+      }
+      console.log(`[grace] Grace period expired — application ${app.id} / provider ${app.converted_provider_id} fully deactivated`);
+    }
+  } catch (err: any) {
+    console.log(`[grace] Grace period check error:`, err.message);
   }
 }

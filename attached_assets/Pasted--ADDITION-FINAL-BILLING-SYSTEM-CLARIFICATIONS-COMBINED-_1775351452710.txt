@@ -1,0 +1,128 @@
+--- ADDITION – FINAL BILLING SYSTEM CLARIFICATIONS (COMBINED) ---
+
+Thanks — this is a strong implementation overall.
+
+Before we finalize and move into live testing, we need to lock in a few final business-rule decisions so everything behaves exactly as intended.
+
+-------------------------------------
+1. PAST_DUE POLICY (IMPORTANT)
+-------------------------------------
+
+Current behavior appears to deactivate everything immediately on failed payment.
+
+We want to adjust this slightly for better user experience and fewer support issues.
+
+Preferred behavior:
+
+- On failed payment:
+  → immediately remove premium boosts:
+     - featured
+     - near_me_boost
+     - sponsored placements
+
+- Keep base listing visible for a short grace period (if practical)
+
+- If payment is not resolved within the grace period:
+  → fully deactivate / hide the listing
+
+Please confirm:
+- how long the grace period can be (if implemented)
+- how this is enforced in the system
+
+-------------------------------------
+2. FAILED PAYMENT EMAIL AUTOMATION (REQUIRED)
+-------------------------------------
+
+This must be fully automated — no manual follow-up.
+
+When a payment fails, partners should receive:
+
+1) Immediate email:
+- payment failed
+- premium features may be paused
+- link to update billing
+
+2) Optional reminder email(s):
+- during grace period
+
+3) Final warning email:
+- before listing is fully deactivated
+
+Each email should clearly explain:
+- what happened
+- what features are affected
+- deadline to fix billing
+- link to Stripe Customer Portal
+
+Please confirm:
+
+- whether this is handled by:
+  → Stripe native emails
+  → our platform email system
+  → or a combination of both
+
+- and what exact flow you recommend
+
+-------------------------------------
+3. APPROVAL GUARD (IMPORTANT SAFETY)
+-------------------------------------
+
+Please add / confirm an explicit guard:
+
+A partner should ONLY activate if:
+- application status = approved_pending_payment
+
+Do NOT rely only on the assumption that checkout sessions were created via admin approval.
+
+-------------------------------------
+4. SORT PRIORITY CONFIRMATION
+-------------------------------------
+
+Please confirm the current intended sorting behavior:
+
+Near Me mode:
+- Near Me Boost
+- Featured
+- Trusted Partner
+- Distance
+
+Standard mode:
+- Featured
+- Featured Rank
+- Trusted Partner
+- Display Order / Created Date
+
+If current logic differs, please clearly state what is live.
+
+-------------------------------------
+5. SPONSORED ENTITLEMENTS (CLARIFICATION)
+-------------------------------------
+
+Please confirm:
+
+- sponsored_top_active
+- sponsored_inline_active
+
+are currently:
+→ billing entitlements only
+
+And that:
+
+- actual ad-slot population will be handled later
+- current system is only preparing for AdButler / sponsored slot injection
+
+-------------------------------------
+6. FINAL CONFIRMATION
+-------------------------------------
+
+Everything else in the implementation looks correct:
+
+- Stripe structure (1 subscription, multiple items)
+- add-on system
+- attribution + ambassador tracking
+- customer portal integration
+- billing-driven listing behavior
+
+We just want to lock in the above rules before moving to full live testing.
+
+--- END ---

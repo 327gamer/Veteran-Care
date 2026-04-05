@@ -636,6 +636,8 @@ async function checkTrustedServicesTable() {
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS billing_active BOOLEAN DEFAULT false`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS requested_addons TEXT`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS grace_period_end TIMESTAMPTZ`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS grace_warning_sent BOOLEAN DEFAULT false`);
     console.log("[schema] veteran_discount_services columns + geo columns + billing add-on columns ensured");
     await seedDiscountCategories();
     await ensureVobTable();

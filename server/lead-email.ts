@@ -590,6 +590,181 @@ export async function sendPartnerPaymentEmail(
   }
 }
 
+export async function sendPaymentFailedEmail(
+  partnerEmail: string,
+  companyName: string,
+  contactName: string | null,
+  portalUrl: string,
+  graceDays: number
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const greeting = contactName ? escapeHtml(contactName) : escapeHtml(companyName);
+    const deadline = new Date(Date.now() + graceDays * 24 * 60 * 60 * 1000);
+    const deadlineStr = deadline.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #991B1B; font-size: 18px;">Payment Issue — Action Required</h2>
+    <p style="margin: 0; color: #DC2626; font-size: 13px;">Your recent payment was unsuccessful.</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We were unable to process your most recent subscription payment for <strong>${escapeHtml(companyName)}</strong> on ${platform.name}.
+  </p>
+
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
+    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #92400E;">What this means:</p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #92400E; line-height: 1.8;">
+      <li>Your <strong>premium features</strong> (Featured Listing, Near Me Boost, Sponsored placements) have been <strong>paused</strong></li>
+      <li>Your <strong>base listing remains visible</strong> for <strong>${graceDays} days</strong> (until ${deadlineStr})</li>
+      <li>If payment is not resolved by ${deadlineStr}, your listing will be <strong>fully hidden</strong></li>
+    </ul>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Please update your payment method to keep your listing active:
+  </p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${escapeHtml(portalUrl)}" style="display: inline-block; background: #DC2626; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+      Update Payment Method
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
+    Need help? Contact us at <a href="mailto:info@veterancare.com" style="color: #2563EB;">info@veterancare.com</a>.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    — The ${platform.name} Team
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
+    <p>This email was sent by ${platform.name} regarding your partner subscription billing.</p>
+  </div>
+
+</body>
+</html>`;
+
+    console.log(`[email] Sending payment-failed notice to ${partnerEmail}`);
+
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [partnerEmail],
+      subject: `${platform.name} — Payment Failed — Action Required`,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Payment-failed email failed:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Payment-failed email sent to ${partnerEmail}`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending payment-failed email:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
+export async function sendGraceExpiringEmail(
+  partnerEmail: string,
+  companyName: string,
+  contactName: string | null,
+  daysLeft: number
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const greeting = contactName ? escapeHtml(contactName) : escapeHtml(companyName);
+    const deadline = new Date(Date.now() + daysLeft * 24 * 60 * 60 * 1000);
+    const deadlineStr = deadline.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #991B1B; font-size: 18px;">Final Warning — Listing Will Be Hidden</h2>
+    <p style="margin: 0; color: #DC2626; font-size: 13px;">Your billing issue has not been resolved.</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    This is a final reminder that your subscription payment for <strong>${escapeHtml(companyName)}</strong> on ${platform.name} is still past due.
+  </p>
+
+  <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
+    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #991B1B;">
+      Your listing will be <strong>fully hidden</strong> in approximately <strong>${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> (${deadlineStr}) if payment is not resolved.
+    </p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    <strong>What will happen:</strong>
+  </p>
+  <ul style="font-size: 14px; line-height: 1.8; color: #374151;">
+    <li>Your business listing will no longer appear in the directory</li>
+    <li>Veterans will not be able to find or connect with your business</li>
+    <li>All premium features will remain paused</li>
+  </ul>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    To prevent this, please update your payment method now:
+  </p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://veterancare.com/discounts" style="display: inline-block; background: #991B1B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+      Update Payment Now
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
+    If you believe this is an error, contact us at <a href="mailto:info@veterancare.com" style="color: #2563EB;">info@veterancare.com</a>.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    — The ${platform.name} Team
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
+    <p>This email was sent by ${platform.name} regarding your partner subscription billing.</p>
+  </div>
+
+</body>
+</html>`;
+
+    console.log(`[email] Sending grace-expiring warning to ${partnerEmail}`);
+
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [partnerEmail],
+      subject: `${platform.name} — Final Warning — Your Listing Will Be Hidden in ${daysLeft} Day${daysLeft === 1 ? '' : 's'}`,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Grace-expiring email failed:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Grace-expiring email sent to ${partnerEmail}`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending grace-expiring email:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
 export async function sendLeadNotification(
   leadId: string,
   partnerId: string
