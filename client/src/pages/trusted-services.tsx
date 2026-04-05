@@ -710,6 +710,16 @@ export default function TrustedServices() {
               <Handshake className="h-4 w-4 mr-1.5" />
               Apply Now
             </Button>
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Already a Trusted Partner?{" "}
+              <button
+                data-testid="link-partner-login-trusted"
+                className="text-primary font-medium underline hover:text-primary/80 transition-colors"
+                onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } })); }}
+              >
+                Log in here
+              </button>
+            </p>
           </CardContent>
         </Card>
       </div>

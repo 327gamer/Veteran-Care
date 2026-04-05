@@ -5,13 +5,30 @@ import { CheckCircle2, ShieldCheck, Loader2, CreditCard } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
+import { useAuth } from "@/lib/use-auth";
 
 export default function PartnerPaymentSuccess() {
   const [, setLocation] = useLocation();
   const [verifying, setVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
+  const { session } = useAuth();
   const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (verified && session?.access_token) {
+      fetch("/api/partner/role-check", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.isPartner) {
+            setTimeout(() => setLocation("/partner-portal"), 1500);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [verified, session?.access_token, setLocation]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -95,9 +112,9 @@ export default function PartnerPaymentSuccess() {
 
               {verified && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                  <p className="text-sm font-semibold text-blue-900 mb-1">Next Step: Create Your Partner Account</p>
+                  <p className="text-sm font-semibold text-blue-900 mb-1">Next Step: Create Your Account</p>
                   <p className="text-xs text-blue-800 leading-relaxed">
-                    Set up your account to access your Partner Portal — where you can track leads, refer businesses to earn free months, and manage your listing.
+                    Create your {platform.name} account using the same email you applied with. Once logged in, you'll have instant access to your Partner Dashboard — track leads, refer businesses, and earn free months.
                   </p>
                 </div>
               )}
@@ -106,7 +123,7 @@ export default function PartnerPaymentSuccess() {
                 {verified && (
                   <Button
                     data-testid="button-create-partner-account"
-                    onClick={() => setLocation("/partner-portal?setup=1")}
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "signup" } }))}
                   >
                     Create My Account
                   </Button>

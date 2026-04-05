@@ -37,6 +37,7 @@ import ProfileModal from "./profile-modal";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import { useSavedResources, syncSavedOnLogin, fetchSavedFromServer } from "@/lib/store";
 import { useAuth } from "@/lib/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 const BOTTOM_NAV_ITEMS = [
   { icon: BookOpen, label: "Resources", desc: "Browse programs and services." },
@@ -62,11 +63,24 @@ export default function Layout({ children }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authDefaultMode, setAuthDefaultMode] = useState<"login" | "signup">("login");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { hasSeenTutorial, markTutorialSeen, onboardingComplete, setAuthToken, setSavedIds, clearAuthState } = useSavedResources();
   const [showTutorial, setShowTutorial] = useState(false);
   const [guideGlow, setGuideGlow] = useState(true);
   const { user, session, loading: authLoading, signOut } = useAuth();
+
+  const { data: partnerRole } = useQuery<{ isPartner: boolean; companyName?: string }>({
+    queryKey: ["/api/partner/role-check", session?.access_token],
+    queryFn: async () => {
+      const r = await fetch("/api/partner/role-check", {
+        headers: { Authorization: `Bearer ${session!.access_token}` },
+      });
+      return r.json();
+    },
+    enabled: !!session?.access_token,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setGuideGlow(false), 5000);
@@ -108,6 +122,17 @@ export default function Layout({ children }: LayoutProps) {
     };
     window.addEventListener("open-tutorial", handler);
     return () => window.removeEventListener("open-tutorial", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.mode === "signup") setAuthDefaultMode("signup");
+      else setAuthDefaultMode("login");
+      setIsAuthOpen(true);
+    };
+    window.addEventListener("open-auth-modal", handler);
+    return () => window.removeEventListener("open-auth-modal", handler);
   }, []);
 
   const isActive = (path: string) => location === path;
@@ -236,6 +261,16 @@ export default function Layout({ children }: LayoutProps) {
                       <UserCircle className="h-4 w-4 mr-2" />
                       My Profile
                     </DropdownMenuItem>
+                    {partnerRole?.isPartner && (
+                      <DropdownMenuItem
+                        data-testid="button-partner-dashboard"
+                        onClick={() => setLocation("/partner-portal")}
+                        className="cursor-pointer"
+                      >
+                        <ShieldCheck className="h-4 w-4 mr-2" />
+                        Partner Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       data-testid="button-sign-out"
@@ -280,7 +315,7 @@ export default function Layout({ children }: LayoutProps) {
       <AiGuide open={isAiOpen} onOpenChange={setIsAiOpen} />
 
       {/* Auth Modal */}
-      <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
+      <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} defaultMode={authDefaultMode} />
 
       {/* Profile Modal */}
       <ProfileModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />

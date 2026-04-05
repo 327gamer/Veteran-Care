@@ -253,18 +253,19 @@ Without this rule, adding a new resource that hasn't been geocoded yet causes it
 - [ ] National records assigned `distance_miles: 99999`
 - [ ] Sort handles nulls via `?? 99999` fallback
 
-## Partner Account/Login System
-- **Auth model**: Email + password (bcrypt-hashed), Bearer token sessions stored in `partner_sessions` table (30-day expiry)
-- **Registration**: Only allowed for partners with `status = 'approved'` (or `active`) in `partner_applications`; atomic password set prevents race conditions
-- **Login**: Rate-limited (5 attempts per 15 min per email); requires approved status + valid password
-- **Token storage**: `localStorage.partner_token` on client; `Authorization: Bearer <token>` header on all partner-facing API calls
-- **Secured endpoints**: `/api/partner-referral/me`, `/api/partner/lead-billing`, `/api/partner/lead-dispute`, `/api/partner/me` — all use `resolvePartnerFromToken()` middleware
-- **Frontend**: `/partner-portal` is the main partner entry point (Login/Create Account tabs). `/partner-referrals` redirects to `/partner-portal`
+## Partner Account/Login System (Unified with Supabase Auth)
+- **Auth model**: Partners use the SAME Supabase Auth as veterans — one login system, one session. Partner role is detected by matching the Supabase user's email to an approved `partner_applications` record
+- **Role detection**: `GET /api/partner/role-check` resolves Supabase token → email → checks `partner_applications` table for approved/active status
+- **resolvePartnerFromToken()**: Tries Supabase auth first (extracts email from token, matches partner), falls back to legacy `partner_sessions` for backwards compat
+- **Secured endpoints**: `/api/partner-referral/me`, `/api/partner/lead-billing`, `/api/partner/lead-dispute`, `/api/partner/me` — all use `resolvePartnerFromToken()` middleware (accepts both Supabase and legacy tokens)
+- **Frontend**: `/partner-portal` uses `useAuth()` hook (Supabase). Shows dashboard when logged-in user's email matches an approved partner. No separate login form
 - **Partner Portal**: Dashboard hub with cards for Referral Tools, Lead Activity, Leaderboard. Sub-views for each tool
-- **Partner onboarding flow**: Apply → Admin approves → Stripe payment → Welcome email with "Create My Account" CTA → `/partner-portal?setup=1` → Create Account tab auto-selected
+- **Partner onboarding flow**: Apply → Admin approves → Stripe payment → Welcome email → Create Veteran Care account (Supabase Auth) using same email → auto-detected as partner → access Partner Dashboard
+- **Login entry points**: (1) Navbar user menu "Partner Dashboard" link (auto-shown for partner users), (2) "Already a Trusted Partner? Log in here" on partner-apply page, (3) "Partner Login" on Trusted Services/Veteran Discounts pages, (4) Direct URL `/partner-portal`
+- **Auto-redirect**: Partner payment success page auto-redirects to `/partner-portal` after login detection
+- **Legacy auth**: `/api/partner/register`, `/api/partner/login`, `partner_sessions` table still exist as fallback but primary auth is Supabase
 - **Emails**: `sendPartnerPaymentEmail()` = approval + Stripe link; `sendPartnerWelcomeEmail()` = post-payment with account creation link
-- **DB additions**: `password_hash TEXT` column on `partner_applications`, `partner_sessions` table with token + expiry
-- **Key files**: `client/src/pages/partner-portal.tsx`, `server/routes.ts` (auth endpoints), `server/lead-email.ts` (welcome email), `server/stripe-service.ts` (triggers welcome email)
+- **Key files**: `client/src/pages/partner-portal.tsx`, `client/src/components/layout.tsx` (partner menu), `server/routes.ts` (auth endpoints + role-check)
 
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts

@@ -415,6 +415,16 @@ export default function VeteranDiscounts() {
         </div>
       </div>
 
+      <div className="flex items-center justify-end gap-3 -mt-1">
+        <button
+          data-testid="link-partner-login-discounts"
+          className="text-xs text-primary font-medium hover:underline transition-colors"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+        >
+          Partner Login
+        </button>
+      </div>
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input

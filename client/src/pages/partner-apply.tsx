@@ -259,6 +259,16 @@ export default function PartnerApply() {
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
             Join the {platform.name} network and connect your services with veterans and military families who need them most.
           </p>
+          <p className="text-sm text-muted-foreground mt-3">
+            Already a Trusted Partner?{" "}
+            <button
+              data-testid="link-partner-login"
+              className="text-primary font-semibold underline hover:text-primary/80 transition-colors"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+            >
+              Log in here
+            </button>
+          </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">

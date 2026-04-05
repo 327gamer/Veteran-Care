@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import {
   Copy,
@@ -19,15 +18,13 @@ import {
   Star,
   Mail,
   Building2,
-  Eye,
-  EyeOff,
   LogOut,
   FileText,
   CreditCard,
   ShieldCheck,
-  AlertCircle,
 } from "lucide-react";
 import { platform } from "@shared/platform";
+import { useAuth } from "@/lib/use-auth";
 
 interface PartnerReferralData {
   partnerId: string;
@@ -54,26 +51,12 @@ interface PartnerProfile {
   status: string;
 }
 
-function getPartnerToken(): string | null {
-  return localStorage.getItem("partner_token");
-}
-
-function setPartnerToken(token: string) {
-  localStorage.setItem("partner_token", token);
-}
-
-function clearPartnerToken() {
-  localStorage.removeItem("partner_token");
-  localStorage.removeItem("partner_company");
-}
-
-function partnerFetch(url: string, options: RequestInit = {}) {
-  const token = getPartnerToken();
+function partnerFetch(url: string, token: string, options: RequestInit = {}) {
   return fetch(url, {
     ...options,
     headers: {
       ...options.headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
@@ -96,64 +79,49 @@ function getRankStyle(rank: number): string {
 export default function PartnerPortal() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { user, session, loading: authLoading, signOut } = useAuth();
+  const accessToken = session?.access_token;
 
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-
-  const [isAuthenticated, setIsAuthenticated] = useState(!!getPartnerToken());
   const [copied, setCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
   const [view, setView] = useState<"dashboard" | "referrals" | "leaderboard">("dashboard");
   const [msgVariant, setMsgVariant] = useState(0);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("setup") === "1") {
-      setAuthMode("register");
+    if (localStorage.getItem("partner_token")) {
+      localStorage.removeItem("partner_token");
+      localStorage.removeItem("partner_company");
+    }
+    if (sessionStorage.getItem("partner_referral_email")) {
+      sessionStorage.removeItem("partner_referral_email");
     }
   }, []);
 
-  useEffect(() => {
-    const oldEmail = sessionStorage.getItem("partner_referral_email");
-    if (oldEmail) sessionStorage.removeItem("partner_referral_email");
-  }, []);
-
-  const { data: profile } = useQuery<PartnerProfile>({
-    queryKey: ["/api/partner/me"],
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery<PartnerProfile>({
+    queryKey: ["/api/partner/me", accessToken],
     queryFn: async () => {
-      const r = await partnerFetch("/api/partner/me");
-      if (r.status === 401) {
-        clearPartnerToken();
-        setIsAuthenticated(false);
-        throw new Error("Session expired");
+      const r = await partnerFetch("/api/partner/me", accessToken!);
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({ error: "Failed" }));
+        throw new Error(body.error || "Not a partner");
       }
-      if (!r.ok) throw new Error("Failed to load profile");
       return r.json();
     },
-    enabled: isAuthenticated,
+    enabled: !!accessToken,
     retry: false,
   });
 
   const { data: refData, isLoading: refLoading } = useQuery<PartnerReferralData>({
-    queryKey: ["/api/partner-referral/me"],
+    queryKey: ["/api/partner-referral/me", accessToken],
     queryFn: async () => {
-      const r = await partnerFetch("/api/partner-referral/me");
-      if (r.status === 401) {
-        clearPartnerToken();
-        setIsAuthenticated(false);
-        throw new Error("Session expired");
-      }
+      const r = await partnerFetch("/api/partner-referral/me", accessToken!);
       if (!r.ok) {
         const body = await r.json().catch(() => ({ error: "Request failed" }));
         throw new Error(body.error || "Request failed");
       }
       return r.json();
     },
-    enabled: isAuthenticated,
+    enabled: !!accessToken && !!profile,
     retry: false,
   });
 
@@ -164,13 +132,13 @@ export default function PartnerPortal() {
   });
 
   const { data: billingData } = useQuery<any[]>({
-    queryKey: ["/api/partner/lead-billing"],
+    queryKey: ["/api/partner/lead-billing", accessToken],
     queryFn: async () => {
-      const r = await partnerFetch("/api/partner/lead-billing");
+      const r = await partnerFetch("/api/partner/lead-billing", accessToken!);
       if (!r.ok) return [];
       return r.json();
     },
-    enabled: isAuthenticated,
+    enabled: !!accessToken && !!profile,
   });
 
   const shareMessages = [
@@ -224,53 +192,21 @@ export default function PartnerPortal() {
     if (msg) window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  const handleAuth = async () => {
-    if (!email.trim() || !email.includes("@")) {
-      setAuthError("Please enter a valid email address");
-      return;
-    }
-    if (!password || password.length < 6) {
-      setAuthError("Password must be at least 6 characters");
-      return;
-    }
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      const endpoint = authMode === "register" ? "/api/partner/register" : "/api/partner/login";
-      const r = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        setAuthError(data.error || "Authentication failed");
-        return;
-      }
-      setPartnerToken(data.token);
-      localStorage.setItem("partner_company", data.partner?.company_name || "");
-      setIsAuthenticated(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/partner/me"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-referral/me"] });
-    } catch (err: any) {
-      setAuthError(err.message || "Network error");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    await partnerFetch("/api/partner/logout", { method: "POST" }).catch(() => {});
-    clearPartnerToken();
-    setIsAuthenticated(false);
-    setEmail("");
-    setPassword("");
-    setView("dashboard");
+  const handleSignOut = async () => {
+    await signOut();
     queryClient.removeQueries({ queryKey: ["/api/partner/me"] });
     queryClient.removeQueries({ queryKey: ["/api/partner-referral/me"] });
   };
 
-  if (!isAuthenticated) {
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user || !session) {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <button
@@ -289,85 +225,67 @@ export default function PartnerPortal() {
             Partner Portal
           </h1>
           <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-            {authMode === "register"
-              ? "Create your partner account using the email from your approved application."
-              : "Log in to access your referral tools, lead billing, and partner dashboard."}
+            Log in to access your partner dashboard, referral tools, and lead activity.
           </p>
-
-          <div className="w-full max-w-xs space-y-3">
-            <div className="flex rounded-lg overflow-hidden border">
-              <button
-                data-testid="button-auth-login-tab"
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${authMode === "login" ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground"}`}
-                onClick={() => { setAuthMode("login"); setAuthError(""); }}
-              >
-                Log In
-              </button>
-              <button
-                data-testid="button-auth-register-tab"
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${authMode === "register" ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground"}`}
-                onClick={() => { setAuthMode("register"); setAuthError(""); }}
-              >
-                Create Account
-              </button>
-            </div>
-
-            <Input
-              data-testid="input-partner-email"
-              type="email"
-              placeholder="Your partner email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-            />
-            <div className="relative">
-              <Input
-                data-testid="input-partner-password"
-                type={showPassword ? "text" : "password"}
-                placeholder={authMode === "register" ? "Create a password (min 6 characters)" : "Password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {authError && <p data-testid="text-auth-error" className="text-xs text-destructive">{authError}</p>}
-            <Button
-              data-testid="button-partner-auth-submit"
-              className="w-full rounded-full"
-              onClick={handleAuth}
-              disabled={authLoading}
-            >
-              {authLoading ? (
-                <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-              ) : authMode === "register" ? "Create Account" : "Log In"}
-            </Button>
-          </div>
-
-          {authMode === "register" && (
-            <div className="flex items-start gap-2 max-w-xs">
-              <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-              <p className="text-[11px] text-muted-foreground text-left">
-                Use the same email from your partner application. Your application must be approved and payment completed before you can create your account.
-              </p>
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Use the same account you created on {platform.name}.
+          </p>
+          <Button
+            data-testid="button-partner-login-cta"
+            className="rounded-full px-8"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }))}
+          >
+            Log In
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full px-8"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "signup" } }))}
+          >
+            Create Account
+          </Button>
           <p className="text-xs text-muted-foreground">
             Not a partner yet?{" "}
-            <button
-              onClick={() => setLocation("/partner-apply")}
-              className="text-primary underline font-medium"
-            >
+            <button onClick={() => setLocation("/partner-apply")} className="text-primary underline font-medium">
               Apply to become a Trusted Partner
             </button>
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    const errorMsg = (profileError as any)?.message || "";
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <button onClick={() => setLocation("/home")} className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+          <ArrowLeft className="h-4 w-4" />Back to Home
+        </button>
+        <div className="flex flex-col items-center justify-center min-h-[40vh] px-6 text-center space-y-4">
+          <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center">
+            <Building2 className="h-8 w-8 text-amber-700" />
+          </div>
+          <h2 className="text-lg font-heading font-bold text-foreground">
+            Partner Account Not Found
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            {errorMsg.includes("not yet approved")
+              ? "Your partner application is still under review. You'll be able to access the dashboard once approved."
+              : `No active partner account was found for ${user.email}. Make sure you applied with this email and your application has been approved.`}
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setLocation("/home")}>Go Home</Button>
+            <Button onClick={() => setLocation("/partner-apply")}>Apply Now</Button>
+          </div>
         </div>
       </div>
     );
@@ -377,26 +295,16 @@ export default function PartnerPortal() {
     return (
       <div className="space-y-4 animate-in fade-in duration-300">
         <div className="flex items-center gap-3">
-          <Button
-            data-testid="button-back-to-dashboard"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => setView("dashboard")}
-          >
+          <Button data-testid="button-back-to-dashboard" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setView("dashboard")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-lg font-heading font-extrabold text-primary">
-              Partner Leaderboard
-            </h2>
+            <h2 className="text-lg font-heading font-extrabold text-primary">Partner Leaderboard</h2>
             <p className="text-xs text-muted-foreground">Top referring partners</p>
           </div>
         </div>
         {lbLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-          </div>
+          <div className="flex items-center justify-center py-12"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
         ) : lbData?.leaderboard?.length ? (
           <div className="space-y-2">
             {lbData.leaderboard.map((entry) => (
@@ -466,22 +374,17 @@ export default function PartnerPortal() {
                 </div>
 
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="text-center p-3 rounded-lg bg-muted/30">
-                    <p data-testid="text-partner-total-referrals" className="text-2xl font-bold text-primary">{refData.totalReferrals}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Referrals</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-muted/30">
-                    <p data-testid="text-partner-free-months" className="text-2xl font-bold text-primary">{refData.freeMonthsEarned}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Free Mo.</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-muted/30">
-                    <p data-testid="text-partner-pending" className="text-2xl font-bold text-primary">{refData.pendingRewards}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Pending</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-muted/30">
-                    <p data-testid="text-partner-rank" className="text-2xl font-bold text-primary">{refData.rank ?? "—"}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Rank</p>
-                  </div>
+                  {[
+                    { key: "referrals", val: refData.totalReferrals, label: "Referrals" },
+                    { key: "free-months", val: refData.freeMonthsEarned, label: "Free Mo." },
+                    { key: "pending", val: refData.pendingRewards, label: "Pending" },
+                    { key: "rank", val: refData.rank ?? "—", label: "Rank" },
+                  ].map((s) => (
+                    <div key={s.key} className="text-center p-3 rounded-lg bg-muted/30">
+                      <p data-testid={`text-partner-${s.key}`} className="text-2xl font-bold text-primary">{s.val}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">{s.label}</p>
+                    </div>
+                  ))}
                 </div>
 
                 <p className="text-[11px] text-center text-muted-foreground/60">Free months are earned when a referred business signs up and completes their first paid billing cycle.</p>
@@ -520,8 +423,8 @@ export default function PartnerPortal() {
     );
   }
 
-  const companyName = profile?.company_name || refData?.companyName || localStorage.getItem("partner_company") || "Partner";
-  const isActive = profile?.status === "active" || profile?.status === "approved";
+  const companyName = profile.company_name || refData?.companyName || "Partner";
+  const isActive = profile.status === "active" || profile.status === "approved";
   const pendingLeads = billingData?.filter((r: any) => r.status === "pending").length || 0;
 
   return (
@@ -530,7 +433,7 @@ export default function PartnerPortal() {
         <button data-testid="link-back-to-home-partner-portal" onClick={() => setLocation("/home")} className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
           <ArrowLeft className="h-4 w-4" />Back to Home
         </button>
-        <button data-testid="button-partner-logout" onClick={handleLogout} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+        <button data-testid="button-partner-logout" onClick={handleSignOut} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
           <LogOut className="h-3.5 w-3.5" />Sign Out
         </button>
       </div>
@@ -540,9 +443,7 @@ export default function PartnerPortal() {
           <Building2 className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight">
-            {companyName}
-          </h1>
+          <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight">{companyName}</h1>
           <div className="flex items-center gap-2 mt-0.5">
             <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${isActive ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
               <ShieldCheck className="h-3 w-3" />
@@ -555,9 +456,7 @@ export default function PartnerPortal() {
       <div className="grid grid-cols-1 gap-3">
         <Card data-testid="card-referral-tools" className="cursor-pointer hover:border-primary/30 transition-colors group" onClick={() => setView("referrals")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <Gift className="h-5 w-5 text-green-700" />
-            </div>
+            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0"><Gift className="h-5 w-5 text-green-700" /></div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Refer a Business</p>
               <p className="text-xs text-muted-foreground">Share your link & earn free months</p>
@@ -574,14 +473,10 @@ export default function PartnerPortal() {
 
         <Card data-testid="card-lead-billing">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-              <FileText className="h-5 w-5 text-blue-700" />
-            </div>
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0"><FileText className="h-5 w-5 text-blue-700" /></div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">Lead Activity</p>
-              <p className="text-xs text-muted-foreground">
-                {billingData && billingData.length > 0 ? `${billingData.length} total leads` : "No leads yet"}
-              </p>
+              <p className="text-xs text-muted-foreground">{billingData && billingData.length > 0 ? `${billingData.length} total leads` : "No leads yet"}</p>
             </div>
             {pendingLeads > 0 && (
               <div className="text-right shrink-0">
@@ -594,9 +489,7 @@ export default function PartnerPortal() {
 
         <Card data-testid="card-partner-leaderboard-home" className="cursor-pointer hover:border-primary/30 transition-colors group" onClick={() => setView("leaderboard")}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <Trophy className="h-5 w-5 text-amber-700" />
-            </div>
+            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0"><Trophy className="h-5 w-5 text-amber-700" /></div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Partner Leaderboard</p>
               <p className="text-xs text-muted-foreground">See top referring partners</p>
@@ -615,10 +508,7 @@ export default function PartnerPortal() {
       {billingData && billingData.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-3">
-            <h3 className="text-sm font-semibold flex items-center gap-1.5">
-              <CreditCard className="h-4 w-4 text-primary" />
-              Recent Lead Activity
-            </h3>
+            <h3 className="text-sm font-semibold flex items-center gap-1.5"><CreditCard className="h-4 w-4 text-primary" />Recent Lead Activity</h3>
             <div className="space-y-2">
               {billingData.slice(0, 5).map((record: any) => (
                 <div key={record.id} className="flex items-center justify-between text-xs border-b border-muted/40 pb-2 last:border-0">
@@ -628,9 +518,7 @@ export default function PartnerPortal() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">${(record.amount_cents / 100).toFixed(2)}</p>
-                    <p className={`text-[10px] ${record.status === "pending" ? "text-amber-600" : record.status === "paid" ? "text-green-600" : "text-red-600"}`}>
-                      {record.status}
-                    </p>
+                    <p className={`text-[10px] ${record.status === "pending" ? "text-amber-600" : record.status === "paid" ? "text-green-600" : "text-red-600"}`}>{record.status}</p>
                   </div>
                 </div>
               ))}
@@ -640,9 +528,7 @@ export default function PartnerPortal() {
       )}
 
       <div className="text-center pt-2">
-        <p className="text-[11px] text-muted-foreground/50">
-          Logged in as {profile?.email || "partner"} · {platform.name} Trusted Partner
-        </p>
+        <p className="text-[11px] text-muted-foreground/50">Logged in as {user.email} · {platform.name} Trusted Partner</p>
       </div>
     </div>
   );

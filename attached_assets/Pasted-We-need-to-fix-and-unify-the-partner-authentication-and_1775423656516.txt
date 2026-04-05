@@ -1,0 +1,71 @@
+We need to fix and unify the partner authentication and login flow.
+
+Right now, the partner login system is separate from the main platform login, which is causing confusion and login failures.
+
+ISSUES:
+1. Partner account created successfully but cannot log in again (password not recognized)
+2. Partner login is not connected to main login system
+3. No clear entry point for partners to return to their dashboard
+4. Email link does not properly guide login flow
+
+GOAL:
+We need ONE unified login system with role-based access.
+
+REQUIREMENTS:
+
+1. UNIFY LOGIN SYSTEM
+- Partners should log in using the SAME login system as veterans
+- Do NOT create a separate auth system
+- Use a single user/session system with roles:
+  - role = "veteran"
+  - role = "partner"
+  - role = "admin"
+
+2. FIX LOGIN BUG
+- Ensure password hashing and validation is consistent
+- Ensure login checks correct database fields
+- Fix “incorrect password” issue after account creation
+- Ensure session persists correctly
+
+3. ROLE-BASED ROUTING
+After login:
+- If user.role = "partner" → redirect to /partner-dashboard
+- If user.role = "veteran" → redirect to /referral
+- If user.role = "admin" → admin panel
+
+4. PARTNER DASHBOARD ACCESS
+- Partners should access their dashboard from:
+  a) Main login
+  b) Trusted Services section
+  c) Direct URL
+
+5. ADD LOGIN ENTRY POINTS (VERY IMPORTANT UX)
+
+A. On "Become a Trusted Partner" page:
+Add:
+"Already a Trusted Partner? Log in here"
+
+B. On Trusted Services main page:
+Add:
+"Partner Login"
+
+C. After login (navbar/profile):
+If role = partner → show shortcut:
+"Partner Dashboard"
+
+6. REMOVE CONFUSION
+- Remove dependency on /partner-portal as separate login system
+- Keep it as dashboard only
+- Login should always go through main auth
+
+7. KEEP REFERRAL SYSTEM SAME
+- Partner referral system (link, copy, SMS, leaderboard) stays exactly as built
+- Only fix access + authentication
+
+GOAL RESULT:
+
+Partners behave exactly like veterans:
+- Create account
+- Log in anywhere
+- Access their dashboard instantly
+- No confusion, no dead ends

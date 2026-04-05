@@ -7534,6 +7534,22 @@ export async function registerRoutes(
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
     const token = authHeader.slice(7);
+
+    // Try Supabase auth first
+    try {
+      if (supabaseAdmin) {
+        const { data: { user: supaUser } } = await supabaseAdmin.auth.getUser(token);
+        if (supaUser?.email) {
+          const partners = await pgQuery(
+            `SELECT id, email, company_name, status FROM partner_applications WHERE LOWER(email) = $1 AND status IN ('approved', 'active') ORDER BY created_at DESC LIMIT 1`,
+            [supaUser.email.toLowerCase()]
+          );
+          if (partners.length > 0) return partners[0];
+        }
+      }
+    } catch {}
+
+    // Fallback to legacy partner_sessions token
     try {
       const sessions = await pgQuery(
         `SELECT partner_id FROM partner_sessions WHERE token = $1 AND expires_at > NOW()`,
@@ -7641,6 +7657,25 @@ export async function registerRoutes(
     const partner = await resolvePartnerFromToken(req);
     if (!partner) return res.status(401).json({ error: "Not authenticated" });
     return res.json(partner);
+  });
+
+  app.get("/api/partner/role-check", async (req, res) => {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return res.json({ isPartner: false });
+    try {
+      const token = authHeader.slice(7);
+      if (!supabaseAdmin) return res.json({ isPartner: false });
+      const { data: { user: supaUser } } = await supabaseAdmin.auth.getUser(token);
+      if (!supaUser?.email) return res.json({ isPartner: false });
+      const partners = await pgQuery(
+        `SELECT id, company_name, status FROM partner_applications WHERE LOWER(email) = $1 AND status IN ('approved', 'active') ORDER BY created_at DESC LIMIT 1`,
+        [supaUser.email.toLowerCase()]
+      );
+      if (partners.length === 0) return res.json({ isPartner: false });
+      return res.json({ isPartner: true, companyName: partners[0].company_name, status: partners[0].status });
+    } catch {
+      return res.json({ isPartner: false });
+    }
   });
 
   // ── Partner Referral System (Link-Based) ──
