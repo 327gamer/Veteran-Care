@@ -1,0 +1,83 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+Thanks — I already republished and the crash is fixed.
+
+Now we need to move straight into the Stripe add-on setup and verification.
+
+IMPORTANT:
+I am NOT a programmer and NOT a developer.
+
+I need you to keep walking me through this in the same step-by-step owner format:
+- click here
+- create this
+- copy this
+- go here
+- paste it there
+- save
+- then move to next step
+
+Do NOT skip steps.
+Do NOT assume I know Stripe or Replit terminology.
+I want to knock this out cleanly and fast.
+
+-------------------------------------
+WHAT WE ARE DOING NOW
+-------------------------------------
+
+We are staying in TEST MODE for now.
+
+We already have working:
+- State Plan ($99)
+- National Plan ($499)
+- Stripe test setup
+- published site stable again
+
+Now we need to complete:
+
+1. create the 4 add-ons in Stripe test mode
+2. add the 4 new Stripe add-on price IDs into Replit secrets
+3. restart / verify the app reads them correctly
+4. confirm nothing broke in:
+   - Stripe flow
+   - Supabase
+   - admin panel
+   - ambassador attribution / tracking
+
+-------------------------------------
+WHAT I NEED FROM YOU RIGHT NOW
+-------------------------------------
+
+Please continue with PHASE 1 in true step-by-step order.
+
+I need:
+
+STEP 1
+STEP 2
+STEP 3
+
+for only this part:
+
+- create the 4 add-ons in Stripe test mode
+- save the 4 new Replit secrets
+- verify the app is reading those secrets correctly
+
+After that, I want you to tell me exactly what short confirmation message to send you once I finish.
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Please also confirm after verification that adding these 4 add-on secrets does NOT interfere with:
+- existing $99 / $499 plans
+- Supabase records
+- admin panel functions
+- ambassador tagging / attribution
+- partner application flow
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+I want to complete the Stripe add-on secret setup in the next 20–30 minutes with no mistakes.
+
+--- END ---
