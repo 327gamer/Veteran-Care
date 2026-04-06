@@ -1,0 +1,60 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+I went back and checked the earlier Veteran Care blueprint records.
+
+We already solved this exact kind of problem before.
+
+The prior fix pattern was:
+
+- stop patching the wrong interaction pattern
+- replace the cramped mobile sheet / dialog behavior with a full-screen / full-page mobile overlay
+- keep desktop-specific behavior separate
+- add safe-area spacing, overscroll containment, and proper layer handling
+
+That is exactly what was done earlier for Resource Detail when the old sheet pattern kept failing on mobile.
+
+So I want you to apply that SAME solution pattern here to My Profile.
+
+IMPORTANT:
+Do NOT continue micro-patching the current floating dialog structure.
+
+The precedent already exists in our project history:
+when the interaction pattern itself was wrong, we replaced it instead of endlessly patching it.
+
+MY PROFILE NEEDS TO FOLLOW THAT SAME APPROACH:
+
+1. Mobile:
+- My Profile must become a true full-screen profile page / full-viewport overlay
+- no centered floating dialog behavior
+- no width math
+- no clipping
+- no horizontal drift
+- no right-side cutoff
+- vertical scroll only
+
+2. Desktop:
+- you can preserve the centered modal/dialog behavior if it still works there
+
+3. Structural rule:
+- use the same mindset that was used when Resource Detail was changed from a broken narrow sheet into a full-screen / full-page mobile experience
+- this should be treated as the same type of fix
+
+4. Required technical behavior:
+- full viewport coverage on iPhone Safari
+- proper safe-area handling
+- overscroll containment
+- content layer above bottom nav
+- no element should exceed viewport width
+- no clipped buttons, no clipped consent text, no clipped referral tools
+
+5. Do not just “reduce padding” again.
+This needs a true pattern replacement if that is what it takes.
+
+Please reply with:
+1. whether you are now converting My Profile into a true mobile full-screen profile page / overlay
+2. exactly which existing container / dialog logic is being removed or bypassed
+3. how this will mirror the earlier successful Resource Detail fix pattern
+4. what files will change
+5. whether publish is required
+
+--- END ---
