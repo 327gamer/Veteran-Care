@@ -28,6 +28,11 @@ import {
   X,
   Activity,
   Clock,
+  Code2,
+  Briefcase,
+  Building2,
+  Smartphone,
+  Linkedin,
   BarChart3,
   FileText,
   User,
@@ -559,6 +564,238 @@ function CreateAmbassadorForm({ onClose, onSuccess, onCreated }: { onClose: () =
           </Button>
         </div>
       </CardContent>
+    </Card>
+  );
+}
+
+const ADMIN_CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; borderColor: string; badgeColor: string }> = {
+  veteran: { title: "Veteran Outreach", icon: Users, borderColor: "border-l-green-500", badgeColor: "bg-green-100 text-green-800" },
+  case_manager: { title: "Case Manager Outreach", icon: Briefcase, borderColor: "border-l-blue-500", badgeColor: "bg-blue-100 text-blue-800" },
+  partner: { title: "Partner / Business Outreach", icon: Building2, borderColor: "border-l-purple-500", badgeColor: "bg-purple-100 text-purple-800" },
+};
+
+const ADMIN_CHANNEL_ICONS: Record<string, any> = { email: Mail, text: Smartphone, facebook: MessageSquare, instagram: MessageSquare, linkedin: Linkedin };
+const ADMIN_CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "SMS / Text", facebook: "Facebook Post", instagram: "Instagram Caption", linkedin: "LinkedIn Message" };
+
+function AdminCopyBtn({ text, label, children }: { text: string; label: string; children?: React.ReactNode }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try { await navigator.clipboard.writeText(text); } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button variant={copied ? "default" : "outline"} size="sm" onClick={handleCopy}
+      className={`${copied ? "bg-green-600 hover:bg-green-700 text-white" : ""} h-7 text-xs gap-1`}
+      data-testid={`copy-${label}`}
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copied!" : (children || "Copy")}
+    </Button>
+  );
+}
+
+function CampaignPacksSection({ ambassadorCode }: { ambassadorCode: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [expandedAudiences, setExpandedAudiences] = useState<Record<string, boolean>>({});
+  const headers = getAdminHeaders();
+
+  const { data: distData, isLoading } = useQuery({
+    queryKey: ["admin-distribution-pack", ambassadorCode],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/ambassador-distribution/${ambassadorCode}`, { headers });
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+    enabled: expanded,
+  });
+
+  const toggleAudience = (key: string) => {
+    setExpandedAudiences((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const downloadDistCSV = () => {
+    if (!ambassadorCode) return;
+    fetch(`/api/admin/ambassador-distribution/${ambassadorCode}?format=csv`, { headers })
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `distribution-pack-${ambassadorCode}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+  };
+
+  const downloadFullKit = () => {
+    if (!distData) return;
+    const sections: string[] = [];
+    sections.push(`AMBASSADOR CAMPAIGN KIT`);
+    sections.push(`========================`);
+    sections.push(`Ambassador: ${distData.ambassador_name}`);
+    sections.push(`Code: ${distData.ambassador_code}`);
+    sections.push(`Total Links: ${distData.total_links}`);
+
+    const audienceOrder = ["veteran", "general", "case_manager", "partner"];
+    for (const aud of audienceOrder) {
+      const entries = distData.audiences[aud];
+      if (!entries?.length) continue;
+      const cfg = ADMIN_CAMPAIGN_CONFIG[aud];
+      sections.push(`\n${"=".repeat(50)}`);
+      sections.push(cfg?.title || aud);
+      sections.push(`${"=".repeat(50)}`);
+
+      if (entries[0]?.html_button) {
+        sections.push(`\n--- HTML BUTTON EMBED ---`);
+        sections.push(entries[0].html_button);
+      }
+
+      for (const entry of entries) {
+        sections.push(`\n--- ${entry.message_title} ---`);
+        sections.push(`Link: ${entry.short_url}`);
+        sections.push(`QR: ${entry.qr_url}`);
+        if (entry.suggested_copy) sections.push(`\n${entry.suggested_copy}`);
+      }
+    }
+
+    const blob = new Blob([sections.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `full-campaign-kit-${ambassadorCode}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Card className="mb-4 border-green-200" data-testid="card-campaign-packs">
+      <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-1.5 text-green-800">
+            <Package className="h-4 w-4" /> Campaign Packs
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {expanded && distData && (
+              <>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); downloadDistCSV(); }} data-testid="button-download-csv">
+                  <Download className="h-3 w-3" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); downloadFullKit(); }} data-testid="button-download-full-kit">
+                  <Download className="h-3 w-3" /> Full Kit
+                </Button>
+              </>
+            )}
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
+      {expanded && (
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : !distData ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Failed to load campaign packs.</p>
+          ) : (
+            <div className="space-y-3">
+              {["veteran", "case_manager", "partner", "general"].map((audKey) => {
+                const entries = distData.audiences[audKey];
+                if (!entries?.length) return null;
+                const cfg = ADMIN_CAMPAIGN_CONFIG[audKey] || { title: "General Outreach", icon: Users, borderColor: "border-l-gray-500", badgeColor: "bg-gray-100 text-gray-800" };
+                const Icon = cfg.icon;
+                const isOpen = expandedAudiences[audKey] ?? false;
+
+                return (
+                  <div key={audKey} className={`border rounded-lg border-l-4 ${cfg.borderColor} overflow-hidden`} data-testid={`campaign-group-${audKey}`}>
+                    <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50" onClick={() => toggleAudience(audKey)}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span className="font-medium text-sm">{cfg.title}</span>
+                        <Badge className={`${cfg.badgeColor} text-[10px]`}>{entries.length} channels</Badge>
+                      </div>
+                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {isOpen && (
+                      <div className="border-t p-3 space-y-4">
+                        {entries[0]?.html_button && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <Code2 className="h-3.5 w-3.5 text-green-700" />
+                                <span className="text-xs font-medium text-green-900">HTML Button Embed</span>
+                              </div>
+                              <AdminCopyBtn text={entries[0].html_button} label={`html-${audKey}`}>Copy HTML</AdminCopyBtn>
+                            </div>
+                            <div className="bg-gray-900 rounded p-2 text-[11px] text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                              {entries[0].html_button}
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-gray-500 block mb-1">Preview:</span>
+                              <a
+                                href={entries[0].short_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ background: "#166534", color: "#fff", padding: "12px 24px", borderRadius: "8px", textDecoration: "none", fontWeight: "bold", display: "inline-block", fontFamily: "Arial, sans-serif", fontSize: "16px" }}
+                              >
+                                {entries[0].button_label || "Learn More"}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
+                        {entries.map((entry: any) => {
+                          const ChIcon = ADMIN_CHANNEL_ICONS[entry.channel] || MessageSquare;
+                          const chLabel = ADMIN_CHANNEL_LABELS[entry.channel] || entry.channel;
+                          return (
+                            <div key={entry.utm_id} className="border rounded-lg p-3 space-y-2" data-testid={`campaign-entry-${entry.utm_id}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <ChIcon className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+                                  <span className="text-sm font-medium truncate">{entry.message_title || chLabel}</span>
+                                </div>
+                                <Badge variant="outline" className="text-[10px] shrink-0">{chLabel}</Badge>
+                              </div>
+
+                              <div className="flex items-center gap-1 text-xs">
+                                <Link2 className="h-3 w-3 text-gray-400 shrink-0" />
+                                <span className="truncate text-gray-500">{entry.short_url}</span>
+                                <AdminCopyBtn text={entry.short_url} label={`link-${entry.utm_id}`}>Link</AdminCopyBtn>
+                              </div>
+
+                              {entry.suggested_copy && (
+                                <div className="space-y-1.5">
+                                  <div className="bg-gray-50 rounded p-2.5 text-xs whitespace-pre-wrap text-gray-700 max-h-32 overflow-y-auto">
+                                    {entry.suggested_copy}
+                                  </div>
+                                  <AdminCopyBtn text={entry.suggested_copy} label={`msg-${entry.utm_id}`}>Copy Message</AdminCopyBtn>
+                                </div>
+                              )}
+
+                              {entry.channel === "qr" && (
+                                <div className="flex items-center gap-3 pt-1">
+                                  <img src={entry.qr_url} alt="QR" className="w-20 h-20 border rounded" />
+                                  <a href={entry.qr_url} download={`qr-${entry.utm_id}.png`} className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <Download className="h-3 w-3" /> Download QR
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
@@ -1188,6 +1425,8 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
             )}
           </CardContent>
         </Card>
+
+        <CampaignPacksSection ambassadorCode={amb.code} />
 
         <Card className="mb-4 border-orange-200" data-testid="card-lifecycle">
           <CardHeader className="pb-2">

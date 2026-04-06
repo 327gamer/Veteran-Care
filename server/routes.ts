@@ -2969,8 +2969,6 @@ export async function registerRoutes(
         },
       };
 
-      const audienceMap: Record<string, string> = { veteran: "veteran", case_manager: "case_manager", partner: "partner" };
-
       for (const [campaignKey, meta] of Object.entries(CAMPAIGN_META)) {
         const audience = meta.audience;
         const campaignLinks = links
@@ -2984,6 +2982,12 @@ export async function registerRoutes(
             qr_url: `${baseUrl}/api/ambassador/qr/${l.utm_id}`,
             click_count: l.click_count || 0,
           }));
+
+        const HTML_BUTTON_LABELS: Record<string, string> = {
+          veteran: "Get Help Now",
+          case_manager: "Explore Resources",
+          partner: "Apply Now",
+        };
 
         const templates: Record<string, any> = {};
         const channelTemplates = OUTREACH_TEMPLATES[campaignKey] || {};
@@ -3000,7 +3004,12 @@ export async function registerRoutes(
           };
         }
 
-        campaigns[campaignKey] = { links: campaignLinks, templates };
+        const primaryLink = campaignLinks.find((l: any) => l.channel === "email")?.short_url
+          || campaignLinks[0]?.short_url || "";
+        const btnLabel = HTML_BUTTON_LABELS[campaignKey] || "Learn More";
+        const htmlButton = primaryLink ? `<a href="${primaryLink}" style="background:#166534;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;">${btnLabel}</a>` : null;
+
+        campaigns[campaignKey] = { links: campaignLinks, templates, html_button: htmlButton, button_label: btnLabel };
       }
 
       return res.json({
@@ -3184,6 +3193,13 @@ export async function registerRoutes(
 
       const byAudience: Record<string, any[]> = {};
 
+      const DIST_BUTTON_LABELS: Record<string, string> = {
+        veteran: "Get Help Now",
+        general: "Get Help Now",
+        case_manager: "Explore Resources",
+        partner: "Apply Now",
+      };
+
       for (const r of rows) {
         const shortUrl = `${baseUrl}/a/${r.utm_id}`;
         const qrUrl = `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${r.utm_id}`;
@@ -3191,6 +3207,9 @@ export async function registerRoutes(
         const suggestedCopy = template
           ? template.suggested_copy.replace(/\{\{short_url\}\}/g, shortUrl).replace(/\{\{ambassador_name\}\}/g, ambassadorName)
           : null;
+
+        const btnLabel = DIST_BUTTON_LABELS[r.audience_type] || "Learn More";
+        const htmlButton = `<a href="${shortUrl}" style="background:#166534;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;">${btnLabel}</a>`;
 
         const entry = {
           link_name: r.link_name,
@@ -3203,6 +3222,8 @@ export async function registerRoutes(
           campaign: r.utm_campaign,
           message_title: template?.message_title || `${r.audience_type} – ${r.channel_type}`,
           suggested_copy: suggestedCopy,
+          html_button: htmlButton,
+          button_label: btnLabel,
           click_count: r.click_count || 0,
           last_clicked_at: r.last_clicked_at || null,
         };

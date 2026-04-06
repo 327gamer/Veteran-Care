@@ -1,0 +1,162 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+PROJECT:
+Ambassador Campaign Pack System – UI + Distribution Upgrade
+
+PRIORITY:
+CRITICAL FOR LAUNCH
+
+-------------------------------------
+CONTEXT
+-------------------------------------
+
+We have confirmed that:
+
+- ambassador links exist (28 per ambassador)
+- UTM tracking works
+- QR codes are generated
+- message templates exist in backend
+- ambassador dashboard partially surfaces templates
+
+The system is FUNCTIONAL but NOT USABLE at scale.
+
+We need to convert this into a clean, visual, plug-and-play campaign system.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a complete "Ambassador Campaign Pack" system that allows:
+
+- admins to view and manage campaign packs
+- ambassadors to easily copy, share, and deploy campaigns
+- zero confusion, zero technical knowledge required
+
+-------------------------------------
+REQUIRED BUILDS
+-------------------------------------
+
+1. ADMIN – CAMPAIGN PACKS TAB
+
+In:
+Admin → Ambassador Detail Page
+
+Add new tab:
+"Campaign Packs"
+
+Structure:
+
+GROUP BY AUDIENCE:
+- Veteran Outreach
+- Case Manager Outreach
+- Partner / Business Outreach
+
+INSIDE EACH GROUP:
+
+FOR EACH CHANNEL:
+- Email
+- SMS
+- Facebook
+- Instagram
+- LinkedIn
+
+DISPLAY:
+
+- Title (example: "Veteran SMS Outreach")
+- Pre-written message (already exists in backend)
+- Ambassador link embedded
+- Copy button (copy message + link together)
+- QR code preview + download button
+
+-------------------------------------
+2. ADD HTML BUTTON / EMBED CODE (CRITICAL)
+
+For EACH campaign:
+
+Generate ready-to-use button code:
+
+Example:
+
+<a href="[AMBASSADOR LINK]" style="background:#166534;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">
+Get Help Now
+</a>
+
+REQUIREMENTS:
+
+- Copy button for HTML
+- Different button labels per campaign:
+  - Veteran → "Get Help Now"
+  - Case Manager → "Explore Resources"
+  - Partner → "Apply Now"
+
+-------------------------------------
+3. AMBASSADOR DASHBOARD UPGRADE
+
+Page:
+ /ambassador-dashboard
+
+Enhance existing UI to include:
+
+- Same campaign grouping as admin
+- Copy message buttons
+- Copy link button
+- Copy HTML button
+- QR code preview + download
+- Mobile-friendly layout
+
+-------------------------------------
+4. DOWNLOAD FULL CAMPAIGN KIT
+
+Add button:
+
+"Download Full Campaign Kit"
+
+OUTPUT:
+
+Option A (preferred):
+- ZIP file containing:
+  - all links
+  - all templates
+  - QR codes
+  - HTML buttons
+
+Option B:
+- clean PDF OR HTML page
+
+-------------------------------------
+5. UI/UX REQUIREMENTS (CRITICAL)
+
+MUST FOLLOW PLATFORM RULES:
+
+- mobile-first design
+- NO horizontal scroll
+- clean vertical stacking
+- large copy buttons
+- clear labels (no dev language)
+- no clutter
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+An ambassador should be able to:
+
+- log in
+- click one button
+- copy a message
+- send it immediately
+
+WITHOUT thinking.
+
+-------------------------------------
+THIS IS NOT OPTIONAL
+-------------------------------------
+
+This system is REQUIRED for:
+- ambassador onboarding
+- campaign execution
+- scaling nationally
+
+-------------------------------------
+
+--- END ---
