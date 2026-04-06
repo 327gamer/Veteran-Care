@@ -1,0 +1,84 @@
+--- COPY TO REPLIT ---
+
+### NEXT PHASE – AMBASSADOR CAMPAIGN DEPLOYMENT PACKS + USAGE SYSTEM
+
+The audit reply is helpful and gives me more confidence in the backend/admin wiring.
+
+Now the next critical step is NOT just storing ambassador links.
+It is making the ambassador campaign system easy to actually USE in real outreach.
+
+I need this built/surfaced as a true campaign deployment system.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Ambassadors should not have to deal with ugly raw links or guess how to use the system.
+
+They need ready-to-use outreach kits.
+
+-------------------------------------
+REQUIRED STRUCTURE
+-------------------------------------
+
+For EACH real ambassador, I need 3 campaign packs:
+
+1. Veteran Outreach
+2. Case Manager / Organization Outreach
+3. Trusted Partner / Business Outreach
+
+-------------------------------------
+FOR EACH CAMPAIGN PACK, INCLUDE
+-------------------------------------
+
+- tracked campaign link
+- QR code
+- email template
+- SMS/text template
+- Facebook caption
+- Instagram caption
+- LinkedIn version (where appropriate)
+- flyer/poster CTA version
+- button-ready CTA copy
+- HTML/button embed version for email campaigns
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+I do NOT want ambassadors forced to send long raw links only.
+
+I want them to have:
+- clean CTA text
+- embedded button versions
+- polished copy they can paste directly into emails, texts, posts, flyers, and videos
+
+Examples:
+- Get Help Now
+- Explore Veteran Resources
+- Apply to Become a Trusted Partner
+
+-------------------------------------
+QUESTIONS / OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. what already exists today in the backend/admin for campaign packs
+2. what is already generated but not surfaced
+3. the cleanest place for ambassadors/admin to access these packs
+4. whether each ambassador can have:
+   - plain tracked links
+   - QR codes
+   - copy blocks
+   - button/embed versions
+5. whether these packs can be exported/downloaded cleanly
+6. what needs to be built next to make this launch-ready
+
+-------------------------------------
+FINAL GOAL
+-------------------------------------
+
+I want every ambassador to receive a professional, ready-to-use campaign package that makes outreach simple, fast, and polished.
+
+--- END ---
