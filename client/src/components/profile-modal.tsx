@@ -336,7 +336,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-heading text-primary flex items-center gap-2">
             <UserCircle className="h-5 w-5" />
@@ -604,7 +604,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     <div className="flex gap-2">
                       <div
                         data-testid="text-profile-referral-link"
-                        className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-xs font-mono text-foreground truncate border"
+                        className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-xs font-mono text-foreground truncate border min-w-0 overflow-hidden"
                       >
                         {referralData.referralLink}
                       </div>

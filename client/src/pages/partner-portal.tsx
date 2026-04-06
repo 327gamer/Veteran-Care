@@ -22,6 +22,10 @@ import {
   FileText,
   CreditCard,
   ShieldCheck,
+  Globe,
+  MapPin,
+  Tag,
+  User,
 } from "lucide-react";
 import { platform } from "@shared/platform";
 import { useAuth } from "@/lib/use-auth";
@@ -49,7 +53,16 @@ interface PartnerProfile {
   id: string;
   email: string;
   company_name: string;
+  contact_name?: string;
+  phone?: string;
+  website?: string;
+  city?: string;
+  state?: string;
+  category_name?: string;
+  subcategory_names?: string[];
+  plan_type?: string;
   status: string;
+  stripe_subscription_id?: string;
 }
 
 function partnerFetch(url: string, token: string, options: RequestInit = {}) {
@@ -457,6 +470,83 @@ export default function PartnerPortal() {
           </div>
         </div>
       </div>
+
+      <Card data-testid="card-business-profile" className="border-primary/20">
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-1.5">
+            <Building2 className="h-4 w-4 text-primary" />
+            Business Profile
+          </h3>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            {profile.contact_name && (
+              <div className="flex items-start gap-2">
+                <User className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Contact</p>
+                  <p data-testid="text-bp-contact" className="text-sm font-medium text-foreground truncate">{profile.contact_name}</p>
+                </div>
+              </div>
+            )}
+            <div className="flex items-start gap-2">
+              <Mail className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Email</p>
+                <p data-testid="text-bp-email" className="text-sm font-medium text-foreground truncate">{profile.email}</p>
+              </div>
+            </div>
+            {profile.phone && (
+              <div className="flex items-start gap-2">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Phone</p>
+                  <p data-testid="text-bp-phone" className="text-sm font-medium text-foreground">{profile.phone}</p>
+                </div>
+              </div>
+            )}
+            {profile.website && (
+              <div className="flex items-start gap-2">
+                <Globe className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Website</p>
+                  <p data-testid="text-bp-website" className="text-sm font-medium text-foreground truncate">{profile.website}</p>
+                </div>
+              </div>
+            )}
+            {profile.category_name && (
+              <div className="flex items-start gap-2">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Category</p>
+                  <p data-testid="text-bp-category" className="text-sm font-medium text-foreground">{profile.category_name}</p>
+                  {profile.subcategory_names && profile.subcategory_names.length > 0 && (
+                    <p data-testid="text-bp-subcategories" className="text-xs text-muted-foreground mt-0.5">{profile.subcategory_names.join(", ")}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {(profile.city || profile.state) && (
+              <div className="flex items-start gap-2">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Location</p>
+                  <p data-testid="text-bp-location" className="text-sm font-medium text-foreground">
+                    {[profile.city, profile.state].filter(Boolean).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+            {profile.plan_type && (
+              <div className="flex items-start gap-2">
+                <CreditCard className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Plan</p>
+                  <p data-testid="text-bp-plan" className="text-sm font-medium text-foreground capitalize">{profile.plan_type}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-3">
         <Card data-testid="card-referral-tools" className="cursor-pointer hover:border-primary/30 transition-colors group" onClick={() => setView("referrals")}>

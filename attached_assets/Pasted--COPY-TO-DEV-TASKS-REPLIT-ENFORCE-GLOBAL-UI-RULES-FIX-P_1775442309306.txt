@@ -1,0 +1,104 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### ENFORCE GLOBAL UI RULES + FIX PROFILE & PARTNER DASHBOARD
+
+Before addressing the issues below, we need to reinforce a platform-wide rule:
+
+-------------------------------------
+GLOBAL UI / UX RULE (NON-NEGOTIABLE)
+-------------------------------------
+
+Every screen, modal, and component MUST:
+
+- be mobile-first (primary device)
+- fully fit within viewport width
+- have NO horizontal overflow
+- have NO left/right scrolling
+- support clean vertical scrolling only
+- ensure all buttons and inputs are accessible
+- behave correctly on iPhone Safari (primary test case)
+
+This rule is NOT optional and must be applied to ALL existing and future components.
+
+We are seeing repeated violations of this standard, which means fixes are being done in isolation instead of following system-level rules.
+
+-------------------------------------
+ISSUE 1 — MY PROFILE IS NOT MOBILE-CLEAN
+-------------------------------------
+
+The personal “My Profile” view is still breaking the global UI rule.
+
+Problems:
+- horizontal overflow exists
+- user can drag left/right
+- layout exceeds viewport width
+- inconsistent mobile behavior vs other pages
+
+This directly violates the platform UI standard.
+
+REQUIRED FIX:
+- enforce container max-width and overflow-x: hidden
+- ensure all fields/components scale within viewport
+- eliminate any element causing width expansion
+- confirm behavior on iPhone (Safari)
+
+This must be treated as a system-level layout correction, not a patch.
+
+-------------------------------------
+ISSUE 2 — PARTNER DASHBOARD IS MISSING BUSINESS PROFILE
+-------------------------------------
+
+The Partner Dashboard currently shows:
+- Refer a Business
+- Lead Activity
+- Partner Leaderboard
+
+However, it does NOT show the partner’s actual business information.
+
+This creates confusion and an incomplete experience.
+
+REQUIRED ADDITION:
+
+Add a Business Profile Section to the Partner Dashboard.
+
+Must display:
+- company name
+- contact name
+- email
+- phone
+- website
+- category
+- subcategory(s)
+- city / state
+- plan/status (if available)
+
+This should be:
+- a clean summary card (not a full edit form yet)
+- positioned near the top of the dashboard
+- visually aligned with the rest of the UI
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Clear separation of roles:
+
+- My Profile → personal user profile
+- Partner Dashboard → business/company dashboard
+
+Both must follow the SAME UI standards.
+
+-------------------------------------
+REQUIRED RESPONSE
+-------------------------------------
+
+Please confirm:
+
+1. root cause of the mobile overflow issue
+2. exact fix to enforce the global UI rule
+3. structure for adding business profile section
+4. fields included in first version
+5. files impacted
+6. whether publish is required
+
+--- END ---

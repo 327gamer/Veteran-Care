@@ -7656,6 +7656,48 @@ export async function registerRoutes(
   app.get("/api/partner/me", async (req, res) => {
     const partner = await resolvePartnerFromToken(req);
     if (!partner) return res.status(401).json({ error: "Not authenticated" });
+
+    try {
+      const full = await pgQuery(
+        `SELECT pa.id, pa.email, pa.company_name, pa.contact_name, pa.phone, pa.website,
+                pa.city, pa.state, pa.category_id, pa.subcategory_ids, pa.plan_type, pa.status,
+                pa.stripe_subscription_id,
+                tsc.name AS category_name
+         FROM partner_applications pa
+         LEFT JOIN trusted_service_categories tsc ON tsc.id::text = pa.category_id::text
+         WHERE pa.id = $1
+         LIMIT 1`,
+        [partner.id]
+      );
+
+      if (full.length > 0) {
+        const row = full[0];
+        let subcategoryNames: string[] = [];
+        if (row.subcategory_ids) {
+          try {
+            const raw = row.subcategory_ids;
+            let ids: string[] = [];
+            if (typeof raw === "string") {
+              ids = raw.split(",").map((s: string) => s.trim()).filter(Boolean);
+            } else if (Array.isArray(raw)) {
+              ids = raw.map(String).filter(Boolean);
+            }
+            if (ids.length > 0) {
+              const subs = await pgQuery(
+                `SELECT name FROM partner_subcategories WHERE id = ANY($1::uuid[])`,
+                [ids]
+              );
+              subcategoryNames = subs.map((s: any) => s.name);
+            }
+          } catch {}
+        }
+        return res.json({
+          ...row,
+          subcategory_names: subcategoryNames,
+        });
+      }
+    } catch {}
+
     return res.json(partner);
   });
 
