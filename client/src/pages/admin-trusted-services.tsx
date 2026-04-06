@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,7 +130,7 @@ const emptyForm: PartnerForm = {
   discount_description: "",
 };
 
-export default function AdminTrustedServices() {
+function AdminTrustedServicesInner() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -831,4 +832,8 @@ export default function AdminTrustedServices() {
       })()}
     </div>
   );
+}
+
+export default function AdminTrustedServices() {
+  return <AdminAuthGuard><AdminTrustedServicesInner /></AdminAuthGuard>;
 }

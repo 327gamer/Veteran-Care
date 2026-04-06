@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,7 +135,7 @@ function FunnelStep({ label, value, rate, color, isLast }: { label: string; valu
   );
 }
 
-export default function AdminAttribution() {
+function AdminAttributionInner() {
   const [, navigate] = useLocation();
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
   const headers = getAdminHeaders();
@@ -674,4 +675,8 @@ export default function AdminAttribution() {
       </div>
     </div>
   );
+}
+
+export default function AdminAttribution() {
+  return <AdminAuthGuard><AdminAttributionInner /></AdminAuthGuard>;
 }

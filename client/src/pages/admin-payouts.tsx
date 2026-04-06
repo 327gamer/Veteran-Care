@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,7 +103,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: 
 const PAYOUT_METHOD_LABELS: Record<string, string> = { check: "Check", direct_deposit: "Direct Deposit (ACH)", ach: "Direct Deposit (ACH)", wire: "Bank Wire", paypal: "PayPal", venmo: "Venmo", zelle: "Zelle", stripe: "Stripe Connect", other: "Other" };
 const fmtMethod = (m: string | null) => m ? (PAYOUT_METHOD_LABELS[m] || m) : "—";
 
-export default function AdminPayouts() {
+function AdminPayoutsInner() {
   const [, navigate] = useLocation();
   const headers = getAdminHeaders();
   const queryClient = useQueryClient();
@@ -687,4 +688,8 @@ export default function AdminPayouts() {
       </div>
     </div>
   );
+}
+
+export default function AdminPayouts() {
+  return <AdminAuthGuard><AdminPayoutsInner /></AdminAuthGuard>;
 }

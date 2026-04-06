@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -126,7 +127,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function AdminCommissions() {
+function AdminCommissionsInner() {
   const [, navigate] = useLocation();
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
   const headers = getAdminHeaders();
@@ -634,4 +635,8 @@ function CommissionTable({
       </table>
     </div>
   );
+}
+
+export default function AdminCommissions() {
+  return <AdminAuthGuard><AdminCommissionsInner /></AdminAuthGuard>;
 }

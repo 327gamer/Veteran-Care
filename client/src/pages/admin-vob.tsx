@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   rejected: { label: "Rejected", color: "bg-red-50 text-red-700 border-red-200", icon: XCircle },
 };
 
-export default function AdminVob() {
+function AdminVobInner() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -290,4 +291,8 @@ export default function AdminVob() {
       </div>
     </div>
   );
+}
+
+export default function AdminVob() {
+  return <AdminAuthGuard><AdminVobInner /></AdminAuthGuard>;
 }

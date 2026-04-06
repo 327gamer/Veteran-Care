@@ -2783,6 +2783,23 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/admin/payouts/:id", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { id } = req.params;
+      const rows = await pgQuery("SELECT payout_status FROM ambassador_payouts WHERE id = $1", [id]);
+      if (rows.length === 0) return res.status(404).json({ error: "Payout not found" });
+      if (!["cancelled", "draft"].includes(rows[0].payout_status)) {
+        return res.status(400).json({ error: "Can only delete cancelled or draft payouts" });
+      }
+      await pgQuery("DELETE FROM ambassador_payouts WHERE id = $1", [id]);
+      return res.json({ success: true, deleted: id });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to delete payout" });
+    }
+  });
+
   app.get("/a/:utmId", async (req, res) => {
     try {
       const rows = await pgQuery(

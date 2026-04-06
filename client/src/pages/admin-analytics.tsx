@@ -1,4 +1,5 @@
 
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +90,7 @@ function fmtNum(val: number | string): string {
   return (n || 0).toLocaleString();
 }
 
-export default function AdminAnalytics() {
+function AdminAnalyticsInner() {
   const [, setLocation] = useLocation();
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
   const headers = getAdminHeaders();
@@ -618,4 +619,8 @@ export default function AdminAnalytics() {
       </main>
     </div>
   );
+}
+
+export default function AdminAnalytics() {
+  return <AdminAuthGuard><AdminAnalyticsInner /></AdminAuthGuard>;
 }

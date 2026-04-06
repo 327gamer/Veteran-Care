@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { US_STATE_ABBRS } from "@/lib/admin-filters";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
   inactive: { label: "Inactive", color: "bg-gray-100 text-gray-500 border-gray-200", icon: XCircle },
 };
 
-export default function AdminPartnerProspects() {
+function AdminPartnerProspectsInner() {
   const [, setLocation] = useLocation();
   const adminKey = localStorage.getItem("adminKey") || "";
   const isAdmin = !!adminKey;
@@ -594,4 +595,8 @@ export default function AdminPartnerProspects() {
       </div>
     </div>
   );
+}
+
+export default function AdminPartnerProspects() {
+  return <AdminAuthGuard><AdminPartnerProspectsInner /></AdminAuthGuard>;
 }

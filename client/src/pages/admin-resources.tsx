@@ -1,4 +1,5 @@
 
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,7 +148,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   rejected: { label: "Rejected", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle },
 };
 
-export default function AdminResources() {
+function AdminResourcesInner() {
   const [adminKey, setAdminKey] = useState(() => localStorage.getItem("adminKey") || "");
   const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("adminKey"));
   const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners" | "applications">("resources");
@@ -2911,4 +2912,8 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
       })}
     </div>
   );
+}
+
+export default function AdminResources() {
+  return <AdminAuthGuard><AdminResourcesInner /></AdminAuthGuard>;
 }

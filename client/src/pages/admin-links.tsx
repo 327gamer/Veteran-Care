@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -333,7 +334,7 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
   );
 }
 
-export default function AdminLinks() {
+function AdminLinksInner() {
   const [, navigate] = useLocation();
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
   const headers = getAdminHeaders();
@@ -675,4 +676,8 @@ export default function AdminLinks() {
       </div>
     </div>
   );
+}
+
+export default function AdminLinks() {
+  return <AdminAuthGuard><AdminLinksInner /></AdminAuthGuard>;
 }

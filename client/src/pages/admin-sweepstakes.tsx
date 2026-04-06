@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,7 +92,7 @@ function PlacementIcon({ placement }: { placement: number }) {
   return <Trophy className="h-4 w-4 text-muted-foreground" />;
 }
 
-export default function AdminSweepstakes() {
+function AdminSweepstakesInner() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const adminKey = localStorage.getItem("adminKey") || "";
@@ -679,4 +680,8 @@ export default function AdminSweepstakes() {
       )}
     </div>
   );
+}
+
+export default function AdminSweepstakes() {
+  return <AdminAuthGuard><AdminSweepstakesInner /></AdminAuthGuard>;
 }

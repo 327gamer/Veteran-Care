@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1520,7 +1521,7 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
   );
 }
 
-export default function AdminAmbassadors() {
+function AdminAmbassadorsInner() {
   const [, navigate] = useLocation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNewlyCreated, setIsNewlyCreated] = useState(false);
@@ -1693,4 +1694,8 @@ export default function AdminAmbassadors() {
       </div>
     </div>
   );
+}
+
+export default function AdminAmbassadors() {
+  return <AdminAuthGuard><AdminAmbassadorsInner /></AdminAuthGuard>;
 }

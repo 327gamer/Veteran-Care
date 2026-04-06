@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState, useMemo } from "react";
 import { US_STATE_ABBRS } from "@/lib/admin-filters";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,7 +59,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-green-100 text-green-700 border-green-200",
 };
 
-export default function AdminTrustedServiceLeads() {
+function AdminTrustedServiceLeadsInner() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -294,4 +295,8 @@ export default function AdminTrustedServiceLeads() {
       )}
     </div>
   );
+}
+
+export default function AdminTrustedServiceLeads() {
+  return <AdminAuthGuard><AdminTrustedServiceLeadsInner /></AdminAuthGuard>;
 }

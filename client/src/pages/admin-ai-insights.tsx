@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Z } from "@/lib/layers";
@@ -56,7 +57,7 @@ function formatCategory(slug: string): string {
   return slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-export default function AdminAiInsights() {
+function AdminAiInsightsInner() {
   const [adminKey, setAdminKey] = useState("");
   const [, setLocation] = useLocation();
 
@@ -350,4 +351,8 @@ export default function AdminAiInsights() {
       </div>
     </div>
   );
+}
+
+export default function AdminAiInsights() {
+  return <AdminAuthGuard><AdminAiInsightsInner /></AdminAuthGuard>;
 }
