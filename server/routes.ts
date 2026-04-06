@@ -366,22 +366,26 @@ async function ensureAttributionTables() {
 
       if (linksEmpty) {
         console.log("[schema] Seeding ambassador links...");
-        const AUDIENCES = ["veteran", "case_manager", "partner", "general"];
+        const SEED_AUDIENCES: Record<string, { path: string; campaign: string; label: string }> = {
+          veteran:       { path: "/get-help",        campaign: "sc_veteran_help",        label: "Veteran Outreach" },
+          case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
+          partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner Outreach" },
+          general:       { path: "/start",           campaign: "sc_launch",              label: "General Outreach" },
+        };
         const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
-        const AUDIENCE_LABELS: Record<string, string> = { veteran: "Veteran Outreach", case_manager: "Case Manager Outreach", partner: "Partner Outreach", general: "General Outreach" };
         const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
         let linkTotal = 0;
         for (const a of seedAmbassadors) {
-          for (const audience of AUDIENCES) {
+          for (const [audienceKey, audience] of Object.entries(SEED_AUDIENCES)) {
             for (const channel of CHANNELS) {
-              const linkName = `${a.display_name} – ${CHANNEL_LABELS[channel]} – ${AUDIENCE_LABELS[audience]}`;
-              const utmId = `${a.code}_${audience}_${channel}`;
-              const fullUrl = `https://veterancare.com/home?utm_source=ambassador&utm_medium=${channel}&utm_campaign=${audience}&utm_content=${a.code}&utm_id=${utmId}`;
+              const linkName = `${a.display_name} – ${CHANNEL_LABELS[channel]} – ${audience.label}`;
+              const utmId = `${a.code}_${audienceKey}_${channel}`;
+              const fullUrl = `https://veterancare.com${audience.path}?utm_source=ambassador&utm_medium=${channel}&utm_campaign=${audience.campaign}&utm_content=${a.code}&utm_id=${utmId}`;
               await pgQuery(
                 `INSERT INTO ambassador_links (ambassador_id, ambassador_code, ambassador_name, link_name, utm_id, base_path, utm_source, utm_medium, utm_campaign, utm_content, full_url, short_url, audience_type, channel_type, is_active, click_count, created_at)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 0, NOW())
                  ON CONFLICT DO NOTHING`,
-                [a.id, a.code, a.display_name, linkName, utmId, '/home', 'ambassador', channel, audience, a.code, fullUrl, `/a/${utmId}`, audience, channel]
+                [a.id, a.code, a.display_name, linkName, utmId, audience.path, 'ambassador', channel, audience.campaign, a.code, fullUrl, `/a/${utmId}`, audienceKey, channel]
               );
               linkTotal++;
             }
@@ -389,6 +393,41 @@ async function ensureAttributionTables() {
         }
         console.log(`[schema] Seeded ${linkTotal} ambassador links`);
       }
+    }
+
+    // === FIX: Correct ambassador link destinations if /home was used ===
+    const homeLinkCheck = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE base_path = '/home'");
+    if (parseInt(homeLinkCheck[0].cnt, 10) > 0) {
+      console.log("[schema] Fixing ambassador link destinations from /home to audience-specific paths...");
+      const AUDIENCE_PATHS: Record<string, { path: string; campaign: string }> = {
+        veteran:       { path: "/get-help",        campaign: "sc_veteran_help" },
+        case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
+        partner:       { path: "/partners",        campaign: "sc_partner_growth" },
+        general:       { path: "/start",           campaign: "sc_launch" },
+      };
+      for (const [audienceKey, aud] of Object.entries(AUDIENCE_PATHS)) {
+        await pgQuery(
+          `UPDATE ambassador_links
+           SET base_path = $1,
+               utm_campaign = $2,
+               full_url = REPLACE(
+                 REPLACE(full_url, '/home?', $1 || '?'),
+                 'utm_campaign=' || audience_type,
+                 'utm_campaign=' || $2
+               )
+           WHERE audience_type = $3 AND base_path = '/home'`,
+          [aud.path, aud.campaign, audienceKey]
+        );
+      }
+      const remaining = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE base_path = '/home'");
+      console.log(`[schema] Fixed link destinations (${remaining[0].cnt} still on /home)`);
+    }
+
+    // === FIX: Remove test commission data ===
+    const testCommissions = await pgQuery("SELECT COUNT(*) as cnt FROM commissions WHERE ambassador_code = 'test_john'");
+    if (parseInt(testCommissions[0].cnt, 10) > 0) {
+      await pgQuery("DELETE FROM commissions WHERE ambassador_code = 'test_john'");
+      console.log(`[schema] Removed ${testCommissions[0].cnt} test_john commission records`);
     }
 
     console.log("[schema] attribution tables ready (with ambassadors + payouts)");

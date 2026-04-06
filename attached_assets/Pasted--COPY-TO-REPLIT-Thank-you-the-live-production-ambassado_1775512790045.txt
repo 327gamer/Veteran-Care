@@ -1,0 +1,138 @@
+--- COPY TO REPLIT ---
+
+Thank you — the live production ambassador/admin visibility now appears to be working much better.
+
+From live production I can now see:
+- 5 ambassadors
+- 28 links per ambassador
+- ambassador detail view
+- campaign packs
+- payout screen cleaned up
+
+So the core live admin visibility problem appears largely resolved.
+
+However, I found two critical issues that still need to be fixed before ambassador launch:
+
+-------------------------------------
+1) COMMISSION LEDGER STILL SHOWS TEST DATA
+-------------------------------------
+
+In live production, the Commission Ledger is still showing:
+- test_john
+
+That should NOT still be present if cleanup was completed.
+
+Please diagnose and fix:
+- why test_john is still visible in the live commission ledger
+- whether this is coming from production data that was never cleaned
+- whether cleanup only ran for payouts and not commissions
+- whether the commission UI is reading from a different source than expected
+
+I need all test commission data removed or reassigned correctly in LIVE production.
+
+-------------------------------------
+2) AMBASSADOR LINK DESTINATION FLOW HAS REGRESSED
+-------------------------------------
+
+This is the more important issue.
+
+I tested the live ambassador links and they are all routing to:
+- /home with UTM parameters
+
+Example from the ambassador pack:
+- partner outreach links go to /home
+- veteran outreach links go to /home
+- case manager outreach links go to /home
+
+Tracking may still be preserved, but the campaign-specific destination flow appears to be gone.
+
+That is NOT what we had before.
+
+Previously, we had audience-specific landing / intro flow, with branded landing pages that matched the Veteran Care platform look and feel:
+- Veteran Care branding
+- logo
+- green theme
+- short intro copy tailored to the audience
+- clear CTA button taking them to the correct next step
+
+These were important because they guided the user through the right journey depending on who they were.
+
+Examples of what we previously had / expected:
+- partner / business outreach → trusted partner intro / partner signup destination
+- veteran outreach → veteran intro landing page with CTA into the platform
+- case manager outreach → case manager landing page / intro page with correct CTA
+
+Right now, everything appears to be flattened to the homepage.
+
+This feels like earlier professional funnel work has been disconnected, replaced, or lost.
+
+-------------------------------------
+REQUIRED DIAGNOSIS
+-------------------------------------
+
+Please investigate and explain clearly:
+
+1. Where the redirect destination is currently being set for ambassador links
+2. Whether the recent ambassador reseed / link regeneration replaced the original destination logic with a generic /home route
+3. Whether the short links are now all reading from a simplified default target instead of campaign-specific targets
+4. Whether the original landing pages / intro pages still exist in code but are no longer connected
+5. If they were removed, when and why that happened
+6. Whether this regression happened during ambassador rebuild, campaign pack rebuild, production sync, or another change
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+I need the ambassador routing system restored so destination matches audience intent.
+
+Please define and implement the intended destination matrix for LIVE production.
+
+At minimum:
+
+A. Veteran Outreach
+- should go to a veteran-specific intro / landing experience
+- then CTA into the correct next step
+
+B. Case Manager Outreach
+- should go to a case manager-specific intro / landing experience
+- then CTA into the correct next step
+
+C. Partner / Business Outreach
+- should go directly to the correct partner intro / landing / application flow
+- not generic homepage routing
+
+D. General Outreach
+- can go to homepage or a general intro page if that is the intended design
+
+-------------------------------------
+VALIDATION REQUIRED AFTER FIX
+-------------------------------------
+
+After you fix this, I need a complete LIVE production validation, not preview only.
+
+Please validate in LIVE:
+
+1. ambassador detail page
+2. ambassador links page
+3. short-link redirect behavior
+4. full URL destination behavior
+5. UTM persistence
+6. ambassador attribution persistence
+7. correct landing page / CTA per audience
+8. commission ledger clean of test_john
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+The admin side now looks much better.
+
+But the ambassador system is NOT launch-ready until:
+- test commission data is removed
+- audience-specific landing flow is restored
+- the earlier branded landing/introduction flow is either reconnected or rebuilt correctly
+- links do not all dump users onto /home unless intentionally meant to
+
+This is critical because campaign performance depends on the right destination experience, not just tracking.
+
+--- END ---
