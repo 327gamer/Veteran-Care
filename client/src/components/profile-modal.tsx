@@ -336,15 +336,15 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-1rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+      <DialogContent className="!w-[calc(100vw-2rem)] !max-w-md !p-3 sm:!p-5 max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
-          <DialogTitle className="text-xl font-heading text-primary flex items-center gap-2">
-            <UserCircle className="h-5 w-5" />
+          <DialogTitle className="text-lg font-heading text-primary flex items-center gap-2">
+            <UserCircle className="h-5 w-5 shrink-0" />
             My Profile
           </DialogTitle>
-          <div className="flex items-center gap-1.5 mt-1">
-            <Shield className="h-3.5 w-3.5 text-primary/60" />
-            <p className="text-xs text-primary/60 font-medium">Your information is private and confidential.</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Shield className="h-3 w-3 text-primary/60 shrink-0" />
+            <p className="text-[11px] text-primary/60 font-medium">Your information is private and confidential.</p>
           </div>
         </DialogHeader>
 
@@ -354,7 +354,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
             <span className="ml-2 text-sm text-muted-foreground">Loading your profile...</span>
           </div>
         ) : (
-          <div className="space-y-3 mt-2">
+          <div className="space-y-2.5 mt-1">
             {(() => {
               const fields = [
                 { filled: !!firstName.trim(), required: true },
@@ -379,55 +379,53 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
               const isComplete = pct === 100;
 
               return (
-                <div data-testid="profile-completion" className={`rounded-lg p-3 ${isComplete ? "bg-green-50 border border-green-200" : "bg-primary/5 border border-primary/10"}`}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-sm font-semibold ${isComplete ? "text-green-700" : "text-primary"}`}>
-                      Profile Completion: {pct}%
+                <div data-testid="profile-completion" className={`rounded-lg p-2.5 ${isComplete ? "bg-green-50 border border-green-200" : "bg-primary/5 border border-primary/10"}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-semibold ${isComplete ? "text-green-700" : "text-primary"}`}>
+                      Profile: {pct}%
                     </span>
-                    <span className="text-xs text-muted-foreground">{completed}/{fields.length} fields</span>
+                    <span className="text-[10px] text-muted-foreground">{completed}/{fields.length}</span>
                   </div>
-                  <Progress value={pct} className="h-2 mb-1.5" />
-                  <p className="text-[11px] text-muted-foreground leading-snug">
+                  <Progress value={pct} className="h-1.5 mb-1" />
+                  <p className="text-[10px] text-muted-foreground leading-snug">
                     {isComplete
-                      ? "Your profile is complete. You'll receive the most personalized recommendations and support."
-                      : "Complete your profile for better recommendations and personalized support."}
+                      ? "Complete! You'll get the most personalized recommendations."
+                      : "Complete your profile for better recommendations."}
                   </p>
                 </div>
               );
             })()}
 
             {error && (
-              <div data-testid="text-profile-error" className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>
+              <div data-testid="text-profile-error" className="text-xs text-destructive bg-destructive/10 rounded-lg px-2.5 py-2">{error}</div>
             )}
             {saveMsg && (
-              <div data-testid="text-profile-success" className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">{saveMsg}</div>
+              <div data-testid="text-profile-success" className="text-xs text-green-700 bg-green-50 rounded-lg px-2.5 py-2">{saveMsg}</div>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1 min-w-0">
-                <Label className="text-xs">First Name *</Label>
-                <Input data-testid="input-profile-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" />
-              </div>
-              <div className="space-y-1 min-w-0">
-                <Label className="text-xs">Last Name *</Label>
-                <Input data-testid="input-profile-last" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
-              </div>
+            <div className="space-y-1">
+              <Label className="text-xs">First Name *</Label>
+              <Input data-testid="input-profile-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className="h-9" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Last Name *</Label>
+              <Input data-testid="input-profile-last" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" className="h-9" />
             </div>
 
             <div className="space-y-1">
               <Label className="text-xs">Email *</Label>
-              <Input data-testid="input-profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              <Input data-testid="input-profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="h-9" />
             </div>
 
             <div className="space-y-1">
               <Label className="text-xs">Phone *</Label>
-              <Input data-testid="input-profile-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" />
+              <Input data-testid="input-profile-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" className="h-9" />
             </div>
 
             <div className="space-y-1">
               <Label className="text-xs">I am a...</Label>
               <Select value={userType} onValueChange={setUserType}>
-                <SelectTrigger data-testid="select-profile-user-type" className="w-full">
+                <SelectTrigger data-testid="select-profile-user-type" className="w-full h-9">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -438,68 +436,66 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
               </Select>
             </div>
 
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start gap-2">
               <Checkbox
                 id="profile-consent"
                 data-testid="checkbox-profile-consent"
                 checked={consentContact}
                 onCheckedChange={(checked) => setConsentContact(checked === true)}
-                className="mt-0.5"
+                className="mt-0.5 shrink-0"
               />
-              <Label htmlFor="profile-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+              <Label htmlFor="profile-consent" className="text-[11px] text-muted-foreground leading-relaxed cursor-pointer">
                 {t(platform.consentText)}
               </Label>
             </div>
 
-            <div className="border-t pt-3 mt-1">
+            <div className="border-t pt-2.5 mt-1">
               <p className="text-xs font-semibold text-primary mb-0.5">Optional — Personalization</p>
-              <p className="text-[10px] text-muted-foreground mb-3">Update anytime for better recommendations.</p>
+              <p className="text-[10px] text-muted-foreground mb-2">Update anytime for better recommendations.</p>
 
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1 min-w-0">
-                    <Label className="text-xs">Branch of Service</Label>
-                    <Select value={branch} onValueChange={setBranch}>
-                      <SelectTrigger data-testid="select-profile-branch" className="w-full">
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BRANCHES.map(b => (
-                          <SelectItem key={b} value={b}>{b}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <Label className="text-xs">Service Era</Label>
-                    <Select value={serviceEra} onValueChange={setServiceEra}>
-                      <SelectTrigger data-testid="select-profile-era" className="w-full">
-                        <SelectValue placeholder="Select era" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SERVICE_ERAS.map(e => (
-                          <SelectItem key={e} value={e}>{e}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <Label className="text-xs">Branch of Service</Label>
+                  <Select value={branch} onValueChange={setBranch}>
+                    <SelectTrigger data-testid="select-profile-branch" className="w-full h-9">
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BRANCHES.map(b => (
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Rank</Label>
-                      <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setRank("N/A / Not Applicable")} data-testid="button-profile-rank-na">N/A</button>
-                    </div>
-                    <Input data-testid="input-profile-rank" value={rank} onChange={(e) => setRank(e.target.value)} placeholder="e.g. SGT, CPL" />
+                <div className="space-y-1">
+                  <Label className="text-xs">Service Era</Label>
+                  <Select value={serviceEra} onValueChange={setServiceEra}>
+                    <SelectTrigger data-testid="select-profile-era" className="w-full h-9">
+                      <SelectValue placeholder="Select era" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICE_ERAS.map(e => (
+                        <SelectItem key={e} value={e}>{e}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Rank</Label>
+                    <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setRank("N/A / Not Applicable")} data-testid="button-profile-rank-na">N/A</button>
                   </div>
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">MOS / Specialty</Label>
-                      <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setMos("N/A / Not Applicable")} data-testid="button-profile-mos-na">N/A</button>
-                    </div>
-                    <Input data-testid="input-profile-mos" value={mos} onChange={(e) => setMos(e.target.value)} placeholder="e.g. 11B, 68W" />
+                  <Input data-testid="input-profile-rank" value={rank} onChange={(e) => setRank(e.target.value)} placeholder="e.g. SGT, CPL" className="h-9" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">MOS / Specialty</Label>
+                    <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setMos("N/A / Not Applicable")} data-testid="button-profile-mos-na">N/A</button>
                   </div>
+                  <Input data-testid="input-profile-mos" value={mos} onChange={(e) => setMos(e.target.value)} placeholder="e.g. 11B, 68W" className="h-9" />
                 </div>
 
                 <div className="space-y-1">
@@ -507,13 +503,13 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     <Label className="text-xs">Deployment / Operational Background</Label>
                     <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setDeploymentBackground("N/A / Not Applicable")} data-testid="button-profile-deployment-na">N/A</button>
                   </div>
-                  <Input data-testid="input-profile-deployment" value={deploymentBackground} onChange={(e) => setDeploymentBackground(e.target.value)} placeholder="e.g. OEF, OIF, OND" />
+                  <Input data-testid="input-profile-deployment" value={deploymentBackground} onChange={(e) => setDeploymentBackground(e.target.value)} placeholder="e.g. OEF, OIF, OND" className="h-9" />
                 </div>
 
                 <div className="space-y-1">
                   <Label className="text-xs">Preferred Contact Method</Label>
                   <Select value={preferredContact} onValueChange={setPreferredContact}>
-                    <SelectTrigger data-testid="select-profile-contact-method" className="w-full">
+                    <SelectTrigger data-testid="select-profile-contact-method" className="w-full h-9">
                       <SelectValue placeholder="How should we reach you?" />
                     </SelectTrigger>
                     <SelectContent>
@@ -551,33 +547,33 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">City</Label>
-                    <Input data-testid="input-profile-city" value={userCity} onChange={(e) => setUserCity(e.target.value)} placeholder="City" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">ZIP</Label>
-                    <Input data-testid="input-profile-zip" value={userZip} onChange={(e) => setUserZip(e.target.value)} placeholder="ZIP" />
-                  </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">City</Label>
+                  <Input data-testid="input-profile-city" value={userCity} onChange={(e) => setUserCity(e.target.value)} placeholder="City" className="h-9" />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">ZIP</Label>
+                  <Input data-testid="input-profile-zip" value={userZip} onChange={(e) => setUserZip(e.target.value)} placeholder="ZIP" className="h-9" />
+                </div>
+
+                <div className="space-y-1.5">
                   <Label className="text-xs">Areas of Interest / Support Needs</Label>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="space-y-1">
                     {INTEREST_OPTIONS.map((item) => {
                       const isSelected = selectedInterests.includes(item);
                       return (
                         <div
                           key={item}
                           data-testid={`interest-profile-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                          className={`flex items-center gap-2 border p-2 rounded-lg cursor-pointer transition-all min-w-0 ${
+                          className={`flex items-center gap-2 border p-2 rounded-lg cursor-pointer transition-all ${
                             isSelected ? "bg-primary/10 border-primary/40 shadow-sm" : "hover:bg-muted/50"
                           }`}
                           onClick={() => toggleInterest(item)}
                         >
                           <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0 pointer-events-none" />
-                          <Label className="cursor-pointer font-medium text-xs leading-tight truncate">{item}</Label>
+                          <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
                         </div>
                       );
                     })}
@@ -587,24 +583,24 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
             </div>
 
             {referralData && (
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Gift className="h-4 w-4 text-primary" />
+              <div className="space-y-2.5 border-t pt-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Gift className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-heading font-bold text-primary">Refer & Earn Entries to Win</h3>
-                    <p className="text-[10px] text-muted-foreground">Share your link. When someone signs up and completes their profile, you earn a sweepstakes entry.</p>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-heading font-bold text-primary">Refer & Earn Entries to Win</h3>
+                    <p className="text-[10px] text-muted-foreground leading-tight">Share your link to earn sweepstakes entries.</p>
                   </div>
                 </div>
 
-                <div className="border border-primary/20 rounded-xl p-3 space-y-3">
-                  <div className="space-y-1.5">
+                <div className="space-y-2.5">
+                  <div className="space-y-1">
                     <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Your Referral Link</label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <div
                         data-testid="text-profile-referral-link"
-                        className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-xs font-mono text-foreground truncate border min-w-0 overflow-hidden"
+                        className="flex-1 bg-muted/50 rounded-lg px-2.5 py-2 text-[11px] font-mono text-foreground truncate border min-w-0"
                       >
                         {referralData.referralLink}
                       </div>
@@ -612,22 +608,22 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                         data-testid="button-profile-copy-referral"
                         variant={refCopied ? "default" : "outline"}
                         size="sm"
-                        className="shrink-0 h-auto px-3"
+                        className="shrink-0 h-auto px-2.5 text-xs"
                         onClick={handleCopyReferralLink}
                       >
-                        {refCopied ? <><Check className="h-3.5 w-3.5 mr-1" />Copied</> : <><Copy className="h-3.5 w-3.5 mr-1" />Copy</>}
+                        {refCopied ? <><Check className="h-3 w-3 mr-1" />Copied</> : <><Copy className="h-3 w-3 mr-1" />Copy</>}
                       </Button>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1">
                       {refShareLabels.map((label, i) => (
                         <button
                           key={label}
                           data-testid={`button-profile-msg-variant-${i}`}
                           onClick={() => setRefMsgVariant(i)}
-                          className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
                             refMsgVariant === i
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-muted/40 text-muted-foreground border-transparent hover:border-muted-foreground/20"
@@ -637,118 +633,115 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                         </button>
                       ))}
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed bg-muted/30 rounded-lg px-3 py-2 border border-dashed">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed bg-muted/30 rounded-lg px-2.5 py-1.5 border border-dashed">
                       {getRefShareMessage() || "Loading..."}
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1.5">
                       <Button
                         data-testid="button-profile-copy-message"
                         variant="outline"
                         size="sm"
-                        className="text-xs h-9"
+                        className="text-[10px] h-8 px-1"
                         onClick={handleCopyRefMessage}
                       >
-                        {refMsgCopied ? <><Check className="h-3.5 w-3.5 mr-1" />Copied</> : <><MessageSquare className="h-3.5 w-3.5 mr-1" />Copy Msg</>}
+                        {refMsgCopied ? <><Check className="h-3 w-3 mr-0.5" />Copied</> : <><MessageSquare className="h-3 w-3 mr-0.5" />Copy</>}
                       </Button>
                       <Button
                         data-testid="button-profile-share-sms"
                         variant="outline"
                         size="sm"
-                        className="text-xs h-9"
+                        className="text-[10px] h-8 px-1"
                         onClick={handleShareSms}
                       >
-                        <PhoneIcon className="h-3.5 w-3.5 mr-1" />
+                        <PhoneIcon className="h-3 w-3 mr-0.5" />
                         SMS
                       </Button>
                       <Button
                         data-testid="button-profile-share-whatsapp"
                         variant="outline"
                         size="sm"
-                        className="text-xs h-9"
+                        className="text-[10px] h-8 px-1"
                         onClick={handleShareWhatsApp}
                       >
-                        <Send className="h-3.5 w-3.5 mr-1" />
-                        WhatsApp
+                        <Send className="h-3 w-3 mr-0.5" />
+                        WA
                       </Button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
-                      <p data-testid="text-profile-referral-entries" className="text-xl font-bold text-primary">{referralData.currentMonthEntryCount}</p>
-                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Entries</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="text-center p-2 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-entries" className="text-lg font-bold text-primary">{referralData.currentMonthEntryCount}</p>
+                      <p className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Entries</p>
                     </div>
-                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
-                      <p data-testid="text-profile-referral-count" className="text-xl font-bold text-primary">{referralData.currentMonthQualifiedReferralCount}</p>
-                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Referrals</p>
+                    <div className="text-center p-2 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-count" className="text-lg font-bold text-primary">{referralData.currentMonthQualifiedReferralCount}</p>
+                      <p className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Referrals</p>
                     </div>
-                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
-                      <p data-testid="text-profile-referral-rank" className="text-xl font-bold text-primary">{referralData.leaderboardRank ?? "—"}</p>
-                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Rank</p>
+                    <div className="text-center p-2 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-rank" className="text-lg font-bold text-primary">{referralData.leaderboardRank ?? "—"}</p>
+                      <p className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Rank</p>
                     </div>
                   </div>
 
                   <p className="text-[10px] text-center text-muted-foreground/60">
-                    Entries are earned when a referral signs up and completes their profile.
+                    Entries earned when a referral signs up and completes their profile.
                   </p>
                 </div>
 
                 <div
                   data-testid="button-profile-view-leaderboard"
-                  className="border rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-colors group"
+                  className="border rounded-lg p-2.5 flex items-center gap-2.5 cursor-pointer hover:border-primary/30 transition-colors group"
                   onClick={() => { onOpenChange(false); setLocation("/referral"); }}
                 >
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Trophy className="h-4 w-4 text-primary" />
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Trophy className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">View Leaderboard</p>
-                    <p className="text-[10px] text-muted-foreground">See the top referrers this month</p>
+                    <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">View Leaderboard</p>
+                    <p className="text-[10px] text-muted-foreground">Top referrers this month</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
                 </div>
 
                 {prizeData?.prizeTitle && (
-                  <div className="border border-primary/20 rounded-xl p-3 bg-gradient-to-br from-primary/[0.03] to-transparent space-y-2">
-                    <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                      <Gift className="h-4 w-4 text-primary" />
+                  <div className="border border-primary/20 rounded-lg p-2.5 bg-gradient-to-br from-primary/[0.03] to-transparent space-y-1.5">
+                    <h3 className="text-xs font-semibold flex items-center gap-1.5">
+                      <Gift className="h-3.5 w-3.5 text-primary shrink-0" />
                       This Month's Giveaway
                     </h3>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                      <p className="font-bold text-sm" data-testid="text-profile-prize-title">{prizeData.prizeTitle}</p>
-                      {prizeData.prizeValue && <p className="text-green-700 font-bold text-base mt-0.5" data-testid="text-profile-prize-value">${prizeData.prizeValue}</p>}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 text-center">
+                      <p className="font-bold text-xs" data-testid="text-profile-prize-title">{prizeData.prizeTitle}</p>
+                      {prizeData.prizeValue && <p className="text-green-700 font-bold text-sm mt-0.5" data-testid="text-profile-prize-value">${prizeData.prizeValue}</p>}
                       {prizeData.prizeDescription && <p className="text-[10px] text-muted-foreground mt-1">{prizeData.prizeDescription}</p>}
                     </div>
-                    <p className="text-[10px] text-muted-foreground/60">
-                      The more veterans you help connect to resources, the more entries you earn.
-                    </p>
                   </div>
                 )}
               </div>
             )}
 
-            <Button data-testid="button-profile-save" className="w-full" onClick={handleSave} disabled={saving || deleting}>
+            <Button data-testid="button-profile-save" className="w-full h-10" onClick={handleSave} disabled={saving || deleting}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               {saving ? "Saving..." : "Save Profile"}
             </Button>
 
-            <div className="border-t pt-4 mt-2">
+            <div className="border-t pt-3 mt-1">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     data-testid="button-delete-account"
                     variant="outline"
-                    className="w-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                    className="w-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive h-10"
                     disabled={deleting}
                   >
                     {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
                     {deleting ? "Deleting Account..." : "Delete Account"}
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="!w-[calc(100vw-2rem)] !max-w-md !p-4">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to delete your account?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="text-sm">Are you sure you want to delete your account?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs">
                       This action cannot be undone. Your profile information, saved resources, and account access will be permanently removed.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

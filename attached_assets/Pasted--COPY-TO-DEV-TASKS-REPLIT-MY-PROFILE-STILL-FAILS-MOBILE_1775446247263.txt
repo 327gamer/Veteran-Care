@@ -1,0 +1,110 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### MY PROFILE STILL FAILS MOBILE RULE — REBUILD IT USING THE SAME COMPACT MOBILE STRUCTURE AS BUSINESS PROFILE
+
+I tested again after publish and My Profile is still cut off on the right on mobile.
+
+I attached screenshots.
+
+The current result still violates our platform-wide universal rule:
+
+-------------------------------------
+UNIVERSAL UI RULE
+-------------------------------------
+
+Every page, modal, and component must:
+- be mobile-first
+- fit fully within viewport width
+- have NO right-side cutoff
+- have NO horizontal drift / side scrolling
+- use clean vertical scrolling only
+- remain fully usable on iPhone Safari
+
+-------------------------------------
+CURRENT RESULT
+-------------------------------------
+
+My Profile is STILL broken:
+- right side is cut off
+- layout still exceeds viewport width
+- content is not fully contained on mobile
+- this rule has still not been properly enforced
+
+Meanwhile, the Business Profile / Partner Dashboard DOES fit correctly.
+
+That proves the issue is NOT the platform.
+It is the structure of the My Profile component itself.
+
+-------------------------------------
+IMPORTANT OBSERVATION
+-------------------------------------
+
+The business profile works because it is:
+- more compact
+- more vertical
+- cleaner spacing
+- simpler text blocks
+- better stacked for mobile
+
+My Profile still feels too wide and too dense.
+
+It is still trying to behave like a desktop/modal form instead of a true mobile-first profile layout.
+
+-------------------------------------
+WHAT I WANT NOW
+-------------------------------------
+
+Do NOT keep patching this with overflow hiding.
+
+Please restructure My Profile on mobile using the same compact design discipline as the Business Profile.
+
+That means:
+
+- simplify the layout
+- stack more fields vertically on mobile
+- reduce side-by-side field groups
+- reduce width pressure across all sections
+- make the referral section more compact if needed
+- keep everything fully inside viewport width
+
+-------------------------------------
+MOBILE STRUCTURE EXPECTATION
+-------------------------------------
+
+On mobile, My Profile should behave like this:
+
+- one clean column wherever possible
+- no wide multi-column form rows unless they truly fit
+- fields should stack instead of forcing compression
+- labels and inputs should not push the modal wider
+- referral section should stay fully contained and readable
+- Save / Delete actions should fit cleanly at full width
+
+If necessary, use a different mobile layout than desktop/tablet.
+
+That is acceptable and preferred.
+
+-------------------------------------
+KEY POINT
+-------------------------------------
+
+Since the Business Profile already fits, I want My Profile rebuilt using that same compact mobile logic:
+- tighter layout
+- simpler flow
+- cleaner stacking
+- no horizontal pressure
+
+-------------------------------------
+REQUIRED RESPONSE
+-------------------------------------
+
+Please reply with:
+
+1. which exact My Profile rows/sections are still forcing width
+2. which rows will now become fully stacked on mobile
+3. whether the referral section also needs a compact mobile variant
+4. exact structural changes you will make
+5. files changed
+6. whether publish is required
+
+--- END ---
