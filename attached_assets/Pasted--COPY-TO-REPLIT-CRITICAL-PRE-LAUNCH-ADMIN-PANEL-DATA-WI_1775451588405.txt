@@ -1,0 +1,247 @@
+--- COPY TO REPLIT ---
+
+CRITICAL PRE-LAUNCH ADMIN PANEL + DATA WIRING AUDIT  
+(FULL SYSTEM DIAGNOSIS + FULL FIX PASS REQUIRED)
+
+We recently consolidated and cleaned up the admin panel to improve usability.
+
+Visually, it looks better.
+
+Functionally, it appears parts of the system are now:
+- missing
+- disconnected
+- not surfaced
+- or not wired correctly
+
+This is NOT a rebuild request.
+
+This is a full audit + restoration of operational integrity before launch.
+
+-------------------------------------
+THIS IS A CRITICAL PRE-LAUNCH BLOCKER
+-------------------------------------
+
+The admin panel must function as the central control system for:
+
+- ambassadors  
+- campaigns  
+- links / UTMs  
+- attribution  
+- commissions  
+- payouts  
+- partner lifecycle  
+- lead routing  
+
+Right now, that full story is NOT clearly connected.
+
+-------------------------------------
+MANDATORY RESPONSE STRUCTURE
+-------------------------------------
+
+Do NOT reply with a summary.
+
+You must provide:
+
+1) FULL SYSTEM DIAGNOSIS  
+2) CLEAR FIX PLAN  
+3) TABLE + DATA SOURCE MAPPING  
+4) EXACT IMPLEMENTATION ACTIONS  
+5) FINAL VALIDATION CONFIRMATION  
+
+-------------------------------------
+1) AMBASSADOR SYSTEM — MISSING / DISCONNECTED
+-------------------------------------
+
+Expected real ambassadors:
+- Colin Slaven  
+- Debbie Slaven  
+- Tracy Robertson  
+- Michelle Keef  
+- Kelsey Reese  
+
+Current state:
+- /admin/ambassadors = 0  
+- archived toggle = 0  
+- link management = 0  
+- analytics says ambassadors = 0  
+
+But:
+- commissions exist  
+- attributed revenue exists  
+- test_john appears in ledger  
+
+This is a direct conflict.
+
+REQUIRED ANSWERS:
+- where are the real ambassadors stored?
+- were they created in dev but not production?
+- are admin pages pointing to wrong tables?
+- is there a production vs dev mismatch?
+
+-------------------------------------
+2) CAMPAIGN PACKS / OUTREACH SYSTEM — NOT VISIBLE
+-------------------------------------
+
+Expected:
+- campaign packs (Veteran / Case Manager / Business)
+- channel breakdown:
+  Email / SMS / Facebook / Instagram / LinkedIn / Flyers
+- QR codes
+- tracked links
+- UTM structure by:
+  ambassador / campaign / channel
+
+Current:
+- no visible UI location for any of this
+
+REQUIRED:
+- where are these stored?
+- where are they surfaced?
+- how do ambassadors access them?
+
+If backend-only → must now be surfaced in admin UI.
+
+-------------------------------------
+3) LINK MANAGEMENT — EMPTY
+-------------------------------------
+
+/admin/links shows 0
+
+Conflicts with:
+- UTM tracking system
+- ambassador links
+- campaign links
+
+REQUIRED:
+- confirm storage location
+- confirm persistence
+- fix admin wiring
+
+Links must be queryable by:
+- ambassador
+- campaign
+- channel
+- utm_id
+- performance
+
+-------------------------------------
+4) ANALYTICS / ATTRIBUTION DISCONNECT
+-------------------------------------
+
+Working:
+- analytics dashboard
+- attribution funnel
+- commission ledger
+
+Not working:
+- ambassadors page empty
+- links page empty
+- analytics shows 0 ambassadors
+
+REQUIRED:
+Explain the FULL data flow:
+
+Ambassador → Link → Click → Session → Conversion → Revenue → Commission → Payout
+
+Where is it breaking?
+
+-------------------------------------
+5) AI INSIGHTS — UNCLEAR / POSSIBLY BROKEN
+-------------------------------------
+
+REQUIRED:
+- what is AI Insights?
+- what data source does it use?
+- why was it key-gated?
+- is it production-ready?
+
+Then choose ONE:
+A) fully enable  
+B) hide for launch  
+C) provide full setup instructions  
+
+No ambiguous features at launch.
+
+-------------------------------------
+6) PARTNER / LEADS / PAYOUT SYSTEM — FULL CLARITY REQUIRED
+-------------------------------------
+
+Explain each screen:
+
+A) Partner Organizations  
+B) Trusted Partner Applications  
+C) Trusted Partner Leads (why empty?)  
+D) Payouts (why zero?)  
+E) Veteran-Owned Businesses  
+F) Sweepstakes  
+
+For EACH:
+- data source  
+- expected behavior  
+- current status (working vs empty vs broken)
+
+-------------------------------------
+7) FULL SYSTEM RE-TEST REQUIRED
+-------------------------------------
+
+You must re-test end-to-end:
+
+- Resource creation → approval → visibility  
+- Navigator request → classification → routing  
+- Partner onboarding → approval → payment → activation  
+- Ambassador attribution persistence  
+- Lead routing to real partners (NO internal fallback)  
+
+-------------------------------------
+8) PRODUCTION vs DEV DATA CHECK
+-------------------------------------
+
+Confirm ALL admin panels are reading:
+
+- production tables  
+- not dev/test/stale data  
+
+Verify for:
+- ambassadors  
+- links  
+- commissions  
+- payouts  
+- referrals  
+- partners  
+- leads  
+
+-------------------------------------
+9) TEST DATA CLEANUP
+-------------------------------------
+
+- remove or reassign test_john  
+- remove all placeholder/test data  
+- ensure only real operational data is visible  
+
+-------------------------------------
+FINAL REQUIREMENT
+-------------------------------------
+
+After fixes, confirm the admin panel clearly shows:
+
+- real ambassadors  
+- real links  
+- real campaigns  
+- real attribution  
+- real commissions  
+- real partners  
+- real leads  
+
+No ambiguity. No placeholders.
+
+-------------------------------------
+THIS IS A HARD REQUIREMENT BEFORE LAUNCH
+-------------------------------------
+
+The admin panel must function as a complete operational control system.
+
+Right now, it does not.
+
+Fix this completely.
+
+--- END ---

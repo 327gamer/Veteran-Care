@@ -1989,6 +1989,79 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/cleanup-test-data", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+      const testCodes = ["e2e_test_runner", "test_short_url", "test_john", "mike_charleston"];
+      const results: string[] = [];
+
+      const tracyNew = await pgQuery(`SELECT id FROM ambassadors WHERE code = 'tracy_robertson'`);
+      if (tracyNew.length > 0) {
+        const tracyId = tracyNew[0].id;
+        const reassigned = await pgQuery(
+          `UPDATE commissions SET ambassador_code = 'tracy_robertson' WHERE ambassador_code = 'tracy_upstate' RETURNING id`
+        );
+        results.push(`Reassigned ${reassigned.length} commissions from tracy_upstate → tracy_robertson`);
+        const reassignedPayouts = await pgQuery(
+          `UPDATE ambassador_payouts SET ambassador_id = $1 WHERE ambassador_id IN (SELECT id FROM ambassadors WHERE code = 'tracy_upstate') RETURNING id`,
+          [tracyId]
+        );
+        results.push(`Reassigned ${reassignedPayouts.length} payouts from tracy_upstate → tracy_robertson`);
+        const reassignedAttr = await pgQuery(
+          `UPDATE partner_attribution SET ambassador = 'tracy_robertson' WHERE ambassador = 'tracy_upstate' RETURNING id`
+        );
+        results.push(`Reassigned ${reassignedAttr.length} attribution from tracy_upstate → tracy_robertson`);
+        const reassignedSessions = await pgQuery(
+          `UPDATE user_attribution_sessions SET utm_content = 'tracy_robertson', ambassador_id = $1 
+           WHERE utm_content = 'tracy_upstate' RETURNING id`,
+          [tracyId]
+        );
+        results.push(`Reassigned ${reassignedSessions.length} sessions from tracy_upstate → tracy_robertson`);
+      }
+
+      const oldTracyAmb = await pgQuery(`SELECT id FROM ambassadors WHERE code = 'tracy_upstate'`);
+      if (oldTracyAmb.length > 0) {
+        const oldId = oldTracyAmb[0].id;
+        await pgQuery(`DELETE FROM commissions WHERE ambassador_id = $1`, [oldId]);
+        await pgQuery(`DELETE FROM ambassador_payouts WHERE ambassador_id = $1`, [oldId]);
+        await pgQuery(`DELETE FROM ambassador_links WHERE ambassador_id = $1`, [oldId]);
+        await pgQuery(`DELETE FROM user_attribution_sessions WHERE ambassador_id = $1`, [oldId]);
+        await pgQuery(`DELETE FROM partner_attribution WHERE ambassador_id = $1`, [oldId]);
+        await pgQuery(`DELETE FROM ambassadors WHERE id = $1`, [oldId]);
+        results.push(`Deleted archived ambassador tracy_upstate and all related records`);
+      }
+
+      for (const code of testCodes) {
+        const amb = await pgQuery(`SELECT id FROM ambassadors WHERE code = $1`, [code]);
+        if (amb.length > 0) {
+          const ambId = amb[0].id;
+          const delCommissions = await pgQuery(`DELETE FROM commissions WHERE ambassador_code = $1`, [code]);
+          results.push(`Deleted commissions for ${code}: ${delCommissions.length || 0}`);
+          await pgQuery(`DELETE FROM commissions WHERE ambassador_id = $1`, [ambId]);
+          const delPayouts = await pgQuery(`DELETE FROM ambassador_payouts WHERE ambassador_id = $1`, [ambId]);
+          results.push(`Deleted payouts for ${code}: ${delPayouts.length || 0}`);
+          const delLinks = await pgQuery(`DELETE FROM ambassador_links WHERE ambassador_id = $1`, [ambId]);
+          results.push(`Deleted links for ${code}: ${delLinks.length || 0}`);
+          const delSessions = await pgQuery(`DELETE FROM user_attribution_sessions WHERE ambassador_id = $1`, [ambId]);
+          results.push(`Deleted sessions for ${code}: ${delSessions.length || 0}`);
+          const delAttribution = await pgQuery(`DELETE FROM partner_attribution WHERE ambassador_id = $1`, [ambId]);
+          results.push(`Deleted attribution for ${code}: ${delAttribution.length || 0}`);
+          await pgQuery(`DELETE FROM ambassadors WHERE id = $1`, [ambId]);
+          results.push(`Deleted ambassador ${code}`);
+        } else {
+          results.push(`Ambassador ${code} not found — skipped`);
+        }
+      }
+
+      return res.json({ success: true, results });
+    } catch (err: any) {
+      console.log("[cleanup-test-data] error:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/admin/attribution", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
