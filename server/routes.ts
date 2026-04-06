@@ -338,6 +338,59 @@ async function ensureAttributionTables() {
         AND pa.utm_content IS NOT NULL
     `);
 
+    // === SEED: Core ambassador profiles + links if missing ===
+    const ambCount = await pgQuery("SELECT COUNT(*) as cnt FROM ambassadors");
+    const linkCountResult = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links");
+    const ambEmpty = parseInt(ambCount[0].cnt, 10) === 0;
+    const linksEmpty = parseInt(linkCountResult[0].cnt, 10) === 0;
+    if (ambEmpty || linksEmpty) {
+      const seedAmbassadors = [
+        { id: 'a9028dc0-7f4f-4f24-aff1-9e20e2637aa0', code: 'colin_slaven', display_name: 'Colin Slaven', first_name: 'Colin', last_name: 'Slaven', email: 'colin@veterancare.com', phone: '8434697000', region_type: 'national', region_value: 'USA', commission_rate: 100.00, created_at: '2026-03-26T20:24:39.368Z' },
+        { id: 'ba8d39d7-64bf-4d34-b485-e3de7c628bd3', code: 'debbie_slaven', display_name: 'Debbie Slaven', first_name: 'Debbie', last_name: 'Slaven', email: 'debbie@veterancare.com', phone: '8434697000', region_type: 'national', region_value: 'USA', commission_rate: 100.00, created_at: '2026-04-05T04:48:36.991Z' },
+        { id: 'd259629f-a438-4ff7-954f-9b9339b92f97', code: 'kelsey_reese', display_name: 'Kelsey Reese', first_name: 'Kelsey', last_name: 'Reese', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:37.279Z' },
+        { id: '5c611623-d79b-42b0-a2f3-186e12fbab79', code: 'michelle_keef', display_name: 'Michelle Keef', first_name: 'Michelle', last_name: 'Keef', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:37.143Z' },
+        { id: '393f2dfa-fea0-4df0-a70a-bf6721af54d7', code: 'tracy_robertson', display_name: 'Tracy Robertson', first_name: 'Tracy', last_name: 'Robertson', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:50.586Z' },
+      ];
+      if (ambEmpty) {
+        console.log("[schema] Seeding ambassador profiles...");
+        for (const a of seedAmbassadors) {
+          await pgQuery(
+            `INSERT INTO ambassadors (id, code, display_name, first_name, last_name, email, phone, region_type, region_value, status, commission_rate, w9_status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', $10, 'not_submitted', $11)
+             ON CONFLICT (id) DO NOTHING`,
+            [a.id, a.code, a.display_name, a.first_name, a.last_name, a.email, a.phone, a.region_type, a.region_value, a.commission_rate, a.created_at]
+          );
+        }
+        console.log("[schema] Seeded 5 ambassadors");
+      }
+
+      if (linksEmpty) {
+        console.log("[schema] Seeding ambassador links...");
+        const AUDIENCES = ["veteran", "case_manager", "partner", "general"];
+        const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
+        const AUDIENCE_LABELS: Record<string, string> = { veteran: "Veteran Outreach", case_manager: "Case Manager Outreach", partner: "Partner Outreach", general: "General Outreach" };
+        const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
+        let linkTotal = 0;
+        for (const a of seedAmbassadors) {
+          for (const audience of AUDIENCES) {
+            for (const channel of CHANNELS) {
+              const linkName = `${a.display_name} – ${CHANNEL_LABELS[channel]} – ${AUDIENCE_LABELS[audience]}`;
+              const utmId = `${a.code}_${audience}_${channel}`;
+              const fullUrl = `https://veterancare.com/home?utm_source=ambassador&utm_medium=${channel}&utm_campaign=${audience}&utm_content=${a.code}&utm_id=${utmId}`;
+              await pgQuery(
+                `INSERT INTO ambassador_links (ambassador_id, ambassador_code, ambassador_name, link_name, utm_id, base_path, utm_source, utm_medium, utm_campaign, utm_content, full_url, short_url, audience_type, channel_type, is_active, click_count, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 0, NOW())
+                 ON CONFLICT DO NOTHING`,
+                [a.id, a.code, a.display_name, linkName, utmId, '/home', 'ambassador', channel, audience, a.code, fullUrl, `/a/${utmId}`, audience, channel]
+              );
+              linkTotal++;
+            }
+          }
+        }
+        console.log(`[schema] Seeded ${linkTotal} ambassador links`);
+      }
+    }
+
     console.log("[schema] attribution tables ready (with ambassadors + payouts)");
   } catch (err: any) {
     console.log("[schema] attribution tables setup error:", err.message);

@@ -49,6 +49,13 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `server/stripe-service.ts` - Stripe subscription workflow (checkout sessions, webhook handlers, auto-activation/deactivation)
 - `server/pg-client.ts` - Direct PostgreSQL client (bypasses Supabase PostgREST for trusted_services, trusted_service_categories, trusted_service_leads, partner_applications — NEVER use supabaseAdmin for these tables)
 
+## Dev vs Production Database
+- **CRITICAL**: Replit's built-in PostgreSQL has **separate instances** for development and production (deployed) environments
+- Dev DATABASE_URL points to local `helium/heliumdb`; production gets its own isolated Postgres
+- Ambassador seed data (5 ambassadors + 140 links) is auto-seeded on startup via `ensureAttributionTables()` if tables are empty
+- Any new seed data must be added to the startup schema migration in `server/routes.ts` to propagate to production
+- Supabase tables are shared across environments (same external Supabase project)
+
 ## Multi-Category Support
 Resources can belong to multiple categories via the `resource_categories` junction table in Supabase:
 - **Junction table**: `resource_categories(resource_id, category_id)` — composite PK
