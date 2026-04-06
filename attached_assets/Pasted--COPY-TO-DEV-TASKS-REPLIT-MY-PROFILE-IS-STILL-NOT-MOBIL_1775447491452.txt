@@ -1,0 +1,99 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### MY PROFILE IS STILL NOT MOBILE-COMPLIANT — STOP PATCHING, APPLY THE SAME UNIVERSAL FIT RULE / STRUCTURE USED BY PARTNER PROFILE
+
+I tested again after publish.
+
+It is improved, but it is still not fixed.
+
+The screenshots clearly show:
+- right side still cut off
+- copy button still clipped
+- referral section still too wide
+- Save Profile button still pushes beyond the visible frame
+
+So this still violates our platform-wide mobile rule.
+
+-------------------------------------
+NON-NEGOTIABLE UNIVERSAL RULE
+-------------------------------------
+
+Every page, modal, profile, and component must:
+- fit fully inside the mobile viewport
+- have NO right-side cutoff
+- have NO horizontal drift
+- have vertical scrolling only
+- be fully usable on iPhone Safari
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+At this point, I do NOT want more small patches on the same broken structure.
+
+This component has already had multiple attempts.
+
+The issue is clearly that My Profile is still carrying too much structural width pressure compared to the Partner Dashboard / Business Profile view.
+
+-------------------------------------
+KEY COMPARISON
+-------------------------------------
+
+The Partner Dashboard / Business Profile fits correctly.
+
+That means the platform CAN do this correctly.
+
+So I want My Profile to follow the same compact mobile-first discipline:
+
+- one-column first
+- tighter spacing
+- simpler stacking
+- no multi-element rows that create width pressure
+- no referral section layout that exceeds modal/page width
+- no buttons or controls that extend beyond viewport
+
+-------------------------------------
+NEW INSTRUCTION
+-------------------------------------
+
+Please stop trying to salvage the current layout with more minor tweaks.
+
+I want one of these two solutions:
+
+OPTION A (preferred):
+Rebuild My Profile as a true mobile-first profile layout using the same structural logic as the Partner Dashboard / Business Profile pages.
+
+OR
+
+OPTION B:
+Keep My Profile as a profile form, but fully simplify it so it is truly single-column and compact on mobile, including the referral section.
+
+-------------------------------------
+SPECIFIC CURRENT PROBLEMS STILL VISIBLE
+-------------------------------------
+
+1. right edge still clipped
+2. referral link row still too wide
+3. referral action row still too wide
+4. stats row still too wide / too compressed
+5. save button still extends beyond visible safe frame
+
+-------------------------------------
+WHAT I NEED NOW
+-------------------------------------
+
+Please do NOT give me another “we reduced padding and gap sizes” answer.
+
+I need a decisive structural fix.
+
+Please reply with:
+
+1. whether you are choosing Option A or Option B
+2. the exact structural reason the current profile still exceeds width
+3. which sections are being rebuilt instead of patched
+4. how you will make the referral section fully mobile-safe
+5. confirmation that the final version will have zero right-side cutoff on iPhone Safari
+6. files changed
+7. whether publish is required
+
+--- END ---

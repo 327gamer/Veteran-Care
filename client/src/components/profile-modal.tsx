@@ -336,7 +336,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] !max-w-md !p-3 sm:!p-5 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="inset-0 translate-x-0 translate-y-0 w-full h-full max-w-none max-h-none rounded-none p-4 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:w-full sm:max-w-md sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-5 overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="text-lg font-heading text-primary flex items-center gap-2">
             <UserCircle className="h-5 w-5 shrink-0" />
@@ -738,7 +738,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     {deleting ? "Deleting Account..." : "Delete Account"}
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="!w-[calc(100vw-2rem)] !max-w-md !p-4">
+                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm p-4">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-sm">Are you sure you want to delete your account?</AlertDialogTitle>
                     <AlertDialogDescription className="text-xs">
