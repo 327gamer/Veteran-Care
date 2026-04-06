@@ -135,11 +135,14 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const [refCopied, setRefCopied] = useState(false);
+  const [refMsgCopied, setRefMsgCopied] = useState(false);
+  const [refMsgVariant, setRefMsgVariant] = useState(0);
 
   const token = session?.access_token;
   const { data: referralData } = useQuery<{
     referralCode: string;
     referralLink: string;
+    currentMonth: string;
     currentMonthEntryCount: number;
     currentMonthQualifiedReferralCount: number;
     leaderboardRank: number | null;
@@ -155,32 +158,57 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   const { data: prizeData } = useQuery<{
     prizeTitle: string | null;
     prizeValue: number | null;
+    prizeDescription: string | null;
   }>({
     queryKey: ["/api/sweepstakes/current-prize"],
     queryFn: () => fetch("/api/sweepstakes/current-prize").then(r => r.ok ? r.json() : null),
     enabled: open,
   });
 
+  const refShareMessages = [
+    (link: string) => `Veteran Care helps veterans and families find real support in one place. If you know someone who could use it, here's my link: ${link}`,
+    (link: string) => `This platform helps connect veterans to real resources and support. Sharing in case it helps someone you know: ${link}`,
+    (link: string) => `If you or someone you know needs support, this is worth checking out: ${link}`,
+  ];
+  const refShareLabels = ["Friendly", "Mission", "Direct"];
+
+  const getRefShareMessage = () => {
+    if (!referralData?.referralLink) return "";
+    return refShareMessages[refMsgVariant](referralData.referralLink);
+  };
+
   const handleCopyReferralLink = async () => {
     if (!referralData?.referralLink) return;
-    try {
-      await navigator.clipboard.writeText(referralData.referralLink);
-    } catch {
+    try { await navigator.clipboard.writeText(referralData.referralLink); } catch {
       const input = document.createElement("input");
       input.value = referralData.referralLink;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
+      document.body.appendChild(input); input.select(); document.execCommand("copy"); document.body.removeChild(input);
     }
     setRefCopied(true);
     setTimeout(() => setRefCopied(false), 2000);
   };
 
+  const handleCopyRefMessage = async () => {
+    const msg = getRefShareMessage();
+    if (!msg) return;
+    try { await navigator.clipboard.writeText(msg); } catch {
+      const ta = document.createElement("textarea");
+      ta.value = msg; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setRefMsgCopied(true);
+    setTimeout(() => setRefMsgCopied(false), 2000);
+  };
+
   const handleShareSms = () => {
-    if (!referralData?.referralLink) return;
-    const msg = `Veteran Care helps veterans and families find real support in one place. Check it out: ${referralData.referralLink}`;
+    const msg = getRefShareMessage();
+    if (!msg) return;
     window.open(`sms:?&body=${encodeURIComponent(msg)}`, "_self");
+  };
+
+  const handleShareWhatsApp = () => {
+    const msg = getRefShareMessage();
+    if (!msg) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   useEffect(() => {
@@ -559,85 +587,143 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
             </div>
 
             {referralData && (
-              <div className="border rounded-xl p-4 bg-gradient-to-br from-green-50/80 to-emerald-50/60 space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <Gift className="h-4 w-4 text-green-700" />
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Gift className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-green-900">Refer & Earn</h3>
-                    <p className="text-[10px] text-green-700">Help more veterans and earn giveaway entries</p>
+                    <h3 className="text-sm font-heading font-bold text-primary">Refer & Earn Entries to Win</h3>
+                    <p className="text-[10px] text-muted-foreground">Share your link. When someone signs up and completes their profile, you earn a sweepstakes entry.</p>
                   </div>
+                </div>
+
+                <div className="border border-primary/20 rounded-xl p-3.5 space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Your Referral Link</label>
+                    <div className="flex gap-2">
+                      <div
+                        data-testid="text-profile-referral-link"
+                        className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-xs font-mono text-foreground truncate border"
+                      >
+                        {referralData.referralLink}
+                      </div>
+                      <Button
+                        data-testid="button-profile-copy-referral"
+                        variant={refCopied ? "default" : "outline"}
+                        size="sm"
+                        className="shrink-0 h-auto px-3"
+                        onClick={handleCopyReferralLink}
+                      >
+                        {refCopied ? <><Check className="h-3.5 w-3.5 mr-1" />Copied</> : <><Copy className="h-3.5 w-3.5 mr-1" />Copy</>}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5">
+                      {refShareLabels.map((label, i) => (
+                        <button
+                          key={label}
+                          data-testid={`button-profile-msg-variant-${i}`}
+                          onClick={() => setRefMsgVariant(i)}
+                          className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                            refMsgVariant === i
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-muted/40 text-muted-foreground border-transparent hover:border-muted-foreground/20"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed bg-muted/30 rounded-lg px-3 py-2 border border-dashed">
+                      {getRefShareMessage() || "Loading..."}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        data-testid="button-profile-copy-message"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-9"
+                        onClick={handleCopyRefMessage}
+                      >
+                        {refMsgCopied ? <><Check className="h-3.5 w-3.5 mr-1" />Copied</> : <><MessageSquare className="h-3.5 w-3.5 mr-1" />Copy Msg</>}
+                      </Button>
+                      <Button
+                        data-testid="button-profile-share-sms"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-9"
+                        onClick={handleShareSms}
+                      >
+                        <PhoneIcon className="h-3.5 w-3.5 mr-1" />
+                        SMS
+                      </Button>
+                      <Button
+                        data-testid="button-profile-share-whatsapp"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-9"
+                        onClick={handleShareWhatsApp}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1" />
+                        WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-entries" className="text-xl font-bold text-primary">{referralData.currentMonthEntryCount}</p>
+                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Entries</p>
+                    </div>
+                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-count" className="text-xl font-bold text-primary">{referralData.currentMonthQualifiedReferralCount}</p>
+                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Referrals</p>
+                    </div>
+                    <div className="text-center p-2.5 rounded-lg bg-muted/30">
+                      <p data-testid="text-profile-referral-rank" className="text-xl font-bold text-primary">{referralData.leaderboardRank ?? "—"}</p>
+                      <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Rank</p>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-center text-muted-foreground/60">
+                    Entries are earned when a referral signs up and completes their profile.
+                  </p>
+                </div>
+
+                <div
+                  data-testid="button-profile-view-leaderboard"
+                  className="border rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-colors group"
+                  onClick={() => { onOpenChange(false); setLocation("/referral"); }}
+                >
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Trophy className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">View Leaderboard</p>
+                    <p className="text-[10px] text-muted-foreground">See the top referrers this month</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
                 </div>
 
                 {prizeData?.prizeTitle && (
-                  <div className="flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 border border-green-200/60">
-                    <Trophy className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <p className="text-[11px] text-green-800">
-                      This month's giveaway: <span className="font-semibold">{prizeData.prizeTitle}</span>
-                      {prizeData.prizeValue ? ` ($${prizeData.prizeValue} value)` : ""}
+                  <div className="border border-primary/20 rounded-xl p-3.5 bg-gradient-to-br from-primary/[0.03] to-transparent space-y-2">
+                    <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                      <Gift className="h-4 w-4 text-primary" />
+                      This Month's Giveaway
+                    </h3>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                      <p className="font-bold text-sm" data-testid="text-profile-prize-title">{prizeData.prizeTitle}</p>
+                      {prizeData.prizeValue && <p className="text-green-700 font-bold text-base mt-0.5" data-testid="text-profile-prize-value">${prizeData.prizeValue}</p>}
+                      {prizeData.prizeDescription && <p className="text-[10px] text-muted-foreground mt-1">{prizeData.prizeDescription}</p>}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60">
+                      The more veterans you help connect to resources, the more entries you earn.
                     </p>
                   </div>
                 )}
-
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
-                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-entries">{referralData.currentMonthEntryCount}</p>
-                    <p className="text-[9px] text-green-600 leading-tight">Entries</p>
-                  </div>
-                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
-                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-count">{referralData.currentMonthQualifiedReferralCount}</p>
-                    <p className="text-[9px] text-green-600 leading-tight">Referrals</p>
-                  </div>
-                  <div className="bg-white/70 rounded-lg py-2 px-1 border border-green-200/40">
-                    <p className="text-lg font-bold text-green-800" data-testid="text-profile-referral-rank">{referralData.leaderboardRank || "—"}</p>
-                    <p className="text-[9px] text-green-600 leading-tight">Rank</p>
-                  </div>
-                </div>
-
-                <div className="bg-white/70 rounded-lg p-2.5 border border-green-200/40">
-                  <Label className="text-[10px] text-green-700 font-medium mb-1 block">Your Referral Link</Label>
-                  <div className="flex gap-1.5">
-                    <Input
-                      data-testid="input-profile-referral-link"
-                      readOnly
-                      value={referralData.referralLink}
-                      className="text-[11px] h-8 bg-white font-mono flex-1"
-                    />
-                    <Button
-                      data-testid="button-profile-copy-referral"
-                      size="sm"
-                      variant={refCopied ? "default" : "outline"}
-                      className={`h-8 px-2.5 shrink-0 ${refCopied ? "bg-green-600 hover:bg-green-600" : ""}`}
-                      onClick={handleCopyReferralLink}
-                    >
-                      {refCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    data-testid="button-profile-share-sms"
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 h-8 text-[11px] gap-1"
-                    onClick={handleShareSms}
-                  >
-                    <MessageSquare className="h-3 w-3" />
-                    Text
-                  </Button>
-                  <Button
-                    data-testid="button-profile-view-leaderboard"
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 h-8 text-[11px] gap-1"
-                    onClick={() => { onOpenChange(false); setLocation("/referral"); }}
-                  >
-                    <Trophy className="h-3 w-3" />
-                    Leaderboard
-                  </Button>
-                </div>
               </div>
             )}
 

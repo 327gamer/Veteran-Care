@@ -1,0 +1,70 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### REFERRAL SECTION IN PROFILE – MATCH HOMEPAGE VERSION
+
+The new referral section inside My Profile is a good improvement, but after reviewing it side-by-side with the referral section on the homepage, the homepage version is clearly stronger.
+
+The homepage referral section is:
+- more polished
+- more complete
+- easier to understand
+- better for sharing
+- a stronger overall UX
+
+The profile version currently feels like a simplified / reduced version.
+
+-------------------------------------
+REQUIRED CHANGE
+-------------------------------------
+
+Please update the referral section inside My Profile so it matches the stronger referral experience already used on the homepage.
+
+Use the homepage referral section as the design / UX reference.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+I want the referral experience to feel consistent across the platform.
+
+So whether a user accesses referrals from:
+- homepage
+- My Profile
+
+they should see essentially the SAME strong referral interface and sharing experience.
+
+-------------------------------------
+WHAT TO MATCH FROM HOMEPAGE VERSION
+-------------------------------------
+
+Please align the My Profile referral section with the homepage version as closely as practical, including:
+
+- stronger referral card layout
+- cleaner referral link presentation
+- better sharing options
+- same / similar messaging structure
+- same overall look and feel
+- same clearer visual hierarchy
+
+If reusable components already exist, please reuse them instead of maintaining two separate inconsistent versions.
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT remove the referral section from My Profile.
+
+Just upgrade it so it mirrors the better homepage version.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. whether the homepage referral component can be reused directly
+2. whether this is a full component reuse or a styled adaptation
+3. files changed
+4. whether publish is required
+
+--- END ---
