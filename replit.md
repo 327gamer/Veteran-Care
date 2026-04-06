@@ -267,6 +267,38 @@ Without this rule, adding a new resource that hasn't been geocoded yet causes it
 - **Emails**: `sendPartnerPaymentEmail()` = approval + Stripe link; `sendPartnerWelcomeEmail()` = post-payment with account creation link
 - **Key files**: `client/src/pages/partner-portal.tsx`, `client/src/components/layout.tsx` (partner menu), `server/routes.ts` (auth endpoints + role-check)
 
+## UNIVERSAL MOBILE UI RULE (NON-NEGOTIABLE — PERMANENT STANDARD)
+Every page, component, modal, overlay, and screen MUST:
+- Fit 100% within the mobile viewport
+- Have ZERO horizontal overflow or scrolling
+- Use vertical scrolling only
+- Never clip content on the left or right
+- Be fully usable on iPhone Safari (real device standard)
+
+**If it does not meet this standard, it is NOT complete.**
+
+### Architecture Rule
+Do NOT patch broken mobile layouts with incremental CSS tweaks. If something doesn't fit on mobile:
+1. Use the full-screen overlay pattern (same as My Profile and Resource Detail)
+2. Mobile = `fixed top-0 left-0 right-0 bottom-0` full-viewport panel with vertical scroll
+3. Desktop = centered modal/card is acceptable at `sm:` breakpoint and above
+4. Include safe-area inset handling (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`)
+5. Include `overscroll-contain` on scroll containers
+6. Include body scroll lock via `useEffect` when panel is open
+7. Never use Radix Dialog for complex/long-form mobile UI — use custom overlay divs instead
+
+### What "make sure it fits the page" or "follow the universal rule" means
+Apply this exact system. Not a variation. Not a partial fix. It works first time, matches the proven structure, no back-and-forth debugging loops.
+
+### Reference implementations
+- `client/src/components/profile-modal.tsx` — My Profile (full-screen mobile overlay)
+- `client/src/components/resource-detail.tsx` — Resource Detail (full-screen mobile overlay)
+
+### Applies to
+- All current pages and components
+- All future features, pages, modals
+- Any future apps built from this codebase
+
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts
 - Logo: `Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png` (metallic dog tag with TM mark)
