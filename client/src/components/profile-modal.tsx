@@ -336,7 +336,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="inset-0 translate-x-0 translate-y-0 w-full h-full max-w-none max-h-none rounded-none p-4 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:w-full sm:max-w-md sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-5 overflow-y-auto overflow-x-hidden">
+      <DialogContent className="left-0 right-0 top-0 bottom-0 translate-x-0 translate-y-0 w-full h-full max-w-none max-h-none rounded-none p-4 sm:left-[50%] sm:right-auto sm:top-[50%] sm:bottom-auto sm:translate-x-[-50%] sm:translate-y-[-50%] sm:w-full sm:max-w-md sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:p-5 overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="text-lg font-heading text-primary flex items-center gap-2">
             <UserCircle className="h-5 w-5 shrink-0" />
