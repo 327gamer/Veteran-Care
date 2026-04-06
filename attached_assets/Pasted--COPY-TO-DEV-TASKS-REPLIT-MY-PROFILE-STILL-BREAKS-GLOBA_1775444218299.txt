@@ -1,0 +1,97 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+### MY PROFILE STILL BREAKS GLOBAL MOBILE RULE – NEED ROOT FIX, NOT PARTIAL PATCH
+
+I tested again after publish.
+
+The Partner Dashboard now looks much better.
+
+However, My Profile is worse now and is still clearly violating our global platform rule:
+
+-------------------------------------
+GLOBAL RULE REMINDER
+-------------------------------------
+
+Every page, modal, and component must:
+- be mobile-first
+- fit within viewport width
+- have NO horizontal cutoff
+- have NO content rendering off-screen
+- allow vertical scrolling only
+- be fully usable on iPhone Safari
+
+-------------------------------------
+CURRENT PROBLEM
+-------------------------------------
+
+The My Profile modal/page is still broken on mobile.
+
+What I am seeing:
+- right side is cut off
+- content is rendering outside the viewport
+- fields do not fit the visible width
+- layout still feels too wide for the phone screen
+- this is not acceptable under the universal fit-page rule
+
+This means the rule has still not been properly enforced on My Profile.
+
+-------------------------------------
+IMPORTANT QUESTION
+-------------------------------------
+
+If the Partner Dashboard can fit correctly on mobile, then My Profile must also be able to fit correctly on mobile.
+
+So this now needs a true root-cause fix, not another partial patch.
+
+-------------------------------------
+WHAT I NEED YOU TO DO
+-------------------------------------
+
+Please stop treating this as a cosmetic tweak.
+
+I need you to identify the exact layout structure causing the overflow in My Profile and fix it fully.
+
+Likely problem areas may include:
+- modal container width
+- internal grid columns
+- fixed/min widths on inputs or wrappers
+- referral section width behavior
+- fields placed side-by-side that should stack on mobile
+- padding/gap combinations pushing total width beyond viewport
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+Make My Profile fully mobile-safe by enforcing:
+
+- single-column stacking on mobile where needed
+- no field group should exceed viewport width
+- all cards/sections contained within modal width
+- all internal content must shrink correctly
+- no right-side cutoff
+- no hidden overflow from child containers
+- clean vertical scrolling only
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT just add more overflow hiding while leaving content structurally broken.
+
+I want the actual layout corrected so the form is truly mobile-friendly and readable.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. exact root cause of the cutoff
+2. exact component/row/section causing it
+3. exact structural fix you are applying
+4. confirmation that all My Profile sections now fit inside viewport width on iPhone
+5. files changed
+6. whether publish is required
+
+--- END ---

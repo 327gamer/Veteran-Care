@@ -336,7 +336,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-heading text-primary flex items-center gap-2">
             <UserCircle className="h-5 w-5" />
@@ -403,12 +403,12 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
               <div data-testid="text-profile-success" className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">{saveMsg}</div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1 min-w-0">
                 <Label className="text-xs">First Name *</Label>
                 <Input data-testid="input-profile-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <Label className="text-xs">Last Name *</Label>
                 <Input data-testid="input-profile-last" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
               </div>
@@ -456,8 +456,8 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
               <p className="text-[10px] text-muted-foreground mb-3">Update anytime for better recommendations.</p>
 
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Branch of Service</Label>
                     <Select value={branch} onValueChange={setBranch}>
                       <SelectTrigger data-testid="select-profile-branch" className="w-full">
@@ -470,7 +470,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Service Era</Label>
                     <Select value={serviceEra} onValueChange={setServiceEra}>
                       <SelectTrigger data-testid="select-profile-era" className="w-full">
@@ -485,15 +485,15 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Rank</Label>
                       <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setRank("N/A / Not Applicable")} data-testid="button-profile-rank-na">N/A</button>
                     </div>
                     <Input data-testid="input-profile-rank" value={rank} onChange={(e) => setRank(e.target.value)} placeholder="e.g. SGT, CPL" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">MOS / Specialty</Label>
                       <button type="button" className="text-[10px] text-primary hover:underline" onClick={() => setMos("N/A / Not Applicable")} data-testid="button-profile-mos-na">N/A</button>
@@ -524,34 +524,34 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">State</Label>
-                    <Popover open={stateOpen} onOpenChange={setStateOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={stateOpen} className="w-full justify-between font-normal h-9 px-3 text-sm" data-testid="select-profile-state">
-                          {userState || <span className="text-muted-foreground">State</span>}
-                          <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search state..." />
-                          <CommandList>
-                            <CommandEmpty>No state found.</CommandEmpty>
-                            <CommandGroup>
-                              {US_STATES.map(s => (
-                                <CommandItem key={s} value={`${s} ${STATE_NAMES[s] || ""}`} onSelect={() => { setUserState(s); setStateOpen(false); }}>
-                                  <Check className={`mr-2 h-3 w-3 ${userState === s ? "opacity-100" : "opacity-0"}`} />
-                                  {s} — {STATE_NAMES[s] || s}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">State</Label>
+                  <Popover open={stateOpen} onOpenChange={setStateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={stateOpen} className="w-full justify-between font-normal h-9 px-3 text-sm" data-testid="select-profile-state">
+                        {userState || <span className="text-muted-foreground">State</span>}
+                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[calc(100vw-3rem)] max-w-[280px]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search state..." />
+                        <CommandList>
+                          <CommandEmpty>No state found.</CommandEmpty>
+                          <CommandGroup>
+                            {US_STATES.map(s => (
+                              <CommandItem key={s} value={`${s} ${STATE_NAMES[s] || ""}`} onSelect={() => { setUserState(s); setStateOpen(false); }}>
+                                <Check className={`mr-2 h-3 w-3 ${userState === s ? "opacity-100" : "opacity-0"}`} />
+                                {s} — {STATE_NAMES[s] || s}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">City</Label>
                     <Input data-testid="input-profile-city" value={userCity} onChange={(e) => setUserCity(e.target.value)} placeholder="City" />
@@ -571,13 +571,13 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                         <div
                           key={item}
                           data-testid={`interest-profile-${item.toLowerCase().replace(/\s+/g, '-')}`}
-                          className={`flex items-center space-x-2 border p-2 rounded-lg cursor-pointer transition-all ${
+                          className={`flex items-center gap-2 border p-2 rounded-lg cursor-pointer transition-all min-w-0 ${
                             isSelected ? "bg-primary/10 border-primary/40 shadow-sm" : "hover:bg-muted/50"
                           }`}
                           onClick={() => toggleInterest(item)}
                         >
                           <Checkbox checked={isSelected} className="h-3.5 w-3.5 shrink-0 pointer-events-none" />
-                          <Label className="cursor-pointer font-medium text-xs leading-tight">{item}</Label>
+                          <Label className="cursor-pointer font-medium text-xs leading-tight truncate">{item}</Label>
                         </div>
                       );
                     })}
@@ -598,7 +598,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                   </div>
                 </div>
 
-                <div className="border border-primary/20 rounded-xl p-3.5 space-y-3.5">
+                <div className="border border-primary/20 rounded-xl p-3 space-y-3">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Your Referral Link</label>
                     <div className="flex gap-2">
@@ -709,7 +709,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 </div>
 
                 {prizeData?.prizeTitle && (
-                  <div className="border border-primary/20 rounded-xl p-3.5 bg-gradient-to-br from-primary/[0.03] to-transparent space-y-2">
+                  <div className="border border-primary/20 rounded-xl p-3 bg-gradient-to-br from-primary/[0.03] to-transparent space-y-2">
                     <h3 className="text-sm font-semibold flex items-center gap-1.5">
                       <Gift className="h-4 w-4 text-primary" />
                       This Month's Giveaway
