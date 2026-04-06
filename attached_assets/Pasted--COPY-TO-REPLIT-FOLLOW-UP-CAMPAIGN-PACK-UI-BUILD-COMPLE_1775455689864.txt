@@ -1,0 +1,184 @@
+--- COPY TO REPLIT ---
+
+### FOLLOW-UP: CAMPAIGN PACK UI BUILD COMPLETE, BUT CORE ADMIN DATA WIRING STILL NOT RESOLVED
+
+Thank you — the Campaign Pack UI work sounds good.
+
+However, this does NOT yet resolve the actual pre-launch blocker identified in the screenshots.
+
+The issue was never only the UI.
+
+The real blocker is that the admin panel still does not appear to reflect the real production system state.
+
+-------------------------------------
+WHAT IS NOW CONFIRMED
+-------------------------------------
+
+Good:
+- ambassador dashboard campaign pack UI was enhanced
+- admin ambassador detail now has Campaign Packs section
+- HTML button/embed support added
+- QR / copy / full kit functionality added
+- XSS/security cleanup handled
+
+That work is appreciated.
+
+-------------------------------------
+WHAT IS STILL UNRESOLVED
+-------------------------------------
+
+From the production screenshots and earlier admin review, these were the critical concerns:
+
+1. /admin/ambassadors showed 0 ambassadors
+   Expected:
+   - Colin Slaven
+   - Debbie Slaven
+   - Tracy Robertson
+   - Michelle Keef
+   - Kelsey Reese
+
+2. /admin/links showed 0 links
+
+3. analytics showed activity / revenue / commissions,
+   but ambassador and link views were empty
+
+4. commission ledger was still tied to test_john
+
+5. AI Insights was still unclear / possibly gated / unfinished
+
+6. Trusted Partner Leads screen appeared empty and needs explanation
+
+So before we can launch, I need the underlying DATA + ADMIN WIRING issue resolved, not just the campaign pack feature layer.
+
+-------------------------------------
+REQUIRED NEXT STEP
+-------------------------------------
+
+Please perform a full production admin/data audit and reply with a structured diagnosis.
+
+I need you to explicitly answer the following:
+
+-------------------------------------
+A) AMBASSADOR TABLE / DISPLAY
+-------------------------------------
+
+- Do the real ambassadors exist in the PRODUCTION database?
+- If yes, why were they not showing in /admin/ambassadors?
+- If no, where were they created before?
+- Is the admin screen pointed at the wrong table or wrong environment?
+- If browser auth/admin key/local state was the cause, explain that clearly and confirm how to validate it cleanly
+
+-------------------------------------
+B) LINK STORAGE / DISPLAY
+-------------------------------------
+
+- Are generated tracked links being persisted in the database?
+- If yes, in which exact table?
+- Why did /admin/links show empty?
+- If not, implement persistence now and wire the admin screen correctly
+
+-------------------------------------
+C) COMMISSION DATA
+-------------------------------------
+
+- Why were commissions tied to test_john?
+- Were real ambassador IDs never connected?
+- Were those only old test records?
+- Have they now been fully removed/reassigned?
+- Confirm what the commission ledger should show in clean production right now
+
+I need the commission ledger to reflect real ambassadors only, not dummy data.
+
+-------------------------------------
+D) ATTRIBUTION CHAIN
+-------------------------------------
+
+Please verify the full chain is working in production:
+
+Ambassador
+→ tracked link
+→ UTM / ambassador_id
+→ click
+→ session
+→ request / application / conversion
+→ commission
+→ payout
+
+And confirm exactly:
+- where each step is stored
+- which table holds each part
+- which admin screen surfaces each part
+
+-------------------------------------
+E) AI INSIGHTS
+-------------------------------------
+
+Please explain clearly:
+- what AI Insights is intended to show
+- what data source it uses
+- whether it is complete, partial, or placeholder
+- whether it is gated by a key/admin requirement
+- whether it should be enabled, fixed, or hidden before launch
+
+I do NOT want ambiguous admin sections at launch.
+
+-------------------------------------
+F) TRUSTED PARTNER LEADS / OTHER EMPTY ADMIN SCREENS
+-------------------------------------
+
+Please go screen by screen and classify each as one of these:
+
+1. Working and correctly populated
+2. Working but intentionally empty right now
+3. Built but not wired correctly
+4. Placeholder / not ready for launch
+
+Specifically explain:
+- Trusted Partner Leads
+- VOB
+- Sweepstakes
+- Payouts
+- AI Insights
+- Links
+- Ambassadors
+- Partner Applications
+
+-------------------------------------
+G) PRODUCTION VS DEVELOPMENT
+-------------------------------------
+
+Please confirm all admin screens are reading the PRODUCTION database and not dev/staging/test sources.
+
+If any screens are reading the wrong source, identify exactly which ones and what you are changing.
+
+-------------------------------------
+WHAT I NEED BACK FROM YOU
+-------------------------------------
+
+Please do NOT give a short summary.
+
+Reply with:
+
+1. Full diagnosis
+2. Which admin screens are correctly empty vs incorrectly empty
+3. What data exists in production right now
+4. What is still test-only
+5. Exact fixes you will apply next
+6. Final validation steps you will run after the fixes
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+The campaign pack UI is useful, but I cannot launch until the admin panel becomes a true operational control room.
+
+Right now I still do not have confidence that:
+- ambassadors are correctly stored
+- links are correctly stored
+- attribution is tied to real ambassadors
+- commissions are tied to real ambassadors
+- the “empty” screens are truly expected
+
+This is still a CRITICAL PRE-LAUNCH BLOCKER.
+
+--- END ---
