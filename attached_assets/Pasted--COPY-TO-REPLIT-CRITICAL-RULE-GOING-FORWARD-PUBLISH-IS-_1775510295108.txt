@@ -1,0 +1,93 @@
+--- COPY TO REPLIT ---
+
+### CRITICAL RULE GOING FORWARD – PUBLISH IS NOT COMPLETE UNTIL PRODUCTION IS VALIDATED
+
+Thank you for identifying the dev vs production database split.
+
+This explains why preview showed correct ambassador/admin data while the live published site did not.
+
+However, I need to make something permanent going forward:
+
+A publish is NOT considered complete just because the code is live.
+
+A publish is only complete when the LIVE production environment is validated front-to-back.
+
+-------------------------------------
+NEW PERMANENT RULE
+-------------------------------------
+
+For ALL future publishes, changes, integrations, and launch-critical systems:
+
+You must validate the LIVE production environment after publish, not only Preview.
+
+This includes verifying that live production correctly reflects:
+
+- ambassadors
+- ambassador links
+- campaign packs
+- admin panel data
+- attribution flow
+- commissions
+- payouts
+- referrals
+- trusted partner applications
+- routing / leads
+- AI insights
+- Stripe
+- Resend
+- Google Analytics
+- OpenAI chat
+- Uptime Robot / health monitoring
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Preview is NOT enough.
+
+If Preview works but live production does not, then the task is NOT complete.
+
+-------------------------------------
+REQUIRED GOING FORWARD
+-------------------------------------
+
+For every publish, I want a post-publish validation pass that confirms:
+
+1. LIVE production database contains expected operational data
+2. LIVE admin pages show expected data
+3. LIVE links / UTMs work
+4. LIVE integrations are connected and functional
+5. LIVE environment is using the correct data sources
+6. No dev-only data or preview-only state is masking production problems
+
+-------------------------------------
+CURRENT ISSUE
+-------------------------------------
+
+This ambassador/admin situation proved that we need a stronger deployment rule.
+
+I do NOT want launch-critical systems relying on assumptions about Preview or startup seeding without production validation.
+
+-------------------------------------
+QUESTIONS I NEED ANSWERED NOW
+-------------------------------------
+
+1. After publish, how exactly will you verify that the production seed worked?
+2. How will you prove that veterancare.com/admin now shows the 5 real ambassadors and 140 links live?
+3. Are there any OTHER operational tables that could still differ between preview/dev and production?
+4. Which systems are still using Replit built-in Postgres vs Supabase vs other sources?
+5. Do you recommend a more permanent single-source-of-truth approach for launch-critical data instead of relying on split dev/prod built-in DB behavior?
+
+-------------------------------------
+FINAL RULE
+-------------------------------------
+
+From now on:
+
+No publish is complete until:
+- code is live
+- production data is verified
+- live integrations are confirmed
+- end-to-end production behavior is tested
+
+--- END ---

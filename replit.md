@@ -13,10 +13,33 @@
 
 ## Release Process
 1. One change at a time
-2. Test it
+2. Test it in Preview
 3. Commit it
 4. Publish it
+5. **POST-PUBLISH VALIDATION (MANDATORY)** — see below
 Never bundle multiple onboarding/profile/navigation changes together.
+
+## Post-Publish Validation Rule (PERMANENT)
+**A publish is NOT complete until LIVE production is validated end-to-end.**
+Preview passing is NOT sufficient. After every publish:
+
+1. **Production database** — verify all operational tables contain expected data (ambassadors, links, trusted_services, partner data, etc.)
+2. **Admin panel** — confirm veterancare.com/admin shows real data (ambassadors, analytics, resources, commissions, payouts)
+3. **Live links / UTMs** — test ambassador tracking links on veterancare.com resolve correctly
+4. **Live integrations** — confirm Stripe, Resend, OpenAI, Google Analytics are connected and functional
+5. **Data source correctness** — verify production is using correct DB connections (Replit Postgres for pg tables, Supabase for resource tables)
+6. **No dev-only state** — ensure no dev/preview-only data is masking production problems
+
+### Validation Checklist (run after every publish)
+- [ ] `GET /api/admin/ambassadors` returns 5 ambassadors with 28 links each
+- [ ] `GET /api/admin/links` returns 140 tracking links
+- [ ] `GET /api/resources` returns approved resources
+- [ ] `GET /api/trusted-services` returns active services
+- [ ] `GET /api/admin/analytics` returns click/engagement data
+- [ ] Admin pages load with real data (not empty states)
+- [ ] Ambassador tracking URLs (`/a/{utm_id}`) redirect correctly
+- [ ] Health endpoint responds (if configured)
+- [ ] Deployment logs show clean startup with no errors
 
 ## Platform Architecture
 - **Config-driven design**: All platform identity, terminology, and behavior controlled from `shared/platform.ts`

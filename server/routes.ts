@@ -1373,6 +1373,76 @@ export async function registerRoutes(
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  app.get("/api/admin/production-validation", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const checks: { name: string; status: string; expected: string; actual: string }[] = [];
+
+    try {
+      const ambRows = await pgQuery("SELECT COUNT(*) as cnt FROM ambassadors WHERE status = 'active'");
+      const ambCount = parseInt(ambRows[0].cnt, 10);
+      checks.push({ name: "Ambassadors (active)", status: ambCount >= 5 ? "PASS" : "FAIL", expected: ">=5", actual: String(ambCount) });
+
+      const linkRows = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE is_active = true");
+      const linkCount = parseInt(linkRows[0].cnt, 10);
+      checks.push({ name: "Ambassador Links (active)", status: linkCount >= 140 ? "PASS" : "FAIL", expected: ">=140", actual: String(linkCount) });
+
+      const payoutRows = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_payouts");
+      checks.push({ name: "Payout Ledger", status: "PASS", expected: "any", actual: payoutRows[0].cnt });
+
+      const tsRows = await pgQuery("SELECT COUNT(*) as cnt FROM trusted_services");
+      const tsCount = parseInt(tsRows[0].cnt, 10);
+      checks.push({ name: "Trusted Services (total)", status: tsCount >= 10 ? "PASS" : "FAIL", expected: ">=10", actual: String(tsCount) });
+
+      const catRows = await pgQuery("SELECT COUNT(*) as cnt FROM trusted_service_categories WHERE is_active = true");
+      checks.push({ name: "Trusted Service Categories", status: parseInt(catRows[0].cnt, 10) > 0 ? "PASS" : "FAIL", expected: ">0", actual: catRows[0].cnt });
+
+      const pricingRows = await pgQuery("SELECT COUNT(*) as cnt FROM lead_category_pricing");
+      checks.push({ name: "Lead Category Pricing", status: parseInt(pricingRows[0].cnt, 10) >= 3 ? "PASS" : "FAIL", expected: ">=3", actual: pricingRows[0].cnt });
+
+      const subRows = await pgQuery("SELECT COUNT(*) as cnt FROM partner_subcategories");
+      checks.push({ name: "Partner Subcategories", status: parseInt(subRows[0].cnt, 10) >= 10 ? "PASS" : "FAIL", expected: ">=10", actual: subRows[0].cnt });
+    } catch (err: any) {
+      checks.push({ name: "Neon/PG Tables", status: "FAIL", expected: "accessible", actual: err.message });
+    }
+
+    try {
+      const { supabaseAdmin } = await import("./supabase");
+      const { data: resources } = await supabaseAdmin.from("resources").select("id", { count: "exact", head: true }).eq("status", "approved");
+      const { count: resCount } = await supabaseAdmin.from("resources").select("id", { count: "exact", head: true }).eq("status", "approved");
+      checks.push({ name: "Resources (approved, Supabase)", status: (resCount || 0) > 0 ? "PASS" : "FAIL", expected: ">0", actual: String(resCount || 0) });
+
+      const { count: catCount } = await supabaseAdmin.from("categories").select("id", { count: "exact", head: true });
+      checks.push({ name: "Categories (Supabase)", status: (catCount || 0) > 0 ? "PASS" : "FAIL", expected: ">0", actual: String(catCount || 0) });
+
+      const { count: navCount } = await supabaseAdmin.from("navigator_requests").select("id", { count: "exact", head: true });
+      checks.push({ name: "Navigator Requests (Supabase)", status: "PASS", expected: "any", actual: String(navCount || 0) });
+    } catch (err: any) {
+      checks.push({ name: "Supabase Tables", status: "FAIL", expected: "accessible", actual: err.message });
+    }
+
+    const envChecks = [
+      { name: "ADMIN_KEY", set: !!process.env.ADMIN_KEY },
+      { name: "OPENAI_API_KEY", set: !!process.env.OPENAI_API_KEY },
+      { name: "RESEND_API_KEY", set: !!process.env.RESEND_API_KEY },
+      { name: "DATABASE_URL", set: !!process.env.DATABASE_URL },
+      { name: "SUPABASE_SERVICE_ROLE_KEY", set: !!process.env.SUPABASE_SERVICE_ROLE_KEY },
+    ];
+    for (const e of envChecks) {
+      checks.push({ name: `Env: ${e.name}`, status: e.set ? "PASS" : "FAIL", expected: "set", actual: e.set ? "set" : "MISSING" });
+    }
+
+    const failCount = checks.filter(c => c.status === "FAIL").length;
+    const passCount = checks.filter(c => c.status === "PASS").length;
+    return res.json({
+      overall: failCount === 0 ? "ALL PASS" : `${failCount} FAILURES`,
+      summary: `${passCount} passed, ${failCount} failed out of ${checks.length} checks`,
+      timestamp: new Date().toISOString(),
+      checks,
+    });
+  });
+
   app.get("/api/reverse-geocode", async (req, res) => {
     const { lat, lon } = req.query;
     if (!lat || !lon) {
