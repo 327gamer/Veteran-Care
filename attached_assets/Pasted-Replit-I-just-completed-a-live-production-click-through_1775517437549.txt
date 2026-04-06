@@ -1,0 +1,136 @@
+Replit,
+
+I just completed a live production click-through test of Colin Slaven’s ambassador links one by one.
+
+Good news:
+Most of the routing/landing flow has been restored and is working much better.
+
+This is no longer a full-system ambassador rebuild issue.
+It is now a targeted cleanup / correction task.
+
+-------------------------------------
+LIVE TEST RESULTS – COLIN SLAVEN
+-------------------------------------
+
+CASE MANAGER OUTREACH
+
+Working correctly:
+- Facebook
+- Flyer
+- Instagram
+- LinkedIn
+- QR
+- Text
+
+Issue:
+- Email → routes to homepage
+
+-------------------------------------
+
+GENERAL OUTREACH
+
+Working correctly:
+- Facebook
+- Instagram
+- LinkedIn
+
+Issue:
+- Email → routes to homepage
+- Flyer → routes to homepage
+
+Question:
+- QR may be intentionally going to homepage depending on intended general flow — please confirm
+- If General is meant to route to /start or a general intro page, confirm that behavior explicitly
+
+-------------------------------------
+
+PARTNER / BUSINESS OUTREACH
+
+Working correctly:
+- Facebook
+- Instagram
+- LinkedIn
+- QR
+
+Issue:
+- Email → routes to homepage
+- Flyer → routes to homepage
+- Text → routes to homepage
+
+These should route to the partner/business landing flow, not homepage.
+
+-------------------------------------
+
+VETERAN OUTREACH
+
+Working correctly:
+- Facebook
+- Flyer
+- Instagram
+- LinkedIn
+- QR
+- Text
+
+Issue:
+- none found in this test pass
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This means the system is mostly restored, but some link records are still using the wrong destination.
+
+This appears to be a selective routing mismatch, not a full failure.
+
+-------------------------------------
+REQUIRED NEXT STEP
+-------------------------------------
+
+Please do the following:
+
+1. Check Colin Slaven’s ambassador links in production and correct the specific links still routing to homepage
+2. Run the same validation across the other 4 real ambassadors as well:
+- Debbie Slaven
+- Tracy Robertson
+- Michelle Keef
+- Kelsey Reese
+
+I do NOT want to manually test every ambassador if the same audience/channel mismatch exists across all records.
+
+-------------------------------------
+SPECIFIC VALIDATION REQUIRED
+-------------------------------------
+
+Please verify for ALL 5 ambassadors:
+
+Case Manager Outreach
+- Email
+
+General Outreach
+- Email
+- Flyer
+- QR (confirm intended behavior)
+
+Partner Outreach
+- Email
+- Flyer
+- Text
+
+And confirm whether the issue is:
+- all ambassadors for those audience/channel combinations
+OR
+- only certain individual records
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please reply with:
+
+1. exact list of incorrect live ambassador links found
+2. exact links corrected
+3. whether the issue affected all ambassadors or only some records
+4. confirmation that all remaining ambassador links now route correctly in LIVE production
+5. confirmation of intended destination for General Outreach
+
+--- END ---
