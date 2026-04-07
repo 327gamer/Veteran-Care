@@ -548,8 +548,9 @@ function CampaignSection({ campaignKey, data }: { campaignKey: string; data: any
 }
 
 export default function AmbassadorDashboard() {
+  const urlCode = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") : null;
   const [code, setCode] = useState("");
-  const [activeCode, setActiveCode] = useState<string | null>(null);
+  const [activeCode, setActiveCode] = useState<string | null>(urlCode || null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/ambassador/dashboard", activeCode],
