@@ -9,10 +9,10 @@ import {
   Copy, Check, Download, QrCode, ChevronDown, ChevronUp,
   Users, Briefcase, Building2, Mail, MessageSquare,
   Smartphone, Linkedin, LogIn, MousePointerClick, Code2, Package,
-  Image, Link2, Type, Globe,
+  Image, Link2, Type, Globe, MapPin, Percent, LogOut,
 } from "lucide-react";
 
-const LOGO_URL = "https://veterancare.com/attached_assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
+const LOGO_URL = "https://veterancare.com/logo.png";
 
 const CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; color: string; badgeColor: string }> = {
   veteran: { title: "Veteran Outreach", icon: Users, color: "border-green-500", badgeColor: "bg-green-100 text-green-800" },
@@ -175,7 +175,7 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
             const primaryUrl = emailLink?.short_url || campaign.links?.[0]?.short_url || "#";
             const textUrl = textLink?.short_url || primaryUrl;
 
-            const logoHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="height:60px;width:auto;border:0;" /></a>`;
+            const logoHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:200px;height:auto;border:0;" /></a>`;
             const buttonHtml = `<a href="${primaryUrl}" style="background:#166534;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;text-align:center;">${ctaLabel}</a>`;
             const imageBlockHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#f0fdf4;padding:20px;text-align:center;"><img src="${LOGO_URL}" alt="Veteran Care" style="height:50px;width:auto;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`;
             const emailBodyHtml = campaign.templates?.email
@@ -600,7 +600,7 @@ export default function AmbassadorDashboard() {
 
       sections.push(`\n--- PROMOTIONAL ASSETS ---`);
       sections.push(`\nClickable Logo (HTML):`);
-      sections.push(`<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="height:60px;width:auto;border:0;" /></a>`);
+      sections.push(`<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:200px;height:auto;border:0;" /></a>`);
 
       sections.push(`\nCTA Button (HTML):`);
       sections.push(`<a href="${primaryUrl}" style="background:#166534;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;text-align:center;">${ctaLabel}</a>`);
@@ -639,35 +639,40 @@ export default function AmbassadorDashboard() {
   if (!activeCode) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <Users className="w-8 h-8 text-green-700" />
-            </div>
-            <CardTitle className="text-2xl">Ambassador Dashboard</CardTitle>
-            <p className="text-gray-500 text-sm mt-2">Enter your ambassador code to access your outreach tools</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Input
-                data-testid="input-ambassador-code"
-                placeholder="Enter your ambassador code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="text-center text-lg"
-              />
-              <Button
-                data-testid="button-login"
-                type="submit"
-                className="w-full bg-green-700 hover:bg-green-800"
-                disabled={!code.trim()}
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Access Dashboard
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <img src={LOGO_URL} alt="Veteran Care" className="h-16 w-auto mx-auto mb-3" />
+          </div>
+          <Card className="shadow-lg border-green-200">
+            <CardHeader className="text-center pb-3">
+              <CardTitle className="text-2xl text-green-900">Ambassador Portal</CardTitle>
+              <p className="text-gray-500 text-sm mt-1">Enter your ambassador code to access your marketing kit</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <Input
+                  data-testid="input-ambassador-code"
+                  placeholder="e.g. colin_slaven"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="text-center text-lg h-12"
+                />
+                <Button
+                  data-testid="button-login"
+                  type="submit"
+                  className="w-full bg-green-700 hover:bg-green-800 h-12 text-base font-semibold"
+                  disabled={!code.trim()}
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Access My Kit
+                </Button>
+              </form>
+              <p className="text-xs text-center text-gray-400 mt-4">
+                Your code was provided when you joined the Ambassador program.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -704,33 +709,76 @@ export default function AmbassadorDashboard() {
   }
 
   const campaignOrder = ["veteran", "case_manager", "partner", "general"];
+  const amb = data.ambassador;
+  const regionDisplay = [amb.region_value, amb.region_type ? `(${amb.region_type})` : ""].filter(Boolean).join(" ");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900 truncate" data-testid="text-welcome">
-              Welcome, {data.ambassador.first_name || data.ambassador.name}
-            </h1>
-            <p className="text-gray-500 text-sm">Your outreach tools and promotional assets</p>
+      <div className="bg-green-800 text-white">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={LOGO_URL} alt="Veteran Care" className="h-10 w-auto hidden sm:block" style={{ filter: "brightness(0) invert(1)" }} />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold truncate" data-testid="text-welcome">
+                Welcome, {amb.first_name || amb.name}
+              </h1>
+              <p className="text-green-200 text-xs sm:text-sm">Your Ambassador Marketing Kit</p>
+            </div>
           </div>
           <Button
             data-testid="button-logout"
             variant="ghost"
             size="sm"
             onClick={() => { setActiveCode(null); setCode(""); }}
+            className="text-green-200 hover:text-white hover:bg-green-700 shrink-0"
           >
-            Switch
+            <LogOut className="w-4 h-4 mr-1" /> Sign Out
           </Button>
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+
+        <Card className="border-green-200" data-testid="card-ambassador-info">
+          <CardContent className="pt-5 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-xs text-gray-500 block mb-0.5">Name</span>
+                <p className="font-medium text-gray-900">{amb.name || [amb.first_name, amb.last_name].filter(Boolean).join(" ")}</p>
+              </div>
+              {amb.email && (
+                <div>
+                  <span className="text-xs text-gray-500 block mb-0.5">Email</span>
+                  <p className="flex items-center gap-1 text-gray-700"><Mail className="h-3 w-3 text-gray-400" /> {amb.email}</p>
+                </div>
+              )}
+              {regionDisplay && (
+                <div>
+                  <span className="text-xs text-gray-500 block mb-0.5">Region</span>
+                  <p className="flex items-center gap-1 text-gray-700"><MapPin className="h-3 w-3 text-gray-400" /> {regionDisplay}</p>
+                </div>
+              )}
+              {amb.commission_rate != null && (
+                <div>
+                  <span className="text-xs text-gray-500 block mb-0.5">Commission</span>
+                  <p className="flex items-center gap-1 font-medium text-green-700"><Percent className="h-3 w-3" /> {amb.commission_rate}%</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <AmbassadorKitSection campaigns={data.campaigns} onDownloadKit={downloadFullKit} />
 
-        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-          <p className="text-sm text-green-800">
-            <strong>How it works:</strong> Choose an audience tab, tap <strong>Copy HTML</strong> on any asset, then paste directly into your email, text, or social post. Your tracking link is built in — no editing needed.
-          </p>
+        <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4">
+          <p className="text-sm font-semibold text-green-900 mb-2">How to use your kit:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-sm text-green-800">
+            <p>1. Choose an audience tab above (Veteran, Case Manager, etc.)</p>
+            <p>2. Find the asset you need (logo, button, email, etc.)</p>
+            <p>3. Click the green <strong>"Copy for Email"</strong> button</p>
+            <p>4. Paste directly into Gmail, Outlook, or any email</p>
+          </div>
+          <p className="text-xs text-green-600 mt-2">Your personal tracking link is built into every asset — no editing needed.</p>
         </div>
 
         <div className="space-y-1">
@@ -738,7 +786,7 @@ export default function AmbassadorDashboard() {
             <Mail className="w-5 h-5" />
             Message Templates & Links
           </h2>
-          <p className="text-sm text-muted-foreground">Expand any campaign below to see ready-to-send templates</p>
+          <p className="text-sm text-muted-foreground">Expand any campaign below to see ready-to-send templates for each channel</p>
         </div>
 
         {campaignOrder.map((key) =>
@@ -746,6 +794,10 @@ export default function AmbassadorDashboard() {
             <CampaignSection key={key} campaignKey={key} data={data.campaigns[key]} />
           ) : null
         )}
+
+        <div className="text-center py-4 text-xs text-gray-400">
+          Veteran Care Ambassador Program &middot; veterancare.com
+        </div>
       </div>
     </div>
   );

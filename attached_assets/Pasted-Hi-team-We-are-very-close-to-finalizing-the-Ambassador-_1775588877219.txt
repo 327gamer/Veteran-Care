@@ -1,0 +1,144 @@
+Hi team,
+
+We are very close to finalizing the Ambassador Marketing Kit and overall system. The structure is excellent — we just need to finalize a few key items to make this fully turnkey and scalable.
+
+Please implement the following:
+
+----------------------------------------
+
+1. LOGO FIX (CRITICAL)
+
+The logo is not displaying correctly when assets are copied into email.
+
+REQUIREMENTS:
+- Logo must use a PUBLIC, absolute HTTPS URL
+- No relative paths (e.g. /logo.png)
+- No protected/authenticated assets
+
+UPDATE:
+Replace any logo usage with:
+<img src="https://veterancare.com/assets/logo.png" style="display:block; max-width:200px;" />
+
+Ensure it renders properly in:
+- Gmail
+- Outlook
+- Mobile
+
+----------------------------------------
+
+2. AMBASSADOR PORTAL (SEPARATE FROM ADMIN)
+
+We want to KEEP the current admin ambassador view exactly as it is for internal use.
+
+NEW REQUIREMENT:
+Create a separate, simplified ambassador-facing portal.
+
+----------------------------------------
+
+3. AMBASSADOR ACCESS LINK SYSTEM
+
+In the ADMIN panel:
+
+- Each ambassador must have:
+  - Their unique ambassador code
+  - A shareable access link
+
+Example:
+https://veterancare.com/ambassador-dashboard?code=colin_slaven
+
+This is the ONLY link I need to send them.
+
+----------------------------------------
+
+4. AMBASSADOR LOGIN (SIMPLE)
+
+When they open the link:
+
+- Prompt:
+  "Enter your Ambassador Code"
+
+- First-time access:
+  - Code acts as login
+  - Option to set simple password (optional, can be phase 2)
+
+Keep this SIMPLE — no complex auth needed for now.
+
+----------------------------------------
+
+5. AMBASSADOR VIEW (LOCKED EXPERIENCE)
+
+Once inside, they should ONLY see:
+
+A. Basic Info:
+- Name
+- Email
+- Region
+- Commission %
+
+B. Ambassador Marketing Kit (FULL VIEW)
+
+Same structure as admin, including:
+- Marketing Kit section
+- 4 audience tabs:
+  - Veteran
+  - Case Manager
+  - Partner / Business
+  - General
+
+Each should include:
+- Clickable Logo (FIXED)
+- CTA Button
+- Image Card
+- Email copy
+- SMS copy
+- QR Code
+
+C. “Open Full Marketing Kit” button
+
+D. Clear instructions:
+- Copy & paste into email
+- Use for outreach
+- Download assets if needed
+
+----------------------------------------
+
+6. REMOVE ALL ADMIN ACCESS
+
+Ambassadors must NOT see:
+- Admin sidebar
+- Admin navigation
+- Other ambassadors
+- Any admin tools or endpoints
+
+This must function as a completely separate, sandboxed view.
+
+----------------------------------------
+
+7. UX REQUIREMENT
+
+This should feel like a standalone portal:
+
+- Clean header:
+  "Welcome [Name] – Your Marketing Kit"
+
+- No distractions
+- Fully plug-and-play
+- No training required
+
+----------------------------------------
+
+FINAL RESULT:
+
+- I can send ONE link to each ambassador
+- They enter their code
+- They access ONLY their portal
+- They see ALL their assets ready to copy/use
+- Logo works correctly in emails
+- No admin exposure
+
+This system will be used to onboard ambassadors at scale, so it must be simple, secure, and fully functional.
+
+Please confirm once complete.
+
+Thanks,
+Colin

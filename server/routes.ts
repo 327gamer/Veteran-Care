@@ -3094,7 +3094,7 @@ export async function registerRoutes(
 
     try {
       const ambRows = await pgQuery(
-        `SELECT id, code, display_name, first_name, last_name, email, commission_rate, status
+        `SELECT id, code, display_name, first_name, last_name, email, phone, commission_rate, region_type, region_value, status
          FROM ambassadors WHERE code = $1 AND status = 'active'`,
         [code]
       );
@@ -3211,6 +3211,12 @@ export async function registerRoutes(
           code: ambassador.code,
           name: ambassador.display_name,
           first_name: ambassador.first_name,
+          last_name: ambassador.last_name,
+          email: ambassador.email,
+          phone: ambassador.phone,
+          commission_rate: ambassador.commission_rate,
+          region_type: ambassador.region_type,
+          region_value: ambassador.region_value,
         },
         campaigns,
       });
