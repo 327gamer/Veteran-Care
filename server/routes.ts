@@ -3116,6 +3116,7 @@ export async function registerRoutes(
         veteran: { title: "Veteran Outreach", description: "Drive veterans to the platform for help and resources", audience: "veteran" },
         case_manager: { title: "Case Management Outreach", description: "Recruit organizations, case managers, and nonprofits", audience: "case_manager" },
         partner: { title: "Partner / Business Outreach", description: "Recruit paying business partners for the directory", audience: "partner" },
+        general: { title: "General Outreach", description: "General awareness and community sharing", audience: "general" },
       };
 
       const OUTREACH_TEMPLATES: Record<string, Record<string, { subject?: string; body: string }>> = {
@@ -3149,6 +3150,16 @@ export async function registerRoutes(
           instagram: { body: "🏢 Grow your business by serving those who served.\n\nJoin Veteran Care's Trusted Services Partner network and get your business in front of veterans in your area.\n\n✅ Directory listing\n✅ Direct referrals\n✅ Premium placement options\n\nApply: {{link}}\n\n#VeteranCare #SmallBusiness #VeteranOwned #BusinessGrowth" },
           linkedin: { body: "Looking to grow your business while supporting veterans?\n\nVeteran Care's Trusted Services Partner program connects your business directly with the veteran community through our trusted directory.\n\nBenefits include directory listing, direct referrals, and premium placement options.\n\nApply here: {{link}}" },
         },
+        general: {
+          email: {
+            subject: "Veteran Care — Supporting Those Who Served",
+            body: "Hi,\n\nI wanted to share Veteran Care with you — it's a free platform that connects U.S. military veterans with critical resources including housing, employment, benefits assistance, mental health support, and more.\n\nWhether you're a veteran, know one, or simply want to support the community, check it out: {{link}}\n\nPlease share this with anyone who might benefit. Together we can make sure no veteran is left without help."
+          },
+          text: { body: "Check out Veteran Care — a free platform connecting veterans with housing, jobs, benefits, mental health & more. Share with anyone who could use it: {{link}}" },
+          facebook: { body: "🇺🇸 Veteran Care connects U.S. military veterans with free resources — housing, jobs, benefits, mental health support & more. Know someone who served? Share this! {{link}} #VeteranCare #SupportOurVeterans" },
+          instagram: { body: "🇺🇸 Veteran Care is a free platform connecting veterans with the resources they need — housing, jobs, benefits, mental health & more.\n\nShare with someone who served: {{link}}\n\n#VeteranCare #Veterans #SupportOurVets" },
+          linkedin: { body: "I'm sharing Veteran Care — a platform connecting U.S. military veterans with critical resources including housing, employment, benefits assistance, and mental health support. All free.\n\nIf you know a veteran or work with the military community, please share: {{link}}" },
+        },
       };
 
       for (const [campaignKey, meta] of Object.entries(CAMPAIGN_META)) {
@@ -3169,6 +3180,7 @@ export async function registerRoutes(
           veteran: "Get Help Now",
           case_manager: "Explore Resources",
           partner: "Apply Now",
+          general: "Learn More",
         };
 
         const templates: Record<string, any> = {};
