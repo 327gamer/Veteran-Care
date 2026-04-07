@@ -68,6 +68,49 @@ function CopyBtn({ text, label, children, size = "sm" }: { text: string; label: 
   );
 }
 
+function CopyRichBtn({ html, plainText, label, children, variant = "default" }: {
+  html: string;
+  plainText?: string;
+  label: string;
+  children: React.ReactNode;
+  variant?: "default" | "outline" | "ghost";
+}) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      const blob = new Blob([html], { type: "text/html" });
+      const textBlob = new Blob([plainText || html], { type: "text/plain" });
+      await navigator.clipboard.write([
+        new ClipboardItem({ "text/html": blob, "text/plain": textBlob }),
+      ]);
+    } catch {
+      try { await navigator.clipboard.writeText(plainText || html); } catch {
+        const ta = document.createElement("textarea");
+        ta.value = plainText || html; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+  const baseClass = variant === "default"
+    ? "bg-green-700 hover:bg-green-800 text-white"
+    : variant === "outline"
+    ? "border border-gray-300"
+    : "";
+  return (
+    <Button
+      data-testid={`copy-rich-${label}`}
+      variant={copied ? "default" : variant === "default" ? "default" : "outline"}
+      size="sm"
+      onClick={handleCopy}
+      className={`h-9 text-sm gap-1.5 ${copied ? "bg-green-600 hover:bg-green-700 text-white" : baseClass}`}
+    >
+      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+      {copied ? "Copied!" : children}
+    </Button>
+  );
+}
+
 function SafeButtonPreview({ url, label }: { url: string; label: string }) {
   return (
     <a
@@ -78,51 +121,6 @@ function SafeButtonPreview({ url, label }: { url: string; label: string }) {
     >
       {label}
     </a>
-  );
-}
-
-function KitAssetRow({ label, icon: Icon, code, preview, testId }: {
-  label: string;
-  icon: any;
-  code: string;
-  preview?: React.ReactNode;
-  testId: string;
-}) {
-  const [showCode, setShowCode] = useState(false);
-  return (
-    <div className="border rounded-lg bg-white overflow-hidden" data-testid={testId}>
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-gray-50/60">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
-            <Icon className="w-3.5 h-3.5 text-green-700" />
-          </div>
-          <span className="text-sm font-semibold text-gray-800 truncate">{label}</span>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-          <CopyBtn text={code} label={testId} size="xs">Copy HTML</CopyBtn>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-gray-500"
-            onClick={() => setShowCode(!showCode)}
-            data-testid={`toggle-code-${testId}`}
-          >
-            <Code2 className="w-3 h-3 mr-1" />
-            {showCode ? "Hide" : "View Code"}
-          </Button>
-        </div>
-      </div>
-      {preview && (
-        <div className="p-4 flex items-center justify-center min-h-[56px]">
-          {preview}
-        </div>
-      )}
-      {showCode && (
-        <div className="mx-3 mb-3 bg-gray-900 rounded-lg p-3 text-xs text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-36 overflow-y-auto">
-          {code}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -178,39 +176,65 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
             const textUrl = textLink?.short_url || primaryUrl;
 
             const logoHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="height:60px;width:auto;border:0;" /></a>`;
-
             const buttonHtml = `<a href="${primaryUrl}" style="background:#166534;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;text-align:center;">${ctaLabel}</a>`;
-
             const imageBlockHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#f0fdf4;padding:20px;text-align:center;"><img src="${LOGO_URL}" alt="Veteran Care" style="height:50px;width:auto;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`;
+            const emailBodyHtml = campaign.templates?.email
+              ? `<div style="font-family:Arial,sans-serif;font-size:15px;color:#1f2937;line-height:1.6;max-width:560px;">${campaign.templates.email.body.split("\n").map((line: string) => line.trim() === "" ? "<br/>" : `<p style="margin:0 0 10px;">${line}</p>`).join("")}<br/>${buttonHtml}</div>`
+              : null;
+            const emailPlainText = campaign.templates?.email
+              ? (campaign.templates.email.subject ? `Subject: ${campaign.templates.email.subject}\n\n` : "") + campaign.templates.email.body
+              : primaryUrl;
 
             return (
-              <TabsContent key={aud} value={aud} className="mt-4 space-y-3" data-testid={`kit-content-${aud}`}>
-                <KitAssetRow
-                  label="Clickable Logo"
-                  icon={Image}
-                  code={logoHtml}
-                  testId={`kit-logo-${aud}`}
-                  preview={
+              <TabsContent key={aud} value={aud} className="mt-4 space-y-4" data-testid={`kit-content-${aud}`}>
+
+                <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-logo-${aud}`}>
+                  <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                      <Image className="w-3.5 h-3.5 text-green-700" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">Clickable Logo</span>
+                    <span className="text-xs text-gray-400 ml-auto hidden sm:inline">Paste into email — logo links to your tracked URL</span>
+                  </div>
+                  <div className="p-5 flex items-center justify-center">
                     <a href={primaryUrl} target="_blank" rel="noopener noreferrer">
                       <img src={LOGO_URL} alt="Veteran Care" className="h-14 w-auto" />
                     </a>
-                  }
-                />
+                  </div>
+                  <div className="px-4 pb-4 flex flex-wrap gap-2">
+                    <CopyRichBtn html={logoHtml} plainText={primaryUrl} label={`logo-email-${aud}`}>
+                      Copy Logo for Email
+                    </CopyRichBtn>
+                    <CopyBtn text={logoHtml} label={`logo-html-${aud}`} size="xs">Copy HTML Code</CopyBtn>
+                  </div>
+                </div>
 
-                <KitAssetRow
-                  label={`CTA Button — "${ctaLabel}"`}
-                  icon={MousePointerClick}
-                  code={buttonHtml}
-                  testId={`kit-button-${aud}`}
-                  preview={<SafeButtonPreview url={primaryUrl} label={ctaLabel} />}
-                />
+                <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-button-${aud}`}>
+                  <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                      <MousePointerClick className="w-3.5 h-3.5 text-green-700" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">CTA Button — "{ctaLabel}"</span>
+                  </div>
+                  <div className="p-5 flex items-center justify-center">
+                    <SafeButtonPreview url={primaryUrl} label={ctaLabel} />
+                  </div>
+                  <div className="px-4 pb-4 flex flex-wrap gap-2">
+                    <CopyRichBtn html={buttonHtml} plainText={`${ctaLabel}: ${primaryUrl}`} label={`button-email-${aud}`}>
+                      Copy Button for Email
+                    </CopyRichBtn>
+                    <CopyBtn text={buttonHtml} label={`button-html-${aud}`} size="xs">Copy HTML Code</CopyBtn>
+                  </div>
+                </div>
 
-                <KitAssetRow
-                  label="Image Card (Flyer Style)"
-                  icon={Image}
-                  code={imageBlockHtml}
-                  testId={`kit-image-${aud}`}
-                  preview={
+                <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-image-${aud}`}>
+                  <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                      <Image className="w-3.5 h-3.5 text-green-700" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">Image Card (Flyer Style)</span>
+                  </div>
+                  <div className="p-5 flex items-center justify-center">
                     <a href={primaryUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "inline-block", width: "100%", maxWidth: 340 }}>
                       <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
                         <div style={{ background: "#f0fdf4", padding: 16, textAlign: "center" }}>
@@ -226,46 +250,89 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                         </div>
                       </div>
                     </a>
-                  }
-                />
+                  </div>
+                  <div className="px-4 pb-4 flex flex-wrap gap-2">
+                    <CopyRichBtn html={imageBlockHtml} plainText={`Veteran Care — Free resources for veterans: ${primaryUrl}`} label={`image-email-${aud}`}>
+                      Copy Image Card for Email
+                    </CopyRichBtn>
+                    <CopyBtn text={imageBlockHtml} label={`image-html-${aud}`} size="xs">Copy HTML Code</CopyBtn>
+                  </div>
+                </div>
 
-                <KitAssetRow
-                  label="Text / SMS Link"
-                  icon={Link2}
-                  code={textUrl}
-                  testId={`kit-text-${aud}`}
-                  preview={
-                    <div className="text-center w-full">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 inline-block">
-                        <code className="text-sm text-blue-700 font-mono break-all" data-testid={`text-link-${aud}`}>{textUrl}</code>
+                {emailBodyHtml && (
+                  <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-email-${aud}`}>
+                    <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                        <Mail className="w-3.5 h-3.5 text-green-700" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800">Ready-to-Send Email</span>
+                      <span className="text-xs text-gray-400 ml-auto hidden sm:inline">Paste into Gmail / Outlook — renders formatted</span>
+                    </div>
+                    <div className="p-4">
+                      {campaign.templates.email.subject && (
+                        <div className="text-xs text-gray-500 mb-2">
+                          <span className="font-semibold">Subject:</span> {campaign.templates.email.subject}
+                        </div>
+                      )}
+                      <div className="bg-gray-50 border rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+                        {campaign.templates.email.body}
                       </div>
                     </div>
-                  }
-                />
+                    <div className="px-4 pb-4 flex flex-wrap gap-2">
+                      <CopyRichBtn html={emailBodyHtml} plainText={emailPlainText} label={`email-rich-${aud}`}>
+                        Copy Email Version
+                      </CopyRichBtn>
+                      <CopyBtn text={emailPlainText} label={`email-plain-${aud}`} size="xs">Copy Plain Text</CopyBtn>
+                      {campaign.templates.email.subject && (
+                        <CopyBtn text={campaign.templates.email.subject} label={`email-subject-${aud}`} size="xs">Copy Subject</CopyBtn>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-text-${aud}`}>
+                  <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                      <Link2 className="w-3.5 h-3.5 text-green-700" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">Text / SMS Link</span>
+                  </div>
+                  <div className="p-4 flex items-center justify-center">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 inline-block">
+                      <code className="text-sm text-blue-700 font-mono break-all" data-testid={`text-link-${aud}`}>{textUrl}</code>
+                    </div>
+                  </div>
+                  <div className="px-4 pb-4 flex flex-wrap gap-2">
+                    <CopyBtn text={textUrl} label={`link-${aud}`}>Copy Link</CopyBtn>
+                    {campaign.templates?.text && (
+                      <CopyBtn text={campaign.templates.text.body} label={`sms-msg-${aud}`} size="xs">Copy SMS Message</CopyBtn>
+                    )}
+                  </div>
+                </div>
 
                 {campaign.links?.filter((l: any) => l.channel === "qr").map((link: any) => (
                   <div key={link.utm_id} className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-qr-${aud}`}>
-                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-gray-50/60">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center">
-                          <QrCode className="w-3.5 h-3.5 text-green-700" />
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">QR Code</span>
+                    <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                        <QrCode className="w-3.5 h-3.5 text-green-700" />
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                        <CopyBtn text={`<img src="${link.qr_url}" alt="Veteran Care QR Code" style="width:200px;height:200px;" />`} label={`kit-qr-html-${aud}`} size="xs">Copy HTML</CopyBtn>
-                        <a
-                          href={link.qr_url}
-                          download={`veteran-care-qr-${aud}.png`}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded-md h-7"
-                          data-testid={`kit-download-qr-${aud}`}
-                        >
-                          <Download className="w-3 h-3" /> PNG
-                        </a>
-                      </div>
+                      <span className="text-sm font-semibold text-gray-800">QR Code</span>
                     </div>
                     <div className="p-4 flex justify-center">
                       <img src={link.qr_url} alt={`QR Code - ${aud}`} className="w-36 h-36 border rounded-lg shadow-sm" />
+                    </div>
+                    <div className="px-4 pb-4 flex flex-wrap gap-2">
+                      <a
+                        href={link.qr_url}
+                        download={`veteran-care-qr-${aud}.png`}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 px-4 py-2 rounded-md h-9"
+                        data-testid={`kit-download-qr-${aud}`}
+                      >
+                        <Download className="w-4 h-4" /> Download PNG
+                      </a>
+                      <CopyRichBtn html={`<img src="${link.qr_url}" alt="Veteran Care QR Code" style="width:200px;height:200px;" />`} plainText={link.qr_url} label={`qr-email-${aud}`} variant="outline">
+                        Copy QR for Email
+                      </CopyRichBtn>
                     </div>
                   </div>
                 ))}
