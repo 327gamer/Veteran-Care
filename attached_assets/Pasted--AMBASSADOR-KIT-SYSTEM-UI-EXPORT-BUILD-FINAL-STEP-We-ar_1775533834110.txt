@@ -1,0 +1,113 @@
+--- AMBASSADOR KIT SYSTEM – UI + EXPORT BUILD (FINAL STEP) ---
+
+We are NOT updating APIs anymore.
+We are NOT adding new data.
+
+The API is already correct.
+
+Now we are building the FINAL Ambassador Kit presentation layer.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Turn ambassador links into clean, ready-to-use marketing assets.
+
+Ambassadors must be able to:
+- copy assets
+- paste into email / text / social
+- send immediately
+- no raw links
+
+-------------------------------------
+REQUIRED UI COMPONENT (CRITICAL)
+-------------------------------------
+
+Create a new section:
+
+→ "AMBASSADOR KIT"
+
+For EACH audience:
+- Veteran
+- Case Manager
+- Partner
+- General
+
+-------------------------------------
+FOR EACH AUDIENCE DISPLAY:
+-------------------------------------
+
+1. CLICKABLE LOGO
+- show Veteran Care logo
+- wrapped in ambassador link
+- include COPY HTML button
+
+2. BUTTON CTA
+- show LIVE preview button
+- correct label per audience:
+  - Veteran → Get Help Now
+  - Case Manager → Explore Resources
+  - Partner → Become a Trusted Partner
+  - General → Learn More
+- include COPY HTML button
+
+3. IMAGE BLOCK (FLYER STYLE)
+- clickable image block
+- include COPY HTML
+
+4. TEXT LINK
+- clean short link
+- include COPY button
+
+-------------------------------------
+UI REQUIREMENTS
+-------------------------------------
+
+- visually clean
+- grouped by audience
+- each asset clearly labeled
+- copy buttons obvious and fast
+
+-------------------------------------
+DOWNLOAD KIT
+-------------------------------------
+
+Add:
+
+→ "DOWNLOAD FULL AMBASSADOR KIT"
+
+Must include:
+- all 4 audiences
+- all assets (logo, button, image, text)
+- clearly structured format
+
+-------------------------------------
+STRICT RULES
+-------------------------------------
+
+- DO NOT modify link routing
+- DO NOT modify attribution
+- DO NOT modify database
+- DO NOT change existing logic
+
+ONLY build presentation + usability layer
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+Ambassador can:
+
+1. open dashboard
+2. copy any asset
+3. paste into:
+   - email
+   - SMS
+   - social
+   - video description
+
+→ and it works instantly
+
+NO training required
+
+--- END ---

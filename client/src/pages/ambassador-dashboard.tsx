@@ -90,33 +90,35 @@ function KitAssetRow({ label, icon: Icon, code, preview, testId }: {
 }) {
   const [showCode, setShowCode] = useState(false);
   return (
-    <div className="border rounded-lg p-3 space-y-2" data-testid={testId}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon className="w-4 h-4 text-gray-500 shrink-0" />
-          <span className="text-sm font-medium truncate">{label}</span>
+    <div className="border rounded-lg bg-white overflow-hidden" data-testid={testId}>
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-gray-50/60">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+            <Icon className="w-3.5 h-3.5 text-green-700" />
+          </div>
+          <span className="text-sm font-semibold text-gray-800 truncate">{label}</span>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+          <CopyBtn text={code} label={testId} size="xs">Copy HTML</CopyBtn>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs"
+            className="h-7 text-xs text-gray-500"
             onClick={() => setShowCode(!showCode)}
             data-testid={`toggle-code-${testId}`}
           >
-            <Code2 className="w-3.5 h-3.5 mr-1" />
-            {showCode ? "Hide" : "Code"}
+            <Code2 className="w-3 h-3 mr-1" />
+            {showCode ? "Hide" : "View Code"}
           </Button>
-          <CopyBtn text={code} label={testId} size="xs">Copy</CopyBtn>
         </div>
       </div>
       {preview && (
-        <div className="bg-gray-50 rounded p-3 flex items-center justify-center min-h-[48px]">
+        <div className="p-4 flex items-center justify-center min-h-[56px]">
           {preview}
         </div>
       )}
       {showCode && (
-        <div className="bg-gray-900 rounded p-2.5 text-xs text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+        <div className="mx-3 mb-3 bg-gray-900 rounded-lg p-3 text-xs text-green-400 font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-36 overflow-y-auto">
           {code}
         </div>
       )}
@@ -124,30 +126,30 @@ function KitAssetRow({ label, icon: Icon, code, preview, testId }: {
   );
 }
 
-function AmbassadorKitSection({ campaigns }: { campaigns: Record<string, any> }) {
+function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<string, any>; onDownloadKit: () => void }) {
   const audienceOrder = ["veteran", "case_manager", "partner", "general"];
   const availableAudiences = audienceOrder.filter(a => campaigns[a]);
 
   if (availableAudiences.length === 0) return null;
 
   return (
-    <Card className="border-2 border-amber-300 bg-amber-50/30" data-testid="card-ambassador-kit">
-      <CardHeader className="pb-3">
+    <Card className="border-2 border-green-600 shadow-lg" data-testid="card-ambassador-kit">
+      <CardHeader className="pb-3 bg-green-50 border-b border-green-200">
         <CardTitle className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-            <Package className="w-5 h-5 text-amber-700" />
+          <div className="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center">
+            <Package className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <span className="text-lg">Promotional Kit</span>
-            <p className="text-xs font-normal text-muted-foreground mt-0.5">
-              Ready-to-use assets for email, SMS, social media, and websites
+          <div className="flex-1 min-w-0">
+            <span className="text-lg font-bold text-green-900">Ambassador Kit</span>
+            <p className="text-xs font-normal text-green-700 mt-0.5">
+              Copy any asset below and paste directly into email, SMS, or social media
             </p>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-4">
         <Tabs defaultValue={availableAudiences[0]} className="w-full">
-          <TabsList className="w-full flex h-auto flex-wrap gap-1 bg-amber-100/50 p-1">
+          <TabsList className="w-full flex h-auto flex-wrap gap-1 bg-green-50 p-1 rounded-lg">
             {availableAudiences.map(aud => {
               const cfg = CAMPAIGN_CONFIG[aud];
               if (!cfg) return null;
@@ -156,7 +158,7 @@ function AmbassadorKitSection({ campaigns }: { campaigns: Record<string, any> })
                 <TabsTrigger
                   key={aud}
                   value={aud}
-                  className="flex-1 min-w-[120px] text-xs gap-1.5 data-[state=active]:bg-white"
+                  className="flex-1 min-w-[80px] text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-green-800 data-[state=active]:font-semibold py-2"
                   data-testid={`kit-tab-${aud}`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -190,35 +192,35 @@ function AmbassadorKitSection({ campaigns }: { campaigns: Record<string, any> })
                   testId={`kit-logo-${aud}`}
                   preview={
                     <a href={primaryUrl} target="_blank" rel="noopener noreferrer">
-                      <img src={LOGO_URL} alt="Veteran Care" className="h-12 w-auto" />
+                      <img src={LOGO_URL} alt="Veteran Care" className="h-14 w-auto" />
                     </a>
                   }
                 />
 
                 <KitAssetRow
                   label={`CTA Button — "${ctaLabel}"`}
-                  icon={Code2}
+                  icon={MousePointerClick}
                   code={buttonHtml}
                   testId={`kit-button-${aud}`}
                   preview={<SafeButtonPreview url={primaryUrl} label={ctaLabel} />}
                 />
 
                 <KitAssetRow
-                  label="Image Card Embed"
+                  label="Image Card (Flyer Style)"
                   icon={Image}
                   code={imageBlockHtml}
                   testId={`kit-image-${aud}`}
                   preview={
-                    <a href={primaryUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "inline-block" }}>
-                      <div style={{ maxWidth: 320, border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
-                        <div style={{ background: "#f0fdf4", padding: 14, textAlign: "center" }}>
-                          <img src={LOGO_URL} alt="Veteran Care" style={{ height: 36, width: "auto" }} />
+                    <a href={primaryUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "inline-block", width: "100%", maxWidth: 340 }}>
+                      <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
+                        <div style={{ background: "#f0fdf4", padding: 16, textAlign: "center" }}>
+                          <img src={LOGO_URL} alt="Veteran Care" style={{ height: 40, width: "auto" }} />
                         </div>
-                        <div style={{ padding: "12px 16px", background: "#fff" }}>
-                          <p style={{ margin: "0 0 10px", fontSize: 13, color: "#1f2937", lineHeight: 1.4 }}>
+                        <div style={{ padding: "14px 18px", background: "#fff" }}>
+                          <p style={{ margin: "0 0 12px", fontSize: 14, color: "#1f2937", lineHeight: 1.5 }}>
                             Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.
                           </p>
-                          <div style={{ background: "#166534", color: "#fff", padding: "10px 20px", borderRadius: 8, textAlign: "center", fontWeight: "bold", fontSize: 13 }}>
+                          <div style={{ background: "#166534", color: "#fff", padding: "11px 22px", borderRadius: 8, textAlign: "center", fontWeight: "bold", fontSize: 14 }}>
                             {ctaLabel}
                           </div>
                         </div>
@@ -229,34 +231,41 @@ function AmbassadorKitSection({ campaigns }: { campaigns: Record<string, any> })
 
                 <KitAssetRow
                   label="Text / SMS Link"
-                  icon={Type}
+                  icon={Link2}
                   code={textUrl}
                   testId={`kit-text-${aud}`}
                   preview={
-                    <div className="text-center">
-                      <code className="text-sm text-blue-700 bg-blue-50 px-3 py-1.5 rounded font-mono break-all">{textUrl}</code>
+                    <div className="text-center w-full">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 inline-block">
+                        <code className="text-sm text-blue-700 font-mono break-all" data-testid={`text-link-${aud}`}>{textUrl}</code>
+                      </div>
                     </div>
                   }
                 />
 
                 {campaign.links?.filter((l: any) => l.channel === "qr").map((link: any) => (
-                  <div key={link.utm_id} className="border rounded-lg p-3" data-testid={`kit-qr-${aud}`}>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <QrCode className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium">QR Code</span>
+                  <div key={link.utm_id} className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-qr-${aud}`}>
+                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-gray-50/60">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center">
+                          <QrCode className="w-3.5 h-3.5 text-green-700" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-800">QR Code</span>
                       </div>
-                      <a
-                        href={link.qr_url}
-                        download={`veteran-care-qr-${aud}.png`}
-                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                        data-testid={`kit-download-qr-${aud}`}
-                      >
-                        <Download className="w-3 h-3" /> Download PNG
-                      </a>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <CopyBtn text={`<img src="${link.qr_url}" alt="Veteran Care QR Code" style="width:200px;height:200px;" />`} label={`kit-qr-html-${aud}`} size="xs">Copy HTML</CopyBtn>
+                        <a
+                          href={link.qr_url}
+                          download={`veteran-care-qr-${aud}.png`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded-md h-7"
+                          data-testid={`kit-download-qr-${aud}`}
+                        >
+                          <Download className="w-3 h-3" /> PNG
+                        </a>
+                      </div>
                     </div>
-                    <div className="bg-gray-50 rounded p-3 flex justify-center">
-                      <img src={link.qr_url} alt={`QR Code - ${aud}`} className="w-32 h-32 border rounded" />
+                    <div className="p-4 flex justify-center">
+                      <img src={link.qr_url} alt={`QR Code - ${aud}`} className="w-36 h-36 border rounded-lg shadow-sm" />
                     </div>
                   </div>
                 ))}
@@ -264,6 +273,20 @@ function AmbassadorKitSection({ campaigns }: { campaigns: Record<string, any> })
             );
           })}
         </Tabs>
+
+        <div className="mt-6 pt-4 border-t border-green-200">
+          <Button
+            data-testid="button-download-full-kit"
+            onClick={onDownloadKit}
+            className="w-full bg-green-700 hover:bg-green-800 text-white h-12 text-base font-semibold gap-2 shadow-md"
+          >
+            <Download className="w-5 h-5" />
+            Download Full Ambassador Kit
+          </Button>
+          <p className="text-xs text-center text-gray-500 mt-2">
+            All 4 audiences, all assets, all templates — one file
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -485,7 +508,7 @@ export default function AmbassadorDashboard() {
     if (!data) return;
     const sections: string[] = [];
     const baseUrl = "https://veterancare.com";
-    sections.push(`VETERAN CARE — AMBASSADOR PROMOTIONAL KIT`);
+    sections.push(`VETERAN CARE — AMBASSADOR KIT`);
     sections.push(`${"=".repeat(50)}`);
     sections.push(`Ambassador: ${data.ambassador.first_name || data.ambassador.name}`);
     sections.push(`Code: ${data.ambassador.code}`);
@@ -624,49 +647,23 @@ export default function AmbassadorDashboard() {
             </h1>
             <p className="text-gray-500 text-sm">Your outreach tools and promotional assets</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              data-testid="button-download-kit"
-              variant="outline"
-              size="sm"
-              onClick={downloadFullKit}
-              className="gap-1"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Download Full Kit</span>
-              <span className="sm:hidden">Kit</span>
-            </Button>
-            <Button
-              data-testid="button-logout"
-              variant="ghost"
-              size="sm"
-              onClick={() => { setActiveCode(null); setCode(""); }}
-            >
-              Switch
-            </Button>
-          </div>
+          <Button
+            data-testid="button-logout"
+            variant="ghost"
+            size="sm"
+            onClick={() => { setActiveCode(null); setCode(""); }}
+          >
+            Switch
+          </Button>
         </div>
 
-        <AmbassadorKitSection campaigns={data.campaigns} />
+        <AmbassadorKitSection campaigns={data.campaigns} onDownloadKit={downloadFullKit} />
 
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-green-200 rounded-full flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5 text-green-700" />
-              </div>
-              <div>
-                <h3 className="font-medium text-green-900">How to use your kit</h3>
-                <ol className="text-sm text-green-800 mt-1 space-y-1 list-decimal list-inside">
-                  <li>Choose an audience tab above (Veteran, Case Manager, Partner, or General)</li>
-                  <li>Pick an asset — logo, button, image card, or text link</li>
-                  <li>Tap <strong>Copy</strong> and paste it into your email, post, or message</li>
-                  <li>Your tracking is built in — no editing needed</li>
-                </ol>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+          <p className="text-sm text-green-800">
+            <strong>How it works:</strong> Choose an audience tab, tap <strong>Copy HTML</strong> on any asset, then paste directly into your email, text, or social post. Your tracking link is built in — no editing needed.
+          </p>
+        </div>
 
         <div className="space-y-1">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2" data-testid="text-templates-header">
