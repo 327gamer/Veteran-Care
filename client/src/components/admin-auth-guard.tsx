@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldAlert, LogIn, AlertTriangle } from "lucide-react";
+import { ShieldAlert, LogIn, AlertTriangle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function useAdminKey() {
@@ -51,8 +51,36 @@ export class AdminAuthError extends Error {
 }
 
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
-  const { adminKey } = useAdminKey();
-  const [, navigate] = useLocation();
+  const { adminKey, saveKey } = useAdminKey();
+  const [keyInput, setKeyInput] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [error, setError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  const handleLogin = async () => {
+    const trimmed = keyInput.trim();
+    if (!trimmed) {
+      setError("Please enter your admin key.");
+      return;
+    }
+    setError("");
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/admin/production-validation", {
+        headers: { "x-admin-key": trimmed, "Content-Type": "application/json" },
+      });
+      if (res.status === 401 || res.status === 403) {
+        setError("Invalid admin key. Please try again.");
+        setVerifying(false);
+        return;
+      }
+      saveKey(trimmed);
+    } catch {
+      saveKey(trimmed);
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   if (!adminKey) {
     return (
@@ -65,17 +93,50 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Admin Authentication Required</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                You need to log in with your admin key to access this page.
+                Enter your admin key to access this page.
               </p>
             </div>
-            <Button
-              className="w-full"
-              onClick={() => navigate("/admin")}
-              data-testid="button-go-admin-login"
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleLogin(); }}
+              className="space-y-3 text-left"
             >
-              <LogIn className="w-4 h-4 mr-2" />
-              Go to Admin Login
-            </Button>
+              <div className="relative">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  placeholder="Admin key"
+                  value={keyInput}
+                  onChange={(e) => { setKeyInput(e.target.value); setError(""); }}
+                  autoFocus
+                  className="pr-10"
+                  data-testid="input-admin-key"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowKey(!showKey)}
+                  tabIndex={-1}
+                  data-testid="button-toggle-key-visibility"
+                >
+                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {error && (
+                <p className="text-xs text-red-600 text-center" data-testid="text-login-error">{error}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={verifying}
+                data-testid="button-admin-login"
+              >
+                {verifying ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <LogIn className="w-4 h-4 mr-2" />
+                )}
+                {verifying ? "Verifying..." : "Log In"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
@@ -86,7 +147,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 export function AdminAuthErrorBanner({ error, onRetry }: { error: Error | null; onRetry?: () => void }) {
-  const [, navigate] = useLocation();
+  const { clearKey } = useAdminKey();
 
   if (!error) return null;
 
@@ -108,10 +169,7 @@ export function AdminAuthErrorBanner({ error, onRetry }: { error: Error | null; 
             size="sm"
             variant="outline"
             className="h-8 text-xs border-red-300 text-red-700 hover:bg-red-50"
-            onClick={() => {
-              localStorage.removeItem("adminKey");
-              navigate("/admin");
-            }}
+            onClick={() => clearKey()}
             data-testid="button-relogin"
           >
             <LogIn className="w-3 h-3 mr-1" />

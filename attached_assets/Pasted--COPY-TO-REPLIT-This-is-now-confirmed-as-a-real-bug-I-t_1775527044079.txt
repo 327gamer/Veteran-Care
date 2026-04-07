@@ -1,0 +1,92 @@
+--- COPY TO REPLIT ---
+
+This is now confirmed as a real bug.
+
+I tested on:
+- desktop incognito
+- different browsers
+- phone private/incognito mode
+
+The Admin Authentication Required screen appears correctly, but the green button:
+
+“Go to Admin Login”
+
+does nothing.
+
+It does not open the login flow.
+It does not open a code field.
+It does not navigate to a working admin login entry point.
+
+So the admin auth flow is broken in a fresh-session environment.
+
+-------------------------------------
+WHY THIS IS CRITICAL
+-------------------------------------
+
+In my normal browser, admin works because the admin key is already stored.
+
+But on:
+- a new computer
+- incognito/private mode
+- another browser
+- another device
+
+…the admin panel is not usable because the entry button is dead.
+
+This is a real launch blocker.
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+Please investigate and fix the full fresh-session admin auth path.
+
+Specifically check:
+
+1. What the “Go to Admin Login” button is supposed to do
+2. Whether its click handler is firing
+3. Whether it is navigating to the correct route
+4. Whether the admin login page / modal actually exists and is reachable
+5. Whether a CSS overlay or disabled state is blocking clicks
+6. Whether the fresh-session auth flow was broken when the AdminAuthGuard was added
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+Fresh browser session:
+1. user visits /admin or any /admin/* page
+2. auth guard appears
+3. user clicks “Go to Admin Login”
+4. user is taken to a working admin login page or inline login form
+5. user enters admin key
+6. key saves to localStorage
+7. admin pages become accessible
+
+-------------------------------------
+REQUIRED VALIDATION
+-------------------------------------
+
+After fixing this, test in:
+- Chrome incognito
+- Edge InPrivate
+- Safari private
+- mobile browser private mode
+
+Then confirm:
+- button works
+- admin key can be entered
+- login succeeds
+- admin panel opens normally
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This is separate from the ambassador link issue.
+
+Do not assume normal-browser stored state means admin auth is working.
+
+We need the clean-browser admin login flow fixed and validated.
+
+--- END ---
