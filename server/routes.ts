@@ -2976,7 +2976,10 @@ export async function registerRoutes(
       if (rows.length === 0) {
         return res.status(404).send("Link not found");
       }
-      return res.redirect(301, rows[0].full_url);
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
+      return res.redirect(302, rows[0].full_url);
     } catch (err: any) {
       console.log("[ambassador] short link error:", err.message);
       return res.status(500).send("Server error");

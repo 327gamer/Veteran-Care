@@ -1,0 +1,114 @@
+--- COPY TO REPLIT ---
+
+The live production ambassador routing is STILL not fully corrected.
+
+I manually tested the real live admin ambassador test links again, one by one.
+
+Please treat my manual live results as the source of truth over any blanket “140/140 correct” claim, because some links are still definitely going to the homepage.
+
+This is no longer a global routing issue.
+It is now a specific record-level production mismatch.
+
+-------------------------------------
+LIVE MANUAL TEST RESULTS
+-------------------------------------
+
+COLIN SLAVEN — INCORRECT LINKS
+
+Case Manager Outreach:
+- Email → goes to homepage (incorrect)
+
+General Outreach:
+- Flyer → goes to homepage (incorrect)
+- Text → goes to homepage (incorrect)
+
+Partner Outreach:
+- Email → goes to homepage (incorrect)
+- Flyer → goes to homepage (incorrect)
+- Text → goes to homepage (incorrect)
+
+Veteran Outreach:
+- Email → goes to homepage (incorrect)
+
+-------------------------------------
+
+DEBBIE SLAVEN — INCORRECT LINKS
+
+Case Manager Outreach:
+- Facebook → goes to homepage (incorrect)
+
+-------------------------------------
+
+KELSEY REESE
+- all tested links were correct
+
+TRACY ROBERTSON
+- all tested links were correct
+
+MICHELLE KEEF
+- no failures reported in this pass
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This means the issue is NOT fully resolved.
+
+It is now a selective production mismatch affecting specific ambassador/channel/audience records.
+
+So I need you to stop giving broad “all links are fixed” answers and instead validate the exact failing records above.
+
+-------------------------------------
+REQUIRED DIAGNOSIS
+-------------------------------------
+
+Please investigate these exact live records and explain:
+
+1. whether the incorrect destination is in the production database record itself
+2. whether the admin UI is showing or caching stale link data
+3. whether the test button is using a different source than the redirect endpoint
+4. whether the short link, full_url, and admin test button are all resolving from the same live production value
+5. whether CDN/browser/server cache is involved for specific records
+
+-------------------------------------
+REQUIRED FIX
+-------------------------------------
+
+Please correct the exact failing live records listed above.
+
+Then run a record-level validation for ALL 5 ambassadors and verify:
+- Email
+- Facebook
+- Flyer
+- Instagram
+- LinkedIn
+- QR
+- Text
+
+across all 4 audiences:
+- Case Manager
+- General
+- Partner
+- Veteran
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+Please reply with:
+
+1. exact root cause of why some individual records are still wrong
+2. exact records corrected
+3. whether the issue was database, cache, UI payload, or redirect source mismatch
+4. proof that the corrected links now resolve properly in LIVE production
+5. whether any cache invalidation / republish was required
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT answer with another aggregate claim like “all links are fixed.”
+
+I need the exact failing records above investigated and corrected individually.
+
+--- END ---

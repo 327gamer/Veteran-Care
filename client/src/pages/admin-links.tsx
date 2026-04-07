@@ -302,7 +302,10 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(link.full_url, "_blank")}
+              onClick={() => {
+                const separator = link.full_url.includes("?") ? "&" : "?";
+                window.open(`${link.full_url}${separator}_t=${Date.now()}`, "_blank");
+              }}
               data-testid="button-test-link"
             >
               <ExternalLink className="h-3.5 w-3.5 mr-1" /> Open Test Link
