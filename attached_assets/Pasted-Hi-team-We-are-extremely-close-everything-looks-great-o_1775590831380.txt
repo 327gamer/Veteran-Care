@@ -1,0 +1,127 @@
+Hi team,
+
+We are extremely close — everything looks great overall. There are just 3 final refinements needed before we publish.
+
+----------------------------------------
+
+1. IMAGE CARD LOGO SIZE (EMAIL ISSUE)
+
+The clickable logo is working correctly now.
+
+However, in the Image Card (flyer-style), the logo appears TOO SMALL when pasted into email.
+
+ISSUE:
+- Logo renders very small in email (especially Partner/Business emails)
+
+FIX REQUIRED:
+
+- Increase logo size specifically inside the Image Card template
+- Ensure consistent sizing across:
+  - Email
+  - Gmail
+  - Outlook
+  - Mobile
+
+Update image card logo to something like:
+
+<img src="https://veterancare.com/logo.png" style="display:block; max-width:180px; height:auto; margin:0 auto;" />
+
+Also ensure:
+- Proper padding around logo
+- Center alignment
+- Not constrained by parent container width
+
+----------------------------------------
+
+2. ADMIN VS AMBASSADOR SESSION CONFLICT (CRITICAL)
+
+Right now:
+- When I open the Ambassador Kit from the Admin panel
+- It logs me into the Ambassador Portal
+- When I click "Sign Out", it logs me out of the ADMIN panel
+
+THIS SHOULD NOT HAPPEN.
+
+REQUIRED FIX:
+
+Admin and Ambassador must be COMPLETELY separate sessions.
+
+----------------------------------------
+
+EXPECTED BEHAVIOR:
+
+ADMIN:
+- Stays logged into admin panel at all times
+- Can preview ambassador portal WITHOUT affecting admin session
+
+AMBASSADOR PORTAL:
+- Separate session (no shared auth)
+- Sign out ONLY affects ambassador portal
+
+----------------------------------------
+
+IMPLEMENTATION:
+
+- Do NOT reuse admin auth/session for ambassador portal
+- Ambassador portal should use:
+  - Code-based session OR
+  - Separate lightweight session
+
+- Opening:
+  /ambassador-dashboard?code=XXXX
+
+Should NOT:
+- Override admin login
+- Share cookies/session with admin
+
+----------------------------------------
+
+3. AMBASSADOR ACCESS LINK (ADMIN PANEL)
+
+Inside Admin → Ambassador section:
+
+Each ambassador must have:
+
+- Their Ambassador Code
+- A COPYABLE DIRECT LINK
+
+Example:
+
+https://veterancare.com/ambassador-dashboard?code=colin_slaven
+
+Add button:
+
+[ Copy Ambassador Link ]
+
+This is the ONLY thing I will send them.
+
+----------------------------------------
+
+EXPECTED FINAL FLOW:
+
+ADMIN:
+- I stay fully logged in
+- I copy ambassador link
+- I send link + code
+
+AMBASSADOR:
+- Opens link
+- Enters code
+- Accesses portal
+- Uses marketing kit
+
+NO crossover between admin and ambassador environments.
+
+----------------------------------------
+
+FINAL RESULT REQUIRED:
+
+- Image card logo displays properly (not tiny)
+- Admin session is never affected by ambassador portal
+- Each ambassador has a simple shareable link + code
+- Fully clean, separated experience
+
+We are at final polish stage — once this is done, we are ready to launch.
+
+Thanks,
+Colin

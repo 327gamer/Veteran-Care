@@ -1438,13 +1438,24 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
             )}
           </CardHeader>
           <CardContent>
-            <div className="bg-slate-50 rounded-lg p-3 mb-3">
+            <div className="bg-slate-50 rounded-lg p-3 mb-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs text-muted-foreground block">Ambassador Code</span>
                   <span className="font-mono font-bold text-lg" data-testid="text-ambassador-code">{amb.code}</span>
                 </div>
                 <CopyButton value={amb.code} label="ambassador-code" />
+              </div>
+              <div className="border-t pt-3">
+                <span className="text-xs text-muted-foreground block mb-1">Ambassador Portal Link <span className="text-gray-400">— send this to your ambassador</span></span>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0 bg-white border rounded-md px-3 py-2">
+                    <code className="text-xs text-blue-700 font-mono break-all" data-testid="text-ambassador-portal-link">
+                      https://veterancare.com/ambassador-dashboard?code={amb.code}
+                    </code>
+                  </div>
+                  <CopyButton value={`https://veterancare.com/ambassador-dashboard?code=${amb.code}`} label="ambassador-portal-link" />
+                </div>
               </div>
             </div>
 
