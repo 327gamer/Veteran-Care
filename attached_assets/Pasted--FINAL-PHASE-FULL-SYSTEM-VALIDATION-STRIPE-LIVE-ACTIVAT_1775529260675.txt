@@ -1,0 +1,258 @@
+--- FINAL PHASE: FULL SYSTEM VALIDATION + STRIPE LIVE ACTIVATION ---
+
+STATUS:
+Ambassador system restored and operational.
+
+We are now entering the FINAL PRE-LAUNCH VALIDATION PHASE.
+
+This phase is mandatory before:
+- ambassador rollout
+- traffic scaling
+- monetization activation
+
+-------------------------------------
+RULE OF EXECUTION (CRITICAL)
+-------------------------------------
+
+THIS PHASE IS VALIDATION ONLY.
+
+DO NOT:
+- bundle fixes
+- introduce new features
+- redesign UI
+- assume anything is working
+
+REQUIREMENT:
+EVERY STEP MUST BE VERIFIED IN LIVE PRODUCTION ONLY.
+
+Preview environment is NOT valid for:
+- link testing
+- attribution
+- redirects
+- database validation
+
+-------------------------------------
+PROOF REQUIREMENT (MANDATORY)
+-------------------------------------
+
+For EVERY stage below, you must provide:
+
+- screenshot OR console output
+- confirmation of route tested
+- confirmation of database write (where applicable)
+
+Do NOT respond with “working” without proof.
+
+-------------------------------------
+STAGE 1 — AMBASSADOR FLOW VALIDATION
+-------------------------------------
+
+Test ONE REAL link per audience type (LIVE only).
+
+A. VETERAN FLOW
+Link → /get-help → CTA → action
+
+VERIFY:
+- correct landing page loads
+- CTA visible and functional
+- NO redirect to /home
+- UTM parameters present OR captured
+- ambassador_id persists
+- user completes action
+
+-------------------------------------
+
+B. CASE MANAGER FLOW
+Link → /resource-center → navigation
+
+VERIFY:
+- correct page loads
+- search/filter works
+- navigation works
+- UTMs captured
+
+-------------------------------------
+
+C. PARTNER FLOW
+Link → /partners → apply
+
+VERIFY:
+- landing page correct
+- application submits
+- data saved to Supabase
+- confirmation triggered
+
+-------------------------------------
+
+D. GENERAL FLOW
+Link → /start → CTA
+
+VERIFY:
+- clean entry
+- CTA leads correctly
+- no dead-end
+
+-------------------------------------
+STAGE 2 — ATTRIBUTION + TRACKING VALIDATION
+-------------------------------------
+
+FOR EACH FLOW ABOVE:
+
+VERIFY:
+
+- utm_source
+- utm_medium
+- utm_campaign
+- utm_content
+- utm_id
+
+ALL must be:
+→ captured
+→ stored
+→ retrievable
+
+CONFIRM:
+
+- ambassador_id stored correctly
+- GA4 events fire (page_view + actions)
+- ai_usage_log records interaction (if applicable)
+
+DATABASE CHECK REQUIRED:
+- session created
+- attribution linked
+- no null values
+
+-------------------------------------
+STAGE 3 — LEAD + ROUTING VALIDATION
+-------------------------------------
+
+TEST:
+
+1. Submit “Get Help”
+VERIFY:
+- stored in Supabase
+- visible in admin
+- routing logic correct
+
+2. Submit Partner Application
+VERIFY:
+- saved correctly
+- appears in admin queue
+
+-------------------------------------
+STAGE 4 — EMAIL SYSTEM (RESEND)
+-------------------------------------
+
+TRIGGER:
+- help request
+- partner application
+
+VERIFY:
+- email sent
+- correct content
+- correct recipient
+- no delivery failure
+
+-------------------------------------
+STAGE 5 — ADMIN PANEL VALIDATION
+-------------------------------------
+
+VERIFY:
+
+- ambassadors visible
+- links accurate
+- campaign packs accessible
+- commission ledger clean
+- payout system accessible
+
+-------------------------------------
+STAGE 6 — STRIPE LIVE ACTIVATION (CRITICAL)
+-------------------------------------
+
+ACTION:
+
+1. Switch Stripe to LIVE MODE
+2. Insert LIVE API keys
+3. Verify webhook is active
+
+TEST:
+
+- create real or controlled subscription
+
+VERIFY:
+
+→ payment success
+→ webhook received
+→ database updated
+→ partner activated
+→ commission triggered
+
+-------------------------------------
+STAGE 7 — MOBILE UX VALIDATION (MANDATORY RULE)
+-------------------------------------
+
+VERIFY ON MOBILE:
+
+- no cutoff content
+- no overlap
+- buttons clickable
+- forms usable
+- no horizontal scroll
+
+-------------------------------------
+STAGE 8 — EDGE CASE TESTING
+-------------------------------------
+
+TEST:
+
+- invalid link
+- missing UTM
+- refresh mid-flow
+- back navigation
+- slow load
+
+-------------------------------------
+STAGE 9 — FULL CONVERSION SIMULATION
+-------------------------------------
+
+Simulate full real-world flow:
+
+Ambassador link
+→ landing page
+→ user action
+→ attribution stored
+→ lead or partner signup
+→ email triggered
+→ commission generated
+
+-------------------------------------
+SUCCESS CRITERIA (STRICT)
+-------------------------------------
+
+System is ONLY launch-ready if:
+
+- all 4 flows pass
+- attribution 100% accurate
+- Stripe live works
+- no broken links
+- no mobile issues
+- no test data
+- admin fully operational
+
+-------------------------------------
+FINAL OUTPUT REQUIRED
+-------------------------------------
+
+1. PASS / FAIL per stage
+2. list of issues
+3. Stripe live confirmation
+4. conversion simulation confirmation
+5. final launch-ready confirmation
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+ZERO uncertainty at launch.
+
+--- END ---
