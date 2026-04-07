@@ -334,7 +334,7 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
             <Button
               size="sm"
               className="bg-green-700 hover:bg-green-800 text-white gap-1.5"
-              onClick={() => window.open(`/ambassador-dashboard?code=${link.ambassador_code}`, "_blank")}
+              onClick={() => window.open(`/ambassador-dashboard?code=${link.ambassador_code}&preview=1`, "_blank")}
               data-testid="button-open-ambassador-kit"
             >
               <Package className="h-3.5 w-3.5" /> Open Ambassador Kit
@@ -484,7 +484,7 @@ function AdminLinksInner() {
             <Button
               size="sm"
               className="bg-green-700 hover:bg-green-800 text-white gap-1.5 shrink-0"
-              onClick={() => window.open(`/ambassador-dashboard?code=${filterAmbassador}`, "_blank")}
+              onClick={() => window.open(`/ambassador-dashboard?code=${filterAmbassador}&preview=1`, "_blank")}
               data-testid="button-open-kit-filtered"
             >
               <Package className="h-3.5 w-3.5" /> Open Ambassador Kit

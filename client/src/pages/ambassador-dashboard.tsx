@@ -177,7 +177,7 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
 
             const logoHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:200px;height:auto;border:0;" /></a>`;
             const buttonHtml = `<a href="${primaryUrl}" style="background:#166534;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;text-align:center;">${ctaLabel}</a>`;
-            const imageBlockHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#f0fdf4;padding:24px 20px;text-align:center;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:180px;height:auto;margin:0 auto;border:0;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`;
+            const imageBlockHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#ffffff;padding:24px 20px;text-align:center;border-bottom:1px solid #e5e7eb;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:180px;height:auto;margin:0 auto;border:0;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`;
             const emailBodyHtml = campaign.templates?.email
               ? `<div style="font-family:Arial,sans-serif;font-size:15px;color:#1f2937;line-height:1.6;max-width:560px;">${campaign.templates.email.body.split("\n").map((line: string) => line.trim() === "" ? "<br/>" : `<p style="margin:0 0 10px;">${line}</p>`).join("")}<br/>${buttonHtml}</div>`
               : null;
@@ -237,7 +237,7 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                   <div className="p-5 flex items-center justify-center">
                     <a href={primaryUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "inline-block", width: "100%", maxWidth: 340 }}>
                       <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
-                        <div style={{ background: "#f0fdf4", padding: "24px 20px", textAlign: "center" }}>
+                        <div style={{ background: "#ffffff", padding: "24px 20px", textAlign: "center", borderBottom: "1px solid #e5e7eb" }}>
                           <img src={LOGO_URL} alt="Veteran Care" style={{ display: "block", maxWidth: 180, height: "auto", margin: "0 auto", border: 0 }} />
                         </div>
                         <div style={{ padding: "14px 18px", background: "#fff" }}>
@@ -548,10 +548,23 @@ function CampaignSection({ campaignKey, data }: { campaignKey: string; data: any
 }
 
 export default function AmbassadorDashboard() {
-  const urlCode = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") : null;
-  const isAdminPreview = !!urlCode;
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const urlCode = params.get("code");
+  const isAdminPreview = params.get("preview") === "1" && !!urlCode;
   const [code, setCode] = useState("");
-  const [activeCode, setActiveCode] = useState<string | null>(urlCode || null);
+  const [activeCode, setActiveCode] = useState<string | null>(isAdminPreview ? urlCode : null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  const { data: lookupData } = useQuery({
+    queryKey: ["/api/ambassador/lookup", urlCode],
+    queryFn: async () => {
+      const res = await fetch(`/api/ambassador/lookup/${urlCode}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!urlCode && !isAdminPreview,
+    retry: false,
+  });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/ambassador/dashboard", activeCode],
@@ -569,8 +582,15 @@ export default function AmbassadorDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
     const sanitized = code.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    if (sanitized) setActiveCode(sanitized);
+    if (sanitized) {
+      if (urlCode && sanitized !== urlCode) {
+        setLoginError("That code doesn't match. Please try again.");
+        return;
+      }
+      setActiveCode(sanitized);
+    }
   };
 
   const downloadFullKit = () => {
@@ -607,7 +627,7 @@ export default function AmbassadorDashboard() {
       sections.push(`<a href="${primaryUrl}" style="background:#166534;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-family:Arial,sans-serif;font-size:16px;text-align:center;">${ctaLabel}</a>`);
 
       sections.push(`\nImage Card Embed (HTML):`);
-      sections.push(`<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#f0fdf4;padding:24px 20px;text-align:center;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:180px;height:auto;margin:0 auto;border:0;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`);
+      sections.push(`<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;"><div style="max-width:400px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;"><div style="background:#ffffff;padding:24px 20px;text-align:center;border-bottom:1px solid #e5e7eb;"><img src="${LOGO_URL}" alt="Veteran Care" style="display:block;max-width:180px;height:auto;margin:0 auto;border:0;" /></div><div style="padding:16px 20px;background:#ffffff;"><p style="margin:0 0 12px;font-size:15px;color:#1f2937;line-height:1.4;">Free resources for U.S. military veterans — housing, employment, benefits, mental health & more.</p><div style="background:#166534;color:#ffffff;padding:12px 24px;border-radius:8px;text-align:center;font-weight:bold;font-size:15px;">${ctaLabel}</div></div></div></a>`);
 
       sections.push(`\nText / SMS Link:`);
       sections.push(textUrl);
@@ -638,6 +658,7 @@ export default function AmbassadorDashboard() {
   };
 
   if (!activeCode) {
+    const ambassadorName = lookupData?.name || null;
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -646,18 +667,31 @@ export default function AmbassadorDashboard() {
           </div>
           <Card className="shadow-lg border-green-200">
             <CardHeader className="text-center pb-3">
-              <CardTitle className="text-2xl text-green-900">Ambassador Portal</CardTitle>
-              <p className="text-gray-500 text-sm mt-1">Enter your ambassador code to access your marketing kit</p>
+              {ambassadorName ? (
+                <>
+                  <p className="text-sm text-gray-500 mb-1">Welcome</p>
+                  <CardTitle className="text-2xl text-green-900">{ambassadorName}</CardTitle>
+                  <p className="text-gray-500 text-sm mt-2">Enter your ambassador code to access your marketing kit</p>
+                </>
+              ) : (
+                <>
+                  <CardTitle className="text-2xl text-green-900">Ambassador Portal</CardTitle>
+                  <p className="text-gray-500 text-sm mt-1">Enter your ambassador code to access your marketing kit</p>
+                </>
+              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <Input
                   data-testid="input-ambassador-code"
-                  placeholder="e.g. colin_slaven"
+                  placeholder={urlCode ? "Enter your code to continue" : "e.g. colin_slaven"}
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => { setCode(e.target.value); setLoginError(null); }}
                   className="text-center text-lg h-12"
                 />
+                {loginError && (
+                  <p className="text-sm text-red-600 text-center" data-testid="text-login-error">{loginError}</p>
+                )}
                 <Button
                   data-testid="button-login"
                   type="submit"
@@ -731,7 +765,7 @@ export default function AmbassadorDashboard() {
               data-testid="button-close-preview"
               variant="ghost"
               size="sm"
-              onClick={() => window.close()}
+              onClick={() => { try { window.close(); } catch {} setTimeout(() => { window.history.back(); }, 100); }}
               className="text-green-200 hover:text-white hover:bg-green-700 shrink-0"
             >
               Close Preview
@@ -744,7 +778,7 @@ export default function AmbassadorDashboard() {
               onClick={() => { setActiveCode(null); setCode(""); }}
               className="text-green-200 hover:text-white hover:bg-green-700 shrink-0"
             >
-              <LogOut className="w-4 h-4 mr-1" /> Sign Out
+              <LogOut className="w-4 h-4 mr-1" /> Log Out
             </Button>
           )}
         </div>

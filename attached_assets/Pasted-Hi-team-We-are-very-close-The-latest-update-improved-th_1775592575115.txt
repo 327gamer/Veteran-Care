@@ -1,0 +1,157 @@
+Hi team,
+
+We are very close. The latest update improved things a lot, especially the larger logo in the image card.
+
+There are now a few final corrections and one important product direction clarification.
+
+----------------------------------------
+1. LOGO BACKGROUND IN IMAGE CARD
+----------------------------------------
+
+The logo size is now much better.
+
+However, I do NOT like the green background behind the logo in the email/image card version.
+
+Please update the image card so the Veteran Care logo sits on a WHITE background, not green.
+
+Goal:
+- logo displayed larger, as it is now
+- but on a clean white background
+- more polished and professional in email
+
+----------------------------------------
+2. ADMIN PREVIEW VS REAL AMBASSADOR PORTAL
+----------------------------------------
+
+Right now these two flows are getting mixed together.
+
+They need to be completely separate:
+
+A. ADMIN PREVIEW MODE
+- When I am in Super Admin and click the ambassador portal link / open kit / preview portal
+- I should be viewing a PREVIEW version only
+- The “Close Preview” button should work and return me to admin
+- It should NOT behave like an ambassador login session
+
+B. REAL AMBASSADOR PORTAL
+- This is the page the ambassador receives from us
+- It should first go to the actual Ambassador Login Portal page
+- That page should show:
+  - Ambassador name at the top
+  - Then a field to enter the ambassador code
+- Example:
+  Colin Slaven
+  [Enter ambassador code]
+
+- The ambassador code remains the simple first_name_last_name format for now
+- Once they enter the code, they access their own marketing portal
+- Inside their real portal, they should have a normal “Log Out” button
+
+So to be clear:
+
+ADMIN PREVIEW:
+- Close Preview button
+- returns to admin
+- preview only
+
+REAL AMBASSADOR LOGIN:
+- login portal page first
+- ambassador enters code
+- then enters their portal
+- normal log out inside portal
+
+----------------------------------------
+3. AMBASSADOR PORTAL LINK IS GOING TO THE WRONG PLACE
+----------------------------------------
+
+Right now, when I click the Ambassador Portal Link, it is taking me into the wrong experience / effectively into the admin preview flow.
+
+That is not what I want.
+
+The Ambassador Portal Link in admin should take the ambassador to the REAL login portal page, not to an admin-preview-style page.
+
+Required flow:
+
+Admin panel shows:
+- Ambassador Code
+- Ambassador Portal Link
+- Copy button for both
+
+Example portal link should lead to:
+- the ambassador login page
+- ambassador name shown
+- ambassador enters their code
+- then accesses their portal
+
+Please correct the routing so the admin preview flow and ambassador live flow are separated properly.
+
+----------------------------------------
+4. CLOSE PREVIEW BUTTON
+----------------------------------------
+
+When I am previewing from Super Admin, “Close Preview” should actually work.
+
+Right now it does nothing in some cases.
+
+Please make sure:
+- in admin preview mode, “Close Preview” closes the preview or returns to the ambassador detail page in admin
+- in real ambassador mode, there is no “Close Preview”
+- in real ambassador mode there should only be “Log Out”
+
+----------------------------------------
+5. KEEP CURRENT PORTAL DESIGN
+----------------------------------------
+
+The current ambassador portal design is looking really good overall.
+
+Please keep:
+- the clean portal layout
+- the open marketing kit
+- the audience tabs
+- the copy-and-paste usability
+- the simple structure
+
+We are not changing the core design now.
+We are only separating the flows properly and polishing the final UX.
+
+----------------------------------------
+6. PHASE 2 REQUEST – AMBASSADOR ANALYTICS DASHBOARD
+----------------------------------------
+
+This is not required for this immediate launch fix, but I want it added to the roadmap as the next phase.
+
+I would like each ambassador, once logged in, to eventually see their own dashboard showing only their personal results, including:
+
+- clicks by link
+- leads generated
+- veterans/case managers/partners coming through their links
+- subscriptions or purchases created through their links
+- commissions earned
+- payouts sent
+- payout timing (for example, paid 30 days later on prior month results)
+
+This should be limited ONLY to their own data, not admin-wide data.
+
+Please treat this as a Phase 2 enhancement after the current launch polish is completed.
+
+----------------------------------------
+FINAL GOAL
+----------------------------------------
+
+We need 2 clearly separate experiences:
+
+1. Super Admin Preview
+- preview portal safely
+- close preview and return to admin
+
+2. Real Ambassador Portal
+- ambassador gets link
+- sees login portal
+- enters code
+- opens their own portal
+- logs out normally
+
+Once that is corrected, plus the white logo background change, we should be in very strong shape for launch.
+
+Thanks,
+Colin

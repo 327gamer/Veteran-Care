@@ -3075,6 +3075,31 @@ export async function registerRoutes(
     }
   });
 
+  const lookupAttempts = new Map<string, { count: number; resetAt: number }>();
+  app.get("/api/ambassador/lookup/:code", async (req, res) => {
+    const ip = req.ip || "unknown";
+    const now = Date.now();
+    const entry = lookupAttempts.get(ip);
+    if (entry && entry.resetAt > now) {
+      if (entry.count >= 10) return res.status(429).json({ error: "Too many requests" });
+      entry.count++;
+    } else {
+      lookupAttempts.set(ip, { count: 1, resetAt: now + 60000 });
+    }
+    const code = sanitizeCode(req.params.code);
+    if (!code) return res.status(400).json({ error: "Invalid code" });
+    try {
+      const rows = await pgQuery(
+        `SELECT display_name, first_name FROM ambassadors WHERE code = $1 AND status = 'active'`,
+        [code]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      return res.json({ name: rows[0].display_name, first_name: rows[0].first_name });
+    } catch {
+      return res.status(500).json({ error: "Failed" });
+    }
+  });
+
   const ambassadorDashboardAttempts = new Map<string, { count: number; resetAt: number }>();
   app.get("/api/ambassador/dashboard/:code", async (req, res) => {
     const ip = req.ip || "unknown";

@@ -1315,7 +1315,7 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
               Includes 4 audience versions: Veterans, Case Managers, Partners, and General
             </p>
             <a
-              href={`/ambassador-dashboard?code=${amb.code}`}
+              href={`/ambassador-dashboard?code=${amb.code}&preview=1`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-3.5 rounded-lg bg-green-700 hover:bg-green-800 text-white font-bold text-base transition-colors shadow-md"
@@ -1533,13 +1533,13 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
                 <Package className="h-4 w-4" /> Outreach Channels
               </CardTitle>
               <a
-                href={`/ambassador-dashboard?code=${amb.code}`}
+                href={`/ambassador-dashboard?code=${amb.code}&preview=1`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md bg-green-700 text-white hover:bg-green-800 transition-colors"
                 data-testid="button-open-kit-secondary"
               >
-                <ExternalLink className="h-3.5 w-3.5" /> Open Marketing Kit
+                <ExternalLink className="h-3.5 w-3.5" /> Preview Marketing Kit
               </a>
             </div>
           </CardHeader>
