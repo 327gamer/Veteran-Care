@@ -45,6 +45,10 @@ import {
   ClipboardList,
   Eye,
   EyeOff,
+  Sparkles,
+  Image,
+  Type,
+  Share2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -677,7 +681,7 @@ function CampaignPacksSection({ ambassadorCode }: { ambassadorCode: string }) {
       <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-1.5 text-green-800">
-            <Package className="h-4 w-4" /> Campaign Packs
+            <Package className="h-4 w-4" /> Channel Details (Advanced)
           </CardTitle>
           <div className="flex items-center gap-2">
             {expanded && distData && (
@@ -696,12 +700,13 @@ function CampaignPacksSection({ ambassadorCode }: { ambassadorCode: string }) {
       </CardHeader>
       {expanded && (
         <CardContent>
+          <p className="text-xs text-slate-500 mb-3 italic">These are the raw channel details and embed codes. For easy copy-and-paste assets, use the Marketing Kit above.</p>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : !distData ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Failed to load campaign packs.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Failed to load channel details.</p>
           ) : (
             <div className="space-y-3">
               {["veteran", "case_manager", "partner", "general"].map((audKey) => {
@@ -1240,6 +1245,89 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
           </CardContent>
         </Card>
 
+        <div className="mb-4 rounded-xl border-2 border-green-400 bg-gradient-to-br from-green-50 via-white to-green-50 overflow-hidden shadow-sm" data-testid="card-marketing-kit-hero">
+          <div className="bg-green-700 px-5 py-3 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-white" />
+            <h2 className="text-white font-bold text-base">Ambassador Marketing Kit</h2>
+          </div>
+          <div className="p-5">
+            <p className="text-sm text-slate-700 mb-4">
+              Open {amb.display_name}'s full marketing kit with ready-to-use assets. Everything is pre-built with their tracking links — just copy and send.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-5">
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <Image className="h-4 w-4 text-green-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Logo</p>
+                  <p className="text-[10px] text-slate-500">Paste into emails</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <Type className="h-4 w-4 text-blue-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">CTA Button</p>
+                  <p className="text-[10px] text-slate-500">Drop into emails</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-purple-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Image Card</p>
+                  <p className="text-[10px] text-slate-500">Flyer-style visual</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                  <Mail className="h-4 w-4 text-amber-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Email</p>
+                  <p className="text-[10px] text-slate-500">Ready-to-send</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
+                  <Smartphone className="h-4 w-4 text-teal-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Text / SMS</p>
+                  <p className="text-[10px] text-slate-500">Copy & text</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2.5">
+                <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                  <QrCode className="h-4 w-4 text-rose-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">QR Code</p>
+                  <p className="text-[10px] text-slate-500">Print or share</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+              <Share2 className="h-3 w-3" />
+              Includes 4 audience versions: Veterans, Case Managers, Partners, and General
+            </p>
+            <a
+              href={`/ambassador-dashboard?code=${amb.code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-lg bg-green-700 hover:bg-green-800 text-white font-bold text-base transition-colors shadow-md"
+              data-testid="button-open-marketing-kit"
+            >
+              <ExternalLink className="h-5 w-5" />
+              Open Full Marketing Kit
+            </a>
+            <p className="text-[11px] text-center text-slate-400 mt-2">Opens in a new tab with all assets ready to copy and send</p>
+          </div>
+        </div>
+
         <Card className="mb-4" data-testid="card-activity-summary">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1.5">
@@ -1424,6 +1512,63 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-4 border-green-200" data-testid="card-quick-kit-access">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-1.5 text-green-800">
+                <Package className="h-4 w-4" /> Outreach Channels
+              </CardTitle>
+              <a
+                href={`/ambassador-dashboard?code=${amb.code}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md bg-green-700 text-white hover:bg-green-800 transition-colors"
+                data-testid="button-open-kit-secondary"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Open Marketing Kit
+              </a>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+              <p className="text-xs text-green-800">
+                <span className="font-semibold">4 audience versions</span> are available in the Marketing Kit, each with 5 ready-to-use assets (logo, button, image card, email, text/SMS, QR code):
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                <div className="flex items-center gap-1.5 text-xs text-green-700">
+                  <Users className="h-3 w-3" />
+                  <span className="font-medium">Veteran Outreach</span>
+                  <span className="text-green-500">→ get help</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-green-700">
+                  <Building2 className="h-3 w-3" />
+                  <span className="font-medium">Case Manager</span>
+                  <span className="text-green-500">→ resources</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-green-700">
+                  <Briefcase className="h-3 w-3" />
+                  <span className="font-medium">Partner / Business</span>
+                  <span className="text-green-500">→ partners</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-green-700">
+                  <Share2 className="h-3 w-3" />
+                  <span className="font-medium">General</span>
+                  <span className="text-green-500">→ learn more</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 space-y-1">
+              <p className="font-medium text-slate-700">How to use:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                <p>📧 <strong>Email someone?</strong> → Use Logo + Email asset</p>
+                <p>📱 <strong>Text someone?</strong> → Use Text/SMS asset</p>
+                <p>📣 <strong>Post on social?</strong> → Use Image Card asset</p>
+                <p>🖨️ <strong>Print a handout?</strong> → Use QR Code + Flyer</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

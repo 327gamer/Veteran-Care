@@ -1,0 +1,68 @@
+--- COPY TO REPLIT ---
+
+Thank you — I understand the technical distinction now between:
+
+- Admin Panel
+- Ambassador Dashboard
+
+But from a real user-flow standpoint, this is still too confusing and not user-friendly enough.
+
+Right now I am managing ambassadors from the admin side, and when I click into an ambassador I still mainly see the older link/campaign pack structure. I am NOT clearly seeing the new richer ambassador kit experience you described in a way that feels obvious and easy.
+
+IMPORTANT:
+I do NOT want to jump all over the system trying to find the real kit.
+
+This needs to feel simple, direct, and native to the admin workflow.
+
+-------------------------------------
+WHAT I NEED
+-------------------------------------
+
+1. In the ambassador detail area inside admin, I need a VERY obvious and clearly labeled section that says something like:
+
+- Open Full Ambassador Kit
+- View Ambassador Marketing Kit
+- Launch Ambassador Kit
+
+2. This should not feel hidden inside a small button or buried lower down where it can be missed.
+
+3. If the true rich kit experience lives on /ambassador-dashboard, then from admin it needs to open in a completely frictionless way and be obvious that THIS is where the real email/logo/button/image assets live.
+
+4. The handoff needs to be clear:
+- Admin = manage ambassador
+- Kit = use/send campaign assets
+
+5. I also need the wording/labels cleaned up so it is obvious where to find:
+- logo version
+- email-ready version
+- button version
+- flyer/image version
+- SMS version
+- QR version
+
+-------------------------------------
+UX REQUIREMENT
+-------------------------------------
+
+Please improve this so a non-technical user can instantly understand:
+
+- where the real ambassador kit is
+- how to open it
+- what each asset type does
+- which version to use for email vs text vs social
+
+Right now it still feels too developer-oriented instead of operator-friendly.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+I should be able to:
+1. go into admin
+2. click ambassador
+3. immediately see how to open/use their full kit
+4. not have to guess where the “real” package is
+
+Please make this more user-friendly and obvious.
+
+--- END ---
