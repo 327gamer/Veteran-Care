@@ -1,0 +1,103 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: FIX VETERANS & DEPENDENTS LANDING PAGE INTERACTIONS + SYNC ADMIN TEST LINK LABELS
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+ISSUE 1: /start PAGE LOADS BUT CTA ACTIONS ARE NOT WORKING
+--------------------------------------------------
+
+The Veterans & Dependents ambassador links are now routing correctly to the new intro / landing page.
+
+This part is correct.
+
+However, the page is not functioning correctly after load.
+
+CURRENT BEHAVIOR:
+- Top “Get Help Now” button → does nothing
+- Bottom “Get Help Now” button → does nothing
+- Category tiles / resource categories → do nothing
+- “Browse Resources” button → DOES work correctly
+
+EXPECTED BEHAVIOR:
+On the /start page:
+
+1. Top “Get Help Now”
+   → opens Create Account modal
+
+2. Bottom “Get Help Now”
+   → opens Create Account modal
+
+3. All category tiles / buttons
+   → open Create Account modal
+
+4. “Browse Resources”
+   → remains unchanged and continues to go to resource browsing
+
+IMPORTANT:
+The landing page visual/layout is correct.
+The issue is the button / click behavior is not wired correctly.
+
+Please fix the CTA wiring only.
+
+--------------------------------------------------
+ISSUE 2: ADMIN TEST LINKS SECTION IS NOT MATCHING THE MARKETING KIT
+--------------------------------------------------
+
+Inside Admin → Ambassadors → select an ambassador → scroll down below the marketing kit / links area.
+
+The TEST LINKS section is still using the old labels and old order.
+
+CURRENTLY SHOWING:
+- Case Manager Outreach first
+- General Outreach
+- Veteran Outreach
+
+THIS IS WRONG.
+
+EXPECTED ORDER:
+1. Veterans & Dependents
+2. Case Manager Outreach
+3. Partner / Business Outreach
+4. Get Help Now
+
+EXPECTED LABEL CHANGES:
+- “Veteran Outreach” → “Veterans & Dependents”
+- “General Outreach” → “Get Help Now”
+
+IMPORTANT:
+These need to match the same naming and ordering already used in the Ambassador Marketing Kit.
+
+Right now the Marketing Kit and the Admin Test Links are out of sync.
+
+--------------------------------------------------
+REQUIRED FIXES
+--------------------------------------------------
+
+1. Fix /start page CTA actions:
+   - top Get Help Now
+   - bottom Get Help Now
+   - category tiles
+   → all must open Create Account modal
+
+2. Leave Browse Resources unchanged
+
+3. Update Admin Test Links labels:
+   - Veteran Outreach → Veterans & Dependents
+   - General Outreach → Get Help Now
+
+4. Update Admin Test Links order to:
+   - Veterans & Dependents
+   - Case Manager Outreach
+   - Partner / Business Outreach
+   - Get Help Now
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Make the Veterans & Dependents funnel fully functional and ensure the admin-side test links match the same naming/order as the Ambassador Marketing Kit.
+
+--- END ---

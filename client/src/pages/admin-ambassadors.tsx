@@ -324,11 +324,13 @@ function formatDate(dateStr: string): string {
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
-  general: "General Public",
-  veteran: "Veterans",
+  veteran: "Veterans & Dependents",
   case_manager: "Case Managers & Nonprofits",
   partner: "Partners & Businesses",
+  general: "Get Help Now",
 };
+
+const AUDIENCE_ORDER = ["veteran", "case_manager", "partner", "general"];
 
 function getAdminHeaders(): Record<string, string> {
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
@@ -1463,7 +1465,11 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
               <p className="text-sm text-muted-foreground text-center py-4">No links generated yet.</p>
             ) : (
               <div className="space-y-2">
-                {amb.links.map((link) => (
+                {[...amb.links].sort((a, b) => {
+                  const ai = AUDIENCE_ORDER.indexOf(a.audience_type);
+                  const bi = AUDIENCE_ORDER.indexOf(b.audience_type);
+                  return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+                }).map((link) => (
                   <div
                     key={link.id}
                     className={`border rounded-lg p-3 ${link.is_active ? "bg-white" : "bg-slate-50 opacity-70"}`}

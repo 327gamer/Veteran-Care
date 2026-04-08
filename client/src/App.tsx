@@ -57,7 +57,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/start" component={LandingPage} />
+      <Route path="/start">
+        <Layout>
+          <LandingPage />
+        </Layout>
+      </Route>
       <Route path="/get-help">
         <Layout>
           <GetHelp />
