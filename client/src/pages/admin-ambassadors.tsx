@@ -576,9 +576,10 @@ function CreateAmbassadorForm({ onClose, onSuccess, onCreated }: { onClose: () =
 }
 
 const ADMIN_CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; borderColor: string; badgeColor: string }> = {
-  veteran: { title: "Veteran Outreach", icon: Users, borderColor: "border-l-green-500", badgeColor: "bg-green-100 text-green-800" },
+  veteran: { title: "Veterans & Dependents", icon: Users, borderColor: "border-l-green-500", badgeColor: "bg-green-100 text-green-800" },
   case_manager: { title: "Case Manager Outreach", icon: Briefcase, borderColor: "border-l-blue-500", badgeColor: "bg-blue-100 text-blue-800" },
   partner: { title: "Partner / Business Outreach", icon: Building2, borderColor: "border-l-purple-500", badgeColor: "bg-purple-100 text-purple-800" },
+  general: { title: "Get Help Now", icon: Share2, borderColor: "border-l-gray-500", badgeColor: "bg-gray-100 text-gray-800" },
 };
 
 const ADMIN_CHANNEL_ICONS: Record<string, any> = { email: Mail, text: Smartphone, facebook: MessageSquare, instagram: MessageSquare, linkedin: Linkedin };
@@ -714,7 +715,7 @@ function CampaignPacksSection({ ambassadorCode }: { ambassadorCode: string }) {
               {["veteran", "case_manager", "partner", "general"].map((audKey) => {
                 const entries = distData.audiences[audKey];
                 if (!entries?.length) return null;
-                const cfg = ADMIN_CAMPAIGN_CONFIG[audKey] || { title: "General Outreach", icon: Users, borderColor: "border-l-gray-500", badgeColor: "bg-gray-100 text-gray-800" };
+                const cfg = ADMIN_CAMPAIGN_CONFIG[audKey] || { title: audKey, icon: Users, borderColor: "border-l-gray-500", badgeColor: "bg-gray-100 text-gray-800" };
                 const Icon = cfg.icon;
                 const isOpen = expandedAudiences[audKey] ?? false;
 
@@ -1557,23 +1558,23 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
               <div className="grid grid-cols-2 gap-1.5 mt-2">
                 <div className="flex items-center gap-1.5 text-xs text-green-700">
                   <Users className="h-3 w-3" />
-                  <span className="font-medium">Veteran Outreach</span>
-                  <span className="text-green-500">→ get help</span>
+                  <span className="font-medium">Veterans & Dependents</span>
+                  <span className="text-green-500">→ landing page</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-green-700">
                   <Building2 className="h-3 w-3" />
-                  <span className="font-medium">Case Manager</span>
+                  <span className="font-medium">Case Manager Outreach</span>
                   <span className="text-green-500">→ resources</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-green-700">
                   <Briefcase className="h-3 w-3" />
-                  <span className="font-medium">Partner / Business</span>
+                  <span className="font-medium">Partner / Business Outreach</span>
                   <span className="text-green-500">→ partners</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-green-700">
                   <Share2 className="h-3 w-3" />
-                  <span className="font-medium">General</span>
-                  <span className="text-green-500">→ learn more</span>
+                  <span className="font-medium">Get Help Now</span>
+                  <span className="text-green-500">→ get help</span>
                 </div>
               </div>
             </div>
