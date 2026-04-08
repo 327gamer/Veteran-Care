@@ -1376,7 +1376,25 @@ function AdminResourcesInner() {
                             id: req.id,
                             updates: { status: "in_progress", admin_notes: noteText },
                           });
-                          toast({ description: `Assigned to ${item.name}` });
+                          if (item.email) {
+                            fetch(`/api/admin/leads/${req.id}/send-assignment-email`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                              body: JSON.stringify({
+                                recipientEmail: item.email,
+                                recipientName: item.name,
+                                contactName: item.contact || null,
+                                assignmentType: item.type,
+                              }),
+                            }).then(r => {
+                              if (r.ok) toast({ description: `Lead email sent to ${item.email}` });
+                              else toast({ description: `Assignment saved but email delivery failed`, variant: "destructive" });
+                            }).catch(() => {
+                              toast({ description: `Assignment saved but email delivery failed`, variant: "destructive" });
+                            });
+                          } else {
+                            toast({ description: `Assigned to ${item.name} (no email on file)` });
+                          }
                         }
                         setManualAssignLeadId(null);
                         setAssignSearchText("");
@@ -1495,7 +1513,7 @@ function AdminResourcesInner() {
                                           <p className="text-[11px] font-medium text-slate-800 truncate">{item.name}</p>
                                         </div>
                                         <p className="text-[9px] text-muted-foreground truncate mt-0.5 ml-0.5">
-                                          {[item.category, item.city, item.state, item.contact, item.phone].filter(Boolean).join(" · ")}
+                                          {[item.category, item.city, item.state, item.contact, item.phone, item.email].filter(Boolean).join(" · ")}
                                         </p>
                                       </div>
                                       <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>

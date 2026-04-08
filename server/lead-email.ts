@@ -935,6 +935,72 @@ export async function sendGraceExpiringEmail(
   }
 }
 
+export async function sendLeadNotificationDirect(
+  leadId: string,
+  recipientEmail: string,
+  recipientName: string,
+  contactName?: string | null,
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const { data: lead, error: leadErr } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, veteran_name, veteran_phone, veteran_email, category, subcategory, urgency, message, user_state, user_city, preferred_contact, created_at")
+      .eq("id", leadId)
+      .single();
+
+    if (leadErr || !lead) {
+      console.log(`[email] Lead ${leadId} not found for direct send`);
+      return { sent: false, error: "Lead not found" };
+    }
+
+    const leadData: LeadEmailData = {
+      leadId: lead.id,
+      veteranName: lead.veteran_name,
+      veteranPhone: lead.veteran_phone,
+      veteranEmail: lead.veteran_email,
+      category: lead.category,
+      subcategory: lead.subcategory,
+      urgency: lead.urgency,
+      message: lead.message,
+      userState: lead.user_state,
+      userCity: lead.user_city,
+      preferredContact: lead.preferred_contact,
+      createdAt: lead.created_at,
+    };
+
+    const partnerData: PartnerEmailData = {
+      partnerName: recipientName,
+      contactEmail: recipientEmail,
+      contactName: contactName || null,
+    };
+
+    const isImmediate = lead.urgency === "immediate";
+    const subject = isImmediate
+      ? `[URGENT] New ${platform.userNounCapital} Lead — ${lead.category || "Help Request"}`
+      : `New ${platform.userNounCapital} Lead — ${lead.category || "Help Request"}`;
+
+    const html = buildLeadEmailHtml(leadData, partnerData);
+
+    const { data: emailResult, error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Failed to send direct to ${recipientEmail}:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Lead ${leadId} notification sent directly to ${recipientEmail} (${emailResult?.id})`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending direct notification for lead ${leadId}:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
 export async function sendLeadNotification(
   leadId: string,
   partnerId: string

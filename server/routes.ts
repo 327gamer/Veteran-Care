@@ -6128,6 +6128,48 @@ export async function registerRoutes(
     return res.json({ success: true, rerouted: true, partner_name: result.partnerName });
   });
 
+  app.post("/api/admin/leads/:id/send-assignment-email", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { recipientEmail, recipientName, contactName, assignmentType } = req.body;
+
+    if (!recipientEmail || !recipientName) {
+      return res.status(400).json({ error: "recipientEmail and recipientName are required" });
+    }
+
+    const { sendLeadNotificationDirect } = await import("./lead-email");
+    const result = await sendLeadNotificationDirect(id, recipientEmail, recipientName, contactName);
+
+    if (!result.sent) {
+      return res.status(500).json({ error: result.error || "Failed to send email" });
+    }
+
+    try {
+      const { data: current } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("routing_history")
+        .eq("id", id)
+        .single();
+      const history = Array.isArray(current?.routing_history) ? current.routing_history : [];
+      history.push({
+        partner_id: null,
+        partner_name: recipientName,
+        routed_at: new Date().toISOString(),
+        delivery_status: "pending",
+        manual: true,
+        email_sent: true,
+        email_sent_at: new Date().toISOString(),
+        assignment_type: assignmentType || "resource",
+        recipient_email: recipientEmail,
+      });
+      await supabaseAdmin
+        .from("navigator_requests")
+        .update({ routing_history: history })
+        .eq("id", id);
+    } catch {}
+
+    return res.json({ success: true, sent_to: recipientEmail });
+  });
+
   function fuzzyNormalize(str: string): string {
     return (str || "").toLowerCase().replace(/[-_&.,;:'"!?()]/g, " ").replace(/\s+/g, " ").trim();
   }

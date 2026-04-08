@@ -1,0 +1,72 @@
+I just ran another full live test and found a real issue.
+
+TEST FLOW:
+1. Submitted a new request
+2. Received the user-facing email with suggested resources correctly
+3. Went into admin
+4. Assigned the lead to Veteran Care
+5. Admin shows the assignment correctly
+
+PROBLEM:
+No routed lead email was received this time, so I could not test the email action buttons or confirm the status loop back into admin.
+
+IMPORTANT DETAIL:
+Earlier in testing, I sent a lead to:
+- colin@veterancare.com
+
+But the assigned resource record now shows:
+- info@veterancare.com
+
+So we need to verify exactly which email address the system is using for the outbound routed lead email.
+
+-------------------------------------
+WHAT NEEDS TO BE VERIFIED
+-------------------------------------
+
+1. When assigning a lead to a resource / internal Veteran Care entry / trusted service, does the system actually trigger the routed lead email?
+
+2. Or is it only:
+- saving assignment in admin
+- marking the lead in progress
+- without sending the actual email?
+
+3. Which email field is being used for delivery?
+For example:
+- colin@veterancare.com
+- info@veterancare.com
+- some other mapped field
+
+4. Are internal resources / non-partner assignments currently excluded from outbound lead email sending?
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+If I assign a lead to any valid assignable destination that has a contact email, I need the outbound routed lead email to be sent so that I can test:
+
+- Connected
+- Completed
+- No Response
+- Unable to Contact
+
+Right now that loop cannot be tested because the outbound email is not arriving.
+
+-------------------------------------
+REQUEST
+-------------------------------------
+
+Please investigate and confirm:
+
+- whether routed lead email currently fires for:
+  - partners
+  - trusted services
+  - internal Veteran Care resources
+  - free resources
+
+- which exact recipient email is being used for the assignment I just made
+
+- why the admin shows the assignment correctly but no email was delivered
+
+This is a critical issue because if it is not sending for my own internal test case, it may also not be sending for other assignable destinations.
+
+--- END ---
