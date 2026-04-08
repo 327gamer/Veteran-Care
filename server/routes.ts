@@ -1254,11 +1254,21 @@ async function ensureAllTrustedServiceCategories() {
     { name: 'Education & Training', slug: 'education-training', description: 'Accredited programs and training providers supporting veteran success', icon: 'graduation-cap', display_order: 5 },
     { name: 'Employment Support', slug: 'employment-support', description: 'Employers and staffing partners committed to hiring veterans', icon: 'briefcase', display_order: 6 },
     { name: 'End of Life Services', slug: 'end-of-life-services', description: 'Hospice, funeral services, estate planning, and survivor benefits', icon: 'flower-2', display_order: 7 },
+    { name: 'Auto Services', slug: 'auto-services', description: 'Trusted auto repair, sales, and vehicle services for veterans', icon: 'car', display_order: 8 },
+    { name: 'Travel Services', slug: 'travel-services', description: 'Veteran-friendly travel, lodging, and recreation services', icon: 'plane', display_order: 9 },
   ];
   const partnerSignupOnly = [
     { name: 'Benefits Assistance', slug: 'benefits-assistance', description: 'Claims assistance, VSO support, and benefits navigation for veterans', icon: 'file-text', display_order: 20 },
     { name: 'Wellness & Recovery', slug: 'wellness-recovery', description: 'Wellness programs, substance recovery, and holistic support', icon: 'heart', display_order: 21 },
     { name: 'Healthcare', slug: 'healthcare-services', description: 'Healthcare providers and medical support for veterans', icon: 'heart-pulse', display_order: 22 },
+  ];
+  const productsLocalOffers = [
+    { name: 'Restaurants', slug: 'restaurants', description: 'Restaurants offering veteran discounts and specials', icon: 'utensils', display_order: 30, program_area: 'veteran_discount_services' },
+    { name: 'Retail Discounts', slug: 'retail-discounts', description: 'Retail stores with veteran discount programs', icon: 'shopping-bag', display_order: 31, program_area: 'veteran_discount_services' },
+    { name: 'Hotels', slug: 'hotels', description: 'Hotels and lodging with veteran rates and military discounts', icon: 'bed', display_order: 32, program_area: 'veteran_discount_services' },
+    { name: 'Car Dealerships', slug: 'car-dealerships', description: 'Car dealerships offering veteran pricing and military discounts', icon: 'car', display_order: 33, program_area: 'veteran_discount_services' },
+    { name: 'Gyms & Fitness', slug: 'gyms-fitness', description: 'Gyms and fitness centers with veteran memberships and discounts', icon: 'dumbbell', display_order: 34, program_area: 'veteran_discount_services' },
+    { name: 'Local Businesses', slug: 'local-businesses', description: 'Local businesses supporting veterans with special offers', icon: 'store', display_order: 35, program_area: 'veteran_discount_services' },
   ];
   try {
     for (const cat of activeTrusted) {
@@ -1275,6 +1285,14 @@ async function ensureAllTrustedServiceCategories() {
          VALUES ($1, $2, $3, $4, $5, false)
          ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = false`,
         [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
+      );
+    }
+    for (const cat of productsLocalOffers) {
+      await pgQuery(
+        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type)
+         VALUES ($1, $2, $3, $4, $5, true, $6, 'product')
+         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = true, program_area = $6, group_type = 'product'`,
+        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order, cat.program_area]
       );
     }
   } catch (err: any) {
@@ -1325,6 +1343,69 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'wellness-recovery', name: 'Holistic & Alternative Therapy', slug: 'holistic-therapy', order: 3 },
       { catSlug: 'wellness-recovery', name: 'Fitness & Physical Wellness', slug: 'fitness-physical', order: 4 },
       { catSlug: 'wellness-recovery', name: 'Peer Support Groups', slug: 'peer-support', order: 5 },
+
+      { catSlug: 'legal-services', name: 'Family Law', slug: 'family-law', order: 1 },
+      { catSlug: 'legal-services', name: 'Disability & VA Appeals', slug: 'disability-va-appeals', order: 2 },
+      { catSlug: 'legal-services', name: 'Criminal Defense', slug: 'criminal-defense', order: 3 },
+      { catSlug: 'legal-services', name: 'Estate Planning & Wills', slug: 'estate-planning-legal', order: 4 },
+      { catSlug: 'legal-services', name: 'Employment Law', slug: 'employment-law', order: 5 },
+
+      { catSlug: 'financial-credit', name: 'Credit Repair & Counseling', slug: 'credit-repair', order: 1 },
+      { catSlug: 'financial-credit', name: 'Debt Management', slug: 'debt-management', order: 2 },
+      { catSlug: 'financial-credit', name: 'Financial Planning & Investing', slug: 'financial-planning', order: 3 },
+      { catSlug: 'financial-credit', name: 'Tax Preparation', slug: 'tax-preparation', order: 4 },
+      { catSlug: 'financial-credit', name: 'Mortgage & Home Loans', slug: 'mortgage-home-loans', order: 5 },
+      { catSlug: 'financial-credit', name: 'Personal & Auto Loans', slug: 'personal-auto-loans', order: 6 },
+
+      { catSlug: 'insurance', name: 'Life Insurance', slug: 'life-insurance', order: 1 },
+      { catSlug: 'insurance', name: 'Health Insurance', slug: 'health-insurance', order: 2 },
+      { catSlug: 'insurance', name: 'Auto Insurance', slug: 'auto-insurance', order: 3 },
+      { catSlug: 'insurance', name: 'Home & Renters Insurance', slug: 'home-renters-insurance', order: 4 },
+
+      { catSlug: 'auto-services', name: 'Auto Repair & Maintenance', slug: 'auto-repair', order: 1 },
+      { catSlug: 'auto-services', name: 'Auto Sales & Dealerships', slug: 'auto-sales', order: 2 },
+      { catSlug: 'auto-services', name: 'Auto Insurance', slug: 'auto-insurance-svc', order: 3 },
+      { catSlug: 'auto-services', name: 'Roadside Assistance', slug: 'roadside-assistance', order: 4 },
+
+      { catSlug: 'travel-services', name: 'Hotels & Lodging', slug: 'hotels-lodging', order: 1 },
+      { catSlug: 'travel-services', name: 'Vacation & Recreation', slug: 'vacation-recreation', order: 2 },
+      { catSlug: 'travel-services', name: 'Airlines & Transportation', slug: 'airlines-transportation', order: 3 },
+      { catSlug: 'travel-services', name: 'Retreats & Wellness Travel', slug: 'retreats-wellness', order: 4 },
+
+      { catSlug: 'restaurants', name: 'Fast Food & Quick Service', slug: 'fast-food', order: 1 },
+      { catSlug: 'restaurants', name: 'Casual Dining', slug: 'casual-dining', order: 2 },
+      { catSlug: 'restaurants', name: 'Fine Dining', slug: 'fine-dining', order: 3 },
+      { catSlug: 'restaurants', name: 'Bars & Breweries', slug: 'bars-breweries', order: 4 },
+
+      { catSlug: 'retail-discounts', name: 'Clothing & Apparel', slug: 'clothing-apparel', order: 1 },
+      { catSlug: 'retail-discounts', name: 'Electronics & Tech', slug: 'electronics-tech', order: 2 },
+      { catSlug: 'retail-discounts', name: 'Home & Garden', slug: 'home-garden', order: 3 },
+      { catSlug: 'retail-discounts', name: 'Grocery & Essentials', slug: 'grocery-essentials', order: 4 },
+
+      { catSlug: 'hotels', name: 'Budget Hotels', slug: 'budget-hotels', order: 1 },
+      { catSlug: 'hotels', name: 'Mid-Range Hotels', slug: 'mid-range-hotels', order: 2 },
+      { catSlug: 'hotels', name: 'Luxury & Resorts', slug: 'luxury-resorts', order: 3 },
+      { catSlug: 'hotels', name: 'Extended Stay', slug: 'extended-stay', order: 4 },
+
+      { catSlug: 'car-dealerships', name: 'New Vehicles', slug: 'new-vehicles', order: 1 },
+      { catSlug: 'car-dealerships', name: 'Used & Certified Pre-Owned', slug: 'used-certified', order: 2 },
+      { catSlug: 'car-dealerships', name: 'Military Auto Programs', slug: 'military-auto-programs', order: 3 },
+
+      { catSlug: 'gyms-fitness', name: 'Gym Memberships', slug: 'gym-memberships', order: 1 },
+      { catSlug: 'gyms-fitness', name: 'Personal Training', slug: 'personal-training', order: 2 },
+      { catSlug: 'gyms-fitness', name: 'Group Classes & Studios', slug: 'group-classes', order: 3 },
+      { catSlug: 'gyms-fitness', name: 'Outdoor & Adventure', slug: 'outdoor-adventure', order: 4 },
+
+      { catSlug: 'local-businesses', name: 'Home Services', slug: 'local-home-services', order: 1 },
+      { catSlug: 'local-businesses', name: 'Professional Services', slug: 'local-professional', order: 2 },
+      { catSlug: 'local-businesses', name: 'Pet Services', slug: 'pet-services', order: 3 },
+      { catSlug: 'local-businesses', name: 'Entertainment & Events', slug: 'entertainment-events', order: 4 },
+
+      { catSlug: 'healthcare-services', name: 'Primary Care', slug: 'primary-care-ts', order: 1 },
+      { catSlug: 'healthcare-services', name: 'Dental Care', slug: 'dental-care-ts', order: 2 },
+      { catSlug: 'healthcare-services', name: 'Vision & Eye Care', slug: 'vision-care-ts', order: 3 },
+      { catSlug: 'healthcare-services', name: 'Specialty Care', slug: 'specialty-care-ts', order: 4 },
+      { catSlug: 'healthcare-services', name: 'Pharmacy & Prescriptions', slug: 'pharmacy-ts', order: 5 },
     ];
 
     let added = 0;
@@ -8048,7 +8129,7 @@ export async function registerRoutes(
   app.get("/api/partner-categories", async (_req, res) => {
     try {
       const rows = await pgQuery(
-        `SELECT id, name, slug FROM trusted_service_categories WHERE slug NOT LIKE 'discount-%' AND (program_area IS NULL OR program_area = 'trusted_services') ORDER BY display_order ASC`
+        `SELECT id, name, slug, COALESCE(group_type, 'service') AS group_type FROM trusted_service_categories WHERE slug NOT LIKE 'discount-%' AND (program_area IS NULL OR program_area IN ('trusted_services', 'veteran_discount_services')) ORDER BY display_order ASC`
       );
       return res.json(rows);
     } catch (err: any) {

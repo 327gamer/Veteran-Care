@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -48,6 +50,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  group_type?: string;
 }
 
 interface Subcategory {
@@ -595,9 +598,30 @@ export default function PartnerApply() {
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
+                  {(() => {
+                    const services = categories.filter(c => !c.group_type || c.group_type === 'service');
+                    const products = categories.filter(c => c.group_type === 'product');
+                    return (
+                      <>
+                        {services.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-xs font-semibold text-muted-foreground">Trusted Services</SelectLabel>
+                            {services.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {products.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-xs font-semibold text-muted-foreground">Products & Local Offers</SelectLabel>
+                            {products.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                      </>
+                    );
+                  })()}
                 </SelectContent>
               </Select>
             </div>

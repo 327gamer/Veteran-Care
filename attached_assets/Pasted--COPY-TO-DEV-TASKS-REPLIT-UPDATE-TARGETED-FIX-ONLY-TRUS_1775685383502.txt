@@ -1,0 +1,125 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: TARGETED FIX ONLY — TRUSTED SERVICES SUBCATEGORIES STILL NOT LIVE + PARTNER SIGNUP CATEGORY LIST STILL INCOMPLETE
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+LIVE ISSUES STILL PRESENT
+--------------------------------------------------
+
+After publish, two specific problems still remain live:
+
+1. TRUSTED SERVICES SERVICE CATEGORIES STILL DO NOT OPEN INTO SUBCATEGORY FLOW
+The 3 removed categories are now gone, which is correct.
+
+However, the main Trusted Services service categories are still showing as flat top-level tiles and are NOT properly entering the subcategory step.
+
+Examples currently shown:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Education & Training
+- Employment Support
+- End of Life Services
+- Auto Services
+- Travel Services
+
+These should not stop at a flat category tile view.
+
+REQUIRED:
+When a user clicks a Trusted Services category, it must open the proper subcategory flow inside Trusted Services.
+
+Correct flow:
+Trusted Services Category → Trusted Services Subcategory Tiles → Trusted Services Results
+
+This still is not happening live.
+
+--------------------------------------------------
+DO NOT DO A BROAD “MIRROR EVERYTHING” PASS
+--------------------------------------------------
+
+Please do NOT run another broad sync or blanket mirror job.
+
+That risks reintroducing categories we intentionally removed or rebreaking naming.
+
+This needs to be a precise fix only.
+
+--------------------------------------------------
+SPECIFIC FIX REQUIRED FOR TRUSTED SERVICES
+--------------------------------------------------
+
+Please verify and correct the click behavior for each active Trusted Services service category so that the live UI actually enters the subcategory level.
+
+This needs to work for the active service-side categories only.
+
+--------------------------------------------------
+SECOND ISSUE — PARTNER SIGNUP CATEGORY LIST IS STILL INCOMPLETE
+--------------------------------------------------
+
+When clicking “Become a Trusted Partner” and opening the service category selector, the list is still missing several important categories.
+
+The missing ones especially include the Products & Local Offers side:
+
+- Restaurants
+- Retail Discounts
+- Hotels
+- Car Dealerships
+- Gyms & Fitness
+- Local Businesses
+
+These must be available in partner signup so businesses can be categorized correctly.
+
+--------------------------------------------------
+IMPORTANT DISTINCTION
+--------------------------------------------------
+
+We now have two different category systems that must both be respected:
+
+1. TRUSTED SERVICES — SERVICES SIDE
+Examples:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Education & Training
+- Employment Support
+- End of Life Services
+- Auto Services
+- Travel Services
+
+2. PRODUCTS & LOCAL OFFERS SIDE
+Examples:
+- Restaurants
+- Retail Discounts
+- Hotels
+- Car Dealerships
+- Gyms & Fitness
+- Local Businesses
+
+Partner signup must allow the business to be placed into the correct side and correct category.
+
+--------------------------------------------------
+REQUIRED FIX FOR PARTNER SIGNUP
+--------------------------------------------------
+
+Update the partner signup category/subcategory selector so it includes:
+
+A) all active Trusted Services service categories
+B) all Products & Local Offers categories
+C) relevant subcategories beneath them
+D) correct naming only
+E) no duplicate or deprecated categories
+
+--------------------------------------------------
+PLEASE FOCUS ONLY ON THESE TWO THINGS
+--------------------------------------------------
+
+1. make Trusted Services category clicks open into real subcategory flow live
+2. complete the Become a Trusted Partner category list so all service and product/local-offer categories are available
+
+Please do not perform another full category rebuild while fixing this.
+
+--- END ---

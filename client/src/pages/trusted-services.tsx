@@ -48,6 +48,8 @@ import {
   Search,
   FileText,
   Flower2,
+  Car,
+  Plane,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useGeolocation } from "@/lib/use-geolocation";
@@ -117,6 +119,8 @@ const iconMap: Record<string, any> = {
   heart: Heart,
   "file-text": FileText,
   "flower-2": Flower2,
+  car: Car,
+  plane: Plane,
 };
 
 interface PartnerSubcategory {
