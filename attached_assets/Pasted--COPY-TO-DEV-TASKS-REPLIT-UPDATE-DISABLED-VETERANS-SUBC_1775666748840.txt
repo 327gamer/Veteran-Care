@@ -1,0 +1,84 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: DISABLED VETERANS SUBCATEGORY PAGE IS STILL NOT LIVE / NOT WORKING
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+STATUS
+--------------------------------------------------
+
+I just tested it live again.
+
+Disabled Veterans is STILL NOT opening a subcategory page.
+
+It is still going directly to the flat resource list.
+
+So this is NOT fixed yet in production.
+
+--------------------------------------------------
+EXPECTED BEHAVIOR
+--------------------------------------------------
+
+Disabled Veterans should behave exactly like End of Life Services:
+
+Disabled Veterans
+→ Disabled Veterans subcategory landing page
+→ click subcategory
+→ filtered resource results
+
+--------------------------------------------------
+CURRENT BEHAVIOR
+--------------------------------------------------
+
+Disabled Veterans
+→ goes straight to resource results
+→ no subcategory landing page appears
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Please do NOT tell me this is complete unless you verify it in LIVE production and click through the exact user flow.
+
+This appears to be one of the following:
+
+1. only implemented in preview / dev
+2. route exists but not deployed
+3. click redirect is still pointing directly to filtered resources
+4. homepage/resources category tile is not wired to the new Disabled Veterans page
+5. production is still using old category behavior
+
+--------------------------------------------------
+REQUIRED ACTION
+--------------------------------------------------
+
+Please verify in LIVE production:
+
+1. click Disabled Veterans from homepage
+2. click Disabled Veterans from resource/category entry
+3. confirm it opens the Disabled Veterans subcategory landing page
+4. confirm it does NOT go directly to flat resource results
+
+If not, fix the live wiring.
+
+--------------------------------------------------
+WHAT I NEED BACK
+--------------------------------------------------
+
+Please reply with:
+
+1. exact live URL for the Disabled Veterans subcategory landing page
+2. exact route name used
+3. confirmation that homepage tile is wired to it
+4. confirmation that resource/category click is wired to it
+5. confirmation that this is tested in LIVE, not just preview
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Disabled Veterans must open a subcategory selection page first, exactly like End of Life Services.
+
+--- END ---
