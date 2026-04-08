@@ -937,6 +937,21 @@ async function checkTrustedServicesTable() {
       (e: any) => console.log("[migration] discount-mortgage migration skipped:", e.message)
     );
     await pgQuery(`UPDATE lead_category_pricing SET category_name = 'Financial Services' WHERE category_slug = 'financial-credit' AND category_name = 'Mortgage / Lending'`).catch(() => {});
+    const mergeDiscountIntoMain = async (discountSlug: string, mainSlug: string) => {
+      try {
+        const mainCat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug = $1 LIMIT 1`, [mainSlug]);
+        const discCat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug = $1 LIMIT 1`, [discountSlug]);
+        if (mainCat.length > 0 && discCat.length > 0) {
+          await pgQuery(`UPDATE trusted_services SET category_id = $1 WHERE category_id = $2`, [mainCat[0].id, discCat[0].id]);
+          await pgQuery(`UPDATE trusted_service_categories SET is_active = false WHERE slug = $1`, [discountSlug]);
+          console.log(`[migration] Merged ${discountSlug} → ${mainSlug}`);
+        }
+      } catch (e: any) { console.log(`[migration] merge ${discountSlug} skipped: ${e.message}`); }
+    };
+    await mergeDiscountIntoMain('discount-legal', 'legal-services');
+    await mergeDiscountIntoMain('discount-insurance', 'insurance');
+    await mergeDiscountIntoMain('discount-healthcare', 'insurance');
+    await mergeDiscountIntoMain('discount-financial', 'financial-credit');
     try {
       const financialCat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug = 'financial-credit' LIMIT 1`);
       if (financialCat.length > 0) {
@@ -1088,12 +1103,12 @@ async function seedDiscountCategories() {
     console.log("[seed] Seeding veteran discount service categories...");
     await pgQuery(`
       INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type) VALUES
-        ('Legal Help', 'discount-legal', 'Legal services offering veteran discounts', 'scale', 101, true, 'veteran_discount_services', 'service'),
+        ('Legal Help', 'discount-legal', 'Legal services offering veteran discounts', 'scale', 101, false, 'veteran_discount_services', 'service'),
         ('Mortgage & Loans', 'discount-mortgage', 'Mortgage and lending services for veterans', 'home', 102, false, 'veteran_discount_services', 'service'),
-        ('Insurance', 'discount-insurance', 'Insurance providers with veteran-friendly rates', 'shield', 103, true, 'veteran_discount_services', 'service'),
-        ('Healthcare Providers', 'discount-healthcare', 'Healthcare providers offering veteran discounts', 'heart-pulse', 104, true, 'veteran_discount_services', 'service'),
+        ('Insurance', 'discount-insurance', 'Insurance providers with veteran-friendly rates', 'shield', 103, false, 'veteran_discount_services', 'service'),
+        ('Healthcare Providers', 'discount-healthcare', 'Healthcare providers offering veteran discounts', 'heart-pulse', 104, false, 'veteran_discount_services', 'service'),
         ('Auto Services', 'discount-auto', 'Automotive services and discounts for veterans', 'car', 105, true, 'veteran_discount_services', 'service'),
-        ('Financial Services', 'discount-financial', 'Financial advisory and services for veterans', 'dollar-sign', 106, true, 'veteran_discount_services', 'service'),
+        ('Financial Services', 'discount-financial', 'Financial advisory and services for veterans', 'dollar-sign', 106, false, 'veteran_discount_services', 'service'),
         ('Travel Services', 'discount-travel', 'Travel services and discounts for veterans', 'plane', 107, true, 'veteran_discount_services', 'service'),
         ('Restaurants', 'discount-restaurants', 'Restaurants offering veteran discounts', 'utensils', 201, true, 'veteran_discount_services', 'product'),
         ('Retail Discounts', 'discount-retail', 'Retail stores with veteran discount programs', 'shopping-bag', 202, true, 'veteran_discount_services', 'product'),
@@ -1199,7 +1214,7 @@ async function alignCategoryNames() {
     "education": "Education & Training",
     "legal": "Legal Services",
     "financial": "Financial & Credit Services",
-    "healthcare": "Insurance Services",
+    "healthcare": "Healthcare",
     "substance-recovery": "Wellness & Recovery",
     "va-benefits": "Benefits Assistance",
   };

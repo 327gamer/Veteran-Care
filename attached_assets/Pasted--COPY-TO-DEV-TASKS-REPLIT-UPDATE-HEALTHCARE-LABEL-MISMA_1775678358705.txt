@@ -1,0 +1,183 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: HEALTHCARE LABEL MISMATCH + TRUSTED SERVICES CATEGORY CLEANUP / SUBCATEGORY SYNC
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+ISSUE 1: HEALTHCARE MAIN CATEGORY LABEL IS STILL WRONG
+--------------------------------------------------
+
+On the Regular Resources side, the category tile is still labeled:
+
+- "Insurance Services"
+
+But when clicked, it opens the Healthcare subcategory page with:
+- VA Healthcare Enrollment
+- Primary Care
+- Specialty Care
+- Rehabilitation Services
+- Telehealth & Virtual Care
+- Preventive Care & Wellness
+- Women Veterans Healthcare
+- Caregiver & Family Health Support
+
+This means the tile label is wrong.
+
+REQUIRED FIX:
+Change the main category label from:
+
+- Insurance Services
+
+to either:
+
+- Healthcare
+OR
+- Healthcare Services
+
+Preferred:
+- Healthcare
+
+This needs to match the actual Healthcare category and the subcategory page it opens.
+
+--------------------------------------------------
+ISSUE 2: TRUSTED SERVICES STILL HAS DUPLICATES
+--------------------------------------------------
+
+Trusted Services still shows duplicate / inconsistent categories.
+
+Examples still visible:
+- Insurance Services
+- Insurance
+- Legal Services
+- Legal Help
+- Financial & Credit Services
+- Financial Services
+- Healthcare Providers
+
+These must be cleaned up so Trusted Services mirrors the cleaned architecture already being established on Regular Resources.
+
+--------------------------------------------------
+REQUIRED TRUSTED SERVICES CLEANUP
+--------------------------------------------------
+
+Please deactivate / remove duplicate or inconsistent Trusted Services category labels and keep ONLY the clean versions below.
+
+KEEP:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Healthcare (or Healthcare Services — must match Resources naming)
+- Education & Training
+- Employment Support
+- End of Life Services
+- Disabled Veterans
+- Auto Services
+- Travel Services
+
+REMOVE / DEACTIVATE DUPLICATES:
+- Insurance
+- Legal Help
+- Financial Services
+- Healthcare Providers (rename / merge into Healthcare or Healthcare Services)
+
+IMPORTANT:
+Do not delete data blindly.
+Please merge / remap anything necessary so no partners, services, or routing data are lost.
+
+--------------------------------------------------
+ISSUE 3: TRUSTED SERVICES NEEDS THE SAME SUBCATEGORY STRUCTURE
+--------------------------------------------------
+
+Right now, Trusted Services is still not behaving like the Regular Resources side.
+
+Example:
+- End of Life Services under Resources has subcategories
+- End of Life Services under Trusted Services does NOT behave the same way
+
+Same issue for:
+- Employment Support
+- Healthcare
+- Financial & Credit Services
+- Disabled Veterans
+and any others already built on the Resources side
+
+REQUIRED FIX:
+Trusted Services top-level categories need to use the SAME guided subcategory entry structure as Resources wherever those guided category pages already exist.
+
+Meaning:
+If a category already has a working guided subcategory landing page on Resources, Trusted Services should route through that same style of guided landing flow before showing filtered partner/service results.
+
+--------------------------------------------------
+EXPECTED TRUSTED SERVICES FLOW
+--------------------------------------------------
+
+Trusted Services Category
+→ matching subcategory landing page
+→ subcategory selected
+→ filtered trusted partner / monetized results
+
+NOT:
+flat category dump with no guided entry structure
+
+--------------------------------------------------
+SYNC RULE GOING FORWARD
+--------------------------------------------------
+
+Resources and Trusted Services should stay aligned at the category architecture level.
+
+That means:
+- same naming
+- same parent category titles
+- same subcategory logic where applicable
+- no duplicates with slightly different labels
+
+Difference between the two sides should be:
+
+Resources:
+- informational / general / free / nonprofit / government / broad directory
+
+Trusted Services:
+- monetized / paying / preferred / boosted / partner-driven
+
+But category naming and navigation logic should remain consistent.
+
+--------------------------------------------------
+SPECIFIC LABEL STANDARD TO USE
+--------------------------------------------------
+
+Please standardize these names exactly:
+
+- Healthcare
+- Insurance Services
+- Legal Services
+- Financial & Credit Services
+- Employment Support
+- Education & Training
+- End of Life Services
+- Disabled Veterans
+- Housing & Home Services
+
+Avoid alternate versions like:
+- Insurance
+- Legal Help
+- Financial Services
+- Healthcare Providers
+
+--------------------------------------------------
+FINAL GOAL
+--------------------------------------------------
+
+We need Trusted Services cleaned up so it mirrors the Regular Resources architecture cleanly, while still functioning as the monetized / preferred-partner layer.
+
+That means:
+
+1. Correct Healthcare label on Resources
+2. Remove duplicate Trusted Services categories
+3. Standardize category names
+4. Add / sync guided subcategory behavior in Trusted Services
+5. Preserve all existing data, partner records, and monetization logic
+
+--- END ---

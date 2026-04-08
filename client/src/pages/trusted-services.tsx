@@ -664,8 +664,18 @@ export default function TrustedServices() {
                 key={cat.id}
                 className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
                 onClick={() => {
-                  if (cat.slug === "end-of-life-services") {
-                    setLocation("/end-of-life");
+                  const guidedRoutes: Record<string, string> = {
+                    "end-of-life-services": "/end-of-life",
+                    "housing-home": "/housing",
+                    "legal-services": "/resources?category=legal",
+                    "financial-credit": "/financial-services",
+                    "insurance": "/resources?category=healthcare",
+                    "education-training": "/resources?category=education",
+                    "employment-support": "/employment",
+                  };
+                  const route = guidedRoutes[cat.slug];
+                  if (route) {
+                    setLocation(route);
                     return;
                   }
                   setSelectedCategory(cat.slug);
