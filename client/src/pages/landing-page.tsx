@@ -63,14 +63,14 @@ export default function LandingPage() {
   const [, setLocation] = useLocation();
   const { onboardingComplete } = useSavedResources();
 
-  const navigateToGetHelp = (slug: string | null = null) => {
-    trackEvent("start_get_help_click", slug ? { category: slug } : {});
-    if (slug === "end-of-life-services") {
-      setLocation("/end-of-life");
-      return;
-    }
-    const url = slug ? `/get-help?category=${encodeURIComponent(slug)}` : "/get-help";
-    setLocation(url);
+  const openCreateAccount = () => {
+    trackEvent("start_create_account_click");
+    window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "signup" } }));
+  };
+
+  const handleCategoryClick = (slug: string | null) => {
+    trackEvent("start_category_click", slug ? { category: slug } : {});
+    openCreateAccount();
   };
 
   const handleBrowse = () => {
@@ -100,7 +100,7 @@ export default function LandingPage() {
           <div className="w-full flex flex-col gap-3">
             <button
               data-testid="cta-get-help-now-hero"
-              onClick={() => navigateToGetHelp()}
+              onClick={openCreateAccount}
               className="w-full py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95"
             >
               Get Help Now
@@ -159,7 +159,7 @@ export default function LandingPage() {
               <button
                 key={label}
                 data-testid={`category-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                onClick={() => navigateToGetHelp(slug)}
+                onClick={() => handleCategoryClick(slug)}
                 className="flex items-center gap-2.5 bg-background border border-border rounded-xl px-3.5 py-3 text-left shadow-sm hover:border-primary/40 transition-colors active:bg-muted"
               >
                 <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -191,7 +191,7 @@ export default function LandingPage() {
           </h2>
           <button
             data-testid="cta-get-help-now-footer"
-            onClick={() => navigateToGetHelp()}
+            onClick={openCreateAccount}
             className="w-full max-w-sm py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
           >
             Get Help Now

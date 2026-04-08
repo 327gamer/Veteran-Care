@@ -1,0 +1,213 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: AMBASSADOR FLOW + LANDING PAGE + LINK STRUCTURE REFINEMENT
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Improve conversion, onboarding, and user understanding by restructuring
+Ambassador links and landing flow.
+
+We are NOT changing functionality — only:
+- entry points
+- naming
+- link destinations
+- ordering
+
+--------------------------------------------------
+PART 1: RENAME "GENERAL OUTREACH"
+--------------------------------------------------
+
+CHANGE:
+
+"General Outreach"
+→ RENAME TO:
+"Get Help Now"
+
+REASON:
+
+All these links currently route to the Get Help flow.
+
+This improves clarity and consistency across:
+- Ambassador kits
+- Investor kits
+- Link naming
+
+--------------------------------------------------
+PART 2: NEW PRIMARY FLOW (CRITICAL CHANGE)
+--------------------------------------------------
+
+CURRENT (WRONG FLOW):
+
+Ambassador Link →
+→ Direct to "Get Help Now" form
+
+NEW (CORRECT FLOW):
+
+Ambassador Link →
+→ LANDING PAGE (Education Page) →
+→ "Create Free Account" →
+→ THEN user proceeds to Get Help
+
+--------------------------------------------------
+PART 3: LANDING PAGE (RE-INTRODUCE)
+--------------------------------------------------
+
+We are restoring the previous "Start Page" style flow.
+
+PAGE STRUCTURE (already partially exists):
+
+SECTION 1:
+"Get the Help You Need — Fast, Local, and Trusted"
+
+CTA BUTTONS:
+- Get Help Now
+- Browse Resources
+
+SECTION 2:
+How It Works (3 steps)
+
+SECTION 3:
+What We Can Help With (categories grid)
+
+SECTION 4:
+One Place to Start
+
+SECTION 5:
+Get Help Now CTA
+
+--------------------------------------------------
+CRITICAL CHANGE REQUIRED:
+
+ALL CTA ACTIONS MUST ROUTE TO:
+
+→ CREATE ACCOUNT MODAL (NOT direct to form)
+
+--------------------------------------------------
+SPECIFIC FIXES:
+
+1. "Get Help Now" button
+→ triggers Create Account modal
+
+2. Category buttons (Housing, Employment, etc.)
+→ ALSO trigger Create Account modal
+(NOT direct to intake form)
+
+3. Bottom CTA "Get Help Now"
+→ triggers Create Account modal
+
+--------------------------------------------------
+EXPECTED FLOW:
+
+User lands →
+User reads →
+User clicks ANY CTA →
+→ Create Account modal opens →
+→ Account created →
+→ THEN user enters system
+
+--------------------------------------------------
+PART 4: AMBASSADOR LINK STRUCTURE
+--------------------------------------------------
+
+AMBASSADOR LINKS (code: veteran)
+
+CHANGE DESTINATION:
+
+ALL ambassador links should now point to:
+
+→ /start (landing page)
+
+NOT directly to:
+→ /get-help
+
+--------------------------------------------------
+PART 5: LINK CATEGORIES (RESTRUCTURE ORDER)
+--------------------------------------------------
+
+CURRENT ORDER (WRONG):
+
+1. Case Manager Outreach
+2. Partner Outreach
+3. General Outreach
+
+NEW ORDER (CORRECT):
+
+1. Veterans & Dependents (NEW PRIMARY)
+2. Case Manager Outreach
+3. Partner / Business Outreach
+4. Get Help Now (previously General Outreach)
+
+--------------------------------------------------
+PART 6: LABEL CHANGES
+--------------------------------------------------
+
+"Veterans"
+→ RENAME TO:
+"Veterans & Dependents"
+
+--------------------------------------------------
+PART 7: AMBASSADOR KIT CLEANUP
+--------------------------------------------------
+
+Inside Ambassador dashboard:
+
+SECTION:
+Test Links / Outreach Links
+
+FIX ORDER + NAMING:
+
+TOP PRIORITY:
+
+1. Veterans & Dependents
+2. Case Manager Outreach
+3. Partner / Business Outreach
+4. Get Help Now
+
+Ensure:
+- Consistent naming
+- Clear hierarchy
+- Matches investor kit
+
+--------------------------------------------------
+PART 8: NO FUNCTIONAL CHANGES
+--------------------------------------------------
+
+DO NOT CHANGE:
+
+- Tracking
+- Attribution
+- UTM logic
+- Lead routing
+- Emails
+- Admin panel
+- Status system
+
+This is ONLY:
+
+- UX improvement
+- Conversion improvement
+- Education layer
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+✔ Higher conversion rate
+✔ Better user understanding
+✔ Cleaner onboarding
+✔ More account creation
+✔ Stronger funnel before intake
+✔ Better long-term monetization
+
+--------------------------------------------------
+STATUS
+--------------------------------------------------
+
+READY FOR IMPLEMENTATION
+
+--- END ---

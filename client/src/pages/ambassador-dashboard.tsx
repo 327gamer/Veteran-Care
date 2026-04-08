@@ -15,11 +15,13 @@ import {
 const LOGO_URL = "https://veterancare.com/logo.png";
 
 const CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; color: string; badgeColor: string }> = {
-  veteran: { title: "Veteran Outreach", icon: Users, color: "border-green-500", badgeColor: "bg-green-100 text-green-800" },
+  veteran: { title: "Veterans & Dependents", icon: Users, color: "border-green-500", badgeColor: "bg-green-100 text-green-800" },
   case_manager: { title: "Case Manager Outreach", icon: Briefcase, color: "border-blue-500", badgeColor: "bg-blue-100 text-blue-800" },
   partner: { title: "Partner / Business Outreach", icon: Building2, color: "border-purple-500", badgeColor: "bg-purple-100 text-purple-800" },
-  general: { title: "General Outreach", icon: Globe, color: "border-gray-500", badgeColor: "bg-gray-100 text-gray-800" },
+  general: { title: "Get Help Now", icon: Globe, color: "border-gray-500", badgeColor: "bg-gray-100 text-gray-800" },
 };
+
+const CAMPAIGN_ORDER = ["veteran", "case_manager", "partner", "general"];
 
 const AUDIENCE_CTA: Record<string, string> = {
   veteran: "Get Help Now",

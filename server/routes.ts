@@ -368,10 +368,10 @@ async function ensureAttributionTables() {
       if (linksEmpty) {
         console.log("[schema] Seeding ambassador links...");
         const SEED_AUDIENCES: Record<string, { path: string; campaign: string; label: string }> = {
-          veteran:       { path: "/get-help",        campaign: "sc_veteran_help",        label: "Veteran Outreach" },
+          veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
           case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
-          partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner Outreach" },
-          general:       { path: "/start",           campaign: "sc_launch",              label: "General Outreach" },
+          partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
+          general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
         };
         const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
         const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
@@ -401,10 +401,10 @@ async function ensureAttributionTables() {
     if (parseInt(homeLinkCheck[0].cnt, 10) > 0) {
       console.log("[schema] Fixing ambassador link destinations from /home to audience-specific paths...");
       const AUDIENCE_PATHS: Record<string, { path: string; campaign: string }> = {
-        veteran:       { path: "/get-help",        campaign: "sc_veteran_help" },
+        veteran:       { path: "/start",           campaign: "sc_veteran_help" },
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth" },
-        general:       { path: "/start",           campaign: "sc_launch" },
+        general:       { path: "/get-help",        campaign: "sc_launch" },
       };
       for (const [audienceKey, aud] of Object.entries(AUDIENCE_PATHS)) {
         await pgQuery(
@@ -422,6 +422,32 @@ async function ensureAttributionTables() {
       }
       const remaining = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE base_path = '/home'");
       console.log(`[schema] Fixed link destinations (${remaining[0].cnt} still on /home)`);
+    }
+
+    // === FIX: Swap veteran links from /get-help → /start and general from /start → /get-help ===
+    const vetOnGetHelp = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'veteran' AND base_path = '/get-help'");
+    if (parseInt(vetOnGetHelp[0].cnt, 10) > 0) {
+      console.log("[schema] Updating veteran links: /get-help → /start (landing page flow)...");
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET base_path = '/start',
+             full_url = REPLACE(full_url, '/get-help?', '/start?')
+         WHERE audience_type = 'veteran' AND base_path = '/get-help'`
+      );
+      const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'veteran' AND base_path = '/start'");
+      console.log(`[schema] Updated ${fixed[0].cnt} veteran links to /start`);
+    }
+    const genOnStart = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/start'");
+    if (parseInt(genOnStart[0].cnt, 10) > 0) {
+      console.log("[schema] Updating general links: /start → /get-help (direct help flow)...");
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET base_path = '/get-help',
+             full_url = REPLACE(full_url, '/start?', '/get-help?')
+         WHERE audience_type = 'general' AND base_path = '/start'`
+      );
+      const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/get-help'");
+      console.log(`[schema] Updated ${fixed[0].cnt} general links to /get-help`);
     }
 
     // === FIX: Remove test commission data ===
@@ -1535,10 +1561,10 @@ export async function registerRoutes(
   const AMBASSADOR_BASE_DOMAIN = "https://veterancare.com";
 
   const AMBASSADOR_AUDIENCES: Record<string, { path: string; campaign: string; label: string }> = {
-    general:       { path: "/start",           campaign: "sc_launch",              label: "General" },
-    veteran:       { path: "/get-help",        campaign: "sc_veteran_help",        label: "Veteran Help" },
+    veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
     case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager" },
-    partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner Outreach" },
+    partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business" },
+    general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
   };
 
   const CHANNEL_LABELS: Record<string, string> = {
@@ -3139,10 +3165,10 @@ export async function registerRoutes(
       const campaigns: Record<string, { links: any[]; templates: Record<string, any> }> = {};
 
       const CAMPAIGN_META: Record<string, { title: string; description: string; audience: string }> = {
-        veteran: { title: "Veteran Outreach", description: "Drive veterans to the platform for help and resources", audience: "veteran" },
-        case_manager: { title: "Case Management Outreach", description: "Recruit organizations, case managers, and nonprofits", audience: "case_manager" },
+        veteran: { title: "Veterans & Dependents", description: "Drive veterans and dependents to the platform for help and resources", audience: "veteran" },
+        case_manager: { title: "Case Manager Outreach", description: "Recruit organizations, case managers, and nonprofits", audience: "case_manager" },
         partner: { title: "Partner / Business Outreach", description: "Recruit paying business partners for the directory", audience: "partner" },
-        general: { title: "General Outreach", description: "General awareness and community sharing", audience: "general" },
+        general: { title: "Get Help Now", description: "General awareness and community sharing — direct help flow", audience: "general" },
       };
 
       const OUTREACH_TEMPLATES: Record<string, Record<string, { subject?: string; body: string }>> = {
