@@ -141,6 +141,10 @@ export default function Home() {
       setLocation("/healthcare");
       return;
     }
+    if (category === "financial") {
+      setLocation("/financial-services");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 

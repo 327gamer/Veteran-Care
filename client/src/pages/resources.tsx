@@ -550,6 +550,10 @@ export default function Resources() {
       setLocation("/healthcare");
       return;
     }
+    if (cat.slug === "financial") {
+      setLocation("/financial-services");
+      return;
+    }
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
@@ -604,6 +608,7 @@ export default function Resources() {
       "employment": "/employment",
       "va-benefits": "/benefits-assistance",
       "healthcare": "/healthcare",
+      "financial": "/financial-services",
     };
     filterChips.push({ label: subLabel, onRemove: () => {
       setSubFilter(null);
@@ -707,6 +712,11 @@ export default function Resources() {
                   setLocation("/healthcare");
                 } else if (selectedSlug === "healthcare") {
                   setLocation("/healthcare");
+                } else if (selectedSlug === "financial" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/financial-services");
+                } else if (selectedSlug === "financial") {
+                  setLocation("/financial-services");
                 } else {
                   clearCategory();
                 }
