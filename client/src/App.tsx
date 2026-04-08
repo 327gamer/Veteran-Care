@@ -58,7 +58,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/start">
-        <Layout>
+        <Layout fullBleed>
           <LandingPage />
         </Layout>
       </Route>

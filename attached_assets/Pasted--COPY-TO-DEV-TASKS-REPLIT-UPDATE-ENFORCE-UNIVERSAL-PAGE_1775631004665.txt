@@ -1,0 +1,85 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: ENFORCE UNIVERSAL PAGE LAYOUT (CRITICAL STANDARD)
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+CORE ISSUE
+--------------------------------------------------
+
+The Veterans & Dependents landing page (/start) is NOT using the same universal layout wrapper as other pages (specifically the Case Manager page).
+
+This is causing:
+- top white gap
+- broken hero spacing
+- inconsistent page rendering
+- different UX feel
+
+--------------------------------------------------
+ROOT CAUSE
+--------------------------------------------------
+
+The page is not using the shared layout / page shell.
+
+Instead, it appears to have:
+- different container structure
+- extra spacing wrapper
+- missing or incorrect hero sizing rules
+
+--------------------------------------------------
+GLOBAL RULE (REINFORCE)
+--------------------------------------------------
+
+ALL pages MUST use the SAME universal layout system.
+
+NO exceptions.
+
+This includes:
+- identical top spacing behavior
+- identical container widths
+- identical hero rendering logic
+- identical viewport height handling
+
+--------------------------------------------------
+REQUIRED FIX
+--------------------------------------------------
+
+1. Identify the layout wrapper used by the Case Manager landing page
+
+2. Apply that EXACT same layout structure to:
+   → Veterans & Dependents landing page (/start)
+
+3. Remove any:
+   - extra top padding
+   - extra margins
+   - duplicate containers
+   - incorrect wrappers
+
+4. Ensure:
+   - hero fills correctly
+   - no white gap at top
+   - content sits properly in viewport
+   - desktop + mobile match behavior
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do NOT redesign the page  
+Do NOT change content  
+Do NOT change CTAs  
+
+This is STRICTLY:
+→ layout standardization
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+ALL landing pages must render identically at the layout level.
+
+The only difference between pages should be CONTENT — not spacing or structure.
+
+--- END ---

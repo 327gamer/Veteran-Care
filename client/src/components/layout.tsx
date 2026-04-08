@@ -57,9 +57,10 @@ const TOP_HEADER_ITEMS = [
 
 interface LayoutProps {
   children: React.ReactNode;
+  fullBleed?: boolean;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, fullBleed }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -306,9 +307,11 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden overscroll-contain pb-20 lg:pb-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
-          {children}
-        </div>
+        {fullBleed ? children : (
+          <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-5xl">
+            {children}
+          </div>
+        )}
       </main>
 
       {/* AI Guide Modal */}
