@@ -151,8 +151,8 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
   
-  <div style="text-align: center; padding: 12px 0 20px 0; border-bottom: 2px solid #166534; margin-bottom: 24px;">
-    <img src="${logoUrl}" alt="${platform.name}" style="height: 48px; max-width: 200px;" />
+  <div style="text-align: center; padding: 24px 0; border-bottom: 2px solid #166534; margin-bottom: 24px;">
+    <img src="${logoUrl}" alt="${platform.name}" style="display:block;width:200px;height:auto;margin:0 auto;border:0;" />
   </div>
 
   ${isImmediate ? `<div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
