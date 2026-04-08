@@ -7611,10 +7611,39 @@ export async function registerRoutes(
   app.get("/api/trusted-services/categories", async (_req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
     try {
-      const rows = await pgQuery(
+      const tsRows = await pgQuery(
         `SELECT * FROM trusted_service_categories WHERE (program_area IS NULL OR program_area = 'trusted_services') AND is_active IS NOT false ORDER BY display_order`
       );
-      return res.json(rows);
+
+      const TS_TO_RESOURCE_SLUG: Record<string, string> = {
+        'housing-home': 'housing',
+        'legal-services': 'legal',
+        'financial-credit': 'financial',
+        'insurance': 'healthcare',
+        'education-training': 'education',
+        'employment-support': 'employment',
+        'end-of-life-services': 'end-of-life-services',
+      };
+
+      let canonicalBySlug = new Map<string, { id: string; name: string; slug: string }>();
+      try {
+        const { data: canonicalCats } = await supabase.from("categories").select("id, name, slug");
+        if (canonicalCats) {
+          for (const c of canonicalCats) canonicalBySlug.set(c.slug, c);
+        }
+      } catch (_e) {}
+
+      const enriched = tsRows.map((ts: any) => {
+        const resourceSlug = TS_TO_RESOURCE_SLUG[ts.slug];
+        const canonical = resourceSlug ? canonicalBySlug.get(resourceSlug) : null;
+        return {
+          ...ts,
+          name: canonical?.name || ts.name,
+          canonical_slug: resourceSlug || null,
+        };
+      });
+
+      return res.json(enriched);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }

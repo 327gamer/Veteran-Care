@@ -1,0 +1,140 @@
+--- PRIORITY FIX – TRUSTED SERVICES TAXONOMY (SAFE ARCHITECTURE) ---
+
+This is a controlled fix. Do NOT attempt a full rebuild.
+
+-------------------------------------
+CRITICAL CONTEXT
+-------------------------------------
+
+This platform is a fully integrated system where categories connect to:
+
+- UTM attribution
+- ambassador tracking
+- referral tracking
+- Stripe subscriptions
+- partner records
+- lead routing
+- commissions
+
+Because of this:
+
+We MUST NOT break:
+- category relationships
+- partner mappings
+- attribution chains
+- Stripe-linked data
+- routing logic
+
+-------------------------------------
+CORE REQUIREMENT
+-------------------------------------
+
+We are separating TWO layers:
+
+1) DISPLAY LAYER (taxonomy)
+→ must come from Resources (canonical source)
+
+2) DATA LAYER (Trusted Services)
+→ must remain unchanged (partners, Stripe, attribution, routing)
+
+-------------------------------------
+THIS IS NOT A MERGE OR REBUILD
+-------------------------------------
+
+Do NOT:
+- replace Trusted Services categories
+- delete Trusted Services category data
+- modify category IDs
+- migrate or rewrite partner records
+- touch Stripe, attribution, or routing
+
+-------------------------------------
+IMPLEMENTATION REQUIREMENT (IMPORTANT)
+-------------------------------------
+
+Trusted Services must CONTINUE to use its own data internally.
+
+However, for PUBLIC DISPLAY:
+
+- categories and subcategories must be sourced from Resources (canonical taxonomy)
+- Trusted Services records must be JOINED or MAPPED to that taxonomy at render time
+
+Acceptable approaches:
+- join on matching category slug
+- join on mapped category_id reference
+- use a mapping layer if needed
+
+NOT acceptable:
+- replacing TS categories table
+- duplicating taxonomy again
+- hardcoding category arrays
+
+-------------------------------------
+TASKS (CHUNK 1 ONLY)
+-------------------------------------
+
+1) Identify canonical taxonomy source used by Resources
+→ categories table or shared service used by /api/categories
+
+2) Update Trusted Services PUBLIC rendering ONLY to use this canonical taxonomy
+
+3) Remove or bypass duplicate local category arrays in Trusted Services
+
+4) Ensure Trusted Services records are correctly mapped/joined to canonical categories at display layer
+
+-------------------------------------
+EXPECTED RESULT
+-------------------------------------
+
+Trusted Services should:
+
+- visually match Resources EXACTLY
+- use same categories and subcategories
+- maintain same order and structure
+
+BUT:
+
+- still use its own underlying data
+- still preserve all relationships
+- still function with existing routing, attribution, and Stripe logic
+
+-------------------------------------
+SPECIFIC BUG TO FIX
+-------------------------------------
+
+- Auto Services appears twice → must appear once
+- Travel Services appears twice → must appear once
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+1. Trusted Services categories EXACTLY match Resources
+2. Subcategories EXACTLY match Resources
+3. No duplicate categories
+4. No regressions in:
+   - attribution
+   - Stripe
+   - routing
+   - partner data
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) root cause  
+B) canonical source used  
+C) files changed  
+D) confirmation UI matches Resources  
+E) confirmation no data relationships were broken  
+F) whether publish is required  
+
+-------------------------------------
+
+This is CHUNK 1 only.
+
+Do not proceed to signup forms, admin, AI, or routing until validated.
+
+--- END ---
