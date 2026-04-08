@@ -1270,17 +1270,113 @@ async function seedDisabledVeteransResources() {
 
     const { data: existingResources } = await supabaseAdmin
       .from("resources")
-      .select("id, title, status")
+      .select("id, title, status, subcategory")
       .eq("category_id", cat.id);
+
+    const needsApproval = (existingResources || []).filter(r => r.status !== "approved");
+    if (needsApproval.length > 0) {
+      await supabaseAdmin.from("resources").update({ status: "approved" }).eq("category_id", cat.id);
+      console.log(`[seed] Updated ${needsApproval.length} Disabled Veterans resources to approved status`);
+    }
+    for (const r of (existingResources || [])) {
+      await supabaseAdmin.from("resource_categories").upsert({ resource_id: r.id, category_id: cat.id }, { onConflict: "resource_id,category_id" });
+    }
+
+    const DV_SUBCATEGORIES = [
+      { name: "Disability Benefits & Claims", slug: "disability-benefits-claims" },
+      { name: "Accessible Housing & Home Modifications", slug: "accessible-housing-home-modifications" },
+      { name: "Adaptive Transportation & Mobility", slug: "adaptive-transportation-mobility" },
+      { name: "Healthcare & Rehabilitation", slug: "healthcare-rehabilitation" },
+      { name: "Mental Health & PTSD Support", slug: "mental-health-ptsd-support" },
+      { name: "Employment & Vocational Rehabilitation", slug: "employment-vocational-rehabilitation" },
+      { name: "Caregiver & Family Support", slug: "caregiver-family-support" },
+      { name: "Legal Advocacy & Rights", slug: "legal-advocacy-rights" },
+      { name: "Independent Living & Daily Support", slug: "independent-living-daily-support" },
+      { name: "Adaptive Equipment & Assistive Technology", slug: "adaptive-equipment-assistive-technology" },
+    ];
+
+    const { data: existingSubs } = await supabaseAdmin
+      .from("subcategories")
+      .select("id, slug")
+      .eq("category_id", cat.id);
+    const existingSlugs = new Set((existingSubs || []).map(s => s.slug));
+    const newSubs = DV_SUBCATEGORIES.filter(s => !existingSlugs.has(s.slug));
+    if (newSubs.length > 0) {
+      const { error: subErr } = await supabaseAdmin.from("subcategories").insert(
+        newSubs.map(s => ({ name: s.name, slug: s.slug, category_id: cat.id }))
+      );
+      if (subErr) console.log("[seed] Disabled Veterans subcategory insert error:", subErr.message);
+      else console.log(`[seed] Created ${newSubs.length} Disabled Veterans subcategories`);
+    }
+
+    const { data: allSubs } = await supabaseAdmin
+      .from("subcategories")
+      .select("id, slug")
+      .eq("category_id", cat.id);
+    const subMap: Record<string, string> = {};
+    for (const s of (allSubs || [])) subMap[s.slug] = s.id;
+
+    const { data: allCats } = await supabaseAdmin.from("categories").select("id, slug");
+    const catSlugToId: Record<string, string> = {};
+    for (const c of (allCats || [])) catSlugToId[c.slug] = c.id;
+
+    const RESOURCE_TAGGING: Record<string, { subcategorySlugs: string[]; crossCategorySlugs: string[] }> = {
+      "SC Department of Veterans' Affairs": { subcategorySlugs: ["disability-benefits-claims"], crossCategorySlugs: ["va-benefits"] },
+      "Disabled American Veterans (DAV)": { subcategorySlugs: ["disability-benefits-claims", "adaptive-transportation-mobility"], crossCategorySlugs: ["va-benefits", "transportation"] },
+      "Paralyzed Veterans of America": { subcategorySlugs: ["healthcare-rehabilitation", "adaptive-equipment-assistive-technology", "accessible-housing-home-modifications"], crossCategorySlugs: ["healthcare"] },
+      "VA Disability Compensation": { subcategorySlugs: ["disability-benefits-claims"], crossCategorySlugs: ["va-benefits"] },
+      "SC Vocational Rehabilitation": { subcategorySlugs: ["employment-vocational-rehabilitation"], crossCategorySlugs: ["employment"] },
+      "Adaptive Sports": { subcategorySlugs: ["healthcare-rehabilitation"], crossCategorySlugs: ["healthcare"] },
+      "Specially Adapted Housing": { subcategorySlugs: ["accessible-housing-home-modifications"], crossCategorySlugs: ["housing"] },
+      "Automobile Allowance": { subcategorySlugs: ["adaptive-transportation-mobility", "adaptive-equipment-assistive-technology"], crossCategorySlugs: ["transportation"] },
+      "Property Tax Exemption": { subcategorySlugs: ["disability-benefits-claims"], crossCategorySlugs: ["financial"] },
+      "Blinded Veterans Association": { subcategorySlugs: ["healthcare-rehabilitation", "adaptive-equipment-assistive-technology"], crossCategorySlugs: ["healthcare"] },
+      "SC Commission for the Blind": { subcategorySlugs: ["employment-vocational-rehabilitation", "independent-living-daily-support", "adaptive-equipment-assistive-technology"], crossCategorySlugs: ["employment"] },
+      "Wounded Warrior Project": { subcategorySlugs: ["mental-health-ptsd-support", "employment-vocational-rehabilitation", "caregiver-family-support"], crossCategorySlugs: ["mental-health", "employment"] },
+      "Aid & Attendance": { subcategorySlugs: ["disability-benefits-claims", "independent-living-daily-support"], crossCategorySlugs: ["va-benefits"] },
+      "Protection & Advocacy": { subcategorySlugs: ["legal-advocacy-rights"], crossCategorySlugs: ["legal"] },
+      "Disabled Veterans Outreach Program": { subcategorySlugs: ["employment-vocational-rehabilitation"], crossCategorySlugs: ["employment"] },
+      "Veterans Crisis Line": { subcategorySlugs: ["mental-health-ptsd-support"], crossCategorySlugs: ["mental-health", "crisis-help"] },
+      "Homes for Our Troops": { subcategorySlugs: ["accessible-housing-home-modifications"], crossCategorySlugs: ["housing"] },
+      "VA Caregiver Support": { subcategorySlugs: ["caregiver-family-support"], crossCategorySlugs: ["family-support"] },
+    };
+
     if (existingResources && existingResources.length > 0) {
-      const needsApproval = existingResources.filter(r => r.status !== "approved");
-      if (needsApproval.length > 0) {
-        await supabaseAdmin.from("resources").update({ status: "approved" }).eq("category_id", cat.id);
-        console.log(`[seed] Updated ${needsApproval.length} Disabled Veterans resources to approved status`);
+      let tagCount = 0;
+      for (const res of existingResources) {
+        const matchKey = Object.keys(RESOURCE_TAGGING).find(k => res.title.includes(k));
+        if (!matchKey) continue;
+        const tags = RESOURCE_TAGGING[matchKey];
+
+        for (const subSlug of tags.subcategorySlugs) {
+          const subId = subMap[subSlug];
+          if (subId) {
+            await supabaseAdmin.from("resource_subcategories").upsert(
+              { resource_id: res.id, subcategory_id: subId },
+              { onConflict: "resource_id,subcategory_id" }
+            );
+          }
+        }
+
+        if (tags.subcategorySlugs.length > 0 && subMap[tags.subcategorySlugs[0]]) {
+          const firstSubName = DV_SUBCATEGORIES.find(s => s.slug === tags.subcategorySlugs[0])?.name;
+          if (firstSubName && res.subcategory !== firstSubName) {
+            await supabaseAdmin.from("resources").update({ subcategory: firstSubName }).eq("id", res.id);
+          }
+        }
+
+        for (const crossSlug of tags.crossCategorySlugs) {
+          const crossId = catSlugToId[crossSlug];
+          if (crossId) {
+            await supabaseAdmin.from("resource_categories").upsert(
+              { resource_id: res.id, category_id: crossId },
+              { onConflict: "resource_id,category_id" }
+            );
+            tagCount++;
+          }
+        }
       }
-      for (const r of existingResources) {
-        await supabaseAdmin.from("resource_categories").upsert({ resource_id: r.id, category_id: cat.id }, { onConflict: "resource_id,category_id" });
-      }
+      if (tagCount > 0) console.log(`[seed] Applied ${tagCount} cross-category tags to Disabled Veterans resources`);
       return;
     }
 

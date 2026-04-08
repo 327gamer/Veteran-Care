@@ -1,0 +1,180 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: DISABLED VETERANS CATEGORY — SUBCATEGORY STRUCTURE + MULTI-CATEGORY TAGGING
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Now that we are adding Disabled Veterans as a core category, we also need to structure it properly so it is useful, searchable, and scalable.
+
+This should NOT be treated as one flat bucket.
+
+We need:
+
+1. multi-category support
+2. subcategory structure
+3. overlapping resource logic
+4. same universal rules used elsewhere in platform
+
+--------------------------------------------------
+CORE RULE
+--------------------------------------------------
+
+Disabled Veterans must be a TOP-LEVEL category.
+
+However, many resources in this category will also belong in other categories such as:
+
+- Healthcare
+- VA Benefits
+- Housing Support
+- Transportation
+- Employment
+- Legal
+- Mental Health
+- Family Support
+
+Therefore:
+
+MULTI-CATEGORY TAGGING MUST BE USED.
+
+A resource should be allowed to appear in:
+- Disabled Veterans
+AND
+- one or more other relevant categories
+
+This is intentional and should help users find the same resource from different entry points.
+
+--------------------------------------------------
+REQUIRED STRUCTURE
+--------------------------------------------------
+
+Please create Disabled Veterans as a parent category with the following initial subcategories:
+
+1. Disability Benefits & Claims
+   - VA disability claims
+   - appeals
+   - rating increases
+   - claims support
+   - benefits counseling
+
+2. Accessible Housing & Home Modifications
+   - wheelchair-accessible housing
+   - ramps
+   - home accessibility upgrades
+   - independent living modifications
+
+3. Adaptive Transportation & Mobility
+   - accessible transportation
+   - mobility assistance
+   - vehicle modification support
+   - transport to appointments
+
+4. Healthcare & Rehabilitation
+   - specialty medical care
+   - rehabilitation services
+   - physical therapy
+   - occupational therapy
+   - prosthetics support
+
+5. Mental Health & PTSD Support
+   - PTSD support
+   - trauma counseling
+   - suicide prevention
+   - behavioral health
+   - crisis support for disabled veterans
+
+6. Employment & Vocational Rehabilitation
+   - disability-friendly employment services
+   - vocational rehab
+   - workforce re-entry
+   - accommodations support
+   - job placement
+
+7. Caregiver & Family Support
+   - family caregiver support
+   - respite support
+   - dependent/family services
+   - family navigation assistance
+
+8. Legal Advocacy & Rights
+   - disability rights
+   - veteran legal aid
+   - discharge-related impact on disability access
+   - accommodations / discrimination support
+
+9. Independent Living & Daily Support
+   - personal care assistance
+   - case management
+   - life-skills support
+   - community support for daily living
+
+10. Adaptive Equipment & Assistive Technology
+   - prosthetics
+   - wheelchairs
+   - assistive technology
+   - hearing/vision support devices
+   - communication aids
+
+--------------------------------------------------
+IMPLEMENTATION RULES
+--------------------------------------------------
+
+1. These subcategories should work like existing subcategory systems already in the platform.
+
+2. Resources must be allowed to exist in:
+   - Disabled Veterans
+   - multiple relevant categories
+   - multiple relevant subcategories where appropriate
+
+3. Do NOT force resources into only one location if overlap is real and useful.
+
+4. If existing resources already in the database fit this new structure, begin mapping them into:
+   - Disabled Veterans
+   - the correct Disabled Veterans subcategory
+   - plus any existing relevant parent categories
+
+--------------------------------------------------
+HOMEPAGE / RESOURCE CENTER / ADMIN
+--------------------------------------------------
+
+Please make sure this new structure is supported in:
+
+- homepage category behavior
+- resource center filters
+- geolocation matching
+- admin tagging / editing
+- search and fuzzy matching
+- category-based browsing
+- lead routing / matching logic where applicable
+
+--------------------------------------------------
+DATA POPULATION GUIDANCE
+--------------------------------------------------
+
+As South Carolina resources are added for Disabled Veterans, prioritize resources that fit one or more of the subcategories above.
+
+Good examples:
+- statewide disability claims help
+- accessible housing programs
+- adaptive transportation options
+- vocational rehabilitation programs
+- prosthetics / rehabilitation resources
+- caregiver support programs
+- legal advocacy for disabled veterans
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Disabled Veterans should become a structured, searchable, and highly usable category — not just a label.
+
+It should help disabled veterans reach the right resources faster by combining:
+- parent category visibility
+- subcategory precision
+- multi-category overlap
+
+--- END ---
