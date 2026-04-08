@@ -140,6 +140,10 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
     dateStyle: "medium",
     timeStyle: "short",
   });
+  const baseUrl = getBaseUrl();
+  const logoUrl = platform.domain ? `https://${platform.domain}/logo.png` : `${baseUrl}/logo.png`;
+  const partnerApplyUrl = platform.domain ? `https://${platform.domain}/partner-apply` : `${baseUrl}/partner-apply`;
+  const siteUrl = platform.domain ? `https://${platform.domain}` : baseUrl;
 
   return `
 <!DOCTYPE html>
@@ -147,6 +151,10 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
   
+  <div style="text-align: center; padding: 12px 0 20px 0; border-bottom: 2px solid #166534; margin-bottom: 24px;">
+    <img src="${logoUrl}" alt="${platform.name}" style="height: 48px; max-width: 200px;" />
+  </div>
+
   ${isImmediate ? `<div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
     <strong style="color: #DC2626; font-size: 16px;">IMMEDIATE — This ${platform.userNoun} needs urgent help</strong>
     <p style="color: #991B1B; margin: 4px 0 0 0; font-size: 13px;">Please respond as quickly as possible. Escalation occurs in 15 minutes if unacknowledged.</p>
@@ -200,13 +208,23 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
   </div>` : ""}
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
-    <p style="margin: 0; font-size: 13px; color: #92400E;">
+    <p style="margin: 0 0 8px 0; font-size: 13px; color: #92400E;">
       <strong>Next Steps:</strong> Please reach out to this ${platform.userNoun} using their preferred contact method. 
       If you are unable to assist, the lead will be automatically rerouted to another partner.
+    </p>
+    <p style="margin: 0; font-size: 12px; color: #92400E; line-height: 1.5;">
+      After contacting the veteran, please update the lead status using the buttons below. If you successfully assist the veteran, select "Service Completed". If you are unable to connect or assist, please select the appropriate option so the lead can be reassigned if needed.
     </p>
   </div>
 
   ${buildActionButtonsHtml(lead.leadId)}
+
+  <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; text-align: center;">
+    <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #0C4A6E;">Want to help more veterans?</p>
+    <p style="margin: 0 0 14px 0; font-size: 13px; color: #0369A1; line-height: 1.5;">Join our trusted network or refer other organizations that can support veterans in your community.</p>
+    <a href="${partnerApplyUrl}" style="display: inline-block; background: #166534; color: white; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none;">Become a Trusted Partner</a>
+    <p style="margin: 10px 0 0 0; font-size: 12px; color: #6B7280;">Know another organization that can help veterans? <a href="${siteUrl}" style="color: #2563EB; text-decoration: underline;">Share VeteranCare.com</a></p>
+  </div>
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
     <p>This lead was routed to ${escapeHtml(partner.partnerName)} by ${platform.name} ${platform.navigatorTitle}.</p>

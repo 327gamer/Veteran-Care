@@ -1,0 +1,95 @@
+This is a refinement to the routed lead email sent to businesses/resources.
+
+IMPORTANT:
+Do NOT change or remove any existing content, legal text, unsubscribe links, lead ID, or current structure.
+
+We are ONLY adding enhancements to improve clarity, professionalism, and growth.
+
+-------------------------------------
+1. ADD LOGO HEADER (TOP OF EMAIL)
+-------------------------------------
+
+At the very top of the email, add the Veteran Care logo (same style used in emails sent to veterans).
+
+Goal:
+- make the email look more professional
+- consistent branding across all communications
+
+-------------------------------------
+2. KEEP EXISTING "NEXT STEPS" (DO NOT CHANGE)
+-------------------------------------
+
+Keep this EXACT text as-is:
+
+"Next Steps: Please reach out to this veteran using their preferred contact method. If you are unable to assist, the lead will be automatically rerouted to another partner."
+
+-------------------------------------
+3. ADD INSTRUCTION LINE (UNDER NEXT STEPS)
+-------------------------------------
+
+Directly UNDER the existing "Next Steps" section, add:
+
+"After contacting the veteran, please update the lead status using the buttons below. If you successfully assist the veteran, select 'Service Completed'. If you are unable to connect or assist, please select the appropriate option so the lead can be reassigned if needed."
+
+-------------------------------------
+4. ADD OPTIONAL NOTES SUPPORT
+-------------------------------------
+
+When the recipient clicks any status button:
+- Connected with Veteran
+- Service Completed
+- No Response
+- Unable to Contact
+
+Allow them to optionally add a short note before confirming.
+
+Examples:
+- "Left voicemail"
+- "Appointment scheduled"
+- "Completed intake"
+- "Wrong number"
+- "Referred elsewhere"
+
+This note should be saved and visible in the admin panel under that lead.
+
+IMPORTANT:
+- keep it optional
+- keep it simple and fast
+
+-------------------------------------
+5. ADD GROWTH CTA (BOTTOM OF EMAIL)
+-------------------------------------
+
+At the bottom of the email (ABOVE the legal/unsubscribe section), add a simple call-to-action section.
+
+Example concept:
+
+"Want to help more veterans?
+Join our trusted network or refer other organizations that can support veterans in your community."
+
+Include:
+- Button: "Become a Trusted Partner"
+  → link to Trusted Services signup page
+
+- Optional secondary text link:
+  "Know another organization that can help veterans? Share VeteranCare.com"
+
+Goal:
+- turn every lead email into a growth channel
+- encourage referrals and partner signups
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+We are enhancing the email WITHOUT changing its core function.
+
+This improves:
+- professionalism (logo)
+- clarity (status instructions)
+- tracking (optional notes)
+- growth (partner CTA)
+
+Everything else remains exactly the same.
+
+--- END ---

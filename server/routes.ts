@@ -7265,14 +7265,23 @@ export async function registerRoutes(
 
   function buildConfirmationPageHtml(token: string, action: string): string {
     const label = actionLabels[action] || action;
+    const placeholders: Record<string, string> = {
+      connected: "e.g., Left voicemail, Appointment scheduled...",
+      completed: "e.g., Completed intake, Benefits filed...",
+      no_response: "e.g., Called twice, Wrong number...",
+      unable_to_contact: "e.g., Wrong number, Referred elsewhere...",
+    };
+    const placeholder = placeholders[action] || "Add a note (optional)";
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm Update — ${platform.name}</title></head>
     <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F9FAFB;">
-    <div style="max-width:440px;padding:32px;text-align:center;">
+    <div style="max-width:440px;width:100%;padding:32px;text-align:center;">
       <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 12px 0;">Confirm Status Update</h1>
-      <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 24px 0;">You are about to update this lead to: <strong>${label}</strong></p>
+      <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 20px 0;">You are about to update this lead to: <strong>${label}</strong></p>
       <form method="POST" action="/api/partner/lead-action">
         <input type="hidden" name="token" value="${token}" />
-        <button type="submit" style="background:#166534;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;">Confirm Update</button>
+        <textarea name="notes" rows="3" maxlength="500" placeholder="${placeholder}" style="width:100%;padding:10px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;margin-bottom:16px;box-sizing:border-box;"></textarea>
+        <p style="font-size:11px;color:#9CA3AF;margin:0 0 16px 0;">Optional — add a short note about this lead</p>
+        <button type="submit" style="background:#166534;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;width:100%;">Confirm Update</button>
       </form>
       <p style="font-size:12px;color:#9CA3AF;margin-top:20px;">${platform.name}</p>
     </div></body></html>`;
@@ -7310,10 +7319,11 @@ export async function registerRoutes(
 
       const { leadId, action } = result;
       const outcome = action;
+      const partnerNotes = typeof req.body.notes === "string" ? req.body.notes.trim().slice(0, 500) : "";
 
       const { data: lead } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status")
+        .select("id, status, admin_notes")
         .eq("id", leadId)
         .single();
 
@@ -7333,6 +7343,11 @@ export async function registerRoutes(
         updates.status = "in_progress";
       }
 
+      if (partnerNotes) {
+        const notePrefix = `[Partner — ${actionLabels[action] || action}]: ${partnerNotes}`;
+        updates.admin_notes = lead.admin_notes ? `${lead.admin_notes}\n${notePrefix}` : notePrefix;
+      }
+
       const { error: updateErr } = await supabaseAdmin.from("navigator_requests").update(updates).eq("id", leadId);
       if (updateErr) {
         console.log("[lead-action] DB update error:", updateErr.message);
@@ -7340,7 +7355,8 @@ export async function registerRoutes(
       }
 
       const label = actionLabels[action] || action;
-      return res.send(buildActionResponseHtml("Status Updated", `Thank you! The lead has been updated to: "${label}". Our team has been notified.`, "success"));
+      const noteAck = partnerNotes ? " Your note has been saved." : "";
+      return res.send(buildActionResponseHtml("Status Updated", `Thank you! The lead has been updated to: "${label}".${noteAck} Our team has been notified.`, "success"));
     } catch (err: any) {
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
