@@ -1,0 +1,74 @@
+The filtering UI is looking better now, but the actual assignment logic is still not working correctly.
+
+What is improved:
+- state filter is present
+- category filter is present
+- routing status filter is present
+- overall layout is cleaner
+
+However, two important problems remain:
+
+-------------------------------------
+ISSUE 1 — SEARCH STILL NOT WORKING
+-------------------------------------
+
+When typing known names into the search area, nothing populates.
+
+If I type the name of a known resource / partner / internal option, it should appear.
+
+Right now the search still does not appear to be connected properly to the assignable/routable dataset.
+
+Please verify that search is actually querying the full assignable pool and returning matches by name.
+
+-------------------------------------
+ISSUE 2 — FILTERED RESULTS SHOULD AUTO-POPULATE
+-------------------------------------
+
+This is the bigger issue.
+
+If the request already has:
+- State = SC
+- Category = Education & GI Bill
+- City / location context from the lead
+
+Then the system should automatically populate matching assignable options below.
+
+Example:
+If State = SC and Category = Education & GI Bill,
+then I should immediately see relevant assignable resources/partners/programs in that category.
+
+Right now it is still sitting empty or not showing expected options.
+
+That defeats the purpose of the filters.
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+1. Best Matches at top (if available)
+2. Filtered assignable results auto-populate below based on:
+   - category
+   - state
+   - city / region if available
+3. Search by name should work on top of that
+4. If no exact city matches exist, widen logically to:
+   - nearby
+   - state-level
+   - broader category matches
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This needs to work for:
+- trusted partners
+- free resources
+- internal Veteran Care programs
+- any valid assignable destination
+
+Also, I noticed a request that previously showed recommendations now did not.
+Please verify whether the recommendation logic or matching logic has become too restrictive or regressed.
+
+The UI is improving, but the actual population and search behavior is still not correct.
+
+--- END ---

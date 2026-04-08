@@ -298,6 +298,40 @@ function AdminResourcesInner() {
     enabled: authenticated && !!manualAssignLeadId,
   });
 
+  const assignLeadContext = useMemo(() => {
+    if (!manualAssignLeadId) return null;
+    const lead = navRequests.find((r: any) => r.id === manualAssignLeadId);
+    return lead ? { category: lead.category || "", state: lead.user_state || "", city: lead.user_city || "" } : null;
+  }, [manualAssignLeadId, navRequests]);
+
+  const [assignSearchText, setAssignSearchText] = useState("");
+  const [showAllAssignable, setShowAllAssignable] = useState(false);
+
+  const assignableSearchParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (assignSearchText.trim()) {
+      params.set("q", assignSearchText.trim());
+    } else if (!showAllAssignable && assignLeadContext) {
+      if (assignLeadContext.state) params.set("state", assignLeadContext.state);
+      if (assignLeadContext.category) params.set("category", assignLeadContext.category);
+      if (assignLeadContext.city) params.set("city", assignLeadContext.city);
+    }
+    return params.toString();
+  }, [assignSearchText, showAllAssignable, assignLeadContext]);
+
+  const { data: assignableResults = [], isLoading: assignableLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/leads/assignable-search", assignableSearchParams, adminKey],
+    queryFn: async () => {
+      const r = await fetch(`/api/admin/leads/assignable-search?${assignableSearchParams}`, {
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!r.ok) return [];
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: authenticated && !!manualAssignLeadId,
+  });
+
   const partnerMutation = useMutation({
     mutationFn: async ({ method, url, body }: { method: string; url: string; body?: any }) => {
       const res = await fetch(url, {
@@ -1250,7 +1284,7 @@ function AdminResourcesInner() {
                           {(req.status === "new" || req.status === "in_progress") && (
                             <button
                               className="text-blue-600 underline text-[9px] hover:text-blue-800"
-                              onClick={() => { setManualAssignLeadId(manualAssignLeadId === req.id ? null : req.id); setManualPartnerId(""); }}
+                              onClick={() => { setManualAssignLeadId(manualAssignLeadId === req.id ? null : req.id); setManualPartnerId(""); setAssignSearchText(""); setShowAllAssignable(false); }}
                             >
                               Change
                             </button>
@@ -1268,7 +1302,7 @@ function AdminResourcesInner() {
                         {(req.status === "new" || req.status === "in_progress") && (
                           <button
                             className="text-teal-700 underline whitespace-nowrap hover:text-teal-900"
-                            onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); }}
+                            onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); setAssignSearchText(""); setShowAllAssignable(false); }}
                           >
                             Assign partner
                           </button>
@@ -1284,7 +1318,7 @@ function AdminResourcesInner() {
                         </div>
                         <button
                           className="text-amber-700 underline whitespace-nowrap hover:text-amber-900"
-                          onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); }}
+                          onClick={() => { setManualAssignLeadId(req.id); setManualPartnerId(""); setAssignSearchText(""); setShowAllAssignable(false); }}
                         >
                           Assign manually
                         </button>
@@ -1292,69 +1326,42 @@ function AdminResourcesInner() {
                     )}
 
                     {manualAssignLeadId === req.id && (() => {
-                      const allPartners = partners;
-                      const matchLabel = (s: any) => {
-                        if (s.categoryMatch && s.locationMatch) return { text: "Best Match", cls: "bg-green-200 text-green-900 border-green-400" };
-                        if (s.categoryMatch) return { text: "Category Match", cls: "bg-blue-100 text-blue-800 border-blue-300" };
-                        if (s.locationMatch) return { text: "Nearby Option", cls: "bg-amber-100 text-amber-800 border-amber-300" };
-                        return { text: "Available", cls: "bg-slate-100 text-slate-700 border-slate-300" };
+                      const typeLabel = (t: string) => {
+                        if (t === "partner") return { text: "Partner", cls: "bg-blue-100 text-blue-800 border-blue-300" };
+                        if (t === "resource") return { text: "Resource", cls: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+                        if (t === "trusted_service") return { text: "Trusted Service", cls: "bg-purple-100 text-purple-800 border-purple-300" };
+                        return { text: t, cls: "bg-slate-100 text-slate-700 border-slate-300" };
                       };
 
-                      const searchVal = manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7) : "";
-                      const showAll = manualPartnerId === "show_all";
-                      const sq = searchVal.toLowerCase();
+                      const contextLabel = [
+                        req.category && req.category.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                        req.user_state,
+                        req.user_city && req.user_city.replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                      ].filter(Boolean).join(", ");
 
-                      const reqCategory = req.category?.toLowerCase() || "";
-                      const reqState = req.user_state?.toUpperCase() || "";
-                      const reqCity = req.user_city?.toLowerCase() || "";
-
-                      const scorePartner = (p: any) => {
-                        let score = 0;
-                        if (reqState && p.state?.toUpperCase() === reqState) score += 2;
-                        if (reqCity && p.cities?.some((c: string) => c.toLowerCase() === reqCity)) score += 3;
-                        if (reqCategory && p.name?.toLowerCase().includes(reqCategory)) score += 1;
-                        return score;
+                      const handleAssign = (item: any) => {
+                        if (item.type === "partner") {
+                          rerouteMutation.mutate({ id: req.id, partner_id: item.id });
+                        } else {
+                          const noteText = `Assigned to ${item.type === "trusted_service" ? "Trusted Service" : "Resource"}: ${item.name}${item.phone ? " | " + item.phone : ""}${item.email ? " | " + item.email : ""}${item.website ? " | " + item.website : ""}`;
+                          navPatchMutation.mutate({
+                            id: req.id,
+                            updates: { status: "in_progress", admin_notes: noteText },
+                          });
+                          toast({ description: `Assigned to ${item.name}` });
+                        }
+                        setManualAssignLeadId(null);
+                        setAssignSearchText("");
+                        setShowAllAssignable(false);
                       };
-
-                      const contextFiltered = allPartners.filter((p: any) => {
-                        if (!p.is_active) return false;
-                        if (reqState && p.state && p.state.toUpperCase() !== reqState) return false;
-                        return true;
-                      });
-
-                      let displayPartners: any[];
-                      let displayLabel = "";
-                      if (sq) {
-                        displayPartners = allPartners.filter((p: any) =>
-                          p.name?.toLowerCase().includes(sq) ||
-                          p.contact_name?.toLowerCase().includes(sq) ||
-                          p.contact_email?.toLowerCase().includes(sq) ||
-                          p.external_intake_email?.toLowerCase().includes(sq) ||
-                          p.notes?.toLowerCase().includes(sq)
-                        );
-                        displayLabel = `Search results for "${searchVal}"`;
-                      } else if (showAll) {
-                        displayPartners = allPartners.filter((p: any) => p.is_active);
-                        displayLabel = `All active partners (${displayPartners.length})`;
-                      } else {
-                        displayPartners = contextFiltered.length > 0 ? contextFiltered : allPartners.filter((p: any) => p.is_active);
-                        const hasContext = reqState || reqCategory;
-                        displayLabel = hasContext && contextFiltered.length > 0
-                          ? `Filtered: ${[reqCategory && reqCategory.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()), reqState, reqCity && reqCity.replace(/\b\w/g, (c: string) => c.toUpperCase())].filter(Boolean).join(", ")} (${contextFiltered.length})`
-                          : `All active partners (${displayPartners.length})`;
-                      }
-
-                      if (!sq) {
-                        displayPartners = [...displayPartners].sort((a, b) => scorePartner(b) - scorePartner(a));
-                      }
 
                       return (
                       <div className="bg-slate-50 border border-slate-200 rounded p-3 space-y-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-semibold text-slate-700">Assign to Partner</p>
+                          <p className="text-[11px] font-semibold text-slate-700">Assign Lead</p>
                           <button
                             className="text-[10px] text-muted-foreground underline hover:text-slate-600"
-                            onClick={() => { setManualAssignLeadId(null); setManualPartnerId(""); }}
+                            onClick={() => { setManualAssignLeadId(null); setAssignSearchText(""); setShowAllAssignable(false); }}
                           >
                             Close
                           </button>
@@ -1362,19 +1369,13 @@ function AdminResourcesInner() {
 
                         {suggestedPartners.length > 0 && (
                           <div className="space-y-1.5">
-                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Suggested Matches</p>
-                            {suggestedPartners.map((s: any) => {
-                              const ml = matchLabel(s);
-                              return (
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Routing Rule Matches</p>
+                            {suggestedPartners.map((s: any) => (
                               <button
                                 key={s.partnerId}
                                 data-testid={`suggest-partner-${s.partnerId}`}
                                 className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-green-200 bg-green-50 hover:bg-green-100 text-left transition-colors"
-                                onClick={() => {
-                                  rerouteMutation.mutate({ id: req.id, partner_id: s.partnerId });
-                                  setManualAssignLeadId(null);
-                                  setManualPartnerId("");
-                                }}
+                                onClick={() => handleAssign({ id: s.partnerId, name: s.partnerName, type: "partner" })}
                               >
                                 <div className="min-w-0">
                                   <span className="flex items-center gap-1.5 text-[11px] text-green-800 font-medium">
@@ -1387,81 +1388,93 @@ function AdminResourcesInner() {
                                     </span>
                                   )}
                                 </div>
-                                <Badge variant="outline" className={`text-[9px] shrink-0 ${ml.cls}`}>
-                                  {ml.text}
-                                </Badge>
+                                <Badge variant="outline" className="text-[9px] shrink-0 bg-green-200 text-green-900 border-green-400">Best Match</Badge>
                               </button>
-                              );
-                            })}
+                            ))}
                           </div>
-                        )}
-
-                        {suggestedPartners.length === 0 && (
-                          <p className="text-[10px] text-muted-foreground italic">No routing rules match — search or browse partners below.</p>
                         )}
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-                              {suggestedPartners.length > 0 ? "Or choose a partner" : "Choose a partner"}
+                              {suggestedPartners.length > 0 ? "Or choose from all sources" : "Find a match"}
                             </p>
-                            {!showAll && !sq && contextFiltered.length < allPartners.filter((p: any) => p.is_active).length && (
+                            {!showAllAssignable && !assignSearchText && assignLeadContext && (assignLeadContext.state || assignLeadContext.category) && (
                               <button
                                 className="text-[9px] text-primary underline hover:text-primary/80"
-                                data-testid="button-show-all-partners"
-                                onClick={() => setManualPartnerId("show_all")}
+                                data-testid="button-show-all-assignable"
+                                onClick={() => setShowAllAssignable(true)}
                               >
-                                Show all partners
+                                Show all
                               </button>
                             )}
-                            {(showAll || sq) && (
+                            {(showAllAssignable || assignSearchText) && (
                               <button
                                 className="text-[9px] text-primary underline hover:text-primary/80"
-                                onClick={() => setManualPartnerId("")}
+                                onClick={() => { setShowAllAssignable(false); setAssignSearchText(""); }}
                               >
-                                Reset filters
+                                Reset to filtered
                               </button>
                             )}
                           </div>
+
+                          {!assignSearchText && !showAllAssignable && contextLabel && (
+                            <p className="text-[9px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                              Showing matches for: {contextLabel}
+                            </p>
+                          )}
 
                           <div className="relative">
                             <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
                             <Input
-                              data-testid={`input-partner-search-${req.id}`}
+                              data-testid={`input-assign-search-${req.id}`}
                               className="h-6 text-[11px] pl-6"
-                              placeholder="Search all partners by name, contact, email..."
-                              value={searchVal}
-                              onChange={(e) => setManualPartnerId(e.target.value ? `search:${e.target.value}` : "")}
+                              placeholder="Search partners, resources, trusted services..."
+                              value={assignSearchText}
+                              onChange={(e) => setAssignSearchText(e.target.value)}
                             />
                           </div>
 
-                          <p className="text-[9px] text-muted-foreground">{displayLabel}</p>
-
-                          <div className="max-h-[200px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
-                            {displayPartners.length === 0 ? (
-                              <p className="text-[10px] text-muted-foreground text-center py-2">No partners found</p>
+                          <div className="max-h-[260px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
+                            {assignableLoading ? (
+                              <p className="text-[10px] text-muted-foreground text-center py-3">Loading...</p>
+                            ) : assignableResults.length === 0 ? (
+                              <div className="text-center py-3 space-y-1">
+                                <p className="text-[10px] text-muted-foreground">No matches found</p>
+                                {!showAllAssignable && !assignSearchText && (
+                                  <button className="text-[9px] text-primary underline" onClick={() => setShowAllAssignable(true)}>
+                                    Show all available options
+                                  </button>
+                                )}
+                              </div>
                             ) : (
-                              displayPartners.map((p: any) => (
-                                <button
-                                  key={p.id}
-                                  data-testid={`partner-option-${p.id}`}
-                                  className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-slate-50 text-left transition-colors border border-transparent hover:border-slate-200"
-                                  onClick={() => {
-                                    rerouteMutation.mutate({ id: req.id, partner_id: p.id });
-                                    setManualPartnerId("");
-                                    setManualAssignLeadId(null);
-                                  }}
-                                >
-                                  <div className="min-w-0">
-                                    <p className="text-[11px] font-medium text-slate-800 truncate">{p.name}</p>
-                                    <p className="text-[9px] text-muted-foreground truncate">
-                                      {[p.contact_name, p.state, p.cities?.length > 0 ? p.cities.join(", ") : null].filter(Boolean).join(" · ")}
-                                      {!p.is_lead_enabled && " · (lead intake off)"}
-                                    </p>
-                                  </div>
-                                  <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>
-                                </button>
-                              ))
+                              <>
+                                <p className="text-[9px] text-muted-foreground px-1 pb-0.5">
+                                  {assignSearchText ? `Search results (${assignableResults.length})` : showAllAssignable ? `All options (${assignableResults.length})` : `Filtered results (${assignableResults.length})`}
+                                </p>
+                                {assignableResults.map((item: any) => {
+                                  const tl = typeLabel(item.type);
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      data-testid={`assignable-option-${item.id}`}
+                                      className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded hover:bg-slate-50 text-left transition-colors border border-transparent hover:border-slate-200"
+                                      onClick={() => handleAssign(item)}
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <Badge variant="outline" className={`text-[8px] px-1 py-0 shrink-0 ${tl.cls}`}>{tl.text}</Badge>
+                                          <p className="text-[11px] font-medium text-slate-800 truncate">{item.name}</p>
+                                        </div>
+                                        <p className="text-[9px] text-muted-foreground truncate mt-0.5 ml-0.5">
+                                          {[item.category, item.city, item.state, item.contact, item.phone].filter(Boolean).join(" · ")}
+                                        </p>
+                                      </div>
+                                      <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>
+                                    </button>
+                                  );
+                                })}
+                              </>
                             )}
                           </div>
                         </div>
@@ -1605,6 +1618,8 @@ function AdminResourcesInner() {
                             onClick={() => {
                               setManualAssignLeadId(manualAssignLeadId === req.id ? null : req.id);
                               setManualPartnerId("");
+                              setAssignSearchText("");
+                              setShowAllAssignable(false);
                             }}
                           >
                             <Users className="h-3 w-3 mr-1" />

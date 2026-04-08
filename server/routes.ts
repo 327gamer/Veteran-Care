@@ -6113,6 +6113,110 @@ export async function registerRoutes(
     return res.json({ success: true, rerouted: true, partner_name: result.partnerName });
   });
 
+  app.get("/api/admin/leads/assignable-search", requireAdmin, async (req, res) => {
+    const { q, category, state, city } = req.query;
+    const searchQ = typeof q === "string" ? q.trim().toLowerCase() : "";
+    const catQ = typeof category === "string" ? category.trim().toLowerCase() : "";
+    const stateQ = typeof state === "string" ? state.trim().toUpperCase() : "";
+    const cityQ = typeof city === "string" ? city.trim().toLowerCase() : "";
+
+    const catTokens = catQ ? catQ.replace(/[&-]/g, " ").split(/\s+/).filter(w => w.length > 2) : [];
+    const catMatches = (targetName: string | null | undefined, targetSlug: string | null | undefined) => {
+      if (!catQ || catTokens.length === 0) return null;
+      const nameL = (targetName || "").toLowerCase();
+      const slugL = (targetSlug || "").toLowerCase();
+      if (slugL && (slugL.includes(catQ) || catQ.includes(slugL))) return true;
+      if (nameL && (nameL.includes(catQ) || catQ.includes(nameL))) return true;
+      const anyToken = catTokens.some(t => nameL.includes(t) || slugL.includes(t));
+      return anyToken || false;
+    };
+
+    const results: any[] = [];
+
+    try {
+      const { data: partnerData } = await supabaseAdmin.from("partner_organizations").select("id, name, contact_name, contact_email, contact_phone, website_url, state, cities, is_active, is_lead_enabled, notes");
+      if (partnerData) {
+        for (const p of partnerData) {
+          if (!p.is_active) continue;
+          if (stateQ && !searchQ && p.state && p.state.toUpperCase() !== stateQ) continue;
+          if (searchQ && !(
+            p.name?.toLowerCase().includes(searchQ) ||
+            p.contact_name?.toLowerCase().includes(searchQ) ||
+            p.contact_email?.toLowerCase().includes(searchQ) ||
+            p.notes?.toLowerCase().includes(searchQ)
+          )) continue;
+          let relevance = 1;
+          if (stateQ && p.state?.toUpperCase() === stateQ) relevance += 2;
+          if (cityQ && p.cities?.some((c: string) => c.toLowerCase() === cityQ)) relevance += 3;
+          results.push({
+            id: p.id, name: p.name, type: "partner",
+            contact: p.contact_name, phone: p.contact_phone, email: p.contact_email,
+            website: p.website_url, state: p.state, city: p.cities?.join(", ") || null,
+            isLeadEnabled: p.is_lead_enabled, relevance,
+          });
+        }
+      }
+    } catch (err: any) { console.log("[assignable-search] partner query error:", err?.message); }
+
+    try {
+      let resourceQuery = supabase.from("resources")
+        .select("id, title, phone, website_url, email, address, city, state, category_id, status, resource_categories(categories(name, slug))")
+        .eq("status", "approved")
+        .limit(500);
+      if (stateQ && !searchQ) resourceQuery = resourceQuery.or(`state.eq.${stateQ},state.is.null`);
+      const { data: resourceData } = await resourceQuery;
+      if (resourceData) {
+        const normalized = normalizeResourceList(resourceData);
+        for (const r of normalized) {
+          if (searchQ && !(
+            r.title?.toLowerCase().includes(searchQ) ||
+            r.phone?.toLowerCase().includes(searchQ) ||
+            r.email?.toLowerCase().includes(searchQ)
+          )) continue;
+          const cm = catMatches(r.categories?.name, r.categories?.slug);
+          if (catQ && cm === false) continue;
+          let relevance = 0;
+          if (stateQ && r.state?.toUpperCase() === stateQ) relevance += 2;
+          if (cityQ && r.city?.toLowerCase() === cityQ) relevance += 4;
+          if (cm === true) relevance += 3;
+          results.push({
+            id: r.id, name: r.title, type: "resource",
+            contact: null, phone: r.phone, email: r.email,
+            website: r.website_url, state: r.state, city: r.city,
+            category: r.categories?.name || null, relevance,
+          });
+        }
+      }
+    } catch (err: any) { console.log("[assignable-search] resource query error:", err?.message); }
+
+    try {
+      const tsRows = await pgQuery(`SELECT id, name, description, phone, email, website, city, state, category_name FROM trusted_services WHERE is_active = true`);
+      for (const ts of tsRows) {
+        if (stateQ && !searchQ && ts.state && ts.state.toUpperCase() !== stateQ) continue;
+        if (searchQ && !(
+          ts.name?.toLowerCase().includes(searchQ) ||
+          ts.description?.toLowerCase().includes(searchQ) ||
+          ts.category_name?.toLowerCase().includes(searchQ)
+        )) continue;
+        const cm = catMatches(ts.category_name, null);
+        if (catQ && cm === false) continue;
+        let relevance = 0;
+        if (stateQ && ts.state?.toUpperCase() === stateQ) relevance += 2;
+        if (cityQ && ts.city?.toLowerCase() === cityQ) relevance += 4;
+        if (cm === true) relevance += 3;
+        results.push({
+          id: `ts_${ts.id}`, name: ts.name, type: "trusted_service",
+          contact: null, phone: ts.phone, email: ts.email,
+          website: ts.website, state: ts.state, city: ts.city,
+          category: ts.category_name, relevance,
+        });
+      }
+    } catch (err: any) { console.log("[assignable-search] trusted_services query error:", err?.message); }
+
+    results.sort((a, b) => b.relevance - a.relevance);
+    return res.json(results.slice(0, 50));
+  });
+
   app.get("/api/admin/leads/:id/suggest-partners", requireAdmin, async (req, res) => {
     if (!hasPartnerTable || !hasRoutingColumns) return res.json([]);
     const { id } = req.params;
