@@ -14,6 +14,7 @@ import {
   Heart,
   HandHeart,
   Flower2,
+  Medal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,6 +43,7 @@ const configBySlug: Record<string, CategoryDisplayConfig> = {
   "substance-recovery": { icon: Heart, color: "text-rose-600", bg: "bg-rose-50", desc: "Wellness, recovery programs, and holistic support" },
   "community-support": { icon: HandHeart, color: "text-violet-600", bg: "bg-violet-50", desc: "Veteran organizations, volunteer groups, and peer networks" },
   "end-of-life-services": { icon: Flower2, color: "text-stone-600", bg: "bg-stone-50", desc: "Hospice, funeral services, estate planning, and survivor benefits" },
+  "disabled-veterans": { icon: Medal, color: "text-amber-700", bg: "bg-amber-50", desc: "Benefits, housing, employment, and advocacy for disabled veterans" },
 };
 
 const defaultConfig: CategoryDisplayConfig = {

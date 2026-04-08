@@ -158,6 +158,7 @@ export default function Home() {
     { slug: "food-assistance", label: "Food Assistance" },
     { slug: "community-support", label: "Community Support" },
     { slug: "transportation", label: "Transportation" },
+    { slug: "disabled-veterans", label: "Disabled Veterans" },
   ];
 
   const URGENCY_OPTIONS = [

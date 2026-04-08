@@ -35,6 +35,7 @@ const GUIDED_CATEGORIES = [
   { slug: "food-assistance", label: "Food Assistance" },
   { slug: "community-support", label: "Community Support" },
   { slug: "transportation", label: "Transportation" },
+  { slug: "disabled-veterans", label: "Disabled Veterans" },
   { slug: "end-of-life-services", label: "End of Life Services" },
 ];
 

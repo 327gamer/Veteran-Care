@@ -1221,6 +1221,368 @@ async function ensureEndOfLifeCategory() {
   }
 }
 
+async function ensureDisabledVeteransCategory() {
+  try {
+    const { data } = await supabaseAdmin
+      .from("categories")
+      .select("id")
+      .eq("slug", "disabled-veterans")
+      .maybeSingle();
+    if (!data) {
+      const { error } = await supabaseAdmin
+        .from("categories")
+        .insert({ name: "Disabled Veterans", slug: "disabled-veterans" });
+      if (error) {
+        console.log("[seed] Failed to insert Disabled Veterans category:", error.message);
+      } else {
+        console.log("[seed] Created Disabled Veterans category");
+      }
+    }
+  } catch (err: any) {
+    console.log("[seed] ensureDisabledVeteransCategory error:", err.message);
+  }
+
+  try {
+    const existing = await pgQuery(
+      `SELECT id FROM trusted_service_categories WHERE slug = 'disabled-veterans' LIMIT 1`
+    );
+    if (existing.length === 0) {
+      await pgQuery(`
+        INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
+        VALUES ('Disabled Veterans', 'disabled-veterans', 'Resources, benefits, housing, transportation, employment, and advocacy specifically for disabled veterans', 'shield-check', 10, true)
+        ON CONFLICT (slug) DO UPDATE SET is_active = true
+      `);
+      console.log("[seed] Added Disabled Veterans to trusted_service_categories");
+    }
+  } catch (err: any) {
+    console.log("[seed] trusted_service_categories disabled-veterans insert skipped:", err.message);
+  }
+}
+
+async function seedDisabledVeteransResources() {
+  try {
+    const { data: cat } = await supabaseAdmin
+      .from("categories")
+      .select("id")
+      .eq("slug", "disabled-veterans")
+      .maybeSingle();
+    if (!cat) return;
+
+    const { data: existingResources } = await supabaseAdmin
+      .from("resources")
+      .select("id, title, status")
+      .eq("category_id", cat.id);
+    if (existingResources && existingResources.length > 0) {
+      const needsApproval = existingResources.filter(r => r.status !== "approved");
+      if (needsApproval.length > 0) {
+        await supabaseAdmin.from("resources").update({ status: "approved" }).eq("category_id", cat.id);
+        console.log(`[seed] Updated ${needsApproval.length} Disabled Veterans resources to approved status`);
+      }
+      for (const r of existingResources) {
+        await supabaseAdmin.from("resource_categories").upsert({ resource_id: r.id, category_id: cat.id }, { onConflict: "resource_id,category_id" });
+      }
+      return;
+    }
+
+    const resources = [
+      {
+        title: "SC Department of Veterans' Affairs — Disabled Veterans Services",
+        short_description: "South Carolina's state veterans affairs office provides benefits counseling, claims assistance, and advocacy for disabled veterans including service-connected disability compensation, pension, and special adaptive programs.",
+        description: "The SC Department of Veterans' Affairs helps disabled veterans navigate VA disability claims, appeals, and benefits. Services include assistance with service-connected disability ratings, pension applications, Aid & Attendance benefits, and connections to adaptive housing and vehicle modification programs.",
+        phone: "803-647-2434",
+        website: "https://scdva.sc.gov",
+        address: "1 National Guard Rd, Columbia, SC 29201",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "All disabled veterans in South Carolina",
+        subcategory: "Benefits & Claims Assistance",
+      },
+      {
+        title: "Disabled American Veterans (DAV) — South Carolina",
+        short_description: "DAV provides free assistance to disabled veterans and their families with VA disability claims, benefits, transportation to VA medical facilities, and employment support.",
+        description: "The Disabled American Veterans organization in South Carolina offers free claims assistance from trained National Service Officers, a network of hospital service coordinators at VA facilities, a transportation program for veterans who need rides to VA medical centers, and employment support programs. DAV also provides community outreach and legislative advocacy on behalf of disabled veterans.",
+        phone: "803-647-2434",
+        website: "https://www.dav.org/veterans/find-your-local-office/",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "All disabled veterans and their families",
+        subcategory: "Advocacy & Support",
+      },
+      {
+        title: "Paralyzed Veterans of America — Southeast Chapter",
+        short_description: "PVA provides support, advocacy, and services for veterans with spinal cord injuries and diseases including wheelchair sports, benefits assistance, and accessibility advocacy.",
+        description: "The Paralyzed Veterans of America Southeast Chapter serves paralyzed and severely disabled veterans across South Carolina with benefits counseling, medical advocacy, adaptive sports and recreation programs, accessibility consulting, and peer mentoring. PVA also advocates for accessible housing and transportation improvements.",
+        phone: "800-292-9335",
+        website: "https://pva.org",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "Veterans with spinal cord injuries/diseases and other severe disabilities",
+        subcategory: "Advocacy & Support",
+      },
+      {
+        title: "VA Disability Compensation — Columbia VA Regional Office",
+        short_description: "The Columbia VA Regional Office processes disability compensation claims for South Carolina veterans with service-connected injuries or illnesses, including rating decisions and appeals.",
+        description: "The VA Regional Office in Columbia handles all disability compensation claims for SC veterans. Services include initial claims processing, rating increases, secondary conditions, Individual Unemployability (TDIU), Special Monthly Compensation, and the appeals process. Veterans can file claims online, by mail, or with assistance from accredited representatives.",
+        phone: "800-827-1000",
+        website: "https://www.va.gov/columbia-sc-regional-office/",
+        address: "6437 Garners Ferry Rd, Columbia, SC 29209",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29209",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Veterans with service-connected disabilities",
+        subcategory: "Benefits & Claims Assistance",
+      },
+      {
+        title: "SC Vocational Rehabilitation — Disabled Veterans Program",
+        short_description: "SC Vocational Rehabilitation provides disabled veterans with job training, assistive technology, job placement services, and workplace accommodations to support employment.",
+        description: "South Carolina Vocational Rehabilitation serves disabled veterans with comprehensive employment services including vocational assessment, skills training, assistive technology, job coaching, workplace modification assistance, and job placement. Priority of service is given to veterans with service-connected disabilities.",
+        phone: "803-896-6500",
+        website: "https://scvrd.net",
+        address: "1410 Boston Ave, West Columbia, SC 29170",
+        city: "West Columbia",
+        state: "SC",
+        zip_code: "29170",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Disabled veterans seeking employment",
+        subcategory: "Employment Support",
+      },
+      {
+        title: "Adaptive Sports & Recreation — Ralph H. Johnson VA Medical Center",
+        short_description: "The Charleston VA offers adaptive sports and recreation programs for disabled veterans including wheelchair basketball, cycling, kayaking, and fitness programs.",
+        description: "The Ralph H. Johnson VA Medical Center in Charleston provides adaptive sports and recreation programs designed for veterans with disabilities. Programs include wheelchair basketball, adaptive cycling, kayaking, swimming, track and field, and general fitness. These programs promote physical rehabilitation, social connection, and competitive opportunities including the National Veterans Wheelchair Games.",
+        phone: "843-577-5011",
+        website: "https://www.va.gov/charleston-health-care/",
+        address: "109 Bee St, Charleston, SC 29401",
+        city: "Charleston",
+        state: "SC",
+        zip_code: "29401",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Veterans with physical disabilities enrolled in VA healthcare",
+        subcategory: "Health & Wellness",
+      },
+      {
+        title: "Specially Adapted Housing (SAH) Grant — VA",
+        short_description: "VA provides grants up to $109,986 for disabled veterans to build or modify homes for wheelchair accessibility, including ramps, widened doorways, and accessible bathrooms.",
+        description: "The VA Specially Adapted Housing (SAH) grant program helps veterans with certain service-connected disabilities build, buy, or modify a home to meet their accessibility needs. Grants can fund wheelchair ramps, widened doorways, accessible bathrooms, roll-in showers, and other modifications. The Special Housing Adaptation (SHA) grant provides up to $44,299 for less severe disabilities. SC veterans can apply through the Columbia VA Regional Office.",
+        phone: "800-827-1000",
+        website: "https://www.va.gov/housing-assistance/disability-housing-grants/",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Veterans with qualifying service-connected disabilities",
+        subcategory: "Housing & Accessibility",
+      },
+      {
+        title: "Automobile Allowance & Adaptive Equipment — VA",
+        short_description: "VA provides a one-time allowance toward purchasing a vehicle and adaptive equipment for disabled veterans who have lost use of limbs or eyesight due to service.",
+        description: "The VA Automobile Allowance provides eligible disabled veterans with a one-time payment toward purchasing a specially equipped vehicle, plus ongoing adaptive equipment such as hand controls, wheelchair lifts, and modified steering. Eligibility includes loss or permanent loss of use of one or both hands or feet, permanent impairment of vision, or ankylosis of a knee or hip.",
+        phone: "800-827-1000",
+        website: "https://www.va.gov/disability/eligibility/special-claims/automobile-allowance-adaptive-equipment/",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Veterans with qualifying service-connected disabilities affecting mobility or vision",
+        subcategory: "Transportation & Mobility",
+      },
+      {
+        title: "SC Disabled Veteran Property Tax Exemption",
+        short_description: "South Carolina offers a complete property tax exemption on a primary residence for veterans with a permanent and total service-connected disability rating.",
+        description: "South Carolina provides a full property tax exemption on the primary residence and up to 1 acre of land for veterans who are permanently and totally disabled due to a service-connected condition. Veterans who are 100% disabled or rated as Individual Unemployability by the VA qualify. Applications are processed through the county auditor's office.",
+        phone: "803-898-5000",
+        website: "https://dor.sc.gov/tax/property",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "SC veterans with permanent and total service-connected disability",
+        subcategory: "Financial Benefits",
+      },
+      {
+        title: "Blinded Veterans Association — South Carolina",
+        short_description: "BVA provides peer support, advocacy, and rehabilitation resources for blinded and visually impaired veterans including assistive technology training and benefits assistance.",
+        description: "The Blinded Veterans Association supports veterans who have lost their sight during or after military service. Services include advocacy for improved VA blind rehabilitation services, peer mentoring, assistive technology guidance, benefits counseling, and connections to local blind rehabilitation programs at VA medical centers in Columbia and Charleston.",
+        phone: "800-669-7079",
+        website: "https://bva.org",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "Legally blind veterans",
+        subcategory: "Health & Rehabilitation",
+      },
+      {
+        title: "SC Commission for the Blind — Veteran Services",
+        short_description: "The SC Commission for the Blind offers vocational rehabilitation, independent living skills training, and assistive technology for blind and visually impaired veterans.",
+        description: "The SC Commission for the Blind provides comprehensive services for blind and visually impaired veterans including vocational rehabilitation, job placement assistance, assistive technology training, orientation and mobility instruction, independent living skills, and counseling. They coordinate with VA Blind Rehabilitation Centers for specialized training.",
+        phone: "803-898-8731",
+        website: "https://www.sccb.sc.gov",
+        address: "1430 Confederate Ave, Columbia, SC 29201",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Blind and visually impaired veterans in South Carolina",
+        subcategory: "Health & Rehabilitation",
+      },
+      {
+        title: "Wounded Warrior Project — South Carolina",
+        short_description: "WWP provides free programs and services for post-9/11 wounded, ill, and injured veterans including mental health support, career counseling, long-term rehabilitative care, and peer connection.",
+        description: "The Wounded Warrior Project serves post-9/11 veterans who incurred a physical or mental injury, illness, or wound during military service. Programs include Warriors to Work (employment), mental health services including PTSD and TBI treatment, physical health and wellness programs, long-term support for severely wounded veterans and their caregivers, and community connection events across South Carolina.",
+        phone: "888-997-2586",
+        website: "https://www.woundedwarriorproject.org",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "Post-9/11 veterans with service-connected injuries, illnesses, or wounds",
+        subcategory: "Comprehensive Support",
+      },
+      {
+        title: "Aid & Attendance and Housebound Benefits — VA",
+        short_description: "VA provides additional monthly pension payments to disabled veterans who need help with daily activities or are largely confined to their home.",
+        description: "Aid & Attendance is an enhanced VA pension benefit for veterans who require the aid of another person to perform daily activities such as bathing, feeding, dressing, or adjusting prosthetic devices. Housebound benefits are available for veterans who are permanently and substantially confined to their home. SC veterans can apply through the Columbia VA Regional Office or with help from a Veterans Service Organization.",
+        phone: "800-827-1000",
+        website: "https://www.va.gov/pension/aid-attendance-housebound/",
+        address: "Columbia, SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Wartime veterans with disabilities requiring daily assistance or who are housebound",
+        subcategory: "Benefits & Claims Assistance",
+      },
+      {
+        title: "SC Protection & Advocacy for People with Disabilities — Veterans",
+        short_description: "P&A provides free legal advocacy for disabled veterans facing discrimination, benefits denials, or accessibility barriers in employment, housing, and public services.",
+        description: "South Carolina Protection & Advocacy for People with Disabilities provides free legal services and advocacy to disabled veterans who experience discrimination, denial of services, abuse, or neglect. Services include disability rights information, legal representation in disputes involving employment, housing, education, government benefits, and accessibility, and systemic advocacy for policy changes benefiting disabled veterans.",
+        phone: "803-782-0639",
+        website: "https://www.pandasc.org",
+        address: "3710 Landmark Dr Suite 208, Columbia, SC 29204",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29204",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "Disabled veterans facing discrimination or rights violations",
+        subcategory: "Legal Advocacy",
+      },
+      {
+        title: "Disabled Veterans Outreach Program (DVOP) — SC DEW",
+        short_description: "DVOP specialists at SC Department of Employment and Workforce provide intensive employment services specifically for disabled and other eligible veterans.",
+        description: "The Disabled Veterans Outreach Program (DVOP) operates through SC Works centers across South Carolina. DVOP specialists provide one-on-one intensive employment services to disabled veterans and other veterans with significant barriers to employment. Services include career counseling, resume assistance, job search support, interview coaching, connections to training programs, and referrals to supportive services. Priority is given to veterans with service-connected disabilities.",
+        phone: "803-737-2400",
+        website: "https://www.dew.sc.gov/individuals/veterans-services",
+        address: "1550 Gadsden St, Columbia, SC 29201",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Disabled veterans and veterans with significant barriers to employment",
+        subcategory: "Employment Support",
+      },
+      {
+        title: "Veterans Crisis Line & Mental Health Services for Disabled Veterans",
+        short_description: "Specialized mental health support for disabled veterans including crisis intervention, PTSD treatment, TBI rehabilitation, and caregiver support through VA and community providers.",
+        description: "Disabled veterans can access specialized mental health services through VA medical centers in Columbia and Charleston, including PTSD treatment programs, traumatic brain injury rehabilitation, substance use treatment, and caregiver support programs. The Veterans Crisis Line (dial 988, press 1) provides 24/7 crisis support. The VA Caregiver Support Program assists family members caring for disabled veterans.",
+        phone: "988",
+        website: "https://www.veteranscrisisline.net",
+        address: "Statewide — SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "government",
+        eligibility: "All veterans, especially disabled veterans in crisis or needing mental health support",
+        subcategory: "Mental Health & Crisis",
+      },
+      {
+        title: "Homes for Our Troops — South Carolina",
+        short_description: "Homes for Our Troops builds and donates specially adapted, mortgage-free homes for severely injured post-9/11 veterans throughout South Carolina.",
+        description: "Homes for Our Troops builds specially adapted, mortgage-free homes for severely injured post-9/11 veterans across South Carolina. Homes are designed for wheelchair accessibility and include features like roll-under sinks, widened doorways, roll-in showers, and smart home technology. The organization also provides financial planning education and community reintegration support.",
+        phone: "866-787-6677",
+        website: "https://www.hfotusa.org",
+        address: "Statewide — SC",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29201",
+        is_national: false,
+        source_type: "nonprofit",
+        eligibility: "Post-9/11 veterans with severe service-connected disabilities",
+        subcategory: "Housing & Accessibility",
+      },
+      {
+        title: "VA Caregiver Support Program — Dorn VA Medical Center",
+        short_description: "The VA Caregiver Support Program provides stipends, training, respite care, and health insurance to family caregivers of disabled veterans at the Columbia VA.",
+        description: "The Program of Comprehensive Assistance for Family Caregivers at the Dorn VA Medical Center supports family members who care for disabled veterans. Benefits include a monthly stipend, access to health insurance through CHAMPVA, mental health counseling, caregiver training, respite care, and peer support groups. The program serves veterans of all eras who need personal care services due to serious injuries or illnesses sustained or aggravated in the line of duty.",
+        phone: "803-776-4000",
+        website: "https://www.va.gov/columbia-sc-health-care/",
+        address: "6439 Garners Ferry Rd, Columbia, SC 29209",
+        city: "Columbia",
+        state: "SC",
+        zip_code: "29209",
+        is_national: false,
+        source_type: "government",
+        eligibility: "Family caregivers of disabled veterans enrolled in VA healthcare",
+        subcategory: "Caregiver Support",
+      },
+    ];
+
+    let inserted = 0;
+    for (const r of resources) {
+      const { description, website, zip_code, is_national, ...rest } = r as any;
+      const row: Record<string, any> = {
+        ...rest,
+        category_id: cat.id,
+        status: "approved",
+      };
+      if (website) row.website_url = website;
+      if (zip_code) row.zip = zip_code;
+      const { data: insertedRow, error } = await supabaseAdmin.from("resources").insert(row).select("id").single();
+      if (!error && insertedRow) {
+        inserted++;
+        await supabaseAdmin.from("resource_categories").upsert({ resource_id: insertedRow.id, category_id: cat.id }, { onConflict: "resource_id,category_id" });
+      } else if (error) {
+        console.log(`[seed] Disabled Veterans resource insert error: ${error.message} — ${r.title}`);
+      }
+    }
+    if (inserted > 0) {
+      console.log(`[seed] Seeded ${inserted} Disabled Veterans resources for SC`);
+    }
+  } catch (err: any) {
+    console.log("[seed] seedDisabledVeteransResources error:", err.message);
+  }
+}
+
 async function checkStatesTable() {
   const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
   if (error) {
@@ -1442,6 +1804,8 @@ export async function registerRoutes(
   await backfillNavAmbassadorId();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
+  await ensureDisabledVeteransCategory();
+  await seedDisabledVeteransResources();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);

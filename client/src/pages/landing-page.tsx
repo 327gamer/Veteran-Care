@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Lock,
   Flower2,
+  Medal,
 } from "lucide-react";
 
 const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
@@ -33,6 +34,7 @@ const categories: { label: string; icon: React.ElementType; slug: string | null 
   { label: "VA Benefits", icon: ShieldCheck, slug: "va-benefits" },
   { label: "Family Support", icon: Users, slug: "family-support" },
   { label: "Food Assistance", icon: UtensilsCrossed, slug: "food-assistance" },
+  { label: "Disabled Veterans", icon: Medal, slug: "disabled-veterans" },
   { label: "End of Life Services", icon: Flower2, slug: "end-of-life-services" },
 ];
 

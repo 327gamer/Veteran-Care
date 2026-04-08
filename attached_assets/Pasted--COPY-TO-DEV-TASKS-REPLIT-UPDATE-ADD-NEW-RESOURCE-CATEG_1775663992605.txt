@@ -1,0 +1,103 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: ADD NEW RESOURCE CATEGORY — DISABLED VETERANS
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Add a new full category:
+
+Disabled Veterans
+
+This must function exactly like the other resource categories already in the platform.
+
+This is an important permanent category and should be treated as a core support area.
+
+--------------------------------------------------
+REQUIRED IMPLEMENTATION
+--------------------------------------------------
+
+Add:
+
+Disabled Veterans
+
+everywhere a core category is used.
+
+This includes:
+
+1. HOMEPAGE / LANDING PAGE
+- Add Disabled Veterans to the visible category list/grid
+- Match styling, spacing, and behavior of existing categories
+- Clicking it should follow the same routing / onboarding logic as the other categories
+
+2. RESOURCE CENTER
+- Add Disabled Veterans as a searchable / filterable category
+- Must work exactly like Housing, Employment, Healthcare, etc.
+
+3. GEOLOCATION / NEAR ME
+- Include Disabled Veterans in the same geolocation / city / state / ZIP based matching behavior
+- It should surface relevant local and statewide resources just like all other categories
+
+4. ADMIN / RESOURCE TAGGING
+- Add Disabled Veterans as a selectable category in admin
+- Allow resources to be assigned to this category
+- Ensure it appears in filters, review, and search
+
+5. MATCHING / LEAD ROUTING
+- If category-based matching exists in request flows, include Disabled Veterans there too
+- It must behave the same as existing support categories
+
+6. SEARCH
+- Disabled Veterans resources must be returned through resource search, category search, and related matching
+- Follow the same fuzzy / normalized search logic already in place
+
+--------------------------------------------------
+RESOURCE POPULATION REQUIREMENT
+--------------------------------------------------
+
+We need real South Carolina coverage loaded for this category.
+
+Please search / identify and populate Disabled Veterans related resources across South Carolina, including:
+
+- statewide resources
+- regional resources
+- city / county resources where available
+- nonprofits
+- government services
+- advocacy / support organizations
+- benefits / accessibility / disability support programs
+- housing / transportation / healthcare / legal / employment resources specifically serving disabled veterans where applicable
+
+Use the same statewide coverage mindset already used for other major categories.
+
+Important:
+Do not just create the category shell.
+Begin loading actual South Carolina resource data for it.
+
+--------------------------------------------------
+UNIVERSAL RULE
+--------------------------------------------------
+
+Apply the same universal platform rule already established for all categories:
+
+- same UI behavior
+- same layout logic
+- same filtering behavior
+- same search behavior
+- same geolocation behavior
+- same admin handling
+
+No custom one-off implementation.
+Disabled Veterans must plug into the existing category framework cleanly.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Disabled Veterans becomes a first-class category across the platform, fully integrated into discovery, matching, admin, and geolocation behavior, with real South Carolina resource coverage added.
+
+--- END ---
