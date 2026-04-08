@@ -1,0 +1,112 @@
+="82914"}
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: FINAL ALIGNMENT — TRUSTED SERVICES MUST MATCH RESOURCES FLOW
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+STATUS
+--------------------------------------------------
+
+Regular Resources is now correctly implemented:
+
+- All categories have AI Guide banner
+- Both guided and flat categories are consistent
+- UX is clean and user-friendly
+
+However, Trusted Services still does not fully match this experience.
+
+--------------------------------------------------
+ISSUE
+--------------------------------------------------
+
+Trusted Services currently:
+
+- skips the guided subcategory step
+- routes users directly into provider lists
+- does not mirror the same UX as Regular Resources
+
+This creates inconsistency in the user journey.
+
+--------------------------------------------------
+REQUIRED FIX (CRITICAL)
+--------------------------------------------------
+
+Trusted Services must follow the SAME FLOW as Regular Resources.
+
+NEW REQUIRED FLOW:
+
+1. Category Click (e.g. Housing)
+2. Subcategory Landing Page (same as Resources)
+3. Then filtered provider results
+
+--------------------------------------------------
+SUBCATEGORY SYSTEM
+--------------------------------------------------
+
+Trusted Services must reuse the SAME subcategories as Regular Resources.
+
+Examples:
+
+Housing:
+- Emergency Housing
+- Rental Assistance
+- VA Housing Benefits
+- Home Ownership
+- etc.
+
+Financial:
+- Mortgages
+- Loans
+- Credit Repair
+- Debt Relief
+- etc.
+
+Legal:
+- Legal Aid
+- Disability Appeals
+- Estate Planning
+- etc.
+
+--------------------------------------------------
+AI GUIDE BANNER
+--------------------------------------------------
+
+Must appear:
+
+- on category landing pages
+- on subcategory pages
+- before results
+
+Same behavior as Resources.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+User should NOT feel like they switched systems.
+
+Instead:
+
+Regular Resources = all options  
+Trusted Services = same journey, but prioritizing paid partners
+
+Same structure, same experience, different ranking.
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do NOT rebuild new logic.
+
+Reuse:
+
+- existing subcategory landing pages
+- existing routing system
+- existing AI banner component
+
+Trusted Services should hook into the same system.
+
+--

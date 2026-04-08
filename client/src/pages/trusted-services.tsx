@@ -672,9 +672,11 @@ export default function TrustedServices() {
                     "housing-home": "/housing",
                     "legal-services": "/resources?category=legal",
                     "financial-credit": "/financial-services",
-                    "insurance": "/resources?category=healthcare",
+                    "insurance": "/healthcare",
                     "education-training": "/resources?category=education",
                     "employment-support": "/employment",
+                    "benefits-assistance": "/benefits-assistance",
+                    "wellness-recovery": "/resources?category=substance-recovery",
                   };
                   const route = guidedRoutes[cat.slug];
                   if (route) {
