@@ -1246,24 +1246,34 @@ async function alignCategoryNames() {
 }
 
 async function ensureAllTrustedServiceCategories() {
-  const required = [
-    { name: 'Housing & Home Services', slug: 'housing-home', description: 'Trusted housing, moving, and home services for veterans and families', icon: 'home', display_order: 4 },
-    { name: 'Legal Services', slug: 'legal-services', description: 'Vetted legal professionals experienced with veteran-specific needs', icon: 'scale', display_order: 13 },
-    { name: 'Financial & Credit Services', slug: 'financial-credit', description: 'Trusted financial advisors, credit counseling, and lending partners', icon: 'dollar-sign', display_order: 12 },
-    { name: 'Insurance Services', slug: 'insurance', description: 'Insurance providers offering veteran-friendly coverage options', icon: 'shield', display_order: 14 },
-    { name: 'Education & Training', slug: 'education-training', description: 'Accredited programs and training providers supporting veteran success', icon: 'graduation-cap', display_order: 10 },
-    { name: 'Employment Support', slug: 'employment-support', description: 'Employers and staffing partners committed to hiring veterans', icon: 'briefcase', display_order: 9 },
-    { name: 'End of Life Services', slug: 'end-of-life-services', description: 'Hospice, funeral services, estate planning, and survivor benefits', icon: 'flower-2', display_order: 16 },
-    { name: 'Benefits Assistance', slug: 'benefits-assistance', description: 'Claims assistance, VSO support, and benefits navigation for veterans', icon: 'file-text', display_order: 6 },
-    { name: 'Wellness & Recovery', slug: 'wellness-recovery', description: 'Wellness programs, substance recovery, and holistic support', icon: 'heart', display_order: 15 },
-    { name: 'Healthcare', slug: 'healthcare-services', description: 'Healthcare providers and medical support for veterans', icon: 'heart-pulse', display_order: 14 },
+  const activeTrusted = [
+    { name: 'Housing & Home Services', slug: 'housing-home', description: 'Trusted housing, moving, and home services for veterans and families', icon: 'home', display_order: 1 },
+    { name: 'Legal Services', slug: 'legal-services', description: 'Vetted legal professionals experienced with veteran-specific needs', icon: 'scale', display_order: 2 },
+    { name: 'Financial & Credit Services', slug: 'financial-credit', description: 'Trusted financial advisors, credit counseling, and lending partners', icon: 'dollar-sign', display_order: 3 },
+    { name: 'Insurance Services', slug: 'insurance', description: 'Insurance providers offering veteran-friendly coverage options', icon: 'shield', display_order: 4 },
+    { name: 'Education & Training', slug: 'education-training', description: 'Accredited programs and training providers supporting veteran success', icon: 'graduation-cap', display_order: 5 },
+    { name: 'Employment Support', slug: 'employment-support', description: 'Employers and staffing partners committed to hiring veterans', icon: 'briefcase', display_order: 6 },
+    { name: 'End of Life Services', slug: 'end-of-life-services', description: 'Hospice, funeral services, estate planning, and survivor benefits', icon: 'flower-2', display_order: 7 },
+  ];
+  const partnerSignupOnly = [
+    { name: 'Benefits Assistance', slug: 'benefits-assistance', description: 'Claims assistance, VSO support, and benefits navigation for veterans', icon: 'file-text', display_order: 20 },
+    { name: 'Wellness & Recovery', slug: 'wellness-recovery', description: 'Wellness programs, substance recovery, and holistic support', icon: 'heart', display_order: 21 },
+    { name: 'Healthcare', slug: 'healthcare-services', description: 'Healthcare providers and medical support for veterans', icon: 'heart-pulse', display_order: 22 },
   ];
   try {
-    for (const cat of required) {
+    for (const cat of activeTrusted) {
       await pgQuery(
         `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
          VALUES ($1, $2, $3, $4, $5, true)
          ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = true`,
+        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
+      );
+    }
+    for (const cat of partnerSignupOnly) {
+      await pgQuery(
+        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
+         VALUES ($1, $2, $3, $4, $5, false)
+         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = false`,
         [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
       );
     }
@@ -1274,7 +1284,7 @@ async function ensureAllTrustedServiceCategories() {
 
 async function ensureAllPartnerSubcategories() {
   try {
-    const catMap = await pgQuery(`SELECT id, slug FROM trusted_service_categories WHERE is_active = true`);
+    const catMap = await pgQuery(`SELECT id, slug FROM trusted_service_categories WHERE slug NOT LIKE 'discount-%'`);
     const findCat = (slug: string) => catMap.find((c: any) => c.slug === slug)?.id;
 
     const subcats: { catSlug: string; name: string; slug: string; order: number }[] = [
@@ -8038,7 +8048,7 @@ export async function registerRoutes(
   app.get("/api/partner-categories", async (_req, res) => {
     try {
       const rows = await pgQuery(
-        `SELECT id, name, slug FROM trusted_service_categories WHERE is_active = true AND slug NOT LIKE 'discount-%' ORDER BY display_order ASC`
+        `SELECT id, name, slug FROM trusted_service_categories WHERE slug NOT LIKE 'discount-%' AND (program_area IS NULL OR program_area = 'trusted_services') ORDER BY display_order ASC`
       );
       return res.json(rows);
     } catch (err: any) {

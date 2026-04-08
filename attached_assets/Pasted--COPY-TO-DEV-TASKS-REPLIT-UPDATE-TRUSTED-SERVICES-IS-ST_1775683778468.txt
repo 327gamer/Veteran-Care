@@ -1,0 +1,106 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: TRUSTED SERVICES IS STILL NOT CORRECT ON LIVE SITE
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+LIVE VERIFICATION RESULT
+--------------------------------------------------
+
+Regular Resources now looks good overall:
+
+- official category order is correct
+- categories with subcategories are working
+- AI Guide banner is showing correctly
+- guided pages look good
+
+However, Trusted Services is still NOT correct on the live site.
+
+--------------------------------------------------
+ISSUES STILL LIVE
+--------------------------------------------------
+
+1. TRUSTED SERVICES IS NOT MIRRORING RESOURCES
+- Trusted Services still does not mirror the same category / subcategory experience as Regular Resources
+- subcategories are still missing under Trusted Services
+- this must match the Resources-side guided flow
+
+2. REMOVED CATEGORIES APPEAR TO HAVE BEEN ADDED BACK
+The following categories appear to be back under Trusted Services on live:
+- Benefits Assistance
+- Healthcare
+- Wellness & Recovery
+
+These were previously discussed as categories we did NOT want sitting there in this way unless intentionally structured and mirrored correctly.
+
+Please verify exactly what should remain under Trusted Services and remove any categories that were accidentally reintroduced.
+
+3. TRUSTED SERVICES MUST KEEP ITS OWN MONETIZED LAYER
+Very important:
+Trusted Services does need to remain its own monetized layer because businesses will pay to be there.
+
+But trusted partners must ALSO be able to surface inside Regular Resources when relevant.
+
+Example:
+- BootPrint
+- Tri-County Veterans Support Network
+
+These should appear in Regular Resources under the proper category/subcategory with badges such as:
+- Veteran Support Service
+- Trusted Partner
+
+And they should rank at the top because they are paid / trusted partners.
+
+--------------------------------------------------
+REQUIRED FIX
+--------------------------------------------------
+
+Please correct Trusted Services so that:
+
+A) category naming matches Resources exactly where categories overlap
+
+B) category click flow mirrors Resources:
+Category → Subcategory → Results
+
+C) subcategories actually appear under Trusted Services just like they do under Regular Resources
+
+D) paid trusted partners still remain a separate monetized layer
+BUT
+also populate into the matching Regular Resources listings with their trusted badges and preferred placement
+
+--------------------------------------------------
+VERY IMPORTANT RULE
+--------------------------------------------------
+
+Trusted Services and Regular Resources are connected systems, not separate silos.
+
+Correct model:
+
+- Regular Resources = all verified / helpful options
+- Trusted Services = monetized / preferred partner layer
+- paid trusted partners can also surface in Regular Resources
+- they must be tagged and ranked correctly there
+
+--------------------------------------------------
+NEXT PHASE AFTER THIS
+--------------------------------------------------
+
+After Trusted Services is corrected, the next major phase is:
+
+FULL CATEGORY / SUBCATEGORY DATA SWEEP
+
+We still need a full audit of:
+- all resources
+- all trusted partners
+- all trusted services
+- all main category assignments
+- all subcategory assignments
+- all blank or missing mappings
+
+This is critical so resources populate correctly everywhere and future partner signups are assigned correctly from the backend.
+
+Do not lose this next phase. It is still required immediately after the current Trusted Services fix is complete.
+
+--- END ---

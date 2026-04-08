@@ -46,6 +46,8 @@ import {
   Filter,
   Heart,
   Search,
+  FileText,
+  Flower2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useGeolocation } from "@/lib/use-geolocation";
@@ -112,7 +114,18 @@ const iconMap: Record<string, any> = {
   briefcase: Briefcase,
   award: Award,
   "heart-pulse": HeartPulse,
+  heart: Heart,
+  "file-text": FileText,
+  "flower-2": Flower2,
 };
+
+interface PartnerSubcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+}
 
 type LeadForm = {
   name: string;
@@ -137,6 +150,7 @@ const emptyLeadForm: LeadForm = { name: "", email: "", phone: "", role: "", city
 export default function TrustedServices() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<string>("");
   const [connectService, setConnectService] = useState<TrustedService | null>(null);
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
@@ -170,6 +184,14 @@ export default function TrustedServices() {
       return r.json();
     }),
     retry: 2,
+  });
+
+  const selectedCatObj = categories.find((c: TrustedCategory) => c.slug === selectedCategory);
+
+  const { data: subcategories = [] } = useQuery<PartnerSubcategory[]>({
+    queryKey: ["/api/partner-subcategories", selectedCatObj?.id],
+    queryFn: () => fetch(`/api/partner-subcategories?category_id=${selectedCatObj?.id}`).then(r => r.json()),
+    enabled: !!selectedCatObj?.id,
   });
 
   const nearMeLat = nearMeActive && geo.location?.lat ? geo.location.lat : undefined;
@@ -388,6 +410,9 @@ export default function TrustedServices() {
   );
 
   if (selectedCategory && selectedCat) {
+    const showSubcategoryPicker = subcategories.length > 0 && !selectedSubcategory;
+    const activeSub = subcategories.find(s => s.slug === selectedSubcategory);
+
     return (
       <div className="space-y-4 animate-in fade-in duration-300">
         <div className="flex items-center gap-2">
@@ -395,148 +420,194 @@ export default function TrustedServices() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => { setSelectedCategory(null); setFilterState(""); }}
+            onClick={() => {
+              if (selectedSubcategory) {
+                setSelectedSubcategory(null);
+              } else {
+                setSelectedCategory(null);
+                setFilterState("");
+              }
+            }}
             data-testid="button-back-trusted-categories"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-heading font-bold text-primary">{selectedCat.name}</h1>
-            <p className="text-xs text-muted-foreground">{selectedCat.description}</p>
+            <h1 className="text-lg font-heading font-bold text-primary">
+              {activeSub ? activeSub.name : selectedCat.name}
+            </h1>
+            {!activeSub && <p className="text-xs text-muted-foreground">{selectedCat.description}</p>}
+            {activeSub && (
+              <p className="text-xs text-muted-foreground">{selectedCat.name}</p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Select value={filterState} onValueChange={(v) => setFilterState(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-9 text-xs flex-1" data-testid="select-state-filter">
-              <SelectValue placeholder="Filter by state" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All States</SelectItem>
-              {US_STATES.map(s => (
-                <SelectItem key={s.value} value={s.value}>{s.label} ({s.value})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {filterState && (
-            <Button variant="ghost" size="sm" className="h-9 text-xs px-2" onClick={() => setFilterState("")} data-testid="button-clear-state-filter">
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+        <AiGuideBanner categoryContext={selectedCat.slug} />
 
-        {services.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">
-                {filterState ? "No Partners in This State Yet" : "Partners Coming Soon"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                {filterState
-                  ? `No trusted providers found in ${US_STATES.find(s => s.value === filterState)?.label || filterState}. Try selecting a different state or view all states.`
-                  : "We're currently vetting trusted providers for this category. Check back soon."}
-              </p>
+        {showSubcategoryPicker ? (
+          <div className="grid grid-cols-2 gap-3">
+            {subcategories.map(sub => (
+              <Card
+                key={sub.id}
+                className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
+                onClick={() => setSelectedSubcategory(sub.slug)}
+                data-testid={`card-trusted-subcategory-${sub.slug}`}
+              >
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">{sub.name}</p>
+                </CardContent>
+              </Card>
+            ))}
+            <Card
+              className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
+              onClick={() => setSelectedSubcategory("__all__")}
+              data-testid="card-trusted-subcategory-all"
+            >
+              <CardContent className="p-4 text-center">
+                <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">View All</p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select value={filterState} onValueChange={(v) => setFilterState(v === "all" ? "" : v)}>
+                <SelectTrigger className="h-9 text-xs flex-1" data-testid="select-state-filter">
+                  <SelectValue placeholder="Filter by state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All States</SelectItem>
+                  {US_STATES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label} ({s.value})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {filterState && (
-                <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setFilterState("")} data-testid="button-view-all-states">
-                  View All States
+                <Button variant="ghost" size="sm" className="h-9 text-xs px-2" onClick={() => setFilterState("")} data-testid="button-clear-state-filter">
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {services.map(service => {
-              const isSaved = isTrustedServiceSaved(service.id);
-              return (
-                <Card
-                  key={service.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
-                  data-testid={`card-trusted-service-${service.id}`}
-                  onClick={() => {
-                    trackEvent("trusted_service_click", { service_id: service.id, service_name: service.name });
-                    setDetailService(service);
-                  }}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-sm">{service.name}</h3>
-                          {service.is_featured && (
-                            <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200">
-                              <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
-                            </Badge>
-                          )}
+            </div>
+
+            {servicesLoading ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Loading services...</p>
+              </div>
+            ) : services.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {filterState ? "No Partners in This State Yet" : "Partners Coming Soon"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                    {filterState
+                      ? `No trusted providers found in ${US_STATES.find(s => s.value === filterState)?.label || filterState}. Try selecting a different state or view all states.`
+                      : "We're currently vetting trusted providers for this category. Check back soon."}
+                  </p>
+                  {filterState && (
+                    <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setFilterState("")} data-testid="button-view-all-states">
+                      View All States
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {services.map(service => {
+                  const isSaved = isTrustedServiceSaved(service.id);
+                  return (
+                    <Card
+                      key={service.id}
+                      className="overflow-hidden cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                      data-testid={`card-trusted-service-${service.id}`}
+                      onClick={() => {
+                        trackEvent("trusted_service_click", { service_id: service.id, service_name: service.name });
+                        setDetailService(service);
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-sm">{service.name}</h3>
+                              {service.is_featured && (
+                                <Badge className="text-[9px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200">
+                                  <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-500" /> Featured
+                                </Badge>
+                              )}
+                            </div>
+                            {service.is_national ? (
+                              <p className="text-[11px] text-blue-600 flex items-center gap-1 mt-0.5 font-medium">
+                                <Globe className="h-3 w-3" /> Nationwide
+                              </p>
+                            ) : (service.city || service.state) ? (
+                              <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3" />
+                                {[service.city, service.state].filter(Boolean).join(", ")}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              data-testid={`button-heart-${service.id}`}
+                              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSaveTrustedService(service.id);
+                                toast({
+                                  description: isSaved ? "Removed from My Saved" : "Saved to My Saved",
+                                  duration: 2000,
+                                });
+                              }}
+                            >
+                              <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                            </button>
+                            {service.verification_label && (
+                              <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                                <ShieldCheck className="h-3 w-3 mr-1" />
+                                {service.verification_label}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        {service.is_national ? (
-                          <p className="text-[11px] text-blue-600 flex items-center gap-1 mt-0.5 font-medium">
-                            <Globe className="h-3 w-3" /> Nationwide
-                          </p>
-                        ) : (service.city || service.state) ? (
-                          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <MapPin className="h-3 w-3" />
-                            {[service.city, service.state].filter(Boolean).join(", ")}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          data-testid={`button-heart-${service.id}`}
-                          className="p-1.5 rounded-full hover:bg-muted transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSaveTrustedService(service.id);
-                            toast({
-                              description: isSaved ? "Removed from My Saved" : "Saved to My Saved",
-                              duration: 2000,
-                            });
-                          }}
-                        >
-                          <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
-                        </button>
-                        {service.verification_label && (
-                          <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-700 border-green-200">
-                            <ShieldCheck className="h-3 w-3 mr-1" />
-                            {service.verification_label}
-                          </Badge>
+                        {service.short_description && (
+                          <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{service.short_description}</p>
                         )}
-                      </div>
-                    </div>
-                    {service.short_description && (
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{service.short_description}</p>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDetailService(service);
-                        }}
-                        data-testid={`button-view-${service.id}`}
-                      >
-                        View Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConnectService(service);
-                        }}
-                        data-testid={`button-connect-${service.id}`}
-                      >
-                        <Handshake className="h-3.5 w-3.5 mr-1" /> Connect
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailService(service);
+                            }}
+                            data-testid={`button-view-${service.id}`}
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConnectService(service);
+                            }}
+                            data-testid={`button-connect-${service.id}`}
+                          >
+                            <Handshake className="h-3.5 w-3.5 mr-1" /> Connect
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {connectModal}
@@ -667,24 +738,8 @@ export default function TrustedServices() {
                 key={cat.id}
                 className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
                 onClick={() => {
-                  const guidedRoutes: Record<string, string> = {
-                    "end-of-life-services": "/end-of-life",
-                    "housing-home": "/housing",
-                    "legal-services": "/resources?category=legal",
-                    "financial-credit": "/financial-services",
-                    "insurance": "/healthcare",
-                    "healthcare-services": "/healthcare",
-                    "education-training": "/resources?category=education",
-                    "employment-support": "/employment",
-                    "benefits-assistance": "/benefits-assistance",
-                    "wellness-recovery": "/resources?category=substance-recovery",
-                  };
-                  const route = guidedRoutes[cat.slug];
-                  if (route) {
-                    setLocation(route);
-                    return;
-                  }
                   setSelectedCategory(cat.slug);
+                  setSelectedSubcategory(null);
                 }}
                 data-testid={`card-trusted-category-${cat.slug}`}
               >
