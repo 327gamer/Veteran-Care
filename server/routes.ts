@@ -348,7 +348,7 @@ async function ensureAttributionTables() {
       const seedAmbassadors = [
         { id: 'a9028dc0-7f4f-4f24-aff1-9e20e2637aa0', code: 'colin_slaven', display_name: 'Colin Slaven', first_name: 'Colin', last_name: 'Slaven', email: 'colin@veterancare.com', phone: '8434697000', region_type: 'national', region_value: 'USA', commission_rate: 100.00, created_at: '2026-03-26T20:24:39.368Z' },
         { id: 'ba8d39d7-64bf-4d34-b485-e3de7c628bd3', code: 'debbie_slaven', display_name: 'Debbie Slaven', first_name: 'Debbie', last_name: 'Slaven', email: 'debbie@veterancare.com', phone: '8434697000', region_type: 'national', region_value: 'USA', commission_rate: 100.00, created_at: '2026-04-05T04:48:36.991Z' },
-        { id: 'd259629f-a438-4ff7-954f-9b9339b92f97', code: 'kelsey_reese', display_name: 'Kelsey Reese', first_name: 'Kelsey', last_name: 'Reese', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:37.279Z' },
+        { id: 'd259629f-a438-4ff7-954f-9b9339b92f97', code: 'kelsey_flanagan', display_name: 'Kelsey Flanagan', first_name: 'Kelsey', last_name: 'Flanagan', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:37.279Z' },
         { id: '5c611623-d79b-42b0-a2f3-186e12fbab79', code: 'michelle_keef', display_name: 'Michelle Keef', first_name: 'Michelle', last_name: 'Keef', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:37.143Z' },
         { id: '393f2dfa-fea0-4df0-a70a-bf6721af54d7', code: 'tracy_robertson', display_name: 'Tracy Robertson', first_name: 'Tracy', last_name: 'Robertson', email: null, phone: null, region_type: 'state', region_value: 'South Carolina', commission_rate: 10.00, created_at: '2026-04-05T04:48:50.586Z' },
       ];
@@ -467,6 +467,70 @@ async function ensureAttributionTables() {
     if (parseInt(testCommissions[0].cnt, 10) > 0) {
       await pgQuery("DELETE FROM commissions WHERE ambassador_code = 'test_john'");
       console.log(`[schema] Removed ${testCommissions[0].cnt} test_john commission records`);
+    }
+
+    // === MIGRATION: Rename Kelsey Reese → Kelsey Flanagan ===
+    const kelseyOld = await pgQuery("SELECT COUNT(*) as cnt FROM ambassadors WHERE code = 'kelsey_reese'");
+    const kelseyNew = await pgQuery("SELECT COUNT(*) as cnt FROM ambassadors WHERE code = 'kelsey_flanagan'");
+    const hasOldKelsey = parseInt(kelseyOld[0].cnt, 10) > 0;
+    const hasNewKelsey = parseInt(kelseyNew[0].cnt, 10) > 0;
+    if (hasOldKelsey && hasNewKelsey) {
+      console.log("[migration] Both kelsey_reese and kelsey_flanagan exist — merging to kelsey_flanagan...");
+      const oldId = (await pgQuery("SELECT id FROM ambassadors WHERE code = 'kelsey_reese'"))[0].id;
+      const newId = (await pgQuery("SELECT id FROM ambassadors WHERE code = 'kelsey_flanagan'"))[0].id;
+      await pgQuery(`DELETE FROM ambassador_links WHERE ambassador_id = $1`, [oldId]);
+      try { await pgQuery(`UPDATE user_attribution_sessions SET ambassador_id = $1 WHERE ambassador_id = $2`, [newId, oldId]); } catch (_e) {}
+      try { await pgQuery(`UPDATE user_attribution_sessions SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE commissions SET ambassador_code = 'kelsey_flanagan', ambassador_id = $1 WHERE ambassador_code = 'kelsey_reese'`, [newId]); } catch (_e) {}
+      try { await pgQuery(`UPDATE partner_attribution SET ambassador = 'kelsey_flanagan', ambassador_id = $1 WHERE ambassador = 'kelsey_reese'`, [newId]); } catch (_e) {}
+      try { await pgQuery(`UPDATE ambassador_payouts SET ambassador_id = $1 WHERE ambassador_id = $2`, [newId, oldId]); } catch (_e) {}
+      try { await pgQuery(`UPDATE trusted_service_leads SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE partner_applications SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      await pgQuery("DELETE FROM ambassadors WHERE code = 'kelsey_reese'");
+      console.log("[migration] Merged kelsey_reese into kelsey_flanagan and removed old profile");
+    } else if (hasOldKelsey && !hasNewKelsey) {
+      console.log("[migration] Renaming ambassador kelsey_reese → kelsey_flanagan...");
+      await pgQuery(
+        `UPDATE ambassadors SET code = 'kelsey_flanagan', display_name = 'Kelsey Flanagan', last_name = 'Flanagan' WHERE code = 'kelsey_reese'`
+      );
+      const AUDIENCES: Record<string, { path: string; campaign: string; label: string }> = {
+        veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
+        case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
+        partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
+        general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
+      };
+      const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
+      const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
+      let updatedLinks = 0;
+      for (const [audienceKey, audience] of Object.entries(AUDIENCES)) {
+        for (const channel of CHANNELS) {
+          const oldUtmId = `kelsey_reese_${audienceKey}_${channel}`;
+          const newUtmId = `kelsey_flanagan_${audienceKey}_${channel}`;
+          const newLinkName = `Kelsey Flanagan – ${CHANNEL_LABELS[channel]} – ${audience.label}`;
+          const newFullUrl = `https://veterancare.com${audience.path}?utm_source=ambassador&utm_medium=${channel}&utm_campaign=${audience.campaign}&utm_content=kelsey_flanagan&utm_id=${newUtmId}`;
+          const newShortUrl = `/a/${newUtmId}`;
+          await pgQuery(
+            `UPDATE ambassador_links SET
+               ambassador_code = 'kelsey_flanagan',
+               ambassador_name = 'Kelsey Flanagan',
+               link_name = $1,
+               utm_id = $2,
+               utm_content = 'kelsey_flanagan',
+               full_url = $3,
+               short_url = $4
+             WHERE utm_id = $5`,
+            [newLinkName, newUtmId, newFullUrl, newShortUrl, oldUtmId]
+          );
+          updatedLinks++;
+        }
+      }
+      try { await pgQuery(`UPDATE user_attribution_sessions SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE commissions SET ambassador_code = 'kelsey_flanagan' WHERE ambassador_code = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE partner_attribution SET ambassador = 'kelsey_flanagan' WHERE ambassador = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE ambassador_payouts SET ambassador_id = (SELECT id FROM ambassadors WHERE code = 'kelsey_flanagan') WHERE ambassador_id = (SELECT id FROM ambassadors WHERE code = 'kelsey_reese')`); } catch (_e) {}
+      try { await pgQuery(`UPDATE trusted_service_leads SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      try { await pgQuery(`UPDATE partner_applications SET utm_content = 'kelsey_flanagan' WHERE utm_content = 'kelsey_reese'`); } catch (_e) {}
+      console.log(`[migration] Renamed kelsey_reese → kelsey_flanagan (profile + ${updatedLinks} links + all attribution tables)`);
     }
 
     console.log("[schema] attribution tables ready (with ambassadors + payouts)");
