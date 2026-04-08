@@ -1,0 +1,125 @@
+PRIORITY CATEGORY EXPANSION — SUBCATEGORY SYSTEM
+
+GOAL:
+Replicate the “Disabled Veterans” subcategory flow across the highest-impact categories to improve navigation, engagement, and conversion.
+
+--------------------------------------------------
+TIER 1 (IMPLEMENT NEXT — HIGHEST IMPACT)
+--------------------------------------------------
+
+1. Mental Health
+WHY:
+- High urgency category
+- Users often don’t know what type of help they need
+- Perfect for guided navigation
+
+SUBCATEGORIES:
+- PTSD & Trauma Support
+- Crisis & Suicide Prevention
+- Substance Abuse & Addiction
+- Counseling & Therapy
+- Inpatient / Outpatient Treatment
+- Peer Support Groups
+- Family Support (Mental Health)
+
+--------------------------------------------------
+
+2. Housing & Home Services
+WHY:
+- One of the most common needs
+- Users are often in very different situations
+
+SUBCATEGORIES:
+- Emergency Housing / Homeless Shelters
+- Rental Assistance
+- Home Ownership Programs
+- VA Housing Benefits
+- Home Modifications (Accessibility)
+- Transitional Housing
+- Foreclosure Prevention
+
+--------------------------------------------------
+
+3. Employment Support
+WHY:
+- Strong long-term value category
+- Key for reintegration and independence
+
+SUBCATEGORIES:
+- Job Placement Programs
+- Resume & Career Coaching
+- Vocational Rehabilitation
+- Apprenticeships & Skilled Trades
+- Veteran-Friendly Employers
+- Entrepreneurship & Small Business Support
+- DVOP / Workforce Programs
+
+--------------------------------------------------
+
+TIER 2 (NEXT PHASE)
+--------------------------------------------------
+
+4. Benefits Assistance
+SUBCATEGORIES:
+- Disability Claims
+- Pension Benefits
+- Education Benefits (GI Bill)
+- Appeals & Claim Support
+- Survivor Benefits
+
+--------------------------------------------------
+
+5. Healthcare
+SUBCATEGORIES:
+- VA Healthcare Enrollment
+- Primary Care
+- Specialty Care
+- Rehabilitation Services
+- Telehealth
+- Preventive Care
+
+--------------------------------------------------
+
+6. Financial & Credit Services
+SUBCATEGORIES:
+- Debt Relief
+- Credit Repair
+- Emergency Financial Assistance
+- Grants & Aid Programs
+- Budgeting & Financial Coaching
+
+--------------------------------------------------
+
+TIER 3 (OPTIONAL / LATER)
+--------------------------------------------------
+
+7. Family Support
+8. Legal Services
+9. Transportation
+10. Education & Training
+
+--------------------------------------------------
+
+RULES FOR ALL NEW CATEGORY BUILDS
+--------------------------------------------------
+
+- Must follow Disabled Veterans structure exactly
+- Must use universal page layout (no UI drift)
+- Must include:
+  → header intro
+  → “start here” suggestion
+  → subcategory tile grid
+  → CTA (Request Support)
+- Must support:
+  → back navigation
+  → filter chip reset behavior
+  → cross-category tagging
+
+--------------------------------------------------
+
+STRATEGY NOTE
+--------------------------------------------------
+
+It is OK (and encouraged) for resources to exist in multiple categories.
+
+Goal = multiple entry points → faster discovery → better outcomes

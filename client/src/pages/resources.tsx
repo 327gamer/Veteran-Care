@@ -530,6 +530,18 @@ export default function Resources() {
       setLocation("/disabled-veterans");
       return;
     }
+    if (cat.slug === "mental-health") {
+      setLocation("/mental-health");
+      return;
+    }
+    if (cat.slug === "housing") {
+      setLocation("/housing");
+      return;
+    }
+    if (cat.slug === "employment") {
+      setLocation("/employment");
+      return;
+    }
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
@@ -576,11 +588,18 @@ export default function Resources() {
   }
   if (subFilter) {
     const subLabel = subFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const subcatRoutes: Record<string, string> = {
+      "disabled-veterans": "/disabled-veterans",
+      "end-of-life-services": "/end-of-life",
+      "mental-health": "/mental-health",
+      "housing": "/housing",
+      "employment": "/employment",
+    };
     filterChips.push({ label: subLabel, onRemove: () => {
       setSubFilter(null);
-      if (selectedSlug === "disabled-veterans") { setLocation("/disabled-veterans"); }
-      else if (selectedSlug === "end-of-life-services") { setLocation("/end-of-life"); }
-      else { setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); }
+      const route = selectedSlug && subcatRoutes[selectedSlug];
+      if (route) { setLocation(route); }
+      else { setLocation(`/resources?category=${selectedSlug || ""}`); }
     } });
   }
 
@@ -653,6 +672,21 @@ export default function Resources() {
                   setLocation("/disabled-veterans");
                 } else if (selectedSlug === "disabled-veterans") {
                   setLocation("/disabled-veterans");
+                } else if (selectedSlug === "mental-health" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/mental-health");
+                } else if (selectedSlug === "mental-health") {
+                  setLocation("/mental-health");
+                } else if (selectedSlug === "housing" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/housing");
+                } else if (selectedSlug === "housing") {
+                  setLocation("/housing");
+                } else if (selectedSlug === "employment" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/employment");
+                } else if (selectedSlug === "employment") {
+                  setLocation("/employment");
                 } else {
                   clearCategory();
                 }

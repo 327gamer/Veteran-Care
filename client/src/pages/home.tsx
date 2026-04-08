@@ -121,6 +121,18 @@ export default function Home() {
       setLocation("/disabled-veterans");
       return;
     }
+    if (category === "mental-health") {
+      setLocation("/mental-health");
+      return;
+    }
+    if (category === "housing") {
+      setLocation("/housing");
+      return;
+    }
+    if (category === "employment") {
+      setLocation("/employment");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 
