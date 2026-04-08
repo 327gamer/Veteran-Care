@@ -1292,13 +1292,62 @@ function AdminResourcesInner() {
                     )}
 
                     {manualAssignLeadId === req.id && (() => {
-                      const activePartners = partners.filter((p: any) => p.is_active && p.is_lead_enabled);
+                      const allPartners = partners;
                       const matchLabel = (s: any) => {
                         if (s.categoryMatch && s.locationMatch) return { text: "Best Match", cls: "bg-green-200 text-green-900 border-green-400" };
                         if (s.categoryMatch) return { text: "Category Match", cls: "bg-blue-100 text-blue-800 border-blue-300" };
                         if (s.locationMatch) return { text: "Nearby Option", cls: "bg-amber-100 text-amber-800 border-amber-300" };
                         return { text: "Available", cls: "bg-slate-100 text-slate-700 border-slate-300" };
                       };
+
+                      const searchVal = manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7) : "";
+                      const showAll = manualPartnerId === "show_all";
+                      const sq = searchVal.toLowerCase();
+
+                      const reqCategory = req.category?.toLowerCase() || "";
+                      const reqState = req.user_state?.toUpperCase() || "";
+                      const reqCity = req.user_city?.toLowerCase() || "";
+
+                      const scorePartner = (p: any) => {
+                        let score = 0;
+                        if (reqState && p.state?.toUpperCase() === reqState) score += 2;
+                        if (reqCity && p.cities?.some((c: string) => c.toLowerCase() === reqCity)) score += 3;
+                        if (reqCategory && p.name?.toLowerCase().includes(reqCategory)) score += 1;
+                        return score;
+                      };
+
+                      const contextFiltered = allPartners.filter((p: any) => {
+                        if (!p.is_active) return false;
+                        if (reqState && p.state && p.state.toUpperCase() !== reqState) return false;
+                        return true;
+                      });
+
+                      let displayPartners: any[];
+                      let displayLabel = "";
+                      if (sq) {
+                        displayPartners = allPartners.filter((p: any) =>
+                          p.name?.toLowerCase().includes(sq) ||
+                          p.contact_name?.toLowerCase().includes(sq) ||
+                          p.contact_email?.toLowerCase().includes(sq) ||
+                          p.external_intake_email?.toLowerCase().includes(sq) ||
+                          p.notes?.toLowerCase().includes(sq)
+                        );
+                        displayLabel = `Search results for "${searchVal}"`;
+                      } else if (showAll) {
+                        displayPartners = allPartners.filter((p: any) => p.is_active);
+                        displayLabel = `All active partners (${displayPartners.length})`;
+                      } else {
+                        displayPartners = contextFiltered.length > 0 ? contextFiltered : allPartners.filter((p: any) => p.is_active);
+                        const hasContext = reqState || reqCategory;
+                        displayLabel = hasContext && contextFiltered.length > 0
+                          ? `Filtered: ${[reqCategory && reqCategory.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()), reqState, reqCity && reqCity.replace(/\b\w/g, (c: string) => c.toUpperCase())].filter(Boolean).join(", ")} (${contextFiltered.length})`
+                          : `All active partners (${displayPartners.length})`;
+                      }
+
+                      if (!sq) {
+                        displayPartners = [...displayPartners].sort((a, b) => scorePartner(b) - scorePartner(a));
+                      }
+
                       return (
                       <div className="bg-slate-50 border border-slate-200 rounded p-3 space-y-3">
                         <div className="flex items-center justify-between">
@@ -1348,37 +1397,51 @@ function AdminResourcesInner() {
                         )}
 
                         {suggestedPartners.length === 0 && (
-                          <p className="text-[10px] text-muted-foreground italic">No routing rules match this request — search or browse partners below.</p>
+                          <p className="text-[10px] text-muted-foreground italic">No routing rules match — search or browse partners below.</p>
                         )}
 
                         <div className="space-y-2">
-                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-                            {suggestedPartners.length > 0 ? "Or search all partners" : "Search partners"}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+                              {suggestedPartners.length > 0 ? "Or choose a partner" : "Choose a partner"}
+                            </p>
+                            {!showAll && !sq && contextFiltered.length < allPartners.filter((p: any) => p.is_active).length && (
+                              <button
+                                className="text-[9px] text-primary underline hover:text-primary/80"
+                                data-testid="button-show-all-partners"
+                                onClick={() => setManualPartnerId("show_all")}
+                              >
+                                Show all partners
+                              </button>
+                            )}
+                            {(showAll || sq) && (
+                              <button
+                                className="text-[9px] text-primary underline hover:text-primary/80"
+                                onClick={() => setManualPartnerId("")}
+                              >
+                                Reset filters
+                              </button>
+                            )}
+                          </div>
+
                           <div className="relative">
                             <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
                             <Input
                               data-testid={`input-partner-search-${req.id}`}
                               className="h-6 text-[11px] pl-6"
-                              placeholder="Search by name..."
-                              value={manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7) : ""}
+                              placeholder="Search all partners by name, contact, email..."
+                              value={searchVal}
                               onChange={(e) => setManualPartnerId(e.target.value ? `search:${e.target.value}` : "")}
                             />
                           </div>
-                          <div className="max-h-[160px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
-                            {(() => {
-                              const sq = manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7).toLowerCase() : "";
-                              const filtered = sq
-                                ? activePartners.filter((p: any) =>
-                                    p.name?.toLowerCase().includes(sq) ||
-                                    p.contact_name?.toLowerCase().includes(sq) ||
-                                    p.external_intake_email?.toLowerCase().includes(sq)
-                                  )
-                                : activePartners.slice(0, 20);
-                              if (filtered.length === 0) {
-                                return <p className="text-[10px] text-muted-foreground text-center py-2">No partners found</p>;
-                              }
-                              return filtered.map((p: any) => (
+
+                          <p className="text-[9px] text-muted-foreground">{displayLabel}</p>
+
+                          <div className="max-h-[200px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
+                            {displayPartners.length === 0 ? (
+                              <p className="text-[10px] text-muted-foreground text-center py-2">No partners found</p>
+                            ) : (
+                              displayPartners.map((p: any) => (
                                 <button
                                   key={p.id}
                                   data-testid={`partner-option-${p.id}`}
@@ -1392,15 +1455,13 @@ function AdminResourcesInner() {
                                   <div className="min-w-0">
                                     <p className="text-[11px] font-medium text-slate-800 truncate">{p.name}</p>
                                     <p className="text-[9px] text-muted-foreground truncate">
-                                      {[p.contact_name, p.state].filter(Boolean).join(" · ")}
+                                      {[p.contact_name, p.state, p.cities?.length > 0 ? p.cities.join(", ") : null].filter(Boolean).join(" · ")}
+                                      {!p.is_lead_enabled && " · (lead intake off)"}
                                     </p>
                                   </div>
                                   <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>
                                 </button>
-                              ));
-                            })()}
-                            {!manualPartnerId.startsWith("search:") && activePartners.length > 20 && (
-                              <p className="text-[9px] text-muted-foreground text-center pt-1">Type to search {activePartners.length} partners...</p>
+                              ))
                             )}
                           </div>
                         </div>

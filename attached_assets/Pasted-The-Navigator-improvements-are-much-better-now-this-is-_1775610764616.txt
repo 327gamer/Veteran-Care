@@ -1,0 +1,130 @@
+The Navigator improvements are much better now — this is a strong step forward.
+
+What is working well:
+- the request support email send is excellent
+- the results email looks strong and professional
+- the admin request cards are clearer
+- the “Best Match” suggestions are useful
+
+So overall, this is a very good improvement.
+
+-------------------------------------
+ISSUE 1 — MANUAL ASSIGNMENT UX (SCALABILITY)
+-------------------------------------
+
+CURRENT ISSUE:
+In the “Search all partners” section, the admin still has to scroll through too many results. This will become a major issue as the platform grows nationally.
+
+We already know from the request:
+- category
+- city
+- state
+
+So the partner assignment flow should use this data more intelligently.
+
+REQUIRED REFINEMENTS:
+
+1. Prefill / filter the manual assignment area using request data:
+- category
+- state
+- city (if available)
+
+2. Show FILTERED partner results first:
+Example:
+If request = Employment in Mount Pleasant, SC
+Then show first:
+- Employment partners
+- in South Carolina
+- ideally Charleston / Mount Pleasant region
+
+3. Keep “Best Match” suggestions at the top
+These are working well and should remain.
+
+4. Improve the manual search behavior:
+- search should operate within filtered results first
+- NOT default to full unfiltered partner list
+
+5. Add structured filters above the list:
+- Category (prefilled)
+- State (prefilled)
+- City / Region (if available)
+- Optional toggle: “Show all partners”
+
+6. Goal:
+Admin should NOT have to hunt through a large list when the system already knows what type of help is needed.
+
+-------------------------------------
+ISSUE 2 — SEARCH FUNCTION NOT RETURNING RESULTS (CRITICAL)
+-------------------------------------
+
+This is a separate but very important issue.
+
+When typing known partner names (for example:
+- “Veteran Care”
+- “Trusted Resource”
+- specific partner names already in the system)
+
+They are NOT appearing in search results.
+
+This breaks the ability to manually route leads directly.
+
+REQUIRED FIX:
+
+1. Search must return ALL available resources, including:
+- trusted partners
+- free resources
+- internal programs (e.g., Veteran Care services)
+- paid partners
+- any resource in the database
+
+2. Search must match against:
+- partner name
+- organization name
+- contact name (if applicable)
+- email (optional)
+- keywords (if available)
+
+3. Search must be FULLY INCLUSIVE:
+If a resource exists in the system, typing its name should ALWAYS return it.
+
+4. Ensure no filtering is unintentionally excluding:
+- internal Veteran Care programs
+- non-paid resources
+- non-category-matching resources when manually searching
+
+-------------------------------------
+EXPECTED FINAL BEHAVIOR
+-------------------------------------
+
+When admin assigns a lead:
+
+STEP 1:
+System shows:
+- Best Matches (already working)
+
+STEP 2:
+Filtered list based on:
+- category
+- location
+
+STEP 3:
+Search works globally:
+- typing ANY known resource name returns it instantly
+
+STEP 4:
+Optional expansion:
+- “Show all partners” if broader search needed
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+This is NOT a rebuild.
+
+This is a refinement of:
+- partner routing UX
+- search behavior
+
+So the system scales cleanly as more partners and resources are added.
+
+--- END ---
