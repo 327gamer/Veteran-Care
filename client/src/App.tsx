@@ -44,6 +44,7 @@ import DisabledVeterans from "@/pages/disabled-veterans";
 import MentalHealth from "@/pages/mental-health";
 import Housing from "@/pages/housing";
 import Employment from "@/pages/employment";
+import BenefitsAssistance from "@/pages/benefits-assistance";
 import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
@@ -96,6 +97,11 @@ function Router() {
       <Route path="/employment">
         <Layout>
           <Employment />
+        </Layout>
+      </Route>
+      <Route path="/benefits-assistance">
+        <Layout>
+          <BenefitsAssistance />
         </Layout>
       </Route>
       <Route path="/onboarding" component={Onboarding} />

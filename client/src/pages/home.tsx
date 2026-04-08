@@ -133,6 +133,10 @@ export default function Home() {
       setLocation("/employment");
       return;
     }
+    if (category === "va-benefits") {
+      setLocation("/benefits-assistance");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 

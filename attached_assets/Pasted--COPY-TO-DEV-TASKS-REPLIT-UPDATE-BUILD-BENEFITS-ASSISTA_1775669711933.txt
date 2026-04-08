@@ -1,0 +1,168 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: BUILD BENEFITS ASSISTANCE SUBCATEGORY LANDING PAGE
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Now that the guided subcategory flow is live and working for:
+
+- End of Life Services
+- Disabled Veterans
+- Mental Health
+- Housing
+- Employment
+
+we now want to apply the SAME structure to:
+
+Benefits Assistance
+
+This should follow the exact same universal page pattern already used successfully on the other guided category pages.
+
+--------------------------------------------------
+CATEGORY
+--------------------------------------------------
+
+Parent Category:
+Benefits Assistance
+
+Use the existing live category slug already in the platform for Benefits Assistance.
+
+--------------------------------------------------
+EXPECTED FLOW
+--------------------------------------------------
+
+Benefits Assistance
+→ Benefits Assistance subcategory landing page
+→ user selects subcategory
+→ user sees filtered resource results
+
+Do NOT send users directly into a flat list when they click Benefits Assistance.
+
+--------------------------------------------------
+REQUIRED SUBCATEGORIES
+--------------------------------------------------
+
+Please create the following initial Benefits Assistance subcategories:
+
+1. Disability Claims
+   - VA disability compensation
+   - initial claims
+   - rating increases
+   - service-connected disability support
+
+2. Pension Benefits
+   - veterans pension
+   - low-income veteran support
+   - wartime pension
+   - needs-based benefits
+
+3. Education Benefits / GI Bill
+   - GI Bill
+   - education funding
+   - tuition assistance
+   - training benefits
+   - school / certification support
+
+4. Appeals & Claim Support
+   - denied claims
+   - appeals
+   - supplemental claims
+   - higher-level review
+   - claims navigation help
+
+5. Survivor Benefits
+   - DIC
+   - survivor compensation
+   - spouse / dependent support
+   - burial / death-related benefit access
+
+6. Aid & Attendance
+   - long-term care support
+   - assisted living support
+   - in-home support funding
+   - pension add-on support
+
+7. VA Enrollment & General Benefits Navigation
+   - general VA benefits guidance
+   - enrollment help
+   - benefits counseling
+   - navigating eligibility and next steps
+
+--------------------------------------------------
+PAGE REQUIREMENTS
+--------------------------------------------------
+
+Build this using the SAME universal structure already used on:
+
+- /end-of-life
+- /disabled-veterans
+- /mental-health
+- /housing
+- /employment
+
+Meaning:
+
+1. Header / intro section
+2. short guidance copy
+3. optional “start here” guidance if user is unsure
+4. subcategory tile grid
+5. Request Support CTA
+6. proper back navigation
+7. proper filter chip reset behavior
+8. same desktop/mobile layout rules
+
+DO NOT create a custom one-off layout.
+
+--------------------------------------------------
+ENTRY POINT WIRING
+--------------------------------------------------
+
+Please wire Benefits Assistance category clicks so that from:
+
+- homepage category tile
+- resources category tile/grid
+- any other main category entry point
+
+clicking Benefits Assistance goes to the Benefits Assistance subcategory landing page first.
+
+NOT directly to flat resource results.
+
+--------------------------------------------------
+FILTER / RESULT BEHAVIOR
+--------------------------------------------------
+
+When a user clicks a Benefits Assistance subcategory:
+
+→ open resource results filtered to that subcategory
+
+Also ensure:
+- back button returns to Benefits Assistance subcategory page
+- removing subcategory chip returns to Benefits Assistance subcategory page
+
+--------------------------------------------------
+UNIVERSAL RULE
+--------------------------------------------------
+
+Must follow the same universal page layout / shell / spacing rules already established.
+
+No extra wrappers
+No spacing drift
+No mobile inconsistencies
+No UI redesign
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Make Benefits Assistance a guided category experience just like the other major categories:
+
+Benefits Assistance
+→ Subcategory Selection
+→ Filtered Resource Results
+
+--- END ---
