@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { BENEFITS_SUBCATEGORIES } from "@/lib/benefits-subcategories";
 import { trackEvent } from "@/lib/analytics";
-import { ChevronLeft, FileText, ChevronRight, HeartHandshake } from "lucide-react";
+import { ChevronLeft, FileText, ChevronRight, HeartHandshake, Sparkles, AlertTriangle } from "lucide-react";
 
 export default function BenefitsAssistance() {
   const [, setLocation] = useLocation();
@@ -10,6 +10,11 @@ export default function BenefitsAssistance() {
   const handleSubcategoryClick = (sub: typeof BENEFITS_SUBCATEGORIES[number]) => {
     trackEvent("benefits_subcategory_click", { subcategory: sub.slug });
     setLocation(`/resources?category=va-benefits&sub=${encodeURIComponent(sub.slug)}`);
+  };
+
+  const openAiGuide = () => {
+    trackEvent("benefits_ai_guide_click");
+    window.dispatchEvent(new CustomEvent("open-ai-guide"));
   };
 
   return (
@@ -32,7 +37,7 @@ export default function BenefitsAssistance() {
           </h1>
         </div>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
-          Disability claims, pension, education benefits, appeals, survivor support, and VA enrollment guidance for veterans and their families.
+          Military records, disability claims, compensation, pension, appeals guidance, and VA enrollment support for veterans and their families.
         </p>
       </div>
 
@@ -42,24 +47,24 @@ export default function BenefitsAssistance() {
             If you're not sure where to start, begin with{" "}
             <button
               onClick={() => {
-                const claims = BENEFITS_SUBCATEGORIES.find(s => s.slug === "disability-claims");
+                const records = BENEFITS_SUBCATEGORIES.find(s => s.slug === "military-records-dd214");
+                if (records) handleSubcategoryClick(records);
+              }}
+              className="font-medium text-primary hover:underline"
+              data-testid="benefits-intro-records-link"
+            >
+              Military Records &amp; DD214
+            </button>{" "}
+            or{" "}
+            <button
+              onClick={() => {
+                const claims = BENEFITS_SUBCATEGORIES.find(s => s.slug === "disability-claims-filing");
                 if (claims) handleSubcategoryClick(claims);
               }}
               className="font-medium text-primary hover:underline"
               data-testid="benefits-intro-claims-link"
             >
-              Disability Claims
-            </button>{" "}
-            or{" "}
-            <button
-              onClick={() => {
-                const nav = BENEFITS_SUBCATEGORIES.find(s => s.slug === "va-enrollment-general-benefits-navigation");
-                if (nav) handleSubcategoryClick(nav);
-              }}
-              className="font-medium text-primary hover:underline"
-              data-testid="benefits-intro-nav-link"
-            >
-              VA Enrollment &amp; General Benefits Navigation
+              Disability Claims &amp; Filing
             </button>.
           </p>
           <div className="flex justify-center mt-4">
@@ -108,6 +113,40 @@ export default function BenefitsAssistance() {
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-8 mx-1 rounded-xl border border-primary/20 bg-primary/5 p-5" data-testid="benefits-ai-guide-section">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4.5 w-4.5 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">Get Help With Your Claim</h2>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-1">
+            Not sure where to start? Our AI Guide can walk you through your situation step-by-step.
+          </p>
+          <ul className="text-xs text-muted-foreground leading-relaxed space-y-0.5 mb-3 ml-3 list-disc">
+            <li>Answer a few questions about your needs</li>
+            <li>Get a personalized step-by-step plan</li>
+            <li>Receive recommended actions and resources</li>
+            <li>Get your plan emailed to you</li>
+          </ul>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+            Covers DD214 guidance, initial claims, disability increases, appeals, and C&amp;P exam preparation.
+          </p>
+          <button
+            onClick={openAiGuide}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors active:scale-[0.98]"
+            data-testid="benefits-ai-guide-btn"
+          >
+            <Sparkles className="h-4 w-4" />
+            Start AI Guided Claim Support
+          </button>
+        </div>
+
+        <div className="mt-4 mx-1 flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200" data-testid="benefits-disclaimer">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-[10px] text-amber-800 leading-relaxed">
+            Processes and requirements may change. Please confirm with official VA or accredited representatives.
+          </p>
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-3">

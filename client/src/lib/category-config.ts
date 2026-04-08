@@ -29,7 +29,7 @@ export interface CategoryDisplayConfig {
 
 const configBySlug: Record<string, CategoryDisplayConfig> = {
   "crisis-help": { icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-50", desc: "Emergency support and suicide prevention", variant: "destructive" },
-  "va-benefits": { icon: FileText, color: "text-blue-600", bg: "bg-blue-50", desc: "Compensation, pension, and appeals" },
+  "va-benefits": { icon: FileText, color: "text-blue-600", bg: "bg-blue-50", desc: "Military records, disability claims, compensation, pension, and appeals" },
   "healthcare": { icon: HeartPulse, color: "text-red-600", bg: "bg-red-50", desc: "VA health, TRICARE, and community care" },
   "mental-health": { icon: Brain, color: "text-purple-600", bg: "bg-purple-50", desc: "PTSD, TBI, and counseling support" },
   "housing": { icon: Home, color: "text-orange-600", bg: "bg-orange-50", desc: "Loans, homelessness, and grants" },

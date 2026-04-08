@@ -6,6 +6,11 @@ import {
   Heart,
   HandHelping,
   ClipboardList,
+  FileArchive,
+  TrendingUp,
+  AlertTriangle,
+  Stethoscope,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,11 +24,46 @@ export interface BenefitsSubcategory {
 
 export const BENEFITS_SUBCATEGORIES: BenefitsSubcategory[] = [
   {
-    name: "Disability Claims",
-    slug: "disability-claims",
+    name: "Military Records & DD214",
+    slug: "military-records-dd214",
+    icon: FileArchive,
+    description: "DD214 requests, military records corrections, service verification, and medals",
+    keywords: ["DD214", "military records", "service records", "corrections", "medals", "discharge", "NPRC"],
+  },
+  {
+    name: "Disability Claims & Filing",
+    slug: "disability-claims-filing",
     icon: FileText,
-    description: "VA disability compensation, initial claims, rating increases, and service-connected disability support",
-    keywords: ["disability", "claims", "compensation", "rating", "service-connected", "VA claim"],
+    description: "Initial VA disability claims, filing assistance, and service-connected compensation",
+    keywords: ["disability", "claims", "filing", "compensation", "service-connected", "VA claim", "initial claim"],
+  },
+  {
+    name: "Disability Increase (Reevaluation)",
+    slug: "disability-increase-reevaluation",
+    icon: TrendingUp,
+    description: "Rating increases, reevaluation requests, and worsened condition documentation",
+    keywords: ["increase", "reevaluation", "rating increase", "worsened condition", "supplemental claim"],
+  },
+  {
+    name: "Appeals & Denials",
+    slug: "appeals-denials",
+    icon: Scale,
+    description: "Denied claims, appeals, supplemental claims, higher-level review, and Board of Appeals",
+    keywords: ["appeals", "denied", "supplemental", "higher-level review", "BVA", "denial", "HLR"],
+  },
+  {
+    name: "C&P Exams (What to Expect)",
+    slug: "cp-exams-what-to-expect",
+    icon: Stethoscope,
+    description: "Compensation & Pension exam preparation, what to bring, and how to document symptoms",
+    keywords: ["C&P exam", "compensation and pension", "exam preparation", "QTC", "VES", "LHI"],
+  },
+  {
+    name: "VA Claims Assistance (DAV, VSO, etc.)",
+    slug: "va-claims-assistance-dav-vso",
+    icon: Users,
+    description: "Accredited VSOs, DAV, VFW, and free claims assistance from veteran organizations",
+    keywords: ["VSO", "DAV", "VFW", "American Legion", "claims assistance", "accredited representative"],
   },
   {
     name: "Pension Benefits",
@@ -38,13 +78,6 @@ export const BENEFITS_SUBCATEGORIES: BenefitsSubcategory[] = [
     icon: GraduationCap,
     description: "GI Bill, tuition assistance, training benefits, and school or certification support",
     keywords: ["GI Bill", "education", "tuition", "training", "certification", "school", "Chapter 33"],
-  },
-  {
-    name: "Appeals & Claim Support",
-    slug: "appeals-claim-support",
-    icon: Scale,
-    description: "Denied claims, appeals, supplemental claims, higher-level review, and claims navigation",
-    keywords: ["appeals", "denied", "supplemental", "higher-level review", "claim support", "BVA"],
   },
   {
     name: "Survivor Benefits",

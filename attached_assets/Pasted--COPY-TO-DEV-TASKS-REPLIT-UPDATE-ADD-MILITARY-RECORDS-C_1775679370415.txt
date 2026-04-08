@@ -1,0 +1,116 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: ADD MILITARY RECORDS & CLAIMS SYSTEM + AI GUIDED FLOW
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+1. ADD NEW SUBCATEGORY CLUSTER
+--------------------------------------------------
+
+Under:
+
+Benefits Assistance
+
+Add the following subcategories:
+
+- Military Records & DD214
+- Disability Claims & Filing
+- Disability Increase (Reevaluation)
+- Appeals & Denials
+- C&P Exams (What to Expect)
+- VA Claims Assistance (DAV, VSO, etc.)
+
+Also cross-tag these under:
+- Disabled Veterans
+
+--------------------------------------------------
+2. UPDATE CATEGORY DESCRIPTION
+--------------------------------------------------
+
+Benefits Assistance description should reflect:
+
+- records
+- claims
+- compensation
+- pension
+- appeals
+
+Example:
+
+"Military records, disability claims, compensation, pension, and appeals guidance"
+
+--------------------------------------------------
+3. ADD AI GUIDED CLAIM SUPPORT SECTION
+--------------------------------------------------
+
+Inside:
+
+Military Records & Claims
+
+Add a section:
+
+Title:
+"Get Help With Your Claim"
+
+Content:
+- Prompt user to use AI Guide
+- Explain it will walk them step-by-step
+- Explain it will generate a personalized plan
+- Explain it will email results
+
+--------------------------------------------------
+4. AI GUIDE INTEGRATION REQUIREMENTS
+--------------------------------------------------
+
+AI should support:
+
+- DD214 guidance
+- initial claim process
+- disability increase process
+- appeals process
+- C&P exam preparation
+
+Flow:
+- Ask structured questions
+- Generate step-by-step plan
+- Recommend next actions
+- Provide relevant resources from platform
+
+--------------------------------------------------
+5. EMAIL OUTPUT
+--------------------------------------------------
+
+After AI session:
+
+System should email user:
+
+- summary of their situation
+- step-by-step plan
+- recommended actions
+- relevant links/resources
+
+--------------------------------------------------
+6. DISCLAIMER (REQUIRED)
+--------------------------------------------------
+
+Add:
+
+"Processes and requirements may change. Please confirm with official VA or accredited representatives."
+
+--------------------------------------------------
+7. DO NOT CREATE NEW MAIN CATEGORY
+--------------------------------------------------
+
+This must remain inside:
+
+Benefits Assistance
+
+Do NOT create a separate "Military Records" top-level category.
+
+--------------------------------------------------
+
+This is a high-priority user journey and must be implemented cleanly and consistently with existing category structure.
+
+--- END ---
