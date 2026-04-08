@@ -1,0 +1,112 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: DISABLED VETERANS NEEDS SUBCATEGORY LANDING PAGE LIKE END OF LIFE SERVICES
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+ISSUE
+--------------------------------------------------
+
+Disabled Veterans is now visible as a main category and resources are loading correctly.
+
+However, when clicking into Disabled Veterans, it goes straight to the resource results list.
+
+That is NOT the desired behavior.
+
+--------------------------------------------------
+EXPECTED BEHAVIOR
+--------------------------------------------------
+
+Disabled Veterans should function like End of Life Services.
+
+Meaning:
+
+1. User clicks:
+   Disabled Veterans
+
+2. User is taken to a Disabled Veterans subcategory selection page
+
+3. That page should display the Disabled Veterans subcategories as selectable cards / tiles
+
+4. Only after selecting a subcategory should the user go to the filtered resource results
+
+--------------------------------------------------
+CURRENT PROBLEM
+--------------------------------------------------
+
+Current behavior:
+Disabled Veterans
+→ opens directly to resource list
+
+Expected behavior:
+Disabled Veterans
+→ opens Disabled Veterans subcategory page
+→ then selected subcategory opens filtered resource results
+
+--------------------------------------------------
+REQUIRED FIX
+--------------------------------------------------
+
+Please make Disabled Veterans use the same front-end flow pattern already used by End of Life Services.
+
+Use the same universal structure / logic pattern, adapted for the Disabled Veterans category.
+
+--------------------------------------------------
+DISABLED VETERANS SUBCATEGORIES TO DISPLAY
+--------------------------------------------------
+
+Please use the Disabled Veterans subcategories already created and surface them in the UI as selectable cards.
+
+Expected subcategories:
+
+1. Disability Benefits & Claims
+2. Accessible Housing & Home Modifications
+3. Adaptive Transportation & Mobility
+4. Healthcare & Rehabilitation
+5. Mental Health & PTSD Support
+6. Employment & Vocational Rehabilitation
+7. Caregiver & Family Support
+8. Legal Advocacy & Rights
+9. Independent Living & Daily Support
+10. Adaptive Equipment & Assistive Technology
+
+--------------------------------------------------
+UI / UX REQUIREMENT
+--------------------------------------------------
+
+This page should visually behave like End of Life Services:
+
+- category intro / heading
+- subcategory tiles/cards
+- clean spacing
+- same universal layout rule
+- same desktop/mobile behavior
+- same click-through logic
+
+Do NOT create a one-off special page style.
+Reuse the same pattern already used successfully for End of Life Services.
+
+--------------------------------------------------
+RESULT BEHAVIOR
+--------------------------------------------------
+
+After a user clicks a Disabled Veterans subcategory:
+
+→ show resources filtered to that Disabled Veterans subcategory
+
+Not just the general parent category.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Make Disabled Veterans a fully structured category experience, not just a parent category that dumps users into a flat resource list.
+
+It should work like End of Life Services:
+Parent Category
+→ Subcategory Selection
+→ Filtered Resource Results
+
+--- END ---

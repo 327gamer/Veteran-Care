@@ -40,6 +40,7 @@ import GetHelp from "@/pages/get-help";
 import ResourceCenter from "@/pages/resource-center";
 import PartnersLanding from "@/pages/partners-landing";
 import EndOfLife from "@/pages/end-of-life";
+import DisabledVeterans from "@/pages/disabled-veterans";
 import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
@@ -72,6 +73,11 @@ function Router() {
       <Route path="/end-of-life">
         <Layout>
           <EndOfLife />
+        </Layout>
+      </Route>
+      <Route path="/disabled-veterans">
+        <Layout>
+          <DisabledVeterans />
         </Layout>
       </Route>
       <Route path="/onboarding" component={Onboarding} />

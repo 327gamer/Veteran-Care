@@ -526,6 +526,10 @@ export default function Resources() {
       setLocation("/end-of-life");
       return;
     }
+    if (cat.slug === "disabled-veterans") {
+      setLocation("/disabled-veterans");
+      return;
+    }
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
@@ -572,7 +576,12 @@ export default function Resources() {
   }
   if (subFilter) {
     const subLabel = subFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    filterChips.push({ label: subLabel, onRemove: () => { setSubFilter(null); setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); } });
+    filterChips.push({ label: subLabel, onRemove: () => {
+      setSubFilter(null);
+      if (selectedSlug === "disabled-veterans") { setLocation("/disabled-veterans"); }
+      else if (selectedSlug === "end-of-life-services") { setLocation("/end-of-life"); }
+      else { setLocation(`/resources?category=${selectedSlug || "end-of-life-services"}`); }
+    } });
   }
 
   const handleUseMyLocation = () => {
@@ -639,6 +648,11 @@ export default function Resources() {
                   setLocation("/end-of-life");
                 } else if (selectedSlug === "end-of-life-services") {
                   setLocation("/end-of-life");
+                } else if (selectedSlug === "disabled-veterans" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/disabled-veterans");
+                } else if (selectedSlug === "disabled-veterans") {
+                  setLocation("/disabled-veterans");
                 } else {
                   clearCategory();
                 }

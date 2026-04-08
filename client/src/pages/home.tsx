@@ -117,6 +117,10 @@ export default function Home() {
       setLocation("/end-of-life");
       return;
     }
+    if (category === "disabled-veterans") {
+      setLocation("/disabled-veterans");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 
