@@ -7,6 +7,7 @@ import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
+import { platform } from "../shared/platform";
 import { query as pgQuery } from "./pg-client";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";

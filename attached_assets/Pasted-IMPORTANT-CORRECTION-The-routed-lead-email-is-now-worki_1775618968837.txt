@@ -1,0 +1,88 @@
+IMPORTANT CORRECTION:
+
+The routed lead email is now working correctly.
+
+The email is received and includes all 4 action buttons:
+- Connected with Veteran
+- Service Completed
+- No Response
+- Unable to Contact
+
+HOWEVER — the issue is NOT email delivery.
+
+-------------------------------------
+CURRENT PROBLEM
+-------------------------------------
+
+When clicking ANY of the action buttons, it opens:
+
+/api/partner/lead-action?token=...
+
+And returns:
+
+Internal Server Error
+
+So the system is failing AFTER the email — at the backend endpoint.
+
+-------------------------------------
+WHAT IS WORKING
+-------------------------------------
+
+1. Lead submission
+2. Lead assignment (admin)
+3. Routed email delivery
+4. Action buttons visible
+
+-------------------------------------
+WHAT IS BROKEN
+-------------------------------------
+
+Clicking any action button results in Internal Server Error.
+
+This means:
+- the confirmation page is not rendering
+- the status update is not processing
+- the admin panel is NOT being updated
+
+-------------------------------------
+LIKELY FAILURE POINTS
+-------------------------------------
+
+Please inspect the /api/partner/lead-action endpoint.
+
+Possible issues:
+- token parsing or decoding
+- token verification (HMAC / secret mismatch)
+- missing or incorrect environment variable
+- lead lookup failing after token decode
+- GET vs POST handling mismatch
+- confirmation page renderer failing
+- uncaught backend exception
+
+-------------------------------------
+EXPECTED BEHAVIOR
+-------------------------------------
+
+Click button →
+Open confirmation page →
+Confirm →
+Lead status updates →
+Admin reflects change
+
+-------------------------------------
+REQUEST
+-------------------------------------
+
+Please:
+
+1. Check server logs for this endpoint
+2. Identify exact error being thrown
+3. Confirm whether failure is on:
+   - GET (confirmation page)
+   - POST (status update)
+4. Fix endpoint so full loop works:
+   email → click → confirm → admin updated
+
+This is now the final blocker in the lead status update loop.
+
+--- END ---
