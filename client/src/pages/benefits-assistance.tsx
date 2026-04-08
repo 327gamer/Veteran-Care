@@ -2,7 +2,8 @@ import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
 import { BENEFITS_SUBCATEGORIES } from "@/lib/benefits-subcategories";
 import { trackEvent } from "@/lib/analytics";
-import { ChevronLeft, FileText, ChevronRight, HeartHandshake, Sparkles, AlertTriangle } from "lucide-react";
+import { ChevronLeft, FileText, ChevronRight, HeartHandshake, AlertTriangle } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function BenefitsAssistance() {
   const [, setLocation] = useLocation();
@@ -10,11 +11,6 @@ export default function BenefitsAssistance() {
   const handleSubcategoryClick = (sub: typeof BENEFITS_SUBCATEGORIES[number]) => {
     trackEvent("benefits_subcategory_click", { subcategory: sub.slug });
     setLocation(`/resources?category=va-benefits&sub=${encodeURIComponent(sub.slug)}`);
-  };
-
-  const openAiGuide = () => {
-    trackEvent("benefits_ai_guide_click");
-    window.dispatchEvent(new CustomEvent("open-ai-guide"));
   };
 
   return (
@@ -67,20 +63,9 @@ export default function BenefitsAssistance() {
               Disability Claims &amp; Filing
             </button>.
           </p>
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => {
-                trackEvent("benefits_request_support_click");
-                setLocation("/get-help");
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
-              data-testid="benefits-request-support"
-            >
-              <HeartHandshake className="h-3.5 w-3.5" />
-              Request Support
-            </button>
-          </div>
         </div>
+
+        <AiGuideBanner categoryContext="benefits-assistance" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
@@ -113,33 +98,6 @@ export default function BenefitsAssistance() {
               </button>
             );
           })}
-        </div>
-
-        <div className="mt-8 mx-1 rounded-xl border border-primary/20 bg-primary/5 p-5" data-testid="benefits-ai-guide-section">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4.5 w-4.5 text-primary" />
-            <h2 className="text-sm font-bold text-foreground">Get Help With Your Claim</h2>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-1">
-            Not sure where to start? Our AI Guide can walk you through your situation step-by-step.
-          </p>
-          <ul className="text-xs text-muted-foreground leading-relaxed space-y-0.5 mb-3 ml-3 list-disc">
-            <li>Answer a few questions about your needs</li>
-            <li>Get a personalized step-by-step plan</li>
-            <li>Receive recommended actions and resources</li>
-            <li>Get your plan emailed to you</li>
-          </ul>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-            Covers DD214 guidance, initial claims, disability increases, appeals, and C&amp;P exam preparation.
-          </p>
-          <button
-            onClick={openAiGuide}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors active:scale-[0.98]"
-            data-testid="benefits-ai-guide-btn"
-          >
-            <Sparkles className="h-4 w-4" />
-            Start AI Guided Claim Support
-          </button>
         </div>
 
         <div className="mt-4 mx-1 flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200" data-testid="benefits-disclaimer">
