@@ -925,6 +925,10 @@ async function checkTrustedServicesTable() {
     hasTrustedServicesTable = true;
     console.log(`[schema] trusted_service_categories table detected via pg (${rows.length} rows)`);
     await seedTrustedServiceCategoriesIfEmpty();
+    await pgQuery(`UPDATE trusted_service_categories SET is_active = false WHERE slug IN ('benefits-assistance', 'wellness-recovery', 'disabled-veterans') AND is_active = true`).then(
+      () => console.log("[migration] Deactivated non-monetizable categories from Trusted Services"),
+      (e: any) => console.log("[migration] trusted_service_categories cleanup skipped:", e.message)
+    );
     const svcCount = await pgQuery(`SELECT count(*) as cnt FROM trusted_services`);
     console.log(`[schema] trusted_services count: ${svcCount[0]?.cnt}`);
     try {
@@ -1026,12 +1030,10 @@ async function seedTrustedServiceCategoriesIfEmpty() {
           ('Financial & Credit Services', 'financial-credit', 'Trusted financial advisors, credit counseling, and lending partners', 'dollar-sign', 3, true),
           ('Insurance Services', 'insurance', 'Insurance providers offering veteran-friendly coverage options', 'shield', 4, true),
           ('Education & Training', 'education-training', 'Accredited programs and training providers supporting veteran success', 'graduation-cap', 5, true),
-          ('Employment Support', 'employment-support', 'Employers and staffing partners committed to hiring veterans', 'briefcase', 6, true),
-          ('Benefits Assistance', 'benefits-assistance', 'Professional services to help navigate and maximize veteran benefits', 'award', 7, true),
-          ('Wellness & Recovery', 'wellness-recovery', 'Wellness providers, recovery programs, and holistic support services', 'heart-pulse', 8, true)
+          ('Employment Support', 'employment-support', 'Employers and staffing partners committed to hiring veterans', 'briefcase', 6, true)
         ON CONFLICT (slug) DO UPDATE SET is_active = true
       `);
-      console.log("[seed] 8 trusted service categories seeded successfully");
+      console.log("[seed] 6 trusted service categories seeded successfully");
     }
     await ensureDefaultServices();
     await repairOrphanedServices();
@@ -1243,19 +1245,11 @@ async function ensureDisabledVeteransCategory() {
   }
 
   try {
-    const existing = await pgQuery(
-      `SELECT id FROM trusted_service_categories WHERE slug = 'disabled-veterans' LIMIT 1`
+    await pgQuery(
+      `UPDATE trusted_service_categories SET is_active = false WHERE slug = 'disabled-veterans'`
     );
-    if (existing.length === 0) {
-      await pgQuery(`
-        INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
-        VALUES ('Disabled Veterans', 'disabled-veterans', 'Resources, benefits, housing, transportation, employment, and advocacy specifically for disabled veterans', 'shield-check', 10, true)
-        ON CONFLICT (slug) DO UPDATE SET is_active = true
-      `);
-      console.log("[seed] Added Disabled Veterans to trusted_service_categories");
-    }
   } catch (err: any) {
-    console.log("[seed] trusted_service_categories disabled-veterans insert skipped:", err.message);
+    console.log("[seed] trusted_service_categories disabled-veterans deactivation skipped:", err.message);
   }
 }
 

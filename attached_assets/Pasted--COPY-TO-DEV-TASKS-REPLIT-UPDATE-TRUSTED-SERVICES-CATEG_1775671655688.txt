@@ -1,0 +1,112 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: TRUSTED SERVICES CATEGORY CLEANUP + REGULAR RESOURCE STRUCTURE
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Clean up the category architecture so that:
+
+1. Regular Resources remain support-first / navigation-first
+2. Trusted Services remain monetizable / business-partner focused
+
+We need to remove several non-monetizable support categories from Trusted Services and keep them in Regular Resources only.
+
+--------------------------------------------------
+MENTAL HEALTH DECISION
+--------------------------------------------------
+
+Keep Mental Health as its own MAIN category in Regular Resources.
+
+Do NOT move Mental Health under Healthcare.
+
+Reason:
+- it is a major high-intent category
+- it has its own strong subcategory system already
+- it needs to remain visible and easy to access
+- it should stay separate from general healthcare navigation
+
+So going forward:
+
+Regular Resources should have BOTH:
+- Mental Health
+- Healthcare
+
+as separate top-level categories.
+
+--------------------------------------------------
+TRUSTED SERVICES CLEANUP
+--------------------------------------------------
+
+Please remove the following categories from Trusted Services:
+
+1. Benefits Assistance
+2. Wellness & Recovery
+3. Disabled Veterans
+4. Insurance
+
+IMPORTANT:
+Keep:
+- Insurance Services
+
+The goal is to remove broad support/navigation categories from Trusted Services and keep only the monetizable business-service categories there.
+
+--------------------------------------------------
+KEEP IN REGULAR RESOURCES
+--------------------------------------------------
+
+These support-oriented categories should remain on the Regular Resources side:
+
+- Benefits Assistance
+- Mental Health
+- Disabled Veterans
+- Wellness & Recovery (if this still exists on the regular resources side)
+- Healthcare
+
+These are support/navigation categories, not core monetizable trusted-service buckets.
+
+--------------------------------------------------
+TRUSTED SERVICES SHOULD STAY FOCUSED ON
+--------------------------------------------------
+
+Examples of the correct Trusted Services structure include:
+
+- Legal Help
+- Mortgages / Home Loans
+- Insurance Services
+- Financial Services
+- Auto Services
+- Travel Services
+- Employment Services
+- Education / Training Services
+- End of Life Services
+- other true monetizable service/provider categories
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+This is a category cleanup / architecture correction.
+
+Do NOT:
+- break existing resource categories
+- change routing logic
+- change attribution logic
+- remove working regular resource categories
+
+Only clean up the Trusted Services category list so the commercial side stays clearly separated from the support side.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Keep the platform architecture clean:
+
+Regular Resources = support / navigation / help-first
+Trusted Services = monetizable partner/service categories
+
+--- END ---
