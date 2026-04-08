@@ -1,0 +1,77 @@
+Post-publish review shows Chunk 1 is only partially complete.
+
+Top-level category display is improved, but the subcategory experience still does NOT match Resources.
+
+CURRENT ISSUE
+
+When viewing Resources:
+- there are 16 resource categories
+- matching categories contain their full expected subcategory trees
+
+When viewing Trusted Services:
+- the matching top-level category names now display more consistently
+- BUT the matching subcategories are still missing or not mirroring Resources
+
+This means the user experience is still inconsistent.
+
+IMPORTANT CLARIFICATION
+
+The goal is not just matching top-level category labels.
+
+For any category that exists in both:
+- Resources
+- Trusted Services
+
+the user experience must match at the subcategory level too.
+
+That means:
+- same subcategory names
+- same subcategory order where applicable
+- same visible taxonomy structure
+
+SAFE ARCHITECTURE REMINDER
+
+Do NOT break:
+- Trusted Services partner records
+- Stripe
+- attribution
+- routing
+- existing data relationships
+
+So again, this must be handled as:
+
+1) DISPLAY LAYER
+- canonical taxonomy must come from Resources
+- this includes BOTH categories and subcategories for shared categories
+
+2) DATA LAYER
+- Trusted Services underlying records remain intact
+
+WHAT TO FIX NOW
+
+1. Audit how Resources subcategories are sourced for the shared categories
+2. Update Trusted Services PUBLIC subcategory rendering to use the same canonical subcategory source for those matching categories
+3. Do NOT replace TS partner/category data
+4. Map or join TS records to canonical Resource subcategories for display only
+5. Preserve all existing underlying business logic
+
+EXPECTED RESULT
+
+For categories shared between Resources and Trusted Services:
+- same category name
+- same subcategory names
+- same visible structure
+- same overall user feel
+
+Only difference should be:
+- Trusted Services shows paid / verified partners
+- ranking / badge / visibility logic
+
+RETURN ONLY
+
+A) root cause of missing subcategory mirroring
+B) canonical subcategory source used by Resources
+C) files changed
+D) confirmation shared categories now mirror Resources at subcategory level
+E) confirmation no data relationships were broken
+F) whether another publish is required

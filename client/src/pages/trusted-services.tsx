@@ -66,6 +66,7 @@ interface TrustedCategory {
   description: string;
   icon: string;
   display_order: number;
+  canonical_slug: string | null;
 }
 
 interface TrustedService {
@@ -192,11 +193,24 @@ export default function TrustedServices() {
 
   const selectedCatObj = categories.find((c: TrustedCategory) => c.slug === selectedCategory);
 
-  const { data: subcategories = [] } = useQuery<PartnerSubcategory[]>({
+  const canonicalSlug = selectedCatObj?.canonical_slug;
+  const hasCanonical = !!canonicalSlug;
+
+  const { data: canonicalSubs = [] } = useQuery<{ id: string; name: string; slug: string }[]>({
+    queryKey: ["/api/subcategories", canonicalSlug],
+    queryFn: () => fetch(`/api/subcategories?category_slug=${canonicalSlug}`).then(r => r.json()),
+    enabled: hasCanonical,
+  });
+
+  const { data: partnerSubs = [] } = useQuery<PartnerSubcategory[]>({
     queryKey: ["/api/partner-subcategories", selectedCatObj?.id],
     queryFn: () => fetch(`/api/partner-subcategories?category_id=${selectedCatObj?.id}`).then(r => r.json()),
     enabled: !!selectedCatObj?.id,
   });
+
+  const subcategories: PartnerSubcategory[] = hasCanonical && canonicalSubs.length > 0
+    ? canonicalSubs.map((s, i) => ({ id: s.id, category_id: selectedCatObj?.id || "", name: s.name, slug: s.slug, display_order: i + 1 }))
+    : partnerSubs;
 
   const nearMeLat = nearMeActive && geo.location?.lat ? geo.location.lat : undefined;
   const nearMeLng = nearMeActive && geo.location?.lng ? geo.location.lng : undefined;
