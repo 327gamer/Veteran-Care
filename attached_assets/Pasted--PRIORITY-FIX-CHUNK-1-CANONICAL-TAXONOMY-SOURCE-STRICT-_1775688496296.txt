@@ -1,0 +1,143 @@
+--- PRIORITY FIX – CHUNK 1: CANONICAL TAXONOMY SOURCE ---
+
+STRICT SCOPE: CHUNK 1 ONLY
+Do NOT expand beyond this scope.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+1. Identify the ONE canonical taxonomy source used by Resources
+2. Make Trusted Services read from that SAME source
+3. Remove duplicate taxonomy sources inside Trusted Services
+4. Fix duplicate category rendering (Auto Services / Travel Services)
+
+-------------------------------------
+STEP 1: AUDIT TAXONOMY SOURCES
+-------------------------------------
+
+Search entire codebase for category/subcategory sources.
+
+Focus areas:
+
+RESOURCES:
+- resources page/component
+- resources API calls
+- category fetch service
+- Supabase queries related to categories
+
+TRUSTED SERVICES:
+- trusted services page/component
+- filters
+- display tree
+- any constants or arrays
+
+Find and list:
+- file path
+- how categories are loaded
+- mark as:
+  [CANONICAL] or [DUPLICATE]
+
+-------------------------------------
+STEP 2: IDENTIFY CANONICAL SOURCE
+-------------------------------------
+
+Determine EXACT source used by Resources:
+- API endpoint OR
+- Supabase query OR
+- shared service
+
+Confirm it provides:
+- category id
+- category name
+- subcategories
+- parent-child relationships
+- order
+
+THIS becomes the ONLY source of truth.
+
+-------------------------------------
+STEP 3: REWIRE TRUSTED SERVICES
+-------------------------------------
+
+Modify Trusted Services to:
+
+- REMOVE any local category arrays
+- REMOVE fallback category lists
+- STOP merging multiple sources
+
+INSTEAD:
+- fetch categories from SAME source as Resources
+
+Implementation pattern:
+- import same service OR
+- call same API endpoint OR
+- reuse same hook/function
+
+-------------------------------------
+STEP 4: REMOVE DUPLICATE SOURCES
+-------------------------------------
+
+In Trusted Services:
+
+- delete or disable:
+  - constants/category arrays
+  - mock data
+  - fallback lists
+
+Ensure:
+ONLY one taxonomy source is used
+
+-------------------------------------
+STEP 5: FIX DUPLICATE DISPLAY
+-------------------------------------
+
+Fix duplicate categories:
+
+Likely causes:
+- double fetch
+- merged arrays
+- duplicate mapping
+- fallback + live data combined
+
+Solution:
+- use canonical source only
+- dedupe by category_id (NOT name)
+- ensure mapping runs once
+
+-------------------------------------
+VALIDATION (MANDATORY)
+-------------------------------------
+
+Confirm:
+
+1. Trusted Services categories EXACTLY match Resources
+2. Subcategories EXACTLY match Resources
+3. Auto Services appears once
+4. Travel Services appears once
+5. Resources page still works
+6. Trusted Services page still works
+
+-------------------------------------
+DELIVERABLE FORMAT
+-------------------------------------
+
+Return ONLY:
+
+A) root cause
+B) canonical source (file/service/API)
+C) files changed
+D) confirmation Trusted Services matches Resources
+E) whether publish required
+
+-------------------------------------
+RULES
+-------------------------------------
+
+- DO NOT touch signup forms
+- DO NOT touch admin panel
+- DO NOT touch AI Guide
+- DO NOT touch routing
+- DO NOT modify database unless absolutely required
+
+--- END ---

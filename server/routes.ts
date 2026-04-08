@@ -1016,6 +1016,14 @@ async function checkTrustedServicesTable() {
     await mergeDiscountIntoMain('discount-insurance', 'insurance');
     await mergeDiscountIntoMain('discount-healthcare', 'insurance');
     await mergeDiscountIntoMain('discount-financial', 'financial-credit');
+    await mergeDiscountIntoMain('discount-auto', 'auto-services');
+    await mergeDiscountIntoMain('discount-travel', 'travel-services');
+    await mergeDiscountIntoMain('discount-restaurants', 'restaurants');
+    await mergeDiscountIntoMain('discount-retail', 'retail-discounts');
+    await mergeDiscountIntoMain('discount-hotels', 'hotels');
+    await mergeDiscountIntoMain('discount-car-dealers', 'car-dealerships');
+    await mergeDiscountIntoMain('discount-gyms', 'gyms-fitness');
+    await mergeDiscountIntoMain('discount-local', 'local-businesses');
     try {
       const financialCat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug = 'financial-credit' LIMIT 1`);
       if (financialCat.length > 0) {
@@ -1159,33 +1167,8 @@ async function seedTrustedServiceCategoriesIfEmpty() {
 }
 
 async function seedDiscountCategories() {
-  try {
-    const existing = await pgQuery(
-      `SELECT id FROM trusted_service_categories WHERE program_area = 'veteran_discount_services' LIMIT 1`
-    );
-    if (existing.length > 0) return;
-    console.log("[seed] Seeding veteran discount service categories...");
-    await pgQuery(`
-      INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type) VALUES
-        ('Legal Help', 'discount-legal', 'Legal services offering veteran discounts', 'scale', 101, false, 'veteran_discount_services', 'service'),
-        ('Mortgage & Loans', 'discount-mortgage', 'Mortgage and lending services for veterans', 'home', 102, false, 'veteran_discount_services', 'service'),
-        ('Insurance', 'discount-insurance', 'Insurance providers with veteran-friendly rates', 'shield', 103, false, 'veteran_discount_services', 'service'),
-        ('Healthcare Providers', 'discount-healthcare', 'Healthcare providers offering veteran discounts', 'heart-pulse', 104, false, 'veteran_discount_services', 'service'),
-        ('Auto Services', 'discount-auto', 'Automotive services and discounts for veterans', 'car', 105, true, 'veteran_discount_services', 'service'),
-        ('Financial Services', 'discount-financial', 'Financial advisory and services for veterans', 'dollar-sign', 106, false, 'veteran_discount_services', 'service'),
-        ('Travel Services', 'discount-travel', 'Travel services and discounts for veterans', 'plane', 107, true, 'veteran_discount_services', 'service'),
-        ('Restaurants', 'discount-restaurants', 'Restaurants offering veteran discounts', 'utensils', 201, true, 'veteran_discount_services', 'product'),
-        ('Retail Discounts', 'discount-retail', 'Retail stores with veteran discount programs', 'shopping-bag', 202, true, 'veteran_discount_services', 'product'),
-        ('Hotels', 'discount-hotels', 'Hotels and lodging with veteran rates', 'bed', 203, true, 'veteran_discount_services', 'product'),
-        ('Car Dealerships', 'discount-car-dealers', 'Car dealerships with veteran pricing programs', 'car', 204, true, 'veteran_discount_services', 'product'),
-        ('Gyms & Fitness', 'discount-gyms', 'Gyms and fitness centers with veteran memberships', 'dumbbell', 205, true, 'veteran_discount_services', 'product'),
-        ('Local Businesses', 'discount-local', 'Local businesses supporting veterans', 'store', 206, true, 'veteran_discount_services', 'product')
-      ON CONFLICT (slug) DO UPDATE SET program_area = 'veteran_discount_services', group_type = EXCLUDED.group_type
-    `);
-    console.log("[seed] 13 veteran discount categories seeded successfully");
-  } catch (err: any) {
-    console.log("[seed] Failed to seed discount categories:", err.message);
-  }
+  // DEPRECATED: discount-* categories are now merged into clean slugs by ensureAllTrustedServiceCategories.
+  // This function is intentionally a no-op to prevent recreating duplicate categories.
 }
 
 async function ensureDefaultServices() {
@@ -7518,7 +7501,7 @@ export async function registerRoutes(
     if (!hasTrustedServicesTable) return res.json([]);
     try {
       const rows = await pgQuery(
-        `SELECT * FROM trusted_service_categories WHERE program_area IN ('veteran_discount_services', 'trusted_services') AND is_active IS NOT false ORDER BY group_type, display_order`
+        `SELECT * FROM trusted_service_categories WHERE program_area IN ('veteran_discount_services', 'trusted_services') AND is_active IS NOT false AND slug NOT LIKE 'discount-%' ORDER BY group_type, display_order`
       );
       return res.json(rows);
     } catch (err: any) {
