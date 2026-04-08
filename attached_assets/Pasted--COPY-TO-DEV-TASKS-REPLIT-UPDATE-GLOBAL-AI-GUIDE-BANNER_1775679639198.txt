@@ -1,0 +1,111 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: GLOBAL AI GUIDE BANNER ACROSS ALL CATEGORY PAGES
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+1. ADD GLOBAL AI GUIDE BANNER COMPONENT
+--------------------------------------------------
+
+Create a reusable component:
+
+AI_GUIDE_BANNER
+
+This must appear on ALL category landing pages, including:
+
+- End of Life Services
+- Disabled Veterans
+- Mental Health
+- Housing
+- Employment
+- Healthcare
+- Financial Services
+- Benefits Assistance
+- All future categories
+
+--------------------------------------------------
+2. PLACEMENT
+--------------------------------------------------
+
+Position:
+
+- Directly below category title and description
+- Above subcategory tile grid
+
+--------------------------------------------------
+3. COPY (STANDARDIZED)
+--------------------------------------------------
+
+Use:
+
+Title:
+"Not sure where to start?"
+
+Body:
+"Talk to our AI Veteran Guide — get step-by-step help and receive everything by email."
+
+--------------------------------------------------
+4. BUTTONS
+--------------------------------------------------
+
+Primary CTA:
+"Talk to AI Guide"
+
+Optional Secondary CTA:
+"Request Support"
+
+--------------------------------------------------
+5. AI CONTEXT HANDOFF (CRITICAL)
+--------------------------------------------------
+
+When user clicks "Talk to AI Guide":
+
+Pass category context into AI session:
+
+Examples:
+- mental-health → AI starts in mental health context
+- housing → housing context
+- benefits → claims/benefits context
+- financial → financial context
+
+This ensures relevant guidance from first response.
+
+--------------------------------------------------
+6. EMAIL OUTPUT REQUIREMENT
+--------------------------------------------------
+
+AI must:
+
+- Offer summary of conversation
+- Automatically generate structured guidance
+- Email results to user
+
+Include:
+- next steps
+- relevant resources
+- suggested actions
+
+--------------------------------------------------
+7. UI STYLE
+--------------------------------------------------
+
+- Clean card or banner
+- Match platform design system
+- Mobile-first (no overflow / no cutoff)
+- CTA buttons fully visible on all devices
+
+--------------------------------------------------
+8. DISCLAIMER
+--------------------------------------------------
+
+Add small text:
+
+"Information is for guidance. Please confirm with official providers."
+
+--------------------------------------------------
+
+This must be implemented as a reusable global component for consistency and scalability.
+
+--- END ---

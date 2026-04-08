@@ -63,6 +63,7 @@ interface LayoutProps {
 export default function Layout({ children, fullBleed }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [aiCategoryContext, setAiCategoryContext] = useState<string | undefined>(undefined);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authDefaultMode, setAuthDefaultMode] = useState<"login" | "signup">("login");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -112,7 +113,13 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
   };
 
   useEffect(() => {
-    const handler = () => setIsAiOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.category) {
+        setAiCategoryContext(detail.category);
+      }
+      setIsAiOpen(true);
+    };
     window.addEventListener("open-ai-guide", handler);
     return () => window.removeEventListener("open-ai-guide", handler);
   }, []);
@@ -315,7 +322,7 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
       </main>
 
       {/* AI Guide Modal */}
-      <AiGuide open={isAiOpen} onOpenChange={setIsAiOpen} />
+      <AiGuide open={isAiOpen} onOpenChange={(open) => { setIsAiOpen(open); if (!open) setAiCategoryContext(undefined); }} categoryContext={aiCategoryContext} />
 
       {/* Auth Modal */}
       <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} defaultMode={authDefaultMode} />

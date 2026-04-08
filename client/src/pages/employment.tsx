@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, Briefcase, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function Employment() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function Employment() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="employment" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

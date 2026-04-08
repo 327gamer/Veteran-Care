@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { DV_SUBCATEGORIES } from "@/lib/dv-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, Medal, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function DisabledVeterans() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function DisabledVeterans() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="disabled-veterans" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

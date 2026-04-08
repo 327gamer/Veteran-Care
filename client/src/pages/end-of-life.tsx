@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, Flower2, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function EndOfLife() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function EndOfLife() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="end-of-life" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { MH_SUBCATEGORIES } from "@/lib/mh-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, Brain, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function MentalHealth() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function MentalHealth() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="mental-health" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

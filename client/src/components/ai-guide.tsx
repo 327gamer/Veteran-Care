@@ -43,14 +43,26 @@ interface TrustedServiceCard {
 interface AiGuideProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  categoryContext?: string;
 }
+
+const CATEGORY_CONTEXT_LABELS: Record<string, string> = {
+  "mental-health": "mental health support, PTSD, counseling, and crisis resources",
+  "housing": "housing assistance, emergency shelter, VA home loans, and rental help",
+  "employment": "employment support, job search, resume help, and career training",
+  "healthcare": "healthcare services, VA health enrollment, and medical support",
+  "financial-services": "financial assistance, credit counseling, and emergency funds",
+  "benefits-assistance": "VA benefits, disability claims, military records, compensation, and appeals",
+  "disabled-veterans": "disabled veteran services, adaptive equipment, and specialized support",
+  "end-of-life": "end of life services, hospice care, burial benefits, and survivor support",
+};
 
 const INITIAL_MESSAGE = {
   role: 'assistant' as const,
   content: t(platform.ai.welcomeMessage),
 };
 
-export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
+export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuideProps) {
   const { chatHistory, addChatMessage, clearChatHistory, userLocation, interests, serviceProfile, authToken } = useSavedResources();
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -76,6 +88,8 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
     }, 50);
   }, []);
 
+  const contextSentRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (open) {
       scrollToBottom();
@@ -84,6 +98,20 @@ export default function AiGuide({ open, onOpenChange }: AiGuideProps) {
       }
     }
   }, [open, chatHistory.length, streamingText, scrollToBottom]);
+
+  useEffect(() => {
+    if (open && categoryContext && chatHistory.length === 0 && !isTyping && contextSentRef.current !== categoryContext) {
+      contextSentRef.current = categoryContext;
+      const contextLabel = CATEGORY_CONTEXT_LABELS[categoryContext] || categoryContext;
+      const autoMessage = `I need help with ${contextLabel}. Can you guide me step by step?`;
+      setTimeout(() => {
+        setInput(autoMessage);
+      }, 300);
+    }
+    if (!open) {
+      contextSentRef.current = null;
+    }
+  }, [open, categoryContext, chatHistory.length, isTyping]);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;

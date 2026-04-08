@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, Home as HomeIcon, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function Housing() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function Housing() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="housing" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

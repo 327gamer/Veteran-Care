@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, HeartPulse, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function Healthcare() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function Healthcare() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="healthcare" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

@@ -3,6 +3,7 @@ import { platform } from "@shared/platform";
 import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
 import { trackEvent } from "@/lib/analytics";
 import { ChevronLeft, DollarSign, ChevronRight, HeartHandshake } from "lucide-react";
+import AiGuideBanner from "@/components/ai-guide-banner";
 
 export default function FinancialServices() {
   const [, setLocation] = useLocation();
@@ -76,6 +77,8 @@ export default function FinancialServices() {
             </button>
           </div>
         </div>
+
+        <AiGuideBanner categoryContext="financial-services" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
