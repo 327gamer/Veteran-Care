@@ -1,0 +1,76 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: TRUSTED SERVICES CATEGORY CONSOLIDATION — MERGE “MORTGAGES & LOANS” INTO “FINANCIAL SERVICES”
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Clean up the Trusted Services monetization structure by consolidating overlapping financial categories.
+
+We want to simplify the top-level monetizable categories and move loan-related services under a stronger parent category.
+
+--------------------------------------------------
+CHANGE REQUIRED
+--------------------------------------------------
+
+Please consolidate:
+
+“MORTGAGES & LOANS”
+into
+“FINANCIAL SERVICES”
+
+Meaning:
+
+- Remove “Mortgages & Loans” as a separate top-level Trusted Services category
+- Keep “Financial Services” as the parent monetizable category
+- Move mortgage / loan-related items into Financial Services subcategories
+
+--------------------------------------------------
+NEW STRUCTURE
+--------------------------------------------------
+
+Top-level category:
+Financial Services
+
+Suggested subcategories underneath Financial Services:
+
+1. Mortgages
+2. Home Loans
+3. Personal Loans
+4. Credit Repair
+5. Debt Relief
+6. Budgeting & Financial Coaching
+7. Banking / Lending Support
+8. Refinancing
+
+You can adjust naming slightly if needed for consistency with the current category architecture, but the main rule is:
+
+Mortgage / loan services should live under Financial Services, not as a separate top-level bucket.
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+This is a category cleanup / consolidation.
+
+Do NOT break:
+- existing partner records
+- routing logic
+- lead attribution
+- trusted services display behavior
+
+Please migrate or remap existing Mortgage / Loan items into Financial Services cleanly.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Trusted Services should stay lean, monetizable, and easy to navigate.
+
+This change should reduce redundancy and make the monetization structure more user-friendly and scalable.
+
+--- END ---

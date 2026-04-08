@@ -515,7 +515,7 @@ async function ensureLeadBilling() {
     if (defaultPrices.length === 0) {
       await pgQuery(`
         INSERT INTO lead_category_pricing (category_slug, category_name, price_cents) VALUES
-          ('financial-credit', 'Mortgage / Lending', 5000),
+          ('financial-credit', 'Financial Services', 5000),
           ('insurance', 'Insurance Services', 2500),
           ('legal-services', 'Legal Services', 3500)
         ON CONFLICT (category_slug) DO NOTHING
@@ -640,10 +640,14 @@ async function ensurePartnerSubcategories() {
         add(insurance, 'Home Insurance', 'home-insurance', 4);
       }
       if (financial) {
-        add(financial, 'VA Loans', 'va-loans', 1);
-        add(financial, 'Refinance', 'refinance', 2);
-        add(financial, 'First-Time Buyers', 'first-time-buyers', 3);
-        add(financial, 'Debt Consolidation', 'debt-consolidation', 4);
+        add(financial, 'Mortgages', 'mortgages', 1);
+        add(financial, 'Home Loans', 'home-loans', 2);
+        add(financial, 'Personal Loans', 'personal-loans', 3);
+        add(financial, 'Credit Repair', 'credit-repair', 4);
+        add(financial, 'Debt Relief', 'debt-relief', 5);
+        add(financial, 'Budgeting & Financial Coaching', 'budgeting-financial-coaching', 6);
+        add(financial, 'Banking / Lending Support', 'banking-lending-support', 7);
+        add(financial, 'Refinancing', 'refinancing', 8);
       }
       if (inserts.length > 0) {
         await pgQuery(
@@ -925,6 +929,39 @@ async function checkTrustedServicesTable() {
     hasTrustedServicesTable = true;
     console.log(`[schema] trusted_service_categories table detected via pg (${rows.length} rows)`);
     await seedTrustedServiceCategoriesIfEmpty();
+    await pgQuery(`
+      UPDATE trusted_services SET category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'discount-financial' LIMIT 1)
+      WHERE category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'discount-mortgage' LIMIT 1)
+    `).then(
+      () => console.log("[migration] Migrated discount-mortgage services to discount-financial"),
+      (e: any) => console.log("[migration] discount-mortgage migration skipped:", e.message)
+    );
+    await pgQuery(`UPDATE lead_category_pricing SET category_name = 'Financial Services' WHERE category_slug = 'financial-credit' AND category_name = 'Mortgage / Lending'`).catch(() => {});
+    try {
+      const financialCat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug = 'financial-credit' LIMIT 1`);
+      if (financialCat.length > 0) {
+        const fId = financialCat[0].id;
+        await pgQuery(`
+          INSERT INTO partner_subcategories (category_id, name, slug, display_order) VALUES
+            ($1, 'Mortgages', 'mortgages', 1),
+            ($1, 'Home Loans', 'home-loans', 2),
+            ($1, 'Personal Loans', 'personal-loans', 3),
+            ($1, 'Credit Repair', 'credit-repair', 4),
+            ($1, 'Debt Relief', 'debt-relief', 5),
+            ($1, 'Budgeting & Financial Coaching', 'budgeting-financial-coaching', 6),
+            ($1, 'Banking / Lending Support', 'banking-lending-support', 7),
+            ($1, 'Refinancing', 'refinancing', 8)
+          ON CONFLICT (category_id, slug) DO NOTHING
+        `, [fId]);
+        console.log("[migration] Ensured financial-credit subcategories include mortgage/loan types");
+      }
+    } catch (e: any) {
+      console.log("[migration] financial subcategories expansion skipped:", e.message);
+    }
+    await pgQuery(`UPDATE trusted_service_categories SET is_active = false WHERE slug = 'discount-mortgage' AND is_active = true`).then(
+      () => console.log("[migration] Deactivated discount-mortgage category"),
+      (e: any) => console.log("[migration] discount-mortgage deactivation skipped:", e.message)
+    );
     await pgQuery(`UPDATE trusted_service_categories SET is_active = false WHERE slug IN ('benefits-assistance', 'wellness-recovery', 'disabled-veterans') AND is_active = true`).then(
       () => console.log("[migration] Deactivated non-monetizable categories from Trusted Services"),
       (e: any) => console.log("[migration] trusted_service_categories cleanup skipped:", e.message)
@@ -1052,7 +1089,7 @@ async function seedDiscountCategories() {
     await pgQuery(`
       INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type) VALUES
         ('Legal Help', 'discount-legal', 'Legal services offering veteran discounts', 'scale', 101, true, 'veteran_discount_services', 'service'),
-        ('Mortgage & Loans', 'discount-mortgage', 'Mortgage and lending services for veterans', 'home', 102, true, 'veteran_discount_services', 'service'),
+        ('Mortgage & Loans', 'discount-mortgage', 'Mortgage and lending services for veterans', 'home', 102, false, 'veteran_discount_services', 'service'),
         ('Insurance', 'discount-insurance', 'Insurance providers with veteran-friendly rates', 'shield', 103, true, 'veteran_discount_services', 'service'),
         ('Healthcare Providers', 'discount-healthcare', 'Healthcare providers offering veteran discounts', 'heart-pulse', 104, true, 'veteran_discount_services', 'service'),
         ('Auto Services', 'discount-auto', 'Automotive services and discounts for veterans', 'car', 105, true, 'veteran_discount_services', 'service'),
