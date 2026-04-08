@@ -1044,7 +1044,8 @@ function AdminResourcesInner() {
                   const urgencyRank: Record<string, number> = { immediate: 0, same_week: 1, standard: 2, information: 3 };
                   const aRank = urgencyRank[a.urgency || ""] ?? 4;
                   const bRank = urgencyRank[b.urgency || ""] ?? 4;
-                  return aRank - bRank;
+                  if (aRank !== bRank) return aRank - bRank;
+                  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 })
                 .map((req) => {
                 const urgencyConfig: Record<string, { label: string; className: string }> = {
@@ -1062,27 +1063,45 @@ function AdminResourcesInner() {
                   declined: { label: "Declined", className: "bg-slate-100 text-slate-700" },
                   unable_to_contact: { label: "Unable to Contact", className: "bg-red-100 text-red-700" },
                 };
+                const effectiveStatus = req.status === "new" && req.routed_to_partner_id ? "assigned" : req.status;
                 const statusConfig: Record<string, { label: string; className: string }> = {
-                  new: { label: "New", className: "bg-blue-100 text-blue-800" },
-                  in_progress: { label: "In Progress", className: "bg-amber-100 text-amber-800" },
-                  resolved: { label: "Resolved", className: "bg-green-100 text-green-800" },
-                  cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-600" },
+                  new: { label: "New", className: "bg-blue-100 text-blue-800 border-blue-300 font-semibold" },
+                  assigned: { label: "Assigned", className: "bg-indigo-100 text-indigo-800 border-indigo-300" },
+                  in_progress: { label: "In Progress", className: "bg-amber-100 text-amber-800 border-amber-300" },
+                  resolved: { label: "Resolved", className: "bg-green-100 text-green-800 border-green-300" },
+                  cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-600 border-slate-300" },
                 };
                 const urg = req.urgency ? urgencyConfig[req.urgency] : null;
                 const outcomeInfo = req.outcome ? outcomeConfig[req.outcome] : null;
-                const statusInfo = statusConfig[req.status] || { label: req.status, className: "" };
+                const statusInfo = statusConfig[effectiveStatus] || { label: req.status, className: "" };
                 const isImmediate = req.urgency === "immediate";
 
                 return (
-                <Card key={req.id} data-testid={`nav-lead-${req.id}`} className={`border ${isImmediate ? "border-red-300 bg-red-50/30" : ""}`}>
+                <Card key={req.id} data-testid={`nav-lead-${req.id}`} className={`border ${isImmediate ? "border-red-300 bg-red-50/30" : effectiveStatus === "new" ? "border-blue-300 bg-blue-50/20" : ""}`}>
                   <CardContent className="p-4 space-y-2">
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
-                        <h3 data-testid={`text-lead-name-${req.id}`} className="font-semibold text-sm">{req.veteran_name}</h3>
-                        <p data-testid={`text-lead-date-${req.id}`} className="text-xs text-muted-foreground">
-                          {new Date(req.created_at).toLocaleString()}
-                          {req.user_state && ` • ${[req.user_city, req.user_state].filter(Boolean).join(", ")}`}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <h3 data-testid={`text-lead-name-${req.id}`} className="font-semibold text-sm">{req.veteran_name}</h3>
+                          {effectiveStatus === "new" && (
+                            <span className="inline-block w-2 h-2 rounded-full bg-blue-500 shrink-0" title="New request" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <p data-testid={`text-lead-date-${req.id}`} className="text-xs text-muted-foreground">
+                            {new Date(req.created_at).toLocaleString()}
+                          </p>
+                          {req.user_state && (
+                            <span className="text-xs font-medium text-slate-700 bg-slate-100 rounded px-1.5 py-0.5">
+                              {[req.user_city, req.user_state].filter(Boolean).join(", ")}
+                            </span>
+                          )}
+                          {req.category && (
+                            <span className="text-xs font-medium text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                              {req.category.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {urg && (
@@ -1097,9 +1116,6 @@ function AdminResourcesInner() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">
-                      {req.category && (
-                        <Badge variant="secondary" className="text-[10px] font-normal">{req.category}</Badge>
-                      )}
                       {req.subcategory && (
                         <Badge variant="secondary" className="text-[10px] font-normal">{req.subcategory}</Badge>
                       )}
@@ -1275,82 +1291,122 @@ function AdminResourcesInner() {
                       </div>
                     )}
 
-                    {manualAssignLeadId === req.id && (
+                    {manualAssignLeadId === req.id && (() => {
+                      const activePartners = partners.filter((p: any) => p.is_active && p.is_lead_enabled);
+                      const matchLabel = (s: any) => {
+                        if (s.categoryMatch && s.locationMatch) return { text: "Best Match", cls: "bg-green-200 text-green-900 border-green-400" };
+                        if (s.categoryMatch) return { text: "Category Match", cls: "bg-blue-100 text-blue-800 border-blue-300" };
+                        if (s.locationMatch) return { text: "Nearby Option", cls: "bg-amber-100 text-amber-800 border-amber-300" };
+                        return { text: "Available", cls: "bg-slate-100 text-slate-700 border-slate-300" };
+                      };
+                      return (
                       <div className="bg-slate-50 border border-slate-200 rounded p-3 space-y-3">
-                        <p className="text-[11px] font-semibold text-slate-700">Assign to Partner</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-semibold text-slate-700">Assign to Partner</p>
+                          <button
+                            className="text-[10px] text-muted-foreground underline hover:text-slate-600"
+                            onClick={() => { setManualAssignLeadId(null); setManualPartnerId(""); }}
+                          >
+                            Close
+                          </button>
+                        </div>
 
                         {suggestedPartners.length > 0 && (
-                          <div className="space-y-1">
-                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Suggested matches</p>
-                            {suggestedPartners.map((s: any) => (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Suggested Matches</p>
+                            {suggestedPartners.map((s: any) => {
+                              const ml = matchLabel(s);
+                              return (
                               <button
                                 key={s.partnerId}
                                 data-testid={`suggest-partner-${s.partnerId}`}
-                                className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded border border-green-200 bg-green-50 hover:bg-green-100 text-left transition-colors"
+                                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-green-200 bg-green-50 hover:bg-green-100 text-left transition-colors"
                                 onClick={() => {
                                   rerouteMutation.mutate({ id: req.id, partner_id: s.partnerId });
                                   setManualAssignLeadId(null);
                                   setManualPartnerId("");
                                 }}
                               >
-                                <span className="flex items-center gap-1.5 text-[11px] text-green-800 font-medium">
-                                  <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />
-                                  {s.partnerName}
-                                </span>
-                                <Badge variant="outline" className="text-[9px] bg-white border-green-300 text-green-700">
-                                  {s.categoryMatch ? "Category match" : "Catch-all"}
+                                <div className="min-w-0">
+                                  <span className="flex items-center gap-1.5 text-[11px] text-green-800 font-medium">
+                                    <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />
+                                    {s.partnerName}
+                                  </span>
+                                  {(s.partnerCategory || s.partnerState || s.partnerCity) && (
+                                    <span className="text-[9px] text-green-700 block ml-4.5 mt-0.5">
+                                      {[s.partnerCategory, s.partnerCity, s.partnerState].filter(Boolean).join(" · ")}
+                                    </span>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className={`text-[9px] shrink-0 ${ml.cls}`}>
+                                  {ml.text}
                                 </Badge>
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 
                         {suggestedPartners.length === 0 && (
-                          <p className="text-[10px] text-muted-foreground italic">No routing rules match this request — you can still assign any active partner below.</p>
+                          <p className="text-[10px] text-muted-foreground italic">No routing rules match this request — search or browse partners below.</p>
                         )}
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-                            {suggestedPartners.length > 0 ? "Or choose any partner" : "Choose a partner"}
+                            {suggestedPartners.length > 0 ? "Or search all partners" : "Search partners"}
                           </p>
-                          <div className="flex gap-2">
-                            <Select
-                              value={manualPartnerId}
-                              onValueChange={setManualPartnerId}
-                            >
-                              <SelectTrigger data-testid={`select-manual-partner-${req.id}`} className="h-7 text-xs flex-1">
-                                <SelectValue placeholder="Choose partner…" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {partners.filter((p: any) => p.is_active && p.is_lead_enabled).map((p: any) => (
-                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              data-testid={`button-manual-assign-${req.id}`}
-                              size="sm"
-                              className="h-7 text-xs shrink-0"
-                              disabled={!manualPartnerId || rerouteMutation.isPending}
-                              onClick={() => {
-                                rerouteMutation.mutate({ id: req.id, partner_id: manualPartnerId });
-                                setManualPartnerId("");
-                                setManualAssignLeadId(null);
-                              }}
-                            >
-                              Assign
-                            </Button>
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                            <Input
+                              data-testid={`input-partner-search-${req.id}`}
+                              className="h-6 text-[11px] pl-6"
+                              placeholder="Search by name..."
+                              value={manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7) : ""}
+                              onChange={(e) => setManualPartnerId(e.target.value ? `search:${e.target.value}` : "")}
+                            />
+                          </div>
+                          <div className="max-h-[160px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
+                            {(() => {
+                              const sq = manualPartnerId.startsWith("search:") ? manualPartnerId.slice(7).toLowerCase() : "";
+                              const filtered = sq
+                                ? activePartners.filter((p: any) =>
+                                    p.name?.toLowerCase().includes(sq) ||
+                                    p.contact_name?.toLowerCase().includes(sq) ||
+                                    p.external_intake_email?.toLowerCase().includes(sq)
+                                  )
+                                : activePartners.slice(0, 20);
+                              if (filtered.length === 0) {
+                                return <p className="text-[10px] text-muted-foreground text-center py-2">No partners found</p>;
+                              }
+                              return filtered.map((p: any) => (
+                                <button
+                                  key={p.id}
+                                  data-testid={`partner-option-${p.id}`}
+                                  className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-slate-50 text-left transition-colors border border-transparent hover:border-slate-200"
+                                  onClick={() => {
+                                    rerouteMutation.mutate({ id: req.id, partner_id: p.id });
+                                    setManualPartnerId("");
+                                    setManualAssignLeadId(null);
+                                  }}
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-[11px] font-medium text-slate-800 truncate">{p.name}</p>
+                                    <p className="text-[9px] text-muted-foreground truncate">
+                                      {[p.contact_name, p.state].filter(Boolean).join(" · ")}
+                                    </p>
+                                  </div>
+                                  <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>
+                                </button>
+                              ));
+                            })()}
+                            {!manualPartnerId.startsWith("search:") && activePartners.length > 20 && (
+                              <p className="text-[9px] text-muted-foreground text-center pt-1">Type to search {activePartners.length} partners...</p>
+                            )}
                           </div>
                         </div>
-
-                        <button
-                          className="text-[10px] text-muted-foreground underline w-full text-center hover:text-slate-600"
-                          onClick={() => { setManualAssignLeadId(null); setManualPartnerId(""); }}
-                        >
-                          Cancel
-                        </button>
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {req.status === "resolved" && outcomeInfo && (
                       <div data-testid={`outcome-summary-${req.id}`} className={`text-xs font-medium rounded px-3 py-1.5 ${outcomeInfo.className}`}>

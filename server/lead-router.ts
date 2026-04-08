@@ -86,6 +86,10 @@ export interface PartnerCandidate {
   ruleId: string;
   priority: number;
   categoryMatch: boolean;
+  locationMatch: boolean;
+  partnerState?: string;
+  partnerCity?: string;
+  partnerCategory?: string;
 }
 
 function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: string | null, excludePartnerIds: string[]): any[] {
@@ -150,13 +154,25 @@ export async function findCandidatePartners(
       seen.add(rule.partner.id);
       return true;
     })
-    .map((rule) => ({
-      partnerId: rule.partner.id,
-      partnerName: rule.partner.name,
-      ruleId: rule.id,
-      priority: rule.priority,
-      categoryMatch: !!rule.category_slug,
-    }));
+    .map((rule) => {
+      const hasLeadLocation = !!(lead.user_state || lead.user_city);
+      const ruleMatchesLocation = hasLeadLocation && !!(
+        (rule.state && lead.user_state && rule.state.toUpperCase() === lead.user_state.toUpperCase()) ||
+        (rule.city && lead.user_city && rule.city.toLowerCase() === lead.user_city.toLowerCase()) ||
+        (rule.partner.state && lead.user_state && rule.partner.state.toUpperCase() === lead.user_state.toUpperCase())
+      );
+      return {
+        partnerId: rule.partner.id,
+        partnerName: rule.partner.name,
+        ruleId: rule.id,
+        priority: rule.priority,
+        categoryMatch: !!rule.category_slug,
+        locationMatch: ruleMatchesLocation,
+        partnerState: rule.partner.state || rule.state || undefined,
+        partnerCity: rule.city || undefined,
+        partnerCategory: rule.category_slug || undefined,
+      };
+    });
 }
 
 export async function findBestPartner(

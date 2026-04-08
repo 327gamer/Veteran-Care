@@ -173,7 +173,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [submitResult, setSubmitResult] = useState<{ routed: boolean; self_serve_resources?: any[] } | null>(null);
+  const [submitResult, setSubmitResult] = useState<{ routed: boolean; emailSent?: boolean; self_serve_resources?: any[] } | null>(null);
   const [form, setForm] = useState({
     veteran_name: "",
     veteran_phone: "",
@@ -261,7 +261,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit");
-      setSubmitResult({ routed: data.routed ?? false, self_serve_resources: data.self_serve_resources });
+      setSubmitResult({ routed: data.routed ?? false, emailSent: data.emailSent ?? false, self_serve_resources: data.self_serve_resources });
       setSubmitted(true);
       trackEvent("lead_submit", {
         category: form.category || "",
@@ -320,6 +320,13 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 </p>
               </div>
             </div>
+
+            {submitResult?.emailSent && (
+              <div data-testid="email-confirmation" className="rounded-lg border border-green-200 bg-green-50 p-3 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                <p className="text-xs text-green-800">These resources have been sent to your email. Check your inbox for next steps.</p>
+              </div>
+            )}
 
             {!submitResult?.routed && submitResult?.self_serve_resources && submitResult.self_serve_resources.length > 0 && (
               <div data-testid="self-serve-resources" className="space-y-2">

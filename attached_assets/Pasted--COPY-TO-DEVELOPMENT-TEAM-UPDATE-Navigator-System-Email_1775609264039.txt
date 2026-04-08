@@ -1,0 +1,182 @@
+--- COPY TO DEVELOPMENT TEAM ---
+
+UPDATE:
+Navigator System + Email Flow + Partner Routing Improvements (CRITICAL UX + SCALE FIX)
+
+STATUS:
+REQUIRED IMPROVEMENTS (Pre-Launch Optimization)
+
+-------------------------------------
+CONTEXT
+-------------------------------------
+
+We are reviewing the full “Get Help” + Navigator flow during final validation.
+
+The system is working, but several UX and scalability gaps have been identified that must be improved before launch.
+
+These are NOT new features — these are critical improvements to existing functionality.
+
+-------------------------------------
+ISSUE 1 — EMAIL DELIVERY OF RESULTS (CRITICAL)
+-------------------------------------
+
+CURRENT:
+- Veteran Guide correctly allows users to email results
+- “Get Help” flow does NOT send results to the user after submission
+
+PROBLEM:
+User already enters email → but receives NOTHING
+
+REQUIRED FIX:
+
+After user submits “Request Support”:
+
+1. Automatically send:
+   - recommended resources shown on screen
+   - summary of their request
+
+2. Use Resend (same logic as Veteran Guide)
+
+3. Update UI message:
+
+Replace:
+(no message)
+
+With:
+“These resources have been sent to your email.”
+
+4. OPTIONAL (recommended):
+Add visible confirmation:
+“Check your inbox for next steps.”
+
+-------------------------------------
+ISSUE 2 — NAVIGATOR REQUEST LIST (ADMIN)
+-------------------------------------
+
+CURRENT:
+- Requests are visible
+- Order is inconsistent (based on updates, not created_at)
+
+REQUIRED FIX:
+
+1. Default sort:
+→ newest FIRST (created_at DESC)
+
+2. Add status clarity:
+- New
+- Assigned
+- In Progress
+- Completed
+
+3. Visual clarity:
+- highlight new requests
+- show timestamp clearly
+- show category + location prominently
+
+-------------------------------------
+ISSUE 3 — PARTNER ASSIGNMENT UX (CRITICAL SCALE ISSUE)
+-------------------------------------
+
+CURRENT:
+- Dropdown shows ALL partners/resources
+- Not filtered
+- Not searchable effectively
+
+THIS WILL BREAK AT SCALE
+
+REQUIRED FIX:
+
+Replace dropdown with structured selection:
+
+STEP 1 — FILTERS:
+- Category (required)
+- State
+- City (optional but preferred)
+
+STEP 2 — SEARCH:
+- Type-to-search input
+- Search by:
+  - partner name
+  - organization
+  - keyword
+
+STEP 3 — RESULTS:
+- show ONLY filtered partners
+- display:
+  - name
+  - category
+  - city/state
+  - match indicator
+
+STEP 4 — QUICK ASSIGN:
+- “Assign” button per result
+
+-------------------------------------
+ISSUE 4 — SMART MATCHING IMPROVEMENT
+-------------------------------------
+
+CURRENT:
+- “Suggested Matches” exist (good)
+
+IMPROVE:
+
+- prioritize by:
+  1) category match
+  2) location match
+  3) availability (future)
+
+- label clearly:
+  “Best Match”
+  “Category Match”
+  “Nearby Option”
+
+-------------------------------------
+ISSUE 5 — FUTURE-PROOFING (IMPORTANT)
+-------------------------------------
+
+This system will evolve into:
+
+- lead routing system
+- monetized partner distribution
+- tracked referral engine
+
+DO NOT hardcode anything.
+
+Ensure:
+- scalable filtering
+- clean partner selection logic
+- ability to track assigned partner per request
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Make the system:
+
+- easy for admin to route requests quickly
+- scalable to thousands of partners
+- clean for future monetization + lead tracking
+
+-------------------------------------
+PRIORITY ORDER
+-------------------------------------
+
+1. Email results (highest priority)
+2. Navigator sorting + clarity
+3. Partner assignment UX (critical)
+4. Smart match improvements
+
+-------------------------------------
+FINAL NOTE
+-------------------------------------
+
+This is not feature expansion.
+
+This is refinement of a core system that will drive:
+
+- user experience
+- lead flow
+- partner engagement
+- future revenue
+
+--- END ---

@@ -5751,10 +5751,93 @@ export async function registerRoutes(
       }
     }
 
+    const vetEmail = data.veteran_email?.trim();
+    let emailSent = false;
+    if (vetEmail && vetEmail.includes("@")) {
+      try {
+        const { Resend } = await import("resend");
+        const resendClient = new Resend(process.env.RESEND_API_KEY);
+        const fromEmail = process.env.RESEND_FROM_EMAIL || `Veteran Care <onboarding@resend.dev>`;
+        const esc = (s: string) => (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const vetName = esc(data.veteran_name || "");
+        const catDisplay = catStr ? esc(catStr.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())) : "";
+        const subDisplay = subStr ? esc(subStr) : "";
+        const locationParts = [data.user_city, data.user_state].filter(Boolean);
+        const locationStr = locationParts.length > 0 ? esc(locationParts.join(", ")) : "";
+
+        let resourcesHtml = "";
+        if (selfServeResources.length > 0) {
+          resourcesHtml = `<h2 style="color:#1a1a2e;font-size:18px;margin:24px 0 12px;">Recommended Resources</h2>`;
+          for (const r of selfServeResources) {
+            resourcesHtml += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px;">
+              <p style="font-weight:600;margin:0;">${esc(r.title)}</p>
+              <p style="color:#6b7280;font-size:13px;margin:4px 0;">${r.city ? esc(r.city) : ''}${r.state ? (r.city ? ', ' : '') + esc(r.state) : ''}</p>
+              <div style="margin-top:8px;">
+                ${r.website ? `<a href="${r.website.startsWith('http') ? esc(r.website) : 'https://' + esc(r.website)}" style="color:#16a34a;text-decoration:none;font-size:13px;margin-right:16px;">Visit Website</a>` : ''}
+                ${r.phone ? `<a href="tel:${esc(r.phone)}" style="color:#16a34a;text-decoration:none;font-size:13px;">${esc(r.phone)}</a>` : ''}
+                ${r.email ? `<a href="mailto:${esc(r.email)}" style="color:#16a34a;text-decoration:none;font-size:13px;margin-left:16px;">Email</a>` : ''}
+              </div>
+            </div>`;
+          }
+        }
+
+        const summaryParts = [];
+        if (catDisplay) summaryParts.push(`<strong>Category:</strong> ${catDisplay}${subDisplay ? ` — ${subDisplay}` : ''}`);
+        if (locationStr) summaryParts.push(`<strong>Location:</strong> ${locationStr}`);
+        if (data.urgency) {
+          const urgencyLabels: Record<string, string> = { immediate: "Immediate", same_week: "This Week", standard: "Standard", information: "Information Only" };
+          summaryParts.push(`<strong>Urgency:</strong> ${urgencyLabels[data.urgency] || data.urgency}`);
+        }
+        if (userMsg) summaryParts.push(`<strong>Your message:</strong> ${esc(userMsg)}`);
+
+        const summaryHtml = summaryParts.length > 0
+          ? `<div style="background:#f9fafb;border-radius:8px;padding:14px;margin:20px 0;">
+              <p style="font-weight:600;color:#374151;font-size:14px;margin:0 0 8px;">Your Request Summary</p>
+              ${summaryParts.map(p => `<p style="color:#374151;font-size:13px;margin:4px 0;">${p}</p>`).join('')}
+            </div>`
+          : '';
+
+        const statusMsg = routed
+          ? `<p style="color:#166534;font-size:15px;font-weight:600;margin:16px 0;">A local partner has been matched and will be reaching out to you soon.</p>`
+          : selfServeResources.length > 0
+            ? `<p style="color:#166534;font-size:15px;font-weight:600;margin:16px 0;">We've found resources that may be able to help. Their contact information is below.</p>`
+            : `<p style="color:#374151;font-size:15px;margin:16px 0;">Your request has been received. A navigator will review it and follow up with you.</p>`;
+
+        const html = `
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+            <div style="text-align:center;padding:24px 0;border-bottom:2px solid #16a34a;">
+              <img src="https://veterancare.com/logo.png" alt="Veteran Care" style="display:block;max-width:200px;height:auto;margin:0 auto;border:0;" />
+              <p style="color:#6b7280;font-size:14px;margin:12px 0 0;">Your Support Request</p>
+            </div>
+            <p style="color:#374151;font-size:15px;margin:20px 0 4px;">Hi ${vetName || 'there'},</p>
+            <p style="color:#374151;font-size:14px;margin:0 0 8px;">Thank you for reaching out to Veteran Care. We've received your request for support.</p>
+            ${statusMsg}
+            ${summaryHtml}
+            ${resourcesHtml}
+            <div style="text-align:center;padding:24px 0;margin-top:24px;border-top:1px solid #e5e7eb;">
+              <a href="https://veterancare.com/home" style="display:inline-block;background:#166534;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;margin-bottom:12px;">Explore More Resources</a>
+              <p style="color:#6b7280;font-size:12px;margin:12px 0 0;">Need more help? Visit <a href="https://veterancare.com" style="color:#16a34a;">veterancare.com</a></p>
+            </div>
+          </div>`;
+
+        await resendClient.emails.send({
+          from: fromEmail,
+          to: vetEmail,
+          subject: routed ? "Veteran Care — Help Is On the Way" : "Veteran Care — Your Resources",
+          html,
+        });
+        emailSent = true;
+        console.log(`[navigator-email] Results email sent to ${vetEmail} for lead ${data.id}`);
+      } catch (emailErr: any) {
+        console.error(`[navigator-email] Failed to send results email for lead ${data.id}:`, emailErr?.message);
+      }
+    }
+
     const response: Record<string, any> = {
       id: data.id,
       status: data.status,
       routed,
+      emailSent,
       message: routed
         ? "Your request has been submitted and routed to a local partner who will reach out to you soon."
         : "Your request has been received. Here are resources that can help you directly.",
