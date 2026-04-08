@@ -1,0 +1,132 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: NEXT PHASE — CATEGORY ORDER + FULL CATEGORY / SUBCATEGORY STRUCTURE CLEANUP
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+STATUS
+--------------------------------------------------
+
+The latest Trusted Services routing correction is the right move.
+
+Thank you.
+
+Now we need to move into the next cleanup phase so the platform structure is fully usable and scalable.
+
+This should be done in 2 stages.
+
+--------------------------------------------------
+STAGE 1 — CATEGORY ORDER + FRONT-END / SIGNUP ALIGNMENT
+--------------------------------------------------
+
+We need to standardize the official display order of categories under Regular Resources.
+
+USE THIS EXACT ORDER:
+
+1. Crisis Help
+2. Mental Health
+3. Disabled Veterans
+4. Housing & Home Services
+5. Food Assistance
+6. Benefits Assistance
+7. Family Support
+8. Community Support
+9. Employment Support
+10. Education & Training
+11. Transportation
+12. Financial & Credit Services
+13. Legal Services
+14. Healthcare
+15. Wellness & Recovery
+16. End of Life Services
+
+This order should be treated as the official user-facing hierarchy.
+
+--------------------------------------------------
+ALSO IN STAGE 1:
+--------------------------------------------------
+
+Update all category labels everywhere so naming is fully consistent.
+
+This includes:
+
+- Regular Resources
+- Trusted Services
+- partner signup / become a trusted partner flow
+- any admin-facing category selectors
+- any submission forms where categories are selected
+
+--------------------------------------------------
+TRUSTED PARTNER SIGNUP / CATEGORY SELECTOR
+--------------------------------------------------
+
+This is a critical issue:
+
+When a business signs up right now to become a trusted partner, the category list is incomplete and does not reflect the full current structure.
+
+That means businesses cannot be placed into the correct categories and subcategories.
+
+REQUIRED FIX:
+
+Update the trusted partner signup flow so it includes:
+
+- all current correct main categories
+- relevant subcategories beneath them
+- clear distinction between products vs services where applicable
+
+This applies to both:
+- new trusted partner signups
+- any admin/category assignment tools used later
+
+--------------------------------------------------
+STAGE 2 — FULL DATA SWEEP / TAGGING AUDIT
+--------------------------------------------------
+
+After Stage 1 is complete, perform a full platform-wide category and subcategory audit.
+
+This must include:
+
+1. Regular Resources
+2. Trusted Services
+3. Existing trusted partner records
+4. Existing promoted / monetized services
+5. Any resources currently missing category or subcategory assignments
+6. Any resources assigned only to a main category but not to a more precise subcategory
+7. Any records sitting in the wrong category or duplicate category structures
+
+--------------------------------------------------
+OBJECTIVE OF STAGE 2
+--------------------------------------------------
+
+Make sure every resource / partner / service is properly mapped to:
+
+- correct main category
+- correct subcategory
+- any overlapping cross-categories where needed
+
+This is essential for:
+
+- search quality
+- AI Guide accuracy
+- lead routing
+- future admin management
+- future partner onboarding
+- future monetization / promoted placement logic
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+This should be done in TWO PASSES:
+
+PASS 1:
+Front-end structure + official order + signup/category selector cleanup
+
+PASS 2:
+Full backend data sweep and tagging audit
+
+Do not try to do the full data cleanup before the official category structure is locked.
+
+--- END ---

@@ -673,6 +673,7 @@ export default function TrustedServices() {
                     "legal-services": "/resources?category=legal",
                     "financial-credit": "/financial-services",
                     "insurance": "/healthcare",
+                    "healthcare-services": "/healthcare",
                     "education-training": "/resources?category=education",
                     "employment-support": "/employment",
                     "benefits-assistance": "/benefits-assistance",

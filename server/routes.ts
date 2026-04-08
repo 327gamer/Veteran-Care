@@ -1209,14 +1209,22 @@ async function repairOrphanedServices() {
 
 async function alignCategoryNames() {
   const RENAMES: Record<string, string> = {
+    "crisis-help": "Crisis Help",
+    "mental-health": "Mental Health",
+    "disabled-veterans": "Disabled Veterans",
     "housing": "Housing & Home Services",
+    "food-assistance": "Food Assistance",
+    "va-benefits": "Benefits Assistance",
+    "family-support": "Family Support",
+    "community-support": "Community Support",
     "employment": "Employment Support",
     "education": "Education & Training",
-    "legal": "Legal Services",
+    "transportation": "Transportation",
     "financial": "Financial & Credit Services",
+    "legal": "Legal Services",
     "healthcare": "Healthcare",
     "substance-recovery": "Wellness & Recovery",
-    "va-benefits": "Benefits Assistance",
+    "end-of-life-services": "End of Life Services",
   };
   try {
     const { data: cats } = await supabaseAdmin.from("categories").select("id, name, slug");
@@ -1234,6 +1242,98 @@ async function alignCategoryNames() {
     }
   } catch (err: any) {
     console.log("[categories] Failed to align category names:", err.message);
+  }
+}
+
+async function ensureAllTrustedServiceCategories() {
+  const required = [
+    { name: 'Housing & Home Services', slug: 'housing-home', description: 'Trusted housing, moving, and home services for veterans and families', icon: 'home', display_order: 4 },
+    { name: 'Legal Services', slug: 'legal-services', description: 'Vetted legal professionals experienced with veteran-specific needs', icon: 'scale', display_order: 13 },
+    { name: 'Financial & Credit Services', slug: 'financial-credit', description: 'Trusted financial advisors, credit counseling, and lending partners', icon: 'dollar-sign', display_order: 12 },
+    { name: 'Insurance Services', slug: 'insurance', description: 'Insurance providers offering veteran-friendly coverage options', icon: 'shield', display_order: 14 },
+    { name: 'Education & Training', slug: 'education-training', description: 'Accredited programs and training providers supporting veteran success', icon: 'graduation-cap', display_order: 10 },
+    { name: 'Employment Support', slug: 'employment-support', description: 'Employers and staffing partners committed to hiring veterans', icon: 'briefcase', display_order: 9 },
+    { name: 'End of Life Services', slug: 'end-of-life-services', description: 'Hospice, funeral services, estate planning, and survivor benefits', icon: 'flower-2', display_order: 16 },
+    { name: 'Benefits Assistance', slug: 'benefits-assistance', description: 'Claims assistance, VSO support, and benefits navigation for veterans', icon: 'file-text', display_order: 6 },
+    { name: 'Wellness & Recovery', slug: 'wellness-recovery', description: 'Wellness programs, substance recovery, and holistic support', icon: 'heart', display_order: 15 },
+    { name: 'Healthcare', slug: 'healthcare-services', description: 'Healthcare providers and medical support for veterans', icon: 'heart-pulse', display_order: 14 },
+  ];
+  try {
+    for (const cat of required) {
+      await pgQuery(
+        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
+         VALUES ($1, $2, $3, $4, $5, true)
+         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = true`,
+        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
+      );
+    }
+  } catch (err: any) {
+    console.log("[seed] ensureAllTrustedServiceCategories error:", err.message);
+  }
+}
+
+async function ensureAllPartnerSubcategories() {
+  try {
+    const catMap = await pgQuery(`SELECT id, slug FROM trusted_service_categories WHERE is_active = true`);
+    const findCat = (slug: string) => catMap.find((c: any) => c.slug === slug)?.id;
+
+    const subcats: { catSlug: string; name: string; slug: string; order: number }[] = [
+      { catSlug: 'housing-home', name: 'Emergency Housing & Shelters', slug: 'emergency-housing', order: 1 },
+      { catSlug: 'housing-home', name: 'Rental Assistance', slug: 'rental-assistance', order: 2 },
+      { catSlug: 'housing-home', name: 'VA Home Loans', slug: 'va-home-loans', order: 3 },
+      { catSlug: 'housing-home', name: 'Home Ownership', slug: 'home-ownership', order: 4 },
+      { catSlug: 'housing-home', name: 'Accessibility Modifications', slug: 'accessibility-modifications', order: 5 },
+      { catSlug: 'housing-home', name: 'Moving & Relocation', slug: 'moving-relocation', order: 6 },
+
+      { catSlug: 'employment-support', name: 'Job Search & Placement', slug: 'job-search-placement', order: 1 },
+      { catSlug: 'employment-support', name: 'Resume & Interview Prep', slug: 'resume-interview-prep', order: 2 },
+      { catSlug: 'employment-support', name: 'Career Training & Certifications', slug: 'career-training', order: 3 },
+      { catSlug: 'employment-support', name: 'Entrepreneurship & Business', slug: 'entrepreneurship-business', order: 4 },
+      { catSlug: 'employment-support', name: 'Federal Employment (USAJOBS)', slug: 'federal-employment', order: 5 },
+
+      { catSlug: 'education-training', name: 'GI Bill & Tuition Assistance', slug: 'gi-bill-tuition', order: 1 },
+      { catSlug: 'education-training', name: 'Trade Schools & Vocational', slug: 'trade-schools', order: 2 },
+      { catSlug: 'education-training', name: 'Certifications & Licensing', slug: 'certifications-licensing', order: 3 },
+      { catSlug: 'education-training', name: 'College & University Programs', slug: 'college-university', order: 4 },
+      { catSlug: 'education-training', name: 'Online Learning', slug: 'online-learning', order: 5 },
+
+      { catSlug: 'end-of-life-services', name: 'Hospice & Palliative Care', slug: 'hospice-palliative', order: 1 },
+      { catSlug: 'end-of-life-services', name: 'Funeral & Burial Services', slug: 'funeral-burial', order: 2 },
+      { catSlug: 'end-of-life-services', name: 'Estate Planning', slug: 'estate-planning-eol', order: 3 },
+      { catSlug: 'end-of-life-services', name: 'Survivor Benefits', slug: 'survivor-benefits-eol', order: 4 },
+      { catSlug: 'end-of-life-services', name: 'Grief & Bereavement Support', slug: 'grief-bereavement', order: 5 },
+
+      { catSlug: 'benefits-assistance', name: 'Military Records & DD214', slug: 'military-records', order: 1 },
+      { catSlug: 'benefits-assistance', name: 'Disability Claims & Filing', slug: 'disability-claims', order: 2 },
+      { catSlug: 'benefits-assistance', name: 'Disability Increase', slug: 'disability-increase', order: 3 },
+      { catSlug: 'benefits-assistance', name: 'Appeals & Denials', slug: 'appeals-denials', order: 4 },
+      { catSlug: 'benefits-assistance', name: 'C&P Exam Prep', slug: 'cp-exam-prep', order: 5 },
+      { catSlug: 'benefits-assistance', name: 'VSO & Claims Assistance', slug: 'vso-claims', order: 6 },
+
+      { catSlug: 'wellness-recovery', name: 'Substance Abuse Treatment', slug: 'substance-abuse', order: 1 },
+      { catSlug: 'wellness-recovery', name: 'Mental Health & Counseling', slug: 'mental-health-counseling', order: 2 },
+      { catSlug: 'wellness-recovery', name: 'Holistic & Alternative Therapy', slug: 'holistic-therapy', order: 3 },
+      { catSlug: 'wellness-recovery', name: 'Fitness & Physical Wellness', slug: 'fitness-physical', order: 4 },
+      { catSlug: 'wellness-recovery', name: 'Peer Support Groups', slug: 'peer-support', order: 5 },
+    ];
+
+    let added = 0;
+    for (const sc of subcats) {
+      const catId = findCat(sc.catSlug);
+      if (!catId) continue;
+      await pgQuery(
+        `INSERT INTO partner_subcategories (category_id, name, slug, display_order)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (category_id, slug) DO NOTHING`,
+        [catId, sc.name, sc.slug, sc.order]
+      );
+      added++;
+    }
+    if (added > 0) {
+      console.log(`[seed] Ensured ${added} partner subcategories across all categories`);
+    }
+  } catch (err: any) {
+    console.log("[seed] ensureAllPartnerSubcategories error:", err.message);
   }
 }
 
@@ -1947,6 +2047,8 @@ export async function registerRoutes(
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
   await ensureDisabledVeteransCategory();
+  await ensureAllTrustedServiceCategories();
+  await ensureAllPartnerSubcategories();
   await seedDisabledVeteransResources();
 
   if (hasPartnerTable && hasRoutingColumns) {
@@ -4038,10 +4140,31 @@ export async function registerRoutes(
       return res.status(500).json({ error: error.message });
     }
 
+    const CATEGORY_ORDER: string[] = [
+      "crisis-help",
+      "mental-health",
+      "disabled-veterans",
+      "housing",
+      "food-assistance",
+      "va-benefits",
+      "family-support",
+      "community-support",
+      "employment",
+      "education",
+      "transportation",
+      "financial",
+      "legal",
+      "healthcare",
+      "substance-recovery",
+      "end-of-life-services",
+    ];
+
     const sorted = (data || []).sort((a: any, b: any) => {
-      if (a.slug === "crisis-help") return -1;
-      if (b.slug === "crisis-help") return 1;
-      return 0;
+      const ai = CATEGORY_ORDER.indexOf(a.slug);
+      const bi = CATEGORY_ORDER.indexOf(b.slug);
+      const aIdx = ai === -1 ? 999 : ai;
+      const bIdx = bi === -1 ? 999 : bi;
+      return aIdx - bIdx;
     });
 
     return res.json(sorted);
