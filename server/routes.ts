@@ -7246,9 +7246,9 @@ export async function registerRoutes(
       info: { bg: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF", icon: "&#8505;" },
     };
     const c = colors[type];
-    const redirectScript = type === "success" ? `<script>setTimeout(function(){window.location.href="https://veterancare.com/";},3000);</script>` : "";
-    const redirectText = type === "success" ? `<p style="font-size:13px;color:#9CA3AF;margin:16px 0 0 0;">Redirecting you back to VeteranCare.com&hellip;</p>` : "";
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} — ${platform.name}</title></head>
+    const redirectMeta = type === "success" ? `<meta http-equiv="refresh" content="3;url=https://veterancare.com/">` : "";
+    const redirectText = type === "success" ? `<p style="font-size:13px;color:#9CA3AF;margin:16px 0 0 0;">Redirecting you back to <a href="https://veterancare.com/" style="color:#6B7280;">VeteranCare.com</a>&hellip;</p>` : "";
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${redirectMeta}<title>${title} — ${platform.name}</title></head>
     <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F9FAFB;">
     <div style="max-width:440px;padding:32px;text-align:center;">
       <div style="width:60px;height:60px;border-radius:50%;background:${c.bg};border:2px solid ${c.border};display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:${c.text};margin-bottom:16px;">${c.icon}</div>
@@ -7256,7 +7256,7 @@ export async function registerRoutes(
       <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 20px 0;">${message}</p>
       ${redirectText}
       <p style="font-size:12px;color:#9CA3AF;">${platform.name}</p>
-    </div>${redirectScript}</body></html>`;
+    </div></body></html>`;
   }
 
   const actionLabels: Record<string, string> = {
