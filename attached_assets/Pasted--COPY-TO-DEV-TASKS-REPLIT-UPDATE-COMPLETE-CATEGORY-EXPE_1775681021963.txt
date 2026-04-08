@@ -1,0 +1,162 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: COMPLETE CATEGORY EXPERIENCE ALIGNMENT ACROSS REGULAR RESOURCES + TRUSTED SERVICES
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+WHAT I VERIFIED
+--------------------------------------------------
+
+The new AI Guide banner and guided category experience look very good on the Regular Resources categories that already have dedicated subcategory landing pages.
+
+Examples:
+- Mental Health
+- Housing
+- Employment
+- Healthcare
+- Benefits Assistance
+- Disabled Veterans
+- End of Life Services
+- Financial Services
+
+However, the implementation is still incomplete across the platform.
+
+--------------------------------------------------
+ISSUE 1: AI GUIDE BANNER / GUIDED EXPERIENCE IS NOT ON ALL REGULAR RESOURCE CATEGORIES
+--------------------------------------------------
+
+Right now, the new banner only appears on categories that already have dedicated subcategory landing pages.
+
+The following categories are still dropping directly into the flat resource list view and therefore do NOT have the same guided experience:
+
+- Family Support
+- Transportation
+- Community Support
+- Food Assistance
+- Education & Training
+- Legal Services
+- Wellness & Recovery
+- Any other remaining regular resource categories that still route directly to the flat list
+
+REQUIRED FIX:
+
+For ALL regular resource categories:
+
+A) Either:
+- create the same guided landing page structure with subcategory tiles
+
+OR
+
+B) if the category is meant to remain flatter for now,
+- still add the same AI Guide banner and consistent category intro/header treatment at the top of that category results page
+
+BOTTOM LINE:
+Every category under Regular Resources must have the same user-friendly guided entry experience, even if some categories are still lighter than others.
+
+--------------------------------------------------
+ISSUE 2: TRUSTED SERVICES DOES NOT YET MATCH REGULAR RESOURCES
+--------------------------------------------------
+
+Trusted Services has now been condensed, which is good.
+
+However, it still does NOT mirror the same guided experience as Regular Resources.
+
+Examples of what is missing:
+- no matching subcategory landing pages
+- no matching AI Guide banner behavior
+- no consistent flow between the two systems
+- same category names exist across both areas, but the experience is not synced
+
+REQUIRED FIX:
+
+For categories that exist in BOTH systems, Trusted Services must mirror the same category structure as Regular Resources.
+
+That means:
+
+- same category naming
+- same guided entry pattern
+- same subcategory landing behavior where applicable
+- same AI Guide banner placement
+- same general user journey
+
+Examples that should align across both systems:
+- Housing & Home Services
+- Employment Support
+- Education & Training
+- Legal Services
+- Financial & Credit Services
+- End of Life Services
+- Healthcare / Healthcare Services
+- Insurance Services (if retained as a monetized category)
+- any other shared categories
+
+--------------------------------------------------
+ISSUE 3: CATEGORY EXPERIENCE MUST BE STANDARDIZED
+--------------------------------------------------
+
+We need one universal rule:
+
+If a category is presented to the user as a major category, it must not feel unfinished compared to the others.
+
+Please apply the same design standard across BOTH surfaces:
+
+STANDARD CATEGORY EXPERIENCE:
+1. category title / description
+2. AI Guide banner
+3. optional Request Support CTA
+4. subcategory tiles if applicable
+5. then filtered resource/provider results
+
+If a category does not yet have subcategories, still preserve:
+- title
+- intro
+- AI Guide banner
+- consistent layout
+- then the results list
+
+--------------------------------------------------
+ISSUE 4: TRUSTED SERVICES SHOULD FEEL LIKE THE PREMIUM VERSION OF THE SAME JOURNEY
+--------------------------------------------------
+
+Trusted Services should not feel like a completely different system.
+
+It should feel like:
+- the monetized / premium / preferred partner layer
+- using the same category logic as Regular Resources
+
+Conceptually:
+
+Regular Resources = all verified/helpful options
+Trusted Services = monetized / preferred / promoted options inside similar category journeys
+
+So users should feel continuity between the two.
+
+--------------------------------------------------
+REQUIRED NEXT STEP
+--------------------------------------------------
+
+Please complete the remaining category alignment in 2 passes:
+
+PASS 1:
+Regular Resources
+- add the same AI banner / guided entry treatment to all remaining categories that still lack it
+- create missing guided landing pages where needed
+
+PASS 2:
+Trusted Services
+- align shared categories so they mirror the same guided structure and experience as Regular Resources
+- same naming, same subcategory logic, same banner placement
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do not break the existing working category pages that are already correct.
+
+Use those as the visual / structural standard for the remaining categories.
+
+The goal now is full consistency and a complete polished experience across the entire platform.
+
+--- END ---

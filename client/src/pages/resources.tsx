@@ -28,6 +28,7 @@ import {
   Building2,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
+import AiGuideBanner from "@/components/ai-guide-banner";
 import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
@@ -737,6 +738,10 @@ export default function Resources() {
               : "Browse the full resource library by category."}
         </p>
       </div>
+
+      {selectedSlug && !["end-of-life-services","disabled-veterans","mental-health","housing","employment","va-benefits","healthcare","financial"].includes(selectedSlug) && (
+        <AiGuideBanner categoryContext={selectedSlug} />
+      )}
 
       {/* Search Bar - Always visible */}
       <div className="relative">

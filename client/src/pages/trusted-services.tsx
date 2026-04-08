@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { trackEvent, getUTMParams } from "@/lib/analytics";
+import AiGuideBanner from "@/components/ai-guide-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -641,6 +642,8 @@ export default function TrustedServices() {
           </p>
         </CardContent>
       </Card>
+
+      {!searchParam && <AiGuideBanner categoryContext={selectedCategory || "trusted-services"} />}
 
       {catsLoading ? (
         <div className="text-center py-8">
