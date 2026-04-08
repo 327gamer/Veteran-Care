@@ -1479,7 +1479,7 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate">{link.link_name}</span>
+                          <span className="font-medium text-sm truncate">{(link.link_name || "").replace(/– Veteran Outreach$/, "– Veterans & Dependents").replace(/– General Outreach$/, "– Get Help Now")}</span>
                           {!link.is_active && (
                             <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300">Inactive</Badge>
                           )}

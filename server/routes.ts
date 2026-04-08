@@ -450,6 +450,18 @@ async function ensureAttributionTables() {
       console.log(`[schema] Updated ${fixed[0].cnt} general links to /get-help`);
     }
 
+    // === FIX: Rename old link_name labels to new naming convention ===
+    const oldVetNames = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE link_name LIKE '%– Veteran Outreach'");
+    if (parseInt(oldVetNames[0].cnt, 10) > 0) {
+      await pgQuery(`UPDATE ambassador_links SET link_name = REPLACE(link_name, '– Veteran Outreach', '– Veterans & Dependents') WHERE link_name LIKE '%– Veteran Outreach'`);
+      console.log(`[schema] Renamed ${oldVetNames[0].cnt} link names: Veteran Outreach → Veterans & Dependents`);
+    }
+    const oldGenNames = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE link_name LIKE '%– General Outreach'");
+    if (parseInt(oldGenNames[0].cnt, 10) > 0) {
+      await pgQuery(`UPDATE ambassador_links SET link_name = REPLACE(link_name, '– General Outreach', '– Get Help Now') WHERE link_name LIKE '%– General Outreach'`);
+      console.log(`[schema] Renamed ${oldGenNames[0].cnt} link names: General Outreach → Get Help Now`);
+    }
+
     // === FIX: Remove test commission data ===
     const testCommissions = await pgQuery("SELECT COUNT(*) as cnt FROM commissions WHERE ambassador_code = 'test_john'");
     if (parseInt(testCommissions[0].cnt, 10) > 0) {
