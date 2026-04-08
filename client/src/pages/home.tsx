@@ -137,6 +137,10 @@ export default function Home() {
       setLocation("/benefits-assistance");
       return;
     }
+    if (category === "healthcare") {
+      setLocation("/healthcare");
+      return;
+    }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
   };
 
@@ -172,7 +176,7 @@ export default function Home() {
     { slug: "education", label: "Education & Training" },
     { slug: "legal", label: "Legal Services" },
     { slug: "financial", label: "Financial & Credit Services" },
-    { slug: "healthcare", label: "Insurance Services" },
+    { slug: "healthcare", label: "Healthcare" },
     { slug: "family-support", label: "Family Support" },
     { slug: "substance-recovery", label: "Wellness & Recovery" },
     { slug: "food-assistance", label: "Food Assistance" },

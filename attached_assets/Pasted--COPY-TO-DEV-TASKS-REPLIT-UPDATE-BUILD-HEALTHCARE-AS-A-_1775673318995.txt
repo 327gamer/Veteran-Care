@@ -1,0 +1,183 @@
+--- COPY TO DEV TASKS & REPLIT ---
+
+UPDATE: BUILD HEALTHCARE AS A REGULAR RESOURCE CATEGORY WITH SUBCATEGORY LANDING PAGE
+
+DATE:
+[INSERT TODAY]
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+We now need to build Healthcare as a proper Regular Resources category.
+
+This should follow the exact same guided category pattern already used successfully for:
+
+- End of Life Services
+- Disabled Veterans
+- Mental Health
+- Housing
+- Employment
+- Benefits Assistance (if already in progress / live)
+
+Healthcare should be a support-first navigation category, NOT a Trusted Services category.
+
+--------------------------------------------------
+CATEGORY
+--------------------------------------------------
+
+Parent Category:
+Healthcare
+
+Use the existing live category slug if Healthcare already exists in the platform.
+If not, create it as a top-level Regular Resources category.
+
+--------------------------------------------------
+EXPECTED FLOW
+--------------------------------------------------
+
+Healthcare
+→ Healthcare subcategory landing page
+→ user selects subcategory
+→ filtered resource results
+
+Do NOT send users directly into a flat Healthcare resource list.
+
+--------------------------------------------------
+REQUIRED SUBCATEGORIES
+--------------------------------------------------
+
+Please create the following initial Healthcare subcategories:
+
+1. VA Healthcare Enrollment
+   - VA enrollment help
+   - eligibility guidance
+   - registration support
+   - VA medical access setup
+
+2. Primary Care
+   - general healthcare providers
+   - routine medical support
+   - family medicine / internal medicine
+   - ongoing basic care
+
+3. Specialty Care
+   - cardiology
+   - neurology
+   - orthopedics
+   - specialty referrals
+   - advanced treatment support
+
+4. Rehabilitation Services
+   - physical therapy
+   - occupational therapy
+   - recovery support
+   - injury rehabilitation
+   - post-surgery rehabilitation
+
+5. Telehealth & Virtual Care
+   - remote appointments
+   - telehealth access
+   - virtual care navigation
+   - digital health services
+
+6. Preventive Care & Wellness
+   - screenings
+   - checkups
+   - wellness visits
+   - preventative health support
+   - health coaching
+
+7. Women Veterans Healthcare
+   - women-focused VA care
+   - reproductive health
+   - gender-specific medical care
+   - women veterans support services
+
+8. Caregiver & Family Health Support
+   - caregiver health support
+   - family medical support resources
+   - caregiver navigation
+   - family wellness support
+
+--------------------------------------------------
+PAGE REQUIREMENTS
+--------------------------------------------------
+
+Build this using the SAME universal structure already used on the existing guided category pages.
+
+Meaning:
+
+1. Header / intro section
+2. short guidance copy
+3. optional “start here” guidance if user is unsure
+4. subcategory tile grid
+5. Request Support CTA
+6. proper back navigation
+7. proper filter chip reset behavior
+8. same desktop/mobile layout rules
+9. same universal page shell and spacing rules
+
+Do NOT create a custom one-off layout.
+
+--------------------------------------------------
+ENTRY POINT WIRING
+--------------------------------------------------
+
+Please wire Healthcare category clicks so that from:
+
+- homepage category tile
+- resources category tile/grid
+- any other main category entry point
+
+clicking Healthcare goes to the Healthcare subcategory landing page first.
+
+NOT directly to flat resource results.
+
+--------------------------------------------------
+FILTER / RESULT BEHAVIOR
+--------------------------------------------------
+
+When a user clicks a Healthcare subcategory:
+
+→ open resource results filtered to that Healthcare subcategory
+
+Also ensure:
+- back button returns to Healthcare subcategory page
+- removing subcategory chip returns to Healthcare subcategory page
+
+--------------------------------------------------
+ADMIN / CATEGORY HANDLING
+--------------------------------------------------
+
+Please ensure Healthcare is supported in:
+
+- category browsing
+- search
+- admin tagging
+- geolocation filtering
+- category-based matching behavior consistent with other regular resource categories
+
+--------------------------------------------------
+TRUSTED SERVICES RULE
+--------------------------------------------------
+
+Do NOT add Healthcare to Trusted Services.
+
+Healthcare should remain on the Regular Resources side only for now.
+
+This is a support/navigation category, not a commercial trusted-services bucket at this stage.
+
+--------------------------------------------------
+GOAL
+--------------------------------------------------
+
+Make Healthcare a fully guided Regular Resources category:
+
+Healthcare
+→ Subcategory Selection
+→ Filtered Resource Results
+
+using the same universal category page system already established across the platform.
+
+--- END ---

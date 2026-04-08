@@ -546,6 +546,10 @@ export default function Resources() {
       setLocation("/benefits-assistance");
       return;
     }
+    if (cat.slug === "healthcare") {
+      setLocation("/healthcare");
+      return;
+    }
     setSelectedSlug(cat.slug);
     setSelectedName(cat.name);
     setLocation(`/resources?category=${encodeURIComponent(cat.slug)}`);
@@ -599,6 +603,7 @@ export default function Resources() {
       "housing": "/housing",
       "employment": "/employment",
       "va-benefits": "/benefits-assistance",
+      "healthcare": "/healthcare",
     };
     filterChips.push({ label: subLabel, onRemove: () => {
       setSubFilter(null);
@@ -697,6 +702,11 @@ export default function Resources() {
                   setLocation("/benefits-assistance");
                 } else if (selectedSlug === "va-benefits") {
                   setLocation("/benefits-assistance");
+                } else if (selectedSlug === "healthcare" && subFilter) {
+                  setSubFilter(null);
+                  setLocation("/healthcare");
+                } else if (selectedSlug === "healthcare") {
+                  setLocation("/healthcare");
                 } else {
                   clearCategory();
                 }
