@@ -5881,12 +5881,27 @@ export async function registerRoutes(
     return res.json({ requests: data || [], total: count || 0 });
   });
 
+  app.post("/api/admin/navigator-requests/bulk-archive", requireAdmin, async (req, res) => {
+    const { statuses } = req.body;
+    const validToArchive = ["resolved", "cancelled"];
+    const archiveStatuses = Array.isArray(statuses) ? statuses.filter((s: string) => validToArchive.includes(s)) : validToArchive;
+
+    const { data, error } = await supabaseAdmin
+      .from("navigator_requests")
+      .update({ status: "archived" })
+      .in("status", archiveStatuses)
+      .select("id");
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ archived: data?.length || 0 });
+  });
+
   app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status, admin_notes, assigned_to, outcome, contacted_at, resolved_at, closed_at,
             routed_to_partner_id, routed_at, delivery_status, partner_outcome } = req.body;
 
-    const validStatuses = ["new", "in_progress", "resolved", "cancelled"];
+    const validStatuses = ["new", "in_progress", "resolved", "cancelled", "archived"];
     const validOutcomes = ["connected", "referred", "completed", "no_response", "not_eligible", "declined", "unable_to_contact"];
 
     const updates: Record<string, any> = {};
@@ -6113,6 +6128,21 @@ export async function registerRoutes(
     return res.json({ success: true, rerouted: true, partner_name: result.partnerName });
   });
 
+  function fuzzyNormalize(str: string): string {
+    return (str || "").toLowerCase().replace(/[-_&.,;:'"!?()]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function fuzzyMatch(haystack: string | null | undefined, needle: string): boolean {
+    if (!haystack || !needle) return false;
+    const h = fuzzyNormalize(haystack);
+    const n = fuzzyNormalize(needle);
+    if (h.includes(n) || n.includes(h)) return true;
+    const hCompact = h.replace(/\s/g, "");
+    const nCompact = n.replace(/\s/g, "");
+    if (hCompact.includes(nCompact) || nCompact.includes(hCompact)) return true;
+    return false;
+  }
+
   app.get("/api/admin/leads/assignable-search", requireAdmin, async (req, res) => {
     const { q, category, state, city } = req.query;
     const searchQ = typeof q === "string" ? q.trim().toLowerCase() : "";
@@ -6123,10 +6153,11 @@ export async function registerRoutes(
     const catTokens = catQ ? catQ.replace(/[&-]/g, " ").split(/\s+/).filter(w => w.length > 2) : [];
     const catMatches = (targetName: string | null | undefined, targetSlug: string | null | undefined) => {
       if (!catQ || catTokens.length === 0) return null;
-      const nameL = (targetName || "").toLowerCase();
-      const slugL = (targetSlug || "").toLowerCase();
+      const nameL = fuzzyNormalize(targetName || "");
+      const slugL = fuzzyNormalize(targetSlug || "");
       if (slugL && (slugL.includes(catQ) || catQ.includes(slugL))) return true;
       if (nameL && (nameL.includes(catQ) || catQ.includes(nameL))) return true;
+      if (fuzzyMatch(targetName, catQ) || fuzzyMatch(targetSlug, catQ)) return true;
       const anyToken = catTokens.some(t => nameL.includes(t) || slugL.includes(t));
       return anyToken || false;
     };
@@ -6140,10 +6171,10 @@ export async function registerRoutes(
           if (!p.is_active) continue;
           if (stateQ && !searchQ && p.state && p.state.toUpperCase() !== stateQ) continue;
           if (searchQ && !(
-            p.name?.toLowerCase().includes(searchQ) ||
-            p.contact_name?.toLowerCase().includes(searchQ) ||
-            p.contact_email?.toLowerCase().includes(searchQ) ||
-            p.notes?.toLowerCase().includes(searchQ)
+            fuzzyMatch(p.name, searchQ) ||
+            fuzzyMatch(p.contact_name, searchQ) ||
+            fuzzyMatch(p.contact_email, searchQ) ||
+            fuzzyMatch(p.notes, searchQ)
           )) continue;
           let relevance = 1;
           if (stateQ && p.state?.toUpperCase() === stateQ) relevance += 2;
@@ -6169,9 +6200,9 @@ export async function registerRoutes(
         const normalized = normalizeResourceList(resourceData);
         for (const r of normalized) {
           if (searchQ && !(
-            r.title?.toLowerCase().includes(searchQ) ||
-            r.phone?.toLowerCase().includes(searchQ) ||
-            r.email?.toLowerCase().includes(searchQ)
+            fuzzyMatch(r.title, searchQ) ||
+            fuzzyMatch(r.phone, searchQ) ||
+            fuzzyMatch(r.email, searchQ)
           )) continue;
           const cm = catMatches(r.categories?.name, r.categories?.slug);
           if (catQ && cm === false) continue;
@@ -6194,9 +6225,9 @@ export async function registerRoutes(
       for (const ts of tsRows) {
         if (stateQ && !searchQ && ts.state && ts.state.toUpperCase() !== stateQ) continue;
         if (searchQ && !(
-          ts.name?.toLowerCase().includes(searchQ) ||
-          ts.description?.toLowerCase().includes(searchQ) ||
-          ts.category_name?.toLowerCase().includes(searchQ)
+          fuzzyMatch(ts.name, searchQ) ||
+          fuzzyMatch(ts.description, searchQ) ||
+          fuzzyMatch(ts.category_name, searchQ)
         )) continue;
         const cm = catMatches(ts.category_name, null);
         if (catQ && cm === false) continue;
@@ -7162,6 +7193,114 @@ export async function registerRoutes(
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
+    }
+  });
+
+  function buildActionResponseHtml(title: string, message: string, type: "success" | "error" | "info"): string {
+    const colors = {
+      success: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", icon: "&#10003;" },
+      error: { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", icon: "&#10007;" },
+      info: { bg: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF", icon: "&#8505;" },
+    };
+    const c = colors[type];
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} — ${platform.name}</title></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F9FAFB;">
+    <div style="max-width:440px;padding:32px;text-align:center;">
+      <div style="width:60px;height:60px;border-radius:50%;background:${c.bg};border:2px solid ${c.border};display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:${c.text};margin-bottom:16px;">${c.icon}</div>
+      <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 8px 0;">${title}</h1>
+      <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 20px 0;">${message}</p>
+      <p style="font-size:12px;color:#9CA3AF;">${platform.name}</p>
+    </div></body></html>`;
+  }
+
+  const actionLabels: Record<string, string> = {
+    connected: "Connected with Veteran",
+    completed: "Service Completed",
+    no_response: "No Response",
+    unable_to_contact: "Unable to Contact",
+  };
+
+  function buildConfirmationPageHtml(token: string, action: string): string {
+    const label = actionLabels[action] || action;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm Update — ${platform.name}</title></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F9FAFB;">
+    <div style="max-width:440px;padding:32px;text-align:center;">
+      <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 12px 0;">Confirm Status Update</h1>
+      <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 24px 0;">You are about to update this lead to: <strong>${label}</strong></p>
+      <form method="POST" action="/api/partner/lead-action">
+        <input type="hidden" name="token" value="${token}" />
+        <button type="submit" style="background:#166534;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;">Confirm Update</button>
+      </form>
+      <p style="font-size:12px;color:#9CA3AF;margin-top:20px;">${platform.name}</p>
+    </div></body></html>`;
+  }
+
+  app.get("/api/partner/lead-action", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== "string") {
+        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This action link is invalid or expired.", "error"));
+      }
+      const { verifyLeadActionToken } = await import("./lead-email");
+      const result = verifyLeadActionToken(token);
+      if (!result) {
+        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This action link is invalid, expired, or has been tampered with.", "error"));
+      }
+      return res.send(buildConfirmationPageHtml(token, result.action));
+    } catch (err: any) {
+      console.log("[lead-action] GET Error:", err?.message);
+      return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
+    }
+  });
+
+  app.post("/api/partner/lead-action", express.urlencoded({ extended: false }), async (req, res) => {
+    try {
+      const { token } = req.body;
+      if (!token || typeof token !== "string") {
+        return res.status(400).send(buildActionResponseHtml("Invalid Request", "Missing or invalid token.", "error"));
+      }
+      const { verifyLeadActionToken } = await import("./lead-email");
+      const result = verifyLeadActionToken(token);
+      if (!result) {
+        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This action link is invalid, expired, or has been tampered with.", "error"));
+      }
+
+      const { leadId, action } = result;
+      const outcome = action;
+
+      const { data: lead } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, status")
+        .eq("id", leadId)
+        .single();
+
+      if (!lead) {
+        return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This lead could not be found in our system.", "error"));
+      }
+
+      if (lead.status === "resolved" || lead.status === "cancelled" || lead.status === "archived") {
+        return res.send(buildActionResponseHtml("Already Updated", `This lead has already been marked as "${lead.status}". No further action needed.`, "info"));
+      }
+
+      const updates: any = { outcome, contacted_at: new Date().toISOString() };
+      if (action === "completed") {
+        updates.status = "resolved";
+        updates.resolved_at = new Date().toISOString();
+      } else if (lead.status === "new") {
+        updates.status = "in_progress";
+      }
+
+      const { error: updateErr } = await supabaseAdmin.from("navigator_requests").update(updates).eq("id", leadId);
+      if (updateErr) {
+        console.log("[lead-action] DB update error:", updateErr.message);
+        return res.status(500).send(buildActionResponseHtml("Error", "Failed to update lead status. Please try again.", "error"));
+      }
+
+      const label = actionLabels[action] || action;
+      return res.send(buildActionResponseHtml("Status Updated", `Thank you! The lead has been updated to: "${label}". Our team has been notified.`, "success"));
+    } catch (err: any) {
+      console.log("[lead-action] POST Error:", err?.message);
+      return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
     }
   });
 

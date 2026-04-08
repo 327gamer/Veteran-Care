@@ -1,10 +1,75 @@
 import { Resend } from "resend";
+import crypto from "crypto";
 import { supabase, supabaseAdmin } from "./supabase";
 import { platform, t } from "../shared/platform";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || `${platform.name} <onboarding@resend.dev>`;
+
+const ACTION_SECRET = process.env.ADMIN_KEY || "vc-lead-action-secret";
+
+const TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function generateLeadActionToken(leadId: string, action: string): string {
+  const ts = Date.now().toString(36);
+  const payload = `${leadId}:${action}:${ts}`;
+  const hmac = crypto.createHmac("sha256", ACTION_SECRET).update(payload).digest("hex").slice(0, 16);
+  return Buffer.from(`${payload}:${hmac}`).toString("base64url");
+}
+
+export function verifyLeadActionToken(token: string): { leadId: string; action: string } | null {
+  try {
+    const decoded = Buffer.from(token, "base64url").toString();
+    const parts = decoded.split(":");
+    if (parts.length < 4) return null;
+    const hmac = parts.pop()!;
+    const ts = parts.pop()!;
+    const action = parts.pop()!;
+    const leadId = parts.join(":");
+    const expectedHmac = crypto.createHmac("sha256", ACTION_SECRET).update(`${leadId}:${action}:${ts}`).digest("hex").slice(0, 16);
+    if (hmac.length !== expectedHmac.length) return null;
+    const match = crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(expectedHmac));
+    if (!match) return null;
+    const tokenTime = parseInt(ts, 36);
+    if (isNaN(tokenTime) || Date.now() - tokenTime > TOKEN_EXPIRY_MS) return null;
+    const validActions = ["connected", "completed", "no_response", "unable_to_contact"];
+    if (!validActions.includes(action)) return null;
+    return { leadId, action };
+  } catch { return null; }
+}
+
+function getBaseUrl(): string {
+  if (process.env.NODE_ENV === "production" && platform.domain) {
+    return `https://${platform.domain}`;
+  }
+  return process.env.REPLIT_DOMAINS
+    ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+    : "http://localhost:5000";
+}
+
+function buildActionButtonsHtml(leadId: string): string {
+  const baseUrl = getBaseUrl();
+  const actions = [
+    { key: "connected", label: "Connected with Veteran", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
+    { key: "completed", label: "Service Completed", color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" },
+    { key: "no_response", label: "No Response", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
+    { key: "unable_to_contact", label: "Unable to Contact", color: "#9CA3AF", bg: "#F9FAFB", border: "#E5E7EB" },
+  ];
+
+  const buttons = actions.map(a => {
+    const token = generateLeadActionToken(leadId, a.key);
+    const url = `${baseUrl}/api/partner/lead-action?token=${token}`;
+    return `<a href="${url}" style="display:block;text-align:center;padding:10px 16px;margin:6px 0;background:${a.bg};border:1px solid ${a.border};border-radius:6px;color:${a.color};font-weight:600;font-size:14px;text-decoration:none;">${a.label}</a>`;
+  }).join("");
+
+  return `
+  <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:16px;margin-bottom:20px;">
+    <p style="margin:0 0 10px 0;font-size:14px;font-weight:600;color:#374151;">Update Lead Status</p>
+    <p style="margin:0 0 12px 0;font-size:12px;color:#6B7280;">Click to update the status of this lead. This helps us track outcomes and improve service.</p>
+    ${buttons}
+  </div>`;
+}
 
 function escapeHtml(str: string | null | undefined): string {
   if (!str) return "";
@@ -140,6 +205,8 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
       If you are unable to assist, the lead will be automatically rerouted to another partner.
     </p>
   </div>
+
+  ${buildActionButtonsHtml(lead.leadId)}
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
     <p>This lead was routed to ${escapeHtml(partner.partnerName)} by ${platform.name} ${platform.navigatorTitle}.</p>

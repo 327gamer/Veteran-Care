@@ -260,6 +260,22 @@ function AdminResourcesInner() {
     },
   });
 
+  const bulkArchiveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/navigator-requests/bulk-archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ statuses: ["resolved", "cancelled"] }),
+      });
+      if (!res.ok) throw new Error("Failed to archive");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
+      toast({ description: `${data.archived} lead(s) archived` });
+    },
+  });
+
   const rerouteMutation = useMutation({
     mutationFn: async ({ id, partner_id }: { id: string; partner_id?: string }) => {
       const res = await fetch(`/api/admin/leads/${id}/reroute`, {
@@ -1010,7 +1026,7 @@ function AdminResourcesInner() {
         {activeTab === "leads" && (
           <>
             <div className="flex gap-2 flex-wrap">
-              {(["new", "in_progress", "resolved", "cancelled"] as const).map((s) => (
+              {(["new", "in_progress", "resolved", "cancelled", "archived"] as const).map((s) => (
                 <Button
                   key={s}
                   data-testid={`lead-filter-${s}`}
@@ -1022,6 +1038,18 @@ function AdminResourcesInner() {
                   {s.replace("_", " ")}
                 </Button>
               ))}
+              {(leadStatusFilter === "resolved" || leadStatusFilter === "cancelled") && (
+                <Button
+                  data-testid="lead-bulk-archive"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs text-slate-500 border-slate-300 ml-auto"
+                  onClick={() => bulkArchiveMutation.mutate()}
+                  disabled={bulkArchiveMutation.isPending}
+                >
+                  {bulkArchiveMutation.isPending ? "Archiving..." : "Archive All"}
+                </Button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1595,6 +1623,30 @@ function AdminResourcesInner() {
                           disabled={navPatchMutation.isPending}
                         >
                           Cancel
+                        </Button>
+                      )}
+                      {(req.status === "resolved" || req.status === "cancelled") && (
+                        <Button
+                          data-testid={`lead-archive-${req.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs text-slate-500 border-slate-300"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "archived" } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Archive
+                        </Button>
+                      )}
+                      {req.status === "archived" && (
+                        <Button
+                          data-testid={`lead-unarchive-${req.id}`}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs text-blue-600 border-blue-300"
+                          onClick={() => navPatchMutation.mutate({ id: req.id, updates: { status: "resolved" } })}
+                          disabled={navPatchMutation.isPending}
+                        >
+                          Unarchive
                         </Button>
                       )}
                       {(req.status === "new" || req.status === "in_progress") && (

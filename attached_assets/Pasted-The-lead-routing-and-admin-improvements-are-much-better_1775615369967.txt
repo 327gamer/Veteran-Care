@@ -1,0 +1,92 @@
+The lead routing and admin improvements are much better now.
+
+What is working well:
+- user results email is working
+- routing/assignment flow is much cleaner
+- routed business email is being delivered
+- admin lead handling is improving
+
+However, two important follow-up items are still needed.
+
+-------------------------------------
+ISSUE 1 — ROUTED LEAD EMAIL NEEDS STATUS ACTIONS
+-------------------------------------
+
+When a partner/business receives a routed lead by email, the email currently tells them to contact the veteran, but it does not give them a way to report the outcome back into the system.
+
+This is a major missing step.
+
+We need a simple partner-facing outcome update flow directly from the email.
+
+REQUIRED EMAIL ACTIONS:
+- Connected
+- Completed
+- No Response
+- Unable to Contact
+
+These should be clickable actions in the routed lead email.
+
+GOAL:
+When a partner clicks one of these, it should update the lead in our system automatically.
+
+EXPECTED INTERNAL EFFECT:
+- Connected → internal status updates appropriately
+- Completed → lead marked completed/resolved
+- No Response → visible in admin
+- Unable to Contact → visible in admin and optionally eligible for reroute later
+
+IMPORTANT:
+Do NOT send the full admin status set in the partner email.
+Keep the partner-facing email actions simple and operational.
+
+-------------------------------------
+ISSUE 2 — CLOSED/CANCELLED LEAD CLEANUP
+-------------------------------------
+
+Right now leads will continue to pile up in admin.
+
+We need a cleanup strategy.
+
+REQUIRED:
+- once a lead is completed / resolved / canceled, admin should be able to archive it cleanly
+- optional delete action can exist for admin only, but archive is the safer default
+- canceled items should not endlessly clog the active working queue
+
+-------------------------------------
+ISSUE 3 — UNIVERSAL FUZZY SEARCH RULE NOT FULLY APPLIED
+-------------------------------------
+
+Search still appears too exact in some places.
+
+Example:
+If a resource is named something like “Tri-County”, the system should still find it when typing:
+- Tri County
+- TRI County
+- Tri-County
+- tricounty
+
+The search should not require exact punctuation or exact formatting.
+
+Please apply the universal fuzzy-search rule consistently so known resources and organizations can be found even when punctuation, spacing, or capitalization differ.
+
+This should apply to resource lookup / assignment lookup where relevant.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+We now need to close the loop properly:
+
+Lead created
+→ routed
+→ partner receives email
+→ partner updates outcome
+→ admin system updates automatically
+
+That is critical for:
+- operational clarity
+- future lead monetization
+- rerouting logic
+- reporting
+
+--- END ---
