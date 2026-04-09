@@ -464,7 +464,7 @@ export default function VeteranDiscounts() {
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-heading font-extrabold text-primary tracking-tight" data-testid="heading-discounts">
-            Veteran Discount Services & Products
+            Trusted Services – Veteran Discount Services & Products
           </h1>
           <p className="text-xs text-muted-foreground">Browse discounts, products, and services for veterans and their families.</p>
         </div>

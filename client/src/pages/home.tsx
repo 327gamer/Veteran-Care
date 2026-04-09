@@ -533,7 +533,7 @@ export default function Home() {
             </div>
             <div className="flex-1 min-w-0 space-y-0.5">
               <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-primary transition-colors">
-                Veteran Discount Services & Products
+                Trusted Services – Veteran Discount Services & Products
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Save money and connect with trusted businesses.

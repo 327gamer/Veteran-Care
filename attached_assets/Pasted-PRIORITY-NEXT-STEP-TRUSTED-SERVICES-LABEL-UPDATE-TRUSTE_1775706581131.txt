@@ -1,0 +1,199 @@
+PRIORITY NEXT STEP – TRUSTED SERVICES LABEL UPDATE + TRUSTED PARTNER MONETIZATION LAYER
+
+The recent fixes look good in production.
+
+Insurance is corrected.
+Trusted Services / Discounts / signup alignment looks good.
+Category and subcategory behavior now looks much closer to launch-ready.
+
+Now I want to move into the next step in two parts:
+
+-------------------------------------
+PART 1 – QUICK LABEL UPDATE
+-------------------------------------
+
+Please update the homepage / section banner label currently showing:
+
+Veteran Discount Services & Products
+
+Change it to:
+
+Trusted Services – Veteran Discount Services & Products
+
+Reason:
+- Trusted Services is the shorter public-facing/mobile-friendly name
+- Veteran Discount Services & Products is the full descriptive name
+- this makes it clearer that both refer to the SAME system
+
+This should be treated as a simple content / label update, not a structural change.
+
+-------------------------------------
+PART 2 – TRUSTED PARTNER ADS / OFFERS / MONETIZATION LAYER
+-------------------------------------
+
+Before proceeding further, we need to implement the monetization + ad / offer layer for Trusted Partners.
+
+This is a launch-priority revenue feature.
+
+-------------------------------------
+1. CORE OBJECTIVE
+-------------------------------------
+
+When a business becomes a Trusted Partner, they must be able to:
+
+- upload an offer / discount / promotion
+- upload a visual banner or ad
+- display this within their listing
+- optionally gain enhanced placement based on plan
+
+This must integrate cleanly with:
+
+- Trusted Services / Discounts
+- Resources (verified placement)
+- Stripe subscription plans
+
+-------------------------------------
+2. REQUIRED PARTNER PROFILE STRUCTURE
+-------------------------------------
+
+Each Trusted Partner listing must support:
+
+A) Basic Info (already exists)
+- business name
+- description
+- location
+- contact info
+
+B) NEW: OFFER / PROMOTION FIELD
+- title (example: “10% Off for Veterans”)
+- short description
+- optional terms
+
+C) NEW: BANNER / AD IMAGE
+- image upload (small banner)
+- used in:
+  - profile view
+  - optionally category listing (future)
+
+D) OPTIONAL (future-ready)
+- expiry date for offer
+- multiple offers (later phase)
+
+-------------------------------------
+3. DISPLAY REQUIREMENTS
+-------------------------------------
+
+When a user clicks on a Trusted Partner, the profile must show:
+
+1. Business info
+2. VERIFIED / TRUSTED badge
+3. OFFER / PROMOTION (clearly visible)
+4. BANNER IMAGE
+5. CALL TO ACTION (Connect / Website / Call)
+
+This must feel like a premium listing.
+
+Also:
+- where appropriate, an offer teaser can appear on the listing card
+- example:
+  “10% Off for Veterans”
+  “Free Consultation”
+  “$500 Off First Purchase”
+
+-------------------------------------
+4. PLAN-BASED FEATURE LOGIC (STRIPE)
+-------------------------------------
+
+We already have pricing tiers such as:
+- $99/month (state)
+- $499/month (national)
+
+We now need to enforce feature differences.
+
+-------------------------------------
+BASE PLAN
+-------------------------------------
+- listing visible
+- appears in category/subcategory
+- can upload offer
+- can upload banner
+
+-------------------------------------
+PREMIUM ADD-ONS
+-------------------------------------
+
+A) Top Placement
+- appears at top of category
+- ranking priority
+
+B) Premium Banner Placement (+$79/month example)
+- banner appears at top of directory or category page
+
+C) Sponsored Listing Boost
+- appears more prominently in results
+
+IMPORTANT:
+Stripe plan / add-ons must control:
+- placement priority
+- visibility enhancements
+- banner placement eligibility
+
+Do NOT break the current Stripe structure.
+Extend it cleanly using plan metadata / feature flags / add-on logic.
+
+-------------------------------------
+5. CATEGORY + SUBCATEGORY MAPPING
+-------------------------------------
+
+When a partner signs up, they must:
+- select category
+- select subcategory (where applicable)
+
+Their offer + banner must:
+- display in the correct category/subcategory
+- appear in Trusted Services / Discounts
+- appear in Resources as an elevated verified listing
+
+-------------------------------------
+6. NO-BREAK RULE
+-------------------------------------
+
+DO NOT break:
+- UTM attribution
+- ambassador tracking
+- referral tracking
+- Stripe subscriptions
+- lead routing
+- existing partner records
+- one-way premium model
+
+This is an ADDITIVE feature, not a replacement.
+
+-------------------------------------
+7. UX REQUIREMENTS
+-------------------------------------
+
+- simple upload flow in partner signup or dashboard
+- clean display in listing
+- no clutter
+- must look premium
+- soft-launch friendly even when some categories have few partners
+
+-------------------------------------
+8. RETURN ONLY
+-------------------------------------
+
+Please confirm:
+
+A) whether the label update can be done immediately and where it will be changed  
+B) where partner offer + banner data will be stored (DB structure)  
+C) how banner upload will be handled (storage approach)  
+D) how Stripe plans / add-ons will control feature access  
+E) how placement priority will be enforced  
+F) how this integrates with category/subcategory mapping  
+G) what can be completed now versus phase 2  
+H) whether another publish is required  
+
+-------------------------------------
+
+This is the next monetization layer and needs to be implemented cleanly.
