@@ -1980,6 +1980,109 @@ async function seedDisabledVeteransResources() {
   }
 }
 
+async function enrichResourceCategories() {
+  try {
+    const { data: allCats } = await supabaseAdmin.from("categories").select("id, slug");
+    if (!allCats || allCats.length === 0) return;
+    const catMap: Record<string, string> = {};
+    allCats.forEach((c: any) => { catMap[c.slug] = c.id; });
+
+    const rules: Array<{ titleMatch: RegExp; addCats: string[] }> = [
+      { titleMatch: /^ralph h\. johnson va|va (medical|clinic|outpatient|health)|va hospice|va star program|dorn va|mount pleasant va/i, addCats: ["healthcare"] },
+      { titleMatch: /mental health|ptsd|psychiatric|behavioral health/i, addCats: ["mental-health"] },
+      { titleMatch: /vet center/i, addCats: ["mental-health", "community-support"] },
+      { titleMatch: /county.*veteran.*affairs|veterans? affairs office/i, addCats: ["va-benefits"] },
+      { titleMatch: /hospice/i, addCats: ["healthcare"] },
+      { titleMatch: /^disabled american veterans|^dav /i, addCats: ["disabled-veterans"] },
+      { titleMatch: /meals on wheels/i, addCats: ["food-assistance"] },
+      { titleMatch: /^goodwill/i, addCats: ["education"] },
+      { titleMatch: /ptsd.*clinical|ptsd.*team/i, addCats: ["mental-health"] },
+      { titleMatch: /veterans? crisis line/i, addCats: ["crisis-help"] },
+      { titleMatch: /forrester.*behavioral|shoreline.*behavioral/i, addCats: ["mental-health"] },
+      { titleMatch: /ssvf/i, addCats: ["housing"] },
+      { titleMatch: /caregiver support/i, addCats: ["family-support"] },
+    ];
+
+    const { data: resources } = await supabaseAdmin.from("resources").select("id, title, resource_categories(category_id)").eq("status", "approved");
+    if (!resources || resources.length === 0) return;
+
+    let totalAdded = 0;
+    for (const r of resources) {
+      const existingCatIds = new Set((r.resource_categories || []).map((rc: any) => rc.category_id));
+      const toAdd: string[] = [];
+
+      for (const rule of rules) {
+        if (rule.titleMatch.test(r.title)) {
+          for (const catSlug of rule.addCats) {
+            const catId = catMap[catSlug];
+            if (catId && !existingCatIds.has(catId) && !toAdd.includes(catId)) {
+              toAdd.push(catId);
+            }
+          }
+        }
+      }
+
+      if (toAdd.length > 0) {
+        const inserts = toAdd.map(cid => ({ resource_id: r.id, category_id: cid }));
+        const { error } = await supabaseAdmin.from("resource_categories").upsert(inserts, { onConflict: "resource_id,category_id" });
+        if (!error) totalAdded += toAdd.length;
+      }
+    }
+
+    if (totalAdded > 0) {
+      console.log(`[enrichment] Added ${totalAdded} multi-category assignments across resources`);
+    }
+
+    const { data: allSubs } = await supabaseAdmin.from("subcategories").select("id, slug, category_id");
+    if (allSubs && allSubs.length > 0) {
+      const subMap: Record<string, string> = {};
+      allSubs.forEach((s: any) => { subMap[s.slug] = s.id; });
+
+      const subRules: Array<{ titleMatch: RegExp; addSubs: string[] }> = [
+        { titleMatch: /va (clinic|outpatient)|va health care enrollment/i, addSubs: ["va-clinics"] },
+        { titleMatch: /va medical center|dorn va|ralph h\. johnson va/i, addSubs: ["va-medical-centers"] },
+        { titleMatch: /vet center(?! call)/i, addSubs: ["vet-centers"] },
+        { titleMatch: /ptsd|ptsd clinical/i, addSubs: ["ptsd-counseling"] },
+        { titleMatch: /crisis line|crisis.*24/i, addSubs: ["crisis-support", "crisis-stabilization"] },
+        { titleMatch: /hospice/i, addSubs: ["hospice-palliative-care"] },
+        { titleMatch: /mental health/i, addSubs: ["ptsd-counseling"] },
+      ];
+
+      const { data: resForSub } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
+      if (resForSub) {
+        let subAdded = 0;
+        for (const r of resForSub) {
+          const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
+          if (existingSubIds.size > 0) continue;
+
+          const toAddSub: string[] = [];
+          for (const rule of subRules) {
+            if (rule.titleMatch.test(r.title)) {
+              for (const subSlug of rule.addSubs) {
+                const subId = subMap[subSlug];
+                if (subId && !existingSubIds.has(subId) && !toAddSub.includes(subId)) {
+                  toAddSub.push(subId);
+                }
+              }
+            }
+          }
+
+          if (toAddSub.length > 0) {
+            const inserts = toAddSub.map(sid => ({ resource_id: r.id, subcategory_id: sid }));
+            const { error } = await supabaseAdmin.from("resource_subcategories").upsert(inserts, { onConflict: "resource_id,subcategory_id" });
+            if (!error) subAdded += toAddSub.length;
+          }
+        }
+        if (subAdded > 0) {
+          console.log(`[enrichment] Added ${subAdded} subcategory assignments to unassigned resources`);
+        }
+      }
+    }
+  } catch (err: any) {
+    console.log("[enrichment] enrichResourceCategories error:", err.message);
+  }
+}
+
 async function checkStatesTable() {
   const { data, error } = await supabaseAdmin.from("states").select("code").limit(1);
   if (error) {
@@ -2205,6 +2308,7 @@ export async function registerRoutes(
   await ensureAllTrustedServiceCategories();
   await ensureAllPartnerSubcategories();
   await seedDisabledVeteransResources();
+  await enrichResourceCategories();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);

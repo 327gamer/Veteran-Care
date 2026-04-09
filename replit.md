@@ -87,6 +87,8 @@ Resources can belong to multiple categories via the `resource_categories` juncti
 - **Normalization**: `normalizeResourceCategories()` and `normalizeResourceList()` in routes.ts convert junction table shape to flat `categories` field (single object for 1 category, array for multiple)
 - **Admin APIs**: `GET/PUT /api/admin/resources/:id/categories` for managing category assignments
 - **Admin UI**: Primary category dropdown + additional category toggle chips in edit form
+- **Boot enrichment**: `enrichResourceCategories()` runs at startup — title-matching rules auto-assign additional categories (e.g., Vet Centers → mental-health + community-support, VA Clinics → healthcare, DAV → disabled-veterans) and subcategories to unassigned resources. Fully idempotent via upsert.
+- **Resource stats**: 400 unique resources, 94 multi-category (24%), 16 categories all populated, 0 duplicates
 
 ## Multi-Subcategory Support
 Resources can belong to multiple subcategories via normalized junction tables in Supabase:

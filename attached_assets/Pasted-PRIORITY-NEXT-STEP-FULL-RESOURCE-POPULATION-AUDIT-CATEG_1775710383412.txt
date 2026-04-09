@@ -1,0 +1,124 @@
+PRIORITY NEXT STEP – FULL RESOURCE POPULATION AUDIT + CATEGORY / SUBCATEGORY COVERAGE
+
+We are moving on from the Trusted Services / banner segment for now.
+
+That area is far enough along to continue later during broader live-mode testing.
+
+The next priority before launch is a full audit of our existing resource database across South Carolina.
+
+-------------------------------------
+CORE OBJECTIVE
+-------------------------------------
+
+We need to make sure our current Resources database is fully and correctly populating across:
+
+- categories
+- subcategories
+- multiple categories where applicable
+- multiple subcategories where applicable
+
+Right now, some parts of the platform still look too empty.
+
+That is not acceptable for launch if we already have organizations in the system that qualify for those placements.
+
+-------------------------------------
+CRITICAL RULE
+-------------------------------------
+
+If an organization genuinely fits more than one category or subcategory, it should populate in all appropriate places.
+
+This includes cases where a resource may belong in:
+- 2 categories
+- 3 categories
+- multiple subcategories under a category
+- multiple top-level resource sections
+
+Do NOT artificially restrict a resource to only one placement if the organization offers multiple relevant services.
+
+-------------------------------------
+WHAT NEEDS TO HAPPEN NOW
+-------------------------------------
+
+1. Audit all current South Carolina resource records in the database
+
+2. Review how they are currently mapped into:
+- categories
+- subcategories
+
+3. Identify any resources that are under-assigned or only appearing in one place when they should appear in multiple places
+
+4. Correct the population logic / mappings so qualifying resources appear in all relevant sections
+
+5. Remove or flag obvious test businesses before launch
+Examples:
+- “ABC”
+- “test”
+- placeholder businesses
+- any junk records used for internal testing
+
+-------------------------------------
+LAUNCH REQUIREMENT
+-------------------------------------
+
+Before launch, the Resources side of the platform should feel populated and useful.
+
+If we already have real organizations that belong under:
+- Housing
+- Legal
+- Financial
+- Education
+- Employment
+- End of Life
+- etc.
+
+then those categories/subcategories should reflect that.
+
+We do NOT want empty-looking areas caused by bad assignment logic.
+
+-------------------------------------
+IMPORTANT DISTINCTION
+-------------------------------------
+
+This task is about the RESOURCES database and population coverage.
+
+It is not primarily about:
+- Trusted Services premium partners
+- Stripe logic
+- banners
+- offers
+
+Those can remain on the back burner for now.
+
+This task is about making sure the existing free / regular resource ecosystem is fully and correctly represented before launch.
+
+-------------------------------------
+WHAT TO AUDIT SPECIFICALLY
+-------------------------------------
+
+Please review:
+
+A) whether resources can currently be assigned to multiple categories and multiple subcategories correctly
+
+B) whether any current logic is preventing valid multi-placement
+
+C) which categories/subcategories are currently under-populated due to assignment gaps rather than lack of real data
+
+D) whether location-based population is still working correctly on top of multi-category assignment
+
+E) whether any test businesses need to be removed now from admin / DB before launch
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+Please reply with ONLY:
+
+A) whether the current system fully supports multi-category and multi-subcategory population for resources  
+B) which categories/subcategories are currently under-populated due to mapping gaps  
+C) what test / placeholder businesses should be deleted before launch  
+D) what fixes or data cleanup you recommend doing now before launch  
+E) whether another publish will be required  
+
+-------------------------------------
+
+This is a launch-critical resource coverage audit.
