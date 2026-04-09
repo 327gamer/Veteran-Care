@@ -1,0 +1,124 @@
+POST-VALIDATION FIX – DATA CLEANUP + STATEWIDE COVERAGE
+
+The platform is now functioning correctly at the taxonomy and filtering level.
+
+We are moving into FINAL PRE-LAUNCH DATA CLEANUP and COVERAGE.
+
+-------------------------------------
+1. REMOVE ALL TEST DATA (CRITICAL)
+-------------------------------------
+
+Delete ALL test / placeholder businesses across the system.
+
+Specifically remove:
+- ACB-7
+- ABC-3
+- ABC-5
+- ABC-6
+- any "test company" entries
+
+These appear across:
+- Employment Support
+- Financial & Credit Services
+- other categories
+
+This must be fully cleaned before launch.
+
+-------------------------------------
+2. FILL KEY EMPTY SUBCATEGORIES
+-------------------------------------
+
+Target subcategories that are currently empty or weak:
+
+Healthcare:
+- Preventative Care
+- Women Veterans Healthcare
+
+Benefits Assistance:
+- Disability Reevaluation
+- C&P Exams
+
+Employment:
+- Veteran Friendly Employers
+
+Financial:
+- under-populated subcategories (leave premium-heavy ones lighter if intentional)
+
+Use:
+- VA
+- state agencies
+- nonprofits
+- verified free services
+
+-------------------------------------
+3. STATEWIDE RESOURCE COVERAGE (HIGH PRIORITY)
+-------------------------------------
+
+Current system appears strong in Charleston.
+
+We now need BROAD South Carolina coverage.
+
+Expand resource population across:
+
+Major Cities:
+- Greenville
+- Columbia
+- Charleston (already strong)
+
+Secondary Cities:
+- Myrtle Beach
+- Beaufort / Bluffton
+- Anderson
+- Spartanburg
+- Aiken
+- Sumter
+- Orangeburg
+- Florence
+- Rock Hill
+
+-------------------------------------
+REQUIREMENT:
+-------------------------------------
+
+Resources must not cluster only in one region.
+
+Each major category should return results across multiple regions.
+
+-------------------------------------
+4. MULTI-CATEGORY + MULTI-SUBCATEGORY LOGIC
+-------------------------------------
+
+Continue applying:
+
+- resources can exist in multiple categories
+- resources can exist in multiple subcategories
+
+Goal:
+MAXIMUM visibility and coverage before launch.
+
+-------------------------------------
+5. DO NOT TOUCH
+-------------------------------------
+
+- taxonomy structure
+- slug mappings
+- Trusted Services logic
+- Stripe
+- attribution
+- routing
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) confirmation test data removed  
+B) categories/subcategories improved  
+C) cities/regions expanded  
+D) total resource count after update  
+E) whether publish is required  
+
+-------------------------------------
+
+This is FINAL DATA QUALITY PASS before launch.
+
+--- END ---
