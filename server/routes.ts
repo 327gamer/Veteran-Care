@@ -2626,10 +2626,19 @@ async function cleanupTestRecords() {
       exactTestNames
     );
     if (found.length > 0) {
-      const ids = found.map((r: any) => r.id);
-      const idPlaceholders = ids.map((_: any, i: number) => `$${i + 1}`).join(",");
-      await pgQuery(`DELETE FROM trusted_services WHERE id IN (${idPlaceholders})`, ids);
-      console.log(`[cleanup] Removed ${found.length} test records from trusted_services:`, found.map((r: any) => r.name).join(", "));
+      let removed = 0;
+      for (const rec of found) {
+        try {
+          await pgQuery(`UPDATE partner_applications SET converted_provider_id = NULL WHERE converted_provider_id = $1`, [rec.id]);
+          await pgQuery(`DELETE FROM trusted_services WHERE id = $1`, [rec.id]);
+          removed++;
+        } catch (delErr: any) {
+          console.log(`[cleanup] Could not remove "${rec.name}":`, delErr.message);
+        }
+      }
+      if (removed > 0) {
+        console.log(`[cleanup] Removed ${removed} test records from trusted_services:`, found.filter((_:any, i:number) => i < removed).map((r: any) => r.name).join(", "));
+      }
     }
   } catch (err: any) {
     console.log("[cleanup] cleanupTestRecords error:", err.message);
