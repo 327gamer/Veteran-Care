@@ -2001,6 +2001,8 @@ async function enrichResourceCategories() {
       { titleMatch: /forrester.*behavioral|shoreline.*behavioral/i, addCats: ["mental-health"] },
       { titleMatch: /ssvf/i, addCats: ["housing"] },
       { titleMatch: /caregiver support/i, addCats: ["family-support"] },
+      { titleMatch: /gi bill|chapter 33|education benefit|tuition.*assist|veterans? education|free tuition|tuition waiver/i, addCats: ["va-benefits"] },
+      { titleMatch: /va.*home.*loan|mortgage.*program|home.*loan.*program/i, addCats: ["financial"] },
     ];
 
     const { data: resources } = await supabaseAdmin.from("resources").select("id, title, resource_categories(category_id)").eq("status", "approved");
@@ -2033,49 +2035,241 @@ async function enrichResourceCategories() {
       console.log(`[enrichment] Added ${totalAdded} multi-category assignments across resources`);
     }
 
-    const { data: allSubs } = await supabaseAdmin.from("subcategories").select("id, slug, category_id");
-    if (allSubs && allSubs.length > 0) {
-      const subMap: Record<string, string> = {};
-      allSubs.forEach((s: any) => { subMap[s.slug] = s.id; });
+    const requiredSubs: Array<{ catSlug: string; subs: Array<{ name: string; slug: string }> }> = [
+      { catSlug: "mental-health", subs: [
+        { name: "PTSD & Trauma Support", slug: "ptsd-trauma-support" },
+        { name: "Crisis & Suicide Prevention", slug: "crisis-suicide-prevention" },
+        { name: "Substance Abuse & Addiction", slug: "substance-abuse-addiction" },
+        { name: "Counseling & Therapy", slug: "counseling-therapy" },
+        { name: "Inpatient / Outpatient Treatment", slug: "inpatient-outpatient-treatment" },
+        { name: "Peer Support Groups", slug: "peer-support-groups" },
+        { name: "Family Support (Mental Health)", slug: "family-support-mental-health" },
+      ]},
+      { catSlug: "healthcare", subs: [
+        { name: "VA Healthcare Enrollment", slug: "va-healthcare-enrollment" },
+        { name: "Primary Care", slug: "primary-care" },
+        { name: "Specialty Care", slug: "specialty-care" },
+        { name: "Rehabilitation Services", slug: "rehabilitation-services" },
+        { name: "Telehealth & Virtual Care", slug: "telehealth-virtual-care" },
+        { name: "Preventive Care & Wellness", slug: "preventive-care-wellness" },
+        { name: "Women Veterans Healthcare", slug: "women-veterans-healthcare" },
+        { name: "Caregiver & Family Health Support", slug: "caregiver-family-health-support" },
+      ]},
+      { catSlug: "va-benefits", subs: [
+        { name: "Military Records & DD214", slug: "military-records-dd214" },
+        { name: "Disability Claims & Filing", slug: "disability-claims-filing" },
+        { name: "Disability Increase (Reevaluation)", slug: "disability-increase-reevaluation" },
+        { name: "Appeals & Denials", slug: "appeals-denials" },
+        { name: "C&P Exams (What to Expect)", slug: "cp-exams-what-to-expect" },
+        { name: "VA Claims Assistance (DAV, VSO, etc.)", slug: "va-claims-assistance-dav-vso" },
+        { name: "Pension Benefits", slug: "pension-benefits" },
+        { name: "Education Benefits / GI Bill", slug: "education-benefits-gi-bill" },
+        { name: "Survivor Benefits", slug: "survivor-benefits" },
+        { name: "Aid & Attendance", slug: "aid-attendance" },
+        { name: "VA Enrollment & General Benefits Navigation", slug: "va-enrollment-general-benefits-navigation" },
+      ]},
+      { catSlug: "housing", subs: [
+        { name: "Emergency Housing / Homeless Shelters", slug: "emergency-housing-homeless-shelters" },
+        { name: "Rental Assistance", slug: "rental-assistance" },
+        { name: "Home Ownership Programs", slug: "home-ownership-programs" },
+        { name: "VA Housing Benefits", slug: "va-housing-benefits" },
+        { name: "Home Modifications (Accessibility)", slug: "home-modifications-accessibility" },
+        { name: "Transitional Housing", slug: "transitional-housing" },
+        { name: "Foreclosure Prevention", slug: "foreclosure-prevention" },
+      ]},
+      { catSlug: "employment", subs: [
+        { name: "Job Placement Programs", slug: "job-placement-programs" },
+        { name: "Resume & Career Coaching", slug: "resume-career-coaching" },
+        { name: "Vocational Rehabilitation", slug: "vocational-rehabilitation" },
+        { name: "Apprenticeships & Skilled Trades", slug: "apprenticeships-skilled-trades" },
+        { name: "Veteran-Friendly Employers", slug: "veteran-friendly-employers" },
+        { name: "Entrepreneurship & Small Business Support", slug: "entrepreneurship-small-business-support" },
+        { name: "DVOP / Workforce Programs", slug: "dvop-workforce-programs" },
+      ]},
+      { catSlug: "financial", subs: [
+        { name: "Mortgages / Home Loans", slug: "mortgages-home-loans" },
+        { name: "Personal Loans", slug: "personal-loans" },
+        { name: "Credit Repair", slug: "credit-repair" },
+        { name: "Debt Relief", slug: "debt-relief" },
+        { name: "Budgeting & Financial Coaching", slug: "budgeting-financial-coaching" },
+        { name: "Banking / Lending Support", slug: "banking-lending-support" },
+        { name: "Refinancing", slug: "refinancing" },
+      ]},
+      { catSlug: "crisis-help", subs: [
+        { name: "Veterans Crisis Line", slug: "veterans-crisis-line" },
+        { name: "Suicide Prevention", slug: "suicide-prevention" },
+        { name: "Mobile Crisis Teams", slug: "mobile-crisis-teams" },
+        { name: "Emergency Mental Health", slug: "emergency-mental-health" },
+        { name: "Substance Abuse Crisis", slug: "substance-abuse-crisis" },
+        { name: "Domestic Violence / Safety", slug: "domestic-violence-safety" },
+      ]},
+    ];
 
-      const subRules: Array<{ titleMatch: RegExp; addSubs: string[] }> = [
-        { titleMatch: /va (clinic|outpatient)|va health care enrollment/i, addSubs: ["va-clinics"] },
-        { titleMatch: /va medical center|dorn va|ralph h\. johnson va/i, addSubs: ["va-medical-centers"] },
-        { titleMatch: /vet center(?! call)/i, addSubs: ["vet-centers"] },
-        { titleMatch: /ptsd|ptsd clinical/i, addSubs: ["ptsd-counseling"] },
-        { titleMatch: /crisis line|crisis.*24/i, addSubs: ["crisis-support", "crisis-stabilization"] },
-        { titleMatch: /hospice/i, addSubs: ["hospice-palliative-care"] },
-        { titleMatch: /mental health/i, addSubs: ["ptsd-counseling"] },
-      ];
+    let subsCreated = 0;
+    const { data: existingSubs } = await supabaseAdmin.from("subcategories").select("id, slug, category_id");
+    const existingByKey = new Set((existingSubs || []).map((s: any) => `${s.category_id}:${s.slug}`));
+    const subIdBySlug: Record<string, string> = {};
+    (existingSubs || []).forEach((s: any) => { subIdBySlug[s.slug] = s.id; });
 
-      const { data: resForSub } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
-      if (resForSub) {
-        let subAdded = 0;
-        for (const r of resForSub) {
-          const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
-          if (existingSubIds.size > 0) continue;
+    for (const group of requiredSubs) {
+      const catId = catMap[group.catSlug];
+      if (!catId) continue;
+      for (const sub of group.subs) {
+        const key = `${catId}:${sub.slug}`;
+        if (!existingByKey.has(key)) {
+          const { data: inserted } = await supabaseAdmin.from("subcategories").upsert(
+            { name: sub.name, slug: sub.slug, category_id: catId },
+            { onConflict: "slug,category_id" }
+          ).select("id").single();
+          if (inserted) {
+            subIdBySlug[sub.slug] = inserted.id;
+            subsCreated++;
+          }
+        }
+      }
+    }
+    if (subsCreated > 0) {
+      console.log(`[enrichment] Created ${subsCreated} new subcategories to align with landing pages`);
+    }
 
-          const toAddSub: string[] = [];
-          for (const rule of subRules) {
-            if (rule.titleMatch.test(r.title)) {
-              for (const subSlug of rule.addSubs) {
-                const subId = subMap[subSlug];
-                if (subId && !existingSubIds.has(subId) && !toAddSub.includes(subId)) {
-                  toAddSub.push(subId);
-                }
+    const oldToNew: Record<string, string[]> = {
+      "ptsd-counseling": ["ptsd-trauma-support"],
+      "crisis-support": ["crisis-suicide-prevention"],
+      "substance-abuse-treatment": ["substance-abuse-addiction"],
+      "peer-support": ["peer-support-groups"],
+      "vet-centers": ["counseling-therapy"],
+      "va-clinics": ["primary-care"],
+      "va-medical-centers": ["primary-care", "specialty-care"],
+      "telehealth": ["telehealth-virtual-care"],
+      "disability-claims-assistance": ["disability-claims-filing", "va-claims-assistance-dav-vso"],
+      "military-records-dd214-help": ["military-records-dd214"],
+      "appeals-assistance": ["appeals-denials"],
+      "pension-assistance": ["pension-benefits"],
+      "va-enrollment-help": ["va-enrollment-general-benefits-navigation"],
+      "county-veterans-service-offices": ["va-claims-assistance-dav-vso"],
+      "emergency-housing": ["emergency-housing-homeless-shelters"],
+      "emergency-shelter": ["emergency-housing-homeless-shelters"],
+      "homeless-veteran-services": ["emergency-housing-homeless-shelters"],
+      "rent-assistance": ["rental-assistance"],
+      "job-placement": ["job-placement-programs"],
+      "resume-assistance": ["resume-career-coaching"],
+      "career-counseling": ["resume-career-coaching"],
+      "apprenticeships": ["apprenticeships-skilled-trades"],
+      "skilled-trades-training": ["apprenticeships-skilled-trades"],
+      "entrepreneurship-support": ["entrepreneurship-small-business-support"],
+      "federal-employment": ["dvop-workforce-programs"],
+      "state-employment": ["dvop-workforce-programs"],
+      "certification-programs": ["vocational-rehabilitation"],
+      "benefits-counseling": ["budgeting-financial-coaching"],
+      "budgeting-financial-planning": ["budgeting-financial-coaching"],
+      "debt-counseling": ["debt-relief"],
+      "emergency-financial-assistance": ["banking-lending-support"],
+      "nonprofit-financial-support": ["banking-lending-support"],
+      "veteran-relief-funds": ["banking-lending-support"],
+      "utility-bill-assistance": ["debt-relief"],
+      "crisis-stabilization": ["emergency-mental-health"],
+      "detox-programs": ["inpatient-outpatient-treatment"],
+      "outpatient-recovery": ["inpatient-outpatient-treatment"],
+      "healthcare-rehabilitation": ["rehabilitation-services"],
+    };
+
+    const { data: resAll } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
+    if (resAll) {
+      let mapped = 0;
+      for (const r of resAll) {
+        const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
+        const toAdd: Array<{ resource_id: string; subcategory_id: string }> = [];
+
+        for (const [oldSlug, newSlugs] of Object.entries(oldToNew)) {
+          const oldId = subIdBySlug[oldSlug];
+          if (oldId && existingSubIds.has(oldId)) {
+            for (const ns of newSlugs) {
+              const newId = subIdBySlug[ns];
+              if (newId && !existingSubIds.has(newId)) {
+                toAdd.push({ resource_id: r.id, subcategory_id: newId });
+                existingSubIds.add(newId);
               }
             }
           }
+        }
 
-          if (toAddSub.length > 0) {
-            const inserts = toAddSub.map(sid => ({ resource_id: r.id, subcategory_id: sid }));
-            const { error } = await supabaseAdmin.from("resource_subcategories").upsert(inserts, { onConflict: "resource_id,subcategory_id" });
-            if (!error) subAdded += toAddSub.length;
+        if (toAdd.length > 0) {
+          const { error } = await supabaseAdmin.from("resource_subcategories").upsert(toAdd, { onConflict: "resource_id,subcategory_id" });
+          if (!error) mapped += toAdd.length;
+        }
+      }
+      if (mapped > 0) {
+        console.log(`[enrichment] Mapped ${mapped} resources from old subcategories to new landing-page subcategories`);
+      }
+    }
+
+    const subRules: Array<{ titleMatch: RegExp; addSubs: string[] }> = [
+      { titleMatch: /va (clinic|outpatient)|va health care enrollment/i, addSubs: ["primary-care", "va-healthcare-enrollment"] },
+      { titleMatch: /va medical center|dorn va|ralph h\. johnson va/i, addSubs: ["primary-care", "specialty-care"] },
+      { titleMatch: /vet center(?! call)/i, addSubs: ["counseling-therapy", "peer-support-groups"] },
+      { titleMatch: /ptsd|ptsd clinical/i, addSubs: ["ptsd-trauma-support"] },
+      { titleMatch: /crisis line|crisis.*24/i, addSubs: ["crisis-suicide-prevention", "veterans-crisis-line"] },
+      { titleMatch: /hospice/i, addSubs: ["hospice-palliative-care"] },
+      { titleMatch: /mental health/i, addSubs: ["counseling-therapy"] },
+      { titleMatch: /telehealth|virtual care/i, addSubs: ["telehealth-virtual-care"] },
+      { titleMatch: /caregiver/i, addSubs: ["caregiver-family-health-support"] },
+      { titleMatch: /women.*veteran|female.*veteran/i, addSubs: ["women-veterans-healthcare"] },
+      { titleMatch: /rehabilitation|physical therapy/i, addSubs: ["rehabilitation-services"] },
+      { titleMatch: /dd.?214|military records|personnel records/i, addSubs: ["military-records-dd214"] },
+      { titleMatch: /disability.*claim|claims.*assistance/i, addSubs: ["disability-claims-filing"] },
+      { titleMatch: /appeal|denied.*claim/i, addSubs: ["appeals-denials"] },
+      { titleMatch: /pension/i, addSubs: ["pension-benefits"] },
+      { titleMatch: /gi bill|education benefit/i, addSubs: ["education-benefits-gi-bill"] },
+      { titleMatch: /survivor benefit|dic /i, addSubs: ["survivor-benefits"] },
+      { titleMatch: /aid.*attendance/i, addSubs: ["aid-attendance"] },
+      { titleMatch: /ssvf|emergency.*housing|homeless.*veteran|shelter/i, addSubs: ["emergency-housing-homeless-shelters"] },
+      { titleMatch: /rent.*assist|rental/i, addSubs: ["rental-assistance"] },
+      { titleMatch: /transitional.*housing/i, addSubs: ["transitional-housing"] },
+      { titleMatch: /home.*loan|home.*owner|va.*loan|mortgage/i, addSubs: ["home-ownership-programs"] },
+      { titleMatch: /job.*place|employment.*match/i, addSubs: ["job-placement-programs"] },
+      { titleMatch: /resume|career.*coach|interview.*prep/i, addSubs: ["resume-career-coaching"] },
+      { titleMatch: /vocational.*rehab|chapter 31|vr&e/i, addSubs: ["vocational-rehabilitation"] },
+      { titleMatch: /apprentice|skilled.*trade/i, addSubs: ["apprenticeships-skilled-trades"] },
+      { titleMatch: /entrepreneur|small.*business|sba/i, addSubs: ["entrepreneurship-small-business-support"] },
+      { titleMatch: /dvop|workforce|department.*labor/i, addSubs: ["dvop-workforce-programs"] },
+      { titleMatch: /mobile.*crisis/i, addSubs: ["mobile-crisis-teams"] },
+      { titleMatch: /domestic.*violence|family.*violence/i, addSubs: ["domestic-violence-safety"] },
+      { titleMatch: /family.*counsel|family.*support.*mental|family.*counseling/i, addSubs: ["family-support-mental-health"] },
+      { titleMatch: /bereavement.*counsel|grief.*counsel/i, addSubs: ["family-support-mental-health"] },
+      { titleMatch: /gi bill|chapter 33|education benefit|tuition.*assist|veterans? education|higher education/i, addSubs: ["education-benefits-gi-bill"] },
+      { titleMatch: /va.*housing|hud-vash|adapted housing|sah.*grant|sha.*grant/i, addSubs: ["va-housing-benefits", "emergency-housing-homeless-shelters"] },
+      { titleMatch: /specially adapted|home.*modif|accessibility.*home/i, addSubs: ["home-modifications-accessibility"] },
+      { titleMatch: /suicide.*prevent/i, addSubs: ["suicide-prevention", "crisis-suicide-prevention"] },
+      { titleMatch: /va.*home.*loan|mortgage.*veteran|home.*loan.*program/i, addSubs: ["mortgages-home-loans", "home-ownership-programs"] },
+      { titleMatch: /college|university|technical college|citadel|clemson/i, addSubs: ["education-benefits-gi-bill"] },
+    ];
+
+    const { data: resForSub } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
+    if (resForSub) {
+      let subAdded = 0;
+      for (const r of resForSub) {
+        const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
+
+        const toAddSub: string[] = [];
+        for (const rule of subRules) {
+          if (rule.titleMatch.test(r.title)) {
+            for (const subSlug of rule.addSubs) {
+              const subId = subIdBySlug[subSlug];
+              if (subId && !existingSubIds.has(subId) && !toAddSub.includes(subId)) {
+                toAddSub.push(subId);
+              }
+            }
           }
         }
-        if (subAdded > 0) {
-          console.log(`[enrichment] Added ${subAdded} subcategory assignments to unassigned resources`);
+
+        if (toAddSub.length > 0) {
+          const inserts = toAddSub.map(sid => ({ resource_id: r.id, subcategory_id: sid }));
+          const { error } = await supabaseAdmin.from("resource_subcategories").upsert(inserts, { onConflict: "resource_id,subcategory_id" });
+          if (!error) subAdded += toAddSub.length;
         }
+      }
+      if (subAdded > 0) {
+        console.log(`[enrichment] Added ${subAdded} new subcategory assignments via title matching`);
       }
     }
   } catch (err: any) {
