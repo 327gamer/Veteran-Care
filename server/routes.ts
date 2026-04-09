@@ -2204,8 +2204,8 @@ async function enrichResourceCategories() {
     }
 
     const subRules: Array<{ titleMatch: RegExp; addSubs: string[] }> = [
-      { titleMatch: /va (clinic|outpatient)|va health care enrollment/i, addSubs: ["primary-care", "va-healthcare-enrollment"] },
-      { titleMatch: /va medical center|dorn va|ralph h\. johnson va/i, addSubs: ["primary-care", "specialty-care"] },
+      { titleMatch: /va (clinic|outpatient)|va health care enrollment/i, addSubs: ["primary-care", "va-healthcare-enrollment", "preventive-care-wellness"] },
+      { titleMatch: /va medical center|dorn va|ralph h\. johnson va/i, addSubs: ["primary-care", "specialty-care", "preventive-care-wellness"] },
       { titleMatch: /vet center(?! call)/i, addSubs: ["counseling-therapy", "peer-support-groups"] },
       { titleMatch: /ptsd|ptsd clinical/i, addSubs: ["ptsd-trauma-support"] },
       { titleMatch: /crisis line|crisis.*24/i, addSubs: ["crisis-suicide-prevention", "veterans-crisis-line"] },
@@ -2610,6 +2610,32 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
+async function cleanupTestRecords() {
+  try {
+    const exactTestNames = [
+      "Test Company ABC",
+      "ABC 3",
+      "ABC-5",
+      "ABC-6",
+      "ABC-6 Second Chance Job Center",
+      "Second Chance Job Center (4)",
+    ];
+    const placeholders = exactTestNames.map((_, i) => `$${i + 1}`).join(",");
+    const found = await pgQuery(
+      `SELECT id, name FROM trusted_services WHERE TRIM(name) IN (${placeholders})`,
+      exactTestNames
+    );
+    if (found.length > 0) {
+      const ids = found.map((r: any) => r.id);
+      const idPlaceholders = ids.map((_: any, i: number) => `$${i + 1}`).join(",");
+      await pgQuery(`DELETE FROM trusted_services WHERE id IN (${idPlaceholders})`, ids);
+      console.log(`[cleanup] Removed ${found.length} test records from trusted_services:`, found.map((r: any) => r.name).join(", "));
+    }
+  } catch (err: any) {
+    console.log("[cleanup] cleanupTestRecords error:", err.message);
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -2636,6 +2662,7 @@ export async function registerRoutes(
   await seedDisabledVeteransResources();
   await enrichResourceCategories();
   await seedStatewideResources();
+  await cleanupTestRecords();
 
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
