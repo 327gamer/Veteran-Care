@@ -1,0 +1,112 @@
+PRIORITY FIX – TRUSTED SERVICES FALLBACK POPULATION (CRITICAL UX + MONETIZATION)
+
+We have a major UX gap:
+
+Trusted Services categories currently appear empty when there are no paid partners.
+
+This is not acceptable for launch.
+
+-------------------------------------
+CORE REQUIREMENT
+-------------------------------------
+
+Trusted Services must NEVER appear empty.
+
+-------------------------------------
+REQUIRED BEHAVIOR
+-------------------------------------
+
+When a user enters a category/subcategory in Trusted Services:
+
+1. SHOW VERIFIED / TRUSTED PARTNERS FIRST
+- premium placement
+- badges remain
+- ranking logic unchanged
+
+2. IF THERE ARE FEW OR NO PARTNERS:
+→ BACKFILL WITH RESOURCES
+
+-------------------------------------
+FALLBACK RULE
+-------------------------------------
+
+Pull from Resources (Supabase):
+
+- same category
+- same subcategory
+- same location filtering
+
+-------------------------------------
+DISPLAY RULES
+-------------------------------------
+
+Trusted Services view should show:
+
+SECTION 1:
+"Verified Partners"
+- paid partners only
+- top placement
+- badge visible
+
+SECTION 2:
+"Other Available Resources"
+- pulled from Resources
+- clearly labeled
+- NOT marked as verified
+- standard styling
+
+-------------------------------------
+CRITICAL RULE
+-------------------------------------
+
+DO NOT:
+- mix ranking logic
+- mark fallback resources as trusted
+- alter partner data
+- alter Stripe logic
+- alter attribution
+- alter routing
+
+This is DISPLAY LAYER ONLY.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Trusted Services should always feel:
+- full
+- useful
+- trustworthy
+
+Even before we scale paid partners.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+1. categories no longer appear empty
+2. fallback resources populate correctly
+3. verified partners still appear first
+4. no impact to:
+   - Stripe
+   - attribution
+   - routing
+   - partner data
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) implementation approach  
+B) files changed  
+C) how fallback is triggered  
+D) confirmation categories no longer appear empty  
+E) whether publish is required  
+
+-------------------------------------
+
+This is critical for launch UX and monetization perception.
+
+--- END ---
