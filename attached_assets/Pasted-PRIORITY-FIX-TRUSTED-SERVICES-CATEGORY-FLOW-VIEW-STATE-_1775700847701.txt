@@ -1,0 +1,117 @@
+PRIORITY FIX – TRUSTED SERVICES CATEGORY FLOW (VIEW-STATE / RENDER LOGIC)
+
+We need to stop working the taxonomy-source layer and fix the actual remaining production bug.
+
+-------------------------------------
+CURRENT DIAGNOSIS
+-------------------------------------
+
+Top-level taxonomy cleanup has already been worked on.
+
+However, the remaining issue is clearly at the FRONT-END FLOW / VIEW-STATE layer.
+
+Production still behaves like:
+
+CATEGORY
+→ PROVIDERS
+
+But the required behavior is:
+
+CATEGORY
+→ SUBCATEGORY LIST
+→ PROVIDERS
+
+-------------------------------------
+NON-NEGOTIABLE RULE
+-------------------------------------
+
+Inside Trusted Services, categories must always show SUBCATEGORIES FIRST.
+
+This must be true:
+- even when providers already exist
+- even when only one provider exists
+- even when no providers exist
+
+Provider existence must NOT control the first screen.
+
+-------------------------------------
+EXAMPLE
+-------------------------------------
+
+Current wrong behavior:
+Trusted Services → Housing & Home Services
+→ immediately shows BootPrint / Tri-County provider cards
+
+Required behavior:
+Trusted Services → Housing & Home Services
+→ first show Housing subcategory list
+→ only after subcategory click show provider results
+
+-------------------------------------
+TASKS (THIS CHUNK ONLY)
+-------------------------------------
+
+1. Identify the initial render logic for Trusted Services category pages
+
+2. Find where current logic is doing something equivalent to:
+   - if providers exist, show providers immediately
+
+3. Replace that logic with:
+   - always show subcategory list first
+   - only show providers after subcategory selection
+
+4. Preserve:
+   - canonical taxonomy display
+   - existing Trusted Services data layer
+   - premium-only listing behavior
+   - trusted badge / verified badge logic
+   - Resources ranking logic
+   - attribution
+   - Stripe
+   - routing
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT revisit category naming again
+- do NOT revisit seed cleanup again
+- do NOT change backend schema
+- do NOT change partner records
+- do NOT change Stripe
+- do NOT change attribution
+- do NOT change Resources behavior
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Please test and confirm:
+
+1. Trusted Services category click now opens subcategory layer first
+2. Providers only appear after subcategory selection
+3. Housing & Home Services follows this correctly
+4. Legal Services follows this correctly
+5. Financial & Credit follows this correctly
+6. Employment Support follows this correctly
+7. Auto Services follows this correctly
+8. Travel Services follows this correctly
+9. No regressions in Resources
+10. No regressions in premium-only Trusted Services behavior
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) root cause in render/view-state logic
+B) files changed
+C) exact rule used to determine subcategory-first behavior
+D) confirmation categories now follow:
+   CATEGORY → SUBCATEGORY LIST → PROVIDERS
+E) whether publish is required
+
+-------------------------------------
+
+This is the actual remaining blocker.
+
+Solve the category browse flow, not the taxonomy-source layer.
