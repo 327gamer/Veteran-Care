@@ -1,0 +1,342 @@
+PRIORITY NEXT STEP – RESOURCE COVERAGE FIX + TEST DATA CLEANUP + SUBCATEGORY STRUCTURE EXPANSION
+
+I reviewed the live Resources side carefully after the recent enrichment work.
+
+The improvement helped in some areas, but many sections are still too blank, under-filled, or not structured correctly for launch.
+
+This is now the launch-critical task.
+
+-------------------------------------
+1. CORE PROBLEM
+-------------------------------------
+
+We still have three major issues in Resources:
+
+1. Many categories / subcategories are still under-populated or blank
+2. Several categories in Resources do NOT yet have the subcategory structure they should have
+3. Test businesses / placeholder records are still showing publicly and must be removed before launch
+
+-------------------------------------
+2. IMPORTANT RULE
+-------------------------------------
+
+If a real organization fits multiple categories or subcategories, it should populate in all appropriate places.
+
+Also:
+
+If Trusted Services already has a strong subcategory structure for a category, and that same category exists in Resources, then Resources should generally mirror that structure where appropriate.
+
+This is especially important for launch because Resources currently feels too empty and unstructured in several places.
+
+-------------------------------------
+3. LIVE FINDINGS FROM REVIEW
+-------------------------------------
+
+Below is what I found while checking the live Resources side.
+
+-------------------------------------
+3A. MENTAL HEALTH
+-------------------------------------
+
+Problem:
+- Mental Health appears completely empty
+- all 7 subcategories appear empty too
+
+This is not acceptable. We know there should be resources in this area.
+
+Action needed:
+- review Mental Health population logic
+- populate correct South Carolina mental health / veteran support resources
+- ensure subcategories are functioning
+
+-------------------------------------
+3B. DISABLED VETERANS
+-------------------------------------
+
+Current state:
+- looks better
+- a few listings are appearing
+
+This category appears improved and is closer to acceptable.
+
+-------------------------------------
+3C. HOUSING
+-------------------------------------
+
+Problem:
+- Housing is confusing and still under-populated
+- I expected many housing-related organizations / agencies to appear
+- instead, only the trusted partners such as Tri-County Veterans Support Network and BootPrint are standing out in most places
+- only Transitional Housing seems to show meaningful volume
+
+Expected:
+- VA housing benefits
+- state apartments / government housing assistance
+- housing-related agencies
+- more housing assistance resources
+
+Action needed:
+- review housing category + subcategory mapping
+- make sure free / existing resources populate, not just the trusted partners
+- especially review VA Housing Benefits, Rental Assistance, Emergency Housing, Home Ownership, etc.
+
+-------------------------------------
+3D. FOOD ASSISTANCE
+-------------------------------------
+
+Current state:
+- this appears to have quite a few listings
+- looks much better
+
+No urgent issue here.
+
+-------------------------------------
+3E. BENEFITS ASSISTANCE
+-------------------------------------
+
+Problem:
+- almost nothing is populating in Benefits Assistance
+- subcategories under Benefits Assistance are very weak or blank
+
+This needs to include state, federal, VA, and related agencies/resources such as:
+- education benefits
+- GI Bill
+- disability claims
+- military records
+- VA benefits support
+- state/federal benefit assistance agencies
+
+Action needed:
+- scrape / source more South Carolina and relevant state/federal/VA resources for this category
+- populate the subcategories properly
+
+-------------------------------------
+3F. FAMILY SUPPORT
+-------------------------------------
+
+Current state:
+- a few listings appear based on my location
+- acceptable for now
+
+-------------------------------------
+3G. COMMUNITY SUPPORT
+-------------------------------------
+
+Current state:
+- a few listings appear
+- acceptable for now
+
+-------------------------------------
+3H. EMPLOYMENT SUPPORT
+-------------------------------------
+
+Problem:
+- there are subcategories, but there is still weak real population
+- test business records are showing publicly
+- example test business:
+  - ACB-7
+- this test record appears under multiple employment subcategories and must be deleted
+
+Also:
+- Veteran Care / my organization should be appearing under this category because it is local and relevant
+
+Action needed:
+- delete all ACB-7 employment-related test partner/test business records
+- verify real employment-support organizations/resources populate correctly
+- review state/federal workforce / employment resources too
+
+-------------------------------------
+3I. EDUCATION & TRAINING
+-------------------------------------
+
+Problem:
+- this area contains several test companies that must be deleted
+- current Resources page has a broad list, but it is not properly organized into subcategories the way Trusted Services is
+- Trusted Services has better education/training subcategory structure than Resources currently does
+
+Important requirement:
+Resources → Education & Training should mirror the subcategory structure already used in Trusted Services for Education & Training.
+
+There are real organizations/resources here such as:
+- Veteran Care
+- Clemson University
+- schools / training providers / veteran education opportunities
+- state/federal education and training opportunities
+
+Test companies that need to be removed include examples such as:
+- ABC 6 Second Chance Job [test]
+- test company 4
+- ABC
+- ABC-5
+- other obvious placeholder / test companies
+
+Action needed:
+- delete these test companies
+- create / mirror the Education & Training subcategory structure in Resources to match Trusted Services
+- assign real organizations/resources into those subcategories
+
+This is a high priority.
+
+-------------------------------------
+3J. TRANSPORTATION
+-------------------------------------
+
+Current state:
+- no subcategories
+- but quite a few listings appear
+- acceptable for now
+
+-------------------------------------
+3K. FINANCIAL & CREDIT SERVICES
+-------------------------------------
+
+Problem:
+- test company is showing publicly
+- example:
+  - ABC 3 test company
+- appears across subcategories and must be removed
+
+Also:
+- trusted/premium companies in this area should still appear in regular Resources too if applicable
+- current Trusted Services side here is mostly just the test company, which is not useful
+
+Action needed:
+- delete ABC 3 test company
+- keep the structure
+- let trusted partners continue to elevate into Resources when applicable
+- we understand broader real paid-partner population here may come later, but test clutter must be removed now
+
+-------------------------------------
+3L. LEGAL SERVICES
+-------------------------------------
+
+Problem:
+- Resources still behaves more like one broad list
+- Trusted Services already has better subcategory structure for Legal Services
+
+Requirement:
+Resources → Legal Services should also get proper subcategory structure similar to Trusted Services.
+
+Also:
+- there are many pro bono / legal aid / government / state resources that should populate here
+- these should not be left blank just because they are not paid partners
+
+Action needed:
+- create / mirror subcategories under Resources Legal Services
+- populate them with relevant legal aid / pro bono / state/federal veteran legal resources
+
+-------------------------------------
+3M. HEALTHCARE
+-------------------------------------
+
+Problem:
+- almost nothing is showing
+- this is far too empty
+- there should be VA / state / federal / healthcare-related resources here
+
+Action needed:
+- scrape / source more South Carolina healthcare-related veteran resources
+- populate healthcare category and any needed subcategories
+
+-------------------------------------
+3N. WELLNESS & RECOVERY
+-------------------------------------
+
+Current state:
+- quite a few listings appear
+- acceptable for now
+- subcategories can be reviewed later if needed
+
+-------------------------------------
+3O. END OF LIFE SERVICES
+-------------------------------------
+
+Problem:
+- this exists in both Trusted Services and Resources
+- Trusted Services has strong subcategory structure
+- Resources needs to be better filled out with free / regular services too
+
+Need more:
+- funeral/home-related resources where relevant
+- estate planning
+- probate
+- legal support
+- grief / family support where appropriate
+
+Action needed:
+- strengthen regular Resources population under End of Life Services
+- mirror/improve subcategory organization as needed
+
+-------------------------------------
+4. TEST / PLACEHOLDER RECORDS TO DELETE
+-------------------------------------
+
+Please audit and remove all obvious public-facing test records before launch, including examples such as:
+
+- ACB-7
+- ABC 3
+- ABC
+- ABC-5
+- ABC 6 Second Chance Job [test]
+- test company 4
+- any similar placeholder / junk record
+- any old internal test partner or fake company record still surfacing publicly
+
+This applies across both:
+- Resources
+- Trusted Services / Discounts
+wherever these test items are still visible
+
+-------------------------------------
+5. STRUCTURE RULE GOING FORWARD
+-------------------------------------
+
+For launch, I need these rules applied:
+
+A) If a category in Trusted Services has a good subcategory structure, and the same category exists in Resources, then Resources should generally be structured the same way where appropriate.
+
+B) Real organizations should populate into multiple categories/subcategories where they genuinely qualify.
+
+C) Free / regular resource ecosystem must feel full and useful before launch, especially in categories such as:
+- Mental Health
+- Benefits Assistance
+- Education & Training
+- Legal Services
+- Healthcare
+- End of Life Services
+- Housing
+
+D) Trusted partners should still elevate into Resources where applicable, but Resources must not look empty just because there are few paid partners.
+
+-------------------------------------
+6. ADDITIONAL SCRAPE / DATA EXPANSION NEEDED
+-------------------------------------
+
+Please run another South Carolina-focused resource sourcing / scrape / enrichment pass for the categories that are still clearly under-filled, especially:
+
+- Mental Health
+- Benefits Assistance
+- Healthcare
+- Housing
+- Legal Services
+- Education & Training
+- End of Life Services
+
+The goal is to bring in additional real South Carolina, VA, state, local, and federal resources where relevant, similar to what was done in the earlier setup phase.
+
+-------------------------------------
+7. RETURN ONLY
+-------------------------------------
+
+Please reply with ONLY:
+
+A) which categories/subcategories are still under-populated after your last enrichment  
+B) which test / placeholder businesses you found and will delete  
+C) which categories in Resources you recommend mirroring from Trusted Services subcategory structure  
+D) what additional South Carolina / VA / state / federal resource scrape/enrichment you can run now  
+E) what can be fixed now before launch versus later  
+F) whether another publish is required  
+
+-------------------------------------
+
+This is now the launch-critical Resources completion pass.
