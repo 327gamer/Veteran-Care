@@ -1,0 +1,66 @@
+Production validation found two remaining issues.
+
+The recent statewide pass helped, but this is NOT fully complete yet.
+
+-------------------------------------
+1. MAJOR-CITY HEALTHCARE / VA COVERAGE IS STILL MISSING
+-------------------------------------
+
+While checking Healthcare and related subcategories, I can see some new resources in smaller cities, which is good.
+
+However, obvious major-city resources are still missing where they should be present.
+
+Examples:
+- Charleston VA clinic
+- Columbia VA clinic
+- Greenville VA clinic
+
+This is especially noticeable under areas like:
+- Preventive Care
+- Women Veterans Healthcare
+
+These major-city / VA resources should not be missing while smaller-city items are present.
+
+Please review the healthcare / VA seeding and ensure the major South Carolina city VA / clinic resources are included properly.
+
+-------------------------------------
+2. TEST COMPANIES ARE STILL PUBLICLY VISIBLE
+-------------------------------------
+
+Despite the earlier report that test data was clean, I am still seeing test companies in production.
+
+Examples still visible:
+- ABC 3 under Financial
+- ABC under Education
+- ABC-6 Second Chance Job Center
+- ABC-5
+- other obvious test placeholders in Education / Financial
+
+These must be removed before launch.
+
+Please investigate why these are still surfacing publicly.
+
+Important:
+- confirm whether they still exist in production data
+- confirm whether production is reading from a different table/path/source than expected
+- confirm whether stale published data is involved
+
+-------------------------------------
+3. REQUIRED NEXT ACTION
+-------------------------------------
+
+Please do a targeted correction only:
+
+A) fill the missing major-city VA / healthcare resources in the relevant categories/subcategories  
+B) remove all remaining visible test / placeholder companies from production-facing views  
+C) confirm the production site is reading from the correct cleaned data source  
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) why major-city VA / healthcare resources are still missing  
+B) which healthcare / VA resources you will add now  
+C) why test companies are still visible in production  
+D) which test companies / records will be removed now  
+E) whether another publish is required
