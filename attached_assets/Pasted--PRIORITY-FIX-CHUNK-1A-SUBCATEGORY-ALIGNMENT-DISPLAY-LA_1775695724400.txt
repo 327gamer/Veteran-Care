@@ -1,0 +1,107 @@
+--- PRIORITY FIX – CHUNK 1A: SUBCATEGORY ALIGNMENT (DISPLAY LAYER ONLY) ---
+
+Chunk 1 categories are partially fixed.
+
+Subcategories are still NOT aligned.
+
+This must be corrected before proceeding further.
+
+-------------------------------------
+PROBLEM
+-------------------------------------
+
+Trusted Services currently:
+
+- does NOT mirror Resources subcategories
+- has incomplete or mismatched subcategory trees
+- creates inconsistent UX between:
+  - Resources
+  - Trusted Services
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Trusted Services must mirror Resources EXACTLY at BOTH levels:
+
+- categories
+- subcategories
+
+-------------------------------------
+CRITICAL RULE
+-------------------------------------
+
+This is DISPLAY LAYER ONLY.
+
+DO NOT:
+- modify Trusted Services data structure
+- modify category IDs
+- touch Stripe, attribution, routing, or partner data
+
+-------------------------------------
+TASKS (CHUNK 1A ONLY)
+-------------------------------------
+
+1) Identify canonical subcategory source used by Resources
+
+2) Update Trusted Services subcategory rendering to use this SAME source
+
+3) Remove any hardcoded or duplicate local subcategory arrays in Trusted Services
+   - safe runtime fallback is allowed only if canonical subcategory source is unavailable or empty
+   - do NOT reintroduce separate parallel taxonomy systems
+
+4) Ensure:
+
+- subcategories render under correct parent category
+- order matches Resources
+- naming matches Resources exactly
+- no duplicates
+- no missing subcategories
+
+-------------------------------------
+EXPECTED RESULT
+-------------------------------------
+
+For ANY shared category:
+
+Resources view === Trusted Services view
+
+Same:
+- structure
+- order
+- labels
+- hierarchy
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+1. Subcategories EXACTLY match Resources
+2. Parent-child structure matches
+3. No duplicates
+4. No missing subcategories
+5. No regressions in:
+   - attribution
+   - Stripe
+   - routing
+   - partner records
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) root cause  
+B) canonical subcategory source  
+C) files changed  
+D) confirmation full category + subcategory parity  
+E) whether publish is required  
+
+-------------------------------------
+
+This completes Chunk 1.
+
+Do NOT proceed to Chunk 2 until confirmed.
+
+--- END ---
