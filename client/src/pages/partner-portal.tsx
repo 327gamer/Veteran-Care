@@ -273,21 +273,40 @@ export default function PartnerPortal() {
     }
   };
 
+  const compressImage = (file: File, maxWidth = 1200, maxHeight = 600, quality = 0.82): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let w = img.width;
+        let h = img.height;
+        if (w > maxWidth) { h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+        if (h > maxHeight) { w = Math.round(w * (maxHeight / h)); h = maxHeight; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+      img.src = url;
+    });
+  };
+
   const handleBannerUpload = async (file: File) => {
     if (!accessToken) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setOfferMsg({ type: "error", text: "Banner image must be under 2MB" });
+    if (file.size > 10 * 1024 * 1024) {
+      setOfferMsg({ type: "error", text: "Image is too large. Please choose a smaller photo." });
       return;
     }
     setBannerSaving(true);
     setOfferMsg(null);
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await compressImage(file);
       setBannerPreview(dataUrl);
       const r = await partnerFetch("/api/partner/banner", accessToken, {
         method: "PATCH",
@@ -514,7 +533,7 @@ export default function PartnerPortal() {
                   <Image className="h-4 w-4 text-primary" />
                   Banner Image
                 </h3>
-                <p className="text-xs text-muted-foreground">Upload a banner image for your listing (max 2MB, JPG/PNG recommended)</p>
+                <p className="text-xs text-muted-foreground">Upload any photo from your phone or computer. It will be automatically resized and optimized for your listing.</p>
 
                 {bannerPreview ? (
                   <div className="space-y-2">
@@ -570,7 +589,7 @@ export default function PartnerPortal() {
                 <input
                   ref={bannerInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];

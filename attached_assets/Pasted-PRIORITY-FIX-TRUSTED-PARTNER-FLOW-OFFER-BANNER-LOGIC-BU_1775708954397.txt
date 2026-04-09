@@ -1,0 +1,157 @@
+PRIORITY FIX – TRUSTED PARTNER FLOW + OFFER/BANNER LOGIC + BUGS
+
+Before proceeding further, I need to clarify the FULL Trusted Partner lifecycle and identify a gap + issues discovered during testing.
+
+-------------------------------------
+1. CURRENT TRUSTED PARTNER FLOW
+-------------------------------------
+
+This is how the system currently works:
+
+STEP 1
+User applies via “Become a Trusted Partner”
+
+STEP 2
+Application goes to Admin Panel → Pending
+
+STEP 3
+Admin manually approves
+
+STEP 4
+Partner receives email → prompted to pay via Stripe
+
+STEP 5
+After Stripe payment:
+- partner receives confirmation email
+- partner is now active in the system
+
+STEP 6
+Partner logs into portal/dashboard
+
+STEP 7 (CURRENT BEHAVIOR)
+Partner can then:
+- enter offer / discount
+- upload banner
+- manage listing
+
+-------------------------------------
+2. CRITICAL QUESTION / GAP
+-------------------------------------
+
+Right now, the offer + banner are being added ONLY at the final step (inside the portal after approval + payment).
+
+We need to confirm:
+
+Is this the intended workflow?
+
+OR
+
+Should we allow partners to:
+- upload offer
+- upload banner
+
+EARLIER in the process (during application or onboarding)?
+
+-------------------------------------
+3. REQUIREMENT (CLARITY NEEDED)
+-------------------------------------
+
+We must define ONE clear flow:
+
+OPTION A (current behavior)
+- partner applies
+- gets approved
+- pays
+- THEN sets up offer/banner in portal
+
+OPTION B (enhanced flow)
+- partner enters offer/banner during signup
+- data carries through approval → payment → activation
+
+-------------------------------------
+IMPORTANT:
+-------------------------------------
+
+Whichever flow we choose, it must:
+- be simple
+- not break Stripe
+- not break approval workflow
+- not break partner mapping
+
+-------------------------------------
+4. BUGS FOUND DURING TESTING
+-------------------------------------
+
+While testing inside the partner portal:
+
+-------------------------------------
+A) BANNER UPLOAD ISSUE
+-------------------------------------
+
+- normal image/photo upload did not work correctly
+- appears too restrictive or format-dependent
+- no guidance provided
+
+REQUIRED FIX:
+- accept standard images (jpg, png, webp)
+- auto resize / scale / crop
+- no strict size requirement for user
+- show preview before saving
+- allow save without banner
+
+-------------------------------------
+B) OFFER NOT DISPLAYING
+-------------------------------------
+
+- entered offer (example: “20% Off”)
+- saved successfully
+- but did NOT appear clearly in listing or detail view
+
+Please investigate:
+
+1. is data saving correctly in DB  
+2. is API returning offer fields  
+3. is UI rendering correctly  
+4. is partner linked correctly to trusted_services record  
+
+-------------------------------------
+5. EXPECTED FINAL BEHAVIOR
+-------------------------------------
+
+After partner completes setup:
+
+- offer appears on listing card (teaser)
+- offer appears on detail page (full)
+- banner displays cleanly on detail page
+- everything loads immediately after save
+
+-------------------------------------
+6. NO BREAK RULE
+-------------------------------------
+
+DO NOT break:
+
+- UTM attribution
+- ambassador tracking
+- referral tracking
+- Stripe subscriptions
+- approval workflow
+- category/subcategory mapping
+- one-way premium model
+
+-------------------------------------
+7. RETURN ONLY
+-------------------------------------
+
+Please confirm:
+
+A) where in the flow offer/banner SHOULD be added (application vs portal)  
+B) root cause of banner upload issue  
+C) root cause of offer not displaying  
+D) exact fixes being applied  
+E) whether any UX clarification is needed for partners  
+F) whether another publish is required  
+
+-------------------------------------
+
+This is critical for monetization and partner experience before launch.

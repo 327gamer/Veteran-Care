@@ -9342,12 +9342,12 @@ export async function registerRoutes(
       }
       const { banner_image_url } = req.body;
       if (banner_image_url && typeof banner_image_url === "string") {
-        if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(banner_image_url)) {
+        if (!/^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(banner_image_url)) {
           return res.status(400).json({ error: "Banner must be a valid image (JPEG, PNG, or WebP)." });
         }
         const sizeBytes = Buffer.byteLength(banner_image_url, "utf8");
-        if (sizeBytes > 2 * 1024 * 1024) {
-          return res.status(400).json({ error: "Banner image is too large. Please use an image under 2MB." });
+        if (sizeBytes > 4 * 1024 * 1024) {
+          return res.status(400).json({ error: "Banner image is too large after compression. Please try a smaller image." });
         }
       }
       await pgQuery(
