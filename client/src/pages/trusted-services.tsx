@@ -196,17 +196,19 @@ export default function TrustedServices() {
   const canonicalSlug = selectedCatObj?.canonical_slug;
   const hasCanonical = !!canonicalSlug;
 
-  const { data: canonicalSubs = [] } = useQuery<{ id: string; name: string; slug: string }[]>({
+  const { data: canonicalSubs = [], isLoading: canonicalSubsLoading } = useQuery<{ id: string; name: string; slug: string }[]>({
     queryKey: ["/api/subcategories", canonicalSlug],
     queryFn: () => fetch(`/api/subcategories?category_slug=${canonicalSlug}`).then(r => r.json()),
     enabled: hasCanonical,
   });
 
-  const { data: partnerSubs = [] } = useQuery<PartnerSubcategory[]>({
+  const { data: partnerSubs = [], isLoading: partnerSubsLoading } = useQuery<PartnerSubcategory[]>({
     queryKey: ["/api/partner-subcategories", selectedCatObj?.id],
     queryFn: () => fetch(`/api/partner-subcategories?category_id=${selectedCatObj?.id}`).then(r => r.json()),
     enabled: !!selectedCatObj?.id,
   });
+
+  const subsLoading = (hasCanonical && canonicalSubsLoading) || (!hasCanonical && partnerSubsLoading);
 
   const subcategories: PartnerSubcategory[] = hasCanonical && canonicalSubs.length > 0
     ? canonicalSubs.map((s, i) => ({ id: s.id, category_id: selectedCatObj?.id || "", name: s.name, slug: s.slug, display_order: i + 1 }))
@@ -428,7 +430,7 @@ export default function TrustedServices() {
   );
 
   if (selectedCategory && selectedCat) {
-    const showSubcategoryPicker = subcategories.length > 0 && !selectedSubcategory;
+    const showSubcategoryPicker = !selectedSubcategory && (subsLoading || subcategories.length > 0);
     const activeSub = subcategories.find(s => s.slug === selectedSubcategory);
 
     return (
@@ -464,29 +466,35 @@ export default function TrustedServices() {
         <AiGuideBanner categoryContext={selectedCat.slug} />
 
         {showSubcategoryPicker ? (
-          <div className="grid grid-cols-2 gap-3">
-            {subcategories.map(sub => (
+          subsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Loading subcategories...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {subcategories.map(sub => (
+                <Card
+                  key={sub.id}
+                  className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
+                  onClick={() => setSelectedSubcategory(sub.slug)}
+                  data-testid={`card-trusted-subcategory-${sub.slug}`}
+                >
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">{sub.name}</p>
+                  </CardContent>
+                </Card>
+              ))}
               <Card
-                key={sub.id}
                 className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
-                onClick={() => setSelectedSubcategory(sub.slug)}
-                data-testid={`card-trusted-subcategory-${sub.slug}`}
+                onClick={() => setSelectedSubcategory("__all__")}
+                data-testid="card-trusted-subcategory-all"
               >
                 <CardContent className="p-4 text-center">
-                  <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">{sub.name}</p>
+                  <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">View All</p>
                 </CardContent>
               </Card>
-            ))}
-            <Card
-              className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
-              onClick={() => setSelectedSubcategory("__all__")}
-              data-testid="card-trusted-subcategory-all"
-            >
-              <CardContent className="p-4 text-center">
-                <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">View All</p>
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+          )
         ) : (
           <>
             <div className="flex items-center gap-2">
