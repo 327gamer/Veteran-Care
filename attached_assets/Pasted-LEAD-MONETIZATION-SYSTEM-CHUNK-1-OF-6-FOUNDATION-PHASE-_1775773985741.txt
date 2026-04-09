@@ -1,0 +1,209 @@
+LEAD MONETIZATION SYSTEM – CHUNK 1 OF 6  
+FOUNDATION PHASE: LEAD-ELIGIBLE CATEGORY GOVERNANCE
+
+We are beginning a new pre-launch revenue system build for Veteran Care.
+
+Please read this carefully before starting.
+
+-------------------------------------
+SYSTEM OBJECTIVE
+-------------------------------------
+
+Veteran Care is no longer just a resource directory.
+
+It is now a connected ecosystem involving:
+- Resources
+- Trusted Services / premium partners
+- Veteran Discount Services & Products
+- AI Guide
+- Request Support / Get Help flows
+- ambassador attribution
+- UTM tracking
+- partner subscriptions
+- lead routing
+- commission logic
+- Stripe billing
+- admin tracking
+
+We are now building the lead monetization layer on top of that existing ecosystem.
+
+The goal is to monetize real lead activity without breaking:
+- existing attribution
+- ambassador / UTM logic
+- Stripe
+- admin workflows
+- trusted partner logic
+- routing
+- current user experience
+
+-------------------------------------
+LAUNCH STRATEGY
+-------------------------------------
+
+We are doing this in SMALL CONTROLLED CHUNKS because this is a revenue system and we do not want to overload the app or create regressions.
+
+Approved launch model:
+
+BILLABLE NOW
+- explicit qualified leads delivered to lead-enabled partners
+- AI-originated leads only when the user clearly requests help / connection and the lead is delivered through the same workflow
+
+TRACKED NOW, NOT BILLABLE YET
+- provider detail views
+- website clicks
+- directions clicks
+- banner clicks
+- broader partner interaction events
+
+SIGNUP RULE
+- only lead-eligible categories should later see Direct Lead Delivery options
+- non-lead businesses like restaurants, local businesses, hotels, gyms, retail discounts should not be cluttered with this
+
+-------------------------------------
+ROADMAP – 6 CHUNKS
+-------------------------------------
+
+Chunk 1
+Lead-Eligible Category Governance
+
+Chunk 2
+Conditional Signup UX for Direct Lead Delivery
+
+Chunk 3
+Event / Lead Model Foundation
+
+Chunk 4
+Admin Lead Delivery Integration
+
+Chunk 5
+Narrow AI Lead Integration for launch
+
+Chunk 6
+Billing / Dispute / Audit Trail layer
+
+We are ONLY doing CHUNK 1 right now.
+
+Do not move ahead into later chunks.
+
+-------------------------------------
+CHUNK 1 GOAL
+-------------------------------------
+
+Create the launch governance layer that determines whether a trusted partner category/subcategory is eligible for Direct Lead Delivery.
+
+This chunk is LOGIC-ONLY.
+
+This is the rulebook that later chunks will depend on.
+
+-------------------------------------
+CHUNK 1 SCOPE
+-------------------------------------
+
+Do:
+- define lead-eligible categories/subcategories for launch
+- create shared helper logic to evaluate eligibility
+- make this reusable for future signup, admin, AI, and routing work
+
+Do NOT:
+- change signup UI yet
+- change admin flow yet
+- add billing yet
+- add AI lead creation yet
+- change Stripe yet
+- change routing yet
+- change attribution / ambassador / UTM logic
+
+-------------------------------------
+REQUIRED IMPLEMENTATION
+-------------------------------------
+
+1. Create a single source of truth for launch lead eligibility
+
+Add a shared config / helper file that defines:
+- lead-eligible categories
+- optional lead-eligible subcategories where needed
+- non-eligible categories by omission
+
+Launch lead-eligible categories should include service-based categories such as:
+- mortgage / home loans / refinance
+- insurance services
+- credit repair / financial recovery
+- legal services
+- funeral / end-of-life related services
+- selected financial services where user connection has clear value
+
+Do NOT include broad non-lead categories such as:
+- restaurants
+- local businesses
+- hotels / travel
+- retail discounts
+- gyms / fitness
+- general products / coupon-style listings
+
+2. Build shared helper logic
+
+Create helper functions such as:
+- isLeadEligibleCategory(categorySlug)
+- isLeadEligibleSubcategory(categorySlug, subcategorySlug)
+- getLeadEligibility(categorySlug, subcategorySlug)
+
+Return a normalized object like:
+{
+  isLeadEligible: boolean,
+  reason: string,
+  categorySlug: string | null,
+  subcategorySlug: string | null
+}
+
+3. Make helper logic reusable
+
+Place it somewhere shared so later chunks can use the same logic in:
+- trusted partner signup
+- admin lead routing
+- AI lead routing
+- future billing logic
+
+4. Add a small developer-safe validation surface
+
+Without changing visible UX yet, add one or more of:
+- unit-safe helper exports
+- lightweight server-side debug/test route only if appropriate
+- console-safe internal verification
+- internal mapping comments
+
+5. Document launch governance clearly in code
+
+Include clear comments stating:
+- this is launch-phase lead governance
+- only eligible categories should later see Direct Lead Delivery
+- tracked events and billable logic come later
+- do not expand category eligibility ad hoc without review
+
+-------------------------------------
+IMPORTANT SYSTEM RULES
+-------------------------------------
+
+Do NOT break:
+- attribution system
+- ambassador IDs / UTMs
+- Stripe
+- current admin lead workflow
+- trusted partner ecosystem
+- existing partner response update system
+
+This system is being layered INTO the existing ecosystem, not replacing it.
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) what file(s) were added/changed  
+B) the final launch-eligible categories/subcategories list  
+C) how the helper works  
+D) how to validate it  
+E) whether publish is required  
+
+-------------------------------------
+
+This is CHUNK 1 OF 6 only.
+Do not move to Chunk 2 until this is completed and verified.

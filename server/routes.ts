@@ -8,6 +8,7 @@ import { startEscalationTimer } from "./lead-escalation";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
+import { getLeadEligibility, getLeadEligibleCategorySlugs, getLeadEligibleSubcategorySlugs, isLeadEligibleCategory } from "../shared/lead-eligibility";
 import { query as pgQuery } from "./pg-client";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -2679,6 +2680,37 @@ export async function registerRoutes(
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  app.get("/api/admin/lead-eligibility", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
+
+    const categorySlug = req.query.category as string | undefined;
+    const subcategorySlug = req.query.subcategory as string | undefined;
+
+    if (categorySlug) {
+      const result = getLeadEligibility(categorySlug, subcategorySlug || null);
+      const subs = getLeadEligibleSubcategorySlugs(categorySlug);
+      return res.json({ ...result, eligibleSubcategories: subs });
+    }
+
+    const eligibleSlugs = getLeadEligibleCategorySlugs();
+    const allCats = await pgQuery(`SELECT slug, name, program_area FROM trusted_service_categories ORDER BY slug`);
+    const summary = allCats.map((cat: any) => ({
+      slug: cat.slug,
+      name: cat.name,
+      program_area: cat.program_area,
+      isLeadEligible: isLeadEligibleCategory(cat.slug),
+      eligibleSubcategories: getLeadEligibleSubcategorySlugs(cat.slug),
+    }));
+
+    res.json({
+      totalCategories: allCats.length,
+      leadEligibleCount: eligibleSlugs.length,
+      leadEligibleSlugs: eligibleSlugs,
+      categories: summary,
+    });
   });
 
   app.get("/api/admin/production-validation", async (req, res) => {
