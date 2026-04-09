@@ -58,6 +58,27 @@ import { useSavedResources } from "@/lib/store";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
 import { toast } from "@/hooks/use-toast";
 import PartnerSignupModal from "@/components/partner-signup-modal";
+import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
+import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
+import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
+import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
+import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
+import type { LucideIcon } from "lucide-react";
+
+interface RichSubcategory {
+  name: string;
+  slug: string;
+  icon: LucideIcon;
+  description: string;
+}
+
+const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
+  "housing-home": HOUSING_SUBCATEGORIES,
+  "financial-credit": FIN_SUBCATEGORIES,
+  "insurance": HC_SUBCATEGORIES,
+  "employment-support": EMP_SUBCATEGORIES,
+  "end-of-life-services": EOL_SUBCATEGORIES,
+};
 
 interface TrustedCategory {
   id: string;
@@ -430,8 +451,11 @@ export default function TrustedServices() {
   );
 
   if (selectedCategory && selectedCat) {
-    const showSubcategoryPicker = !selectedSubcategory && (subsLoading || subcategories.length > 0);
-    const activeSub = subcategories.find(s => s.slug === selectedSubcategory);
+    const richSubs = TS_RICH_SUBCATEGORIES[selectedCat.slug];
+    const showSubcategoryPicker = !selectedSubcategory && (subsLoading || subcategories.length > 0 || !!richSubs);
+    const activeSub = richSubs
+      ? richSubs.find(s => s.slug === selectedSubcategory)
+      : subcategories.find(s => s.slug === selectedSubcategory);
 
     return (
       <div className="space-y-4 animate-in fade-in duration-300">
@@ -470,31 +494,90 @@ export default function TrustedServices() {
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">Loading subcategories...</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {subcategories.map(sub => (
-                <Card
-                  key={sub.id}
-                  className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
-                  onClick={() => setSelectedSubcategory(sub.slug)}
-                  data-testid={`card-trusted-subcategory-${sub.slug}`}
-                >
-                  <CardContent className="p-4 text-center">
-                    <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">{sub.name}</p>
-                  </CardContent>
-                </Card>
-              ))}
-              <Card
-                className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group"
-                onClick={() => setSelectedSubcategory("__all__")}
-                data-testid="card-trusted-subcategory-all"
-              >
-                <CardContent className="p-4 text-center">
-                  <p className="text-xs font-semibold leading-tight group-hover:text-primary transition-colors">View All</p>
-                </CardContent>
-              </Card>
-            </div>
-          )
+          ) : (() => {
+            const richSubs = TS_RICH_SUBCATEGORIES[selectedCat.slug];
+            if (richSubs) {
+              return (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Select a topic to find trusted providers near you.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {richSubs.map((sub) => {
+                      const Icon = sub.icon;
+                      return (
+                        <button
+                          key={sub.slug}
+                          data-testid={`card-trusted-subcategory-${sub.slug}`}
+                          onClick={() => setSelectedSubcategory(sub.slug)}
+                          className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-left transition-all active:scale-[0.98]"
+                        >
+                          <div className="shrink-0 w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center mt-0.5">
+                            <Icon className="h-4.5 w-4.5 text-orange-700" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-sm font-semibold text-foreground leading-tight">
+                                {sub.name}
+                              </span>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                              {sub.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setSelectedSubcategory("__all__")}
+                      data-testid="card-trusted-subcategory-all"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      View all {selectedCat.name} providers
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground text-center">
+                  Select a topic to find trusted providers near you.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {subcategories.map(sub => (
+                    <button
+                      key={sub.id}
+                      data-testid={`card-trusted-subcategory-${sub.slug}`}
+                      onClick={() => setSelectedSubcategory(sub.slug)}
+                      className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-left transition-all active:scale-[0.98]"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-sm font-semibold text-foreground leading-tight">
+                            {sub.name}
+                          </span>
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setSelectedSubcategory("__all__")}
+                    data-testid="card-trusted-subcategory-all"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    View all {selectedCat.name} providers
+                  </button>
+                </div>
+              </div>
+            );
+          })()
         ) : (
           <>
             <div className="flex items-center gap-2">
