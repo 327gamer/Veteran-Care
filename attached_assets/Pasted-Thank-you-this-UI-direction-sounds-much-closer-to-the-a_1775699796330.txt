@@ -1,0 +1,72 @@
+Thank you — this UI direction sounds much closer to the actual requirement.
+
+Before moving forward, I need to lock in BOTH the UI behavior and the ecosystem rules so nothing breaks.
+
+-------------------------------------
+PART 1 — UI FLOW (CRITICAL)
+-------------------------------------
+
+Trusted Services must follow the same browse flow as Resources:
+
+CATEGORY → SUBCATEGORY LIST → PROVIDERS
+
+NOT:
+CATEGORY → EMPTY OR PROVIDER RESULTS PAGE
+
+Requirements:
+- subcategories must always be shown first
+- even if there are zero providers
+- do not depend on provider data to render the first view
+
+-------------------------------------
+PART 2 — ECOSYSTEM RULE (VERY IMPORTANT)
+-------------------------------------
+
+This platform has a one-way premium model:
+
+Resources = full directory  
+Trusted Services = premium partner layer  
+
+Rules that MUST remain intact:
+
+1. Resources:
+- contains ALL organizations (regular + trusted partners)
+- trusted partners also appear here
+- trusted partners must be visually elevated (verified / preferred)
+- trusted partners should appear first in their category / subcategory
+
+2. Trusted Services:
+- contains ONLY trusted / paying partners
+- regular resource organizations must NOT automatically appear here
+
+3. One-way relationship:
+- Trusted partner → also appears in Resources (elevated)
+- Regular resource → does NOT appear in Trusted Services
+
+-------------------------------------
+CRITICAL PROTECTION
+-------------------------------------
+
+Do NOT break:
+- partner listings in Resources
+- partner ranking in Resources
+- verified / trusted badges
+- attribution
+- Stripe
+- routing
+- existing category/subcategory relationships
+
+-------------------------------------
+WHAT I NEED CONFIRMED AFTER FIX
+-------------------------------------
+
+A) Categories now open to subcategory list first  
+B) Subcategory-first flow matches Resources UX  
+C) Shared organizations (e.g., BootPrint, Tri-County) still appear correctly in BOTH places  
+D) Trusted partners still show as verified and ranked first in Resources  
+E) Regular resource organizations are NOT pulled into Trusted Services  
+F) No listing relationships or visibility rules were broken  
+
+-------------------------------------
+
+This is the required behavior before we proceed further.
