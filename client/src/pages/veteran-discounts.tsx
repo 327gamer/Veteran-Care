@@ -70,9 +70,9 @@ import PartnerSignupModal from "@/components/partner-signup-modal";
 import AiGuideBanner from "@/components/ai-guide-banner";
 import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
 import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
-import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
+import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 
 interface RichSubcategory {
   name: string;
@@ -85,7 +85,7 @@ const TS_SLUG_TO_CANONICAL: Record<string, string> = {
   "housing-home": "housing",
   "legal-services": "legal",
   "financial-credit": "financial",
-  "insurance": "healthcare",
+  "insurance": "insurance",
   "education-training": "education",
   "employment-support": "employment",
   "end-of-life-services": "end-of-life-services",
@@ -94,7 +94,7 @@ const TS_SLUG_TO_CANONICAL: Record<string, string> = {
 const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "housing-home": HOUSING_SUBCATEGORIES,
   "financial-credit": FIN_SUBCATEGORIES,
-  "insurance": HC_SUBCATEGORIES,
+  "insurance": INSURANCE_SUBCATEGORIES,
   "employment-support": EMP_SUBCATEGORIES,
   "end-of-life-services": EOL_SUBCATEGORIES,
 };

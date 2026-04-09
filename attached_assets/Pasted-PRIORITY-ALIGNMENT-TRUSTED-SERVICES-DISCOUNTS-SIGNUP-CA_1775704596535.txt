@@ -1,0 +1,259 @@
+PRIORITY ALIGNMENT – TRUSTED SERVICES / DISCOUNTS / SIGNUP / CATEGORY GOVERNANCE
+
+This message consolidates all requirements so nothing is missed before launch.
+
+Please read carefully — this is a system-level clarification, not a small fix.
+
+-------------------------------------
+1. CRITICAL SYSTEM RULE (NON-NEGOTIABLE)
+-------------------------------------
+
+Trusted Services and Veteran Discount Services & Products are the SAME system.
+
+This includes:
+- Trusted Services (top nav)
+- Veteran Discount Services & Products (homepage card)
+- /discounts page
+- Trusted Partner signup flow
+
+They must:
+- use the same category structure
+- use the same subcategory structure
+- use the same data mapping
+- operate as one ecosystem
+
+Reason for naming difference:
+- the full name was too long for mobile UI
+- “Trusted Services” is just a shortened label
+
+But technically and architecturally:
+ALL are the same system.
+
+-------------------------------------
+2. ECOSYSTEM RULE (DO NOT BREAK)
+-------------------------------------
+
+This platform is fully interconnected via:
+
+- UTM tracking
+- ambassador attribution
+- referral tracking (on-platform and off-platform)
+- Stripe subscriptions
+- partner records
+- lead routing
+
+Because of this:
+
+DO NOT break:
+- category relationships
+- partner mappings
+- attribution chains
+- Stripe-linked data
+- routing logic
+
+-------------------------------------
+3. CORE BUSINESS MODEL (MUST BE PRESERVED)
+-------------------------------------
+
+A) Resources = full directory
+- ~500+ listings
+- location-based
+- includes ALL organizations
+- includes trusted partners (elevated / verified)
+
+B) Trusted Services / Discounts = premium layer
+- only paying / trusted partners
+- monetized environment
+
+C) One-way relationship:
+- trusted partner signs up →
+  appears in Trusted Services / Discounts
+  AND appears elevated in Resources
+
+- regular resources DO NOT appear in Trusted Services
+
+This must remain intact.
+
+-------------------------------------
+4. CURRENT STATUS
+-------------------------------------
+
+Progress is good.
+
+We are now approximately 75% complete.
+
+Confirmed improvements:
+- categories no longer duplicate
+- subcategory-first flow is now working
+- Trusted Services and Discounts appear aligned visually
+
+-------------------------------------
+5. REMAINING CRITICAL ISSUES
+-------------------------------------
+
+-------------------------------------
+5A. SIGNUP FLOW IS OUT OF SYNC
+-------------------------------------
+
+The Trusted Partner signup dropdown is NOT aligned with the new system.
+
+It is still using a mixed flat list such as:
+- Housing & Home Services
+- Legal Services
+- Financial & Credit Services
+- Insurance Services
+- Education & Training
+- Employment Support
+- End of Life Services
+- Auto Services
+- Healthcare
+- Products & Local Offers
+- Restaurants
+- Retail Discounts
+- Hotels
+- Car Dealerships
+- Gyms & Fitness
+- Local Businesses
+
+Problems:
+- does not reflect subcategory structure
+- mixes service categories and product categories
+- risks placing partners into incorrect locations
+- breaks monetization if mapped incorrectly
+
+-------------------------------------
+REQUIRED FIX:
+-------------------------------------
+
+Signup must align with the SAME structure as Trusted Services / Discounts:
+
+Partner selects:
+→ Category
+→ Subcategory (where applicable)
+
+Then system maps to:
+- Trusted Services / Discounts display
+- Resources (elevated verified listing)
+
+-------------------------------------
+5B. CATEGORY / SUBCATEGORY CONSISTENCY
+-------------------------------------
+
+There are still inconsistencies between:
+
+- Resources
+- Trusted Services / Discounts
+
+Examples:
+- Housing: mostly aligned but layout differs
+- Legal: subcategories in Trusted, not consistent in Resources
+- Financial: aligned but layout differences
+- Education & Training: mismatch
+- Employment Support: mismatch
+- End of Life Services: mismatch in listing behavior
+
+Goal:
+Same structure across both systems.
+
+-------------------------------------
+5C. INSURANCE CATEGORY IS INCORRECT
+-------------------------------------
+
+IMPORTANT:
+
+Insurance Services is currently mirroring Healthcare.
+
+This is WRONG.
+
+Healthcare belongs under Resources.
+
+Insurance is a monetizable category in Trusted Services / Discounts.
+
+-------------------------------------
+REQUIRED FIX:
+-------------------------------------
+
+1) REMOVE healthcare-based subcategories from Insurance Services
+
+2) CREATE proper Insurance subcategories such as:
+- Health Insurance
+- Life Insurance
+- Auto Insurance
+- Home Insurance
+- Renters Insurance
+- Disability Insurance
+- Long-Term Care Insurance
+- Supplemental Insurance
+- Medicare / VA-related plans
+
+3) Ensure Insurance is treated as a separate monetizable category
+
+-------------------------------------
+5D. EMPTY STATE (EXPECTED BUT MUST BE CLEAN)
+-------------------------------------
+
+Trusted Services / Discounts is still early-stage:
+- few paying partners
+- many empty categories
+
+This is expected.
+
+But:
+- structure must be correct
+- UX must feel intentional
+- no broken flows
+
+-------------------------------------
+6. UI NOTE (LOW PRIORITY)
+-------------------------------------
+
+Trusted Services rectangular subcategory cards look cleaner than Resources square cards.
+
+Do NOT redesign now.
+
+Log as future UI improvement:
+Potential to standardize both systems later.
+
+-------------------------------------
+7. HOMEPAGE LABEL SUGGESTION
+-------------------------------------
+
+Optional improvement:
+
+Change:
+Veteran Discount Services & Products
+
+To:
+Trusted Services – Veteran Discount Services & Products
+
+This is optional but may improve clarity.
+
+-------------------------------------
+8. WHAT NEEDS TO BE VERIFIED NOW
+-------------------------------------
+
+Please confirm:
+
+A) Trusted Services / Discounts / signup are treated as ONE system  
+B) Signup category + subcategory mapping is correct  
+C) Subcategory selection is fully supported in signup  
+D) No partners are being miscategorized  
+E) Trusted partners appear correctly in:
+   - Trusted Services / Discounts
+   - Resources (elevated)  
+F) Insurance category is corrected  
+G) Remaining mismatches between Resources and Trusted Services  
+H) What must be fixed before launch vs after  
+I) Whether another publish is required  
+
+-------------------------------------
+
+This is the final alignment step before launch.
+
+Focus on:
+- category governance
+- signup accuracy
+- monetization structure
+- system integrity
+
+--- END ---

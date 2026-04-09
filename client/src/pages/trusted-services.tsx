@@ -60,7 +60,7 @@ import { toast } from "@/hooks/use-toast";
 import PartnerSignupModal from "@/components/partner-signup-modal";
 import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
 import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
-import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
+import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import type { LucideIcon } from "lucide-react";
@@ -75,7 +75,7 @@ interface RichSubcategory {
 const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "housing-home": HOUSING_SUBCATEGORIES,
   "financial-credit": FIN_SUBCATEGORIES,
-  "insurance": HC_SUBCATEGORIES,
+  "insurance": INSURANCE_SUBCATEGORIES,
   "employment-support": EMP_SUBCATEGORIES,
   "end-of-life-services": EOL_SUBCATEGORIES,
 };

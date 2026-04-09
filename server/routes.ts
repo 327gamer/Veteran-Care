@@ -698,10 +698,15 @@ async function ensurePartnerSubcategories() {
         add(legal, 'Estate Planning', 'estate-planning', 5);
       }
       if (insurance) {
-        add(insurance, 'Life Insurance', 'life-insurance', 1);
-        add(insurance, 'Health Insurance', 'health-insurance', 2);
+        add(insurance, 'Health Insurance', 'health-insurance', 1);
+        add(insurance, 'Life Insurance', 'life-insurance', 2);
         add(insurance, 'Auto Insurance', 'auto-insurance', 3);
         add(insurance, 'Home Insurance', 'home-insurance', 4);
+        add(insurance, 'Renters Insurance', 'renters-insurance', 5);
+        add(insurance, 'Disability Insurance', 'disability-insurance', 6);
+        add(insurance, 'Long-Term Care Insurance', 'long-term-care-insurance', 7);
+        add(insurance, 'Supplemental Insurance', 'supplemental-insurance', 8);
+        add(insurance, 'Medicare & VA Plans', 'medicare-va-plans', 9);
       }
       if (financial) {
         add(financial, 'Mortgages', 'mortgages', 1);
@@ -1404,10 +1409,15 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'financial-credit', name: 'Mortgage & Home Loans', slug: 'mortgage-home-loans', order: 5 },
       { catSlug: 'financial-credit', name: 'Personal & Auto Loans', slug: 'personal-auto-loans', order: 6 },
 
-      { catSlug: 'insurance', name: 'Life Insurance', slug: 'life-insurance', order: 1 },
-      { catSlug: 'insurance', name: 'Health Insurance', slug: 'health-insurance', order: 2 },
+      { catSlug: 'insurance', name: 'Health Insurance', slug: 'health-insurance', order: 1 },
+      { catSlug: 'insurance', name: 'Life Insurance', slug: 'life-insurance', order: 2 },
       { catSlug: 'insurance', name: 'Auto Insurance', slug: 'auto-insurance', order: 3 },
-      { catSlug: 'insurance', name: 'Home & Renters Insurance', slug: 'home-renters-insurance', order: 4 },
+      { catSlug: 'insurance', name: 'Home Insurance', slug: 'home-insurance', order: 4 },
+      { catSlug: 'insurance', name: 'Renters Insurance', slug: 'renters-insurance', order: 5 },
+      { catSlug: 'insurance', name: 'Disability Insurance', slug: 'disability-insurance', order: 6 },
+      { catSlug: 'insurance', name: 'Long-Term Care Insurance', slug: 'long-term-care-insurance', order: 7 },
+      { catSlug: 'insurance', name: 'Supplemental Insurance', slug: 'supplemental-insurance', order: 8 },
+      { catSlug: 'insurance', name: 'Medicare & VA Plans', slug: 'medicare-va-plans', order: 9 },
 
       { catSlug: 'auto-services', name: 'Auto Repair & Maintenance', slug: 'auto-repair', order: 1 },
       { catSlug: 'auto-services', name: 'Auto Sales & Dealerships', slug: 'auto-sales', order: 2 },
@@ -1470,6 +1480,9 @@ async function ensureAllPartnerSubcategories() {
     if (added > 0) {
       console.log(`[seed] Ensured ${added} partner subcategories across all categories`);
     }
+    await pgQuery(
+      `UPDATE partner_subcategories SET is_active = false WHERE slug = 'home-renters-insurance'`
+    ).catch(() => {});
   } catch (err: any) {
     console.log("[seed] ensureAllPartnerSubcategories error:", err.message);
   }
@@ -7619,7 +7632,7 @@ export async function registerRoutes(
         'housing-home': 'housing',
         'legal-services': 'legal',
         'financial-credit': 'financial',
-        'insurance': 'healthcare',
+        'insurance': 'insurance',
         'education-training': 'education',
         'employment-support': 'employment',
         'end-of-life-services': 'end-of-life-services',
@@ -7786,7 +7799,7 @@ export async function registerRoutes(
     "employment": "employment-support",
     "va-benefits": "benefits-assistance",
     "substance-recovery": "wellness-recovery",
-    "healthcare": "insurance",
+    "insurance": "insurance",
     "end-of-life-services": "end-of-life-services",
   };
 
