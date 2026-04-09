@@ -248,9 +248,9 @@ export default function VeteranDiscounts() {
 
   const showSubcategoryPicker = !!selectedCategory && isServiceCategory && !selectedSubcategory && (!!richSubs || apiSubsLoading || apiSubcategories.length > 0);
 
-  const { data: listings = [], isLoading: listingsLoading } = useQuery<DiscountListing[]>({
+  const { data: listingsData, isLoading: listingsLoading } = useQuery<{ partners: DiscountListing[]; fallback: DiscountListing[] }>({
     queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
       if (isNearMeQuery) {
@@ -262,10 +262,15 @@ export default function VeteranDiscounts() {
       }
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       const qs = params.toString();
-      return fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts").then(r => r.json());
+      const res = await fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts");
+      const json = await res.json();
+      if (Array.isArray(json)) return { partners: json, fallback: [] };
+      return { partners: json.partners || [], fallback: json.fallback || [] };
     },
     enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
   });
+  const listings = listingsData?.partners ?? [];
+  const fallbackListings = listingsData?.fallback ?? [];
 
   const sponsoredAds: SponsoredAd[] = [];
   const geoContext = {
@@ -759,7 +764,7 @@ export default function VeteranDiscounts() {
                     </Card>
                   ))}
                 </div>
-              ) : listings.length === 0 ? (
+              ) : listings.length === 0 && fallbackListings.length === 0 ? (
                 <div className="text-center py-12 space-y-2">
                   <MapPin className="h-10 w-10 text-muted-foreground/40 mx-auto" />
                   <p className="text-sm font-medium text-muted-foreground">Nothing nearby yet</p>
@@ -773,24 +778,52 @@ export default function VeteranDiscounts() {
                     <AdSlotPlaceholder placement="top" />
                   )}
 
-                  {(() => {
-                    const activeInlineAds = isNearMeQuery && localBoostAds.length > 0 ? localBoostAds : inlineAds;
-                    const feed = interleaveAdsInListings(listings, activeInlineAds, { interval: 6, boostFirst: isNearMeQuery && localBoostAds.length > 0 });
-                    return feed.map((item, idx) =>
-                      item.type === "ad" ? (
-                        <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement={isNearMeQuery ? "local" : "inline"} />
-                      ) : (
-                        <ListingCard
-                          key={item.data.id}
-                          listing={item.data}
-                          isSaved={isTrustedServiceSaved(item.data.id)}
-                          onToggleSave={() => toggleSaveTrustedService(item.data.id)}
-                          onViewDetails={() => setDetailService(item.data)}
-                          onConnect={() => setConnectService(item.data)}
+                  {listings.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                        <h3 className="text-sm font-bold text-foreground" data-testid="heading-verified-partners">Verified Partners</h3>
+                      </div>
+                      {(() => {
+                        const activeInlineAds = isNearMeQuery && localBoostAds.length > 0 ? localBoostAds : inlineAds;
+                        const feed = interleaveAdsInListings(listings, activeInlineAds, { interval: 6, boostFirst: isNearMeQuery && localBoostAds.length > 0 });
+                        return feed.map((item, idx) =>
+                          item.type === "ad" ? (
+                            <AdSlot key={`ad-${item.data.id}`} ad={item.data} placement={isNearMeQuery ? "local" : "inline"} />
+                          ) : (
+                            <ListingCard
+                              key={item.data.id}
+                              listing={item.data}
+                              isSaved={isTrustedServiceSaved(item.data.id)}
+                              onToggleSave={() => toggleSaveTrustedService(item.data.id)}
+                              onViewDetails={() => setDetailService(item.data)}
+                              onConnect={() => setConnectService(item.data)}
+                            />
+                          )
+                        );
+                      })()}
+                    </>
+                  )}
+
+                  {fallbackListings.length > 0 && (
+                    <>
+                      {listings.length > 0 && <div className="border-t my-2" />}
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-blue-600" />
+                        <h3 className="text-sm font-bold text-foreground" data-testid="heading-other-resources">Other Available Resources</h3>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground -mt-1">Free veteran resources and services in this category.</p>
+                      {fallbackListings.map((listing) => (
+                        <FallbackResourceCard
+                          key={listing.id}
+                          listing={listing}
+                          onViewDetails={() => {
+                            if (listing.website_url) window.open(listing.website_url, "_blank", "noopener");
+                          }}
                         />
-                      )
-                    );
-                  })()}
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -811,14 +844,14 @@ export default function VeteranDiscounts() {
                 </Card>
               ))}
             </div>
-          ) : listings.length === 0 ? (
+          ) : listings.length === 0 && fallbackListings.length === 0 ? (
             <div className="text-center py-12 space-y-2">
               <Search className="h-10 w-10 text-muted-foreground/40 mx-auto" />
               <p className="text-sm text-muted-foreground">No results for "{searchQuery}"</p>
             </div>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">{listings.length} result{listings.length !== 1 ? "s" : ""} found</p>
+              <p className="text-xs text-muted-foreground">{listings.length + fallbackListings.length} result{listings.length + fallbackListings.length !== 1 ? "s" : ""} found</p>
               {(() => {
                 const feed = interleaveAdsInListings(listings, inlineAds, { interval: 6 });
                 return feed.map((item, idx) =>
@@ -836,6 +869,24 @@ export default function VeteranDiscounts() {
                   )
                 );
               })()}
+              {fallbackListings.length > 0 && (
+                <>
+                  {listings.length > 0 && <div className="border-t my-2" />}
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-sm font-bold text-foreground">Other Available Resources</h3>
+                  </div>
+                  {fallbackListings.map((listing) => (
+                    <FallbackResourceCard
+                      key={listing.id}
+                      listing={listing}
+                      onViewDetails={() => {
+                        if (listing.website_url) window.open(listing.website_url, "_blank", "noopener");
+                      }}
+                    />
+                  ))}
+                </>
+              )}
             </>
           )}
         </div>
@@ -957,6 +1008,60 @@ function ListingCard({
           <Button size="sm" className="flex-1 text-xs h-8" onClick={onConnect} data-testid={`button-connect-${listing.id}`}>
             {ctaLabel}
           </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FallbackResourceCard({
+  listing,
+  onViewDetails,
+}: {
+  listing: DiscountListing;
+  onViewDetails: () => void;
+}) {
+  return (
+    <Card className="shadow-sm hover:shadow-md transition-shadow border-slate-200" data-testid={`card-fallback-${listing.id}`}>
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-heading font-bold text-sm" data-testid={`text-fallback-name-${listing.id}`}>{listing.name}</h3>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+              {listing.is_national ? (
+                <><Globe className="h-3 w-3" /><span>Nationwide</span></>
+              ) : listing.city && listing.state ? (
+                <><MapPin className="h-3 w-3" /><span>{listing.city}, {listing.state}</span></>
+              ) : listing.state ? (
+                <><MapPin className="h-3 w-3" /><span>{listing.state}</span></>
+              ) : null}
+              {listing.distance_miles != null && listing.distance_miles < 99999 && (
+                <span className="text-primary font-medium">{listing.distance_miles} mi</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 text-slate-600 border-slate-200">
+          <CheckCircle2 className="h-3 w-3 mr-0.5" />
+          Community Resource
+        </Badge>
+
+        {listing.short_description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">{listing.short_description}</p>
+        )}
+
+        <div className="flex items-center gap-2 pt-1">
+          {listing.phone && (
+            <Button variant="outline" size="sm" className="text-xs h-8" asChild>
+              <a href={`tel:${listing.phone}`} data-testid={`button-call-fallback-${listing.id}`}>Call</a>
+            </Button>
+          )}
+          {listing.website_url && (
+            <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={onViewDetails} data-testid={`button-visit-fallback-${listing.id}`}>
+              Visit Website
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -8056,7 +8056,99 @@ export async function registerRoutes(
           });
       }
 
-      return res.json(rows);
+      const FALLBACK_THRESHOLD = 5;
+      const tsCategorySlug = req.query.category as string | undefined;
+      const tsSlugToResourceCat: Record<string, string> = {
+        "housing-home": "housing",
+        "legal-services": "legal",
+        "financial-credit": "financial",
+        "insurance": "insurance",
+        "education-training": "education",
+        "employment-support": "employment",
+        "end-of-life-services": "end-of-life-services",
+        "healthcare-services": "healthcare",
+        "benefits-assistance": "va-benefits",
+        "wellness-recovery": "substance-recovery",
+        "disabled-veterans": "disabled-veterans",
+        "auto-services": "auto-services",
+        "travel-services": "travel-services",
+      };
+      const resourceCatSlug = tsCategorySlug ? tsSlugToResourceCat[tsCategorySlug] : undefined;
+
+      let fallbackResources: any[] = [];
+      if (tsCategorySlug && resourceCatSlug && rows.length < FALLBACK_THRESHOLD) {
+        try {
+          const { data: matchCat } = await supabaseAdmin.from("categories").select("id").eq("slug", resourceCatSlug).single();
+          if (!matchCat) throw new Error("No matching resource category");
+
+          const { data: rcLinks } = await supabaseAdmin
+            .from("resource_categories")
+            .select("resource_id")
+            .eq("category_id", matchCat.id);
+          const resIds = (rcLinks || []).map((r: any) => r.resource_id);
+          if (resIds.length === 0) throw new Error("No resources in category");
+
+          let rQuery = supabaseAdmin
+            .from("resources")
+            .select("id, title, short_description, website_url, phone, email, address, city, state, zip, source_type, eligibility, latitude, longitude, category_id")
+            .eq("status", "approved")
+            .in("id", resIds.slice(0, 50));
+
+          if (!nearMeMode && req.query.state) {
+            const st = (req.query.state as string).toUpperCase();
+            rQuery = rQuery.or(`state.eq.${st},state.is.null`);
+          }
+
+          const { data: resourceRows } = await rQuery.limit(20);
+          if (resourceRows && resourceRows.length > 0) {
+            fallbackResources = resourceRows.map((r: any) => ({
+              id: r.id,
+              category_id: r.category_id,
+              name: r.title,
+              short_description: r.short_description || "",
+              website_url: r.website_url || "",
+              phone: r.phone || "",
+              email: r.email || "",
+              address: r.address || "",
+              city: r.city || "",
+              state: r.state || "",
+              zip: r.zip || "",
+              latitude: r.latitude,
+              longitude: r.longitude,
+              verification_status: "none",
+              verification_label: "",
+              cta_text: "Learn More",
+              cta_url: r.website_url || "",
+              is_featured: false,
+              is_national: !r.city && !r.state,
+              listing_type: "service",
+              discount_value: null,
+              discount_description: null,
+              program_area: "resource_fallback",
+              trusted_service_categories: { slug: tsCategorySlug, name: "", group_type: "service" },
+              source: "resource",
+            }));
+
+            if (nearMeMode && userLat !== undefined && userLng !== undefined) {
+              fallbackResources = fallbackResources
+                .map((r: any) => {
+                  if (r.latitude != null && r.longitude != null) {
+                    const dist = haversineDistance(userLat!, userLng!, r.latitude, r.longitude);
+                    return { ...r, distance_miles: Math.round(dist * 10) / 10 };
+                  }
+                  return { ...r, distance_miles: r.is_national ? 99999 : 99998 };
+                })
+                .filter((r: any) => r.is_national || r.latitude == null || (r.distance_miles <= radiusMiles!))
+                .sort((a: any, b: any) => (a.distance_miles ?? 99999) - (b.distance_miles ?? 99999));
+            }
+          }
+        } catch (fbErr: any) {
+          console.log("[fallback] Resource fallback error:", fbErr.message);
+        }
+      }
+
+      const partnerRows = rows.map((r: any) => ({ ...r, source: "partner" }));
+      return res.json({ partners: partnerRows, fallback: fallbackResources });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
