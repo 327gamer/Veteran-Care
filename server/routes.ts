@@ -1072,6 +1072,10 @@ async function checkTrustedServicesTable() {
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS featured_rank INTEGER`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_value TEXT`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS discount_description TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS offer_title TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS offer_description TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS banner_image_url TEXT`);
+    await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS offer_expiry DATE`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION`);
     await pgQuery(`ALTER TABLE trusted_services ADD COLUMN IF NOT EXISTS geocoded_at TIMESTAMPTZ`);
@@ -7575,7 +7579,13 @@ export async function registerRoutes(
         });
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
-      const sql = `SELECT ts.*, tsc.program_area,
+      const sql = `SELECT ts.id, ts.category_id, ts.name, ts.short_description, ts.website_url, ts.phone, ts.email,
+                  ts.address, ts.city, ts.state, ts.zip, ts.latitude, ts.longitude,
+                  ts.verification_status, ts.verification_label, ts.cta_text, ts.cta_url,
+                  ts.is_featured, ts.is_national, ts.listing_type, ts.discount_value, ts.discount_description,
+                  ts.display_order, ts.featured_rank, ts.featured_active, ts.near_me_boost_active,
+                  ts.offer_title, ts.offer_description, ts.offer_expiry, ts.created_at,
+                  tsc.program_area,
              CASE WHEN (ts.is_featured = true AND (ts.featured_active = true OR ts.featured_active IS NULL)) THEN true ELSE false END AS effective_featured,
              CASE WHEN ts.near_me_boost_active = true THEN true ELSE false END AS effective_near_me_boost,
              json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
@@ -7616,6 +7626,25 @@ export async function registerRoutes(
       }
 
       return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/veteran-discounts/:id", async (req, res) => {
+    if (!hasTrustedServicesTable) return res.status(404).json({ error: "Not found" });
+    try {
+      const rows = await pgQuery(
+        `SELECT ts.*, tsc.program_area,
+                json_build_object('slug', tsc.slug, 'name', tsc.name, 'group_type', tsc.group_type) AS trusted_service_categories
+         FROM trusted_services ts
+         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+         WHERE ts.id = $1 AND ts.is_active IS NOT false
+         LIMIT 1`,
+        [req.params.id]
+      );
+      if (!rows.length) return res.status(404).json({ error: "Not found" });
+      return res.json(rows[0]);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -9214,7 +9243,7 @@ export async function registerRoutes(
       const full = await pgQuery(
         `SELECT pa.id, pa.email, pa.company_name, pa.contact_name, pa.phone, pa.website,
                 pa.city, pa.state, pa.category_id, pa.subcategory_ids, pa.plan_type, pa.status,
-                pa.stripe_subscription_id,
+                pa.stripe_subscription_id, pa.converted_provider_id,
                 tsc.name AS category_name
          FROM partner_applications pa
          LEFT JOIN trusted_service_categories tsc ON tsc.id::text = pa.category_id::text
@@ -9244,14 +9273,91 @@ export async function registerRoutes(
             }
           } catch {}
         }
+        let offerData: any = {};
+        if (row.converted_provider_id) {
+          try {
+            const ts = await pgQuery(
+              `SELECT offer_title, offer_description, banner_image_url, offer_expiry FROM trusted_services WHERE id = $1 LIMIT 1`,
+              [row.converted_provider_id]
+            );
+            if (ts.length > 0) offerData = ts[0];
+          } catch {}
+        }
         return res.json({
           ...row,
           subcategory_names: subcategoryNames,
+          ...offerData,
         });
       }
     } catch {}
 
     return res.json(partner);
+  });
+
+  app.patch("/api/partner/offer", async (req, res) => {
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pa = await pgQuery(`SELECT converted_provider_id, status FROM partner_applications WHERE id = $1`, [partner.id]);
+      if (!pa.length || !pa[0].converted_provider_id) {
+        return res.status(400).json({ error: "No active listing found. Your account must be approved and active to manage offers." });
+      }
+      if (pa[0].status !== "active" && pa[0].status !== "approved") {
+        return res.status(403).json({ error: "Your account must be active to manage offers." });
+      }
+      const { offer_title, offer_description, offer_expiry } = req.body;
+      let parsedExpiry: string | null = null;
+      if (offer_expiry) {
+        const d = new Date(offer_expiry);
+        if (isNaN(d.getTime())) {
+          return res.status(400).json({ error: "Invalid expiry date format." });
+        }
+        parsedExpiry = d.toISOString().split("T")[0];
+      }
+      await pgQuery(
+        `UPDATE trusted_services SET offer_title = $1, offer_description = $2, offer_expiry = $3 WHERE id = $4`,
+        [
+          (offer_title || "").trim().slice(0, 100) || null,
+          (offer_description || "").trim().slice(0, 500) || null,
+          parsedExpiry,
+          pa[0].converted_provider_id,
+        ]
+      );
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/partner/banner", async (req, res) => {
+    const partner = await resolvePartnerFromToken(req);
+    if (!partner) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const pa = await pgQuery(`SELECT converted_provider_id, status FROM partner_applications WHERE id = $1`, [partner.id]);
+      if (!pa.length || !pa[0].converted_provider_id) {
+        return res.status(400).json({ error: "No active listing found." });
+      }
+      if (pa[0].status !== "active" && pa[0].status !== "approved") {
+        return res.status(403).json({ error: "Your account must be active to manage banners." });
+      }
+      const { banner_image_url } = req.body;
+      if (banner_image_url && typeof banner_image_url === "string") {
+        if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(banner_image_url)) {
+          return res.status(400).json({ error: "Banner must be a valid image (JPEG, PNG, or WebP)." });
+        }
+        const sizeBytes = Buffer.byteLength(banner_image_url, "utf8");
+        if (sizeBytes > 2 * 1024 * 1024) {
+          return res.status(400).json({ error: "Banner image is too large. Please use an image under 2MB." });
+        }
+      }
+      await pgQuery(
+        `UPDATE trusted_services SET banner_image_url = $1 WHERE id = $2`,
+        [banner_image_url || null, pa[0].converted_provider_id]
+      );
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   const partnerCreateAccountLimiter = new Map<string, { count: number; resetAt: number }>();

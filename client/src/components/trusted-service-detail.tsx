@@ -14,6 +14,8 @@ import {
   Handshake,
   ExternalLink,
   Sparkles,
+  Percent,
+  Clock,
 } from "lucide-react";
 import { useSavedResources } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +45,10 @@ export interface TrustedServiceItem {
   is_featured: boolean;
   is_national: boolean;
   trusted_service_categories: { slug: string; name: string };
+  offer_title?: string;
+  offer_description?: string;
+  banner_image_url?: string;
+  offer_expiry?: string;
 }
 
 interface TrustedServiceDetailProps {
@@ -159,6 +165,32 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
         </div>
 
         <div className="px-4 py-4 space-y-4">
+          {service.banner_image_url && (
+            <div data-testid="section-banner" className="rounded-lg overflow-hidden border -mt-1">
+              <img src={service.banner_image_url} alt={`${service.name} banner`} className="w-full h-36 object-cover" />
+            </div>
+          )}
+
+          {service.offer_title && (
+            <section data-testid="section-offer" className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 p-3.5 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-600 text-white">
+                  <Percent className="h-3 w-3" />Special Offer
+                </span>
+                {service.offer_expiry && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Expires {new Date(service.offer_expiry).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm font-bold text-green-900">{service.offer_title}</p>
+              {service.offer_description && (
+                <p className="text-xs text-green-800/80 leading-relaxed">{service.offer_description}</p>
+              )}
+            </section>
+          )}
+
           {service.short_description && (
             <section data-testid="section-overview">
               <h3 className="font-bold text-base flex items-center gap-2 text-primary mb-2">

@@ -131,6 +131,10 @@ interface DiscountListing {
   discount_description: string | null;
   program_area?: string;
   trusted_service_categories: { slug: string; name: string; group_type: string };
+  offer_title?: string;
+  offer_description?: string;
+  banner_image_url?: string;
+  offer_expiry?: string;
 }
 
 const iconMap: Record<string, any> = {
@@ -448,11 +452,24 @@ export default function VeteranDiscounts() {
 
   const detailOpen = !!detailService;
 
+  const { data: detailFull } = useQuery({
+    queryKey: ["/api/veteran-discounts", detailService?.id],
+    queryFn: async () => {
+      const r = await fetch(`/api/veteran-discounts/${detailService!.id}`);
+      if (!r.ok) return null;
+      return r.json();
+    },
+    enabled: !!detailService?.id,
+    staleTime: 60_000,
+  });
+
+  const enrichedDetail = detailService ? { ...detailService, ...(detailFull || {}) } : null;
+
   return (
     <div className="space-y-3">
       {connectModal}
       <TrustedServiceDetail
-        service={detailService as any}
+        service={enrichedDetail as any}
         open={detailOpen}
         onOpenChange={(open) => { if (!open) setDetailService(null); }}
         onConnect={(svc: any) => { setDetailService(null); setConnectService(svc); }}
@@ -911,8 +928,17 @@ function ListingCard({
               {listing.verification_label}
             </Badge>
           )}
+          {listing.offer_title && (
+            <Badge className="text-[10px] px-1.5 py-0 bg-green-600 text-white border-green-600">
+              <Percent className="h-3 w-3 mr-0.5" />
+              Offer
+            </Badge>
+          )}
         </div>
 
+        {listing.offer_title && !listing.discount_value && (
+          <p className="text-xs font-semibold text-green-700">{listing.offer_title}</p>
+        )}
         {listing.discount_value && (
           <p className="text-xs font-semibold text-green-700">{listing.discount_value}</p>
         )}

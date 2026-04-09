@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import {
   Copy,
@@ -26,6 +29,12 @@ import {
   MapPin,
   Tag,
   User,
+  Percent,
+  Image,
+  Pencil,
+  Trash2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { platform } from "@shared/platform";
 import { useAuth } from "@/lib/use-auth";
@@ -63,6 +72,11 @@ interface PartnerProfile {
   plan_type?: string;
   status: string;
   stripe_subscription_id?: string;
+  converted_provider_id?: string;
+  offer_title?: string;
+  offer_description?: string;
+  banner_image_url?: string;
+  offer_expiry?: string;
 }
 
 function partnerFetch(url: string, token: string, options: RequestInit = {}) {
@@ -98,10 +112,19 @@ export default function PartnerPortal() {
 
   const [copied, setCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
-  const [view, setView] = useState<"dashboard" | "referrals" | "leaderboard">("dashboard");
+  const [view, setView] = useState<"dashboard" | "referrals" | "leaderboard" | "offer">("dashboard");
   const [msgVariant, setMsgVariant] = useState(0);
   const [showPartnerSignup, setShowPartnerSignup] = useState(false);
   const [partnerSignupMode, setPartnerSignupMode] = useState<"signup" | "login">("login");
+
+  const [offerTitle, setOfferTitle] = useState("");
+  const [offerDescription, setOfferDescription] = useState("");
+  const [offerExpiry, setOfferExpiry] = useState("");
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [offerSaving, setOfferSaving] = useState(false);
+  const [bannerSaving, setBannerSaving] = useState(false);
+  const [offerMsg, setOfferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (localStorage.getItem("partner_token")) {
@@ -214,6 +237,95 @@ export default function PartnerPortal() {
     queryClient.removeQueries({ queryKey: ["/api/partner-referral/me"] });
   };
 
+  useEffect(() => {
+    if (profile && view === "offer") {
+      setOfferTitle(profile.offer_title || "");
+      setOfferDescription(profile.offer_description || "");
+      setOfferExpiry(profile.offer_expiry ? profile.offer_expiry.split("T")[0] : "");
+      setBannerPreview(profile.banner_image_url || null);
+      setOfferMsg(null);
+    }
+  }, [profile, view]);
+
+  const handleSaveOffer = async () => {
+    if (!accessToken) return;
+    setOfferSaving(true);
+    setOfferMsg(null);
+    try {
+      const r = await partnerFetch("/api/partner/offer", accessToken, {
+        method: "PATCH",
+        body: JSON.stringify({
+          offer_title: offerTitle.trim() || null,
+          offer_description: offerDescription.trim() || null,
+          offer_expiry: offerExpiry || null,
+        }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({ error: "Save failed" }));
+        throw new Error(body.error || "Save failed");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/partner/me"] });
+      setOfferMsg({ type: "success", text: "Offer details saved!" });
+    } catch (e: any) {
+      setOfferMsg({ type: "error", text: e.message || "Failed to save offer" });
+    } finally {
+      setOfferSaving(false);
+    }
+  };
+
+  const handleBannerUpload = async (file: File) => {
+    if (!accessToken) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setOfferMsg({ type: "error", text: "Banner image must be under 2MB" });
+      return;
+    }
+    setBannerSaving(true);
+    setOfferMsg(null);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setBannerPreview(dataUrl);
+      const r = await partnerFetch("/api/partner/banner", accessToken, {
+        method: "PATCH",
+        body: JSON.stringify({ banner_image_url: dataUrl }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(body.error || "Upload failed");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/partner/me"] });
+      setOfferMsg({ type: "success", text: "Banner image uploaded!" });
+    } catch (e: any) {
+      setOfferMsg({ type: "error", text: e.message || "Failed to upload banner" });
+    } finally {
+      setBannerSaving(false);
+    }
+  };
+
+  const handleRemoveBanner = async () => {
+    if (!accessToken) return;
+    setBannerSaving(true);
+    setOfferMsg(null);
+    try {
+      const r = await partnerFetch("/api/partner/banner", accessToken, {
+        method: "PATCH",
+        body: JSON.stringify({ banner_image_url: null }),
+      });
+      if (!r.ok) throw new Error("Failed to remove banner");
+      setBannerPreview(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/partner/me"] });
+      setOfferMsg({ type: "success", text: "Banner removed" });
+    } catch (e: any) {
+      setOfferMsg({ type: "error", text: e.message || "Failed to remove banner" });
+    } finally {
+      setBannerSaving(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -305,6 +417,196 @@ export default function PartnerPortal() {
             <Button onClick={() => setLocation("/partner-apply")}>Apply Now</Button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (view === "offer") {
+    const hasListing = !!profile?.converted_provider_id;
+    return (
+      <div className="space-y-5 animate-in fade-in duration-300">
+        <div className="flex items-center gap-3">
+          <Button data-testid="button-back-from-offer" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setView("dashboard")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h2 className="text-lg font-heading font-extrabold text-primary">Manage Your Offer</h2>
+            <p className="text-xs text-muted-foreground">Highlight a special deal on your listing</p>
+          </div>
+        </div>
+
+        {!hasListing ? (
+          <Card className="border-amber-200 bg-amber-50/40">
+            <CardContent className="p-4 text-center space-y-2">
+              <Percent className="h-8 w-8 text-amber-600 mx-auto" />
+              <p className="text-sm font-medium text-amber-800">Your listing hasn't been created yet</p>
+              <p className="text-xs text-muted-foreground">Once your application is fully approved, you'll be able to add a special offer and banner image to your listing.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {offerMsg && (
+              <div data-testid="text-offer-message" className={`text-sm px-3 py-2 rounded-lg ${offerMsg.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                {offerMsg.text}
+              </div>
+            )}
+
+            <Card data-testid="card-offer-form" className="border-primary/20">
+              <CardContent className="p-4 space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Percent className="h-4 w-4 text-primary" />
+                  Offer Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-title" className="text-xs font-medium">Offer Title</Label>
+                    <Input
+                      id="offer-title"
+                      data-testid="input-offer-title"
+                      placeholder="e.g. 20% Off First Visit"
+                      value={offerTitle}
+                      onChange={(e) => setOfferTitle(e.target.value)}
+                      maxLength={100}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-description" className="text-xs font-medium">Offer Description</Label>
+                    <Textarea
+                      id="offer-description"
+                      data-testid="input-offer-description"
+                      placeholder="Describe your offer — what veterans get and any conditions"
+                      value={offerDescription}
+                      onChange={(e) => setOfferDescription(e.target.value)}
+                      maxLength={500}
+                      rows={3}
+                      className="text-sm resize-none"
+                    />
+                    <p className="text-[10px] text-muted-foreground text-right">{offerDescription.length}/500</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-expiry" className="text-xs font-medium">Expiry Date (optional)</Label>
+                    <Input
+                      id="offer-expiry"
+                      data-testid="input-offer-expiry"
+                      type="date"
+                      value={offerExpiry}
+                      onChange={(e) => setOfferExpiry(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="text-sm"
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-save-offer"
+                    className="w-full rounded-full"
+                    onClick={handleSaveOffer}
+                    disabled={offerSaving}
+                  >
+                    {offerSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : "Save Offer Details"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-banner-upload" className="border-primary/20">
+              <CardContent className="p-4 space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Image className="h-4 w-4 text-primary" />
+                  Banner Image
+                </h3>
+                <p className="text-xs text-muted-foreground">Upload a banner image for your listing (max 2MB, JPG/PNG recommended)</p>
+
+                {bannerPreview ? (
+                  <div className="space-y-2">
+                    <div className="relative rounded-lg overflow-hidden border bg-muted/20">
+                      <img
+                        src={bannerPreview}
+                        alt="Banner preview"
+                        data-testid="img-banner-preview"
+                        className="w-full h-32 object-cover"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        data-testid="button-change-banner"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        onClick={() => bannerInputRef.current?.click()}
+                        disabled={bannerSaving}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" />Change
+                      </Button>
+                      <Button
+                        data-testid="button-remove-banner"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={handleRemoveBanner}
+                        disabled={bannerSaving}
+                      >
+                        {bannerSaving ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    data-testid="button-upload-banner"
+                    onClick={() => bannerInputRef.current?.click()}
+                    disabled={bannerSaving}
+                    className="w-full h-28 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                  >
+                    {bannerSaving ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="h-6 w-6" />
+                        <span className="text-xs font-medium">Tap to upload banner</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleBannerUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            {(offerTitle || offerDescription || bannerPreview) && (
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-4 space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preview</h3>
+                  {bannerPreview && (
+                    <div className="rounded-lg overflow-hidden border">
+                      <img src={bannerPreview} alt="Banner" className="w-full h-24 object-cover" />
+                    </div>
+                  )}
+                  {offerTitle && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                        <Percent className="h-3 w-3" />Special Offer
+                      </span>
+                    </div>
+                  )}
+                  {offerTitle && <p className="text-sm font-semibold text-foreground">{offerTitle}</p>}
+                  {offerDescription && <p className="text-xs text-muted-foreground leading-relaxed">{offerDescription}</p>}
+                  {offerExpiry && (
+                    <p className="text-[10px] text-muted-foreground">Expires: {new Date(offerExpiry + "T00:00:00").toLocaleDateString()}</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -549,6 +851,24 @@ export default function PartnerPortal() {
       </Card>
 
       <div className="grid grid-cols-1 gap-3">
+        <Card data-testid="card-manage-offer" className="cursor-pointer hover:border-primary/30 transition-colors group" onClick={() => setView("offer")}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0"><Percent className="h-5 w-5 text-purple-700" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Manage Offer & Banner</p>
+              <p className="text-xs text-muted-foreground">
+                {profile.offer_title ? profile.offer_title : "Add a special offer to your listing"}
+              </p>
+            </div>
+            {profile.offer_title && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-green-100 text-green-700 shrink-0">
+                <Check className="h-2.5 w-2.5" />Active
+              </span>
+            )}
+            <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
+          </CardContent>
+        </Card>
+
         <Card data-testid="card-referral-tools" className="cursor-pointer hover:border-primary/30 transition-colors group" onClick={() => setView("referrals")}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0"><Gift className="h-5 w-5 text-green-700" /></div>
