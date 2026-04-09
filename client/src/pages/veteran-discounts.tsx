@@ -47,6 +47,12 @@ import {
   Loader2,
   Star,
   ShieldCheck,
+  ChevronRight,
+  GraduationCap,
+  Briefcase,
+  Filter,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
@@ -61,6 +67,37 @@ import {
   type SponsoredType,
 } from "@/components/ad-slot";
 import PartnerSignupModal from "@/components/partner-signup-modal";
+import AiGuideBanner from "@/components/ai-guide-banner";
+import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
+import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
+import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
+import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
+import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
+
+interface RichSubcategory {
+  name: string;
+  slug: string;
+  icon: LucideIcon;
+  description: string;
+}
+
+const TS_SLUG_TO_CANONICAL: Record<string, string> = {
+  "housing-home": "housing",
+  "legal-services": "legal",
+  "financial-credit": "financial",
+  "insurance": "healthcare",
+  "education-training": "education",
+  "employment-support": "employment",
+  "end-of-life-services": "end-of-life-services",
+};
+
+const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
+  "housing-home": HOUSING_SUBCATEGORIES,
+  "financial-credit": FIN_SUBCATEGORIES,
+  "insurance": HC_SUBCATEGORIES,
+  "employment-support": EMP_SUBCATEGORIES,
+  "end-of-life-services": EOL_SUBCATEGORIES,
+};
 
 interface DiscountCategory {
   id: string;
@@ -155,6 +192,7 @@ export default function VeteranDiscounts() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"service" | "product">("service");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [connectService, setConnectService] = useState<DiscountListing | null>(null);
@@ -193,6 +231,19 @@ export default function VeteranDiscounts() {
   const nearMeLng = locationMode === "nearme" && geo.location?.lng ? geo.location.lng : undefined;
   const isNearMeQuery = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
 
+  const selectedCat = categories.find(c => c.slug === selectedCategory);
+  const isServiceCategory = selectedCat?.group_type === "service";
+  const richSubs = selectedCategory ? TS_RICH_SUBCATEGORIES[selectedCategory] : undefined;
+  const canonicalSlug = selectedCategory ? TS_SLUG_TO_CANONICAL[selectedCategory] : undefined;
+
+  const { data: apiSubcategories = [], isLoading: apiSubsLoading } = useQuery<{ id: string; name: string; slug: string }[]>({
+    queryKey: ["/api/subcategories", canonicalSlug],
+    queryFn: () => fetch(`/api/subcategories?category_slug=${canonicalSlug}`).then(r => r.json()),
+    enabled: !!canonicalSlug && isServiceCategory && !richSubs,
+  });
+
+  const showSubcategoryPicker = !!selectedCategory && isServiceCategory && !selectedSubcategory && (!!richSubs || apiSubsLoading || apiSubcategories.length > 0);
+
   const { data: listings = [], isLoading: listingsLoading } = useQuery<DiscountListing[]>({
     queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
     queryFn: () => {
@@ -209,7 +260,7 @@ export default function VeteranDiscounts() {
       const qs = params.toString();
       return fetch(qs ? `/api/veteran-discounts?${qs}` : "/api/veteran-discounts").then(r => r.json());
     },
-    enabled: (!!selectedCategory || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
+    enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
   });
 
   const sponsoredAds: SponsoredAd[] = [];
@@ -272,15 +323,17 @@ export default function VeteranDiscounts() {
 
   useEffect(() => {
     setSelectedCategory(null);
+    setSelectedSubcategory(null);
   }, [activeTab]);
-
-  const selectedCat = categories.find(c => c.slug === selectedCategory);
 
   const handleBack = () => {
     if (detailService) {
       setDetailService(null);
+    } else if (selectedSubcategory) {
+      setSelectedSubcategory(null);
     } else if (selectedCategory) {
       setSelectedCategory(null);
+      setSelectedSubcategory(null);
     } else {
       setLocation("/home");
     }
@@ -553,7 +606,7 @@ export default function VeteranDiscounts() {
                     <Card
                       key={cat.id}
                       className="hover:border-primary/50 transition-colors cursor-pointer group shadow-sm hover:shadow-md"
-                      onClick={() => setSelectedCategory(cat.slug)}
+                      onClick={() => { setSelectedCategory(cat.slug); setSelectedSubcategory(null); }}
                       data-testid={`card-discount-cat-${cat.slug}`}
                     >
                       <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
@@ -569,12 +622,112 @@ export default function VeteranDiscounts() {
                 })
               )}
             </div>
+          ) : showSubcategoryPicker ? (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); setSelectedSubcategory(null); }} data-testid="button-back-categories">
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Back
+                </Button>
+                <div className="flex-1">
+                  <h2 className="text-lg font-heading font-bold text-primary">{selectedCat?.name}</h2>
+                  <p className="text-xs text-muted-foreground">{selectedCat?.description}</p>
+                </div>
+              </div>
+
+              <AiGuideBanner categoryContext={selectedCategory || "trusted-services"} />
+
+              {apiSubsLoading && !richSubs ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Loading subcategories...</p>
+                </div>
+              ) : richSubs ? (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Select a topic to find trusted providers near you.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {richSubs.map((sub) => {
+                      const Icon = sub.icon;
+                      return (
+                        <button
+                          key={sub.slug}
+                          data-testid={`card-subcategory-${sub.slug}`}
+                          onClick={() => setSelectedSubcategory(sub.slug)}
+                          className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-left transition-all active:scale-[0.98]"
+                        >
+                          <div className="shrink-0 w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center mt-0.5">
+                            <Icon className="h-4.5 w-4.5 text-orange-700" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-sm font-semibold text-foreground leading-tight">
+                                {sub.name}
+                              </span>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                              {sub.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setSelectedSubcategory("__all__")}
+                      data-testid="button-view-all-subcategory"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      View all {selectedCat?.name} providers
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Select a topic to find trusted providers near you.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {apiSubcategories.map((sub) => (
+                      <button
+                        key={sub.id}
+                        data-testid={`card-subcategory-${sub.slug}`}
+                        onClick={() => setSelectedSubcategory(sub.slug)}
+                        className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-left transition-all active:scale-[0.98]"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-sm font-semibold text-foreground leading-tight">
+                              {sub.name}
+                            </span>
+                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setSelectedSubcategory("__all__")}
+                      data-testid="button-view-all-subcategory"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      View all {selectedCat?.name} providers
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); }} data-testid="button-back-categories">
+                <Button variant="ghost" size="sm" onClick={handleBack} data-testid="button-back-categories">
                   <ChevronLeft className="h-4 w-4 mr-1" />
-                  {selectedCat?.name || "Back"}
+                  {selectedSubcategory && selectedSubcategory !== "__all__"
+                    ? (richSubs?.find(s => s.slug === selectedSubcategory)?.name || apiSubcategories.find(s => s.slug === selectedSubcategory)?.name || selectedCat?.name)
+                    : selectedCat?.name || "Back"}
                 </Button>
               </div>
 
