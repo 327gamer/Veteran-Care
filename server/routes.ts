@@ -544,6 +544,7 @@ async function ensureLeadBilling() {
   try {
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS billing_model TEXT DEFAULT 'subscription_only'`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS lead_price_cents INTEGER`);
+    await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS is_lead_enabled BOOLEAN DEFAULT false`);
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS lead_billing_records (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -8862,7 +8863,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, referred_by_code } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, referred_by_code, is_lead_enabled } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
@@ -8882,8 +8883,8 @@ export async function registerRoutes(
         if (referrer.length > 0) referredByPartnerId = referrer[0].id;
       }
       const rows = await pgQuery(
-        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id, referred_by_partner_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'prospect', $14, $15, $16, $17, $18, $19, $20, $21)
+        `INSERT INTO partner_applications (company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, requested_addons, status, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, ambassador_id, referred_by_partner_id, is_lead_enabled)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'prospect', $14, $15, $16, $17, $18, $19, $20, $21, $22)
          RETURNING *`,
         [
           company_name, contact_name, email,
@@ -8896,6 +8897,10 @@ export async function registerRoutes(
           utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_id || null, session_id || null,
           paAmbassadorId,
           referredByPartnerId,
+          is_lead_enabled === true && category_id ? await (async () => {
+            const catRows = await pgQuery(`SELECT slug FROM trusted_service_categories WHERE id = $1`, [category_id]);
+            return catRows.length > 0 && isLeadEligibleCategory(catRows[0].slug);
+          })() : false,
         ]
       );
       if (referredByPartnerId && rows.length > 0) {

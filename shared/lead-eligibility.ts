@@ -121,8 +121,7 @@ const LEAD_ELIGIBLE_CATEGORIES: Record<string, CategoryEligibility> = {
   },
 
   "auto-services": {
-    eligible: true,
-    allSubcategories: true,
+    eligible: false,
   },
 };
 

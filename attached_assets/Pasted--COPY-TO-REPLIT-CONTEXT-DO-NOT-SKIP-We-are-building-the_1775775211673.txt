@@ -1,0 +1,139 @@
+--- COPY TO REPLIT ---
+
+CONTEXT – DO NOT SKIP
+
+We are building the Lead Monetization System for Veteran Care in controlled phases.
+
+Chunk 1 (Lead Eligibility Governance) is COMPLETE.
+
+We now move to Chunk 2.
+
+IMPORTANT UPDATE:
+Auto Services is NO LONGER lead-eligible at launch.
+Remove it from all eligibility logic immediately.
+
+-------------------------------------
+CHUNK 2 – CONDITIONAL SIGNUP UX FOR DIRECT LEAD DELIVERY
+-------------------------------------
+
+GOAL
+
+Introduce Direct Lead Delivery as a conditional option in trusted partner signup based on Chunk 1 eligibility logic.
+
+-------------------------------------
+CRITICAL RULES
+-------------------------------------
+
+- Keep signup CLEAN and simple
+- Do NOT overwhelm non-lead-based businesses
+- Do NOT break existing signup flow
+- Do NOT touch Stripe billing yet
+- Do NOT change admin routing yet
+- Do NOT add pricing yet
+
+-------------------------------------
+REQUIRED IMPLEMENTATION
+-------------------------------------
+
+1. CONDITIONAL DISPLAY
+
+Use Chunk 1 helper logic:
+
+IF category/subcategory is lead-eligible:
+→ show Direct Lead Delivery section
+
+IF NOT eligible:
+→ show NOTHING (no placeholder, no disabled UI)
+
+-------------------------------------
+
+2. DIRECT LEAD DELIVERY SECTION (SIMPLE)
+
+Add a clean optional section in signup:
+
+Title:
+"Direct Lead Delivery"
+
+Description:
+"Receive qualified veteran inquiries directly when users request help connecting with a provider in your category."
+
+Field:
+Toggle or dropdown:
+- Yes, I want to receive qualified leads
+- No
+
+Optional (simple only):
+- preferred contact method OR service area confirmation
+
+-------------------------------------
+
+3. DATA STORAGE
+
+Add ONE field to partner record:
+
+- is_lead_enabled (boolean)
+
+Do NOT modify existing structures beyond this.
+
+-------------------------------------
+
+4. REMOVE AUTO SERVICES FROM ELIGIBILITY
+
+Update Chunk 1 logic:
+
+- auto-services must NOT be lead-eligible
+- ensure helper functions return NOT eligible for this category
+
+-------------------------------------
+
+5. NO BILLING YET
+
+Do NOT:
+- add pricing
+- add Stripe logic
+- add per-lead cost
+- show pricing language
+
+-------------------------------------
+
+6. NO ADMIN FLOW CHANGES YET
+
+Do NOT:
+- change routing logic
+- change admin panel
+- send leads automatically
+
+-------------------------------------
+
+VALIDATION REQUIRED
+
+Confirm:
+
+1. Eligible categories show Direct Lead Delivery option
+2. Non-eligible categories show NOTHING
+3. Auto Services does NOT show this option
+4. Signup UX remains clean and simple
+5. is_lead_enabled saves correctly
+6. No regressions to:
+   - Stripe
+   - attribution
+   - routing
+   - partner signup flow
+
+-------------------------------------
+
+RETURN ONLY
+
+A) files changed  
+B) how eligibility is wired into signup  
+C) how is_lead_enabled is stored  
+D) validation results  
+E) whether publish is required  
+
+-------------------------------------
+
+Do not expand scope.
+
+This is a controlled UX layer only.
+
+--- END ---

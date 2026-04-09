@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
+import { isLeadEligibleCategory } from "@shared/lead-eligibility";
 import { useToast } from "@/hooks/use-toast";
 import PartnerSignupModal from "@/components/partner-signup-modal";
 
@@ -87,6 +88,7 @@ export default function PartnerApply() {
     service_description: "",
     pricing_interest: "both",
     plan_type: "" as "state" | "national" | "",
+    is_lead_enabled: false,
   });
 
   const [addons, setAddons] = useState({
@@ -592,7 +594,7 @@ export default function PartnerApply() {
             <div>
               <Label htmlFor="category" className="text-xs">Service Category</Label>
               <Select value={form.category_id} onValueChange={(v) => {
-                setForm(prev => ({ ...prev, category_id: v, subcategory_ids: [] }));
+                setForm(prev => ({ ...prev, category_id: v, subcategory_ids: [], is_lead_enabled: false }));
               }}>
                 <SelectTrigger data-testid="select-category">
                   <SelectValue placeholder="Select a category" />
@@ -659,6 +661,35 @@ export default function PartnerApply() {
                 </div>
               </div>
             )}
+
+            {(() => {
+              const selectedCat = categories.find(c => c.id === form.category_id);
+              if (!selectedCat || !isLeadEligibleCategory(selectedCat.slug)) return null;
+              return (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3" data-testid="section-lead-delivery">
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">Direct Lead Delivery</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Receive qualified veteran inquiries directly when users request help connecting with a provider in your category.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="lead-toggle" className="text-sm font-medium cursor-pointer">
+                      Yes, I want to receive qualified leads
+                    </Label>
+                    <Switch
+                      id="lead-toggle"
+                      data-testid="toggle-lead-enabled"
+                      checked={form.is_lead_enabled}
+                      onCheckedChange={(checked) => setForm(prev => ({ ...prev, is_lead_enabled: checked }))}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             <div>
               <Label htmlFor="service_description" className="text-xs">Describe Your Services</Label>
