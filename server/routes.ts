@@ -5826,7 +5826,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/track-click", async (req, res) => {
-    const { resource_id, click_type, user_state, user_city, user_zip } = req.body;
+    const { resource_id, click_type, user_state, user_city, user_zip, category_slug } = req.body;
 
     if (!resource_id || !click_type) {
       return res.status(400).json({ error: "resource_id and click_type are required" });
@@ -5862,12 +5862,13 @@ export async function registerRoutes(
       directions_click: "partner_directions_click",
     };
     const mappedType = eventMap[click_type];
-    if (mappedType) {
+    if (mappedType && category_slug) {
       logLeadEvent({
         event_type: mappedType,
         lead_class: "engagement_event",
         action_type: click_type,
         source_surface: "resources",
+        category_slug: category_slug,
         resource_id: resource_id,
         state: user_state || null,
         city: user_city || null,
@@ -5880,6 +5881,8 @@ export async function registerRoutes(
   app.post("/api/lead-event", async (req, res) => {
     const { event_type, partner_id, resource_id, category_slug, subcategory_slug, source_surface, state, city, session_id } = req.body;
     if (!event_type) return res.status(400).json({ error: "event_type is required" });
+    if (!category_slug) return res.status(400).json({ error: "category_slug is required" });
+    if (!source_surface) return res.status(400).json({ error: "source_surface is required" });
 
     const validTypes = ["partner_view", "partner_call_click", "partner_email_click", "partner_website_click", "partner_apply_click"];
     if (!validTypes.includes(event_type)) return res.status(400).json({ error: "Invalid event_type" });
@@ -5908,10 +5911,10 @@ export async function registerRoutes(
       event_type,
       lead_class: "engagement_event",
       action_type: event_type.replace("partner_", ""),
-      source_surface: source_surface || "trusted_services",
+      source_surface: source_surface,
       partner_id: partner_id || null,
       resource_id: resource_id || null,
-      category_slug: category_slug || null,
+      category_slug: category_slug,
       subcategory_slug: subcategory_slug || null,
       state: state || null,
       city: city || null,
@@ -7074,21 +7077,23 @@ export async function registerRoutes(
       console.log(`[router] Lead ${data.id} not routed — self-serve mode, no admin email`);
     }
 
-    logLeadEvent({
-      event_type: "help_request_submitted",
-      lead_class: "explicit_lead",
-      action_type: "submit",
-      session_id: session_id || null,
-      source_surface: source || "get_help",
-      resource_id: resource_id || null,
-      category_slug: catStr || null,
-      subcategory_slug: subStr || null,
-      utm_id: utm_id || null,
-      ambassador_id: baseRow.ambassador_id || null,
-      state: user_state || null,
-      city: user_city || null,
-      delivery_status: routed ? "routed" : "self_serve",
-    });
+    if (catStr) {
+      logLeadEvent({
+        event_type: "help_request_submitted",
+        lead_class: "explicit_lead",
+        action_type: "submit",
+        session_id: session_id || null,
+        source_surface: source || "get_help",
+        resource_id: resource_id || null,
+        category_slug: catStr,
+        subcategory_slug: subStr || null,
+        utm_id: utm_id || null,
+        ambassador_id: baseRow.ambassador_id || null,
+        state: user_state || null,
+        city: user_city || null,
+        delivery_status: routed ? "routed" : "self_serve",
+      });
+    }
 
     let selfServeResources: any[] = [];
     if (!routed) {

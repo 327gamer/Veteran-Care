@@ -1,0 +1,72 @@
+MICRO ADD – EVENT TRACKING PROTECTION RULE
+
+Before moving to Chunk 4, apply this hardening rule to the lead_events system.
+
+This is NOT a new chunk.
+This is a protection rule for the existing Chunk 3 event engine.
+
+-------------------------------------
+REQUIRED RULE
+-------------------------------------
+
+All lead_events must always include:
+
+- category_slug (canonical only)
+- source_surface (required)
+- created_at / timestamp (server-generated only)
+
+Rule:
+No event should be stored without taxonomy + source context.
+
+-------------------------------------
+PURPOSE
+-------------------------------------
+
+This is required to:
+- prevent orphaned event data
+- preserve monetization accuracy
+- guarantee future reporting consistency
+- support clean billing and routing later
+
+-------------------------------------
+IMPLEMENTATION REQUIREMENT
+-------------------------------------
+
+Please update the event engine so that:
+
+1. category_slug is required for all stored lead_events
+- must be canonical slug only
+- reject or normalize non-canonical values before insert
+
+2. source_surface is required for all stored lead_events
+
+3. created_at / timestamp must always be generated server-side
+- do not trust client-provided timestamps
+
+4. if required context is missing:
+- event should not be stored
+- failure should remain non-blocking to user action
+- optionally log internal warning if helpful
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+A) category_slug is now required  
+B) source_surface is now required  
+C) timestamp is server-generated only  
+D) non-canonical or missing taxonomy/source data does not create stored orphan events  
+E) no regressions to existing event tracking behavior  
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) files changed  
+B) what validation/enforcement was added  
+C) how invalid events are handled  
+D) whether publish is required  
+
+This is a micro hardening step before Chunk 4.

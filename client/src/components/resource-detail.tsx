@@ -38,16 +38,17 @@ interface ResourceDetailProps {
 function trackClick(
   resource_id: string,
   click_type: string,
-  fallback: { state?: string; city?: string; zip?: string } = {}
+  fallback: { state?: string; city?: string; zip?: string; category_slug?: string } = {}
 ) {
   const loc = useSavedResources.getState().userLocation;
   const user_state = loc.stateCode || fallback.state || null;
   const user_city = loc.city || fallback.city || null;
   const user_zip = loc.zip || fallback.zip || null;
+  const category_slug = fallback.category_slug || null;
   fetch("/api/track-click", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ resource_id, click_type, user_state, user_city, user_zip }),
+    body: JSON.stringify({ resource_id, click_type, user_state, user_city, user_zip, category_slug }),
   }).catch(() => {});
 }
 
@@ -93,6 +94,7 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
     state: resource.state || undefined,
     city: resource.city || undefined,
     zip: resource.zip || undefined,
+    category_slug: resource.category_slug || undefined,
   };
 
   const evParams = {

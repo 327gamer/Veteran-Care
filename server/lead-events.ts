@@ -1,4 +1,5 @@
 import { query as pgQuery } from "./pg-client";
+import { toCanonical, isCanonical } from "../shared/canonical-categories";
 
 export interface LeadEventData {
   event_type: string;
@@ -9,12 +10,12 @@ export interface LeadEventData {
   session_id?: string | null;
   anonymous_id?: string | null;
 
-  source_surface?: string | null;
+  source_surface: string;
 
   partner_id?: string | null;
   resource_id?: string | null;
 
-  category_slug?: string | null;
+  category_slug: string;
   subcategory_slug?: string | null;
 
   utm_id?: string | null;
@@ -49,12 +50,12 @@ export async function ensureLeadEventsTable(): Promise<void> {
         session_id TEXT,
         anonymous_id TEXT,
 
-        source_surface TEXT,
+        source_surface TEXT NOT NULL,
 
         partner_id UUID,
         resource_id UUID,
 
-        category_slug TEXT,
+        category_slug TEXT NOT NULL,
         subcategory_slug TEXT,
 
         utm_id TEXT,
@@ -75,6 +76,8 @@ export async function ensureLeadEventsTable(): Promise<void> {
         billing_type TEXT
       )
     `);
+    await pgQuery(`ALTER TABLE lead_events ALTER COLUMN source_surface SET NOT NULL`).catch(() => {});
+    await pgQuery(`ALTER TABLE lead_events ALTER COLUMN category_slug SET NOT NULL`).catch(() => {});
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_type ON lead_events(event_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_class ON lead_events(lead_class)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_created ON lead_events(created_at)`);
@@ -88,6 +91,17 @@ export async function ensureLeadEventsTable(): Promise<void> {
 
 export async function logLeadEvent(data: LeadEventData): Promise<void> {
   try {
+    if (!data.category_slug) {
+      console.warn("[lead-events] Rejected event: missing category_slug", { event_type: data.event_type, source_surface: data.source_surface });
+      return;
+    }
+    if (!data.source_surface) {
+      console.warn("[lead-events] Rejected event: missing source_surface", { event_type: data.event_type, category_slug: data.category_slug });
+      return;
+    }
+
+    const canonicalSlug = isCanonical(data.category_slug) ? data.category_slug : toCanonical(data.category_slug);
+
     await pgQuery(
       `INSERT INTO lead_events (
         event_type, lead_class, action_type,
@@ -119,10 +133,10 @@ export async function logLeadEvent(data: LeadEventData): Promise<void> {
         data.user_id || null,
         data.session_id || null,
         data.anonymous_id || null,
-        data.source_surface || null,
+        data.source_surface,
         data.partner_id || null,
         data.resource_id || null,
-        data.category_slug || null,
+        canonicalSlug,
         data.subcategory_slug || null,
         data.utm_id || null,
         data.ambassador_id || null,
