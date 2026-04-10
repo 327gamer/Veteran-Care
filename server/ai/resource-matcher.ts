@@ -19,30 +19,46 @@ export async function matchResources(
   userMessage: string,
   userState?: string,
   userCity?: string,
-  limit: number = 6
+  limit: number = 5
 ): Promise<MatchedResource[]> {
   const detectedCategories = detectCategories(userMessage);
-  const searchTerms = extractSearchTerms(userMessage);
-
   let allResults: MatchedResource[] = [];
 
   if (detectedCategories.length > 0) {
-    const categoryResults = await searchByCategory(detectedCategories, userState, userCity);
-    allResults.push(...categoryResults);
+    const primaryCategory = detectedCategories[0];
+    const primaryResults = await searchByCategory([primaryCategory], userState, userCity);
+    allResults.push(...primaryResults.slice(0, 4));
+
+    if (allResults.length < 3 && detectedCategories.length > 1) {
+      const secondaryResults = await searchByCategory([detectedCategories[1]], userState, userCity);
+      for (const r of secondaryResults) {
+        if (allResults.length >= limit) break;
+        if (!allResults.find(existing => existing.id === r.id)) {
+          allResults.push(r);
+        }
+      }
+    }
   }
 
-  if (searchTerms.length > 0) {
-    const textResults = await searchByText(searchTerms.join(" "), userState, userCity);
-    for (const r of textResults) {
-      if (!allResults.find(existing => existing.id === r.id)) {
-        allResults.push(r);
+  if (allResults.length < 2) {
+    const searchTerms = extractSearchTerms(userMessage);
+    if (searchTerms.length > 0) {
+      const textResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState, userCity);
+      for (const r of textResults) {
+        if (allResults.length >= limit) break;
+        if (!allResults.find(existing => existing.id === r.id)) {
+          allResults.push(r);
+        }
       }
     }
   }
 
   if (allResults.length === 0 && userState) {
-    const broadResults = await searchByText(userMessage.slice(0, 100), userState);
-    allResults.push(...broadResults);
+    const searchTerms = extractSearchTerms(userMessage);
+    if (searchTerms.length > 0) {
+      const broadResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
+      allResults.push(...broadResults.slice(0, 3));
+    }
   }
 
   return allResults.slice(0, limit);
@@ -149,7 +165,7 @@ async function searchByText(
     .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
     .eq("status", "approved")
     .or(ilikeClauses)
-    .limit(8);
+    .limit(5);
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);

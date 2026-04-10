@@ -1,0 +1,135 @@
+POST-TEST FIXES – CHUNK 4 VALIDATION ISSUES
+
+We completed manual testing of the Lead Routing Engine.
+
+Routing logic is directionally working, but we identified 3 issues that must be fixed before moving forward.
+
+-------------------------------------
+ISSUE 1 – CRITICAL REGRESSION
+ADMIN PANEL NOT SHOWING NEW LEADS
+-------------------------------------
+
+Important context:
+This WAS working before.
+When I previously submitted Request Support / Get Help items, they appeared in the admin Navigator Requests panel normally.
+
+Now, after the recent Chunk 4 routing changes, new submissions are no longer appearing there.
+
+Current behavior:
+- user submits request → success
+- confirmation email sent → correct
+- routing logic appears to run
+- BUT the new lead does NOT appear in the admin Navigator Requests view
+
+This suggests a regression, most likely caused by:
+- new delivery_status values
+- query/filter mismatch in admin
+- status transition issue
+
+Likely example:
+The system may now be using statuses such as:
+- unrouted
+- delivered
+- delivery_failed
+
+while the admin panel may still be filtering for older statuses like:
+- pending
+- new
+
+Fix Required:
+
+1. Ensure ALL newly submitted leads appear in admin regardless of delivery_status
+
+2. Update admin query / filtering logic to include:
+- pending
+- delivered
+- unrouted
+- delivery_failed
+
+OR remove restrictive filtering if that is cleaner
+
+3. Confirm:
+- ALL newly submitted leads appear immediately in admin
+- no lead is hidden because of the new delivery_status workflow
+
+-------------------------------------
+ISSUE 2 – AI RESPONSE TOO BROAD
+-------------------------------------
+
+Problem:
+AI recommendations are too generic and not tightly matched to user intent.
+
+Examples:
+- benefits query returned mixed categories like legal help, drug abuse programs, VET TEC, etc.
+- housing query returned broad / unrelated references
+
+Fix Required:
+
+1. Tighten AI category matching
+- prioritize PRIMARY category first
+- only show closely related subcategories
+
+2. Reduce cross-category bleed
+- do NOT mix unrelated categories in the initial response
+
+3. Limit initial results to:
+- 2–5 strong matches
+- not broad mixed lists
+
+-------------------------------------
+ISSUE 3 – AI ESCALATION NOT TRIGGERING CLEANLY
+-------------------------------------
+
+Problem:
+When user says something like:
+"I need help. Please connect me with someone."
+
+Expected:
+- escalate into a real connection / routing flow
+
+Actual:
+- still returns broad resource suggestions instead of behaving like a connection request
+
+Fix Required:
+
+1. Strengthen escalation detection for phrases like:
+- help
+- connect me
+- contact me
+- someone reach out
+- callback
+
+2. When escalation is triggered:
+- lock onto detected category if possible
+OR
+- ask a clean follow-up category question
+THEN
+- route through the connection/help flow
+
+3. Do NOT fall back to generic resource browsing once escalation intent is clear
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT:
+- change billing
+- change eligibility rules
+- change event tracking
+
+Only fix:
+- admin visibility regression
+- AI response quality
+- AI escalation behavior
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+After fix:
+
+1. Submit new lead → MUST appear in admin
+2. AI benefits query → focused results only
+3. AI “connect me” → triggers connection flow behavior
+
+Do NOT proceed to next chunk until confirmed.

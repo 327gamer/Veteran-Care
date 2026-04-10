@@ -86,14 +86,29 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const escalationKeywords = [
+    "connect me", "contact me", "callback", "call me back",
+    "reach out to me", "someone reach out",
+    "talk to someone", "speak to someone", "speak with someone",
+    "talk to a person", "talk to a real person",
+    "need someone to help", "need someone to call",
+    "help me connect", "put me in touch",
+    "please connect me", "can someone call",
+    "someone to help me", "want to talk to someone",
+    "real person", "human help",
+    "please help me connect", "i want to be connected",
+  ];
+  const lastMsgLower = lastUserMsg.content.toLowerCase();
+  const isEscalation = escalationKeywords.some(kw => lastMsgLower.includes(kw));
+
   const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
   const detectedCats = detectCategories(lastUserMsg.content);
 
   if (detectedCats.length > 0) {
     logLeadEvent({
-      event_type: "ai_intent_detected",
+      event_type: isEscalation ? "ai_escalation_detected" : "ai_intent_detected",
       lead_class: "ai_intent",
-      action_type: "detect",
+      action_type: isEscalation ? "escalate" : "detect",
       user_id: userId,
       source_surface: "ai_guide",
       ai_origin: true,
@@ -101,6 +116,19 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       ai_intent_subcategory: detectedCats[1] || null,
       state: userState || null,
       city: userCity || null,
+      category_slug: detectedCats[0],
+    });
+  } else if (isEscalation) {
+    logLeadEvent({
+      event_type: "ai_escalation_detected",
+      lead_class: "ai_intent",
+      action_type: "escalate",
+      user_id: userId,
+      source_surface: "ai_guide",
+      ai_origin: true,
+      state: userState || null,
+      city: userCity || null,
+      category_slug: "unknown",
     });
   }
 
@@ -141,6 +169,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       type: "done",
       categories: detectedCats,
       navigatorSuggested: true,
+      isEscalation,
+      escalationCategory: isEscalation ? (detectedCats[0] || null) : undefined,
       resourceCount: matchedResources.length,
       fallbackMode: true,
       trustedServices: trustedServiceResult ? trustedServiceResult.providers : undefined,
@@ -179,13 +209,15 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       res.write(`data: ${JSON.stringify({ type: "chunk", text })}\n\n`);
     },
     onDone: (fullText, usage) => {
-      const navigatorSuggested = fullText.toLowerCase().includes("navigator") ||
+      const navigatorSuggested = isEscalation || fullText.toLowerCase().includes("navigator") ||
         fullText.toLowerCase().includes("request support");
 
       res.write(`data: ${JSON.stringify({
         type: "done",
         categories: detectedCats,
         navigatorSuggested,
+        isEscalation,
+        escalationCategory: isEscalation ? (detectedCats[0] || null) : undefined,
         resourceCount: matchedResources.length,
         trustedServices: trustedServiceResult ? trustedServiceResult.providers : undefined,
         trustedServiceCategory: trustedServiceResult ? trustedServiceResult.categoryName : undefined,

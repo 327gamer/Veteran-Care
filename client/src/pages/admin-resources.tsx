@@ -159,7 +159,7 @@ function AdminResourcesInner() {
   const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>([]);
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
   const [, setLocation] = useLocation();
-  const [leadStatusFilter, setLeadStatusFilter] = useState("new");
+  const [leadStatusFilter, setLeadStatusFilter] = useState("");
   const [createMode, setCreateMode] = useState(false);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [csvRows, setCsvRows] = useState<Record<string, any>[]>([]);
@@ -1026,16 +1026,16 @@ function AdminResourcesInner() {
         {activeTab === "leads" && (
           <>
             <div className="flex gap-2 flex-wrap">
-              {(["new", "in_progress", "resolved", "cancelled", "archived"] as const).map((s) => (
+              {(["", "new", "in_progress", "resolved", "cancelled", "archived"] as const).map((s) => (
                 <Button
-                  key={s}
-                  data-testid={`lead-filter-${s}`}
+                  key={s || "all"}
+                  data-testid={`lead-filter-${s || "all"}`}
                   variant={leadStatusFilter === s ? "default" : "outline"}
                   size="sm"
                   className="h-8 text-xs capitalize"
                   onClick={() => setLeadStatusFilter(s)}
                 >
-                  {s.replace("_", " ")}
+                  {s ? s.replace("_", " ") : "All"}
                 </Button>
               ))}
               {(leadStatusFilter === "resolved" || leadStatusFilter === "cancelled") && (
@@ -1289,21 +1289,29 @@ function AdminResourcesInner() {
                       </div>
                     )}
 
-                    {req.routed_to_partner_id && (
+                    {(req.routed_to_partner_id || req.delivery_status) && (
                       <div className="text-[10px] bg-blue-50 text-blue-800 rounded p-2 border border-blue-200 space-y-0.5">
                         <p className="flex items-center gap-1 flex-wrap">
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="font-medium">
-                            {partners.find(p => p.id === req.routed_to_partner_id)?.name || "Routing Partner"}
+                            {req.routed_to_partner_id
+                              ? (partners.find(p => p.id === req.routed_to_partner_id)?.name || "Routing Partner")
+                              : "No Partner Assigned"}
                           </span>
                           {req.delivery_status && (
                             <Badge variant="outline" className={`text-[9px] ml-auto ${
-                              req.delivery_status === "pending" ? "bg-amber-100 text-amber-800" :
+                              req.delivery_status === "pending" || req.delivery_status === "ready_for_delivery" ? "bg-amber-100 text-amber-800" :
+                              req.delivery_status === "delivered" ? "bg-green-100 text-green-800" :
+                              req.delivery_status === "unrouted" ? "bg-slate-100 text-slate-700" :
+                              req.delivery_status === "delivery_failed" ? "bg-red-100 text-red-700" :
                               req.delivery_status === "escalated" ? "bg-red-100 text-red-700" :
                               req.delivery_status === "fallback_manual" ? "bg-slate-100 text-slate-700" :
-                              "bg-green-100 text-green-800"
+                              "bg-slate-100 text-slate-700"
                             }`}>
-                              {req.delivery_status === "fallback_manual" ? "Manual Fallback" : req.delivery_status}
+                              {req.delivery_status === "fallback_manual" ? "Manual Fallback" :
+                               req.delivery_status === "ready_for_delivery" ? "Pending Delivery" :
+                               req.delivery_status === "delivery_failed" ? "Delivery Failed" :
+                               req.delivery_status}
                             </Badge>
                           )}
                         </p>
