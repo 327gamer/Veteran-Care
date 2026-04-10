@@ -2,6 +2,9 @@ import { supabase, supabaseAdmin } from "./supabase";
 import { sendLeadNotification } from "./lead-email";
 import { platform } from "../shared/platform";
 import { query as pgQuery } from "./pg-client";
+import { toCanonical } from "../shared/canonical-categories";
+import { isLeadEligibleCategory, isLeadEligibleSubcategory } from "../shared/lead-eligibility";
+import { logLeadEvent } from "./lead-events";
 
 const ADMIN_EMAILS = [
   platform.email.defaultNotifyEmail.toLowerCase(),
@@ -60,13 +63,14 @@ function computeSpecificity(rule: RoutingRule): number {
 
 async function getCategorySlugForLead(lead: LeadForRouting): Promise<string | null> {
   if (!lead.category) return null;
+  const canonical = toCanonical(lead.category);
   const { data } = await supabase
     .from("categories")
     .select("slug")
-    .or(`slug.eq.${lead.category},name.ilike.%${lead.category}%`)
+    .or(`slug.eq.${lead.category},slug.eq.${canonical},name.ilike.%${lead.category}%`)
     .limit(1)
     .single();
-  return data?.slug || null;
+  return data?.slug ? toCanonical(data.slug) : (canonical !== lead.category ? canonical : null);
 }
 
 async function countTodayLeadsForPartner(partnerId: string): Promise<number> {
@@ -98,8 +102,9 @@ function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: s
     if (!partner || !partner.is_active || !partner.is_lead_enabled) return false;
     if (excludePartnerIds.includes(partner.id)) return false;
 
-    if (rule.category_slug && categorySlug && rule.category_slug !== categorySlug) return false;
-    if (rule.category_slug && !categorySlug) return false;
+    const ruleCategory = rule.category_slug ? toCanonical(rule.category_slug) : null;
+    if (ruleCategory && categorySlug && ruleCategory !== categorySlug) return false;
+    if (ruleCategory && !categorySlug) return false;
 
     if (rule.subcategory && lead.subcategory &&
         rule.subcategory.toLowerCase() !== lead.subcategory.toLowerCase()) return false;
@@ -232,6 +237,19 @@ export async function routeLead(leadId: string): Promise<{
     return { routed: false };
   }
 
+  const categorySlug = await getCategorySlugForLead(lead);
+  const subcategorySlug = lead.subcategory || null;
+
+  if (categorySlug && !isLeadEligibleCategory(categorySlug)) {
+    console.log(`[router] Lead ${leadId} category "${categorySlug}" is not lead-eligible — skipping monetized routing`);
+    return { routed: false };
+  }
+
+  if (categorySlug && subcategorySlug && !isLeadEligibleSubcategory(categorySlug, subcategorySlug)) {
+    console.log(`[router] Lead ${leadId} subcategory "${subcategorySlug}" in "${categorySlug}" is not lead-eligible — skipping monetized routing`);
+    return { routed: false };
+  }
+
   const excludeIds: string[] = [];
   if (lead.routed_to_partner_id) excludeIds.push(lead.routed_to_partner_id);
 
@@ -261,7 +279,7 @@ export async function routeLead(leadId: string): Promise<{
     partner_name: match.partnerName,
     rule_id: match.ruleId,
     routed_at: new Date().toISOString(),
-    delivery_status: "pending",
+    delivery_status: "ready_for_delivery",
   };
 
   let existingHistory: any[] = [];
@@ -280,7 +298,7 @@ export async function routeLead(leadId: string): Promise<{
     .update({
       routed_to_partner_id: match.partnerId,
       routed_at: new Date().toISOString(),
-      delivery_status: "pending",
+      delivery_status: "ready_for_delivery",
       routing_history: existingHistory,
     })
     .eq("id", leadId);
@@ -292,9 +310,52 @@ export async function routeLead(leadId: string): Promise<{
 
   console.log(`[router] Lead ${leadId} routed to ${match.partnerName} (${match.partnerId})`);
 
-  sendLeadNotification(leadId, match.partnerId).catch((err) => {
-    console.log(`[router] Email notification failed for lead ${leadId}:`, err?.message);
-  });
+  sendLeadNotification(leadId, match.partnerId)
+    .then(async () => {
+      await supabaseAdmin
+        .from("navigator_requests")
+        .update({ delivery_status: "delivered" })
+        .eq("id", leadId)
+        .catch(() => {});
+
+      if (categorySlug) {
+        logLeadEvent({
+          event_type: "lead_routed",
+          lead_class: "explicit_lead",
+          action_type: "route",
+          source_surface: "lead_router",
+          category_slug: categorySlug,
+          subcategory_slug: subcategorySlug,
+          partner_id: match.partnerId,
+          state: lead.user_state || null,
+          city: lead.user_city || null,
+          delivery_status: "delivered",
+        });
+      }
+    })
+    .catch((err) => {
+      console.log(`[router] Email notification failed for lead ${leadId}:`, err?.message);
+      supabaseAdmin
+        .from("navigator_requests")
+        .update({ delivery_status: "delivery_failed" })
+        .eq("id", leadId)
+        .catch(() => {});
+
+      if (categorySlug) {
+        logLeadEvent({
+          event_type: "lead_routed",
+          lead_class: "explicit_lead",
+          action_type: "route",
+          source_surface: "lead_router",
+          category_slug: categorySlug,
+          subcategory_slug: subcategorySlug,
+          partner_id: match.partnerId,
+          state: lead.user_state || null,
+          city: lead.user_city || null,
+          delivery_status: "delivery_failed",
+        });
+      }
+    });
 
   createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
     console.log(`[router] Lead billing record creation failed for lead ${leadId}:`, err?.message);

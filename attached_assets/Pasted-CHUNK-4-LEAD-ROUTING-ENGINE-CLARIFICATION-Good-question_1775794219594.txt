@@ -1,0 +1,151 @@
+CHUNK 4 – LEAD ROUTING ENGINE (CLARIFICATION)
+
+Good question.
+
+We are NOT building a new lead system.
+
+We are extending the existing system to support monetization-ready routing.
+
+-------------------------------------
+CURRENT SYSTEM (KEEP AS-IS)
+-------------------------------------
+
+You already have:
+- lead creation (Get Help / Navigator)
+- admin lead view
+- manual routing
+- email notifications
+- partner management
+
+Do NOT rebuild or replace these.
+
+-------------------------------------
+GOAL OF CHUNK 4
+-------------------------------------
+
+Introduce controlled, rule-based lead routing using:
+
+- lead-eligible categories (from Chunk 1)
+- is_lead_enabled flag (from Chunk 2)
+
+This ensures leads are only routed to partners who:
+- are in the correct category
+- have opted into Direct Lead Delivery
+
+-------------------------------------
+WHAT TO BUILD (ONLY THIS)
+-------------------------------------
+
+1. LEAD ROUTING FILTER
+
+When a lead is created:
+
+System should:
+- identify category_slug
+- identify subcategory_slug (if present)
+- identify location (if available)
+
+Then:
+
+Find partners where:
+- category matches
+- is_lead_enabled = true
+- partner is active (already exists)
+
+-------------------------------------
+
+2. DELIVERY PREPARATION (NO BILLING)
+
+When eligible partners are found:
+
+Prepare lead for delivery:
+- attach partner_id(s)
+- mark delivery_status = "ready_for_delivery"
+
+Do NOT:
+- charge anything
+- modify Stripe
+- change billing logic
+
+-------------------------------------
+
+3. DELIVERY EXECUTION (KEEP SIMPLE)
+
+Use EXISTING email system.
+
+If routing is valid:
+- send lead to matched partner(s)
+
+-------------------------------------
+
+4. EVENT LOGGING INTEGRATION
+
+For every routed lead:
+
+Create/update lead_events entry:
+
+- event_type = lead_routed
+- lead_class = explicit_lead
+- category_slug
+- partner_id
+- delivery_status = delivered
+
+-------------------------------------
+
+5. FALLBACK LOGIC
+
+If NO eligible partners found:
+
+- do NOT break flow
+- keep existing behavior:
+  - admin/manual routing
+  - resource fallback
+  - AI assistance
+
+-------------------------------------
+
+-------------------------------------
+DO NOT BUILD
+-------------------------------------
+
+DO NOT add:
+- partner portals
+- dashboards
+- SLA timers
+- acceptance flows
+- billing logic
+- dispute system
+- lead scoring
+
+-------------------------------------
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Confirm:
+
+A) leads route ONLY to is_lead_enabled partners  
+B) category matching works correctly  
+C) existing admin routing still works  
+D) email delivery still works  
+E) fallback works when no partner available  
+F) lead_events logs routing activity  
+G) no regressions  
+
+-------------------------------------
+
+RETURN REQUIRED
+-------------------------------------
+
+A) files changed  
+B) routing logic summary  
+C) example routed lead  
+D) validation results  
+E) whether deploy required  
+
+-------------------------------------
+
+This is a focused routing layer only.
+
+Do NOT expand scope beyond this.
