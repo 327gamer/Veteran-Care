@@ -666,7 +666,7 @@ export default function PartnerApply() {
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Direct Lead Delivery</h4>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Receive qualified veteran inquiries directly when users request help connecting with a provider in your category.
+                        Receive direct inquiries from individuals actively seeking services in your category and requesting to be connected with a provider.
                       </p>
                     </div>
                   </div>
@@ -682,9 +682,9 @@ export default function PartnerApply() {
                     />
                   </div>
                   {form.is_lead_enabled && (
-                    <div className="rounded-md bg-background border border-border p-3 space-y-1" data-testid="lead-pricing-info">
-                      <p className="text-sm font-semibold text-foreground">$49.99 per qualified lead</p>
-                      <p className="text-xs text-muted-foreground">You will only be charged when a qualified veteran lead is delivered to you.</p>
+                    <div className="rounded-md bg-background border border-border p-3 space-y-1.5" data-testid="lead-pricing-info">
+                      <p className="text-sm font-semibold text-foreground">$49.99 per qualified lead delivered</p>
+                      <p className="text-xs text-muted-foreground">A qualified lead is a direct inquiry from a user who has requested help connecting with a provider in your category. Leads are delivered directly to your inbox, and you are only charged when a qualified lead is sent to you.</p>
                     </div>
                   )}
                 </div>
