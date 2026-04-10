@@ -684,7 +684,7 @@ export default function PartnerApply() {
                   {form.is_lead_enabled && (
                     <div className="rounded-md bg-background border border-border p-3 space-y-1.5" data-testid="lead-pricing-info">
                       <p className="text-sm font-semibold text-foreground">$49.99 per qualified lead delivered</p>
-                      <p className="text-xs text-muted-foreground">A qualified lead is a direct inquiry from a user who has requested help connecting with a provider in your category. Leads are delivered directly to your inbox, and you are only charged when a qualified lead is sent to you.</p>
+                      <p className="text-xs text-muted-foreground">A qualified lead is a direct inquiry from a user who has requested help connecting with a provider in your category. Leads are delivered directly to your inbox, and you are only charged when a qualified lead is sent to you. Leads are matched based on category, location, and user request.</p>
                     </div>
                   )}
                 </div>
