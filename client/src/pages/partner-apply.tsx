@@ -30,8 +30,6 @@ import {
   Globe,
   Sparkles,
   Navigation,
-  Megaphone,
-  LayoutList,
   Gift,
 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -94,15 +92,11 @@ export default function PartnerApply() {
   const [addons, setAddons] = useState({
     featured: false,
     near_me_boost: false,
-    sponsored_top: false,
-    sponsored_inline: false,
   });
 
   const ADDON_INFO = [
-    { key: "featured" as const, label: "Featured Listing", icon: Sparkles, price: 49, desc: "Appear at the top of category results with a highlighted badge" },
-    { key: "near_me_boost" as const, label: "Near Me Boost", icon: Navigation, price: 29, desc: "Priority placement in location-based searches" },
-    { key: "sponsored_top" as const, label: "Sponsored Top Slot", icon: Megaphone, price: 79, desc: "Premium banner placement at the top of the directory" },
-    { key: "sponsored_inline" as const, label: "Sponsored Inline", icon: LayoutList, price: 39, desc: "Promoted listing woven into search results" },
+    { key: "featured" as const, label: "Featured Partner Placement", icon: Sparkles, price: 49.99, desc: "Appear at the top of category results with a highlighted badge" },
+    { key: "near_me_boost" as const, label: "Near Me Boost", icon: Navigation, price: 29.99, desc: "Priority placement in location-based searches" },
   ];
 
   const basePrices = { state: 99, national: 499 };
@@ -449,7 +443,7 @@ export default function PartnerApply() {
                       <p className="text-sm font-medium text-foreground">{addon.label}</p>
                       <p className="text-[11px] text-muted-foreground">{addon.desc}</p>
                     </div>
-                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">+${addon.price}/mo</span>
+                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">+${addon.price.toFixed(2)}/mo</span>
                     <Switch
                       data-testid={`switch-addon-${addon.key}`}
                       checked={addons[addon.key]}
@@ -472,17 +466,17 @@ export default function PartnerApply() {
                 <span className="text-muted-foreground">
                   {form.plan_type === "state" ? "State Plan" : "National Plan"} (base)
                 </span>
-                <span className="font-medium">${basePrice}/mo</span>
+                <span className="font-medium">${basePrice.toFixed(2)}/mo</span>
               </div>
               {selectedAddons.map((a) => (
                 <div key={a.key} className="flex justify-between">
                   <span className="text-muted-foreground">{a.label}</span>
-                  <span className="font-medium">+${a.price}/mo</span>
+                  <span className="font-medium">+${a.price.toFixed(2)}/mo</span>
                 </div>
               ))}
               <div className="border-t pt-1 mt-1 flex justify-between text-base font-bold text-foreground">
                 <span>Total</span>
-                <span>${monthlyTotal}/mo</span>
+                <span>${monthlyTotal.toFixed(2)}/mo</span>
               </div>
             </div>
           </div>
@@ -678,7 +672,7 @@ export default function PartnerApply() {
                   </div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="lead-toggle" className="text-sm font-medium cursor-pointer">
-                      Yes, I want to receive qualified leads
+                      Yes, I'd like to receive qualified leads
                     </Label>
                     <Switch
                       id="lead-toggle"
@@ -687,6 +681,12 @@ export default function PartnerApply() {
                       onCheckedChange={(checked) => setForm(prev => ({ ...prev, is_lead_enabled: checked }))}
                     />
                   </div>
+                  {form.is_lead_enabled && (
+                    <div className="rounded-md bg-background border border-border p-3 space-y-1" data-testid="lead-pricing-info">
+                      <p className="text-sm font-semibold text-foreground">$49.99 per qualified lead</p>
+                      <p className="text-xs text-muted-foreground">You will only be charged when a qualified veteran lead is delivered to you.</p>
+                    </div>
+                  )}
                 </div>
               );
             })()}

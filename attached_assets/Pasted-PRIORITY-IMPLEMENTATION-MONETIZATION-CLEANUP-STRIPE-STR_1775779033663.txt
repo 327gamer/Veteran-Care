@@ -1,0 +1,185 @@
+PRIORITY IMPLEMENTATION – MONETIZATION CLEANUP + STRIPE STRUCTURE (PRE-LAUNCH STABILIZATION)
+
+This is a REQUIRED stabilization step before continuing further development chunks.
+
+Please read fully before making changes.
+
+-------------------------------------
+CONTEXT
+-------------------------------------
+
+We are preparing for launch.
+
+The Trusted Partner system must:
+- be clean and simple for users
+- be monetizable
+- be scalable
+- avoid confusion or disputes
+
+We are simplifying and correcting the monetization structure BEFORE continuing lead system development.
+
+-------------------------------------
+1. PRICING UPDATE (UI + CONFIG ALIGNMENT)
+-------------------------------------
+
+Update pricing to:
+
+- Featured Partner Placement → $49.99/month
+- Near Me Boost → $29.99/month
+- Direct Lead Delivery → $49.99 per qualified lead
+
+These values must be reflected in:
+- signup UI
+- any pricing labels
+- any config/constants used in frontend
+
+-------------------------------------
+2. DIRECT LEAD DELIVERY (UX FIX)
+-------------------------------------
+
+This is NOT a subscription.
+
+This is PAY-PER-LEAD.
+
+Update the toggle section:
+
+LABEL:
+"Yes, I’d like to receive qualified leads"
+
+WHEN ENABLED:
+Display clearly:
+
+"$49.99 per qualified lead"
+
+Also include a short explanation:
+
+"You will only be charged when a qualified veteran lead is delivered to you."
+
+IMPORTANT:
+- DO NOT add dropdowns
+- DO NOT add pricing tiers
+- DO NOT add Stripe billing logic yet
+- DO NOT change routing yet
+
+This step is UX + configuration only.
+
+-------------------------------------
+3. REMOVE NON-FUNCTIONAL ADD-ONS (FRONTEND ONLY)
+-------------------------------------
+
+REMOVE from signup UI:
+
+- Sponsored Top Slot
+- Sponsored Inline
+
+REASON:
+These are not enforceable at scale and will create conflicts.
+
+IMPORTANT:
+- Remove from UI ONLY
+- DO NOT delete from Stripe
+- DO NOT modify backend schema
+
+-------------------------------------
+4. KEEP ONLY THESE ADD-ONS
+-------------------------------------
+
+A) Featured Partner Placement
+- highlighted badge
+- appears in featured section
+- rotation acceptable
+
+B) Near Me Boost
+- prioritizes listing in location-based results
+
+-------------------------------------
+5. STRIPE STRUCTURE (CRITICAL – TEST MODE ONLY)
+-------------------------------------
+
+We are currently in TEST MODE.
+
+DO NOT attempt to convert anything to live yet.
+
+However, we must structure correctly for future live deployment.
+
+-------------------------------------
+REQUIREMENTS:
+-------------------------------------
+
+1. DO NOT hardcode any Stripe price IDs
+
+2. Use environment variables for ALL Stripe values:
+
+Examples:
+
+STRIPE_SECRET_KEY
+STRIPE_PUBLISHABLE_KEY
+
+PRICE_FEATURED
+PRICE_NEAR_ME
+(FUTURE) PRICE_PER_LEAD
+
+3. Code must always reference:
+
+process.env.PRICE_FEATURED
+process.env.PRICE_NEAR_ME
+
+NEVER hardcoded values.
+
+-------------------------------------
+IMPORTANT:
+-------------------------------------
+
+We will recreate products in LIVE mode later.
+
+Do NOT attempt:
+- migration
+- syncing test to live
+
+We will simply swap environment variables at launch.
+
+-------------------------------------
+6. DO NOT CHANGE
+-------------------------------------
+
+DO NOT modify:
+
+- Stripe billing logic (beyond pricing display)
+- attribution / UTM / ambassador system
+- partner routing
+- admin panel
+- lead system (future chunks)
+- database schema beyond what already exists
+
+-------------------------------------
+7. VALIDATION REQUIRED
+-------------------------------------
+
+Confirm the following:
+
+A) Pricing displays correctly in signup UI  
+B) Direct Lead Delivery text updated  
+C) "$49.99 per qualified lead" is visible when enabled  
+D) Sponsored options removed from UI  
+E) Featured + Near Me still visible and clean  
+F) No regressions in signup flow  
+G) No Stripe logic broken  
+H) No hardcoded Stripe IDs exist  
+
+-------------------------------------
+8. RETURN REQUIRED
+-------------------------------------
+
+Provide:
+
+A) files changed  
+B) confirmation of environment variable usage  
+C) confirmation no hardcoded Stripe values exist  
+D) confirmation UI cleanup is complete  
+E) whether publish is required  
+
+-------------------------------------
+
+DO NOT proceed to next chunk until this is complete and verified.
+
+--- END ---
