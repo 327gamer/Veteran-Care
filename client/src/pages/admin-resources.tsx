@@ -187,7 +187,7 @@ function AdminResourcesInner() {
   const [resourceStateFilter, setResourceStateFilter] = useState("");
   const [resourceCategoryFilter, setResourceCategoryFilter] = useState("");
 
-  // Navigator Requests client-side filters
+  // Support Requests client-side filters
   const [leadSearch, setLeadSearch] = useState("");
   const [leadStateFilter, setLeadStateFilter] = useState("");
   const [leadCategoryFilter, setLeadCategoryFilter] = useState("");
@@ -242,6 +242,8 @@ function AdminResourcesInner() {
       return Array.isArray(body) ? body : (body.requests || []);
     },
     enabled: authenticated && activeTab === "leads",
+    refetchInterval: 15000,
+    staleTime: 5000,
   });
 
   const navPatchMutation = useMutation({
@@ -1001,7 +1003,7 @@ function AdminResourcesInner() {
             className="h-9 text-xs"
             onClick={() => setActiveTab("leads")}
           >
-            <Users className="h-3.5 w-3.5 mr-1.5" /> Navigator Requests
+            <Users className="h-3.5 w-3.5 mr-1.5" /> Support Requests
           </Button>
           <Button
             data-testid="tab-partners"
@@ -1713,7 +1715,7 @@ function AdminResourcesInner() {
               {!navLoading && filteredNavRequests.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">
                   {navRequests.length === 0
-                    ? `No ${leadStatusFilter.replace("_", " ")} navigator requests.`
+                    ? `No ${leadStatusFilter.replace("_", " ")} support requests.`
                     : "No requests match the current filters."}
                 </p>
               )}

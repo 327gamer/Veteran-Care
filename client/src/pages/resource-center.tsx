@@ -35,7 +35,7 @@ const steps = [
     number: "3",
     icon: Phone,
     title: "Connect them directly",
-    desc: "Share resources, request a Navigator, or submit a lead on behalf of the veteran you're supporting.",
+    desc: "Share resources, request support, or submit a lead on behalf of the veteran you're supporting.",
   },
 ];
 

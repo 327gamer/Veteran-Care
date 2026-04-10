@@ -1,0 +1,151 @@
+}
+POST-TEST REGRESSION + UX + AI TUNING FIXES
+
+We completed another full test cycle.
+
+The system is directionally correct, but recent changes introduced regressions and clarity issues that must be fixed before continuing.
+
+-------------------------------------
+ISSUE 1 – CRITICAL REGRESSION
+SUPPORT REQUESTS NOT SHOWING IN ADMIN
+-------------------------------------
+
+Important context:
+This was working correctly prior to recent routing changes.
+
+Now:
+- user submits request → success
+- email sent → correct
+- routing logic executes
+- BUT new requests do NOT appear in admin panel
+
+Observation:
+Older requests (from yesterday) are visible
+New requests are not
+
+Likely cause:
+New delivery_status values (unrouted, delivered, etc.)
+are not included in admin query filters
+
+Fix Required:
+
+1. Update admin query to include ALL statuses:
+- pending
+- delivered
+- unrouted
+- delivery_failed
+
+OR remove restrictive filtering entirely
+
+2. Confirm:
+- ALL new requests appear immediately in admin
+- no requests are hidden due to delivery_status changes
+
+-------------------------------------
+ISSUE 2 – TERMINOLOGY CONFUSION
+-------------------------------------
+
+Current naming is inconsistent:
+
+- "Navigator Requests" (admin)
+- "Request Support" (user)
+- "Veteran Guide" (AI)
+
+Fix Required:
+
+Rename:
+"Navigator Requests" → "Support Requests"
+
+Ensure naming consistency across:
+- admin panel
+- internal labels
+- logs where applicable
+
+-------------------------------------
+ISSUE 3 – AI RESULTS OVER-RESTRICTED
+-------------------------------------
+
+Problem:
+Results are now too limited compared to before
+
+Example:
+- “food” or “housing” returns ~203 results
+- previously returned broader dataset
+
+Fix Required:
+
+1. Adjust result limits:
+- increase initial result pool
+- do not overly restrict results
+
+2. Keep relevance high but allow:
+- broader matching within same category
+
+-------------------------------------
+ISSUE 4 – LOCATION PRIORITIZATION
+-------------------------------------
+
+Problem:
+Results are not prioritizing closest location
+
+Example:
+- user near Charleston
+- results show Dorchester instead of closer options
+
+Fix Required:
+
+1. Sort results by:
+- distance (closest first)
+- then relevance
+
+2. Use:
+- user geolocation if available
+- fallback to ZIP / city
+
+-------------------------------------
+ISSUE 5 – AI CATEGORY BLEED
+-------------------------------------
+
+Problem:
+AI mixes unrelated categories
+
+Example:
+- benefits → legal + drug + education
+
+Fix Required:
+
+1. Enforce primary category lock:
+- once category detected → stay within it
+
+2. Limit initial results to:
+- 3–5 highly relevant matches
+
+3. Remove cross-category mixing in first response
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do NOT:
+- change routing logic
+- change billing
+- change eligibility system
+- change event tracking
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+After fix:
+
+1. Submit support request → appears in admin immediately
+2. Admin shows ALL requests regardless of delivery_status
+3. AI results are:
+   - more localized
+   - category-specific
+   - not overly restricted
+4. Naming updated to "Support Requests"
+
+-------------------------------------
+
+Do NOT proceed to next chunk until confirmed

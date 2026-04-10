@@ -19,7 +19,7 @@ export async function matchResources(
   userMessage: string,
   userState?: string,
   userCity?: string,
-  limit: number = 5
+  limit: number = 8
 ): Promise<MatchedResource[]> {
   const detectedCategories = detectCategories(userMessage);
   let allResults: MatchedResource[] = [];
@@ -27,20 +27,10 @@ export async function matchResources(
   if (detectedCategories.length > 0) {
     const primaryCategory = detectedCategories[0];
     const primaryResults = await searchByCategory([primaryCategory], userState, userCity);
-    allResults.push(...primaryResults.slice(0, 4));
-
-    if (allResults.length < 3 && detectedCategories.length > 1) {
-      const secondaryResults = await searchByCategory([detectedCategories[1]], userState, userCity);
-      for (const r of secondaryResults) {
-        if (allResults.length >= limit) break;
-        if (!allResults.find(existing => existing.id === r.id)) {
-          allResults.push(r);
-        }
-      }
-    }
+    allResults.push(...primaryResults.slice(0, limit));
   }
 
-  if (allResults.length < 2) {
+  if (allResults.length < 3) {
     const searchTerms = extractSearchTerms(userMessage);
     if (searchTerms.length > 0) {
       const textResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState, userCity);
@@ -57,7 +47,7 @@ export async function matchResources(
     const searchTerms = extractSearchTerms(userMessage);
     if (searchTerms.length > 0) {
       const broadResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
-      allResults.push(...broadResults.slice(0, 3));
+      allResults.push(...broadResults.slice(0, 5));
     }
   }
 
@@ -102,6 +92,38 @@ function extractSearchTerms(message: string): string[] {
     .filter(w => w.length > 2 && !stopWords.has(w));
 }
 
+const SC_NEARBY_CITIES: Record<string, string[]> = {
+  "charleston": ["north charleston", "mount pleasant", "summerville", "goose creek", "james island", "west ashley", "hanahan"],
+  "columbia": ["west columbia", "lexington", "irmo", "cayce", "forest acres", "blythewood"],
+  "greenville": ["greer", "mauldin", "simpsonville", "travelers rest", "easley", "taylors"],
+  "myrtle beach": ["north myrtle beach", "conway", "surfside beach", "garden city", "pawleys island", "georgetown"],
+  "spartanburg": ["boiling springs", "duncan", "inman", "wellford"],
+  "rock hill": ["fort mill", "lake wylie", "clover", "york"],
+  "mount pleasant": ["charleston", "sullivan's island", "isle of palms"],
+  "north charleston": ["charleston", "goose creek", "hanahan", "summerville"],
+  "summerville": ["charleston", "north charleston", "goose creek", "ladson"],
+  "florence": ["hartsville", "darlington", "lake city", "effingham"],
+  "hilton head island": ["bluffton", "beaufort", "port royal"],
+  "beaufort": ["port royal", "hilton head island", "bluffton"],
+};
+
+function getLocationScore(resourceCity: string | null, resourceState: string | null, userCity?: string, userState?: string): number {
+  if (!userCity && !userState) return 5;
+  const rCity = resourceCity?.toLowerCase()?.trim();
+  const uCity = userCity?.toLowerCase()?.trim();
+  const rState = resourceState?.toUpperCase()?.trim();
+  const uState = userState?.toUpperCase()?.trim();
+
+  if (uCity && rCity === uCity) return 0;
+  if (uCity && rCity) {
+    const nearby = SC_NEARBY_CITIES[uCity] || [];
+    if (nearby.includes(rCity)) return 1;
+  }
+  if (uState && rState === uState) return 2;
+  if (!rState) return 3;
+  return 4;
+}
+
 async function searchByCategory(
   categorySlugs: string[],
   userState?: string,
@@ -112,7 +134,7 @@ async function searchByCategory(
     .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories!inner(categories!inner(slug, name))")
     .eq("status", "approved")
     .in("resource_categories.categories.slug", categorySlugs)
-    .limit(10);
+    .limit(25);
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);
@@ -134,17 +156,9 @@ async function searchByCategory(
     category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
     category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
   })).sort((a, b) => {
-    if (userCity) {
-      const aLocal = a.city?.toLowerCase() === userCity.toLowerCase() ? 0 : 1;
-      const bLocal = b.city?.toLowerCase() === userCity.toLowerCase() ? 0 : 1;
-      if (aLocal !== bLocal) return aLocal - bLocal;
-    }
-    if (userState) {
-      const aState = a.state === userState ? 0 : 1;
-      const bState = b.state === userState ? 0 : 1;
-      return aState - bState;
-    }
-    return 0;
+    const aScore = getLocationScore(a.city, a.state, userCity, userState);
+    const bScore = getLocationScore(b.city, b.state, userCity, userState);
+    return aScore - bScore;
   });
 }
 
@@ -165,7 +179,7 @@ async function searchByText(
     .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
     .eq("status", "approved")
     .or(ilikeClauses)
-    .limit(5);
+    .limit(15);
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);
@@ -186,5 +200,9 @@ async function searchByText(
     subcategory: r.subcategory,
     category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
     category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
-  }));
+  })).sort((a, b) => {
+    const aScore = getLocationScore(a.city, a.state, userCity, userState);
+    const bScore = getLocationScore(b.city, b.state, userCity, userState);
+    return aScore - bScore;
+  });
 }
