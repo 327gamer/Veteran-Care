@@ -1,0 +1,128 @@
+CHUNK 4 – FINAL ALIGNMENT / COMPLETION PASS
+
+Your Chunk 4 implementation is directionally correct and we are keeping the existing approach.
+
+However, before Chunk 4 is considered complete, we need a final alignment pass so it matches the approved spec exactly.
+
+Do NOT rebuild Chunk 4.
+Do NOT expand scope.
+Apply only the following corrections / completions.
+
+-------------------------------------
+1. CORRECT LEAD-ELIGIBLE CATEGORY SET
+-------------------------------------
+
+Your summary still lists:
+- wellness-recovery
+- benefits-assistance
+
+These should NOT be treated as lead-eligible at launch.
+
+Use the approved launch eligibility set only.
+
+Remove routing eligibility for:
+- wellness-recovery
+- benefits-assistance
+- auto-services (already removed earlier)
+
+Chunk 4 routing must only route leads for the currently approved lead-eligible categories.
+
+-------------------------------------
+2. SUPPORT BOTH LEAD TYPES REQUIRED FOR CHUNK 4
+-------------------------------------
+
+Chunk 4 must route only these lead types:
+
+A) explicit_lead
+- Get Help / Request Support
+- admin-created or user-submitted qualified leads
+
+B) ai_intent ONLY when escalated into a real connection/help request
+- user explicitly asks for:
+  - help
+  - connection
+  - contact
+  - callback
+  - someone to reach out
+
+Do NOT route:
+- engagement_event
+- visibility_event
+- non-escalated AI intent
+
+If AI escalation support is not yet fully wired, add the routing-ready logic/path now without changing broader AI behavior.
+
+-------------------------------------
+3. EVENT LOGGING MUST MATCH APPROVED SPEC
+-------------------------------------
+
+Chunk 4 must log all routing outcomes, not just successful route preparation.
+
+Ensure these routing events exist:
+
+- lead_routed
+- lead_unrouted
+- lead_delivered_to_partner
+
+All must include:
+- category_slug
+- partner_id where applicable
+- attribution fields if available
+- timestamp
+- lead_class
+
+-------------------------------------
+4. UNROUTED LEAD HANDLING MUST BE EXPLICIT
+-------------------------------------
+
+If no eligible partner match is found:
+
+- do NOT drop the lead
+- mark/store it as unrouted
+- ensure it remains visible in existing admin workflow
+- preserve fallback behavior for user experience
+
+We need this to be explicit and traceable, not just implied through fallback.
+
+-------------------------------------
+5. PARTNER SELECTION RULE
+-------------------------------------
+
+For launch:
+- route to 1–3 partners max
+
+Please explicitly enforce / confirm this cap in the routing logic.
+
+Do NOT add:
+- scoring
+- ranking
+- quotas
+- load balancing
+
+-------------------------------------
+6. KEEP ALL EXISTING PROTECTIONS
+-------------------------------------
+
+Do NOT break:
+- taxonomy
+- attribution / ambassador / referral
+- Stripe
+- existing admin manual routing
+- existing fallback behavior
+- AI behavior outside routing trigger
+- current signup UX
+
+-------------------------------------
+RETURN ONLY
+-------------------------------------
+
+A) files updated  
+B) exact final lead-eligible category set used by Chunk 4  
+C) how explicit_lead and escalated ai_intent are handled  
+D) how unrouted leads are stored / surfaced  
+E) confirmation that 1–3 partner cap is enforced  
+F) which routing events are now logged  
+G) whether deploy is required  
+
+This is the final Chunk 4 completion pass.
+Do not expand scope beyond this.

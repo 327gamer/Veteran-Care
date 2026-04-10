@@ -101,23 +101,11 @@ const LEAD_ELIGIBLE_CATEGORIES: Record<string, CategoryEligibility> = {
   },
 
   "wellness-recovery": {
-    eligible: true,
-    allSubcategories: false,
-    eligibleSubcategories: [
-      "mental-health-counseling",
-      "substance-abuse",
-    ],
+    eligible: false,
   },
 
   "benefits-assistance": {
-    eligible: true,
-    allSubcategories: false,
-    eligibleSubcategories: [
-      "disability-claims",
-      "disability-increase",
-      "cp-exam-prep",
-      "vso-claims",
-    ],
+    eligible: false,
   },
 
   "auto-services": {

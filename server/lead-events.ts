@@ -47,6 +47,8 @@ export interface LeadEventData {
 
   billable?: boolean;
   billing_type?: string | null;
+
+  metadata?: Record<string, any> | null;
 }
 
 export async function ensureLeadEventsTable(): Promise<void> {
@@ -86,12 +88,14 @@ export async function ensureLeadEventsTable(): Promise<void> {
         acknowledgement_status TEXT,
 
         billable BOOLEAN NOT NULL DEFAULT false,
-        billing_type TEXT
+        billing_type TEXT,
+        metadata JSONB
       )
     `);
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN source_surface SET NOT NULL`).catch(() => {});
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN category_slug SET NOT NULL`).catch(() => {});
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN lead_class SET NOT NULL`).catch(() => {});
+    await pgQuery(`ALTER TABLE lead_events ADD COLUMN IF NOT EXISTS metadata JSONB`).catch(() => {});
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_type ON lead_events(event_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_class ON lead_events(lead_class)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_created ON lead_events(created_at)`);
@@ -136,7 +140,8 @@ export async function logLeadEvent(data: LeadEventData): Promise<void> {
         state, city,
         ai_origin, ai_intent_category, ai_intent_subcategory,
         delivery_status, acknowledgement_status,
-        billable, billing_type
+        billable, billing_type,
+        metadata
       ) VALUES (
         $1, $2, $3,
         $4, $5, $6,
@@ -147,7 +152,8 @@ export async function logLeadEvent(data: LeadEventData): Promise<void> {
         $15, $16,
         $17, $18, $19,
         $20, $21,
-        $22, $23
+        $22, $23,
+        $24
       )`,
       [
         data.event_type,
@@ -173,6 +179,7 @@ export async function logLeadEvent(data: LeadEventData): Promise<void> {
         data.acknowledgement_status || null,
         data.billable ?? false,
         data.billing_type || null,
+        data.metadata ? JSON.stringify(data.metadata) : null,
       ]
     );
   } catch (err: any) {

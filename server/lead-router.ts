@@ -180,10 +180,13 @@ export async function findCandidatePartners(
     });
 }
 
-export async function findBestPartner(
+const MAX_PARTNERS_PER_LEAD = 3;
+
+export async function findMatchingPartners(
   lead: LeadForRouting,
-  excludePartnerIds: string[] = []
-): Promise<{ partnerId: string; partnerName: string; ruleId: string } | null> {
+  excludePartnerIds: string[] = [],
+  maxPartners: number = MAX_PARTNERS_PER_LEAD
+): Promise<{ partnerId: string; partnerName: string; ruleId: string }[]> {
   const categorySlug = await getCategorySlugForLead(lead);
 
   const { data: rules, error } = await supabaseAdmin
@@ -191,18 +194,24 @@ export async function findBestPartner(
     .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities)")
     .eq("is_active", true);
 
-  if (error || !rules || rules.length === 0) return null;
+  if (error || !rules || rules.length === 0) return [];
 
   const candidates = applyRoutingFilters(rules as any[], lead, categorySlug, excludePartnerIds);
 
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) return [];
 
   candidates.sort((a, b) => {
     if (a.priority !== b.priority) return a.priority - b.priority;
     return computeSpecificity(b) - computeSpecificity(a);
   });
 
+  const matched: { partnerId: string; partnerName: string; ruleId: string }[] = [];
+  const seenPartnerIds = new Set<string>();
+
   for (const rule of candidates) {
+    if (matched.length >= maxPartners) break;
+    if (seenPartnerIds.has(rule.partner.id)) continue;
+
     if (!isExternalEmail(rule.partner.contact_email)) {
       console.log(`[router] Skipping ${rule.partner.name} — no external intake email`);
       continue;
@@ -211,24 +220,76 @@ export async function findBestPartner(
       const todayCount = await countTodayLeadsForPartner(rule.partner.id);
       if (todayCount >= rule.max_leads_per_day) continue;
     }
-    return {
+    seenPartnerIds.add(rule.partner.id);
+    matched.push({
       partnerId: rule.partner.id,
       partnerName: rule.partner.name,
       ruleId: rule.id,
-    };
+    });
   }
 
-  return null;
+  return matched;
+}
+
+export async function findBestPartner(
+  lead: LeadForRouting,
+  excludePartnerIds: string[] = []
+): Promise<{ partnerId: string; partnerName: string; ruleId: string } | null> {
+  const matches = await findMatchingPartners(lead, excludePartnerIds, 1);
+  return matches.length > 0 ? matches[0] : null;
+}
+
+async function markLeadUnrouted(leadId: string): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from("navigator_requests")
+      .update({ delivery_status: "unrouted" })
+      .eq("id", leadId);
+  } catch {}
+}
+
+const ROUTABLE_LEAD_CLASSES = ["explicit_lead", "ai_intent"];
+
+const AI_ESCALATION_KEYWORDS = [
+  "help", "connect", "contact", "callback", "reach out",
+  "speak to someone", "talk to someone", "get assistance",
+  "need help", "call me", "someone to help",
+];
+
+export function isEscalatedAiIntent(leadClass: string | null | undefined, message: string | null | undefined): boolean {
+  if (leadClass !== "ai_intent") return false;
+  if (!message) return false;
+  const lower = message.toLowerCase();
+  return AI_ESCALATION_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+const KNOWN_LEAD_CLASSES = ["explicit_lead", "ai_intent", "engagement_event", "visibility_event"];
+
+function resolveLeadClass(lead: any): string {
+  const raw = lead.lead_class || null;
+  if (raw && KNOWN_LEAD_CLASSES.includes(raw)) {
+    return raw;
+  }
+  const source = lead.source || "";
+  if (source === "get_help" || source === "resource_detail" || source === "admin") {
+    return "explicit_lead";
+  }
+  return raw || "explicit_lead";
+}
+
+function isRoutableLeadClass(leadClass: string): boolean {
+  return ROUTABLE_LEAD_CLASSES.includes(leadClass);
 }
 
 export async function routeLead(leadId: string): Promise<{
   routed: boolean;
   partnerId?: string;
   partnerName?: string;
+  partnerIds?: string[];
 }> {
   const { data: lead, error: leadErr } = await supabaseAdmin
     .from("navigator_requests")
-    .select("id, category, subcategory, urgency, user_state, user_city, routed_to_partner_id")
+    .select("*")
     .eq("id", leadId)
     .single();
 
@@ -237,16 +298,112 @@ export async function routeLead(leadId: string): Promise<{
     return { routed: false };
   }
 
-  const categorySlug = await getCategorySlugForLead(lead);
+  let categorySlug = await getCategorySlugForLead(lead);
+  if (!categorySlug && lead.category) {
+    const canonical = toCanonical(lead.category);
+    if (canonical !== lead.category) {
+      categorySlug = canonical;
+    } else {
+      categorySlug = lead.category;
+    }
+  }
   const subcategorySlug = lead.subcategory || null;
+  const leadClass = resolveLeadClass(lead);
 
-  if (categorySlug && !isLeadEligibleCategory(categorySlug)) {
-    console.log(`[router] Lead ${leadId} category "${categorySlug}" is not lead-eligible — skipping monetized routing`);
+  const attributionFields = {
+    utm_source: lead.utm_source || null,
+    utm_medium: lead.utm_medium || null,
+    utm_campaign: lead.utm_campaign || null,
+    ambassador_id: lead.ambassador_id || null,
+  };
+
+  if (!categorySlug) {
+    console.log(`[router] Lead ${leadId} has no resolvable category — skipping monetized routing`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: lead.category || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "category_unresolvable", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
     return { routed: false };
   }
 
-  if (categorySlug && subcategorySlug && !isLeadEligibleSubcategory(categorySlug, subcategorySlug)) {
+  if (!isLeadEligibleCategory(categorySlug)) {
+    console.log(`[router] Lead ${leadId} category "${categorySlug}" not lead-eligible — skipping monetized routing`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: categorySlug || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "category_not_eligible", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
+    return { routed: false };
+  }
+
+  if (subcategorySlug && !isLeadEligibleSubcategory(categorySlug, subcategorySlug)) {
     console.log(`[router] Lead ${leadId} subcategory "${subcategorySlug}" in "${categorySlug}" is not lead-eligible — skipping monetized routing`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: categorySlug || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "subcategory_not_eligible", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
+    return { routed: false };
+  }
+
+  if (leadClass === "ai_intent" && !isEscalatedAiIntent(leadClass, lead.message || lead.description || "")) {
+    console.log(`[router] Lead ${leadId} is non-escalated ai_intent — skipping routing`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: categorySlug || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "ai_intent_not_escalated", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
+    return { routed: false };
+  }
+
+  if (!isRoutableLeadClass(leadClass)) {
+    console.log(`[router] Lead ${leadId} class "${leadClass}" is not routable — skipping`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: categorySlug || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "lead_class_not_routable", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
     return { routed: false };
   }
 
@@ -268,19 +425,27 @@ export async function routeLead(leadId: string): Promise<{
     }
   } catch {}
 
-  const match = await findBestPartner(lead, excludeIds);
-  if (!match) {
+  const matches = await findMatchingPartners(lead, excludeIds, MAX_PARTNERS_PER_LEAD);
+  if (matches.length === 0) {
     console.log(`[router] No matching partner for lead ${leadId}`);
+    logLeadEvent({
+      event_type: "lead_unrouted",
+      lead_class: leadClass,
+      action_type: "route",
+      source_surface: "lead_router",
+      category_slug: categorySlug || "unknown",
+      subcategory_slug: subcategorySlug,
+      state: lead.user_state || null,
+      city: lead.user_city || null,
+      delivery_status: "unrouted",
+      metadata: { reason: "no_partner_match", ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
     return { routed: false };
   }
 
-  const historyEntry = {
-    partner_id: match.partnerId,
-    partner_name: match.partnerName,
-    rule_id: match.ruleId,
-    routed_at: new Date().toISOString(),
-    delivery_status: "ready_for_delivery",
-  };
+  const primaryMatch = matches[0];
+  const now = new Date().toISOString();
 
   let existingHistory: any[] = [];
   try {
@@ -291,13 +456,22 @@ export async function routeLead(leadId: string): Promise<{
       .single();
     existingHistory = Array.isArray(hist?.routing_history) ? hist.routing_history : [];
   } catch {}
-  existingHistory.push(historyEntry);
+
+  for (const match of matches) {
+    existingHistory.push({
+      partner_id: match.partnerId,
+      partner_name: match.partnerName,
+      rule_id: match.ruleId,
+      routed_at: now,
+      delivery_status: "ready_for_delivery",
+    });
+  }
 
   const { error: updateErr } = await supabaseAdmin
     .from("navigator_requests")
     .update({
-      routed_to_partner_id: match.partnerId,
-      routed_at: new Date().toISOString(),
+      routed_to_partner_id: primaryMatch.partnerId,
+      routed_at: now,
       delivery_status: "ready_for_delivery",
       routing_history: existingHistory,
     })
@@ -308,60 +482,88 @@ export async function routeLead(leadId: string): Promise<{
     return { routed: false };
   }
 
-  console.log(`[router] Lead ${leadId} routed to ${match.partnerName} (${match.partnerId})`);
+  console.log(`[router] Lead ${leadId} routed to ${matches.length} partner(s): ${matches.map(m => m.partnerName).join(", ")}`);
 
-  sendLeadNotification(leadId, match.partnerId)
-    .then(async () => {
-      await supabaseAdmin
-        .from("navigator_requests")
-        .update({ delivery_status: "delivered" })
-        .eq("id", leadId)
-        .catch(() => {});
+  logLeadEvent({
+    event_type: "lead_routed",
+    lead_class: leadClass,
+    action_type: "route",
+    source_surface: "lead_router",
+    category_slug: categorySlug || "unknown",
+    subcategory_slug: subcategorySlug,
+    partner_id: primaryMatch.partnerId,
+    state: lead.user_state || null,
+    city: lead.user_city || null,
+    delivery_status: "ready_for_delivery",
+    metadata: {
+      partner_count: matches.length,
+      partner_ids: matches.map(m => m.partnerId),
+      ...attributionFields,
+    },
+  });
 
-      if (categorySlug) {
+  for (const match of matches) {
+    sendLeadNotification(leadId, match.partnerId)
+      .then(async () => {
         logLeadEvent({
-          event_type: "lead_routed",
-          lead_class: "explicit_lead",
-          action_type: "route",
+          event_type: "lead_delivered_to_partner",
+          lead_class: leadClass,
+          action_type: "deliver",
           source_surface: "lead_router",
-          category_slug: categorySlug,
+          category_slug: categorySlug || "unknown",
           subcategory_slug: subcategorySlug,
           partner_id: match.partnerId,
           state: lead.user_state || null,
           city: lead.user_city || null,
           delivery_status: "delivered",
+          metadata: attributionFields,
         });
-      }
-    })
-    .catch((err) => {
-      console.log(`[router] Email notification failed for lead ${leadId}:`, err?.message);
-      supabaseAdmin
-        .from("navigator_requests")
-        .update({ delivery_status: "delivery_failed" })
-        .eq("id", leadId)
-        .catch(() => {});
 
-      if (categorySlug) {
+        if (match.partnerId === primaryMatch.partnerId) {
+          await supabaseAdmin
+            .from("navigator_requests")
+            .update({ delivery_status: "delivered" })
+            .eq("id", leadId)
+            .catch(() => {});
+        }
+
+        createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
+          console.log(`[router] Lead billing record creation failed for lead ${leadId}:`, err?.message);
+        });
+      })
+      .catch((err) => {
+        console.log(`[router] Email notification failed for lead ${leadId} to ${match.partnerName}:`, err?.message);
+
         logLeadEvent({
-          event_type: "lead_routed",
-          lead_class: "explicit_lead",
-          action_type: "route",
+          event_type: "lead_delivered_to_partner",
+          lead_class: leadClass,
+          action_type: "deliver",
           source_surface: "lead_router",
-          category_slug: categorySlug,
+          category_slug: categorySlug || "unknown",
           subcategory_slug: subcategorySlug,
           partner_id: match.partnerId,
           state: lead.user_state || null,
           city: lead.user_city || null,
           delivery_status: "delivery_failed",
+          metadata: { error: err?.message, ...attributionFields },
         });
-      }
-    });
 
-  createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
-    console.log(`[router] Lead billing record creation failed for lead ${leadId}:`, err?.message);
-  });
+        if (match.partnerId === primaryMatch.partnerId) {
+          supabaseAdmin
+            .from("navigator_requests")
+            .update({ delivery_status: "delivery_failed" })
+            .eq("id", leadId)
+            .catch(() => {});
+        }
+      });
+  }
 
-  return { routed: true, partnerId: match.partnerId, partnerName: match.partnerName };
+  return {
+    routed: true,
+    partnerId: primaryMatch.partnerId,
+    partnerName: primaryMatch.partnerName,
+    partnerIds: matches.map(m => m.partnerId),
+  };
 }
 
 async function createLeadBillingRecord(leadId: string, partnerId: string, category: string | null) {
@@ -397,11 +599,11 @@ async function createLeadBillingRecord(leadId: string, partnerId: string, catego
   }
 }
 
-export async function autoRouteNewLead(leadId: string): Promise<{ routed: boolean; partnerId?: string; partnerName?: string }> {
+export async function autoRouteNewLead(leadId: string): Promise<{ routed: boolean; partnerId?: string; partnerName?: string; partnerIds?: string[] }> {
   try {
     const result = await routeLead(leadId);
     if (!result.routed) {
-      console.log(`[router] Lead ${leadId} unmatched — self-serve fallback`);
+      console.log(`[router] Lead ${leadId} not routed — self-serve fallback`);
     }
     return result;
   } catch (err: any) {
