@@ -213,7 +213,7 @@ export default function GetHelp() {
   return (
     <>
       {isMobile ? (
-        <div className="flex flex-col min-h-full pb-20">
+        <div className="flex flex-col min-h-full">
           <div className="flex items-center gap-2 px-4 py-3 border-b bg-background sticky top-0 z-10">
             <button
               data-testid="get-help-back"
