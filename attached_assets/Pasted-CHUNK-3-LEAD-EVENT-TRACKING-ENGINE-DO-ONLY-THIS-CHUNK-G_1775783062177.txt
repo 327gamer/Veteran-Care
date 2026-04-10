@@ -1,0 +1,248 @@
+CHUNK 3 – LEAD EVENT + TRACKING ENGINE
+
+DO ONLY THIS CHUNK.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create a unified event + lead tracking foundation that captures:
+
+- explicit help-request leads
+- partner interaction events
+- AI intent signals (foundation only)
+
+This is a DATA LAYER ONLY.
+
+Do NOT change:
+- billing
+- routing
+- admin workflows
+- Stripe
+- attribution logic
+- signup UI
+- trusted partner visibility logic
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+We are building the foundation to ensure:
+- no monetizable action is lost
+- all important interactions are trackable
+- attribution is preserved
+- future billing can be layered cleanly
+
+This chunk should be invisible to end users.
+
+-------------------------------------
+1. CREATE EVENT STORAGE
+-------------------------------------
+
+Create a new table:
+
+lead_events
+
+Use the existing primary operational database pattern already used for related lead / partner / admin workflows.
+Do NOT create a disconnected client-only store.
+
+Fields (minimum required):
+
+CORE:
+- id (uuid)
+- event_type (string)
+- lead_class (string)
+- action_type (string)
+- created_at (timestamp)
+
+ACTOR:
+- user_id (nullable)
+- session_id (string, nullable if unavailable)
+- anonymous_id (nullable)
+
+SOURCE:
+- source_surface (string)
+  examples:
+  - get_help
+  - trusted_services
+  - resources
+  - ai_guide
+  - partner_page
+
+PARTNER / RESOURCE:
+- partner_id (nullable)
+- resource_id (nullable)
+
+TAXONOMY:
+- category_slug (nullable)
+- subcategory_slug (nullable)
+
+ATTRIBUTION:
+- utm_id (nullable)
+- ambassador_id (nullable)
+- referral_code (nullable)
+
+GEO:
+- state (nullable)
+- city (nullable)
+
+AI:
+- ai_origin (boolean default false)
+- ai_intent_category (nullable)
+- ai_intent_subcategory (nullable)
+
+STATUS:
+- delivery_status (nullable)
+- acknowledgement_status (nullable)
+
+COMMERCIAL:
+- billable (boolean default false)
+- billing_type (nullable)
+
+-------------------------------------
+2. EVENT TYPES TO CAPTURE
+-------------------------------------
+
+Implement logging for:
+
+A) EXPLICIT LEADS
+(existing flows – log event only)
+
+event_type:
+- help_request_submitted
+
+lead_class:
+- explicit_lead
+
+-------------------------------------
+
+B) PARTNER INTERACTIONS
+
+Track these actions on partner detail pages / partner action surfaces:
+
+- partner_view
+- partner_call_click
+- partner_email_click
+- partner_website_click
+- partner_apply_click
+
+lead_class:
+- engagement_event
+
+IMPORTANT:
+- Do NOT mark as billable yet
+- Do NOT change the visible UX
+- Do NOT interrupt the action if event logging fails
+
+-------------------------------------
+
+C) AI INTENT (FOUNDATION ONLY)
+
+When AI detects strong intent:
+- store event only
+
+event_type:
+- ai_intent_detected
+
+lead_class:
+- ai_intent
+
+Set:
+- ai_origin = true
+- ai_intent_category
+- ai_intent_subcategory
+
+DO NOT create leads yet.
+DO NOT route yet.
+DO NOT bill yet.
+
+-------------------------------------
+3. BUILD LOGGING HELPER
+-------------------------------------
+
+Create reusable helper:
+
+logLeadEvent(data)
+
+This must:
+- accept normalized payload
+- attach timestamp
+- safely insert into lead_events
+- fail gracefully without breaking user actions
+
+Make it reusable across:
+- backend routes
+- partner interaction handlers
+- AI system (future)
+
+If some frontend actions must call backend logging, do so through safe lightweight endpoints or existing action flows.
+Do NOT create noisy or fragile client-only logging patterns.
+
+-------------------------------------
+4. PRESERVE ATTRIBUTION
+-------------------------------------
+
+Every event MUST include if available:
+
+- utm_id
+- ambassador_id
+- referral_code
+
+Pull from:
+- existing attribution/session context
+- stored attribution values already used by the platform
+
+Do NOT alter current attribution logic.
+Only read and attach existing attribution values.
+
+-------------------------------------
+5. NO UI CHANGES
+-------------------------------------
+
+- no visible changes to users
+- no changes to signup
+- no changes to admin panel
+- no pricing/billing changes
+- no routing changes
+
+-------------------------------------
+6. NON-BLOCKING / PERFORMANCE RULE
+-------------------------------------
+
+Event logging must be lightweight and non-blocking.
+
+Requirements:
+- no user-facing delay
+- no failed page action because event insert failed
+- no performance degradation on partner clicks or help-request submission
+
+If needed:
+- log after successful core action
+- isolate event failure from core action success
+
+-------------------------------------
+7. VALIDATION
+-------------------------------------
+
+Confirm:
+
+A) lead_events table exists  
+B) events log correctly for:
+   - help requests
+   - partner clicks  
+   - AI intent foundation event  
+C) attribution fields are populated when available  
+D) no regression in platform behavior  
+E) no performance issues  
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+A) table structure  
+B) files created/updated  
+C) example event logs  
+D) how to test events  
+E) confirmation no regressions  
+
+END OF CHUNK 3

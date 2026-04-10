@@ -9,6 +9,7 @@ import { logUsage } from "./usage-logger";
 import { checkBudget, invalidateBudgetCache } from "./budget-guard";
 import { aiConfig } from "./config";
 import { routeToTrustedServices, type TrustedServiceSuggestion } from "../service-router";
+import { logLeadEvent } from "../lead-events";
 
 interface ChatRequest {
   messages: Array<{ role: string; content: string }>;
@@ -87,6 +88,21 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
 
   const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
   const detectedCats = detectCategories(lastUserMsg.content);
+
+  if (detectedCats.length > 0) {
+    logLeadEvent({
+      event_type: "ai_intent_detected",
+      lead_class: "ai_intent",
+      action_type: "detect",
+      user_id: userId,
+      source_surface: "ai_guide",
+      ai_origin: true,
+      ai_intent_category: detectedCats[0],
+      ai_intent_subcategory: detectedCats[1] || null,
+      state: userState || null,
+      city: userCity || null,
+    });
+  }
 
   let trustedServiceResult: { categorySlug: string; categoryName: string; providers: TrustedServiceSuggestion[] } | null = null;
   try {

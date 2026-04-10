@@ -24,6 +24,15 @@ import { trackEvent } from "@/lib/analytics";
 import GetDirectionsButton from "@/components/get-directions-button";
 import { hasDirectionsData } from "@/lib/directions";
 
+function logPartnerEvent(event_type: string, extra: Record<string, any> = {}) {
+  const sid = sessionStorage.getItem("vc_session_id") || undefined;
+  fetch("/api/lead-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event_type, source_surface: "trusted_services", session_id: sid, ...extra }),
+  }).catch(() => {});
+}
+
 export interface TrustedServiceItem {
   id: string;
   category_id: string;
@@ -82,6 +91,12 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  useEffect(() => {
+    if (open && service) {
+      logPartnerEvent("partner_view", { partner_id: service.id, category_slug: service.trusted_service_categories?.slug || null, state: service.state || null, city: service.city || null });
+    }
+  }, [open, service?.id]);
 
   if (!open || !service) return null;
 
@@ -267,6 +282,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 className="w-full h-12 text-sm"
                 onClick={() => {
                   trackEvent("trusted_service_connect_click", { service_id: service.id, service_name: service.name });
+                  logPartnerEvent("partner_apply_click", { partner_id: service.id, category_slug: service.trusted_service_categories?.slug || null });
                   onConnect(service);
                 }}
               >
@@ -282,6 +298,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 className="w-full h-11 text-sm bg-green-50 border-green-200 text-green-800 hover:bg-green-100"
                 onClick={() => {
                   trackEvent("trusted_service_call", { service_id: service.id });
+                  logPartnerEvent("partner_call_click", { partner_id: service.id, category_slug: service.trusted_service_categories?.slug || null });
                   window.open(`tel:${service.phone}`);
                 }}
               >
@@ -297,6 +314,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 className="w-full h-11 text-sm"
                 onClick={() => {
                   trackEvent("trusted_service_website_click", { service_id: service.id, service_name: service.name });
+                  logPartnerEvent("partner_website_click", { partner_id: service.id, category_slug: service.trusted_service_categories?.slug || null });
                   window.open(service.cta_url || service.website_url, "_blank");
                 }}
               >
@@ -312,6 +330,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 className="w-full h-11 text-sm"
                 onClick={() => {
                   trackEvent("trusted_service_email", { service_id: service.id });
+                  logPartnerEvent("partner_email_click", { partner_id: service.id, category_slug: service.trusted_service_categories?.slug || null });
                   window.open(`mailto:${service.email}`);
                 }}
               >

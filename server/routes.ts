@@ -9,6 +9,7 @@ import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPart
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
 import { getLeadEligibility, getLeadEligibleCategorySlugs, getLeadEligibleSubcategorySlugs, isLeadEligibleCategory } from "../shared/lead-eligibility";
+import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { query as pgQuery } from "./pg-client";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -2664,6 +2665,7 @@ export async function registerRoutes(
   await ensurePartnerSubcategories();
   await ensurePartnerReferrals();
   await ensureLeadBilling();
+  await ensureLeadEventsTable();
   await backfillNavAmbassadorId();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
@@ -5835,12 +5837,75 @@ export async function registerRoutes(
       if (fallbackErr) {
         console.error("Click tracking error:", fallbackErr.message);
       }
-      return res.json({ ok: true });
-    }
-
-    if (error) {
+    } else if (error) {
       console.error("Click tracking error:", error.message);
     }
+
+    const eventMap: Record<string, string> = {
+      call_click: "partner_call_click",
+      website_click: "partner_website_click",
+      apply_click: "partner_apply_click",
+      directions_click: "partner_directions_click",
+    };
+    const mappedType = eventMap[click_type];
+    if (mappedType) {
+      logLeadEvent({
+        event_type: mappedType,
+        lead_class: "engagement_event",
+        action_type: click_type,
+        source_surface: "resources",
+        resource_id: resource_id,
+        state: user_state || null,
+        city: user_city || null,
+      });
+    }
+
+    return res.json({ ok: true });
+  });
+
+  app.post("/api/lead-event", async (req, res) => {
+    const { event_type, partner_id, resource_id, category_slug, subcategory_slug, source_surface, state, city, session_id } = req.body;
+    if (!event_type) return res.status(400).json({ error: "event_type is required" });
+
+    const validTypes = ["partner_view", "partner_call_click", "partner_email_click", "partner_website_click", "partner_apply_click"];
+    if (!validTypes.includes(event_type)) return res.status(400).json({ error: "Invalid event_type" });
+
+    let utm_id: string | null = null;
+    let ambassador_id: string | null = null;
+    let referral_code: string | null = null;
+    if (session_id) {
+      try {
+        const sessions = await pgQuery(
+          `SELECT utm_id, utm_content, ambassador_id FROM attribution_sessions WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1`,
+          [session_id]
+        );
+        if (sessions.length > 0) {
+          utm_id = sessions[0].utm_id || null;
+          ambassador_id = sessions[0].ambassador_id || null;
+          if (!ambassador_id && sessions[0].utm_content) {
+            const amb = await resolveAmbassadorId(sessions[0].utm_content, sessions[0].utm_id);
+            ambassador_id = amb || null;
+          }
+        }
+      } catch {}
+    }
+
+    logLeadEvent({
+      event_type,
+      lead_class: "engagement_event",
+      action_type: event_type.replace("partner_", ""),
+      source_surface: source_surface || "trusted_services",
+      partner_id: partner_id || null,
+      resource_id: resource_id || null,
+      category_slug: category_slug || null,
+      subcategory_slug: subcategory_slug || null,
+      state: state || null,
+      city: city || null,
+      session_id: session_id || null,
+      utm_id,
+      ambassador_id,
+      referral_code,
+    });
 
     return res.json({ ok: true });
   });
@@ -6988,6 +7053,22 @@ export async function registerRoutes(
     if (!routed) {
       console.log(`[router] Lead ${data.id} not routed — self-serve mode, no admin email`);
     }
+
+    logLeadEvent({
+      event_type: "help_request_submitted",
+      lead_class: "explicit_lead",
+      action_type: "submit",
+      session_id: session_id || null,
+      source_surface: source || "get_help",
+      resource_id: resource_id || null,
+      category_slug: catStr || null,
+      subcategory_slug: subStr || null,
+      utm_id: utm_id || null,
+      ambassador_id: baseRow.ambassador_id || null,
+      state: user_state || null,
+      city: user_city || null,
+      delivery_status: routed ? "routed" : "self_serve",
+    });
 
     let selfServeResources: any[] = [];
     if (!routed) {
