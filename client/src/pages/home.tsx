@@ -112,37 +112,21 @@ export default function Home() {
     }
   }, []);
 
+  const CATEGORY_ROUTES: Record<string, string> = {
+    "end-of-life-services": "/end-of-life",
+    "disabled-veterans": "/disabled-veterans",
+    "mental-health": "/mental-health",
+    "housing-home": "/housing",
+    "employment-support": "/employment",
+    "benefits-assistance": "/benefits-assistance",
+    "healthcare-services": "/healthcare",
+    "financial-credit": "/financial-services",
+  };
+
   const handleCategoryClick = (category: string) => {
-    if (category === "end-of-life-services") {
-      setLocation("/end-of-life");
-      return;
-    }
-    if (category === "disabled-veterans") {
-      setLocation("/disabled-veterans");
-      return;
-    }
-    if (category === "mental-health") {
-      setLocation("/mental-health");
-      return;
-    }
-    if (category === "housing") {
-      setLocation("/housing");
-      return;
-    }
-    if (category === "employment") {
-      setLocation("/employment");
-      return;
-    }
-    if (category === "va-benefits") {
-      setLocation("/benefits-assistance");
-      return;
-    }
-    if (category === "healthcare") {
-      setLocation("/healthcare");
-      return;
-    }
-    if (category === "financial") {
-      setLocation("/financial-services");
+    const route = CATEGORY_ROUTES[category];
+    if (route) {
+      setLocation(route);
       return;
     }
     setLocation(`/resources?category=${encodeURIComponent(category)}`);
@@ -176,18 +160,18 @@ export default function Home() {
     { slug: "crisis-help", label: "Crisis Help" },
     { slug: "mental-health", label: "Mental Health" },
     { slug: "disabled-veterans", label: "Disabled Veterans" },
-    { slug: "housing", label: "Housing & Home Services" },
+    { slug: "housing-home", label: "Housing & Home Services" },
     { slug: "food-assistance", label: "Food Assistance" },
-    { slug: "va-benefits", label: "Benefits Assistance" },
+    { slug: "benefits-assistance", label: "Benefits Assistance" },
     { slug: "family-support", label: "Family Support" },
     { slug: "community-support", label: "Community Support" },
-    { slug: "employment", label: "Employment Support" },
-    { slug: "education", label: "Education & Training" },
+    { slug: "employment-support", label: "Employment Support" },
+    { slug: "education-training", label: "Education & Training" },
     { slug: "transportation", label: "Transportation" },
-    { slug: "financial", label: "Financial & Credit Services" },
-    { slug: "legal", label: "Legal Services" },
-    { slug: "healthcare", label: "Healthcare" },
-    { slug: "substance-recovery", label: "Wellness & Recovery" },
+    { slug: "financial-credit", label: "Financial & Credit Services" },
+    { slug: "legal-services", label: "Legal Services" },
+    { slug: "healthcare-services", label: "Healthcare" },
+    { slug: "wellness-recovery", label: "Wellness & Recovery" },
     { slug: "end-of-life-services", label: "End of Life Services" },
   ];
 

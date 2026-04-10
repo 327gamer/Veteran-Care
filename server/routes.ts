@@ -8928,6 +8928,68 @@ export async function registerRoutes(
     }
   });
 
+  const RESOURCE_ONLY_CATEGORIES = [
+    { slug: "crisis-help", name: "Crisis Help", display_order: 0 },
+    { slug: "mental-health", name: "Mental Health", display_order: 1 },
+    { slug: "family-support", name: "Family Support", display_order: 14 },
+    { slug: "community-support", name: "Community Support", display_order: 15 },
+    { slug: "food-assistance", name: "Food Assistance", display_order: 16 },
+    { slug: "transportation", name: "Transportation", display_order: 17 },
+  ];
+
+  const RESOURCE_ONLY_SUBCATEGORIES: Record<string, { slug: string; name: string }[]> = {
+    "crisis-help": [
+      { slug: "suicide-prevention", name: "Suicide Prevention" },
+      { slug: "homeless-services", name: "Homeless Services" },
+      { slug: "domestic-violence", name: "Domestic Violence" },
+      { slug: "substance-abuse", name: "Substance Abuse" },
+    ],
+    "mental-health": [
+      { slug: "ptsd", name: "PTSD" },
+      { slug: "counseling", name: "Counseling / Therapy" },
+      { slug: "peer-support", name: "Peer Support" },
+      { slug: "group-therapy", name: "Group Therapy" },
+    ],
+    "family-support": [
+      { slug: "caregiver-support", name: "Caregiver Support" },
+      { slug: "spouse-benefits", name: "Spouse / Dependent Benefits" },
+      { slug: "childcare", name: "Childcare" },
+      { slug: "survivor-benefits", name: "Survivor Benefits" },
+    ],
+  };
+
+  app.get("/api/help-categories", async (_req, res) => {
+    try {
+      const dbCats = await pgQuery(
+        `SELECT id, name, slug, COALESCE(display_order, 99) AS display_order FROM trusted_service_categories WHERE program_area = 'trusted_services' AND group_type = 'service' AND slug NOT LIKE 'discount-%' ORDER BY display_order ASC`
+      );
+
+      const allCats = [
+        ...RESOURCE_ONLY_CATEGORIES.map(c => ({ id: null, ...c })),
+        ...dbCats.filter((c: any) => !RESOURCE_ONLY_CATEGORIES.find(r => r.slug === c.slug)),
+      ].sort((a: any, b: any) => (a.display_order || 99) - (b.display_order || 99));
+
+      const result = [];
+      for (const cat of allCats) {
+        let subcategories: { slug: string; name: string }[] = [];
+        if (cat.id) {
+          const dbSubs = await pgQuery(
+            `SELECT slug, name FROM partner_subcategories WHERE category_id = $1 AND is_active = true ORDER BY display_order ASC`,
+            [cat.id]
+          );
+          subcategories = dbSubs;
+        } else if (RESOURCE_ONLY_SUBCATEGORIES[cat.slug]) {
+          subcategories = RESOURCE_ONLY_SUBCATEGORIES[cat.slug];
+        }
+        result.push({ slug: cat.slug, name: cat.name, subcategories });
+      }
+
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
   app.get("/api/partner-subcategories", async (req, res) => {
     try {
       const { category_id } = req.query;

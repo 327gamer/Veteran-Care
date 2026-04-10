@@ -60,28 +60,33 @@ const URGENCY_OPTIONS = [
 ];
 
 const HELP_CATEGORIES = [
-  { value: "va-benefits", label: "Benefits & VA Claims" },
-  { value: "healthcare", label: "Healthcare" },
   { value: "crisis-help", label: "Crisis Help" },
   { value: "mental-health", label: "Mental Health" },
-  { value: "housing", label: "Housing Support" },
-  { value: "employment", label: "Employment" },
-  { value: "education", label: "Education & GI Bill" },
-  { value: "legal", label: "Legal & Financial" },
+  { value: "benefits-assistance", label: "Benefits & VA Claims" },
+  { value: "healthcare-services", label: "Healthcare" },
+  { value: "housing-home", label: "Housing & Home Services" },
+  { value: "disabled-veterans", label: "Disabled Veterans" },
+  { value: "employment-support", label: "Employment Support" },
+  { value: "education-training", label: "Education & Training" },
+  { value: "legal-services", label: "Legal Services" },
+  { value: "financial-credit", label: "Financial & Credit Services" },
+  { value: "wellness-recovery", label: "Wellness & Recovery" },
+  { value: "end-of-life-services", label: "End of Life Services" },
   { value: "family-support", label: "Family & Caregivers" },
-  { value: "records", label: "Military Records" },
-  { value: "transition", label: "Transition" },
+  { value: "food-assistance", label: "Food Assistance" },
+  { value: "community-support", label: "Community Support" },
+  { value: "transportation", label: "Transportation" },
 ];
 
 const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
-  "va-benefits": [
+  "benefits-assistance": [
     { value: "disability-claim", label: "Disability Claim" },
     { value: "pact-act", label: "PACT Act / Burn Pit" },
     { value: "pension", label: "Pension" },
     { value: "appeals", label: "Appeals" },
     { value: "other-benefits", label: "Other Benefits" },
   ],
-  "healthcare": [
+  "healthcare-services": [
     { value: "va-enrollment", label: "VA Healthcare Enrollment" },
     { value: "prescriptions", label: "Prescriptions" },
     { value: "dental-vision", label: "Dental / Vision" },
@@ -102,33 +107,60 @@ const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
     { value: "group-therapy", label: "Group Therapy" },
     { value: "other-mental-health", label: "Other Mental Health" },
   ],
-  "housing": [
+  "housing-home": [
     { value: "va-home-loan", label: "VA Home Loan" },
     { value: "rental-assistance", label: "Rental Assistance" },
     { value: "homeless-prevention", label: "Homeless Prevention" },
     { value: "home-modification", label: "Home Modification" },
     { value: "other-housing", label: "Other Housing" },
   ],
-  "employment": [
+  "employment-support": [
     { value: "job-search", label: "Job Search" },
     { value: "resume-help", label: "Resume / Interview Prep" },
     { value: "vocational-rehab", label: "Vocational Rehab (VR&E)" },
     { value: "veteran-owned-biz", label: "Veteran-Owned Business" },
     { value: "other-employment", label: "Other Employment" },
   ],
-  "education": [
+  "education-training": [
     { value: "gi-bill", label: "GI Bill" },
     { value: "tuition-assistance", label: "Tuition Assistance" },
     { value: "certifications", label: "Certifications / Training" },
     { value: "scholarships", label: "Scholarships" },
     { value: "other-education", label: "Other Education" },
   ],
-  "legal": [
+  "legal-services": [
     { value: "legal-aid", label: "Legal Aid" },
+    { value: "disability-appeals", label: "Disability Appeals" },
+    { value: "estate-planning", label: "Estate Planning" },
+    { value: "tenant-rights", label: "Tenant Rights" },
+    { value: "other-legal", label: "Other Legal" },
+  ],
+  "financial-credit": [
     { value: "financial-counseling", label: "Financial Counseling" },
     { value: "debt-relief", label: "Debt Relief" },
+    { value: "credit-repair", label: "Credit Repair" },
     { value: "tax-help", label: "Tax Help" },
-    { value: "other-legal-financial", label: "Other Legal / Financial" },
+    { value: "other-financial", label: "Other Financial" },
+  ],
+  "wellness-recovery": [
+    { value: "substance-recovery", label: "Substance Recovery" },
+    { value: "holistic-wellness", label: "Holistic Wellness" },
+    { value: "fitness-recreation", label: "Fitness & Recreation" },
+    { value: "other-wellness", label: "Other Wellness" },
+  ],
+  "end-of-life-services": [
+    { value: "hospice", label: "Hospice Care" },
+    { value: "funeral-burial", label: "Funeral & Burial" },
+    { value: "survivor-benefits", label: "Survivor Benefits" },
+    { value: "estate-planning", label: "Estate Planning" },
+    { value: "other-end-of-life", label: "Other End of Life" },
+  ],
+  "disabled-veterans": [
+    { value: "adaptive-housing", label: "Adaptive Housing" },
+    { value: "mobility-equipment", label: "Mobility Equipment" },
+    { value: "caregiver-support", label: "Caregiver Support" },
+    { value: "advocacy", label: "Advocacy" },
+    { value: "other-disabled", label: "Other Disabled Veteran" },
   ],
   "family-support": [
     { value: "caregiver-support", label: "Caregiver Support" },
@@ -136,20 +168,6 @@ const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
     { value: "childcare", label: "Childcare" },
     { value: "survivor-benefits", label: "Survivor Benefits" },
     { value: "other-family", label: "Other Family" },
-  ],
-  "records": [
-    { value: "dd214", label: "DD-214 Request" },
-    { value: "service-records", label: "Service Records" },
-    { value: "discharge-upgrade", label: "Discharge Upgrade" },
-    { value: "medals-awards", label: "Medals / Awards" },
-    { value: "other-records", label: "Other Records" },
-  ],
-  "transition": [
-    { value: "tap-program", label: "TAP Program" },
-    { value: "relocation", label: "Relocation" },
-    { value: "civilian-adjustment", label: "Civilian Adjustment" },
-    { value: "networking", label: "Networking / Mentorship" },
-    { value: "other-transition", label: "Other Transition" },
   ],
 };
 

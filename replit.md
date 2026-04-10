@@ -90,6 +90,22 @@ Resources can belong to multiple categories via the `resource_categories` juncti
 - **Boot enrichment**: `enrichResourceCategories()` runs at startup — title-matching rules auto-assign additional categories (e.g., Vet Centers → mental-health + community-support, VA Clinics → healthcare, DAV → disabled-veterans) and subcategories to unassigned resources. Fully idempotent via upsert.
 - **Resource stats**: 400 unique resources, 94 multi-category (24%), 16 categories all populated, 0 duplicates
 
+## Unified Category System (Canonical Slugs)
+All help request flows (Navigator modal, Get Help page, Home page guided help, AI config) use canonical DB slugs from `trusted_service_categories`. The slug mapping:
+- `benefits-assistance` (was: va-benefits)
+- `healthcare-services` (was: healthcare)
+- `housing-home` (was: housing)
+- `employment-support` (was: employment)
+- `education-training` (was: education)
+- `legal-services` (was: legal)
+- `financial-credit` (was: financial)
+- `wellness-recovery` (was: substance-recovery)
+- `disabled-veterans`, `end-of-life-services`, `crisis-help`, `mental-health`, `family-support`, `community-support`, `food-assistance`, `transportation` — unchanged
+
+**Backward compat**: `client/src/lib/category-config.ts` has `slugAliases` map + `toCanonicalSlug()` helper for old→canonical translation.
+**API**: `GET /api/help-categories` returns unified category list with subcategories (DB-backed + resource-only).
+**Note**: Supabase `categories` table still uses old slugs for resource browsing — `resources.tsx` routing handles both old and canonical slugs.
+
 ## Multi-Subcategory Support
 Resources can belong to multiple subcategories via normalized junction tables in Supabase:
 - **`subcategories` table**: `id, name, slug, category_id` — normalized subcategory definitions, each tied to a category. UNIQUE(slug, category_id).

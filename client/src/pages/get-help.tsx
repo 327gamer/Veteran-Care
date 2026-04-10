@@ -22,20 +22,21 @@ import {
 } from "lucide-react";
 
 const GUIDED_CATEGORIES = [
-  { slug: "va-benefits", label: "Benefits Assistance" },
-  { slug: "housing", label: "Housing & Home Services" },
-  { slug: "employment", label: "Employment Support" },
+  { slug: "crisis-help", label: "Crisis Help" },
   { slug: "mental-health", label: "Mental Health" },
-  { slug: "education", label: "Education & Training" },
-  { slug: "legal", label: "Legal Services" },
-  { slug: "financial", label: "Financial & Credit Services" },
-  { slug: "healthcare", label: "Insurance Services" },
-  { slug: "family-support", label: "Family Support" },
-  { slug: "substance-recovery", label: "Wellness & Recovery" },
-  { slug: "food-assistance", label: "Food Assistance" },
-  { slug: "community-support", label: "Community Support" },
-  { slug: "transportation", label: "Transportation" },
   { slug: "disabled-veterans", label: "Disabled Veterans" },
+  { slug: "housing-home", label: "Housing & Home Services" },
+  { slug: "food-assistance", label: "Food Assistance" },
+  { slug: "benefits-assistance", label: "Benefits Assistance" },
+  { slug: "family-support", label: "Family Support" },
+  { slug: "community-support", label: "Community Support" },
+  { slug: "employment-support", label: "Employment Support" },
+  { slug: "education-training", label: "Education & Training" },
+  { slug: "transportation", label: "Transportation" },
+  { slug: "financial-credit", label: "Financial & Credit Services" },
+  { slug: "legal-services", label: "Legal Services" },
+  { slug: "healthcare-services", label: "Healthcare" },
+  { slug: "wellness-recovery", label: "Wellness & Recovery" },
   { slug: "end-of-life-services", label: "End of Life Services" },
 ];
 

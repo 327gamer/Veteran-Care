@@ -739,7 +739,7 @@ export default function Resources() {
         </p>
       </div>
 
-      {selectedSlug && !["end-of-life-services","disabled-veterans","mental-health","housing","employment","va-benefits","healthcare","financial"].includes(selectedSlug) && (
+      {selectedSlug && !["end-of-life-services","disabled-veterans","mental-health","housing","housing-home","employment","employment-support","va-benefits","benefits-assistance","healthcare","healthcare-services","financial","financial-credit"].includes(selectedSlug) && (
         <AiGuideBanner categoryContext={selectedSlug} />
       )}
 

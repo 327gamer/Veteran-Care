@@ -24,14 +24,14 @@ import {
 } from "lucide-react";
 
 const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
-  { label: "Housing", icon: Home, slug: "housing" },
-  { label: "Employment", icon: Briefcase, slug: "employment" },
+  { label: "Housing", icon: Home, slug: "housing-home" },
+  { label: "Employment", icon: Briefcase, slug: "employment-support" },
   { label: "Mental Health", icon: Heart, slug: "mental-health" },
-  { label: "Healthcare", icon: Activity, slug: "healthcare" },
+  { label: "Healthcare", icon: Activity, slug: "healthcare-services" },
   { label: "Crisis Help", icon: AlertCircle, slug: null },
-  { label: "Legal", icon: Scale, slug: "legal" },
-  { label: "Education", icon: GraduationCap, slug: "education" },
-  { label: "VA Benefits", icon: ShieldCheck, slug: "va-benefits" },
+  { label: "Legal", icon: Scale, slug: "legal-services" },
+  { label: "Education", icon: GraduationCap, slug: "education-training" },
+  { label: "VA Benefits", icon: ShieldCheck, slug: "benefits-assistance" },
   { label: "Family Support", icon: Users, slug: "family-support" },
   { label: "Food Assistance", icon: UtensilsCrossed, slug: "food-assistance" },
   { label: "Disabled Veterans", icon: Medal, slug: "disabled-veterans" },

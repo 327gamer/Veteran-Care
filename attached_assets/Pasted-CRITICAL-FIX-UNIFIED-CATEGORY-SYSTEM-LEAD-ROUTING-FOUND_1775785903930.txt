@@ -1,0 +1,122 @@
+CRITICAL FIX – UNIFIED CATEGORY SYSTEM (LEAD ROUTING FOUNDATION)
+
+We identified a major issue during testing.
+
+This must be fixed BEFORE continuing development.
+
+-------------------------------------
+CORE PROBLEM
+-------------------------------------
+
+The category system used in:
+
+- Request Support / Get Help
+- AI Guide
+- Trusted Services
+- Resources
+
+is NOT aligned.
+
+Issues:
+- Categories missing from request flow
+- Categories combined (e.g. "Legal & Financial")
+- Subcategories inconsistent
+- Cannot reliably route or monetize leads
+
+-------------------------------------
+REQUIRED FIX (HIGH PRIORITY)
+-------------------------------------
+
+We need ONE unified category + subcategory system.
+
+-------------------------------------
+
+1. USE EXISTING MASTER STRUCTURE
+
+Use the SAME structure already used in:
+
+- Trusted Services
+- Resources
+- partner categories / subcategories
+
+DO NOT create a separate category system for:
+- request flow
+- AI
+- navigator
+
+-------------------------------------
+
+2. REMOVE COMBINED CATEGORIES
+
+REMOVE any combined categories like:
+- Legal & Financial
+
+Replace with:
+- Legal Services
+- Financial Services
+
+-------------------------------------
+
+3. REQUEST FLOW UPDATE
+
+The dropdown in:
+Request Support / Get Help
+
+must:
+- show ALL categories
+- match EXACT category_slug values
+- match EXACT subcategory_slug values
+
+-------------------------------------
+
+4. SUBCATEGORY ALIGNMENT
+
+When category is selected:
+- subcategory dropdown must load matching subcategories
+- must use SAME slugs as:
+  - trusted services
+  - resources
+  - lead eligibility logic
+
+-------------------------------------
+
+5. NO HARD-CODED LISTS
+
+Remove any hardcoded category arrays in:
+- frontend
+- AI logic
+- navigator
+
+All must come from:
+- canonical category source
+
+-------------------------------------
+
+6. DO NOT BREAK
+
+- existing routing
+- attribution
+- lead logging (Chunk 3)
+- trusted partner structure
+
+-------------------------------------
+
+7. VALIDATION REQUIRED
+
+Confirm:
+
+A) all categories appear in request flow  
+B) no combined categories exist  
+C) subcategories match system-wide  
+D) same slug is used across:
+   - request flow
+   - AI
+   - trusted services
+   - resources  
+E) no regression in user flow  
+
+-------------------------------------
+
+This is REQUIRED before continuing lead routing and monetization.
+
+END
