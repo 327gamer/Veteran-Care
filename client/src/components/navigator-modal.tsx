@@ -334,7 +334,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {submitResult?.routed
                     ? t(platform.navigatorConfirmation)
-                    : "We've logged your request. In the meantime, reach out directly to these resources for help."}
+                    : "Your request has been received. A support specialist will review it and follow up with you."}
                 </p>
               </div>
             </div>
@@ -342,7 +342,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
             {submitResult?.emailSent && (
               <div data-testid="email-confirmation" className="rounded-lg border border-green-200 bg-green-50 p-3 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                <p className="text-xs text-green-800">These resources have been sent to your email. Check your inbox for next steps.</p>
+                <p className="text-xs text-green-800">A confirmation has been sent to your email. A support specialist will review your request and follow up with you.</p>
               </div>
             )}
 

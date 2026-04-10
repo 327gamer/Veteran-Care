@@ -5980,14 +5980,20 @@ export async function registerRoutes(
       const html = `
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
           <div style="text-align:center;padding:24px 0;border-bottom:2px solid #16a34a;">
-            <h1 style="color:#1a1a2e;font-size:24px;margin:0;">Veteran Care</h1>
-            <p style="color:#6b7280;font-size:14px;margin:8px 0 0;">Your Resource Results</p>
+            <img src="https://veterancare.com/logo.png" alt="Veteran Care" style="display:block;max-width:200px;height:auto;margin:0 auto;border:0;" />
+            <p style="color:#6b7280;font-size:14px;margin:12px 0 0;">Your Resource Results</p>
           </div>
-          ${conversationSummary ? `<p style="color:#374151;font-size:14px;margin:20px 0;padding:12px;background:#f9fafb;border-radius:8px;">${(conversationSummary || '').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>` : ''}
+          <p style="color:#374151;font-size:15px;margin:20px 0 4px;">Hi there,</p>
+          <p style="color:#374151;font-size:14px;margin:0 0 8px;">Here are the resources matched by your Veteran Guide conversation. We hope these help you find the support you need.</p>
+          ${conversationSummary ? `<div style="background:#f9fafb;border-radius:8px;padding:14px;margin:16px 0;">
+            <p style="font-weight:600;color:#374151;font-size:14px;margin:0 0 6px;">Conversation Summary</p>
+            <p style="color:#374151;font-size:13px;margin:0;">${(conversationSummary || '').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>
+          </div>` : ''}
           ${resourcesHtml}
           ${trustedHtml}
           <div style="text-align:center;padding:24px 0;margin-top:24px;border-top:1px solid #e5e7eb;">
-            <p style="color:#6b7280;font-size:12px;margin:0;">Need more help? Visit <a href="https://veterancare.com" style="color:#16a34a;">veterancare.com</a> or talk to our AI Guide.</p>
+            <a href="https://veterancare.com/home" style="display:inline-block;background:#166534;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;margin-bottom:12px;">Explore More Resources</a>
+            <p style="color:#6b7280;font-size:12px;margin:12px 0 0;">Need more help? Visit <a href="https://veterancare.com" style="color:#16a34a;">veterancare.com</a></p>
           </div>
         </div>`;
 
@@ -7269,7 +7275,7 @@ export async function registerRoutes(
       emailSent,
       message: routed
         ? "Your request has been submitted and routed to a local partner who will reach out to you soon."
-        : "Your request has been received. Here are resources that can help you directly.",
+        : "Your request has been received. A support specialist will review it and follow up with you.",
     };
     if (!routed && selfServeResources.length > 0) {
       response.self_serve_resources = selfServeResources;

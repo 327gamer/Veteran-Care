@@ -1,0 +1,170 @@
+CHUNK 4 POST-TEST ADJUSTMENTS – COMBINED FIX PASS
+
+We completed another full manual test cycle.
+
+Core routing logic is directionally correct.
+Do NOT change the routing engine itself in this pass.
+
+This pass is for:
+- user clarity
+- email consistency
+- AI usefulness
+- admin assignment usability
+
+-------------------------------------
+ISSUE 1 – SUPPORT REQUEST CONFIRMATION MESSAGE IS WRONG
+-------------------------------------
+
+Current problem:
+After submitting Request Support / Get Help, the UI tells the user that resources have been sent to their email.
+
+But in this flow:
+- the user receives a confirmation/support-request email
+- they do NOT receive a resource-results email
+
+This is confusing and must be corrected.
+
+REQUIRED FIX:
+
+Update the Request Support success message so it does NOT say resources were emailed.
+
+Use messaging like:
+
+"Your request has been received. A support specialist will review it and follow up with you."
+
+Do NOT mention emailed resources in the Support Request flow.
+
+-------------------------------------
+ISSUE 2 – EMAIL BRANDING / TEMPLATE INCONSISTENCY
+-------------------------------------
+
+Current problem:
+The Veteran Guide resource-results email does NOT match the Support Request email style.
+
+Support Request email currently has:
+- VeteranCare.com logo at top
+- stronger branded layout
+- more polished structure
+
+Veteran Guide resource-results email is missing:
+- logo/header consistency
+- stronger branded structure
+- bottom CTA / button back into platform
+
+REQUIRED FIX:
+
+The Veteran Guide resource-results email must be upgraded to match the same branded email standard used by Support Request emails.
+
+Required additions:
+1. Add the same VeteranCare.com logo/header at the top
+2. Use consistent email branding/layout
+3. Add a bottom CTA button:
+   "Explore More Resources"
+4. That button should link users back to Veteran Care
+
+Goal:
+Both email types should feel like part of the same product ecosystem.
+
+-------------------------------------
+ISSUE 3 – MINIMUM RESOURCE RULE FOR VETERAN GUIDE
+-------------------------------------
+
+Current problem:
+Veteran Guide still returns too few resources in some categories.
+
+REQUIRED FIX:
+
+Add a minimum-result rule:
+
+- Always return at least 5 resources when available
+
+Fallback order:
+1. exact city
+2. nearby cities / metro cluster
+3. same state
+4. national
+
+Do NOT return only 1–2 results unless fewer than 5 truly exist in the system.
+
+-------------------------------------
+ISSUE 4 – STRONGER LOCATION PRIORITY
+-------------------------------------
+
+Current problem:
+Veteran Guide still jumps too quickly to distant cities (example: Greenville / Myrtle Beach) when more local Charleston-area options should be prioritized first.
+
+REQUIRED FIX:
+
+Strengthen location ranking:
+
+Priority:
+1. exact city
+2. nearby city cluster
+3. same state
+4. national
+
+For Charleston-area examples, prioritize:
+- Mount Pleasant
+- North Charleston
+- Summerville
+- Goose Creek
+- Charleston metro area
+
+Only go to distant SC cities if needed to meet minimum result count.
+
+-------------------------------------
+ISSUE 5 – ADMIN ASSIGNMENT UX NEEDS TO BE SMARTER
+-------------------------------------
+
+Current problem:
+Manual lead assignment is still too dependent on search.
+
+Even though suggested matches are starting to appear, this still needs to be easier and more structured for launch operations.
+
+REQUIRED FIX:
+
+When admin clicks Assign:
+
+Display:
+SECTION 1:
+Recommended Matches
+- best-fit matches first
+- based on canonical category_slug
+- based on city/state proximity
+
+SECTION 2:
+All Matches
+- full searchable/filterable list
+
+The assignment experience should clearly guide admin toward likely matches without relying on manual search only.
+
+-------------------------------------
+ISSUE 6 – KEEP ROUTING ENGINE INTACT
+-------------------------------------
+
+Do NOT change:
+- eligibility rules
+- lead_class logic
+- event tracking
+- routing engine core
+- billing behavior
+
+This pass is about:
+- UX clarity
+- email consistency
+- AI usefulness
+- admin usability
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+This fix pass should produce:
+
+1. clearer user communication
+2. fully branded / consistent emails
+3. more useful Veteran Guide outputs
+4. stronger local relevance
+5. easier admin assignment workflow
+
+Do NOT expand scope beyond this pass.

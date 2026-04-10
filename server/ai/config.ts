@@ -74,7 +74,7 @@ You are not alone, and reaching out takes courage. Would you like me to help you
     "legal-services": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono"],
     "financial-credit": ["financial", "money", "bills", "utilities", "debt", "budget", "emergency funds", "relief fund", "financial counseling", "credit", "mortgage", "lending"],
     "education-training": ["education", "school", "college", "gi bill", "tuition", "degree", "technical", "training", "student"],
-    "family-support": ["family", "spouse", "child", "childcare", "caregiver", "dependent", "gold star", "survivor benefits", "parenting"],
+    "family-support": ["family support", "family services", "spouse", "child", "childcare", "caregiver", "dependent", "gold star", "survivor benefits", "parenting", "military family"],
     "transportation": ["transportation", "ride", "bus", "transit", "medical transport", "dat", "volunteer driver"],
     "wellness-recovery": ["substance", "alcohol", "drug", "recovery", "detox", "rehab", "sober", "aa", "na", "medication assisted", "wellness", "holistic"],
     "community-support": ["community", "volunteer", "recreation", "social", "peer", "mentor", "fellowship"],

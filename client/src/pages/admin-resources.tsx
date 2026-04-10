@@ -1411,6 +1411,42 @@ function AdminResourcesInner() {
                         setShowAllAssignable(false);
                       };
 
+                      const recommendedResults = assignableResults.filter((item: any) => {
+                        if (assignSearchText || showAllAssignable) return false;
+                        const matchesCategory = assignLeadContext?.category && item.category && (
+                          item.category.toLowerCase().replace(/-/g, " ").includes(assignLeadContext.category.toLowerCase().replace(/-/g, " ")) ||
+                          assignLeadContext.category.toLowerCase().replace(/-/g, " ").includes(item.category.toLowerCase().replace(/-/g, " "))
+                        );
+                        const matchesLocation = assignLeadContext?.city && item.city && item.city.toLowerCase() === assignLeadContext.city.toLowerCase();
+                        const matchesState = assignLeadContext?.state && item.state && item.state.toUpperCase() === assignLeadContext.state.toUpperCase();
+                        return matchesCategory && (matchesLocation || matchesState);
+                      });
+                      const otherResults = assignableResults.filter((item: any) => !recommendedResults.find((r: any) => r.id === item.id));
+
+                      const renderAssignButton = (item: any, isRecommended: boolean = false) => {
+                        const tl = typeLabel(item.type);
+                        return (
+                          <button
+                            key={item.id}
+                            data-testid={`assignable-option-${item.id}`}
+                            className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded text-left transition-colors ${isRecommended ? "border border-green-200 bg-green-50 hover:bg-green-100" : "border border-transparent hover:border-slate-200 hover:bg-slate-50"}`}
+                            onClick={() => handleAssign(item)}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                {isRecommended && <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />}
+                                <Badge variant="outline" className={`text-[8px] px-1 py-0 shrink-0 ${tl.cls}`}>{tl.text}</Badge>
+                                <p className={`text-[11px] font-medium truncate ${isRecommended ? "text-green-800" : "text-slate-800"}`}>{item.name}</p>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground truncate mt-0.5 ml-0.5">
+                                {[item.category, item.city, item.state, item.contact, item.phone, item.email].filter(Boolean).join(" · ")}
+                              </p>
+                            </div>
+                            <span className={`text-[10px] font-medium shrink-0 ${isRecommended ? "text-green-700" : "text-primary"}`}>Assign</span>
+                          </button>
+                        );
+                      };
+
                       return (
                       <div className="bg-slate-50 border border-slate-200 rounded p-3 space-y-3">
                         <div className="flex items-center justify-between">
@@ -1423,9 +1459,17 @@ function AdminResourcesInner() {
                           </button>
                         </div>
 
+                        {contextLabel && (
+                          <p className="text-[9px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                            Lead: {contextLabel}
+                          </p>
+                        )}
+
                         {suggestedPartners.length > 0 && (
                           <div className="space-y-1.5">
-                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Routing Rule Matches</p>
+                            <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wide flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" /> Recommended Matches
+                            </p>
                             {suggestedPartners.map((s: any) => (
                               <button
                                 key={s.partnerId}
@@ -1450,10 +1494,19 @@ function AdminResourcesInner() {
                           </div>
                         )}
 
+                        {!assignSearchText && !showAllAssignable && recommendedResults.length > 0 && suggestedPartners.length === 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wide flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" /> Recommended Matches
+                            </p>
+                            {recommendedResults.map((item: any) => renderAssignButton(item, true))}
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-                              {suggestedPartners.length > 0 ? "Or choose from all sources" : "Find a match"}
+                              {(suggestedPartners.length > 0 || recommendedResults.length > 0) && !assignSearchText && !showAllAssignable ? "All Matches" : "Find a match"}
                             </p>
                             {!showAllAssignable && !assignSearchText && assignLeadContext && (assignLeadContext.state || assignLeadContext.category) && (
                               <button
@@ -1474,12 +1527,6 @@ function AdminResourcesInner() {
                             )}
                           </div>
 
-                          {!assignSearchText && !showAllAssignable && contextLabel && (
-                            <p className="text-[9px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
-                              Showing matches for: {contextLabel}
-                            </p>
-                          )}
-
                           <div className="relative">
                             <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
                             <Input
@@ -1494,7 +1541,7 @@ function AdminResourcesInner() {
                           <div className="max-h-[260px] overflow-y-auto space-y-1 border rounded bg-white p-1.5">
                             {assignableLoading ? (
                               <p className="text-[10px] text-muted-foreground text-center py-3">Loading...</p>
-                            ) : assignableResults.length === 0 ? (
+                            ) : (assignSearchText || showAllAssignable ? assignableResults : otherResults).length === 0 && suggestedPartners.length === 0 && recommendedResults.length === 0 ? (
                               <div className="text-center py-3 space-y-1">
                                 <p className="text-[10px] text-muted-foreground">No matches found</p>
                                 {!showAllAssignable && !assignSearchText && (
@@ -1506,30 +1553,9 @@ function AdminResourcesInner() {
                             ) : (
                               <>
                                 <p className="text-[9px] text-muted-foreground px-1 pb-0.5">
-                                  {assignSearchText ? `Search results (${assignableResults.length})` : showAllAssignable ? `All options (${assignableResults.length})` : `Filtered results (${assignableResults.length})`}
+                                  {assignSearchText ? `Search results (${assignableResults.length})` : showAllAssignable ? `All options (${assignableResults.length})` : `Other options (${otherResults.length})`}
                                 </p>
-                                {assignableResults.map((item: any) => {
-                                  const tl = typeLabel(item.type);
-                                  return (
-                                    <button
-                                      key={item.id}
-                                      data-testid={`assignable-option-${item.id}`}
-                                      className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded hover:bg-slate-50 text-left transition-colors border border-transparent hover:border-slate-200"
-                                      onClick={() => handleAssign(item)}
-                                    >
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <Badge variant="outline" className={`text-[8px] px-1 py-0 shrink-0 ${tl.cls}`}>{tl.text}</Badge>
-                                          <p className="text-[11px] font-medium text-slate-800 truncate">{item.name}</p>
-                                        </div>
-                                        <p className="text-[9px] text-muted-foreground truncate mt-0.5 ml-0.5">
-                                          {[item.category, item.city, item.state, item.contact, item.phone, item.email].filter(Boolean).join(" · ")}
-                                        </p>
-                                      </div>
-                                      <span className="text-[10px] text-primary font-medium shrink-0">Assign</span>
-                                    </button>
-                                  );
-                                })}
+                                {(assignSearchText || showAllAssignable ? assignableResults : otherResults).map((item: any) => renderAssignButton(item, false))}
                               </>
                             )}
                           </div>

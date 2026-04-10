@@ -15,6 +15,8 @@ interface MatchedResource {
   category_name: string | null;
 }
 
+const MIN_RESULTS = 5;
+
 export async function matchResources(
   userMessage: string,
   userState?: string,
@@ -26,11 +28,34 @@ export async function matchResources(
 
   if (detectedCategories.length > 0) {
     const primaryCategory = detectedCategories[0];
-    const primaryResults = await searchByCategory([primaryCategory], userState, userCity);
-    allResults.push(...primaryResults.slice(0, limit));
+
+    if (userCity) {
+      const localResults = await searchByCategory([primaryCategory], userState, userCity);
+      allResults.push(...localResults);
+    }
+
+    if (allResults.length < MIN_RESULTS && userState) {
+      const stateResults = await searchByCategory([primaryCategory], userState);
+      for (const r of stateResults) {
+        if (allResults.length >= limit) break;
+        if (!allResults.find(existing => existing.id === r.id)) {
+          allResults.push(r);
+        }
+      }
+    }
+
+    if (allResults.length < MIN_RESULTS) {
+      const nationalResults = await searchByCategory([primaryCategory]);
+      for (const r of nationalResults) {
+        if (allResults.length >= limit) break;
+        if (!allResults.find(existing => existing.id === r.id)) {
+          allResults.push(r);
+        }
+      }
+    }
   }
 
-  if (allResults.length < 3) {
+  if (allResults.length < MIN_RESULTS) {
     const searchTerms = extractSearchTerms(userMessage);
     if (searchTerms.length > 0) {
       const textResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState, userCity);
@@ -47,7 +72,7 @@ export async function matchResources(
     const searchTerms = extractSearchTerms(userMessage);
     if (searchTerms.length > 0) {
       const broadResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
-      allResults.push(...broadResults.slice(0, 5));
+      allResults.push(...broadResults.slice(0, MIN_RESULTS));
     }
   }
 
@@ -56,18 +81,29 @@ export async function matchResources(
 
 export function detectCategories(message: string): string[] {
   const lower = message.toLowerCase();
-  const matched: string[] = [];
+  const scored: { slug: string; bestLen: number; matchCount: number }[] = [];
 
   for (const [slug, keywords] of Object.entries(aiConfig.categoryKeywords)) {
+    let bestLen = 0;
+    let matchCount = 0;
     for (const kw of keywords) {
       if (lower.includes(kw)) {
-        matched.push(slug);
-        break;
+        matchCount++;
+        if (kw.length > bestLen) bestLen = kw.length;
       }
+    }
+    if (matchCount > 0) {
+      scored.push({ slug, bestLen, matchCount });
     }
   }
 
-  return matched;
+  scored.sort((a, b) => {
+    const aScore = a.matchCount * 3 + a.bestLen;
+    const bScore = b.matchCount * 3 + b.bestLen;
+    return bScore - aScore;
+  });
+
+  return scored.map(s => s.slug);
 }
 
 function extractSearchTerms(message: string): string[] {
