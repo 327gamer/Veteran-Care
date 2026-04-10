@@ -10,7 +10,7 @@ export default function Housing() {
 
   const handleSubcategoryClick = (sub: typeof HOUSING_SUBCATEGORIES[number]) => {
     trackEvent("housing_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=housing&sub=${encodeURIComponent(sub.slug)}`);
+    setLocation(`/resources?category=housing-home&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function Housing() {
           </div>
         </div>
 
-        <AiGuideBanner categoryContext="housing" />
+        <AiGuideBanner categoryContext="housing-home" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
@@ -118,7 +118,7 @@ export default function Housing() {
             data-testid="housing-view-all"
             onClick={() => {
               trackEvent("housing_view_all_click");
-              setLocation("/resources?category=housing");
+              setLocation("/resources?category=housing-home");
             }}
             className="text-xs font-medium text-primary hover:underline"
           >

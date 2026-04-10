@@ -78,7 +78,7 @@ export default function EndOfLife() {
           </div>
         </div>
 
-        <AiGuideBanner categoryContext="end-of-life" />
+        <AiGuideBanner categoryContext="end-of-life-services" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

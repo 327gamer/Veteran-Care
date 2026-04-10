@@ -9,6 +9,7 @@ import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPart
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
 import { getLeadEligibility, getLeadEligibleCategorySlugs, getLeadEligibleSubcategorySlugs, isLeadEligibleCategory } from "../shared/lead-eligibility";
+import { toCanonical, toLegacy, normalizeCategoryList } from "../shared/canonical-categories";
 import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { query as pgQuery } from "./pg-client";
 import bcrypt from "bcryptjs";
@@ -2521,13 +2522,22 @@ function normalizeResourceCategories(resource: any): any {
   if (resource.resource_categories && Array.isArray(resource.resource_categories)) {
     resource.categories = resource.resource_categories
       .map((rc: any) => rc.categories)
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((cat: any) => cat && cat.slug ? { ...cat, slug: toCanonical(cat.slug) } : cat);
     if (resource.categories.length === 1) {
       resource.categories = resource.categories[0];
     } else if (resource.categories.length === 0) {
       resource.categories = null;
     }
     delete resource.resource_categories;
+  } else if (resource.categories) {
+    if (Array.isArray(resource.categories)) {
+      resource.categories = resource.categories.map((cat: any) =>
+        cat && cat.slug ? { ...cat, slug: toCanonical(cat.slug) } : cat
+      );
+    } else if (resource.categories && resource.categories.slug) {
+      resource.categories = { ...resource.categories, slug: toCanonical(resource.categories.slug) };
+    }
   }
   return resource;
 }
@@ -4801,22 +4811,24 @@ export async function registerRoutes(
       "crisis-help",
       "mental-health",
       "disabled-veterans",
-      "housing",
+      "housing-home",
       "food-assistance",
-      "va-benefits",
+      "benefits-assistance",
       "family-support",
       "community-support",
-      "employment",
-      "education",
+      "employment-support",
+      "education-training",
       "transportation",
-      "financial",
-      "legal",
-      "healthcare",
-      "substance-recovery",
+      "financial-credit",
+      "legal-services",
+      "healthcare-services",
+      "wellness-recovery",
       "end-of-life-services",
     ];
 
-    const sorted = (data || []).sort((a: any, b: any) => {
+    const normalized = normalizeCategoryList((data || []) as { slug: string }[]);
+
+    const sorted = normalized.sort((a: any, b: any) => {
       const ai = CATEGORY_ORDER.indexOf(a.slug);
       const bi = CATEGORY_ORDER.indexOf(b.slug);
       const aIdx = ai === -1 ? 999 : ai;
@@ -4886,7 +4898,8 @@ export async function registerRoutes(
     query = query.eq("status", "approved");
 
     if (category) {
-      query = query.eq("resource_categories.categories.slug", category as string);
+      const supabaseSlug = toLegacy(category as string);
+      query = query.eq("resource_categories.categories.slug", supabaseSlug);
     }
 
     if (sub) {
@@ -4958,7 +4971,8 @@ export async function registerRoutes(
       let nationalQuery = supabase.from("resources").select(resourceSelectFields(!!category, !!sub))
         .eq("status", "approved").is("state", null);
       if (category) {
-        nationalQuery = nationalQuery.eq("resource_categories.categories.slug", category as string);
+        const supabaseSlug = toLegacy(category as string);
+        nationalQuery = nationalQuery.eq("resource_categories.categories.slug", supabaseSlug);
       }
       if (sub) {
         nationalQuery = nationalQuery.eq("resource_subcategories.subcategories.slug", sub as string);
@@ -5005,7 +5019,7 @@ export async function registerRoutes(
     }
 
     if (category) {
-      query = query.eq("resource_categories.categories.slug", category as string);
+      query = query.eq("resource_categories.categories.slug", toLegacy(category as string));
     }
 
     const { data, error } = await query;
@@ -5036,7 +5050,7 @@ export async function registerRoutes(
     }
 
     if (category) {
-      query = query.eq("resource_categories.categories.slug", category as string);
+      query = query.eq("resource_categories.categories.slug", toLegacy(category as string));
     }
 
     const { data, error } = await query;
@@ -6835,12 +6849,18 @@ export async function registerRoutes(
       query = query.eq("category_id", category_id as string);
     }
     if (category_slug) {
-      query = query.eq("categories.slug", category_slug as string);
+      query = query.eq("categories.slug", toLegacy(category_slug as string));
     }
     query = query.order("name");
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
-    return res.json(data || []);
+    const normalized = (data || []).map((s: any) => {
+      if (s.categories && s.categories.slug) {
+        return { ...s, categories: { ...s.categories, slug: toCanonical(s.categories.slug) } };
+      }
+      return s;
+    });
+    return res.json(normalized);
   });
 
   app.get("/api/admin/resources/:id/subcategories", requireAdmin, async (req, res) => {
@@ -7935,18 +7955,10 @@ export async function registerRoutes(
         });
       });
 
-      const slugNormalize: Record<string, string> = {
-        "housing-assistance": "housing",
-        "legal-assistance": "legal",
-        "financial-assistance": "financial",
-        "community-programs": "community-support",
-        "disability-services": "va-benefits",
-      };
-
       const resourceGaps = topCategories
         .filter(c => c.count >= 3)
         .map(c => {
-          const dbSlug = slugNormalize[c.category] || c.category;
+          const dbSlug = toCanonical(c.category);
           return {
             category: c.category,
             demand: c.count,
@@ -8208,22 +8220,7 @@ export async function registerRoutes(
 
       const FALLBACK_THRESHOLD = 5;
       const tsCategorySlug = req.query.category as string | undefined;
-      const tsSlugToResourceCat: Record<string, string> = {
-        "housing-home": "housing",
-        "legal-services": "legal",
-        "financial-credit": "financial",
-        "insurance": "insurance",
-        "education-training": "education",
-        "employment-support": "employment",
-        "end-of-life-services": "end-of-life-services",
-        "healthcare-services": "healthcare",
-        "benefits-assistance": "va-benefits",
-        "wellness-recovery": "substance-recovery",
-        "disabled-veterans": "disabled-veterans",
-        "auto-services": "auto-services",
-        "travel-services": "travel-services",
-      };
-      const resourceCatSlug = tsCategorySlug ? tsSlugToResourceCat[tsCategorySlug] : undefined;
+      const resourceCatSlug = tsCategorySlug ? toLegacy(tsCategorySlug) : undefined;
 
       let fallbackResources: any[] = [];
       if (tsCategorySlug && resourceCatSlug && rows.length < FALLBACK_THRESHOLD) {
@@ -8493,22 +8490,9 @@ export async function registerRoutes(
     }
   });
 
-  const RESOURCE_TO_TRUSTED_CATEGORY_MAP: Record<string, string> = {
-    "housing": "housing-home",
-    "legal": "legal-services",
-    "financial": "financial-credit",
-    "education": "education-training",
-    "employment": "employment-support",
-    "va-benefits": "benefits-assistance",
-    "substance-recovery": "wellness-recovery",
-    "insurance": "insurance",
-    "end-of-life-services": "end-of-life-services",
-  };
-
   app.get("/api/trusted-partners-for-category/:resourceSlug", async (req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
-    const trustedSlug = RESOURCE_TO_TRUSTED_CATEGORY_MAP[req.params.resourceSlug];
-    if (!trustedSlug) return res.json([]);
+    const trustedSlug = toCanonical(req.params.resourceSlug);
     try {
       const rows = await pgQuery(
         `SELECT ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url, ts.city, ts.state,
@@ -8967,7 +8951,7 @@ export async function registerRoutes(
       const allCats = [
         ...RESOURCE_ONLY_CATEGORIES.map(c => ({ id: null, ...c })),
         ...dbCats.filter((c: any) => !RESOURCE_ONLY_CATEGORIES.find(r => r.slug === c.slug)),
-      ].sort((a: any, b: any) => (a.display_order || 99) - (b.display_order || 99));
+      ].sort((a: any, b: any) => (a.display_order ?? 99) - (b.display_order ?? 99));
 
       const result = [];
       for (const cat of allCats) {

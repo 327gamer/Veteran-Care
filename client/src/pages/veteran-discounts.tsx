@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { trackEvent, getUTMParams } from "@/lib/analytics";
+import { toLegacy } from "@shared/canonical-categories";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,15 +82,6 @@ interface RichSubcategory {
   description: string;
 }
 
-const TS_SLUG_TO_CANONICAL: Record<string, string> = {
-  "housing-home": "housing",
-  "legal-services": "legal",
-  "financial-credit": "financial",
-  "insurance": "insurance",
-  "education-training": "education",
-  "employment-support": "employment",
-  "end-of-life-services": "end-of-life-services",
-};
 
 const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "housing-home": HOUSING_SUBCATEGORIES,
@@ -238,7 +230,7 @@ export default function VeteranDiscounts() {
   const selectedCat = categories.find(c => c.slug === selectedCategory);
   const isServiceCategory = selectedCat?.group_type === "service";
   const richSubs = selectedCategory ? TS_RICH_SUBCATEGORIES[selectedCategory] : undefined;
-  const canonicalSlug = selectedCategory ? TS_SLUG_TO_CANONICAL[selectedCategory] : undefined;
+  const canonicalSlug = selectedCategory ? toLegacy(selectedCategory) : undefined;
 
   const { data: apiSubcategories = [], isLoading: apiSubsLoading } = useQuery<{ id: string; name: string; slug: string }[]>({
     queryKey: ["/api/subcategories", canonicalSlug],

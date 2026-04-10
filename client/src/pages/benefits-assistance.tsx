@@ -10,7 +10,7 @@ export default function BenefitsAssistance() {
 
   const handleSubcategoryClick = (sub: typeof BENEFITS_SUBCATEGORIES[number]) => {
     trackEvent("benefits_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=va-benefits&sub=${encodeURIComponent(sub.slug)}`);
+    setLocation(`/resources?category=benefits-assistance&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -112,7 +112,7 @@ export default function BenefitsAssistance() {
             data-testid="benefits-view-all"
             onClick={() => {
               trackEvent("benefits_view_all_click");
-              setLocation("/resources?category=va-benefits");
+              setLocation("/resources?category=benefits-assistance");
             }}
             className="text-xs font-medium text-primary hover:underline"
           >

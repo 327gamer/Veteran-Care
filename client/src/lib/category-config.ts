@@ -51,16 +51,8 @@ const configBySlug: Record<string, CategoryDisplayConfig> = {
   "transition": { icon: Flag, color: "text-cyan-600", bg: "bg-cyan-50", desc: "Returning to civilian life" },
 };
 
-const slugAliases: Record<string, string> = {
-  "housing": "housing-home",
-  "va-benefits": "benefits-assistance",
-  "employment": "employment-support",
-  "education": "education-training",
-  "financial": "financial-credit",
-  "legal": "legal-services",
-  "healthcare": "healthcare-services",
-  "substance-recovery": "wellness-recovery",
-};
+import { toCanonical, LEGACY_TO_CANONICAL } from "@shared/canonical-categories";
+const slugAliases = LEGACY_TO_CANONICAL;
 
 const defaultConfig: CategoryDisplayConfig = {
   icon: FileText,
@@ -70,13 +62,10 @@ const defaultConfig: CategoryDisplayConfig = {
 };
 
 export function getCategoryConfig(slug: string): CategoryDisplayConfig {
-  const canonical = slugAliases[slug] || slug;
-  return configBySlug[canonical] || defaultConfig;
+  return configBySlug[toCanonical(slug)] || defaultConfig;
 }
 
-export function toCanonicalSlug(slug: string): string {
-  return slugAliases[slug] || slug;
-}
+export { toCanonical as toCanonicalSlug } from "@shared/canonical-categories";
 
 export interface SupabaseCategory {
   id: string;

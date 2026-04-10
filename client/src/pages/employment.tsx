@@ -10,7 +10,7 @@ export default function Employment() {
 
   const handleSubcategoryClick = (sub: typeof EMP_SUBCATEGORIES[number]) => {
     trackEvent("emp_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=employment&sub=${encodeURIComponent(sub.slug)}`);
+    setLocation(`/resources?category=employment-support&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function Employment() {
           </div>
         </div>
 
-        <AiGuideBanner categoryContext="employment" />
+        <AiGuideBanner categoryContext="employment-support" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
@@ -118,7 +118,7 @@ export default function Employment() {
             data-testid="emp-view-all"
             onClick={() => {
               trackEvent("emp_view_all_click");
-              setLocation("/resources?category=employment");
+              setLocation("/resources?category=employment-support");
             }}
             className="text-xs font-medium text-primary hover:underline"
           >

@@ -10,7 +10,7 @@ export default function FinancialServices() {
 
   const handleSubcategoryClick = (sub: typeof FIN_SUBCATEGORIES[number]) => {
     trackEvent("fin_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=financial&sub=${encodeURIComponent(sub.slug)}`);
+    setLocation(`/resources?category=financial-credit&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function FinancialServices() {
           </div>
         </div>
 
-        <AiGuideBanner categoryContext="financial-services" />
+        <AiGuideBanner categoryContext="financial-credit" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
@@ -118,7 +118,7 @@ export default function FinancialServices() {
             data-testid="fin-view-all"
             onClick={() => {
               trackEvent("fin_view_all_click");
-              setLocation("/resources?category=financial");
+              setLocation("/resources?category=financial-credit");
             }}
             className="text-xs font-medium text-primary hover:underline"
           >

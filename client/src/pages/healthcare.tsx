@@ -10,7 +10,7 @@ export default function Healthcare() {
 
   const handleSubcategoryClick = (sub: typeof HC_SUBCATEGORIES[number]) => {
     trackEvent("hc_subcategory_click", { subcategory: sub.slug });
-    setLocation(`/resources?category=healthcare&sub=${encodeURIComponent(sub.slug)}`);
+    setLocation(`/resources?category=healthcare-services&sub=${encodeURIComponent(sub.slug)}`);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function Healthcare() {
           </div>
         </div>
 
-        <AiGuideBanner categoryContext="healthcare" />
+        <AiGuideBanner categoryContext="healthcare-services" />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.
@@ -118,7 +118,7 @@ export default function Healthcare() {
             data-testid="hc-view-all"
             onClick={() => {
               trackEvent("hc_view_all_click");
-              setLocation("/resources?category=healthcare");
+              setLocation("/resources?category=healthcare-services");
             }}
             className="text-xs font-medium text-primary hover:underline"
           >

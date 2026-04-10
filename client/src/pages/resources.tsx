@@ -521,38 +521,22 @@ export default function Resources() {
     });
   };
 
+  const CATEGORY_DEDICATED_ROUTES: Record<string, string> = {
+    "end-of-life-services": "/end-of-life",
+    "disabled-veterans": "/disabled-veterans",
+    "mental-health": "/mental-health",
+    "housing-home": "/housing",
+    "employment-support": "/employment",
+    "benefits-assistance": "/benefits-assistance",
+    "healthcare-services": "/healthcare",
+    "financial-credit": "/financial-services",
+  };
+
   const selectCategory = (cat: SupabaseCategory) => {
     trackEvent("category_view", { category: cat.slug });
-    if (cat.slug === "end-of-life-services") {
-      setLocation("/end-of-life");
-      return;
-    }
-    if (cat.slug === "disabled-veterans") {
-      setLocation("/disabled-veterans");
-      return;
-    }
-    if (cat.slug === "mental-health") {
-      setLocation("/mental-health");
-      return;
-    }
-    if (cat.slug === "housing") {
-      setLocation("/housing");
-      return;
-    }
-    if (cat.slug === "employment") {
-      setLocation("/employment");
-      return;
-    }
-    if (cat.slug === "va-benefits") {
-      setLocation("/benefits-assistance");
-      return;
-    }
-    if (cat.slug === "healthcare") {
-      setLocation("/healthcare");
-      return;
-    }
-    if (cat.slug === "financial") {
-      setLocation("/financial-services");
+    const route = CATEGORY_DEDICATED_ROUTES[cat.slug];
+    if (route) {
+      setLocation(route);
       return;
     }
     setSelectedSlug(cat.slug);
@@ -601,19 +585,9 @@ export default function Resources() {
   }
   if (subFilter) {
     const subLabel = subFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    const subcatRoutes: Record<string, string> = {
-      "disabled-veterans": "/disabled-veterans",
-      "end-of-life-services": "/end-of-life",
-      "mental-health": "/mental-health",
-      "housing": "/housing",
-      "employment": "/employment",
-      "va-benefits": "/benefits-assistance",
-      "healthcare": "/healthcare",
-      "financial": "/financial-services",
-    };
     filterChips.push({ label: subLabel, onRemove: () => {
       setSubFilter(null);
-      const route = selectedSlug && subcatRoutes[selectedSlug];
+      const route = selectedSlug && CATEGORY_DEDICATED_ROUTES[selectedSlug];
       if (route) { setLocation(route); }
       else { setLocation(`/resources?category=${selectedSlug || ""}`); }
     } });
@@ -678,46 +652,9 @@ export default function Resources() {
                   setLocationMode("national");
                   setCityFilter("");
                   setLocation("/resources");
-                } else if (selectedSlug === "end-of-life-services" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/end-of-life");
-                } else if (selectedSlug === "end-of-life-services") {
-                  setLocation("/end-of-life");
-                } else if (selectedSlug === "disabled-veterans" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/disabled-veterans");
-                } else if (selectedSlug === "disabled-veterans") {
-                  setLocation("/disabled-veterans");
-                } else if (selectedSlug === "mental-health" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/mental-health");
-                } else if (selectedSlug === "mental-health") {
-                  setLocation("/mental-health");
-                } else if (selectedSlug === "housing" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/housing");
-                } else if (selectedSlug === "housing") {
-                  setLocation("/housing");
-                } else if (selectedSlug === "employment" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/employment");
-                } else if (selectedSlug === "employment") {
-                  setLocation("/employment");
-                } else if (selectedSlug === "va-benefits" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/benefits-assistance");
-                } else if (selectedSlug === "va-benefits") {
-                  setLocation("/benefits-assistance");
-                } else if (selectedSlug === "healthcare" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/healthcare");
-                } else if (selectedSlug === "healthcare") {
-                  setLocation("/healthcare");
-                } else if (selectedSlug === "financial" && subFilter) {
-                  setSubFilter(null);
-                  setLocation("/financial-services");
-                } else if (selectedSlug === "financial") {
-                  setLocation("/financial-services");
+                } else if (selectedSlug && CATEGORY_DEDICATED_ROUTES[selectedSlug]) {
+                  if (subFilter) setSubFilter(null);
+                  setLocation(CATEGORY_DEDICATED_ROUTES[selectedSlug]);
                 } else {
                   clearCategory();
                 }
@@ -739,7 +676,7 @@ export default function Resources() {
         </p>
       </div>
 
-      {selectedSlug && !["end-of-life-services","disabled-veterans","mental-health","housing","housing-home","employment","employment-support","va-benefits","benefits-assistance","healthcare","healthcare-services","financial","financial-credit"].includes(selectedSlug) && (
+      {selectedSlug && !Object.keys(CATEGORY_DEDICATED_ROUTES).includes(selectedSlug) && (
         <AiGuideBanner categoryContext={selectedSlug} />
       )}
 
