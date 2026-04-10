@@ -1,6 +1,19 @@
 import { query as pgQuery } from "./pg-client";
 import { toCanonical, isCanonical } from "../shared/canonical-categories";
 
+const VALID_LEAD_CLASSES = ["explicit_lead", "engagement_event", "ai_intent", "visibility_event"] as const;
+export type LeadClass = typeof VALID_LEAD_CLASSES[number];
+
+const LEAD_CLASS_ALIASES: Record<string, LeadClass> = {
+  "explicit": "explicit_lead",
+  "engagement": "engagement_event",
+};
+
+function normalizeLeadClass(raw: string): LeadClass | null {
+  if ((VALID_LEAD_CLASSES as readonly string[]).includes(raw)) return raw as LeadClass;
+  return LEAD_CLASS_ALIASES[raw] || null;
+}
+
 export interface LeadEventData {
   event_type: string;
   lead_class: string;
@@ -78,6 +91,7 @@ export async function ensureLeadEventsTable(): Promise<void> {
     `);
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN source_surface SET NOT NULL`).catch(() => {});
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN category_slug SET NOT NULL`).catch(() => {});
+    await pgQuery(`ALTER TABLE lead_events ALTER COLUMN lead_class SET NOT NULL`).catch(() => {});
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_type ON lead_events(event_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_class ON lead_events(lead_class)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_events_created ON lead_events(created_at)`);
@@ -91,6 +105,15 @@ export async function ensureLeadEventsTable(): Promise<void> {
 
 export async function logLeadEvent(data: LeadEventData): Promise<void> {
   try {
+    if (!data.lead_class) {
+      console.warn("[lead-events] Rejected event: missing lead_class", { event_type: data.event_type });
+      return;
+    }
+    const validatedClass = normalizeLeadClass(data.lead_class);
+    if (!validatedClass) {
+      console.warn("[lead-events] Rejected event: invalid lead_class", { lead_class: data.lead_class, event_type: data.event_type });
+      return;
+    }
     if (!data.category_slug) {
       console.warn("[lead-events] Rejected event: missing category_slug", { event_type: data.event_type, source_surface: data.source_surface });
       return;
@@ -128,7 +151,7 @@ export async function logLeadEvent(data: LeadEventData): Promise<void> {
       )`,
       [
         data.event_type,
-        data.lead_class,
+        validatedClass,
         data.action_type,
         data.user_id || null,
         data.session_id || null,
