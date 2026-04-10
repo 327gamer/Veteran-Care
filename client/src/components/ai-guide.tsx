@@ -291,7 +291,8 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
     }
   };
 
-  const handleNavigatorClick = () => {
+  const handleConnectProvider = () => {
+    trackEvent("ai_connect_provider_click");
     onOpenChange(false);
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent("open-navigator"));
@@ -538,16 +539,17 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
             )}
 
             {showNavigatorHint && !isCrisis && (
-              <div className="mx-2">
+              <div className="mx-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs text-muted-foreground mb-2">Would you like us to connect you with a provider who can help directly?</p>
                 <Button
-                  data-testid="button-navigator-from-chat"
+                  data-testid="button-connect-provider"
                   variant="outline"
                   size="sm"
-                  className="w-full text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                  onClick={handleNavigatorClick}
+                  className="w-full text-xs gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={handleConnectProvider}
                 >
                   <Handshake className="h-4 w-4" />
-                  Request a {platform.navigatorTitle} for personalized help
+                  Yes, connect me with a provider
                 </Button>
               </div>
             )}

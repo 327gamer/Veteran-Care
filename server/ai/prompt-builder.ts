@@ -63,7 +63,7 @@ export function buildSystemPrompt(
       parts.push(lines.join("\n"));
     }
   } else {
-    parts.push("\n\nMATCHED RESOURCES: None found for this query. Be honest about this and suggest using the 'Request a Navigator' feature for personalized assistance.");
+    parts.push("\n\nMATCHED RESOURCES: None found for this query. Be honest about this and let the user know you can connect them with a provider for personalized assistance.");
   }
 
   parts.push(`\n\nIMPORTANT FORMATTING:
