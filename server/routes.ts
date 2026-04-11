@@ -7994,6 +7994,169 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/intelligence/category-performance", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads } = await supabaseAdmin.from("navigator_requests")
+        .select("category, is_billable, billed, billing_workflow_status, stripe_payment_status, billing_amount");
+      if (!leads) return res.json([]);
+      const cats: Record<string, { category: string; total: number; billable: number; paid: number; revenue: number }> = {};
+      for (const l of leads) {
+        const c = l.category || "uncategorized";
+        if (!cats[c]) cats[c] = { category: c, total: 0, billable: 0, paid: 0, revenue: 0 };
+        cats[c].total++;
+        if (l.is_billable) cats[c].billable++;
+        if (l.billed || l.billing_workflow_status === "charged") {
+          cats[c].paid++;
+          cats[c].revenue += parseFloat(l.billing_amount) || 49.99;
+        }
+      }
+      const result = Object.values(cats)
+        .map(c => ({ ...c, conversion_rate: c.billable > 0 ? Math.round((c.paid / c.billable) * 10000) / 100 : 0 }))
+        .sort((a, b) => b.total - a.total);
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/intelligence/partner-performance", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads } = await supabaseAdmin.from("navigator_requests")
+        .select("routed_to_partner_id, response_status, response_at, assigned_at, routed_at, billed, billing_workflow_status, billing_amount, is_billable");
+      if (!leads) return res.json([]);
+      const pMap: Record<string, { partner_id: string; leads_assigned: number; responded: number; accepted: number; declined: number; billed: number; revenue: number; response_times: number[] }> = {};
+      for (const l of leads) {
+        const pid = l.routed_to_partner_id;
+        if (!pid) continue;
+        if (!pMap[pid]) pMap[pid] = { partner_id: pid, leads_assigned: 0, responded: 0, accepted: 0, declined: 0, billed: 0, revenue: 0, response_times: [] };
+        pMap[pid].leads_assigned++;
+        if (l.response_status && l.response_status !== "pending") {
+          pMap[pid].responded++;
+          if (l.response_status === "accepted" || l.response_status === "completed") pMap[pid].accepted++;
+          if (l.response_status === "declined") pMap[pid].declined++;
+          if (l.response_at && (l.assigned_at || l.routed_at)) {
+            const diff = new Date(l.response_at).getTime() - new Date(l.assigned_at || l.routed_at).getTime();
+            if (diff > 0) pMap[pid].response_times.push(diff);
+          }
+        }
+        if (l.billed || l.billing_workflow_status === "charged") {
+          pMap[pid].billed++;
+          pMap[pid].revenue += parseFloat(l.billing_amount) || 49.99;
+        }
+      }
+      const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name");
+      const nameMap: Record<string, string> = {};
+      for (const p of partners || []) nameMap[p.id] = p.name;
+      const result = Object.values(pMap).map(p => {
+        const avgMs = p.response_times.length > 0 ? p.response_times.reduce((a, b) => a + b, 0) / p.response_times.length : null;
+        return {
+          partner_id: p.partner_id,
+          partner_name: nameMap[p.partner_id] || "Unknown",
+          leads_assigned: p.leads_assigned,
+          responded: p.responded,
+          response_rate: p.leads_assigned > 0 ? Math.round((p.responded / p.leads_assigned) * 10000) / 100 : 0,
+          accepted: p.accepted,
+          declined: p.declined,
+          avg_response_hours: avgMs ? Math.round((avgMs / (1000 * 60 * 60)) * 100) / 100 : null,
+          billed: p.billed,
+          revenue: Math.round(p.revenue * 100) / 100,
+        };
+      }).sort((a, b) => b.leads_assigned - a.leads_assigned);
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/intelligence/revenue", requireAdmin, async (req, res) => {
+    try {
+      const { from: fromDate, to: toDate } = req.query;
+      let query = supabaseAdmin.from("navigator_requests")
+        .select("category, routed_to_partner_id, billed, billed_at, billing_workflow_status, billing_amount, stripe_payment_status");
+      if (fromDate) query = query.gte("billed_at", String(fromDate));
+      if (toDate) query = query.lte("billed_at", String(toDate));
+      const { data: leads } = await query;
+      if (!leads) return res.json({ total_revenue: 0, by_category: {}, by_partner: {}, paid_count: 0 });
+      let totalRevenue = 0;
+      let paidCount = 0;
+      const byCat: Record<string, number> = {};
+      const byPartner: Record<string, number> = {};
+      for (const l of leads) {
+        if (!l.billed && l.billing_workflow_status !== "charged") continue;
+        const amt = parseFloat(l.billing_amount) || 49.99;
+        totalRevenue += amt;
+        paidCount++;
+        const cat = l.category || "uncategorized";
+        byCat[cat] = (byCat[cat] || 0) + amt;
+        if (l.routed_to_partner_id) {
+          byPartner[l.routed_to_partner_id] = (byPartner[l.routed_to_partner_id] || 0) + amt;
+        }
+      }
+      const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name");
+      const nameMap: Record<string, string> = {};
+      for (const p of partners || []) nameMap[p.id] = p.name;
+      const byPartnerNamed: Record<string, number> = {};
+      for (const [pid, amt] of Object.entries(byPartner)) {
+        byPartnerNamed[nameMap[pid] || pid] = Math.round(amt * 100) / 100;
+      }
+      return res.json({
+        total_revenue: Math.round(totalRevenue * 100) / 100,
+        paid_count: paidCount,
+        by_category: Object.fromEntries(Object.entries(byCat).map(([k, v]) => [k, Math.round(v * 100) / 100])),
+        by_partner: byPartnerNamed,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/intelligence/lead-signals", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads } = await supabaseAdmin.from("navigator_requests")
+        .select("category, routed_to_partner_id, is_billable, billed, billing_workflow_status, response_status, billing_amount");
+      if (!leads) return res.json({ high_value_categories: [], low_conversion_categories: [], high_response_low_payment_partners: [], low_response_partners: [] });
+      const catStats: Record<string, { total: number; billable: number; paid: number; revenue: number }> = {};
+      const partnerStats: Record<string, { total: number; responded: number; paid: number }> = {};
+      for (const l of leads) {
+        const c = l.category || "uncategorized";
+        if (!catStats[c]) catStats[c] = { total: 0, billable: 0, paid: 0, revenue: 0 };
+        catStats[c].total++;
+        if (l.is_billable) catStats[c].billable++;
+        if (l.billed || l.billing_workflow_status === "charged") {
+          catStats[c].paid++;
+          catStats[c].revenue += parseFloat(l.billing_amount) || 49.99;
+        }
+        const pid = l.routed_to_partner_id;
+        if (pid) {
+          if (!partnerStats[pid]) partnerStats[pid] = { total: 0, responded: 0, paid: 0 };
+          partnerStats[pid].total++;
+          if (l.response_status && l.response_status !== "pending") partnerStats[pid].responded++;
+          if (l.billed || l.billing_workflow_status === "charged") partnerStats[pid].paid++;
+        }
+      }
+      const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name");
+      const nameMap: Record<string, string> = {};
+      for (const p of partners || []) nameMap[p.id] = p.name;
+      const highValueCats = Object.entries(catStats)
+        .filter(([, s]) => s.paid > 0)
+        .map(([c, s]) => ({ category: c, paid: s.paid, revenue: Math.round(s.revenue * 100) / 100, conversion: s.billable > 0 ? Math.round((s.paid / s.billable) * 10000) / 100 : 0 }))
+        .sort((a, b) => b.revenue - a.revenue);
+      const lowConvCats = Object.entries(catStats)
+        .filter(([, s]) => s.billable >= 3 && s.paid === 0)
+        .map(([c, s]) => ({ category: c, billable: s.billable, total: s.total }))
+        .sort((a, b) => b.billable - a.billable);
+      const highRespLowPay = Object.entries(partnerStats)
+        .filter(([, s]) => s.total >= 2 && s.responded > 0 && s.paid === 0)
+        .map(([pid, s]) => ({ partner: nameMap[pid] || pid, total: s.total, responded: s.responded, paid: s.paid }));
+      const lowResp = Object.entries(partnerStats)
+        .filter(([, s]) => s.total >= 3 && (s.responded / s.total) < 0.3)
+        .map(([pid, s]) => ({ partner: nameMap[pid] || pid, total: s.total, responded: s.responded, response_rate: Math.round((s.responded / s.total) * 10000) / 100 }));
+      return res.json({ high_value_categories: highValueCats, low_conversion_categories: lowConvCats, high_response_low_payment_partners: highRespLowPay, low_response_partners: lowResp });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/billing-export", requireAdmin, async (_req, res) => {
     if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
     try {

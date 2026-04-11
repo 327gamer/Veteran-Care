@@ -1,0 +1,182 @@
+🚨 EXECUTE NOW — LIGHTWEIGHT INTELLIGENCE LAYER ONLY
+
+TITLE:
+Veteran Care – Step 5.6 – Pricing + Performance Intelligence Layer
+
+DATE:
+4.11.2026
+
+PRIORITY:
+HIGH (Monetization Optimization Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This is:
+
+✅ Step 5.6 – Pricing + Performance Intelligence
+❌ NOT subscriptions
+❌ NOT auto-billing
+❌ NOT UI overhaul
+❌ NOT dashboards
+❌ NOT charts
+
+This step exposes structured insights from existing lead + billing data only.
+
+It must remain:
+- lightweight
+- operational
+- queryable
+- decision-focused
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Expose structured insights from current lead, billing, and payment data to support:
+
+- pricing decisions
+- partner performance evaluation
+- category value identification
+- launch-phase monetization learning
+
+-------------------------------------
+IMPLEMENTATION RULE
+-------------------------------------
+
+Preferred delivery order:
+
+1. Supabase SQL query set (preferred)
+2. Internal admin-accessible endpoint set (if needed)
+
+Do NOT build heavy UI.
+
+No dashboards.
+No charts.
+No redesign.
+
+-------------------------------------
+REQUIREMENT 1 — CATEGORY PERFORMANCE DATA
+-------------------------------------
+
+Provide query or endpoint showing:
+
+- total leads per category
+- total billable leads per category
+- total paid leads per category
+- conversion rate from billable → paid
+
+Purpose:
+identify high-value categories
+
+-------------------------------------
+REQUIREMENT 2 — PARTNER PERFORMANCE DATA
+-------------------------------------
+
+Provide query or endpoint showing:
+
+- leads assigned per partner
+- response rate per partner
+- average response time per partner
+- total billed leads per partner
+- total paid leads per partner
+
+Purpose:
+identify strong vs weak partners
+
+-------------------------------------
+REQUIREMENT 3 — REVENUE VISIBILITY
+-------------------------------------
+
+Provide query or endpoint showing:
+
+- total revenue (sum of paid leads)
+- revenue by category
+- revenue by partner
+- revenue by date range
+
+-------------------------------------
+REQUIREMENT 4 — LEAD VALUE SIGNALS
+-------------------------------------
+
+Enable identification of:
+
+- categories with highest billing success
+- categories with high lead volume but low payment conversion
+- partners with high response but low payment
+- partners with low response rates
+
+This can be derived through query output.
+No scoring engine needed.
+
+-------------------------------------
+REQUIREMENT 5 — DATA INTEGRITY
+-------------------------------------
+
+All calculations must be based only on real stored values, including:
+
+- billing_status
+- billed
+- billed_at
+- stripe_payment_status
+- category
+- assigned_to / partner mapping
+
+Do NOT rely on assumptions.
+
+-------------------------------------
+REQUIREMENT 6 — ADMIN ACCESS
+-------------------------------------
+
+Make the data accessible through ONE of:
+
+- SQL queries for Supabase SQL editor
+- internal JSON endpoints for admin/dev use
+
+Keep this lightweight and operational.
+
+If using SQL, provide clean copy/paste-ready query blocks.
+If using endpoints, provide example output.
+
+-------------------------------------
+REQUIREMENT 7 — NO CORE SYSTEM MODIFICATION
+-------------------------------------
+
+Do NOT modify:
+- routing
+- tracking
+- reassignment
+- billing logic
+- Stripe integration
+- admin core UI
+
+This is read-only intelligence only.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Please validate and report:
+
+1. Category performance returns correct counts
+2. Partner performance returns correct metrics
+3. Revenue totals match paid lead records / Stripe-confirmed states
+4. No mismatch between lead records and payment data
+5. Queries or endpoints perform efficiently
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+A) query set or endpoint set
+B) example outputs
+C) validation confirmation
+D) confirmation that no core system logic was modified
+
+If SQL is used, paste the FULL query set directly in chat in clean copy/paste blocks.
+Do NOT only reference filenames.
+
+BEGIN EXECUTION
