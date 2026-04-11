@@ -281,6 +281,57 @@ function isRoutableLeadClass(leadClass: string): boolean {
   return ROUTABLE_LEAD_CLASSES.includes(leadClass);
 }
 
+async function findBestResourceFallback(
+  lead: LeadForRouting,
+  categorySlug: string | null
+): Promise<{ id: string; name: string; email: string | null; phone: string | null } | null> {
+  if (!categorySlug) return null;
+  try {
+    const { data: resources } = await supabaseAdmin
+      .from("resources")
+      .select("id, title, email, phone, city, state, resource_categories(categories(slug))")
+      .eq("status", "approved")
+      .not("email", "is", null)
+      .limit(200);
+
+    if (!resources || resources.length === 0) return null;
+
+    const matching = resources.filter((r: any) => {
+      const cats = Array.isArray(r.resource_categories) ? r.resource_categories : [];
+      const slugs = cats.map((rc: any) => {
+        const cat = rc?.categories;
+        return cat?.slug ? toCanonical(cat.slug) : null;
+      }).filter(Boolean);
+      return slugs.includes(categorySlug);
+    });
+
+    if (matching.length === 0) return null;
+
+    const emailOk = (e: string | null) => {
+      if (!e) return false;
+      const d = e.toLowerCase().split("@")[1];
+      return d && d !== "veterancare.com" && !d.endsWith(".veterancare.com");
+    };
+
+    const withEmail = matching.filter((r: any) => emailOk(r.email));
+    if (withEmail.length === 0) return null;
+
+    const scored = withEmail.map((r: any) => {
+      let score = 0;
+      if (lead.user_city && r.city && r.city.toLowerCase() === lead.user_city.toLowerCase()) score += 4;
+      if (lead.user_state && r.state && r.state.toUpperCase() === lead.user_state.toUpperCase()) score += 2;
+      return { ...r, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const best = scored[0];
+    return { id: best.id, name: best.title, email: best.email, phone: best.phone };
+  } catch (err: any) {
+    console.log("[router] Resource fallback search error:", err?.message);
+    return null;
+  }
+}
+
 export async function routeLead(leadId: string): Promise<{
   routed: boolean;
   partnerId?: string;
@@ -427,7 +478,70 @@ export async function routeLead(leadId: string): Promise<{
 
   const matches = await findMatchingPartners(lead, excludeIds, MAX_PARTNERS_PER_LEAD);
   if (matches.length === 0) {
-    console.log(`[router] No matching partner for lead ${leadId}`);
+    console.log(`[router] No matching partner for lead ${leadId} — trying resource fallback`);
+
+    const resourceFallback = await findBestResourceFallback(lead, categorySlug);
+    if (resourceFallback) {
+      console.log(`[router] Resource fallback found for lead ${leadId}: ${resourceFallback.name}`);
+      const now = new Date().toISOString();
+      let hist: any[] = [];
+      try {
+        const { data: h } = await supabaseAdmin.from("navigator_requests").select("routing_history").eq("id", leadId).single();
+        hist = Array.isArray(h?.routing_history) ? h.routing_history : [];
+      } catch {}
+      hist.push({
+        partner_id: null,
+        partner_name: resourceFallback.name,
+        routed_at: now,
+        delivery_status: "ready_for_delivery",
+        assignment_type: "resource_fallback",
+        resource_id: resourceFallback.id,
+        recipient_email: resourceFallback.email,
+      });
+      await supabaseAdmin.from("navigator_requests").update({
+        delivery_status: "ready_for_delivery",
+        routed_at: now,
+        routing_history: hist,
+        admin_notes: `Auto-assigned to Resource: ${resourceFallback.name}${resourceFallback.phone ? " | " + resourceFallback.phone : ""}${resourceFallback.email ? " | " + resourceFallback.email : ""}`,
+      }).eq("id", leadId);
+
+      logLeadEvent({
+        event_type: "lead_routed",
+        lead_class: leadClass,
+        action_type: "route",
+        source_surface: "lead_router",
+        category_slug: categorySlug || "unknown",
+        subcategory_slug: subcategorySlug,
+        state: lead.user_state || null,
+        city: lead.user_city || null,
+        delivery_status: "ready_for_delivery",
+        metadata: { reason: "resource_fallback", resource_id: resourceFallback.id, resource_name: resourceFallback.name, ...attributionFields },
+      });
+
+      if (resourceFallback.email) {
+        const { sendLeadNotificationDirect } = await import("./lead-email");
+        sendLeadNotificationDirect(leadId, resourceFallback.email, resourceFallback.name, null)
+          .then(async (result) => {
+            if (result.sent) {
+              await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId).catch(() => {});
+              logLeadEvent({
+                event_type: "lead_delivered_to_partner",
+                lead_class: leadClass, action_type: "deliver", source_surface: "lead_router",
+                category_slug: categorySlug || "unknown", subcategory_slug: subcategorySlug,
+                state: lead.user_state || null, city: lead.user_city || null,
+                delivery_status: "delivered",
+                metadata: { resource_fallback: true, resource_id: resourceFallback.id, ...attributionFields },
+              });
+            }
+          })
+          .catch((err) => {
+            console.log(`[router] Resource fallback email failed for lead ${leadId}:`, err?.message);
+          });
+      }
+
+      return { routed: true, partnerName: resourceFallback.name };
+    }
+
     logLeadEvent({
       event_type: "lead_unrouted",
       lead_class: leadClass,
@@ -438,7 +552,7 @@ export async function routeLead(leadId: string): Promise<{
       state: lead.user_state || null,
       city: lead.user_city || null,
       delivery_status: "unrouted",
-      metadata: { reason: "no_partner_match", ...attributionFields },
+      metadata: { reason: "no_partner_or_resource_match", ...attributionFields },
     });
     await markLeadUnrouted(leadId);
     return { routed: false };

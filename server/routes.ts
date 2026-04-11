@@ -989,6 +989,31 @@ async function backfillNavAmbassadorId() {
   } catch (err: any) {
     console.log("[schema] Partner rename skipped:", err.message);
   }
+
+  try {
+    const { data: internalPartners } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("id, name, contact_email")
+      .eq("is_lead_enabled", true);
+    if (internalPartners) {
+      let disabled = 0;
+      for (const p of internalPartners) {
+        const email = (p.contact_email || "").toLowerCase().trim();
+        if (!email || email.endsWith("@veterancare.com") || email.endsWith(".veterancare.com")) {
+          await supabaseAdmin
+            .from("partner_organizations")
+            .update({ is_lead_enabled: false })
+            .eq("id", p.id);
+          disabled++;
+        }
+      }
+      if (disabled > 0) {
+        console.log(`[schema] Disabled lead routing for ${disabled} partners with internal/missing emails`);
+      }
+    }
+  } catch (err: any) {
+    console.log("[schema] Partner email cleanup skipped:", err.message);
+  }
 }
 
 async function resolveAmbassadorId(ambassadorCode: string | null, utmId?: string | null): Promise<string | null> {

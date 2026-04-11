@@ -1,0 +1,212 @@
+We need to implement a COMPLETE and CORRECT lead routing system for Veteran Care.
+
+This is NOT a UI tweak. This is CORE SYSTEM LOGIC.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Every Support Request must:
+
+1. Match ONLY correct category resources
+2. Prioritize VERIFIED / TRUSTED PARTNERS (paid partners)
+3. Route automatically (no confusion)
+4. Track delivery + response status
+5. Auto-reassign if ignored (72-hour rule)
+
+-------------------------------------
+ISSUE SUMMARY (CURRENT STATE IS BROKEN)
+-------------------------------------
+
+- "Veteran Care Navigator Program" is acting as a placeholder with no clarity
+- Admin cannot tell WHERE leads are going
+- Recommended matches show WRONG categories
+- Leads are NOT reliably routed to real resources
+- No fallback logic if no partner responds
+- No escalation logic
+
+-------------------------------------
+SYSTEM WE ARE BUILDING (FINAL MODEL)
+-------------------------------------
+
+STEP 1 — CATEGORY LOCK (STRICT FILTER)
+
+When a request is submitted:
+
+- ONLY return resources WHERE:
+  resource.category === request.category
+
+NO CROSS-CATEGORY MATCHES EVER.
+
+Example:
+- Housing request → ONLY Housing resources
+- Financial → ONLY Financial resources
+
+-------------------------------------
+STEP 2 — LOCATION PRIORITY
+
+Sort results in this EXACT order:
+
+1. Same City
+2. Nearby Cities (within region)
+3. Same State
+4. National (last fallback)
+
+-------------------------------------
+STEP 3 — VERIFIED PARTNER PRIORITY
+
+Within results:
+
+- VERIFIED / TRUSTED PARTNERS ALWAYS appear first
+
+Priority order:
+
+1. Verified Trusted Partner (closest location)
+2. Other Trusted Partners
+3. Standard Resources
+
+-------------------------------------
+STEP 4 — AUTOMATIC ROUTING LOGIC
+
+IF a VERIFIED PARTNER exists:
+
+→ AUTO ASSIGN immediately
+→ SEND EMAIL to that partner
+→ Mark as:
+
+Status: Assigned  
+Delivery: External Email Sent  
+Assigned To: [Partner Name]
+
+-------------------------------------
+STEP 5 — FALLBACK (NO TRUSTED PARTNER)
+
+IF no trusted partner exists:
+
+→ AUTO ASSIGN to BEST MATCH RESOURCE (category + location)
+→ SEND EMAIL to that resource
+→ Mark same status
+
+-------------------------------------
+STEP 6 — REMOVE FAKE / CONFUSING ROUTES
+
+REMOVE:
+
+- "Veteran Care Navigator Program"
+- "OpenAI"
+- ANY placeholder routing
+
+REPLACE WITH:
+
+REAL resource or partner ONLY
+
+-------------------------------------
+STEP 7 — EMAIL DELIVERY SYSTEM (CRITICAL)
+
+When assigned:
+
+SEND EMAIL:
+
+To: resource.email
+
+Include:
+- Veteran request details
+- Category
+- Location
+- Contact info
+- Action buttons:
+   → Accept Lead
+   → Decline
+   → Need More Info
+   → Completed
+
+-------------------------------------
+STEP 8 — RESPONSE TRACKING
+
+Store:
+
+- assigned_at
+- email_sent_at
+- response_status
+- response_time
+
+-------------------------------------
+STEP 9 — 72-HOUR ESCALATION RULE
+
+IF no response after 72 hours:
+
+→ Mark as: "Unresponsive"
+
+→ Automatically:
+   - Find NEXT BEST MATCH (same category)
+   - Reassign
+   - Send NEW email
+
+→ Log:
+   reassigned_at
+   previous_partner
+
+-------------------------------------
+STEP 10 — ADMIN PANEL CLARITY
+
+Display MUST show:
+
+Assigned to: [Name]  
+Type: Trusted Partner / Resource  
+Delivery: Email Sent / Pending  
+Status: Awaiting Response / Accepted / Completed  
+
+-------------------------------------
+STEP 11 — ADMIN FILTERING
+
+Fix Recommended Matches:
+
+- MUST only show SAME CATEGORY
+- NO unrelated results
+
+-------------------------------------
+STEP 12 — DO NOT CHANGE
+
+- Billing logic
+- Ambassador tracking
+- Event tracking
+- Taxonomy structure
+
+-------------------------------------
+FINAL REQUIREMENT
+-------------------------------------
+
+This system must:
+
+- Work WITHOUT manual intervention
+- Be scalable nationally
+- Be reliable (no missed leads)
+- Be monetizable (trusted partners first)
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+1. Housing request (Charleston)
+   → Routes to Charleston Verified Partner
+
+2. Housing request (Greenville)
+   → Routes to Greenville Verified Partner
+
+3. Financial request (no partner)
+   → Routes to correct VA/resource fallback
+
+4. No response after 72 hours
+   → Reassigned automatically
+
+-------------------------------------
+
+Implement clean, simple, and predictable logic.
+
+No placeholders. No guessing. No cross-category leakage.
+
+This is the core engine of the platform.
+
+-------------------------------------
+END
+-------------------------------------

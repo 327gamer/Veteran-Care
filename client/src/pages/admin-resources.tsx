@@ -1306,10 +1306,14 @@ function AdminResourcesInner() {
                       </div>
                     )}
 
-                    {(req.routed_to_partner_id || req.delivery_status) && (() => {
+                    {(req.routed_to_partner_id || req.delivery_status || (Array.isArray(req.routing_history) && req.routing_history.length > 0)) && (() => {
                       const partnerMatch = partners.find(p => p.id === req.routed_to_partner_id);
-                      const partnerName = partnerMatch?.name || "Routing Partner";
-                      const isExternal = !!partnerMatch?.contact_email;
+                      const lastRoute = Array.isArray(req.routing_history) ? req.routing_history[req.routing_history.length - 1] : null;
+                      const isResourceFallback = !req.routed_to_partner_id && lastRoute?.assignment_type === "resource_fallback";
+                      const partnerName = req.routed_to_partner_id
+                        ? (partnerMatch?.name || "Routing Partner")
+                        : (lastRoute?.partner_name || "Auto-assigned Resource");
+                      const isExternal = req.routed_to_partner_id ? !!partnerMatch?.contact_email : !!lastRoute?.recipient_email;
                       const deliveryLabel = req.delivery_status === "delivered" ? "Email Delivered" :
                         req.delivery_status === "pending" || req.delivery_status === "ready_for_delivery" ? "Pending Email Delivery" :
                         req.delivery_status === "delivery_failed" ? "Email Delivery Failed" :
@@ -1322,7 +1326,8 @@ function AdminResourcesInner() {
                         <p className="flex items-center gap-1 flex-wrap">
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="font-medium">
-                            Assigned to: {req.routed_to_partner_id ? partnerName : "No Partner Assigned"}
+                            Assigned to: {partnerName}
+                            {isResourceFallback && <span className="text-[9px] font-normal text-blue-600 ml-1">(Resource Fallback)</span>}
                           </span>
                           {req.delivery_status && (
                             <Badge variant="outline" className={`text-[9px] ml-auto ${
@@ -1357,7 +1362,7 @@ function AdminResourcesInner() {
                       );
                     })()}
 
-                    {!req.routed_to_partner_id && req.delivery_status !== "fallback_manual" && (
+                    {!req.routed_to_partner_id && req.delivery_status !== "fallback_manual" && !req.delivery_status && !(Array.isArray(req.routing_history) && req.routing_history.some((h: any) => h.assignment_type === "resource_fallback")) && (
                       <div className="text-[10px] bg-teal-50 text-teal-800 rounded p-2 border border-teal-200 flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1">
                           <ExternalLink className="h-3 w-3 shrink-0" />

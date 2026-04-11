@@ -3,12 +3,12 @@ import { findBestPartner } from "./lead-router";
 
 const ESCALATION_WINDOWS: Record<string, number> = {
   immediate: 15 * 60 * 1000,
-  same_week: 48 * 60 * 60 * 1000,
-  standard: 7 * 24 * 60 * 60 * 1000,
-  information: 14 * 24 * 60 * 60 * 1000,
+  same_week: 72 * 60 * 60 * 1000,
+  standard: 72 * 60 * 60 * 1000,
+  information: 7 * 24 * 60 * 60 * 1000,
 };
 
-const DEFAULT_WINDOW = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_WINDOW = 72 * 60 * 60 * 1000;
 
 function getEscalationWindow(urgency: string | null): number {
   return ESCALATION_WINDOWS[urgency || ""] || DEFAULT_WINDOW;
@@ -27,9 +27,9 @@ export async function checkEscalations(): Promise<{
     const { data: routedLeads, error } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, urgency, routed_to_partner_id, routed_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city")
-      .eq("status", "new")
+      .in("status", ["new", "in_progress"])
       .not("routed_to_partner_id", "is", null)
-      .eq("delivery_status", "pending");
+      .in("delivery_status", ["pending", "delivered", "ready_for_delivery"]);
 
     if (error) {
       if (error.message.includes("does not exist")) return { escalated: 0, rerouted: 0, fallback: 0 };
