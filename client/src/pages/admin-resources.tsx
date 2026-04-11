@@ -124,6 +124,9 @@ interface NavigatorRequest {
   billed_at: string | null;
   billing_amount: number | null;
   billing_status: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_status: string | null;
 }
 
 interface AdminResource {
@@ -1392,30 +1395,86 @@ function AdminResourcesInner() {
                             }`}>{(req.billing_status || "not_billable").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p>
                             <p>Amount: ${parseFloat(String(req.billing_amount || 49.99)).toFixed(2)}</p>
                             {req.billed && req.billed_at && <p>Billed: {new Date(req.billed_at).toLocaleString()}</p>}
+                            {req.stripe_payment_intent_id && <p>Stripe PI: {req.stripe_payment_intent_id.substring(0, 20)}...</p>}
+                            {req.stripe_payment_status && req.stripe_payment_status !== "pending" && <p>Payment: <span className={req.stripe_payment_status === "paid" ? "text-green-700 font-medium" : "text-slate-600"}>{req.stripe_payment_status}</span></p>}
                             {req.is_billable && !req.billed && (
-                              <button
-                                data-testid={`button-mark-billed-${req.id}`}
-                                className="mt-1 px-2 py-0.5 bg-green-600 text-white rounded text-[9px] hover:bg-green-700"
-                                onClick={async () => {
-                                  if (!window.confirm("Mark this lead as billed? This cannot be undone.")) return;
-                                  try {
-                                    const resp = await fetch(`/api/admin/navigator-requests/${req.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-                                      body: JSON.stringify({ mark_billed: true }),
-                                    });
-                                    if (resp.ok) {
-                                      const updated = await resp.json();
-                                      setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, ...updated } : r));
-                                    } else {
-                                      const err = await resp.json();
-                                      alert(err.error || "Failed to mark billed");
-                                    }
-                                  } catch { alert("Network error"); }
-                                }}
-                              >
-                                Mark Billed
-                              </button>
+                              <div className="flex gap-1 mt-1">
+                                <button
+                                  data-testid={`button-charge-now-${req.id}`}
+                                  className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[9px] hover:bg-indigo-700"
+                                  onClick={async () => {
+                                    if (!window.confirm(`Create Stripe payment for $${parseFloat(String(req.billing_amount || 49.99)).toFixed(2)}?`)) return;
+                                    try {
+                                      const resp = await fetch(`/api/admin/billing-charge/${req.id}`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                                      });
+                                      if (resp.ok) {
+                                        const { url, reused } = await resp.json();
+                                        if (url) {
+                                          window.open(url, "_blank");
+                                          setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, stripe_payment_status: "pending" } : r));
+                                        }
+                                      } else {
+                                        const err = await resp.json();
+                                        alert(err.error || "Failed to create charge");
+                                      }
+                                    } catch { alert("Network error"); }
+                                  }}
+                                >
+                                  Charge Now
+                                </button>
+                                <button
+                                  data-testid={`button-mark-billed-${req.id}`}
+                                  className="px-2 py-0.5 bg-green-600 text-white rounded text-[9px] hover:bg-green-700"
+                                  onClick={async () => {
+                                    if (!window.confirm("Mark this lead as billed manually (without Stripe)? This cannot be undone.")) return;
+                                    try {
+                                      const resp = await fetch(`/api/admin/navigator-requests/${req.id}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                                        body: JSON.stringify({ mark_billed: true }),
+                                      });
+                                      if (resp.ok) {
+                                        const updated = await resp.json();
+                                        setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, ...updated } : r));
+                                      } else {
+                                        const err = await resp.json();
+                                        alert(err.error || "Failed to mark billed");
+                                      }
+                                    } catch { alert("Network error"); }
+                                  }}
+                                >
+                                  Mark Billed
+                                </button>
+                                {req.stripe_checkout_session_id && req.stripe_payment_status === "pending" && (
+                                  <button
+                                    data-testid={`button-check-payment-${req.id}`}
+                                    className="px-2 py-0.5 bg-slate-500 text-white rounded text-[9px] hover:bg-slate-600"
+                                    onClick={async () => {
+                                      try {
+                                        const resp = await fetch(`/api/admin/billing-check-payment/${req.id}`, {
+                                          headers: { "x-admin-key": adminKey },
+                                        });
+                                        if (resp.ok) {
+                                          const result = await resp.json();
+                                          if (result.status === "paid_now_billed") {
+                                            setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, billed: true, billing_status: "billed", stripe_payment_status: "paid", billed_at: new Date().toISOString() } : r));
+                                            alert("Payment confirmed — lead marked billed");
+                                          } else if (result.status === "expired") {
+                                            setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, stripe_payment_status: "expired", stripe_checkout_session_id: null } : r));
+                                            alert("Checkout session expired — you can create a new one");
+                                          } else {
+                                            alert(`Payment status: ${result.status}`);
+                                          }
+                                        }
+                                      } catch { alert("Network error"); }
+                                    }}
+                                  >
+                                    Check
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}

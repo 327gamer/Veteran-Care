@@ -1,0 +1,196 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 5.1 – Stripe Payment Capture Layer (Manual Admin Charge)
+
+PRIORITY:
+CRITICAL (Monetization Activation – Launch Ready)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This is:
+
+✅ Chunk 5.1
+✅ Stripe payment capture for already-billable leads
+✅ manual admin-triggered charging only
+
+This is NOT:
+
+❌ subscriptions
+❌ recurring billing
+❌ automated charging
+❌ invoice system
+❌ reporting dashboard
+
+This is controlled payment capture only.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to collect payment for leads that are already marked:
+
+- is_billable = true
+- billed = false
+- billing_status = billable
+
+Using Stripe in a controlled, manual workflow.
+
+-------------------------------------
+PAYMENT RULE
+-------------------------------------
+
+A lead can only be charged if:
+
+- is_billable = true
+- billed = false
+- billing_status = billable
+- billing_amount exists
+
+If not, payment must be blocked.
+
+-------------------------------------
+REQUIREMENT 1 — STRIPE LINKAGE
+-------------------------------------
+
+Create a safe Stripe payment flow for a single lead charge.
+
+Preferred approach:
+- admin clicks “Charge Now” on a billable lead
+- system creates Stripe payment object / checkout / payment link for that lead
+- payment is associated to that specific lead record
+
+Return whichever Stripe approach is best for:
+- controlled admin use
+- auditability
+- dispute safety
+- fast launch
+
+-------------------------------------
+REQUIREMENT 2 — ADMIN PAYMENT ACTION
+-------------------------------------
+
+Admin panel must allow:
+
+- Charge Now (only for billable + unbilled leads)
+
+After successful payment confirmation:
+
+System MUST:
+- set billed = true
+- set billed_at = payment confirmation time
+- set billing_status = billed
+- store Stripe payment reference if available
+
+-------------------------------------
+REQUIREMENT 3 — PAYMENT SAFETY
+-------------------------------------
+
+Must prevent:
+
+- charging non-billable leads
+- charging already billed leads
+- duplicate charge creation
+- billing status corruption
+
+If lead already billed:
+- block charge action
+
+If Stripe payment fails:
+- do NOT mark billed
+
+-------------------------------------
+REQUIREMENT 4 — STRIPE DATA FIELDS
+-------------------------------------
+
+If lightweight and safe, add fields such as:
+
+- stripe_payment_intent_id
+- stripe_charge_id
+- stripe_payment_status
+
+Only if needed for auditability.
+Do NOT overbuild.
+
+-------------------------------------
+REQUIREMENT 5 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin must clearly see:
+
+- billing_status
+- billing_amount
+- billed
+- billed_at
+- Stripe reference if available
+- payment state if useful
+
+No redesign.
+Only extend current admin request view cleanly.
+
+-------------------------------------
+REQUIREMENT 6 — HISTORICAL SAFETY
+-------------------------------------
+
+Historical billable leads must remain chargeable only once.
+
+No duplicate charges.
+No retroactive corruption.
+
+-------------------------------------
+REQUIREMENT 7 — NO SUBSCRIPTION YET
+-------------------------------------
+
+DO NOT build:
+- monthly subscriptions
+- auto-renew
+- recurring partner billing
+- invoice automation
+- statement dashboards
+
+This step is one-lead / one-payment manual capture only.
+
+-------------------------------------
+REQUIREMENT 8 — TEST CASES REQUIRED
+-------------------------------------
+
+Please validate:
+
+1. Billable unbilled lead → Charge Now available
+2. Non-billable lead → Charge blocked
+3. Already billed lead → Charge blocked
+4. Successful Stripe payment → billed updated correctly
+5. Failed Stripe payment → billed remains false
+6. Admin panel shows payment result clearly
+7. No duplicate payment possible for same lead
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return with:
+
+A) files changed
+B) Stripe flow chosen and why
+C) admin payment control added
+D) payment safety protections
+E) fields added for audit trail
+F) test confirmation results
+G) confirmation that subscriptions/recurring were NOT built
+
+-------------------------------------
+STRICT DO-NOT-TOUCH LIST
+-------------------------------------
+
+Do NOT modify:
+- routing engine
+- response tracking
+- reassignment engine
+- category logic
+- attribution logic
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------

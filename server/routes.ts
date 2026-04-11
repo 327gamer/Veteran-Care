@@ -7573,6 +7573,148 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/billing-charge/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+
+    const { id } = req.params;
+    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+
+    if (!isStripeEnabled()) {
+      return res.status(503).json({ error: "Stripe is not configured. Add STRIPE_SECRET_KEY." });
+    }
+
+    let lead: any = null;
+    let fetchErr: any = null;
+    const { data: d1, error: e1 } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id")
+      .eq("id", id)
+      .single();
+    if (!e1) {
+      lead = d1;
+    } else {
+      const { data: d2, error: e2 } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id")
+        .eq("id", id)
+        .single();
+      lead = d2;
+      fetchErr = e2;
+    }
+
+    if (fetchErr || !lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.billed) return res.status(400).json({ error: "Lead is already billed — cannot charge twice" });
+    if (!lead.is_billable) return res.status(400).json({ error: "Lead is not billable — delivery criteria not met" });
+    if (lead.billing_status !== "billable") return res.status(400).json({ error: `Lead billing_status is '${lead.billing_status}' — must be 'billable'` });
+
+    if (lead.stripe_checkout_session_id) {
+      try {
+        const { stripe } = await import("./stripe-service");
+        if (stripe) {
+          const existing = await stripe.checkout.sessions.retrieve(lead.stripe_checkout_session_id);
+          if (existing.status === "open") {
+            return res.json({ url: existing.url, sessionId: existing.id, reused: true });
+          }
+        }
+      } catch {}
+    }
+
+    const amount = parseFloat(lead.billing_amount) || 49.99;
+    let partnerName = "Partner";
+    if (lead.routed_to_partner_id) {
+      try {
+        const { data: partner } = await supabaseAdmin.from("partner_organizations").select("name").eq("id", lead.routed_to_partner_id).single();
+        if (partner?.name) partnerName = partner.name;
+      } catch {}
+    }
+
+    try {
+      const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
+
+      try {
+        const { error: upErr } = await supabaseAdmin.from("navigator_requests").update({
+          stripe_checkout_session_id: sessionId,
+          stripe_payment_status: "pending",
+        }).eq("id", id);
+        if (upErr) {
+          await supabaseAdmin.from("navigator_requests").update({}).eq("id", id);
+        }
+      } catch {}
+
+      return res.json({ url, sessionId });
+    } catch (err: any) {
+      console.log(`[billing] Stripe charge creation failed for lead ${id}:`, err?.message);
+      return res.status(500).json({ error: err?.message || "Stripe charge creation failed" });
+    }
+  });
+
+  app.get("/api/admin/billing-check-payment/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+
+    const { id } = req.params;
+    let lead: any = null;
+    const { data: ld1, error: le1 } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, billed, billing_status, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_status")
+      .eq("id", id)
+      .single();
+    if (!le1) {
+      lead = ld1;
+    } else {
+      const { data: ld2 } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, billed, billing_status")
+        .eq("id", id)
+        .single();
+      lead = ld2;
+    }
+
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.billed) return res.json({ status: "billed", lead });
+
+    if (!lead.stripe_checkout_session_id) return res.json({ status: "no_checkout", lead });
+
+    try {
+      const { stripe } = await import("./stripe-service");
+      if (!stripe) return res.json({ status: "stripe_unavailable" });
+
+      const session = await stripe.checkout.sessions.retrieve(lead.stripe_checkout_session_id);
+
+      if (session.payment_status === "paid" && !lead.billed) {
+        const paymentIntentId = typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : (session.payment_intent as any)?.id || null;
+        const billedAt = new Date().toISOString();
+
+        try {
+          await supabaseAdmin.from("navigator_requests").update({
+            billed: true,
+            billed_at: billedAt,
+            billing_status: "billed",
+            stripe_payment_intent_id: paymentIntentId,
+            stripe_payment_status: "paid",
+          }).eq("id", id).eq("billed", false);
+        } catch {
+          await supabaseAdmin.from("navigator_requests").update({
+            billed: true,
+            billed_at: billedAt,
+            billing_status: "billed",
+          }).eq("id", id).eq("billed", false);
+        }
+
+        return res.json({ status: "paid_now_billed", paymentIntentId });
+      }
+
+      return res.json({
+        status: session.status === "expired" ? "expired" : session.payment_status === "unpaid" ? "unpaid" : session.status,
+        checkoutStatus: session.status,
+        paymentStatus: session.payment_status,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/partners", requireAdmin, async (_req, res) => {
     if (!hasPartnerTable) return res.json([]);
     const { data, error } = await supabaseAdmin

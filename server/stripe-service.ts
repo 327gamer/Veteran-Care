@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { query as pgQuery } from "./pg-client";
 import { platform } from "../shared/platform";
 import { sendPaymentFailedEmail, sendGraceExpiringEmail, sendPartnerWelcomeEmail } from "./lead-email";
+import { supabaseAdmin } from "./supabase";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -154,6 +155,42 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
   return { url: session.url!, sessionId: session.id };
 }
 
+export async function createLeadChargeCheckout(leadId: string, amountDollars: number, partnerName: string, veteranName: string, category: string): Promise<{ url: string; sessionId: string }> {
+  if (!stripe) throw new Error("Stripe is not configured");
+
+  const amountCents = Math.round(amountDollars * 100);
+  if (amountCents <= 0) throw new Error("Invalid billing amount");
+
+  const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          unit_amount: amountCents,
+          product_data: {
+            name: `Lead Delivery Fee — ${category || "General"}`,
+            description: `Veteran: ${veteranName} | Partner: ${partnerName} | Lead ID: ${leadId.substring(0, 8)}`,
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      lead_id: leadId,
+      partner_name: partnerName,
+      charge_type: "lead_billing",
+    },
+    success_url: `${appUrl}/admin?billing=success&lead=${leadId.substring(0, 8)}`,
+    cancel_url: `${appUrl}/admin?billing=cancelled&lead=${leadId.substring(0, 8)}`,
+  });
+
+  return { url: session.url!, sessionId: session.id };
+}
+
 export async function createCustomerPortalSession(stripeCustomerId: string, returnUrl?: string): Promise<{ url: string }> {
   if (!stripe) throw new Error("Stripe is not configured");
 
@@ -169,9 +206,15 @@ export async function createCustomerPortalSession(stripeCustomerId: string, retu
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
-    case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.charge_type === "lead_billing") {
+        await handleLeadBillingCompleted(session);
+      } else {
+        await handleCheckoutCompleted(session);
+      }
       break;
+    }
     case "customer.subscription.created":
       await handleSubscriptionSync(event.data.object as Stripe.Subscription);
       break;
@@ -263,6 +306,65 @@ async function syncAddonFlags(appId: string, providerId: string | null, subscrip
     );
     console.log(`[stripe] Synced add-on flags for provider ${providerId}: featured=${featured}, nearMe=${nearMeBoost}, sponsoredTop=${sponsoredTop}, sponsoredInline=${sponsoredInline}, active=${isActive}`);
   }
+}
+
+async function handleLeadBillingCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const leadId = session.metadata?.lead_id;
+  if (!leadId) {
+    console.log("[stripe] lead_billing checkout completed but missing lead_id in metadata");
+    return;
+  }
+
+  if (session.payment_status !== "paid") {
+    console.log(`[stripe] lead_billing checkout for lead ${leadId} — payment_status: ${session.payment_status}, skipping`);
+    return;
+  }
+
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : (session.payment_intent as any)?.id || null;
+
+  const billedAt = new Date().toISOString();
+
+  const { data: lead, error: fetchErr } = await supabaseAdmin
+    .from("navigator_requests")
+    .select("id, billed, is_billable, billing_status")
+    .eq("id", leadId)
+    .single();
+
+  if (fetchErr || !lead) {
+    console.log(`[stripe] lead_billing: lead ${leadId} not found`);
+    return;
+  }
+
+  if (lead.billed) {
+    console.log(`[stripe] lead_billing: lead ${leadId} already billed — skipping duplicate webhook`);
+    return;
+  }
+
+  if (!lead.is_billable) {
+    console.log(`[stripe] lead_billing: lead ${leadId} is not billable — payment received but cannot mark billed`);
+    return;
+  }
+
+  const updateFields: Record<string, any> = {
+    billed: true,
+    billed_at: billedAt,
+    billing_status: "billed",
+  };
+
+  try {
+    await supabaseAdmin.from("navigator_requests").update({
+      ...updateFields,
+      stripe_payment_intent_id: paymentIntentId,
+      stripe_checkout_session_id: session.id,
+      stripe_payment_status: "paid",
+    }).eq("id", leadId).eq("billed", false);
+  } catch {
+    await supabaseAdmin.from("navigator_requests").update(updateFields).eq("id", leadId).eq("billed", false);
+  }
+
+  console.log(`[stripe] lead_billing: lead ${leadId} marked BILLED via Stripe checkout ${session.id}, PI: ${paymentIntentId}`);
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
