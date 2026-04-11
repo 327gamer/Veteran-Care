@@ -262,6 +262,21 @@ function AdminResourcesInner() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/navigator-requests/${id}`, {
+        method: "DELETE",
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/navigator-requests") });
+      toast({ description: "Request permanently deleted" });
+    },
+  });
+
   const bulkArchiveMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/admin/navigator-requests/bulk-archive", {
@@ -296,7 +311,7 @@ function AdminResourcesInner() {
         toast({ description: "No auto-match found — choose a partner below", variant: "destructive" });
       } else {
         setManualAssignLeadId(null);
-        toast({ description: `Routed to ${data.partner_name || "partner"}` });
+        toast({ description: `Assigned to ${data.partner_name || "partner"} — email notification sent` });
       }
     },
   });
@@ -1291,14 +1306,23 @@ function AdminResourcesInner() {
                       </div>
                     )}
 
-                    {(req.routed_to_partner_id || req.delivery_status) && (
-                      <div className="text-[10px] bg-blue-50 text-blue-800 rounded p-2 border border-blue-200 space-y-0.5">
+                    {(req.routed_to_partner_id || req.delivery_status) && (() => {
+                      const partnerMatch = partners.find(p => p.id === req.routed_to_partner_id);
+                      const partnerName = partnerMatch?.name || "Routing Partner";
+                      const isExternal = !!partnerMatch?.contact_email;
+                      const deliveryLabel = req.delivery_status === "delivered" ? "Email Delivered" :
+                        req.delivery_status === "pending" || req.delivery_status === "ready_for_delivery" ? "Pending Email Delivery" :
+                        req.delivery_status === "delivery_failed" ? "Email Delivery Failed" :
+                        req.delivery_status === "fallback_manual" ? "Manual Follow-up Required" :
+                        req.delivery_status === "unrouted" ? "Unrouted" :
+                        req.delivery_status === "escalated" ? "Escalated" :
+                        req.delivery_status || "Unknown";
+                      return (
+                      <div className="text-[10px] bg-blue-50 text-blue-800 rounded p-2 border border-blue-200 space-y-1">
                         <p className="flex items-center gap-1 flex-wrap">
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="font-medium">
-                            {req.routed_to_partner_id
-                              ? (partners.find(p => p.id === req.routed_to_partner_id)?.name || "Routing Partner")
-                              : "No Partner Assigned"}
+                            Assigned to: {req.routed_to_partner_id ? partnerName : "No Partner Assigned"}
                           </span>
                           {req.delivery_status && (
                             <Badge variant="outline" className={`text-[9px] ml-auto ${
@@ -1310,15 +1334,16 @@ function AdminResourcesInner() {
                               req.delivery_status === "fallback_manual" ? "bg-slate-100 text-slate-700" :
                               "bg-slate-100 text-slate-700"
                             }`}>
-                              {req.delivery_status === "fallback_manual" ? "Manual Fallback" :
-                               req.delivery_status === "ready_for_delivery" ? "Pending Delivery" :
-                               req.delivery_status === "delivery_failed" ? "Delivery Failed" :
-                               req.delivery_status}
+                              {deliveryLabel}
                             </Badge>
                           )}
                         </p>
+                        <div className="text-[9px] text-blue-700 space-y-0.5 pl-4">
+                          <p>Delivery: {isExternal ? "External email to partner" : "Internal / manual"}</p>
+                          <p>Status: {deliveryLabel}</p>
+                        </div>
                         <div className="flex items-center justify-between">
-                          {req.routed_at && <p className="text-muted-foreground">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
+                          {req.routed_at && <p className="text-muted-foreground text-[9px]">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
                           {(req.status === "new" || req.status === "in_progress") && (
                             <button
                               className="text-blue-600 underline text-[9px] hover:text-blue-800"
@@ -1329,7 +1354,8 @@ function AdminResourcesInner() {
                           )}
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {!req.routed_to_partner_id && req.delivery_status !== "fallback_manual" && (
                       <div className="text-[10px] bg-teal-50 text-teal-800 rounded p-2 border border-teal-200 flex items-start justify-between gap-2">
@@ -1381,7 +1407,8 @@ function AdminResourcesInner() {
                         if (item.type === "partner") {
                           rerouteMutation.mutate({ id: req.id, partner_id: item.id });
                         } else {
-                          const noteText = `Assigned to ${item.type === "trusted_service" ? "Trusted Service" : "Resource"}: ${item.name}${item.phone ? " | " + item.phone : ""}${item.email ? " | " + item.email : ""}${item.website ? " | " + item.website : ""}`;
+                          const typeLabel2 = item.type === "trusted_service" ? "Trusted Service" : "Resource";
+                          const noteText = `Assigned to ${typeLabel2}: ${item.name}${item.phone ? " | " + item.phone : ""}${item.email ? " | " + item.email : ""}${item.website ? " | " + item.website : ""}`;
                           navPatchMutation.mutate({
                             id: req.id,
                             updates: { status: "in_progress", admin_notes: noteText },
@@ -1397,13 +1424,13 @@ function AdminResourcesInner() {
                                 assignmentType: item.type,
                               }),
                             }).then(r => {
-                              if (r.ok) toast({ description: `Lead email sent to ${item.email}` });
-                              else toast({ description: `Assignment saved but email delivery failed`, variant: "destructive" });
+                              if (r.ok) toast({ description: `Assigned to ${item.name} — external email sent to ${item.email}` });
+                              else toast({ description: `Assigned to ${item.name} — email delivery failed (manual follow-up needed)`, variant: "destructive" });
                             }).catch(() => {
-                              toast({ description: `Assignment saved but email delivery failed`, variant: "destructive" });
+                              toast({ description: `Assigned to ${item.name} — email delivery failed (manual follow-up needed)`, variant: "destructive" });
                             });
                           } else {
-                            toast({ description: `Assigned to ${item.name} (no email on file)` });
+                            toast({ description: `Assigned to ${item.name} — no email on file (manual follow-up needed)` });
                           }
                         }
                         setManualAssignLeadId(null);
@@ -1413,13 +1440,15 @@ function AdminResourcesInner() {
 
                       const recommendedResults = assignableResults.filter((item: any) => {
                         if (assignSearchText || showAllAssignable) return false;
-                        const matchesCategory = assignLeadContext?.category && item.category && (
-                          item.category.toLowerCase().replace(/-/g, " ").includes(assignLeadContext.category.toLowerCase().replace(/-/g, " ")) ||
-                          assignLeadContext.category.toLowerCase().replace(/-/g, " ").includes(item.category.toLowerCase().replace(/-/g, " "))
-                        );
+                        if (!item.category) return false;
+                        if (!assignLeadContext?.category) return false;
+                        const leadCat = assignLeadContext.category.toLowerCase().replace(/-/g, " ").trim();
+                        const itemCat = item.category.toLowerCase().replace(/-/g, " ").trim();
+                        const matchesCategory = itemCat.includes(leadCat) || leadCat.includes(itemCat);
+                        if (!matchesCategory) return false;
                         const matchesLocation = assignLeadContext?.city && item.city && item.city.toLowerCase() === assignLeadContext.city.toLowerCase();
                         const matchesState = assignLeadContext?.state && item.state && item.state.toUpperCase() === assignLeadContext.state.toUpperCase();
-                        return matchesCategory && (matchesLocation || matchesState);
+                        return matchesLocation || matchesState;
                       });
                       const otherResults = assignableResults.filter((item: any) => !recommendedResults.find((r: any) => r.id === item.id));
 
@@ -1703,6 +1732,21 @@ function AdminResourcesInner() {
                           Unarchive
                         </Button>
                       )}
+                      <Button
+                        data-testid={`lead-delete-${req.id}`}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => {
+                          if (window.confirm(`Permanently delete this request from ${req.full_name || "unknown"}? This cannot be undone.`)) {
+                            deleteMutation.mutate(req.id);
+                          }
+                        }}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
                       {(req.status === "new" || req.status === "in_progress") && (
                         <>
                           <Button

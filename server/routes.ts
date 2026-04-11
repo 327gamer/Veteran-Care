@@ -972,6 +972,23 @@ async function backfillNavAmbassadorId() {
   } catch (err: any) {
     console.log("[schema] navigator_requests ambassador_id backfill skipped:", err.message);
   }
+
+  try {
+    const { data: scNav } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("id, name")
+      .eq("name", "SC Veteran Navigator Program")
+      .maybeSingle();
+    if (scNav) {
+      await supabaseAdmin
+        .from("partner_organizations")
+        .update({ name: "Veteran Care Navigator Program" })
+        .eq("id", scNav.id);
+      console.log(`[schema] Renamed "SC Veteran Navigator Program" → "Veteran Care Navigator Program"`);
+    }
+  } catch (err: any) {
+    console.log("[schema] Partner rename skipped:", err.message);
+  }
 }
 
 async function resolveAmbassadorId(ambassadorCode: string | null, utmId?: string | null): Promise<string | null> {
@@ -7392,6 +7409,25 @@ export async function registerRoutes(
     return res.json(data);
   });
 
+  app.delete("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { data: existing } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, status")
+      .eq("id", id)
+      .single();
+    if (!existing) return res.status(404).json({ error: "Request not found" });
+
+    const { error } = await supabaseAdmin
+      .from("navigator_requests")
+      .delete()
+      .eq("id", id);
+    if (error) return res.status(500).json({ error: error.message });
+
+    console.log(`[admin] Permanently deleted navigator_request ${id} (was status: ${existing.status})`);
+    return res.json({ success: true, deleted_id: id });
+  });
+
   app.get("/api/admin/partners", requireAdmin, async (_req, res) => {
     if (!hasPartnerTable) return res.json([]);
     const { data, error } = await supabaseAdmin
@@ -7627,16 +7663,15 @@ export async function registerRoutes(
     const stateQ = typeof state === "string" ? state.trim().toUpperCase() : "";
     const cityQ = typeof city === "string" ? city.trim().toLowerCase() : "";
 
-    const catTokens = catQ ? catQ.replace(/[&-]/g, " ").split(/\s+/).filter(w => w.length > 2) : [];
-    const catMatches = (targetName: string | null | undefined, targetSlug: string | null | undefined) => {
-      if (!catQ || catTokens.length === 0) return null;
+    const catNormalized = catQ ? catQ.replace(/[&-]/g, " ").replace(/\s+/g, " ").trim() : "";
+    const catMatches = (targetName: string | null | undefined, targetSlug: string | null | undefined): boolean | null => {
+      if (!catNormalized) return null;
       const nameL = fuzzyNormalize(targetName || "");
       const slugL = fuzzyNormalize(targetSlug || "");
-      if (slugL && (slugL.includes(catQ) || catQ.includes(slugL))) return true;
-      if (nameL && (nameL.includes(catQ) || catQ.includes(nameL))) return true;
+      if (slugL && (slugL.includes(catNormalized) || catNormalized.includes(slugL))) return true;
+      if (nameL && (nameL.includes(catNormalized) || catNormalized.includes(nameL))) return true;
       if (fuzzyMatch(targetName, catQ) || fuzzyMatch(targetSlug, catQ)) return true;
-      const anyToken = catTokens.some(t => nameL.includes(t) || slugL.includes(t));
-      return anyToken || false;
+      return false;
     };
 
     const results: any[] = [];

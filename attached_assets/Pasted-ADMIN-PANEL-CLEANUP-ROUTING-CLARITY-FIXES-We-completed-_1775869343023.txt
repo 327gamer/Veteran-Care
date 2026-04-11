@@ -1,0 +1,161 @@
+ADMIN PANEL CLEANUP + ROUTING CLARITY FIXES
+
+We completed another manual test cycle.
+
+The platform is directionally much better.
+Core request flow, admin visibility, and Veteran Guide emails all improved.
+
+Now the remaining issues are primarily admin usability, routing clarity, and future-safe naming.
+
+Do NOT change core routing logic in this pass.
+This is an admin operations + clarity pass.
+
+-------------------------------------
+ISSUE 1 – MASTER ADMIN NEEDS DELETE OPTION
+-------------------------------------
+
+Current problem:
+Archived test requests still remain visible in the system and clutter the admin panel.
+
+For pilot testing and cleanup, master admin must be able to permanently remove test / junk requests.
+
+REQUIRED FIX:
+
+Add a master-admin-only delete option for Support Requests.
+
+Requirements:
+- visible only to master admin
+- allow permanent deletion of test / junk requests
+- keep archive option if needed for normal workflow
+- delete should remove clutter from admin view
+
+Goal:
+Archive = workflow state
+Delete = actual cleanup / testing control
+
+-------------------------------------
+ISSUE 2 – ASSIGNMENT MATCHING IS TOO BROAD
+-------------------------------------
+
+Current problem:
+When a request is for Housing, the assignment panel still shows unrelated options such as:
+- employment
+- mental health
+- legal
+- other unrelated categories
+
+This reduces trust in the assignment system and makes manual operations confusing.
+
+REQUIRED FIX:
+
+Recommended Matches must be STRICT:
+- category-relevant only
+- location-relevant only
+- no unrelated categories
+
+For example:
+If request category = Housing
+Recommended Matches should only contain Housing-related matches.
+
+Do NOT show unrelated recommended options.
+
+If broader options are shown lower in the panel, label them clearly and keep them separate from Recommended Matches.
+
+-------------------------------------
+ISSUE 3 – ROUTING ACTION IS NOT CLEAR
+-------------------------------------
+
+Current problem:
+When admin clicks Assign / Route / Best Match, it is not clear what actually happens.
+
+We need clarity on:
+- where the lead is being sent
+- whether an email is being sent
+- who received it
+- whether it is internal or external
+- what “pending” means after assignment
+
+REQUIRED FIX:
+
+When admin routes or assigns a lead, show a clear confirmation / status line such as:
+
+- Assigned to: [partner/resource/team name]
+- Delivery type: internal / external email / manual fallback
+- Current status: pending / routed / delivered
+
+This must be visible in the request record after assignment.
+
+Admin should never have to guess what happened.
+
+-------------------------------------
+ISSUE 4 – STATE-SPECIFIC LABELS MUST BE FUTURE-SAFE
+-------------------------------------
+
+Current problem:
+“SC Veteran Navigator Program” is not scalable naming.
+
+We are piloting in South Carolina, but this platform will expand nationally.
+
+REQUIRED FIX:
+
+Rename state-specific internal routing label(s) to a future-safe label.
+
+Preferred examples:
+- Veteran Navigator Program
+- Veteran Care Navigator Team
+- Veteran Care Navigator Program
+
+Do NOT hardcode state names into reusable routing labels.
+
+-------------------------------------
+ISSUE 5 – REQUEST LIFECYCLE CONTROLS NEED CLEANUP
+-------------------------------------
+
+Current problem:
+Archive / Cancel behavior is unclear and does not feel operationally clean.
+
+REQUIRED FIX:
+
+Clarify lifecycle actions:
+- New
+- In Progress
+- Resolved
+- Cancelled
+- Archived
+- Deleted (master admin only)
+
+Also confirm:
+- Cancelled behaves correctly
+- Archived behaves correctly
+- Deleted removes test clutter
+
+-------------------------------------
+ISSUE 6 – KEEP CORE SYSTEM INTACT
+-------------------------------------
+
+Do NOT change:
+- lead eligibility rules
+- billing logic
+- event tracking
+- core routing engine
+- taxonomy
+
+This pass is about:
+- admin usability
+- routing transparency
+- assignment relevance
+- scalable naming
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+After fix:
+
+1. master admin can delete test requests
+2. recommended matches are category-accurate
+3. assignment action clearly shows where the lead went
+4. no hardcoded SC naming in reusable routing labels
+5. lifecycle controls behave clearly
+
+Do not expand scope beyond this pass.
