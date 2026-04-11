@@ -7600,9 +7600,11 @@ export async function registerRoutes(
 
     let lead: any = null;
     let fetchErr: any = null;
+    const chargeFields = "id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id, stripe_payment_status, assigned_to, email_sent, is_disputed, reassignment_count, response_status, delivery_status, user_state, retry_count";
+    const chargeFallback = "id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id, assigned_to, email_sent, stripe_payment_status, user_state";
     const { data: d1, error: e1 } = await supabaseAdmin
       .from("navigator_requests")
-      .select("id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id")
+      .select(chargeFields)
       .eq("id", id)
       .single();
     if (!e1) {
@@ -7610,7 +7612,7 @@ export async function registerRoutes(
     } else {
       const { data: d2, error: e2 } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id")
+        .select(chargeFallback)
         .eq("id", id)
         .single();
       lead = d2;
@@ -7618,10 +7620,21 @@ export async function registerRoutes(
     }
 
     if (fetchErr || !lead) return res.status(404).json({ error: "Lead not found" });
-    if (lead.billed) return res.status(400).json({ error: "Lead is already billed — cannot charge twice" });
-    if (!lead.is_billable) return res.status(400).json({ error: "Lead is not billable — delivery criteria not met" });
-    if (lead.billing_status !== "billable") return res.status(400).json({ error: `Lead billing_status is '${lead.billing_status}' — must be 'billable'` });
-    if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold before charging" });
+
+    const { getBillingConfig, runChargeChecklist, shouldAutoReview } = await import("./billing-governance");
+    const config = await getBillingConfig();
+    const checklist = runChargeChecklist(lead, config);
+    if (!checklist.pass) {
+      return res.status(400).json({ error: checklist.failures[0], checklist_failures: checklist.failures });
+    }
+
+    const review = shouldAutoReview(lead);
+    if (review.flagged) {
+      try {
+        await supabaseAdmin.from("navigator_requests").update({ billing_workflow_status: "review_required" }).eq("id", id);
+      } catch {}
+      return res.status(400).json({ error: "Lead auto-flagged for review", review_reasons: review.reasons });
+    }
 
     if (lead.stripe_checkout_session_id) {
       try {
@@ -7647,20 +7660,21 @@ export async function registerRoutes(
     try {
       const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
 
-      try {
+      const chargeUpdate: Record<string, any> = {
+        stripe_checkout_session_id: sessionId,
+        stripe_payment_status: "pending",
+        billing_workflow_status: "queued",
+      };
+      const { error: cu } = await supabaseAdmin.from("navigator_requests").update(chargeUpdate).eq("id", id);
+      if (cu) {
         await supabaseAdmin.from("navigator_requests").update({
           stripe_checkout_session_id: sessionId,
           stripe_payment_status: "pending",
-          billing_workflow_status: "queued",
         }).eq("id", id);
-      } catch {
-        try {
-          await supabaseAdmin.from("navigator_requests").update({
-            stripe_checkout_session_id: sessionId,
-            stripe_payment_status: "pending",
-          }).eq("id", id);
-        } catch {}
       }
+
+      const { logBillingRun } = await import("./billing-governance");
+      await logBillingRun("admin", 1, amount, config.billing_mode, [id]);
 
       return res.json({ url, sessionId });
     } catch (err: any) {
@@ -7799,19 +7813,23 @@ export async function registerRoutes(
     if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
 
     let lead: any = null;
+    const retryFields = "id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, retry_count, is_disputed";
+    const retryFallback = "id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id";
     const { data: ld1, error: le1 } = await supabaseAdmin.from("navigator_requests")
-      .select("id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id")
-      .eq("id", id).single();
+      .select(retryFields).eq("id", id).single();
     if (!le1) { lead = ld1; } else {
       const { data: ld2 } = await supabaseAdmin.from("navigator_requests")
-        .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id")
-        .eq("id", id).single();
+        .select(retryFallback).eq("id", id).single();
       lead = ld2;
     }
     if (!lead) return res.status(404).json({ error: "Lead not found" });
     if (lead.billed) return res.status(400).json({ error: "Lead is already billed" });
+    if (lead.is_disputed) return res.status(400).json({ error: "Lead is disputed — cannot retry" });
     if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold first" });
     if (lead.billing_workflow_status !== "failed") return res.status(400).json({ error: `Retry is only for failed leads. Current: ${lead.billing_workflow_status}` });
+
+    const currentRetry = lead.retry_count || 0;
+    if (currentRetry >= 3) return res.status(400).json({ error: `Retry cap reached (${currentRetry}/3). Manual review required.` });
 
     const amount = parseFloat(lead.billing_amount) || 49.99;
     let partnerName = "Partner";
@@ -7824,12 +7842,21 @@ export async function registerRoutes(
 
     try {
       const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
-      const retryUpdate: Record<string, any> = { stripe_checkout_session_id: sessionId, stripe_payment_status: "pending", billing_workflow_status: "queued" };
+      const retryUpdate: Record<string, any> = {
+        stripe_checkout_session_id: sessionId,
+        stripe_payment_status: "pending",
+        billing_workflow_status: "queued",
+        retry_count: currentRetry + 1,
+      };
       const { error: ru } = await supabaseAdmin.from("navigator_requests").update(retryUpdate).eq("id", id);
       if (ru) {
         await supabaseAdmin.from("navigator_requests").update({ stripe_checkout_session_id: sessionId, stripe_payment_status: "pending" }).eq("id", id);
       }
-      return res.json({ url, sessionId });
+
+      const { logBillingRun } = await import("./billing-governance");
+      await logBillingRun("admin", 1, amount, "retry", [id]);
+
+      return res.json({ url, sessionId, retry_count: currentRetry + 1 });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message || "Retry failed" });
     }
@@ -7884,12 +7911,95 @@ export async function registerRoutes(
     return res.json({ updated: eligibleIds.length, skipped: leads.length - eligible.length, total: ids.length });
   });
 
+  app.post("/api/admin/billing-dispute/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { id } = req.params;
+    const { dispute_reason } = req.body;
+    const disputeUpdate: Record<string, any> = {
+      is_disputed: true,
+      dispute_reason: dispute_reason?.trim()?.substring(0, 1000) || null,
+      billing_workflow_status: "hold",
+    };
+    const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests")
+      .update(disputeUpdate).eq("id", id).select().single();
+    if (!e1) return res.json(d1);
+    const { data: d2, error: e2 } = await supabaseAdmin.from("navigator_requests")
+      .update({ billing_workflow_status: "hold" }).eq("id", id).select().single();
+    if (!e2) return res.json(d2);
+    return res.status(500).json({ error: e2?.message || "Dispute update failed" });
+  });
+
+  app.post("/api/admin/billing-undispute/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { id } = req.params;
+    const undisputeUpdate: Record<string, any> = {
+      is_disputed: false,
+      dispute_reason: null,
+      billing_workflow_status: "ready",
+    };
+    const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests")
+      .update(undisputeUpdate).eq("id", id).select().single();
+    if (!e1) return res.json(d1);
+    const { data: d2, error: e2 } = await supabaseAdmin.from("navigator_requests")
+      .update({ billing_workflow_status: "ready" }).eq("id", id).select().single();
+    if (!e2) return res.json(d2);
+    return res.status(500).json({ error: e2?.message || "Undispute failed" });
+  });
+
+  app.patch("/api/admin/billing-notes/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { id } = req.params;
+    const { billing_notes } = req.body;
+    const { data, error } = await supabaseAdmin.from("navigator_requests")
+      .update({ billing_notes: billing_notes?.trim()?.substring(0, 2000) || null })
+      .eq("id", id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  });
+
+  app.get("/api/admin/billing-config", requireAdmin, async (_req, res) => {
+    try {
+      const { getBillingConfig } = await import("./billing-governance");
+      const config = await getBillingConfig();
+      return res.json(config);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.patch("/api/admin/billing-config", requireAdmin, async (req, res) => {
+    try {
+      const { updateBillingConfig, getBillingConfig } = await import("./billing-governance");
+      const validKeys = ["billing_mode", "allowed_categories_for_billing", "allowed_partners_for_billing", "allowed_states_for_billing"];
+      for (const [key, value] of Object.entries(req.body)) {
+        if (validKeys.includes(key)) {
+          await updateBillingConfig(key, String(value));
+        }
+      }
+      const config = await getBillingConfig();
+      return res.json(config);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/billing-runs", requireAdmin, async (_req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin.from("billing_runs")
+        .select("*").order("executed_at", { ascending: false }).limit(50);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data || []);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/billing-export", requireAdmin, async (_req, res) => {
     if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
     try {
       let leads: any[] = [];
       const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests")
-        .select("id, veteran_name, category, user_city, user_state, routed_to_partner_id, billing_amount, billing_status, billing_workflow_status, stripe_payment_status, stripe_payment_intent_id, stripe_checkout_session_id, billed_at, is_billable, billed")
+        .select("id, veteran_name, category, user_city, user_state, routed_to_partner_id, billing_amount, billing_status, billing_workflow_status, stripe_payment_status, stripe_payment_intent_id, stripe_checkout_session_id, billed_at, is_billable, billed, is_disputed, dispute_reason, billing_notes, retry_count")
         .order("created_at", { ascending: false });
       if (!e1) {
         leads = d1 || [];
@@ -7907,7 +8017,7 @@ export async function registerRoutes(
         for (const p of (partners || [])) partnerMap[p.id] = p.name;
       }
 
-      const header = "lead_id,assigned_entity,category,city,state,billing_amount,billing_status,billing_workflow_status,stripe_payment_status,billed_at,stripe_payment_intent_id,stripe_checkout_session_id";
+      const header = "lead_id,assigned_entity,category,city,state,billing_amount,billing_status,billing_workflow_status,stripe_payment_status,billed_at,stripe_payment_intent_id,stripe_checkout_session_id,is_disputed,dispute_reason,billing_notes,retry_count";
       const rows = leads.map((l: any) => {
         const esc = (v: any) => `"${String(v || "").replace(/"/g, '""')}"`;
         return [
@@ -7916,6 +8026,7 @@ export async function registerRoutes(
           esc(l.billing_status), esc(l.billing_workflow_status || ""),
           esc(l.stripe_payment_status || ""), esc(l.billed_at || ""),
           esc(l.stripe_payment_intent_id || ""), esc(l.stripe_checkout_session_id || ""),
+          l.is_disputed ? "yes" : "no", esc(l.dispute_reason || ""), esc(l.billing_notes || ""), l.retry_count || 0,
         ].join(",");
       });
 

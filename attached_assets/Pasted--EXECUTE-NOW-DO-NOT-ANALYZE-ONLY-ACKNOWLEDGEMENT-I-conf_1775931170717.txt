@@ -1,0 +1,221 @@
+🚨 EXECUTE NOW — DO NOT ANALYZE ONLY
+
+ACKNOWLEDGEMENT:
+
+I confirm we are now implementing:
+
+Veteran Care – Chunk 5.3 – Controlled Billing Launch + Payment Governance
+
+DATE: 4.11.2026
+
+-------------------------------------
+IMPORTANT EXECUTION RULES
+-------------------------------------
+
+This is a CONTROL LAYER ONLY.
+
+DO NOT modify:
+- routing
+- tracking
+- reassignment
+- email
+- Stripe charge logic
+- pricing
+
+This is STRICTLY:
+→ validation
+→ gating
+→ governance
+→ audit tracking
+
+-------------------------------------
+IMPLEMENTATION PLAN (REQUIRED)
+-------------------------------------
+
+You must implement in this exact order:
+
+STEP 1 — CONFIG LAYER
+STEP 2 — BILLING CHECKLIST ENFORCEMENT
+STEP 3 — PILOT FILTERS
+STEP 4 — AUTO HOLD / REVIEW LOGIC
+STEP 5 — DISPUTE + NOTES FIELDS
+STEP 6 — BILLING RUN LOGGING
+STEP 7 — RETRY GOVERNANCE
+STEP 8 — ADMIN VISIBILITY
+
+-------------------------------------
+STEP 1 — CONFIG LAYER
+-------------------------------------
+
+Add config:
+
+billing_mode:
+- manual_only (default)
+- controlled_batch
+
+Store as:
+- environment config OR
+- database config table
+
+Must be easily changeable without redeploy.
+
+-------------------------------------
+STEP 2 — BILLING CHECKLIST ENFORCEMENT
+-------------------------------------
+
+Before ANY charge is triggered:
+
+Validate ALL:
+
+- is_billable = true
+- billing_workflow_status IN ('ready','queued')
+- NOT on hold
+- NOT disputed
+- assigned_to IS NOT NULL
+- email_sent = true
+- stripe_payment_status IS NULL OR 'failed'
+
+IF ANY FAIL:
+→ BLOCK charge
+→ return clear error message
+
+-------------------------------------
+STEP 3 — PILOT FILTER SYSTEM
+-------------------------------------
+
+Add optional config:
+
+- allowed_categories_for_billing
+- allowed_partners_for_billing
+- allowed_states_for_billing
+
+IF defined:
+→ ONLY matching leads allowed to charge
+
+IF not defined:
+→ allow all
+
+This MUST apply inside the charge endpoint.
+
+-------------------------------------
+STEP 4 — AUTO REVIEW FLAGGING
+-------------------------------------
+
+On billing evaluation:
+
+IF:
+
+- reassignment_count > 0
+OR
+- response_status = 'declined'
+OR
+- delivery anomaly exists
+
+THEN:
+
+→ billing_workflow_status = 'review_required'
+
+DO NOT charge these leads.
+
+-------------------------------------
+STEP 5 — DISPUTE + NOTES
+-------------------------------------
+
+Add fields:
+
+- is_disputed (boolean, default false)
+- dispute_reason (text)
+- billing_notes (text)
+
+Rules:
+
+IF is_disputed = true:
+→ force billing_workflow_status = 'hold'
+→ block charge
+
+-------------------------------------
+STEP 6 — BILLING RUN LOGGING
+-------------------------------------
+
+Create table:
+
+billing_runs:
+
+- id (uuid)
+- executed_at (timestamp)
+- executed_by (text/admin id)
+- number_of_leads_charged (integer)
+- total_amount (decimal)
+- mode (manual / controlled_batch)
+
+Log entry MUST be created when:
+
+- admin completes billing action (single or batch)
+
+-------------------------------------
+STEP 7 — RETRY GOVERNANCE
+-------------------------------------
+
+Add:
+
+- retry_count (integer, default 0)
+
+Rules:
+
+- increment on retry attempt
+- optional cap = 3
+- block retry if cap exceeded
+
+-------------------------------------
+STEP 8 — ADMIN VISIBILITY
+-------------------------------------
+
+Ensure admin can clearly see:
+
+- billing_workflow_status
+- hold / dispute flags
+- review_required status
+- billing_notes
+- retry_count
+
+NO UI redesign — extend existing card/table only.
+
+-------------------------------------
+TEST REQUIREMENTS
+-------------------------------------
+
+You must validate ALL:
+
+1. Checklist blocks invalid charge
+2. Pilot filters correctly block leads
+3. Disputed lead cannot be charged
+4. review_required lead not charged
+5. Billing notes persist
+6. Billing run log created correctly
+7. Retry increments and caps properly
+8. No regression in billing or Stripe logic
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+- SQL (FULL COPY BLOCK)
+- implementation summary
+- validation results
+- confirmation NO existing logic modified
+
+-------------------------------------
+DO NOT RESPOND WITH PLAN ONLY
+-------------------------------------
+
+You must:
+
+→ IMPLEMENT  
+→ TEST  
+→ RETURN RESULTS  
+
+-------------------------------------
+
+BEGIN EXECUTION

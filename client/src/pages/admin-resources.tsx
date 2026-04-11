@@ -1,6 +1,6 @@
 
 import { AdminAuthGuard } from "@/components/admin-auth-guard";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +129,10 @@ interface NavigatorRequest {
   stripe_payment_status: string | null;
   billing_workflow_status: string | null;
   billing_hold_reason: string | null;
+  is_disputed: boolean | null;
+  dispute_reason: string | null;
+  billing_notes: string | null;
+  retry_count: number | null;
 }
 
 interface AdminResource {
@@ -265,7 +269,7 @@ function AdminResourcesInner() {
       const body = await r.json();
       return Array.isArray(body) ? body : (body.requests || []);
     },
-    enabled: authenticated && activeTab === "leads",
+    enabled: authenticated && (activeTab === "leads" || activeTab === "billing"),
     refetchInterval: 15000,
     staleTime: 5000,
   });
@@ -2521,20 +2525,45 @@ function AdminResourcesInner() {
                           data-testid={`billing-unhold-${lead.id}`}
                           className="px-2 py-0.5 bg-blue-500 text-white rounded text-[9px] hover:bg-blue-600"
                           onClick={async () => {
-                            const resp = await fetch(`/api/admin/billing-workflow/${lead.id}`, {
-                              method: "PATCH",
+                            const endpoint = lead.is_disputed ? `/api/admin/billing-undispute/${lead.id}` : `/api/admin/billing-workflow/${lead.id}`;
+                            const method = lead.is_disputed ? "POST" : "PATCH";
+                            const body = lead.is_disputed ? {} : { billing_workflow_status: "ready" };
+                            const resp = await fetch(endpoint, {
+                              method,
                               headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-                              body: JSON.stringify({ billing_workflow_status: "ready" }),
+                              body: JSON.stringify(body),
                             });
                             if (resp.ok) {
                               queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
-                              toast({ description: "Hold removed — lead is ready" });
+                              toast({ description: lead.is_disputed ? "Dispute resolved — lead is ready" : "Hold removed — lead is ready" });
                             } else {
                               const err = await resp.json();
                               toast({ description: err.error, variant: "destructive" });
                             }
                           }}
-                        >Remove Hold</button>
+                        >{lead.is_disputed ? "Resolve Dispute" : "Remove Hold"}</button>
+                      )}
+                      {!lead.is_disputed && !lead.billed && wfs !== "charged" && (
+                        <button
+                          data-testid={`billing-dispute-${lead.id}`}
+                          className="px-2 py-0.5 bg-red-500 text-white rounded text-[9px] hover:bg-red-600"
+                          onClick={async () => {
+                            const reason = prompt("Dispute reason:");
+                            if (reason === null) return;
+                            const resp = await fetch(`/api/admin/billing-dispute/${lead.id}`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                              body: JSON.stringify({ dispute_reason: reason }),
+                            });
+                            if (resp.ok) {
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                              toast({ description: "Lead disputed — placed on hold" });
+                            } else {
+                              const err = await resp.json();
+                              toast({ description: err.error, variant: "destructive" });
+                            }
+                          }}
+                        >Dispute</button>
                       )}
                       {(lead.stripe_checkout_session_id && !lead.billed) && (
                         <button
@@ -2559,17 +2588,29 @@ function AdminResourcesInner() {
                         >Check</button>
                       )}
                     </div>
-                    {lead.billing_hold_reason && wfs === "hold" && (
-                      <span className="text-[9px] text-orange-600 italic ml-1" title={lead.billing_hold_reason}>
-                        {lead.billing_hold_reason.length > 30 ? lead.billing_hold_reason.substring(0, 30) + "..." : lead.billing_hold_reason}
-                      </span>
-                    )}
-                    {lead.billed_at && (
-                      <span className="text-[9px] text-muted-foreground ml-1">{new Date(lead.billed_at).toLocaleDateString()}</span>
-                    )}
-                    {lead.stripe_payment_intent_id && (
-                      <span className="text-[9px] text-muted-foreground font-mono ml-1" title={lead.stripe_payment_intent_id}>PI: {lead.stripe_payment_intent_id.substring(0, 15)}...</span>
-                    )}
+                    <div className="flex flex-wrap gap-1 items-center ml-1">
+                      {lead.billing_hold_reason && wfs === "hold" && (
+                        <span className="text-[9px] text-orange-600 italic" title={lead.billing_hold_reason}>
+                          {lead.billing_hold_reason.length > 25 ? lead.billing_hold_reason.substring(0, 25) + "..." : lead.billing_hold_reason}
+                        </span>
+                      )}
+                      {lead.is_disputed && (
+                        <span className="text-[9px] bg-red-100 text-red-700 px-1 rounded" data-testid={`text-disputed-${lead.id}`}>
+                          DISPUTED{lead.dispute_reason ? `: ${lead.dispute_reason.substring(0, 20)}` : ""}
+                        </span>
+                      )}
+                      {(lead.retry_count || 0) > 0 && (
+                        <span className="text-[9px] text-amber-600" data-testid={`text-retry-${lead.id}`}>
+                          Retry: {lead.retry_count}/3
+                        </span>
+                      )}
+                      {lead.billed_at && (
+                        <span className="text-[9px] text-muted-foreground">{new Date(lead.billed_at).toLocaleDateString()}</span>
+                      )}
+                      {lead.stripe_payment_intent_id && (
+                        <span className="text-[9px] text-muted-foreground font-mono" title={lead.stripe_payment_intent_id}>PI: {lead.stripe_payment_intent_id.substring(0, 15)}...</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -2578,6 +2619,20 @@ function AdminResourcesInner() {
                   No leads in {billingQueueFilter === "all" ? "billing" : billingQueueFilter.replace(/_/g, " ")} queue.
                 </p>
               )}
+            </div>
+
+            <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Billing Governance</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border rounded p-3">
+                  <h4 className="text-xs font-semibold mb-2">Billing Config</h4>
+                  <BillingConfigPanel adminKey={adminKey} />
+                </div>
+                <div className="border rounded p-3">
+                  <h4 className="text-xs font-semibold mb-2">Recent Billing Runs</h4>
+                  <BillingRunsPanel adminKey={adminKey} />
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -3676,6 +3731,89 @@ function ApplicationsPanel({ adminKey }: { adminKey: string }) {
           </Card>
         );
       })}
+    </div>
+  );
+}
+
+function BillingConfigPanel({ adminKey }: { adminKey: string }) {
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetch("/api/admin/billing-config", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(setConfig).catch(() => setConfig(null)).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground">Loading config...</p>;
+  if (!config) return <p className="text-xs text-red-500">Config not available (run 5.3 SQL migration)</p>;
+
+  const save = async (key: string, value: string) => {
+    setSaving(true);
+    try {
+      const resp = await fetch("/api/admin/billing-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (resp.ok) {
+        const updated = await resp.json();
+        setConfig(updated);
+        toast({ description: `Updated ${key}` });
+      }
+    } catch {} finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-2 text-xs" data-testid="billing-config-panel">
+      <div>
+        <label className="font-medium">Mode:</label>
+        <select className="ml-2 border rounded px-1 py-0.5 text-xs" value={config.billing_mode}
+          onChange={(e) => save("billing_mode", e.target.value)} disabled={saving}>
+          <option value="manual_only">Manual Only</option>
+          <option value="controlled_batch">Controlled Batch</option>
+        </select>
+      </div>
+      <div>
+        <label className="font-medium">Allowed Categories:</label>
+        <input className="ml-1 border rounded px-1 py-0.5 text-xs w-full" placeholder="comma-separated"
+          defaultValue={(config.allowed_categories || []).join(",")}
+          onBlur={(e) => save("allowed_categories_for_billing", e.target.value)} disabled={saving} />
+      </div>
+      <div>
+        <label className="font-medium">Allowed States:</label>
+        <input className="ml-1 border rounded px-1 py-0.5 text-xs w-full" placeholder="comma-separated (e.g. SC)"
+          defaultValue={(config.allowed_states || []).join(",")}
+          onBlur={(e) => save("allowed_states_for_billing", e.target.value)} disabled={saving} />
+      </div>
+    </div>
+  );
+}
+
+function BillingRunsPanel({ adminKey }: { adminKey: string }) {
+  const [runs, setRuns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/billing-runs", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(d => setRuns(Array.isArray(d) ? d : [])).catch(() => setRuns([])).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground">Loading runs...</p>;
+  if (runs.length === 0) return <p className="text-xs text-muted-foreground">No billing runs recorded yet.</p>;
+
+  return (
+    <div className="space-y-1 max-h-48 overflow-y-auto" data-testid="billing-runs-panel">
+      {runs.slice(0, 20).map((run, i) => (
+        <div key={run.id || i} className="flex items-center gap-2 text-[10px] border-b pb-1">
+          <span className="text-muted-foreground">{new Date(run.executed_at).toLocaleString()}</span>
+          <span className="font-medium">{run.mode}</span>
+          <span>{run.number_of_leads_charged} leads</span>
+          <span className="text-green-600">${Number(run.total_amount || 0).toFixed(2)}</span>
+          <span className="text-muted-foreground">by {run.executed_by}</span>
+        </div>
+      ))}
     </div>
   );
 }
