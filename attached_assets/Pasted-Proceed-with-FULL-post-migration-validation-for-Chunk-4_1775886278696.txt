@@ -1,0 +1,143 @@
+Proceed with FULL post-migration validation for Chunk 4.3 and 4.4.
+
+IMPORTANT:
+We are NOT testing theory — we are validating REAL behavior end-to-end with the live Supabase columns.
+
+-------------------------------------
+VALIDATION REQUIREMENTS (MANDATORY)
+-------------------------------------
+
+Run ALL of the following and report results clearly:
+
+1) 72-HOUR REASSIGNMENT TEST
+- Create a test lead
+- Backdate assigned_at > 72 hours
+- Ensure:
+  → response_status = pending
+  → system triggers reassignment
+  → reassignment_count increments
+  → assigned_to changes (NOT same entity)
+  → last_reassigned_at populated
+  → previous_assigned_to recorded
+  → new email sent
+
+-------------------------------------
+
+2) MAX REASSIGNMENT CAP TEST
+- Force same lead through reassignment 3 times
+- On 4th attempt:
+  → MUST STOP
+  → MUST set:
+     - escalation_required OR manual_review
+  → MUST NOT continue routing
+
+-------------------------------------
+
+3) RESPONSE STATUS PROTECTION TEST
+Verify:
+- accepted → NOT reassigned
+- completed → NOT reassigned
+- declined → NOT reassigned
+- need_info → NOT reassigned
+
+ONLY:
+→ pending triggers reassignment
+
+-------------------------------------
+
+4) DELIVERY VALIDATION TEST
+For ALL routed leads verify:
+
+- assigned_to exists
+- email_sent = true
+- email_sent_at populated
+
+Simulate failure:
+- missing email OR forced fail
+
+Ensure:
+→ system flags failure
+→ admin panel shows failure
+→ NO silent success
+
+-------------------------------------
+
+5) ADMIN PANEL VALIDATION
+Confirm admin shows clearly:
+
+- Assigned To
+- Delivery Type
+- Email Sent (true/false)
+- Response Status
+- Assigned Time
+- Response At
+- reassignment_count
+- last_reassigned_at
+
+NO ambiguous states allowed
+
+-------------------------------------
+
+6) DATA INTEGRITY CHECK
+Run system-wide check:
+
+Ensure NO leads exist with:
+- assigned_at NULL
+- response_status NULL
+- assigned but email_sent = false
+
+Report counts of any issues
+
+-------------------------------------
+
+7) LOOP PREVENTION TEST
+Confirm:
+- system NEVER reassigns to same entity
+- system NEVER loops between same 2 entities
+
+-------------------------------------
+
+DELIVERABLE FORMAT REQUIRED
+-------------------------------------
+
+Return results in this exact structure:
+
+TEST RESULTS:
+
+1. 72-HOUR REASSIGNMENT → PASS / FAIL
+(details)
+
+2. MAX REASSIGNMENT CAP → PASS / FAIL
+(details)
+
+3. STATUS PROTECTION → PASS / FAIL
+(details)
+
+4. DELIVERY VALIDATION → PASS / FAIL
+(details)
+
+5. ADMIN VISIBILITY → PASS / FAIL
+(details)
+
+6. DATA INTEGRITY → PASS / FAIL
+(details)
+
+7. LOOP PREVENTION → PASS / FAIL
+(details)
+
+-------------------------------------
+
+STRICT RULE
+-------------------------------------
+
+Do NOT:
+- add features
+- change routing logic
+- change categories
+- change UI design
+
+This is VALIDATION ONLY.
+
+-------------------------------------
+
+We do NOT proceed to billing until ALL tests PASS.
