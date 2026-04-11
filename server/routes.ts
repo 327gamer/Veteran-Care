@@ -87,6 +87,7 @@ async function checkNotifyEmailColumn() {
 
 let hasRoutingColumns = false;
 let hasResponseTrackingColumns = false;
+let hasBillingColumns = false;
 let hasPartnerTable = false;
 let hasRoutingRulesTable = false;
 let hasStatesTable = false;
@@ -2579,6 +2580,15 @@ async function checkNavLifecycleColumns() {
   } else {
     hasNavAmbassadorId = true;
     console.log("[schema] navigator_requests.ambassador_id detected");
+  }
+
+  const { error: billErr } = await supabaseAdmin.from("navigator_requests").select("is_billable, billed, billed_at, billing_amount, billing_status").limit(1);
+  if (billErr && billErr.message.includes("does not exist")) {
+    hasBillingColumns = false;
+    console.log("[schema] Billing columns not found. Run supabase/chunk-5.0-billing-columns.sql in Supabase SQL editor");
+  } else {
+    hasBillingColumns = true;
+    console.log("[schema] Billing columns detected (is_billable, billed, billing_status)");
   }
 }
 
@@ -7454,6 +7464,34 @@ export async function registerRoutes(
       }
     }
 
+    if (hasBillingColumns && req.body.mark_billed === true) {
+      const { data: existing } = await supabaseAdmin.from("navigator_requests").select("billed, is_billable, billing_status").eq("id", id).single();
+      if (existing?.billed === true) {
+        return res.status(400).json({ error: "Lead is already billed — cannot bill twice" });
+      }
+      if (!existing?.is_billable) {
+        return res.status(400).json({ error: "Lead is not billable — delivery criteria not met" });
+      }
+      const billedAt = new Date().toISOString();
+      const { data: billedRow, error: billErr } = await supabaseAdmin
+        .from("navigator_requests")
+        .update({ billed: true, billed_at: billedAt, billing_status: "billed" })
+        .eq("id", id)
+        .eq("billed", false)
+        .select("id")
+        .single();
+      if (billErr || !billedRow) {
+        return res.status(409).json({ error: "Billing update failed — lead may have been billed concurrently" });
+      }
+      updates.billed = true;
+      updates.billed_at = billedAt;
+      updates.billing_status = "billed";
+    }
+
+    if (hasBillingColumns && req.body.billing_status === "disputed") {
+      updates.billing_status = "disputed";
+    }
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No fields to update" });
     }
@@ -7489,6 +7527,50 @@ export async function registerRoutes(
 
     console.log(`[admin] Permanently deleted navigator_request ${id} (was status: ${existing.status})`);
     return res.json({ success: true, deleted_id: id });
+  });
+
+  app.get("/api/admin/billing-summary", requireAdmin, async (_req, res) => {
+    if (!hasBillingColumns) return res.json({ available: false });
+    try {
+      const { data } = await supabaseAdmin.from("navigator_requests").select("billing_status, billing_amount, is_billable, billed");
+      const leads = data || [];
+      const summary = {
+        available: true,
+        total_leads: leads.length,
+        billable: leads.filter((l: any) => l.is_billable && !l.billed).length,
+        billed: leads.filter((l: any) => l.billed).length,
+        not_billable: leads.filter((l: any) => !l.is_billable).length,
+        disputed: leads.filter((l: any) => l.billing_status === "disputed").length,
+        total_billable_amount: leads.filter((l: any) => l.is_billable && !l.billed).reduce((sum: number, l: any) => sum + (parseFloat(l.billing_amount) || 49.99), 0),
+        total_billed_amount: leads.filter((l: any) => l.billed).reduce((sum: number, l: any) => sum + (parseFloat(l.billing_amount) || 49.99), 0),
+      };
+      return res.json(summary);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.post("/api/admin/billing-backfill", requireAdmin, async (_req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available. Run supabase/chunk-5.0-billing-columns.sql" });
+    try {
+      const { data: allLeads } = await supabaseAdmin.from("navigator_requests").select("id, routed_to_partner_id, email_sent, email_sent_at, is_billable, billed, billing_status");
+      const leads = allLeads || [];
+      let marked = 0;
+      let skipped = 0;
+      for (const lead of leads) {
+        if (lead.billed) { skipped++; continue; }
+        const meetsCriteria = lead.routed_to_partner_id && lead.email_sent === true && lead.email_sent_at;
+        if (meetsCriteria && !lead.is_billable) {
+          await supabaseAdmin.from("navigator_requests").update({ is_billable: true, billing_status: "billable" }).eq("id", lead.id);
+          marked++;
+        } else if (!meetsCriteria && lead.billing_status !== "not_billable" && !lead.is_billable) {
+          await supabaseAdmin.from("navigator_requests").update({ billing_status: "not_billable" }).eq("id", lead.id);
+        }
+      }
+      return res.json({ success: true, total: leads.length, newly_marked_billable: marked, skipped_already_billed: skipped });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
   });
 
   app.get("/api/admin/partners", requireAdmin, async (_req, res) => {
@@ -7728,6 +7810,9 @@ export async function registerRoutes(
         .eq("id", id);
       if (hasResponseTrackingColumns) {
         try { await supabaseAdmin.from("navigator_requests").update({ assigned_at: assignNow, email_sent: true, email_sent_at: assignNow, response_status: "pending" }).eq("id", id); } catch {}
+      }
+      if (hasBillingColumns) {
+        try { await supabaseAdmin.from("navigator_requests").update({ is_billable: true, billing_status: "billable" }).eq("id", id); } catch {}
       }
     } catch {}
 

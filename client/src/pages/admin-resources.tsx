@@ -119,6 +119,11 @@ interface NavigatorRequest {
   last_reassigned_at: string | null;
   previous_assigned_to: string | null;
   escalation_count: number | null;
+  is_billable: boolean | null;
+  billed: boolean | null;
+  billed_at: string | null;
+  billing_amount: number | null;
+  billing_status: string | null;
 }
 
 interface AdminResource {
@@ -1376,6 +1381,44 @@ function AdminResourcesInner() {
                           {(req.reassignment_count ?? 0) > 0 && <p className="text-orange-600">Reassigned: {req.reassignment_count}x{req.last_reassigned_at ? ` (${new Date(req.last_reassigned_at).toLocaleString()})` : ""}</p>}
                           <p>Delivery: {req.routed_to_partner_id && req.email_sent && req.email_sent_at ? <span className="text-green-700">Verified ✓</span> : req.delivery_status === "delivery_failed" ? <span className="text-red-700">Failed ✗</span> : req.delivery_status === "fallback_manual" ? <span className="text-orange-600">Manual Review</span> : <span className="text-blue-600">Pending</span>}</p>
                         </div>
+                        {req.billing_status !== undefined && req.billing_status !== null && (
+                          <div className="text-[9px] mt-1 pt-1 border-t border-blue-200">
+                            <p className="font-semibold text-blue-800 mb-0.5">Billing</p>
+                            <p>Status: <span className={`font-medium ${
+                              req.billing_status === "billed" ? "text-green-700" :
+                              req.billing_status === "billable" ? "text-blue-700" :
+                              req.billing_status === "disputed" ? "text-red-700" :
+                              "text-slate-500"
+                            }`}>{(req.billing_status || "not_billable").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p>
+                            <p>Amount: ${parseFloat(String(req.billing_amount || 49.99)).toFixed(2)}</p>
+                            {req.billed && req.billed_at && <p>Billed: {new Date(req.billed_at).toLocaleString()}</p>}
+                            {req.is_billable && !req.billed && (
+                              <button
+                                data-testid={`button-mark-billed-${req.id}`}
+                                className="mt-1 px-2 py-0.5 bg-green-600 text-white rounded text-[9px] hover:bg-green-700"
+                                onClick={async () => {
+                                  if (!window.confirm("Mark this lead as billed? This cannot be undone.")) return;
+                                  try {
+                                    const resp = await fetch(`/api/admin/navigator-requests/${req.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                                      body: JSON.stringify({ mark_billed: true }),
+                                    });
+                                    if (resp.ok) {
+                                      const updated = await resp.json();
+                                      setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, ...updated } : r));
+                                    } else {
+                                      const err = await resp.json();
+                                      alert(err.error || "Failed to mark billed");
+                                    }
+                                  } catch { alert("Network error"); }
+                                }}
+                              >
+                                Mark Billed
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           {req.routed_at && <p className="text-muted-foreground text-[9px]">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
                           {(req.status === "new" || req.status === "in_progress") && (

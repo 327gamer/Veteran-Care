@@ -7,6 +7,31 @@ import { isLeadEligibleCategory, isLeadEligibleSubcategory } from "../shared/lea
 import { logLeadEvent } from "./lead-events";
 
 let _trackingColumnsAvailable: boolean | null = null;
+let _billingColumnsAvailable: boolean | null = null;
+
+async function checkBillingColumns(): Promise<boolean> {
+  if (_billingColumnsAvailable !== null) return _billingColumnsAvailable;
+  const { error } = await supabaseAdmin.from("navigator_requests").select("is_billable, billing_status").limit(1);
+  _billingColumnsAvailable = !error || !error.message.includes("does not exist");
+  return _billingColumnsAvailable;
+}
+
+async function markLeadBillable(leadId: string): Promise<void> {
+  if (!(await checkBillingColumns())) return;
+  try {
+    const { error } = await supabaseAdmin.from("navigator_requests").update({
+      is_billable: true,
+      billing_status: "billable",
+    }).eq("id", leadId);
+    if (error) {
+      console.log(`[billing] Failed to mark lead ${leadId} as billable:`, error.message);
+    } else {
+      console.log(`[billing] Lead ${leadId} marked billable`);
+    }
+  } catch (err: any) {
+    console.log(`[billing] Error marking lead ${leadId} billable:`, err?.message);
+  }
+}
 
 async function checkTrackingColumns(): Promise<boolean> {
   if (_trackingColumnsAvailable !== null) return _trackingColumnsAvailable;
@@ -558,6 +583,7 @@ export async function routeLead(leadId: string): Promise<{
               const emailNow = new Date().toISOString();
               try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
               setTrackingFields(leadId, { email_sent: true, email_sent_at: emailNow });
+              markLeadBillable(leadId);
               logLeadEvent({
                 event_type: "lead_delivered_to_partner",
                 lead_class: leadClass, action_type: "deliver", source_surface: "lead_router",
@@ -672,6 +698,7 @@ export async function routeLead(leadId: string): Promise<{
           const emailNow = new Date().toISOString();
           try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
           setTrackingFields(leadId, { email_sent: true, email_sent_at: emailNow });
+          markLeadBillable(leadId);
         }
 
         createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {

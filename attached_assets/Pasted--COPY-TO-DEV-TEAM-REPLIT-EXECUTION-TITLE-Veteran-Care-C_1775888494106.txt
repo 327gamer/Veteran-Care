@@ -1,0 +1,260 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 5.0 – Billing Engine (Delivered Lead Billing – Phase 1)
+
+PRIORITY:
+CRITICAL (Monetization Activation – Controlled Launch)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This is:
+
+✅ Chunk 5 – Billing Engine (INITIAL PHASE)
+❌ NOT full subscription system
+❌ NOT pricing expansion
+❌ NOT reporting dashboards
+❌ NOT Stripe charging
+❌ NOT invoicing system
+
+This is internal billing tracking only.
+
+Goal:
+→ mark delivered leads as billable
+→ allow admin to mark them billed
+→ create an auditable billing state
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Enable billing when a lead is:
+
+- successfully routed
+- assigned to a real entity
+- email successfully delivered
+
+This must be:
+
+- accurate
+- auditable
+- admin-controlled
+- dispute-safe
+
+-------------------------------------
+BILLING RULE (LOCKED)
+-------------------------------------
+
+A lead is billable ONLY if:
+
+- assigned_to IS NOT NULL
+- email_sent = true
+- email_sent_at IS NOT NULL
+
+DO NOT use:
+- accepted
+- completed
+- response status
+
+Billing is based on DELIVERY only.
+
+-------------------------------------
+REQUIREMENT 1 — BILLING FIELDS
+-------------------------------------
+
+Add fields to navigator_requests:
+
+- is_billable (boolean, default false)
+- billed (boolean, default false)
+- billed_at (timestamp, nullable)
+- billing_amount (decimal, default 49.99)
+- billing_status (string)
+
+-------------------------------------
+BILLING STATUS VALUES
+-------------------------------------
+
+Allowed values only:
+
+- not_billable
+- billable
+- billed
+- disputed
+
+Default logic:
+- not_billable until delivery criteria met
+- billable once delivery criteria met
+- billed only when admin marks billed
+- disputed reserved for future manual use
+
+-------------------------------------
+REQUIREMENT 2 — BILLABLE FLAG LOGIC
+-------------------------------------
+
+When a lead meets criteria:
+
+IF:
+- assigned_to exists
+- email_sent = true
+- email_sent_at exists
+
+THEN:
+- set is_billable = true
+- set billing_status = "billable"
+
+This must happen automatically.
+
+-------------------------------------
+REQUIREMENT 3 — ADMIN BILLING CONTROL
+-------------------------------------
+
+Admin panel must allow:
+
+- viewing billable leads
+- manually marking a lead as billed
+
+When admin marks billed:
+
+System MUST:
+- set billed = true
+- set billed_at = current timestamp
+- set billing_status = "billed"
+
+IMPORTANT:
+No automatic charging yet.
+No Stripe trigger.
+No invoice send.
+
+-------------------------------------
+REQUIREMENT 4 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin panel must display:
+
+- billing_status
+- billing_amount
+- billed
+- billed_at
+
+No redesign.
+Only extend the existing admin request view cleanly.
+
+-------------------------------------
+REQUIREMENT 5 — BILLING SAFETY RULE
+-------------------------------------
+
+DO NOT mark billable if:
+
+- email_sent = false
+- email_sent_at is null
+- assigned_to is null
+- delivery failed
+
+This must be strict.
+
+-------------------------------------
+REQUIREMENT 6 — DUPLICATE BILLING PROTECTION
+-------------------------------------
+
+System must prevent:
+
+- billed = true being applied twice
+- billing_status moving backward incorrectly
+
+Once billed:
+- remain billed
+- no double-billing
+- no duplicate billed_at writes
+
+Admin override logic can be future scope, not now.
+
+-------------------------------------
+REQUIREMENT 7 — NO STRIPE YET
+-------------------------------------
+
+DO NOT:
+
+- connect Stripe
+- trigger charges
+- send invoices
+- build subscriptions
+- build payment UI
+
+This step is internal billing state only.
+
+-------------------------------------
+REQUIREMENT 8 — BACKFILL / DATA INTEGRITY
+-------------------------------------
+
+Backfill existing leads:
+
+For all historical leads where:
+- assigned_to exists
+- email_sent = true
+- email_sent_at exists
+
+Set:
+- is_billable = true
+- billing_status = "billable"
+- billing_amount = 49.99 if null
+
+For all others:
+- billing_status = "not_billable"
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Please validate:
+
+1. Delivered lead
+   → automatically marked billable
+
+2. Non-delivered lead
+   → remains not_billable
+
+3. Admin marks billed
+   → billed = true
+   → billed_at populated
+   → billing_status = billed
+
+4. Already billed lead
+   → cannot be billed twice
+
+5. Admin panel
+   → billing fields visible and correct
+
+6. Historical delivered leads
+   → backfilled correctly
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return with:
+
+A) files changed
+B) schema update
+C) billing flag logic
+D) admin controls added
+E) backfill behavior
+F) test confirmation results
+G) confirmation that Stripe/routing/tracking were not modified
+
+-------------------------------------
+STRICT DO-NOT-TOUCH LIST
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- tracking system
+- reassignment logic
+- email system
+- attribution system
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------

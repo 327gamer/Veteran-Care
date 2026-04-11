@@ -164,6 +164,9 @@ export async function checkEscalations(): Promise<{
                 email_sent_at: emailNow,
               })
               .eq("id", lead.id);
+            try {
+              await supabaseAdmin.from("navigator_requests").update({ is_billable: true, billing_status: "billable" }).eq("id", lead.id);
+            } catch {}
             console.log(`[escalation] Reassignment email sent for lead ${lead.id} to ${newMatch.partnerName}`);
           })
           .catch(async (err: any) => {
@@ -282,6 +285,12 @@ async function runDeliveryValidation(): Promise<number> {
             .from("navigator_requests")
             .update(backfill)
             .eq("id", lead.id);
+        }
+
+        if (lead.routed_to_partner_id && (lead.email_sent || backfill.email_sent) && lead.email_sent_at) {
+          try {
+            await supabaseAdmin.from("navigator_requests").update({ is_billable: true, billing_status: "billable" }).eq("id", lead.id);
+          } catch {}
         }
 
         console.log(`[delivery-validation] Lead ${lead.id} issues: ${issues.join(", ")}${Object.keys(backfill).length > 0 ? " (auto-fixed)" : ""}`);
