@@ -136,7 +136,11 @@ export async function findCandidatePartners(
   lead: LeadForRouting,
   excludePartnerIds: string[] = []
 ): Promise<PartnerCandidate[]> {
-  const categorySlug = await getCategorySlugForLead(lead);
+  let categorySlug = await getCategorySlugForLead(lead);
+  if (!categorySlug && lead.category) {
+    const canonical = toCanonical(lead.category);
+    categorySlug = canonical !== lead.category ? canonical : lead.category;
+  }
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
@@ -187,7 +191,11 @@ export async function findMatchingPartners(
   excludePartnerIds: string[] = [],
   maxPartners: number = MAX_PARTNERS_PER_LEAD
 ): Promise<{ partnerId: string; partnerName: string; ruleId: string }[]> {
-  const categorySlug = await getCategorySlugForLead(lead);
+  let categorySlug = await getCategorySlugForLead(lead);
+  if (!categorySlug && lead.category) {
+    const canonical = toCanonical(lead.category);
+    categorySlug = canonical !== lead.category ? canonical : lead.category;
+  }
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
@@ -523,7 +531,7 @@ export async function routeLead(leadId: string): Promise<{
         sendLeadNotificationDirect(leadId, resourceFallback.email, resourceFallback.name, null)
           .then(async (result) => {
             if (result.sent) {
-              await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId).catch(() => {});
+              try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
               logLeadEvent({
                 event_type: "lead_delivered_to_partner",
                 lead_class: leadClass, action_type: "deliver", source_surface: "lead_router",
@@ -634,18 +642,14 @@ export async function routeLead(leadId: string): Promise<{
         });
 
         if (match.partnerId === primaryMatch.partnerId) {
-          await supabaseAdmin
-            .from("navigator_requests")
-            .update({ delivery_status: "delivered" })
-            .eq("id", leadId)
-            .catch(() => {});
+          try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
         }
 
         createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
           console.log(`[router] Lead billing record creation failed for lead ${leadId}:`, err?.message);
         });
       })
-      .catch((err) => {
+      .catch(async (err) => {
         console.log(`[router] Email notification failed for lead ${leadId} to ${match.partnerName}:`, err?.message);
 
         logLeadEvent({
@@ -663,11 +667,7 @@ export async function routeLead(leadId: string): Promise<{
         });
 
         if (match.partnerId === primaryMatch.partnerId) {
-          supabaseAdmin
-            .from("navigator_requests")
-            .update({ delivery_status: "delivery_failed" })
-            .eq("id", leadId)
-            .catch(() => {});
+          try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivery_failed" }).eq("id", leadId); } catch {}
         }
       });
   }
