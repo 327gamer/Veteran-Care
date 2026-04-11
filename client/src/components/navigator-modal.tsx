@@ -201,6 +201,8 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
     category: "",
     subcategory: "",
     urgency: "",
+    override_state: "",
+    override_city: "",
   });
 
   const hasResourceContext = !!(context?.resource_id);
@@ -226,6 +228,7 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
     setForm({
       veteran_name: "", veteran_phone: "", veteran_email: "", message: "",
       preferred_contact: "either", category: "", subcategory: "", urgency: "",
+      override_state: "", override_city: "",
     });
     setSubmitted(false);
     setSubmitResult(null);
@@ -251,6 +254,8 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
     try {
       const loc = useSavedResources.getState().userLocation;
       const utm = getUTMParams();
+      const finalState = form.override_state?.trim() || loc.stateCode || null;
+      const finalCity = form.override_city?.trim() || loc.city || null;
       const res = await fetch("/api/navigator-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -264,8 +269,8 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
           preferred_contact: form.preferred_contact,
           category: form.category || null,
           subcategory: subcategoryLabel || null,
-          user_state: loc.stateCode || null,
-          user_city: loc.city || null,
+          user_state: finalState,
+          user_city: finalCity,
           user_zip: loc.zip || null,
           urgency: form.urgency || null,
           source: source || (context?.resource_id ? "resource_page" : null),
@@ -480,6 +485,46 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">State</Label>
+                <Select
+                  value={form.override_state || undefined}
+                  onValueChange={(v) => setForm(p => ({ ...p, override_state: v }))}
+                >
+                  <SelectTrigger data-testid="select-nav-modal-state" className="h-9 text-sm">
+                    <SelectValue placeholder={useSavedResources.getState().userLocation.stateCode || "Select state"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SC">South Carolina</SelectItem>
+                    <SelectItem value="NC">North Carolina</SelectItem>
+                    <SelectItem value="GA">Georgia</SelectItem>
+                    <SelectItem value="FL">Florida</SelectItem>
+                    <SelectItem value="VA">Virginia</SelectItem>
+                    <SelectItem value="TX">Texas</SelectItem>
+                    <SelectItem value="CA">California</SelectItem>
+                    <SelectItem value="NY">New York</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">City</Label>
+                <Input
+                  data-testid="input-nav-modal-city"
+                  className="h-9 text-sm"
+                  placeholder={useSavedResources.getState().userLocation.city || "Your city"}
+                  value={form.override_city}
+                  onChange={(e) => setForm(p => ({ ...p, override_city: e.target.value }))}
+                />
+              </div>
+            </div>
+            {!form.override_state && !form.override_city && useSavedResources.getState().userLocation.city && (
+              <p className="text-[10px] text-muted-foreground -mt-1">
+                Detected: {useSavedResources.getState().userLocation.city}, {useSavedResources.getState().userLocation.stateCode}. Override above if different.
+              </p>
+            )}
 
             {hasResourceContext ? (
               <div className="rounded-lg bg-muted/50 p-3 space-y-1 border">

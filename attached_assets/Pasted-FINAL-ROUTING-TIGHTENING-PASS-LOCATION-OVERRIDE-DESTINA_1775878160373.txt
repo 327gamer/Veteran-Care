@@ -1,0 +1,146 @@
+FINAL ROUTING TIGHTENING PASS – LOCATION OVERRIDE + DESTINATION CLARITY + STRICT PRIORITY
+
+We completed another manual validation pass.
+
+The system is closer, but routing is still not precise enough for launch.
+
+Do NOT deploy yet.
+
+This is the final tightening pass for support-request routing behavior.
+
+-------------------------------------
+ISSUE 1 – SUPPORT REQUEST FORM NEEDS CITY + STATE OVERRIDE
+-------------------------------------
+
+Current problem:
+Routing is relying too heavily on detected location.
+
+This causes:
+- testing to stay biased toward the current user location
+- users without location enabled to route poorly
+- inability to cleanly simulate / support Greenville, Columbia, Charleston, etc.
+
+REQUIRED FIX:
+
+In the Support Request / Get Help form, add structured fields for:
+- State
+- City
+
+Rules:
+- keep location detection if available
+- but allow manual override
+- use submitted City + State as routing priority when provided
+- do NOT require street address
+
+This is required for:
+- routing accuracy
+- admin trust
+- national scaling
+- testing
+
+-------------------------------------
+ISSUE 2 – “AUTO-ASSIGNED RESOURCE” IS TOO VAGUE
+-------------------------------------
+
+Current problem:
+The request card still says:
+“Assigned to: Auto-assigned Resource”
+
+That is not clear enough.
+
+REQUIRED FIX:
+
+Always show the REAL assigned destination name.
+
+Examples:
+- Assigned to: Tri-County Veterans Support Network
+- Assigned to: Star Gospel Mission
+- Assigned to: Charleston VA Housing Office
+
+Do NOT use generic labels like:
+- Auto-assigned Resource
+
+The assigned destination must always be explicit.
+
+-------------------------------------
+ISSUE 3 – VERIFIED TRUSTED PARTNER MUST WIN FIRST
+-------------------------------------
+
+Current business rule:
+
+If a verified / trusted partner exists in the correct category and the correct geography,
+it MUST be selected first before any regular resource fallback.
+
+Example:
+- Charleston / Mount Pleasant housing request
+  → Tri-County Veterans Support Network should be first
+- Greenville housing request
+  → Boot Print should be first
+
+REQUIRED FIX:
+
+Enforce routing priority:
+
+1. Verified Trusted Partner (same category + best location)
+2. Other trusted partners
+3. Standard category-matched resources
+
+Do NOT let a regular resource win before an eligible verified partner.
+
+-------------------------------------
+ISSUE 4 – STRICT CATEGORY MATCHING STILL NEEDS TIGHTENING
+-------------------------------------
+
+Current problem:
+Financial requests are still not showing correct finance-first assignment behavior.
+All Matches / manual assignment still shows unrelated categories in places.
+
+REQUIRED FIX:
+
+For assignment and routing:
+- category lock must stay strict
+- financial = financial only
+- housing = housing only
+- legal = legal only
+
+No cross-category clutter in recommended logic.
+
+If broader options exist, they must be clearly fallback-only and still category-adjacent.
+
+-------------------------------------
+ISSUE 5 – ASSIGNMENT RESULT MUST SHOW TRUE DELIVERY TARGET
+-------------------------------------
+
+After a request is routed or assigned, admin must see:
+
+- Assigned to: [actual entity name]
+- Destination type: Trusted Partner / Resource
+- Delivery method: External email / internal/manual
+- Status: Pending / delivered / awaiting response
+- Recipient email (full or masked if needed)
+
+No ambiguity.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Please verify these exact scenarios:
+
+1. Charleston / Mount Pleasant housing request
+   → routes first to Tri-County Veterans Support Network
+
+2. Greenville housing request
+   → routes first to Boot Print
+
+3. Financial request with no trusted partner
+   → routes to correct financial resource fallback
+   → not housing / legal / mental health clutter
+
+4. Assigned card always shows actual destination name
+   → never “Auto-assigned Resource”
+
+5. Support Request form includes City + State override
+   → used for routing when provided
+
+Do not expand scope beyond this pass.

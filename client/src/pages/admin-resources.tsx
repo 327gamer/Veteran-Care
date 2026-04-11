@@ -1311,13 +1311,18 @@ function AdminResourcesInner() {
                       const lastRoute = Array.isArray(req.routing_history) ? req.routing_history[req.routing_history.length - 1] : null;
                       const isResourceFallback = !req.routed_to_partner_id && lastRoute?.assignment_type === "resource_fallback";
                       const partnerName = req.routed_to_partner_id
-                        ? (partnerMatch?.name || "Routing Partner")
-                        : (lastRoute?.partner_name || "Auto-assigned Resource");
-                      const isExternal = req.routed_to_partner_id ? !!partnerMatch?.contact_email : !!lastRoute?.recipient_email;
-                      const deliveryLabel = req.delivery_status === "delivered" ? "Email Delivered" :
-                        req.delivery_status === "pending" || req.delivery_status === "ready_for_delivery" ? "Pending Email Delivery" :
-                        req.delivery_status === "delivery_failed" ? "Email Delivery Failed" :
-                        req.delivery_status === "fallback_manual" ? "Manual Follow-up Required" :
+                        ? (partnerMatch?.name || lastRoute?.partner_name || "Unknown Partner")
+                        : (lastRoute?.partner_name || "Unknown Destination");
+                      const recipientEmail = req.routed_to_partner_id
+                        ? (partnerMatch?.contact_email || lastRoute?.recipient_email || null)
+                        : (lastRoute?.recipient_email || null);
+                      const isExternal = !!recipientEmail;
+                      const destinationType = req.routed_to_partner_id ? "Trusted Partner" : isResourceFallback ? "Resource" : "Manual";
+                      const deliveryMethod = isExternal ? "External email" : "Internal / manual";
+                      const deliveryLabel = req.delivery_status === "delivered" ? "Delivered" :
+                        req.delivery_status === "pending" || req.delivery_status === "ready_for_delivery" ? "Pending" :
+                        req.delivery_status === "delivery_failed" ? "Failed" :
+                        req.delivery_status === "fallback_manual" ? "Manual Required" :
                         req.delivery_status === "unrouted" ? "Unrouted" :
                         req.delivery_status === "escalated" ? "Escalated" :
                         req.delivery_status || "Unknown";
@@ -1327,7 +1332,6 @@ function AdminResourcesInner() {
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="font-medium">
                             Assigned to: {partnerName}
-                            {isResourceFallback && <span className="text-[9px] font-normal text-blue-600 ml-1">(Resource Fallback)</span>}
                           </span>
                           {req.delivery_status && (
                             <Badge variant="outline" className={`text-[9px] ml-auto ${
@@ -1344,8 +1348,10 @@ function AdminResourcesInner() {
                           )}
                         </p>
                         <div className="text-[9px] text-blue-700 space-y-0.5 pl-4">
-                          <p>Delivery: {isExternal ? "External email to partner" : "Internal / manual"}</p>
+                          <p>Type: {destinationType}</p>
+                          <p>Delivery: {deliveryMethod}</p>
                           <p>Status: {deliveryLabel}</p>
+                          {recipientEmail && <p>Recipient: {recipientEmail}</p>}
                         </div>
                         <div className="flex items-center justify-between">
                           {req.routed_at && <p className="text-muted-foreground text-[9px]">Routed: {new Date(req.routed_at).toLocaleString()}</p>}
@@ -1443,13 +1449,20 @@ function AdminResourcesInner() {
                         setShowAllAssignable(false);
                       };
 
+                      const suggestedPartnerIds = new Set(suggestedPartners.map((s: any) => s.partnerId));
                       const recommendedResults = assignableResults.filter((item: any) => {
                         if (assignSearchText || showAllAssignable) return false;
-                        if (!item.category) return false;
                         if (!assignLeadContext?.category) return false;
-                        const leadCat = assignLeadContext.category.toLowerCase().replace(/-/g, " ").trim();
-                        const itemCat = item.category.toLowerCase().replace(/-/g, " ").trim();
-                        const matchesCategory = itemCat.includes(leadCat) || leadCat.includes(itemCat);
+                        const leadSlug = assignLeadContext.category.toLowerCase().replace(/\s+/g, "-").trim();
+                        const leadWords = assignLeadContext.category.toLowerCase().replace(/-/g, " ").trim();
+                        if (item.type === "partner") {
+                          return suggestedPartnerIds.has(item.id);
+                        }
+                        if (!item.category) return false;
+                        const itemSlug = item.category.toLowerCase().replace(/\s+/g, "-").trim();
+                        const itemWords = item.category.toLowerCase().replace(/-/g, " ").trim();
+                        const matchesCategory = itemSlug === leadSlug || itemWords === leadWords ||
+                          itemSlug.startsWith(leadSlug) || leadSlug.startsWith(itemSlug);
                         if (!matchesCategory) return false;
                         const matchesLocation = assignLeadContext?.city && item.city && item.city.toLowerCase() === assignLeadContext.city.toLowerCase();
                         const matchesState = assignLeadContext?.state && item.state && item.state.toUpperCase() === assignLeadContext.state.toUpperCase();

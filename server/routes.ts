@@ -7689,13 +7689,15 @@ export async function registerRoutes(
     const cityQ = typeof city === "string" ? city.trim().toLowerCase() : "";
 
     const catNormalized = catQ ? catQ.replace(/[&-]/g, " ").replace(/\s+/g, " ").trim() : "";
+    const catSlugNormalized = catQ ? catQ.replace(/\s+/g, "-").toLowerCase() : "";
     const catMatches = (targetName: string | null | undefined, targetSlug: string | null | undefined): boolean | null => {
       if (!catNormalized) return null;
+      const slugL = (targetSlug || "").toLowerCase().trim();
+      if (slugL && slugL === catSlugNormalized) return true;
+      if (slugL && (slugL === catQ || catQ === slugL)) return true;
       const nameL = fuzzyNormalize(targetName || "");
-      const slugL = fuzzyNormalize(targetSlug || "");
-      if (slugL && (slugL.includes(catNormalized) || catNormalized.includes(slugL))) return true;
+      if (nameL && nameL === catNormalized) return true;
       if (nameL && (nameL.includes(catNormalized) || catNormalized.includes(nameL))) return true;
-      if (fuzzyMatch(targetName, catQ) || fuzzyMatch(targetSlug, catQ)) return true;
       return false;
     };
 
@@ -7703,6 +7705,21 @@ export async function registerRoutes(
 
     try {
       const { data: partnerData } = await supabaseAdmin.from("partner_organizations").select("id, name, contact_name, contact_email, contact_phone, website_url, state, cities, is_active, is_lead_enabled, notes");
+      let partnerCategoryMap: Record<string, string[]> = {};
+      if (catQ) {
+        try {
+          const { data: rules } = await supabaseAdmin.from("partner_routing_rules").select("partner_id, category_slug").eq("is_active", true);
+          if (rules) {
+            for (const r of rules) {
+              if (!r.category_slug) continue;
+              if (!partnerCategoryMap[r.partner_id]) partnerCategoryMap[r.partner_id] = [];
+              if (!partnerCategoryMap[r.partner_id].includes(r.category_slug)) {
+                partnerCategoryMap[r.partner_id].push(r.category_slug);
+              }
+            }
+          }
+        } catch {}
+      }
       if (partnerData) {
         for (const p of partnerData) {
           if (!p.is_active) continue;
@@ -7713,14 +7730,24 @@ export async function registerRoutes(
             fuzzyMatch(p.contact_email, searchQ) ||
             fuzzyMatch(p.notes, searchQ)
           )) continue;
+          const partnerCats = partnerCategoryMap[p.id] || [];
+          const partnerCatLabel = partnerCats.length > 0 ? partnerCats.map(s => s.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())).join(", ") : null;
+          if (catQ && !searchQ && partnerCats.length > 0) {
+            const matchesCat = partnerCats.some(slug => {
+              const slugNorm = slug.toLowerCase();
+              return slugNorm === catSlugNormalized || slugNorm === catQ || catQ === slugNorm;
+            });
+            if (!matchesCat) continue;
+          }
           let relevance = 1;
           if (stateQ && p.state?.toUpperCase() === stateQ) relevance += 2;
           if (cityQ && p.cities?.some((c: string) => c.toLowerCase() === cityQ)) relevance += 3;
+          if (partnerCats.some(s => s.toLowerCase() === catSlugNormalized)) relevance += 3;
           results.push({
             id: p.id, name: p.name, type: "partner",
             contact: p.contact_name, phone: p.contact_phone, email: p.contact_email,
             website: p.website_url, state: p.state, city: p.cities?.join(", ") || null,
-            isLeadEnabled: p.is_lead_enabled, relevance,
+            isLeadEnabled: p.is_lead_enabled, category: partnerCatLabel, relevance,
           });
         }
       }
