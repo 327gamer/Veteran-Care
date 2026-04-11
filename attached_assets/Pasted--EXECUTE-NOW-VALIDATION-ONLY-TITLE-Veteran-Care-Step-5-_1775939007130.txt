@@ -1,0 +1,287 @@
+🚨 EXECUTE NOW — VALIDATION ONLY
+
+TITLE:
+Veteran Care – Step 5.5 – Final Pre-Launch Lock (Scenario Testing + Safety Validation)
+
+DATE:
+4.11.2026
+
+PRIORITY:
+CRITICAL (FINAL GATE BEFORE CONTROLLED LAUNCH)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This is:
+
+✅ FINAL VALIDATION STEP BEFORE LAUNCH
+❌ NOT new feature development
+❌ NOT monetization expansion
+❌ NOT system redesign
+❌ NOT UI overhaul
+
+This is a full-system validation + safety lock step.
+
+DO NOT build anything new.
+DO NOT change logic unless a real defect is found and clearly documented.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Simulate real-world scenarios and confirm that:
+
+- routing behaves correctly
+- tracking is complete
+- reassignment works safely
+- billing is accurate
+- Stripe payments are controlled
+- admin operations are clear
+- no unsafe edge cases exist
+
+This step is REQUIRED before controlled launch.
+
+-------------------------------------
+SECTION 1 — SCENARIO TESTING MATRIX
+-------------------------------------
+
+Run ALL of the following scenarios end-to-end and report PASS / FAIL for each.
+
+-------------------------------------
+SCENARIO A — STANDARD LEAD FLOW
+-------------------------------------
+
+Flow:
+- user submits request
+- system routes correctly
+- email_sent = true
+- response_status updates via email action
+- lead becomes billable
+- admin charges successfully
+- Stripe payment succeeds
+
+Validate:
+- timestamps correct
+- admin visibility correct
+- payment recorded correctly
+- lead/Stripe mapping correct
+
+-------------------------------------
+SCENARIO B — NO RESPONSE → REASSIGNMENT
+-------------------------------------
+
+Flow:
+- lead remains pending > 72 hours
+- reassignment triggers
+- new entity assigned
+- new email sent
+- reassignment_count increments
+
+Validate:
+- no loop
+- no duplicate entity
+- admin reflects reassignment correctly
+
+-------------------------------------
+SCENARIO C — PARTNER DECLINES
+-------------------------------------
+
+Flow:
+- partner clicks Decline
+- response_status = declined
+
+Validate:
+- system does NOT auto-charge
+- lead flagged correctly for hold/review if applicable
+- admin visibility correct
+
+-------------------------------------
+SCENARIO D — NEED INFO FLOW
+-------------------------------------
+
+Flow:
+- partner clicks Need Info
+
+Validate:
+- response_status = need_info
+- lead not reassigned
+- billing not triggered prematurely
+
+-------------------------------------
+SCENARIO E — FAILED PAYMENT
+-------------------------------------
+
+Flow:
+- Stripe payment fails or remains incomplete
+
+Validate:
+- billing_workflow_status = failed
+- retry allowed
+- no duplicate charge created
+- lead remains auditable
+
+-------------------------------------
+SCENARIO F — DISPUTED LEAD
+-------------------------------------
+
+Flow:
+- admin flags lead as disputed
+
+Validate:
+- billing disabled
+- billing_workflow_status = hold
+- dispute_reason stored
+- charge path blocked
+
+-------------------------------------
+SCENARIO G — HOLD / EXCLUDED LEAD
+-------------------------------------
+
+Flow:
+- admin places lead on hold
+
+Validate:
+- cannot be charged
+- remains auditable
+- can be removed from hold cleanly if needed
+
+-------------------------------------
+SCENARIO H — REASSIGNED + BILLING EDGE CASE
+-------------------------------------
+
+Flow:
+- lead reassigned at least once
+- billing logic evaluated afterward
+
+Validate:
+- no accidental charge if review/hold rules apply
+- reassignment history preserved
+- no duplicate or unsafe billing behavior
+
+-------------------------------------
+SECTION 2 — BILLING VALIDATION PASS
+-------------------------------------
+
+Confirm that ONLY leads with:
+- assigned_to
+- email_sent = true
+- valid delivery state
+
+are billable.
+
+Confirm that:
+- disputed leads cannot be charged
+- held leads cannot be charged
+- failed delivery leads cannot be charged
+- non-billable leads never enter charge-ready flow
+
+-------------------------------------
+SECTION 3 — STRIPE VALIDATION
+-------------------------------------
+
+Confirm:
+- every payment maps to correct lead_id
+- correct partner/entity
+- correct amount
+- no duplicate payments possible
+- failed payments handled safely
+- retry flow works cleanly
+- Stripe references stored correctly
+
+-------------------------------------
+SECTION 4 — DATA INTEGRITY CHECK
+-------------------------------------
+
+Run validation checks and confirm:
+
+- no NULL assigned_at on routed leads
+- no NULL response_status
+- no billed leads without Stripe reference
+- no Stripe payment without lead mapping
+- no ambiguous billing states
+- no false-positive billable leads
+
+-------------------------------------
+SECTION 5 — ADMIN WORKFLOW VALIDATION
+-------------------------------------
+
+Confirm admin can:
+- identify ready leads
+- identify risky leads (badges/flags working)
+- filter quickly using launch filters
+- follow daily workflow helper
+- execute billing without confusion
+- understand payment / dispute / hold states clearly
+
+-------------------------------------
+SECTION 6 — EDGE CASE SAFETY REVIEW
+-------------------------------------
+
+Test:
+- rapid multiple submissions
+- repeated email clicks
+- invalid Stripe responses
+- partial data states
+
+Validate:
+- no crashes
+- no data corruption
+- no duplicate actions
+- system remains stable
+
+-------------------------------------
+SECTION 7 — GO / NO-GO CRITERIA
+-------------------------------------
+
+System is GO for controlled launch ONLY IF:
+- all scenarios pass
+- no billing inconsistencies
+- no routing failures
+- no delivery failures
+- admin flow is clear
+- Stripe is stable
+
+IF ANY FAIL:
+→ HOLD LAUNCH
+→ list issue clearly
+→ identify required fix
+
+-------------------------------------
+SECTION 8 — NO SCOPE CREEP
+-------------------------------------
+
+Do NOT build:
+- new features
+- new UI
+- dashboards
+- pricing changes
+- automation layers
+
+This is VALIDATION ONLY.
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return in this exact structure:
+
+1. Scenario A — PASS / FAIL
+2. Scenario B — PASS / FAIL
+3. Scenario C — PASS / FAIL
+4. Scenario D — PASS / FAIL
+5. Scenario E — PASS / FAIL
+6. Scenario F — PASS / FAIL
+7. Scenario G — PASS / FAIL
+8. Scenario H — PASS / FAIL
+
+Then provide:
+
+- Billing Validation Summary
+- Stripe Validation Summary
+- Data Integrity Summary
+- Admin Workflow Summary
+- Edge Case Safety Summary
+- Final GO / NO-GO recommendation
+
+BEGIN EXECUTION
