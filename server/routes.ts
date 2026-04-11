@@ -2557,6 +2557,7 @@ async function checkNavLifecycleColumns() {
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS email_sent_at TIMESTAMPTZ;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_status TEXT DEFAULT 'pending';");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS last_action_source TEXT;");
     console.log("  -- Backfill existing data:");
     console.log("  UPDATE navigator_requests SET assigned_at = routed_at WHERE assigned_at IS NULL AND routed_at IS NOT NULL;");
     console.log("  UPDATE navigator_requests SET email_sent = true, email_sent_at = routed_at WHERE email_sent = false AND delivery_status = 'delivered' AND routed_at IS NOT NULL;");
@@ -8943,8 +8944,11 @@ export async function registerRoutes(
   }
 
   const actionLabels: Record<string, string> = {
-    connected: "Connected with Veteran",
+    accepted: "Accepted",
+    declined: "Declined",
+    need_info: "Need More Information",
     completed: "Service Completed",
+    connected: "Connected with Veteran",
     no_response: "No Response",
     unable_to_contact: "Unable to Contact",
   };
@@ -8952,10 +8956,10 @@ export async function registerRoutes(
   function buildConfirmationPageHtml(token: string, action: string): string {
     const label = actionLabels[action] || action;
     const placeholders: Record<string, string> = {
-      connected: "e.g., Left voicemail, Appointment scheduled...",
+      accepted: "e.g., Will call this week, Appointment scheduled...",
+      declined: "e.g., Outside service area, Not taking new clients...",
+      need_info: "e.g., Need veteran's DD-214, Missing address...",
       completed: "e.g., Completed intake, Benefits filed...",
-      no_response: "e.g., Called twice, Wrong number...",
-      unable_to_contact: "e.g., Wrong number, Referred elsewhere...",
     };
     const placeholder = placeholders[action] || "Add a note (optional)";
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm Update — ${platform.name}</title></head>
@@ -9004,27 +9008,54 @@ export async function registerRoutes(
       }
 
       const { leadId, action } = result;
-      const outcome = action;
       const partnerNotes = typeof req.body.notes === "string" ? req.body.notes.trim().slice(0, 500) : "";
+
+      const actionToResponseStatus: Record<string, string> = {
+        accepted: "accepted",
+        declined: "declined",
+        need_info: "need_info",
+        completed: "completed",
+        connected: "accepted",
+        no_response: "need_info",
+        unable_to_contact: "declined",
+      };
+
+      const responseStatus = actionToResponseStatus[action] || action;
 
       const { data: lead } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status, admin_notes")
+        .select("id, status, admin_notes, response_status")
         .eq("id", leadId)
         .single();
 
       if (!lead) {
-        return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This lead could not be found in our system.", "error"));
+        return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This support request could not be found in our system.", "error"));
       }
 
-      if (lead.status === "resolved" || lead.status === "cancelled" || lead.status === "archived") {
-        return res.send(buildActionResponseHtml("Already Updated", `This lead has already been marked as "${lead.status}". No further action needed.`, "info"));
+      const currentResponse = lead.response_status || "pending";
+      if (currentResponse === responseStatus) {
+        const label = actionLabels[action] || action;
+        return res.send(buildActionResponseHtml("Already Updated", `This support request has already been marked as "${label}". No further action is needed. Thank you.`, "info"));
+      }
+      if (currentResponse === "completed") {
+        return res.send(buildActionResponseHtml("Already Completed", "This support request has already been marked as completed. No further changes can be made via email. Contact the admin team if you need to make a correction.", "info"));
+      }
+      if (currentResponse === "declined" && responseStatus !== "declined") {
+        return res.send(buildActionResponseHtml("Status Locked", "This support request was declined. Only an admin can change the status at this point.", "info"));
       }
 
-      const updates: any = { outcome, contacted_at: new Date().toISOString() };
-      if (action === "completed") {
+      const now = new Date().toISOString();
+      const updates: any = {
+        outcome: action,
+        contacted_at: now,
+        response_status: responseStatus,
+        response_at: now,
+        last_action_source: "email_link",
+      };
+
+      if (responseStatus === "completed") {
         updates.status = "resolved";
-        updates.resolved_at = new Date().toISOString();
+        updates.resolved_at = now;
       } else if (lead.status === "new") {
         updates.status = "in_progress";
       }
@@ -9034,15 +9065,29 @@ export async function registerRoutes(
         updates.admin_notes = lead.admin_notes ? `${lead.admin_notes}\n${notePrefix}` : notePrefix;
       }
 
-      const { error: updateErr } = await supabaseAdmin.from("navigator_requests").update(updates).eq("id", leadId);
+      let { error: updateErr } = await supabaseAdmin.from("navigator_requests").update(updates).eq("id", leadId);
+      if (updateErr && updateErr.message.includes("last_action_source")) {
+        delete updates.last_action_source;
+        const retry = await supabaseAdmin.from("navigator_requests").update(updates).eq("id", leadId);
+        updateErr = retry.error;
+      }
       if (updateErr) {
         console.log("[lead-action] DB update error:", updateErr.message);
-        return res.status(500).send(buildActionResponseHtml("Error", "Failed to update lead status. Please try again.", "error"));
+        return res.status(500).send(buildActionResponseHtml("Error", "Failed to update. Please try again.", "error"));
       }
+
+      console.log(`[lead-action] Lead ${leadId} response_status → ${responseStatus} via email_link`);
 
       const label = actionLabels[action] || action;
       const noteAck = partnerNotes ? " Your note has been saved." : "";
-      return res.send(buildActionResponseHtml("Status Updated", `Thank you! The lead has been updated to: "${label}".${noteAck} Our team has been notified.`, "success"));
+      const friendlyMessages: Record<string, string> = {
+        accepted: `Thank you for accepting this support request! The veteran has been notified that you will be reaching out.${noteAck}`,
+        declined: `This support request has been marked as declined. Our team will reassign it to another provider.${noteAck}`,
+        need_info: `Thank you. We've noted that you need more information. Our team will follow up with additional details.${noteAck}`,
+        completed: `Thank you! This support request has been marked as completed.${noteAck} We appreciate your service to our veterans.`,
+      };
+      const message = friendlyMessages[responseStatus] || `Thank you! The status has been updated to "${label}".${noteAck}`;
+      return res.send(buildActionResponseHtml("Status Updated", message, "success"));
     } catch (err: any) {
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));

@@ -109,6 +109,12 @@ interface NavigatorRequest {
   routed_at: string | null;
   delivery_status: string | null;
   partner_outcome: string | null;
+  email_sent: boolean | null;
+  email_sent_at: string | null;
+  response_status: string | null;
+  response_at: string | null;
+  assigned_at: string | null;
+  last_action_source: string | null;
 }
 
 interface AdminResource {
@@ -1359,6 +1365,7 @@ function AdminResourcesInner() {
                             req.response_status === "need_info" ? "text-amber-700" :
                             "text-blue-700"
                           }`}>{(req.response_status || "pending").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p>
+                          {req.response_at && <p>Responded: {new Date(req.response_at).toLocaleString()}{req.last_action_source === "email_link" ? " (via email)" : ""}</p>}
                           {recipientEmail && <p>Recipient: {recipientEmail}</p>}
                           {req.assigned_at && <p>Assigned: {new Date(req.assigned_at).toLocaleString()}</p>}
                         </div>

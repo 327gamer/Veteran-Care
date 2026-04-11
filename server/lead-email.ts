@@ -33,7 +33,7 @@ export function verifyLeadActionToken(token: string): { leadId: string; action: 
     if (!match) return null;
     const tokenTime = parseInt(ts, 36);
     if (isNaN(tokenTime) || Date.now() - tokenTime > TOKEN_EXPIRY_MS) return null;
-    const validActions = ["connected", "completed", "no_response", "unable_to_contact"];
+    const validActions = ["accepted", "declined", "need_info", "completed", "connected", "no_response", "unable_to_contact"];
     if (!validActions.includes(action)) return null;
     return { leadId, action };
   } catch { return null; }
@@ -51,10 +51,10 @@ function getBaseUrl(): string {
 function buildActionButtonsHtml(leadId: string): string {
   const baseUrl = getBaseUrl();
   const actions = [
-    { key: "connected", label: "Connected with Veteran", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
+    { key: "accepted", label: "Accept — I Will Assist This Veteran", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
+    { key: "need_info", label: "Need More Information", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
+    { key: "declined", label: "Decline — Unable to Assist", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
     { key: "completed", label: "Service Completed", color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" },
-    { key: "no_response", label: "No Response", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
-    { key: "unable_to_contact", label: "Unable to Contact", color: "#9CA3AF", bg: "#F9FAFB", border: "#E5E7EB" },
   ];
 
   const buttons = actions.map(a => {

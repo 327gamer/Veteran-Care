@@ -1,0 +1,259 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 4.2 – Email Response Loop
+
+PRIORITY:
+CRITICAL
+
+This is:
+
+✅ PART OF CHUNK 4 (Routing Engine Completion)  
+❌ NOT Chunk 5 (Billing)  
+❌ NOT Chunk 6 (Reporting)  
+❌ NOT Chunk 7 (Scale)  
+❌ NOT AI expansion
+
+Routing and tracking are already working.
+This step completes the RESPONSE LOOP so the system can react to recipient actions.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+When the assigned recipient clicks an email action button, the system must immediately update the real lead record and reflect that change in Admin.
+
+Required email actions:
+- Accept
+- Decline
+- Need Info
+- Completed
+
+-------------------------------------
+BUSINESS PURPOSE
+-------------------------------------
+
+This creates live accountability.
+
+We already can:
+- assign a lead
+- send the email
+- track pending status
+
+After this step we must also be able to:
+- confirm recipient acknowledgment
+- know who accepted
+- know who declined
+- know who needs more info
+- know when the case is completed
+
+This is required before 72-hour reassignment logic.
+
+-------------------------------------
+REQUIREMENT 1 — ACTION ENDPOINTS
+-------------------------------------
+
+Create or verify a secure backend endpoint flow for email action buttons.
+
+Each email CTA must send:
+- request ID
+- action type
+- secure signed token (or equivalent)
+- timestamp if needed
+
+Allowed actions:
+- accepted
+- declined
+- need_info
+- completed
+
+Buttons in email must map exactly to these values.
+
+-------------------------------------
+REQUIREMENT 2 — RESPONSE STATUS UPDATE RULES
+-------------------------------------
+
+When a valid action is clicked:
+
+System MUST:
+- update navigator_requests.response_status
+- set response_at = current timestamp
+- preserve assigned_at
+- preserve email_sent / email_sent_at
+- record who responded if safely available
+
+Status mapping:
+- Accept → accepted
+- Decline → declined
+- Need Info → need_info
+- Completed → completed
+
+No other values allowed.
+
+-------------------------------------
+REQUIREMENT 3 — IDEMPOTENT + SAFE BEHAVIOR
+-------------------------------------
+
+The action system must be safe against repeated clicks or weird email behavior.
+
+Rules:
+- repeated clicks on same action must not corrupt data
+- invalid token must be rejected
+- action on nonexistent request must return safe error
+- no duplicate records
+- no unrelated request updates
+
+State rules:
+- completed remains terminal
+- accepted can move to completed
+- need_info can move to accepted or completed
+- declined remains declined unless manually changed by admin
+
+-------------------------------------
+REQUIREMENT 4 — ADMIN PANEL LIVE VISIBILITY
+-------------------------------------
+
+Admin panel must reflect updated values clearly:
+
+- Assigned To
+- Delivery Type
+- Email Sent
+- Response Status
+- Response At
+- Assigned Time
+
+Do NOT redesign admin.
+Only ensure fields update correctly after email action.
+
+-------------------------------------
+REQUIREMENT 5 — OPTIONAL LIGHT AUDIT FIELD
+-------------------------------------
+
+If lightweight and safe, add ONE of:
+
+Option A:
+- responded_by_email
+
+Option B:
+- last_action_source = email_link
+
+Only do this if it is low risk and does not slow the step down.
+
+-------------------------------------
+REQUIREMENT 6 — RECIPIENT CONFIRMATION PAGE
+-------------------------------------
+
+When recipient clicks an action button, they must land on a simple confirmation page.
+
+Examples:
+- “Thank you. This support request has been marked as accepted.”
+- “Thank you. This support request has been marked as completed.”
+
+Requirements:
+- branded Veteran Care styling
+- simple success / failure message
+- no login required
+- no admin exposure
+- no sensitive data leak
+
+-------------------------------------
+REQUIREMENT 7 — EMAIL TEMPLATE BUTTON WIRING
+-------------------------------------
+
+Update the routed lead email template so all 4 action buttons point to the correct secure endpoint.
+
+Buttons required:
+- Accept
+- Decline
+- Need Info
+- Completed
+
+Do NOT change branding.
+Do NOT change routing selection logic.
+Do NOT change subject lines unless technically necessary.
+
+-------------------------------------
+REQUIREMENT 8 — SECURITY
+-------------------------------------
+
+Action links must not be guessable.
+
+Use:
+- signed token
+or
+- one-time secure token
+or
+- HMAC-style verification
+
+Do NOT expose raw admin controls through public links.
+
+This is critical because the links live in email.
+
+-------------------------------------
+REQUIREMENT 9 — NO SCOPE CREEP
+-------------------------------------
+
+Do NOT build:
+- reassignment logic
+- billing triggers
+- partner dashboard
+- analytics dashboard
+- advanced audit history UI
+
+This step is only:
+EMAIL ACTION → STATUS UPDATE → ADMIN VISIBILITY
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Please validate all of the following:
+
+1. New routed lead email sends correctly with all 4 buttons
+2. Accept click updates:
+   - response_status = accepted
+   - response_at populated
+3. Need Info click updates:
+   - response_status = need_info
+   - response_at populated
+4. Completed click updates:
+   - response_status = completed
+   - response_at populated
+5. Decline click updates:
+   - response_status = declined
+   - response_at populated
+6. Invalid / expired token rejected safely
+7. Repeated click does not corrupt record
+8. Admin panel reflects updated status correctly
+9. Completed status remains terminal unless admin manually changes it
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return with:
+- endpoint(s) added / updated
+- email buttons wired
+- confirmation page working
+- admin status reflection confirmed
+- test results for all 4 response paths
+
+-------------------------------------
+STRICT DO-NOT-TOUCH LIST
+-------------------------------------
+
+Do NOT modify:
+- category logic
+- subcategory normalization
+- location priority
+- trusted partner priority
+- fallback routing logic
+- billing logic
+- reporting logic
+- reassignment logic
+
+This is RESPONSE LOOP ONLY.
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------
