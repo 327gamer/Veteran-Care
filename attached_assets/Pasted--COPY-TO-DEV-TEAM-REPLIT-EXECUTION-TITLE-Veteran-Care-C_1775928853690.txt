@@ -1,0 +1,302 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 5.2 – Payment Operations + Billing Workflow Hardening
+
+PRIORITY:
+CRITICAL (Revenue Operations Control Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Chunk 5.2 – Payment Operations / Billing Workflow Hardening
+❌ NOT subscriptions
+❌ NOT recurring billing
+❌ NOT auto-charging
+❌ NOT pricing expansion
+❌ NOT reporting dashboards
+
+This step is about making billing operationally safe, repeatable, and clear.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Turn the current manual one-by-one Stripe charging flow into a controlled billing operations layer that supports:
+
+- queue visibility
+- billing workflow clarity
+- failed-payment handling
+- dispute-safe exclusions
+- reconciliation confidence
+- optional lightweight batch preparation
+
+-------------------------------------
+BUSINESS PURPOSE
+-------------------------------------
+
+Right now the platform can charge.
+
+This step ensures the platform can manage charging without confusion as lead volume grows.
+
+We need a system that clearly shows:
+
+- what is ready to charge
+- what has already been charged
+- what failed
+- what is being held back
+- what should be reviewed manually
+
+-------------------------------------
+REQUIREMENT 1 — BILLING WORKFLOW STATES
+-------------------------------------
+
+Add field if needed:
+
+- billing_workflow_status
+
+Allowed values ONLY:
+
+- ready
+- queued
+- charged
+- failed
+- hold
+- review_required
+
+RULES:
+- billable unpaid leads default to ready
+- queued = selected for billing workflow but not finalized
+- charged = successful Stripe payment confirmed
+- failed = charge attempted but payment failed or expired
+- hold = intentionally excluded from charging
+- review_required = anomaly or manual review needed
+
+IMPORTANT:
+Do NOT use this field to replace:
+- billing_status
+- stripe_payment_status
+
+This is an operations layer only.
+
+-------------------------------------
+REQUIREMENT 2 — BILLING QUEUE VIEW
+-------------------------------------
+
+Admin must have a clear billing queue view or filterable list showing at minimum:
+
+- lead ID
+- assigned entity
+- category
+- city/state
+- billing_amount
+- billing_status
+- billing_workflow_status
+- stripe payment state
+- billed_at / payment_at
+
+Acceptable implementation:
+- filtered admin table state
+- OR dedicated lightweight billing tab
+
+Do NOT redesign the full admin panel.
+
+-------------------------------------
+REQUIREMENT 3 — HOLD / EXCLUDE FROM BILLING
+-------------------------------------
+
+Admin must be able to place a lead on hold.
+
+Use cases:
+- disputed lead
+- test lead
+- partner issue
+- accidental routing
+- courtesy no-charge
+
+When hold is applied:
+- billing_workflow_status = hold
+- charge action disabled
+- lead remains auditable
+- no Stripe payment attempt allowed
+
+Optional if lightweight and safe:
+- billing_hold_reason
+
+-------------------------------------
+REQUIREMENT 4 — FAILED PAYMENT HANDLING
+-------------------------------------
+
+If Stripe payment fails, expires, or remains incomplete:
+
+System MUST:
+- set billing_workflow_status = failed
+- preserve Stripe references
+- keep lead billable unless manually changed
+- allow admin to retry later
+
+Do NOT auto-retry payments.
+
+-------------------------------------
+REQUIREMENT 5 — RETRY PAYMENT ACTION
+-------------------------------------
+
+Admin must be able to retry payment for failed leads only.
+
+Retry must:
+- create a fresh Stripe Checkout Session or approved payment flow
+- not overwrite prior audit history incorrectly
+- preserve duplicate-charge protection once payment succeeds
+
+-------------------------------------
+REQUIREMENT 6 — SIMPLE BATCH OPERATIONS
+-------------------------------------
+
+Add lightweight batch workflow support for billing preparation.
+
+Minimum acceptable version:
+
+Admin can bulk update selected leads to:
+- queued
+- hold
+
+Optional only if safe:
+Admin can initiate a controlled sequential charge flow for selected ready leads one-by-one.
+
+IMPORTANT:
+Do NOT build full auto-batch charging.
+Do NOT fire charges in the background.
+Do NOT remove admin control.
+
+-------------------------------------
+REQUIREMENT 7 — RECONCILIATION CONFIDENCE
+-------------------------------------
+
+System must make it easy to reconcile lead records with Stripe outcomes.
+
+For each billed lead, admin/dev must be able to verify:
+
+- lead ID
+- stripe_checkout_session_id
+- stripe_payment_intent_id
+- stripe_payment_status
+- payment_at
+- billing_amount
+
+Goal:
+Every successful charge maps cleanly to one lead.
+No orphan payments.
+No ambiguous payment records.
+
+-------------------------------------
+REQUIREMENT 8 — EXPORT CAPABILITY
+-------------------------------------
+
+Add simple export capability for billing operations.
+
+Minimum export fields:
+- lead ID
+- assigned entity
+- category
+- city/state
+- billing_amount
+- billing_status
+- billing_workflow_status
+- stripe_payment_status
+- payment_at
+- stripe references
+
+CSV export is sufficient.
+
+Do NOT build dashboards.
+
+-------------------------------------
+REQUIREMENT 9 — DATA INTEGRITY RULES
+-------------------------------------
+
+Ensure:
+- charged leads cannot return to ready
+- succeeded Stripe payments cannot be recharged
+- hold leads cannot be charged unless removed from hold
+- failed leads can be retried
+- non-billable leads never appear in ready-to-charge queue
+
+-------------------------------------
+REQUIREMENT 10 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin must clearly understand current billing state at a glance.
+
+At minimum make visible:
+- Ready to Charge
+- On Hold
+- Failed
+- Charged
+
+No ambiguous money states allowed.
+
+-------------------------------------
+REQUIREMENT 11 — NO SCOPE CREEP
+-------------------------------------
+
+Do NOT build:
+- subscriptions
+- recurring billing
+- auto-renewals
+- invoice automation
+- pricing tiers
+- dashboards
+- partner billing portal
+
+This is OPERATIONS HARDENING ONLY.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Please validate all of the following:
+
+1. Billable unpaid lead defaults to ready
+2. Admin can place lead on hold
+3. Hold lead cannot be charged
+4. Failed payment sets workflow state to failed
+5. Failed payment can be retried successfully
+6. Successful payment sets workflow state to charged
+7. Charged lead cannot be charged again
+8. CSV export works with correct fields
+9. Billing queue only shows appropriate leads
+10. No non-billable lead appears in charge-ready flow
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return with:
+
+A) files changed
+B) schema updates if needed
+C) billing queue / filter implementation
+D) hold / retry workflow
+E) export capability
+F) reconciliation visibility confirmation
+G) test results for all required cases
+H) confirmation that subscriptions / recurring billing were NOT built
+
+-------------------------------------
+STRICT DO-NOT-TOUCH LIST
+-------------------------------------
+
+Do NOT modify:
+- routing engine
+- tracking system
+- reassignment logic
+- email system
+- attribution system
+- pricing rules
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------

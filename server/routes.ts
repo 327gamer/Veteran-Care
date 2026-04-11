@@ -7475,7 +7475,7 @@ export async function registerRoutes(
       const billedAt = new Date().toISOString();
       const { data: billedRow, error: billErr } = await supabaseAdmin
         .from("navigator_requests")
-        .update({ billed: true, billed_at: billedAt, billing_status: "billed" })
+        .update({ billed: true, billed_at: billedAt, billing_status: "billed", billing_workflow_status: "charged" })
         .eq("id", id)
         .eq("billed", false)
         .select("id")
@@ -7486,6 +7486,7 @@ export async function registerRoutes(
       updates.billed = true;
       updates.billed_at = billedAt;
       updates.billing_status = "billed";
+      updates.billing_workflow_status = "charged";
     }
 
     if (hasBillingColumns && req.body.billing_status === "disputed") {
@@ -7532,8 +7533,14 @@ export async function registerRoutes(
   app.get("/api/admin/billing-summary", requireAdmin, async (_req, res) => {
     if (!hasBillingColumns) return res.json({ available: false });
     try {
-      const { data } = await supabaseAdmin.from("navigator_requests").select("billing_status, billing_amount, is_billable, billed");
-      const leads = data || [];
+      let leads: any[] = [];
+      const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests").select("billing_status, billing_amount, is_billable, billed, billing_workflow_status");
+      if (!e1) {
+        leads = d1 || [];
+      } else {
+        const { data: d2 } = await supabaseAdmin.from("navigator_requests").select("billing_status, billing_amount, is_billable, billed");
+        leads = d2 || [];
+      }
       const summary = {
         available: true,
         total_leads: leads.length,
@@ -7543,6 +7550,14 @@ export async function registerRoutes(
         disputed: leads.filter((l: any) => l.billing_status === "disputed").length,
         total_billable_amount: leads.filter((l: any) => l.is_billable && !l.billed).reduce((sum: number, l: any) => sum + (parseFloat(l.billing_amount) || 49.99), 0),
         total_billed_amount: leads.filter((l: any) => l.billed).reduce((sum: number, l: any) => sum + (parseFloat(l.billing_amount) || 49.99), 0),
+        workflow: {
+          ready: leads.filter((l: any) => l.billing_workflow_status === "ready").length,
+          queued: leads.filter((l: any) => l.billing_workflow_status === "queued").length,
+          charged: leads.filter((l: any) => l.billing_workflow_status === "charged").length,
+          failed: leads.filter((l: any) => l.billing_workflow_status === "failed").length,
+          hold: leads.filter((l: any) => l.billing_workflow_status === "hold").length,
+          review_required: leads.filter((l: any) => l.billing_workflow_status === "review_required").length,
+        },
       };
       return res.json(summary);
     } catch (err: any) {
@@ -7587,7 +7602,7 @@ export async function registerRoutes(
     let fetchErr: any = null;
     const { data: d1, error: e1 } = await supabaseAdmin
       .from("navigator_requests")
-      .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id")
+      .select("id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id")
       .eq("id", id)
       .single();
     if (!e1) {
@@ -7606,6 +7621,7 @@ export async function registerRoutes(
     if (lead.billed) return res.status(400).json({ error: "Lead is already billed — cannot charge twice" });
     if (!lead.is_billable) return res.status(400).json({ error: "Lead is not billable — delivery criteria not met" });
     if (lead.billing_status !== "billable") return res.status(400).json({ error: `Lead billing_status is '${lead.billing_status}' — must be 'billable'` });
+    if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold before charging" });
 
     if (lead.stripe_checkout_session_id) {
       try {
@@ -7632,14 +7648,19 @@ export async function registerRoutes(
       const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
 
       try {
-        const { error: upErr } = await supabaseAdmin.from("navigator_requests").update({
+        await supabaseAdmin.from("navigator_requests").update({
           stripe_checkout_session_id: sessionId,
           stripe_payment_status: "pending",
+          billing_workflow_status: "queued",
         }).eq("id", id);
-        if (upErr) {
-          await supabaseAdmin.from("navigator_requests").update({}).eq("id", id);
-        }
-      } catch {}
+      } catch {
+        try {
+          await supabaseAdmin.from("navigator_requests").update({
+            stripe_checkout_session_id: sessionId,
+            stripe_payment_status: "pending",
+          }).eq("id", id);
+        } catch {}
+      }
 
       return res.json({ url, sessionId });
     } catch (err: any) {
@@ -7691,6 +7712,7 @@ export async function registerRoutes(
             billed: true,
             billed_at: billedAt,
             billing_status: "billed",
+            billing_workflow_status: "charged",
             stripe_payment_intent_id: paymentIntentId,
             stripe_payment_status: "paid",
           }).eq("id", id).eq("billed", false);
@@ -7699,10 +7721,20 @@ export async function registerRoutes(
             billed: true,
             billed_at: billedAt,
             billing_status: "billed",
+            billing_workflow_status: "charged",
           }).eq("id", id).eq("billed", false);
         }
 
         return res.json({ status: "paid_now_billed", paymentIntentId });
+      }
+
+      if (session.status === "expired") {
+        try {
+          await supabaseAdmin.from("navigator_requests").update({
+            billing_workflow_status: "failed",
+            stripe_payment_status: "expired",
+          }).eq("id", id);
+        } catch {}
       }
 
       return res.json({
@@ -7710,6 +7742,186 @@ export async function registerRoutes(
         checkoutStatus: session.status,
         paymentStatus: session.payment_status,
       });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.patch("/api/admin/billing-workflow/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { id } = req.params;
+    const { billing_workflow_status, billing_hold_reason } = req.body;
+    const validStatuses = ["ready", "queued", "charged", "failed", "hold", "review_required"];
+    if (!billing_workflow_status || !validStatuses.includes(billing_workflow_status)) {
+      return res.status(400).json({ error: `Invalid billing_workflow_status. Valid: ${validStatuses.join(", ")}` });
+    }
+
+    let lead: any = null;
+    const { data: ld1, error: le1 } = await supabaseAdmin.from("navigator_requests")
+      .select("id, is_billable, billed, billing_workflow_status")
+      .eq("id", id).single();
+    if (!le1) { lead = ld1; } else {
+      const { data: ld2 } = await supabaseAdmin.from("navigator_requests")
+        .select("id, is_billable, billed")
+        .eq("id", id).single();
+      lead = ld2;
+    }
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+
+    if (lead.billed && billing_workflow_status !== "charged") {
+      return res.status(400).json({ error: "Charged leads cannot change workflow status" });
+    }
+    if (!lead.is_billable && ["ready", "queued"].includes(billing_workflow_status)) {
+      return res.status(400).json({ error: "Non-billable leads cannot be set to ready or queued" });
+    }
+
+    const updates: Record<string, any> = { billing_workflow_status };
+    if (billing_workflow_status === "hold" && billing_hold_reason) {
+      updates.billing_hold_reason = billing_hold_reason.trim().substring(0, 500);
+    }
+    if (billing_workflow_status !== "hold") {
+      updates.billing_hold_reason = null;
+    }
+
+    const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests")
+      .update(updates).eq("id", id).select().single();
+    if (!e1) return res.json(d1);
+    const { data: d2, error: e2 } = await supabaseAdmin.from("navigator_requests")
+      .update({ billing_workflow_status }).eq("id", id).select().single();
+    if (!e2) return res.json(d2);
+    return res.status(500).json({ error: e2?.message || "Update failed — billing_workflow_status column may not exist. Run supabase/chunk-5.2-billing-workflow.sql" });
+  });
+
+  app.post("/api/admin/billing-retry/:id", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { id } = req.params;
+    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+    if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
+
+    let lead: any = null;
+    const { data: ld1, error: le1 } = await supabaseAdmin.from("navigator_requests")
+      .select("id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id")
+      .eq("id", id).single();
+    if (!le1) { lead = ld1; } else {
+      const { data: ld2 } = await supabaseAdmin.from("navigator_requests")
+        .select("id, is_billable, billed, billing_status, billing_amount, veteran_name, category, routed_to_partner_id")
+        .eq("id", id).single();
+      lead = ld2;
+    }
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.billed) return res.status(400).json({ error: "Lead is already billed" });
+    if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold first" });
+    if (lead.billing_workflow_status !== "failed") return res.status(400).json({ error: `Retry is only for failed leads. Current: ${lead.billing_workflow_status}` });
+
+    const amount = parseFloat(lead.billing_amount) || 49.99;
+    let partnerName = "Partner";
+    if (lead.routed_to_partner_id) {
+      try {
+        const { data: partner } = await supabaseAdmin.from("partner_organizations").select("name").eq("id", lead.routed_to_partner_id).single();
+        if (partner?.name) partnerName = partner.name;
+      } catch {}
+    }
+
+    try {
+      const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
+      const retryUpdate: Record<string, any> = { stripe_checkout_session_id: sessionId, stripe_payment_status: "pending", billing_workflow_status: "queued" };
+      const { error: ru } = await supabaseAdmin.from("navigator_requests").update(retryUpdate).eq("id", id);
+      if (ru) {
+        await supabaseAdmin.from("navigator_requests").update({ stripe_checkout_session_id: sessionId, stripe_payment_status: "pending" }).eq("id", id);
+      }
+      return res.json({ url, sessionId });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || "Retry failed" });
+    }
+  });
+
+  app.post("/api/admin/billing-bulk-update", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { ids, billing_workflow_status, billing_hold_reason } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (ids.length > 100) return res.status(400).json({ error: "Maximum 100 leads per batch" });
+    const allowed = ["queued", "hold", "ready", "review_required"];
+    if (!allowed.includes(billing_workflow_status)) {
+      return res.status(400).json({ error: `Bulk update only supports: ${allowed.join(", ")}` });
+    }
+
+    let leads: any[] = [];
+    const { data: bl1, error: ble1 } = await supabaseAdmin.from("navigator_requests")
+      .select("id, billed, is_billable, billing_workflow_status")
+      .in("id", ids);
+    if (!ble1) { leads = bl1 || []; } else {
+      const { data: bl2 } = await supabaseAdmin.from("navigator_requests")
+        .select("id, billed, is_billable")
+        .in("id", ids);
+      leads = bl2 || [];
+    }
+    if (leads.length === 0) return res.status(404).json({ error: "No leads found" });
+
+    const eligible = leads.filter((l: any) => {
+      if (l.billed) return false;
+      if (!l.is_billable && ["ready", "queued"].includes(billing_workflow_status)) return false;
+      if (l.billing_workflow_status === "charged") return false;
+      return true;
+    });
+
+    if (eligible.length === 0) return res.status(400).json({ error: "No eligible leads for this update" });
+
+    const updates: Record<string, any> = { billing_workflow_status };
+    if (billing_workflow_status === "hold" && billing_hold_reason) {
+      updates.billing_hold_reason = billing_hold_reason.trim().substring(0, 500);
+    }
+    if (billing_workflow_status !== "hold") updates.billing_hold_reason = null;
+
+    const eligibleIds = eligible.map((l: any) => l.id);
+    const { error } = await supabaseAdmin.from("navigator_requests")
+      .update(updates).in("id", eligibleIds);
+    if (error) {
+      const { error: e2 } = await supabaseAdmin.from("navigator_requests")
+        .update({ billing_workflow_status }).in("id", eligibleIds);
+      if (e2) return res.status(500).json({ error: e2.message });
+    }
+
+    return res.json({ updated: eligibleIds.length, skipped: leads.length - eligible.length, total: ids.length });
+  });
+
+  app.get("/api/admin/billing-export", requireAdmin, async (_req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    try {
+      let leads: any[] = [];
+      const { data: d1, error: e1 } = await supabaseAdmin.from("navigator_requests")
+        .select("id, veteran_name, category, user_city, user_state, routed_to_partner_id, billing_amount, billing_status, billing_workflow_status, stripe_payment_status, stripe_payment_intent_id, stripe_checkout_session_id, billed_at, is_billable, billed")
+        .order("created_at", { ascending: false });
+      if (!e1) {
+        leads = d1 || [];
+      } else {
+        const { data: d2 } = await supabaseAdmin.from("navigator_requests")
+          .select("id, veteran_name, category, user_city, user_state, routed_to_partner_id, billing_amount, billing_status, stripe_payment_status, stripe_payment_intent_id, stripe_checkout_session_id, billed_at, is_billable, billed")
+          .order("created_at", { ascending: false });
+        leads = d2 || [];
+      }
+
+      const partnerIds = [...new Set(leads.filter((l: any) => l.routed_to_partner_id).map((l: any) => l.routed_to_partner_id))];
+      let partnerMap: Record<string, string> = {};
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name").in("id", partnerIds);
+        for (const p of (partners || [])) partnerMap[p.id] = p.name;
+      }
+
+      const header = "lead_id,assigned_entity,category,city,state,billing_amount,billing_status,billing_workflow_status,stripe_payment_status,billed_at,stripe_payment_intent_id,stripe_checkout_session_id";
+      const rows = leads.map((l: any) => {
+        const esc = (v: any) => `"${String(v || "").replace(/"/g, '""')}"`;
+        return [
+          esc(l.id), esc(partnerMap[l.routed_to_partner_id] || ""), esc(l.category),
+          esc(l.user_city), esc(l.user_state), l.billing_amount || 49.99,
+          esc(l.billing_status), esc(l.billing_workflow_status || ""),
+          esc(l.stripe_payment_status || ""), esc(l.billed_at || ""),
+          esc(l.stripe_payment_intent_id || ""), esc(l.stripe_checkout_session_id || ""),
+        ].join(",");
+      });
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=billing-export.csv");
+      return res.send([header, ...rows].join("\n"));
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }

@@ -127,6 +127,8 @@ interface NavigatorRequest {
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
   stripe_payment_status: string | null;
+  billing_workflow_status: string | null;
+  billing_hold_reason: string | null;
 }
 
 interface AdminResource {
@@ -169,7 +171,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 function AdminResourcesInner() {
   const [adminKey, setAdminKey] = useState(() => localStorage.getItem("adminKey") || "");
   const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("adminKey"));
-  const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners" | "applications">("resources");
+  const [activeTab, setActiveTab] = useState<"resources" | "leads" | "partners" | "applications" | "billing">("resources");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<AdminResource | null>(null);
@@ -210,6 +212,10 @@ function AdminResourcesInner() {
   const [leadStateFilter, setLeadStateFilter] = useState("");
   const [leadCategoryFilter, setLeadCategoryFilter] = useState("");
   const [leadRoutedFilter, setLeadRoutedFilter] = useState("");
+
+  const [billingQueueFilter, setBillingQueueFilter] = useState<string>("ready");
+  const [billingSelectedIds, setBillingSelectedIds] = useState<Set<string>>(new Set());
+  const [holdReasonInput, setHoldReasonInput] = useState("");
 
   // Routing Partners client-side filters
   const [partnerSearch, setPartnerSearch] = useState("");
@@ -337,7 +343,14 @@ function AdminResourcesInner() {
   const { data: partners = [], isLoading: partnersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/partners", adminKey],
     queryFn: () => fetch("/api/admin/partners", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
-    enabled: authenticated && (activeTab === "partners" || activeTab === "leads"),
+    enabled: authenticated && (activeTab === "partners" || activeTab === "leads" || activeTab === "billing"),
+  });
+
+  const { data: billingSummary } = useQuery<any>({
+    queryKey: ["/api/admin/billing-summary", adminKey],
+    queryFn: () => fetch("/api/admin/billing-summary", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    enabled: authenticated && activeTab === "billing",
+    refetchInterval: 15000,
   });
 
   const { data: suggestedPartners = [] } = useQuery<any[]>({
@@ -918,6 +931,25 @@ function AdminResourcesInner() {
     });
   }, [navRequests, leadSearch, leadStateFilter, leadCategoryFilter, leadRoutedFilter]);
 
+  const billingQueueLeads = useMemo(() => {
+    return navRequests.filter(r => {
+      if (billingQueueFilter === "all") return r.is_billable || r.billed;
+      if (billingQueueFilter === "ready") return r.billing_workflow_status === "ready" || (r.is_billable && !r.billed && !r.billing_workflow_status);
+      if (billingQueueFilter === "queued") return r.billing_workflow_status === "queued";
+      if (billingQueueFilter === "charged") return r.billing_workflow_status === "charged" || r.billed;
+      if (billingQueueFilter === "failed") return r.billing_workflow_status === "failed";
+      if (billingQueueFilter === "hold") return r.billing_workflow_status === "hold";
+      if (billingQueueFilter === "review_required") return r.billing_workflow_status === "review_required";
+      return false;
+    });
+  }, [navRequests, billingQueueFilter]);
+
+  const partnerNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of partners) m[p.id] = p.name;
+    return m;
+  }, [partners]);
+
   const filteredPartners = useMemo(() => {
     return (Array.isArray(partners) ? partners : []).filter((p: any) => {
       if (partnerSearch) {
@@ -1055,6 +1087,15 @@ function AdminResourcesInner() {
             onClick={() => setActiveTab("applications")}
           >
             <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" /> Trusted Partner Applications
+          </Button>
+          <Button
+            data-testid="tab-billing"
+            variant={activeTab === "billing" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setActiveTab("billing")}
+          >
+            <DollarSign className="h-3.5 w-3.5 mr-1.5" /> Billing
           </Button>
         </div>
 
@@ -2239,6 +2280,306 @@ function AdminResourcesInner() {
 
         {activeTab === "applications" && (
           <ApplicationsPanel adminKey={adminKey} />
+        )}
+
+        {activeTab === "billing" && (
+          <>
+            {billingSummary?.available && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Card className="p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase">Ready to Charge</p>
+                  <p className="text-xl font-bold text-blue-700" data-testid="text-billing-ready">{billingSummary.workflow?.ready || 0}</p>
+                  <p className="text-[10px] text-muted-foreground">${((billingSummary.workflow?.ready || 0) * 49.99).toFixed(2)}</p>
+                </Card>
+                <Card className="p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase">Charged</p>
+                  <p className="text-xl font-bold text-green-700" data-testid="text-billing-charged">{billingSummary.workflow?.charged || billingSummary.billed || 0}</p>
+                  <p className="text-[10px] text-muted-foreground">${(billingSummary.total_billed_amount || 0).toFixed(2)}</p>
+                </Card>
+                <Card className="p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase">On Hold</p>
+                  <p className="text-xl font-bold text-orange-600" data-testid="text-billing-hold">{billingSummary.workflow?.hold || 0}</p>
+                </Card>
+                <Card className="p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase">Failed</p>
+                  <p className="text-xl font-bold text-red-600" data-testid="text-billing-failed">{billingSummary.workflow?.failed || 0}</p>
+                </Card>
+              </div>
+            )}
+
+            <div className="flex gap-2 flex-wrap items-center">
+              {(["ready", "queued", "charged", "failed", "hold", "review_required", "all"] as const).map(s => (
+                <Button
+                  key={s}
+                  data-testid={`billing-filter-${s}`}
+                  variant={billingQueueFilter === s ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs capitalize"
+                  onClick={() => { setBillingQueueFilter(s); setBillingSelectedIds(new Set()); }}
+                >
+                  {s === "review_required" ? "Review" : s}
+                </Button>
+              ))}
+              <div className="ml-auto flex gap-2">
+                {billingSelectedIds.size > 0 && (
+                  <>
+                    <Button
+                      data-testid="billing-bulk-queue"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={async () => {
+                        const resp = await fetch("/api/admin/billing-bulk-update", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                          body: JSON.stringify({ ids: [...billingSelectedIds], billing_workflow_status: "queued" }),
+                        });
+                        const result = await resp.json();
+                        if (resp.ok) {
+                          toast({ description: `${result.updated} leads queued` });
+                          setBillingSelectedIds(new Set());
+                          queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                        } else { toast({ description: result.error, variant: "destructive" }); }
+                      }}
+                    >
+                      Queue ({billingSelectedIds.size})
+                    </Button>
+                    <Button
+                      data-testid="billing-bulk-hold"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs text-orange-600 border-orange-300"
+                      onClick={async () => {
+                        const reason = prompt("Hold reason (optional):");
+                        const resp = await fetch("/api/admin/billing-bulk-update", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                          body: JSON.stringify({ ids: [...billingSelectedIds], billing_workflow_status: "hold", billing_hold_reason: reason || undefined }),
+                        });
+                        const result = await resp.json();
+                        if (resp.ok) {
+                          toast({ description: `${result.updated} leads placed on hold` });
+                          setBillingSelectedIds(new Set());
+                          queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                        } else { toast({ description: result.error, variant: "destructive" }); }
+                      }}
+                    >
+                      Hold ({billingSelectedIds.size})
+                    </Button>
+                  </>
+                )}
+                <Button
+                  data-testid="billing-export-csv"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = `/api/admin/billing-export?t=${Date.now()}`;
+                    link.download = "billing-export.csv";
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("GET", `/api/admin/billing-export`);
+                    xhr.setRequestHeader("x-admin-key", adminKey);
+                    xhr.responseType = "blob";
+                    xhr.onload = () => {
+                      const url = URL.createObjectURL(xhr.response);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "billing-export.csv";
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    };
+                    xhr.send();
+                  }}
+                >
+                  <Download className="h-3 w-3 mr-1" /> Export CSV
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">{billingQueueLeads.length} lead{billingQueueLeads.length !== 1 ? "s" : ""}</p>
+
+            {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
+
+            <div className="space-y-1">
+              {billingQueueLeads.length > 0 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    data-testid="billing-select-all"
+                    className="h-3.5 w-3.5"
+                    checked={billingSelectedIds.size === billingQueueLeads.length && billingQueueLeads.length > 0}
+                    onChange={e => {
+                      if (e.target.checked) setBillingSelectedIds(new Set(billingQueueLeads.map(l => l.id)));
+                      else setBillingSelectedIds(new Set());
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">Select all</span>
+                </div>
+              )}
+              {billingQueueLeads.map(lead => {
+                const wfs = lead.billing_workflow_status || (lead.billed ? "charged" : lead.is_billable ? "ready" : "");
+                const wfsColors: Record<string, string> = {
+                  ready: "bg-blue-100 text-blue-800", queued: "bg-purple-100 text-purple-800",
+                  charged: "bg-green-100 text-green-800", failed: "bg-red-100 text-red-800",
+                  hold: "bg-orange-100 text-orange-800", review_required: "bg-yellow-100 text-yellow-800",
+                };
+                return (
+                  <div key={lead.id} className="flex items-center gap-2 p-2 rounded border text-xs hover:bg-slate-50" data-testid={`billing-row-${lead.id}`}>
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 shrink-0"
+                      checked={billingSelectedIds.has(lead.id)}
+                      onChange={e => {
+                        const next = new Set(billingSelectedIds);
+                        e.target.checked ? next.add(lead.id) : next.delete(lead.id);
+                        setBillingSelectedIds(next);
+                      }}
+                      data-testid={`billing-check-${lead.id}`}
+                    />
+                    <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-6 gap-1 items-center">
+                      <div className="truncate font-mono text-[10px]" title={lead.id}>{lead.id.substring(0, 8)}</div>
+                      <div className="truncate text-[10px]">{partnerNameMap[lead.routed_to_partner_id || ""] || "—"}</div>
+                      <div className="truncate text-[10px]">{(lead.category || "—").replace(/-/g, " ")}</div>
+                      <div className="text-[10px]">{lead.user_city || ""}{lead.user_city && lead.user_state ? ", " : ""}{lead.user_state || ""}</div>
+                      <div className="text-[10px] font-medium">${parseFloat(String(lead.billing_amount || 49.99)).toFixed(2)}</div>
+                      <div className="flex items-center gap-1">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${wfsColors[wfs] || "bg-slate-100 text-slate-600"}`}>
+                          {(wfs || "n/a").replace(/_/g, " ")}
+                        </span>
+                        {lead.stripe_payment_status && lead.stripe_payment_status !== "pending" && (
+                          <span className={`text-[9px] ${lead.stripe_payment_status === "paid" ? "text-green-600" : "text-slate-500"}`}>
+                            {lead.stripe_payment_status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      {wfs === "ready" && !lead.billed && (
+                        <button
+                          data-testid={`billing-charge-${lead.id}`}
+                          className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[9px] hover:bg-indigo-700"
+                          onClick={async () => {
+                            if (!window.confirm(`Charge $${parseFloat(String(lead.billing_amount || 49.99)).toFixed(2)}?`)) return;
+                            const resp = await fetch(`/api/admin/billing-charge/${lead.id}`, {
+                              method: "POST", headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                            });
+                            if (resp.ok) {
+                              const { url } = await resp.json();
+                              if (url) window.open(url, "_blank");
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                            } else {
+                              const err = await resp.json();
+                              toast({ description: err.error, variant: "destructive" });
+                            }
+                          }}
+                        >Charge</button>
+                      )}
+                      {wfs === "failed" && !lead.billed && (
+                        <button
+                          data-testid={`billing-retry-${lead.id}`}
+                          className="px-2 py-0.5 bg-amber-600 text-white rounded text-[9px] hover:bg-amber-700"
+                          onClick={async () => {
+                            if (!window.confirm("Retry payment for this lead?")) return;
+                            const resp = await fetch(`/api/admin/billing-retry/${lead.id}`, {
+                              method: "POST", headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                            });
+                            if (resp.ok) {
+                              const { url } = await resp.json();
+                              if (url) window.open(url, "_blank");
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                            } else {
+                              const err = await resp.json();
+                              toast({ description: err.error, variant: "destructive" });
+                            }
+                          }}
+                        >Retry</button>
+                      )}
+                      {wfs !== "hold" && wfs !== "charged" && !lead.billed && (
+                        <button
+                          data-testid={`billing-hold-${lead.id}`}
+                          className="px-2 py-0.5 bg-orange-500 text-white rounded text-[9px] hover:bg-orange-600"
+                          onClick={async () => {
+                            const reason = prompt("Hold reason (optional):");
+                            const resp = await fetch(`/api/admin/billing-workflow/${lead.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                              body: JSON.stringify({ billing_workflow_status: "hold", billing_hold_reason: reason || undefined }),
+                            });
+                            if (resp.ok) {
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                              toast({ description: "Lead placed on hold" });
+                            } else {
+                              const err = await resp.json();
+                              toast({ description: err.error, variant: "destructive" });
+                            }
+                          }}
+                        >Hold</button>
+                      )}
+                      {wfs === "hold" && (
+                        <button
+                          data-testid={`billing-unhold-${lead.id}`}
+                          className="px-2 py-0.5 bg-blue-500 text-white rounded text-[9px] hover:bg-blue-600"
+                          onClick={async () => {
+                            const resp = await fetch(`/api/admin/billing-workflow/${lead.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                              body: JSON.stringify({ billing_workflow_status: "ready" }),
+                            });
+                            if (resp.ok) {
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                              toast({ description: "Hold removed — lead is ready" });
+                            } else {
+                              const err = await resp.json();
+                              toast({ description: err.error, variant: "destructive" });
+                            }
+                          }}
+                        >Remove Hold</button>
+                      )}
+                      {(lead.stripe_checkout_session_id && !lead.billed) && (
+                        <button
+                          data-testid={`billing-check-${lead.id}`}
+                          className="px-2 py-0.5 bg-slate-500 text-white rounded text-[9px] hover:bg-slate-600"
+                          onClick={async () => {
+                            const resp = await fetch(`/api/admin/billing-check-payment/${lead.id}`, {
+                              headers: { "x-admin-key": adminKey },
+                            });
+                            if (resp.ok) {
+                              const result = await resp.json();
+                              if (result.status === "paid_now_billed") {
+                                toast({ description: "Payment confirmed — lead marked charged" });
+                              } else if (result.status === "expired") {
+                                toast({ description: "Checkout expired — can retry" });
+                              } else {
+                                toast({ description: `Status: ${result.status}` });
+                              }
+                              queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                            }
+                          }}
+                        >Check</button>
+                      )}
+                    </div>
+                    {lead.billing_hold_reason && wfs === "hold" && (
+                      <span className="text-[9px] text-orange-600 italic ml-1" title={lead.billing_hold_reason}>
+                        {lead.billing_hold_reason.length > 30 ? lead.billing_hold_reason.substring(0, 30) + "..." : lead.billing_hold_reason}
+                      </span>
+                    )}
+                    {lead.billed_at && (
+                      <span className="text-[9px] text-muted-foreground ml-1">{new Date(lead.billed_at).toLocaleDateString()}</span>
+                    )}
+                    {lead.stripe_payment_intent_id && (
+                      <span className="text-[9px] text-muted-foreground font-mono ml-1" title={lead.stripe_payment_intent_id}>PI: {lead.stripe_payment_intent_id.substring(0, 15)}...</span>
+                    )}
+                  </div>
+                );
+              })}
+              {!navLoading && billingQueueLeads.length === 0 && (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  No leads in {billingQueueFilter === "all" ? "billing" : billingQueueFilter.replace(/_/g, " ")} queue.
+                </p>
+              )}
+            </div>
+          </>
         )}
 
         {activeTab === "resources" && (<>

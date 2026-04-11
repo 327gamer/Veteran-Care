@@ -347,6 +347,20 @@ Apply this exact system. Not a variation. Not a partial fix. It works first time
 - All future features, pages, modals
 - Any future apps built from this codebase
 
+## Lead Billing System (Chunks 5.0–5.2)
+- **Billing columns** (Supabase `navigator_requests`): `is_billable`, `billed`, `billed_at`, `billing_amount` (default $49.99), `billing_status`
+- **Stripe audit columns**: `stripe_payment_intent_id`, `stripe_checkout_session_id`, `stripe_payment_status`
+- **Workflow operations columns** (chunk 5.2): `billing_workflow_status` (ready/queued/charged/failed/hold/review_required), `billing_hold_reason`
+- **Billable rule**: `routed_to_partner_id IS NOT NULL AND email_sent = true AND email_sent_at IS NOT NULL`
+- **Charge flow**: Admin clicks "Charge Now" → Stripe Checkout Session → payment → webhook marks billed
+- **Manual billing**: Admin "Mark Billed" bypasses Stripe
+- **Hold**: Admin places lead on hold → charge blocked until removed
+- **Retry**: Failed payments can be retried with fresh checkout
+- **Bulk ops**: Batch queue/hold for multiple leads
+- **Export**: CSV export of all billing data
+- **SQL migrations**: `supabase/chunk-5.0-billing-columns.sql`, `supabase/chunk-5.1-stripe-billing-columns.sql`, `supabase/chunk-5.2-billing-workflow.sql`
+- **Admin UI**: Billing tab in admin panel with queue view, summary cards, filters, bulk actions
+
 ## Design Decisions
 - App name: "Veteran Care" (two words) — configured in shared/platform.ts
 - Logo: `Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png` (metallic dog tag with TM mark)
