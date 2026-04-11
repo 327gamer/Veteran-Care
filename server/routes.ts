@@ -6042,7 +6042,7 @@ export async function registerRoutes(
       await resendClient.emails.send({
         from: fromEmail,
         to: email,
-        subject: "Your Veteran Care Resource Results",
+        subject: "Veteran Care — Your Saved Resources",
         html,
       });
 
@@ -7300,7 +7300,7 @@ export async function registerRoutes(
         await resendClient.emails.send({
           from: fromEmail,
           to: vetEmail,
-          subject: routed ? "Veteran Care — Help Is On the Way" : "Veteran Care — Your Resources",
+          subject: "Veteran Care — Your Support Request",
           html,
         });
         emailSent = true;

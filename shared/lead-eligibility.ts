@@ -42,6 +42,11 @@ const LEAD_ELIGIBLE_CATEGORIES: Record<string, CategoryEligibility> = {
     eligible: true,
     allSubcategories: false,
     eligibleSubcategories: [
+      "financial-counseling",
+      "debt-relief",
+      "credit-repair",
+      "tax-help",
+      "other-financial",
       "mortgage-home-loans",
       "mortgages",
       "home-loans",
@@ -51,9 +56,7 @@ const LEAD_ELIGIBLE_CATEGORIES: Record<string, CategoryEligibility> = {
       "first-time-buyers",
       "personal-auto-loans",
       "personal-loans",
-      "credit-repair",
       "debt-consolidation",
-      "debt-relief",
       "debt-management",
       "financial-planning",
       "tax-preparation",
@@ -93,10 +96,15 @@ const LEAD_ELIGIBLE_CATEGORIES: Record<string, CategoryEligibility> = {
     eligible: true,
     allSubcategories: false,
     eligibleSubcategories: [
+      "va-home-loan",
       "va-home-loans",
+      "rental-assistance",
+      "homeless-prevention",
+      "home-modification",
       "home-ownership",
       "moving-relocation",
       "accessibility-modifications",
+      "other-housing",
     ],
   },
 
@@ -150,7 +158,8 @@ export function isLeadEligibleSubcategory(
   if (entry.allSubcategories) return true;
   if (!subcategorySlug) return true;
   if (!entry.eligibleSubcategories) return false;
-  return entry.eligibleSubcategories.includes(subcategorySlug);
+  const normalized = subcategorySlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return entry.eligibleSubcategories.includes(normalized) || entry.eligibleSubcategories.includes(subcategorySlug);
 }
 
 export function getLeadEligibility(
@@ -204,7 +213,8 @@ export function getLeadEligibility(
     };
   }
 
-  if (entry.eligibleSubcategories?.includes(subcategorySlug)) {
+  const normalized = subcategorySlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (entry.eligibleSubcategories?.includes(normalized) || entry.eligibleSubcategories?.includes(subcategorySlug)) {
     return {
       isLeadEligible: true,
       reason: "Category and subcategory are both lead-eligible",

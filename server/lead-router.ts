@@ -106,8 +106,11 @@ function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: s
     if (ruleCategory && categorySlug && ruleCategory !== categorySlug) return false;
     if (ruleCategory && !categorySlug) return false;
 
-    if (rule.subcategory && lead.subcategory &&
-        rule.subcategory.toLowerCase() !== lead.subcategory.toLowerCase()) return false;
+    if (rule.subcategory && lead.subcategory) {
+      const ruleSubNorm = rule.subcategory.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const leadSubNorm = lead.subcategory.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      if (ruleSubNorm !== leadSubNorm) return false;
+    }
     if (rule.subcategory && !lead.subcategory) return false;
 
     if (rule.urgency && lead.urgency && rule.urgency !== lead.urgency) return false;
@@ -366,7 +369,10 @@ export async function routeLead(leadId: string): Promise<{
       categorySlug = lead.category;
     }
   }
-  const subcategorySlug = lead.subcategory || null;
+  let subcategorySlug = lead.subcategory || null;
+  if (subcategorySlug) {
+    subcategorySlug = subcategorySlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
   const leadClass = resolveLeadClass(lead);
 
   const attributionFields = {

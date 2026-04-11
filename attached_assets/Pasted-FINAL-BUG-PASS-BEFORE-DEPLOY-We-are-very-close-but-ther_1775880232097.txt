@@ -1,0 +1,103 @@
+FINAL BUG PASS BEFORE DEPLOY
+
+We are very close, but there is still one real bug remaining in the live user submission path.
+
+Do NOT deploy yet.
+
+-------------------------------------
+ISSUE 1 – “UNKNOWN DESTINATION” STILL APPEARS ON REAL USER TESTS
+-------------------------------------
+
+Important finding:
+
+Your internal validation tests routed correctly.
+
+However, manually submitted real-user tests are still producing:
+- Assigned to: Unknown Destination
+- Type: Manual
+- Delivery: Internal / manual
+- Status: Unrouted
+
+This happened on housing tests using the live support request form, including manual city/state override.
+
+That means the routing engine may be working in internal validation, but the actual user-submission flow is still failing in some cases.
+
+-------------------------------------
+WHAT NEEDS TO BE CHECKED
+-------------------------------------
+
+Please trace the FULL path for a real support request submission:
+
+1. Support Request form submission
+2. saved request payload
+3. category + subcategory normalization
+4. city/state override handling
+5. route resolution
+6. assigned destination persistence
+7. admin card display
+
+We need to know exactly why:
+- internal test leads resolve correctly
+- but live/manual submitted leads sometimes fall to Unknown Destination
+
+-------------------------------------
+LIKELY FAILURE POINTS TO CHECK
+-------------------------------------
+
+Please verify all of the following:
+
+A) City/state override values are actually being written into the request record and used in routing logic
+
+B) category_slug is resolving correctly for live form submissions, not just internal test-created requests
+
+C) the destination entity name is being persisted after successful routing, not just inferred during internal test flow
+
+D) the admin card is reading the same destination source for live requests and internal validation requests
+
+E) no fallback/default label such as “Unknown Destination” is being shown when a real destination actually exists
+
+-------------------------------------
+ISSUE 2 – EMAIL SUBJECTS ARE INCONSISTENT
+-------------------------------------
+
+Current issue:
+Some emails show one subject line and others show another.
+
+Examples observed:
+- “Help is on the way”
+- “Your Resources”
+
+We need a cleaner, unified subject strategy so the platform feels consistent.
+
+Please review all user-facing support/routing email subject lines and standardize them.
+
+Suggested logic:
+- acknowledgement email = one consistent subject
+- routed resource/help email = one consistent subject
+
+Do not leave mixed subject naming unless intentionally separated by clear workflow type.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Please run and confirm using REAL form submissions, not only internal test-created records:
+
+1. Charleston housing request from live support form
+2. Greenville housing request from live support form using city/state override
+3. financial request from live support form
+
+For each, confirm:
+- assigned destination name is real
+- no “Unknown Destination”
+- correct destination type
+- recipient email visible
+- status correct
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+We are now debugging the last real submission-path mismatch.
+
+Do not expand scope beyond this pass.

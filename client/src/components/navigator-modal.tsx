@@ -210,10 +210,16 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
   useEffect(() => {
     if (open) {
       if (context?.category) {
+        let ctxSub = context.subcategory || "";
+        if (ctxSub && !ctxSub.includes("-")) {
+          ctxSub = ctxSub.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        }
+        const catSubs = SUBCATEGORIES[context.category || ""] || [];
+        const validSub = catSubs.find(s => s.value === ctxSub || s.label === context.subcategory);
         setForm(p => ({
           ...p,
           category: context.category || "",
-          subcategory: context.subcategory || "",
+          subcategory: validSub?.value || ctxSub,
         }));
       }
       if (initialUrgency) {
@@ -268,7 +274,8 @@ export default function NavigatorModal({ open, onOpenChange, context, initialUrg
           message: form.message || null,
           preferred_contact: form.preferred_contact,
           category: form.category || null,
-          subcategory: subcategoryLabel || null,
+          subcategory: form.subcategory || null,
+          subcategory_label: subcategoryLabel || null,
           user_state: finalState,
           user_city: finalCity,
           user_zip: loc.zip || null,
