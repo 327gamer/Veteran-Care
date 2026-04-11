@@ -220,6 +220,8 @@ function AdminResourcesInner() {
   const [billingQueueFilter, setBillingQueueFilter] = useState<string>("ready");
   const [billingSelectedIds, setBillingSelectedIds] = useState<Set<string>>(new Set());
   const [holdReasonInput, setHoldReasonInput] = useState("");
+  const [leadQuickFilter, setLeadQuickFilter] = useState("");
+  const [showWorkflowHelper, setShowWorkflowHelper] = useState(false);
 
   // Routing Partners client-side filters
   const [partnerSearch, setPartnerSearch] = useState("");
@@ -935,6 +937,40 @@ function AdminResourcesInner() {
     });
   }, [navRequests, leadSearch, leadStateFilter, leadCategoryFilter, leadRoutedFilter]);
 
+  const opsSummary = useMemo(() => {
+    const now = Date.now();
+    const h24 = 24 * 60 * 60 * 1000;
+    const all = navRequests;
+    const newLast24h = all.filter(r => (now - new Date(r.created_at).getTime()) < h24).length;
+    const pending = all.filter(r => r.status === "new" || r.status === "in_progress").length;
+    const readyToCharge = all.filter(r => r.billing_workflow_status === "ready" || (r.is_billable && !r.billed && !r.billing_workflow_status)).length;
+    const failed = all.filter(r => r.billing_workflow_status === "failed").length;
+    const onHold = all.filter(r => r.billing_workflow_status === "hold").length;
+    const disputed = all.filter(r => r.is_disputed).length;
+    const reviewRequired = all.filter(r => r.billing_workflow_status === "review_required").length;
+    const totalProcessed = all.filter(r => r.status === "resolved" || r.billed).length;
+    const totalSuccess = all.filter(r => r.billed || r.billing_workflow_status === "charged").length;
+    const totalFailed = all.filter(r => r.billing_workflow_status === "failed").length;
+    return { newLast24h, pending, readyToCharge, failed, onHold, disputed, reviewRequired, totalProcessed, totalSuccess, totalFailed };
+  }, [navRequests]);
+
+  const launchFilteredLeads = useMemo(() => {
+    if (!leadQuickFilter) return filteredNavRequests;
+    const now = Date.now();
+    const h24 = 24 * 60 * 60 * 1000;
+    return filteredNavRequests.filter(r => {
+      if (leadQuickFilter === "24h") return (now - new Date(r.created_at).getTime()) < h24;
+      if (leadQuickFilter === "pending") return r.status === "new" || r.status === "in_progress";
+      if (leadQuickFilter === "ready") return r.billing_workflow_status === "ready" || (r.is_billable && !r.billed && !r.billing_workflow_status);
+      if (leadQuickFilter === "failed") return r.billing_workflow_status === "failed";
+      if (leadQuickFilter === "hold") return r.billing_workflow_status === "hold";
+      if (leadQuickFilter === "disputed") return r.is_disputed;
+      if (leadQuickFilter === "review") return r.billing_workflow_status === "review_required";
+      if (leadQuickFilter === "caution") return (r.reassignment_count || 0) > 0 || r.is_disputed || r.response_status === "declined" || r.billing_workflow_status === "failed";
+      return true;
+    });
+  }, [filteredNavRequests, leadQuickFilter]);
+
   const billingQueueLeads = useMemo(() => {
     return navRequests.filter(r => {
       if (billingQueueFilter === "all") return r.is_billable || r.billed;
@@ -1103,6 +1139,60 @@ function AdminResourcesInner() {
           </Button>
         </div>
 
+        {(activeTab === "leads" || activeTab === "billing") && navRequests.length > 0 && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 md:grid-cols-7 gap-2" data-testid="ops-summary-panel">
+              {[
+                { label: "New (24h)", value: opsSummary.newLast24h, color: "text-blue-700", bg: "bg-blue-50" },
+                { label: "Pending", value: opsSummary.pending, color: "text-amber-700", bg: "bg-amber-50" },
+                { label: "Ready", value: opsSummary.readyToCharge, color: "text-green-700", bg: "bg-green-50" },
+                { label: "Failed", value: opsSummary.failed, color: "text-red-700", bg: "bg-red-50" },
+                { label: "Hold", value: opsSummary.onHold, color: "text-orange-700", bg: "bg-orange-50" },
+                { label: "Disputed", value: opsSummary.disputed, color: "text-red-700", bg: "bg-red-50" },
+                { label: "Review", value: opsSummary.reviewRequired, color: "text-purple-700", bg: "bg-purple-50" },
+              ].map(item => (
+                <div key={item.label} className={`${item.bg} rounded p-2 text-center`}>
+                  <p className={`text-lg font-bold ${item.color}`} data-testid={`text-ops-${item.label.toLowerCase().replace(/[^a-z]/g, "")}`}>{item.value}</p>
+                  <p className="text-[9px] text-muted-foreground uppercase">{item.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center">
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span data-testid="text-ops-processed">Processed: <strong className="text-foreground">{opsSummary.totalProcessed}</strong></span>
+                <span data-testid="text-ops-paid">Paid: <strong className="text-green-600">{opsSummary.totalSuccess}</strong></span>
+                <span data-testid="text-ops-failed-total">Failed: <strong className="text-red-600">{opsSummary.totalFailed}</strong></span>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px]" data-testid="button-workflow-helper"
+                onClick={() => setShowWorkflowHelper(!showWorkflowHelper)}>
+                {showWorkflowHelper ? "Hide" : "Daily Checklist"}
+              </Button>
+            </div>
+
+            {showWorkflowHelper && (
+              <div className="border rounded p-3 bg-slate-50 space-y-1.5" data-testid="workflow-helper-panel">
+                <p className="text-xs font-semibold text-slate-800">Daily Workflow Checklist</p>
+                {[
+                  { step: "1", text: "Review new leads (last 24h)", done: opsSummary.newLast24h === 0 },
+                  { step: "2", text: "Review pending / partner responses", done: opsSummary.pending === 0 },
+                  { step: "3", text: "Review ready-to-charge leads", done: opsSummary.readyToCharge === 0 },
+                  { step: "4", text: "Move questionable leads to hold/review", done: false },
+                  { step: "5", text: "Run billing for approved leads", done: false },
+                  { step: "6", text: "Review failed payments and retry", done: opsSummary.failed === 0 },
+                  { step: "7", text: "Review disputes and resolve", done: opsSummary.disputed === 0 },
+                ].map(item => (
+                  <div key={item.step} className={`flex items-center gap-2 text-xs ${item.done ? "text-green-600" : "text-slate-700"}`}>
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ${item.done ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>{item.done ? "\u2713" : item.step}</span>
+                    <span>{item.text}</span>
+                    {item.done && <span className="text-[9px] text-green-500 ml-auto">Clear</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "leads" && (
           <>
             <div className="flex gap-2 flex-wrap">
@@ -1130,6 +1220,27 @@ function AdminResourcesInner() {
                   {bulkArchiveMutation.isPending ? "Archiving..." : "Archive All"}
                 </Button>
               )}
+            </div>
+
+            <div className="flex gap-1.5 flex-wrap" data-testid="launch-filters">
+              {[
+                { key: "", label: "All" },
+                { key: "24h", label: "Last 24h" },
+                { key: "pending", label: "Pending" },
+                { key: "ready", label: "Ready" },
+                { key: "failed", label: "Failed" },
+                { key: "hold", label: "Hold" },
+                { key: "disputed", label: "Disputed" },
+                { key: "review", label: "Review" },
+                { key: "caution", label: "Caution" },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  data-testid={`launch-filter-${f.key || "all"}`}
+                  className={`px-2 py-1 rounded text-[10px] font-medium border ${leadQuickFilter === f.key ? "bg-primary text-white border-primary" : f.key === "caution" ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                  onClick={() => setLeadQuickFilter(f.key)}
+                >{f.label}</button>
+              ))}
             </div>
 
             <div className="space-y-2">
@@ -1173,7 +1284,7 @@ function AdminResourcesInner() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground ml-auto">
-                  {filteredNavRequests.length}{filteredNavRequests.length !== navRequests.length ? ` of ${navRequests.length}` : ""} request{navRequests.length !== 1 ? "s" : ""}
+                  {launchFilteredLeads.length}{launchFilteredLeads.length !== navRequests.length ? ` of ${navRequests.length}` : ""} request{navRequests.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -1181,7 +1292,7 @@ function AdminResourcesInner() {
             {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 
             <div className="space-y-3">
-              {[...filteredNavRequests]
+              {[...launchFilteredLeads]
                 .sort((a, b) => {
                   const urgencyRank: Record<string, number> = { immediate: 0, same_week: 1, standard: 2, information: 3 };
                   const aRank = urgencyRank[a.urgency || ""] ?? 4;
@@ -1255,6 +1366,44 @@ function AdminResourcesInner() {
                           {statusInfo.label}
                         </Badge>
                       </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {(req.reassignment_count || 0) > 0 && (
+                        <Badge data-testid={`badge-reassigned-${req.id}`} variant="outline" className="text-[9px] bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <ArrowRightLeft className="h-2.5 w-2.5 mr-0.5" /> Reassigned ({req.reassignment_count}x)
+                        </Badge>
+                      )}
+                      {req.is_disputed && (
+                        <Badge data-testid={`badge-disputed-${req.id}`} variant="outline" className="text-[9px] bg-red-100 text-red-800 border-red-300">
+                          <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Disputed
+                        </Badge>
+                      )}
+                      {req.billing_workflow_status === "failed" && (
+                        <Badge data-testid={`badge-payment-failed-${req.id}`} variant="outline" className="text-[9px] bg-red-100 text-red-700 border-red-300">
+                          Payment Failed
+                        </Badge>
+                      )}
+                      {req.billing_workflow_status === "hold" && (
+                        <Badge data-testid={`badge-on-hold-${req.id}`} variant="outline" className="text-[9px] bg-orange-100 text-orange-700 border-orange-300">
+                          On Hold
+                        </Badge>
+                      )}
+                      {req.billing_workflow_status === "review_required" && (
+                        <Badge data-testid={`badge-review-${req.id}`} variant="outline" className="text-[9px] bg-purple-100 text-purple-700 border-purple-300">
+                          Review
+                        </Badge>
+                      )}
+                      {req.response_status === "declined" && (
+                        <Badge data-testid={`badge-declined-${req.id}`} variant="outline" className="text-[9px] bg-slate-100 text-slate-700 border-slate-300">
+                          Declined
+                        </Badge>
+                      )}
+                      {((req.reassignment_count || 0) > 0 || req.is_disputed || req.response_status === "declined" || req.billing_workflow_status === "failed") && (
+                        <span className="text-[9px] text-amber-600 font-semibold flex items-center gap-0.5" data-testid={`badge-caution-${req.id}`}>
+                          <AlertTriangle className="h-2.5 w-2.5" /> CAUTION
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">

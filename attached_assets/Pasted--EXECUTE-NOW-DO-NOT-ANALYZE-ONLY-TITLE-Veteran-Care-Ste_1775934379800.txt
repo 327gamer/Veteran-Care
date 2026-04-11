@@ -1,0 +1,177 @@
+🚨 EXECUTE NOW — DO NOT ANALYZE ONLY
+
+TITLE:
+Veteran Care – Step 5.4 – Launch Operations Layer
+
+DATE:
+4.11.2026
+
+-------------------------------------
+EXECUTION MODE
+-------------------------------------
+
+This is a LIGHTWEIGHT OPERATIONS LAYER.
+
+DO NOT modify:
+- routing logic
+- tracking logic
+- reassignment logic
+- Stripe logic
+- attribution
+- pricing
+
+This is strictly:
+→ visibility
+→ admin clarity
+→ workflow guidance
+→ launch execution support
+
+-------------------------------------
+STEP-BY-STEP IMPLEMENTATION
+-------------------------------------
+
+STEP 1 — OPERATIONS SUMMARY PANEL
+
+Add a lightweight panel at top of Admin showing:
+
+- New leads (last 24h)
+- Pending leads
+- Ready to charge
+- Failed payments
+- On hold
+- Disputed
+- Review required
+
+RULE:
+- must load fast
+- must use existing data
+- no heavy queries
+- no charts
+
+-------------------------------------
+
+STEP 2 — DAILY WORKFLOW HELPER
+
+Add a visible admin guidance panel:
+
+Display EXACT checklist:
+
+1. Review new leads
+2. Review pending / responses
+3. Review ready-to-charge
+4. Move questionable → hold/review
+5. Run billing
+6. Review failed payments
+7. Review disputes
+
+This can be:
+- card
+- sidebar
+- static block
+
+DO NOT overbuild.
+
+-------------------------------------
+
+STEP 3 — EXCEPTION VISIBILITY
+
+Add clear badges/labels on leads:
+
+Show when:
+
+- reassignment_count > 0 → “Reassigned”
+- is_disputed = true → “Disputed”
+- billing_workflow_status = failed → “Payment Failed”
+- billing_workflow_status = hold → “On Hold”
+- billing_workflow_status = review_required → “Review”
+- response_status = declined → “Declined”
+
+Must be visually obvious.
+
+-------------------------------------
+
+STEP 4 — LAUNCH FILTERS
+
+Add quick filters:
+
+- Last 24h
+- Pending
+- Ready
+- Failed
+- Hold
+- Disputed
+- Review Required
+
+Must work instantly.
+
+-------------------------------------
+
+STEP 5 — MANUAL → BATCH READINESS
+
+Add simple counters (no automation):
+
+- total processed leads
+- total successful payments
+- total failed payments
+
+Display in admin.
+
+This is for decision-making later.
+
+-------------------------------------
+
+STEP 6 — BILLING DISCIPLINE SUPPORT
+
+Highlight leads needing caution:
+
+If ANY of these:
+- reassigned
+- disputed
+- declined
+- failed payment history
+
+→ visually flag lead
+
+Goal:
+prevent bad charges
+
+-------------------------------------
+
+STEP 7 — PERFORMANCE RULE
+
+This layer MUST:
+
+- not slow admin page
+- not introduce lag
+- not break existing flows
+
+-------------------------------------
+
+STEP 8 — VALIDATION REQUIRED
+
+You must confirm:
+
+1. summary panel shows correct counts
+2. filters work correctly
+3. exception flags visible
+4. workflow helper visible
+5. no regression anywhere
+6. UI remains lightweight
+
+-------------------------------------
+
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+- summary panel working
+- filters working
+- exception flags active
+- workflow helper added
+- validation results
+- confirmation no core logic modified
+
+-------------------------------------
+
+BEGIN EXECUTION
