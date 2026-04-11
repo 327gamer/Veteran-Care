@@ -1,0 +1,148 @@
+Proceed with Chunk 4.5 – Post-Launch Validation + Intelligence Layer.
+
+IMPORTANT:
+This is a READ-ONLY intelligence layer.
+NO system behavior changes allowed.
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This is:
+- visibility
+- inspection
+- query access
+
+This is NOT:
+- UI work
+- dashboard work
+- analytics build
+- routing changes
+
+-------------------------------------
+DELIVERY REQUIREMENT
+-------------------------------------
+
+Implement ONE of the following (preferred order):
+
+1) Supabase SQL query set (preferred)
+2) Lightweight internal endpoints (if needed)
+
+NO frontend required.
+
+-------------------------------------
+REQUIRED OUTPUTS
+-------------------------------------
+
+Provide a clean set of queries (copy-ready) for:
+
+-------------------------------------
+1) FULL LEAD LIFECYCLE VIEW
+-------------------------------------
+
+Fields required:
+- id
+- created_at
+- assigned_at
+- email_sent_at
+- response_status
+- response_at
+- reassignment_count
+- assigned_to
+
+-------------------------------------
+2) RESPONSE TIME
+-------------------------------------
+
+Must be queryable as:
+
+response_time = response_at - assigned_at
+
+-------------------------------------
+3) CORE METRICS
+-------------------------------------
+
+Provide queries for:
+
+A) Total leads (by date range)
+
+B) Leads by category
+
+C) Leads by city/state
+
+D) Response status breakdown:
+- pending
+- accepted
+- declined
+- need_info
+- completed
+
+E) Average response time
+
+F) Reassignment frequency
+
+G) % leads with no response after 72 hours
+
+-------------------------------------
+4) FAILURE VISIBILITY
+-------------------------------------
+
+Query for:
+
+- email_sent = false
+- assigned_to IS NULL
+- any abnormal states
+
+-------------------------------------
+5) CATEGORY DEMAND
+-------------------------------------
+
+Query for:
+
+- top categories by volume
+- subcategory usage
+
+-------------------------------------
+6) PARTNER ENGAGEMENT
+-------------------------------------
+
+Query for:
+
+- leads per partner
+- response rate per partner
+- avg response time per partner
+
+-------------------------------------
+REQUIREMENT
+-------------------------------------
+
+All queries must:
+- be copy/paste ready
+- work directly in Supabase SQL editor
+- use current schema (navigator_requests, etc.)
+
+-------------------------------------
+TEST CONFIRMATION
+-------------------------------------
+
+Return:
+
+- sample outputs
+- confirmation all queries work
+- confirmation NO system changes were made
+
+-------------------------------------
+STRICT RULE
+-------------------------------------
+
+Do NOT:
+- modify routing
+- modify tracking
+- modify reassignment
+- modify email logic
+- modify admin UI
+
+-------------------------------------
+
+This is visibility only.
+No system behavior changes allowed.
