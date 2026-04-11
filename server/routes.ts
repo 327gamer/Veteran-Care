@@ -86,6 +86,7 @@ async function checkNotifyEmailColumn() {
 }
 
 let hasRoutingColumns = false;
+let hasResponseTrackingColumns = false;
 let hasPartnerTable = false;
 let hasRoutingRulesTable = false;
 let hasStatesTable = false;
@@ -2545,6 +2546,24 @@ async function checkNavLifecycleColumns() {
   } else {
     hasRoutingColumns = true;
     console.log("[schema] Routing columns detected");
+  }
+
+  const { error: trackColErr } = await supabaseAdmin.from("navigator_requests").select("assigned_at, email_sent, email_sent_at, response_status, response_at").limit(1);
+  if (trackColErr && trackColErr.message.includes("does not exist")) {
+    hasResponseTrackingColumns = false;
+    console.log("[schema] Response tracking columns not found. Run in Supabase SQL editor:");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS email_sent BOOLEAN DEFAULT false;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS email_sent_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_status TEXT DEFAULT 'pending';");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_at TIMESTAMPTZ;");
+    console.log("  -- Backfill existing data:");
+    console.log("  UPDATE navigator_requests SET assigned_at = routed_at WHERE assigned_at IS NULL AND routed_at IS NOT NULL;");
+    console.log("  UPDATE navigator_requests SET email_sent = true, email_sent_at = routed_at WHERE email_sent = false AND delivery_status = 'delivered' AND routed_at IS NOT NULL;");
+    console.log("  UPDATE navigator_requests SET response_status = 'pending' WHERE response_status IS NULL;");
+  } else {
+    hasResponseTrackingColumns = true;
+    console.log("[schema] Response tracking columns detected (assigned_at, email_sent, response_status)");
   }
 
   const { error: ambErr } = await supabaseAdmin.from("navigator_requests").select("ambassador_id").limit(1);
@@ -7376,7 +7395,8 @@ export async function registerRoutes(
   app.patch("/api/admin/navigator-requests/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status, admin_notes, assigned_to, outcome, contacted_at, resolved_at, closed_at,
-            routed_to_partner_id, routed_at, delivery_status, partner_outcome } = req.body;
+            routed_to_partner_id, routed_at, delivery_status, partner_outcome,
+            response_status: reqResponseStatus } = req.body;
 
     const validStatuses = ["new", "in_progress", "resolved", "cancelled", "archived"];
     const validOutcomes = ["connected", "referred", "completed", "no_response", "not_eligible", "declined", "unable_to_contact"];
@@ -7414,6 +7434,18 @@ export async function registerRoutes(
       if (delivery_status !== undefined) updates.delivery_status = delivery_status || null;
       if (partner_outcome !== undefined) updates.partner_outcome = partner_outcome || null;
       if (closed_at !== undefined) updates.closed_at = closed_at || null;
+    }
+
+    if (hasResponseTrackingColumns) {
+      const validResponseStatuses = ["pending", "accepted", "declined", "need_info", "completed"];
+      if (reqResponseStatus !== undefined) {
+        if (validResponseStatuses.includes(reqResponseStatus)) {
+          updates.response_status = reqResponseStatus;
+          updates.response_at = new Date().toISOString();
+        } else {
+          return res.status(400).json({ error: `Invalid response_status. Valid values: ${validResponseStatuses.join(", ")}` });
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -7595,11 +7627,12 @@ export async function registerRoutes(
         manual: true,
       });
 
+      const rerouteNow = new Date().toISOString();
       const { error } = await supabaseAdmin
         .from("navigator_requests")
         .update({
           routed_to_partner_id: partner.id,
-          routed_at: new Date().toISOString(),
+          routed_at: rerouteNow,
           delivery_status: "pending",
           routing_history: history,
         })
@@ -7607,10 +7640,22 @@ export async function registerRoutes(
 
       if (error) return res.status(500).json({ error: error.message });
 
+      if (hasResponseTrackingColumns) {
+        try { await supabaseAdmin.from("navigator_requests").update({ assigned_at: rerouteNow, response_status: "pending", email_sent: false }).eq("id", id); } catch {}
+      }
+
       import("./lead-email").then(({ sendLeadNotification }) => {
-        sendLeadNotification(id, partner.id).catch((err) => {
-          console.log(`[reroute] Email notification failed for lead ${id}:`, err?.message);
-        });
+        sendLeadNotification(id, partner.id)
+          .then(async () => {
+            try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", id); } catch {}
+            if (hasResponseTrackingColumns) {
+              const emailNow = new Date().toISOString();
+              try { await supabaseAdmin.from("navigator_requests").update({ email_sent: true, email_sent_at: emailNow }).eq("id", id); } catch {}
+            }
+          })
+          .catch((err) => {
+            console.error(`[reroute] Email notification failed for lead ${id}:`, err?.message);
+          });
       });
 
       return res.json({ success: true, partner_name: partner.name });
@@ -7657,10 +7702,17 @@ export async function registerRoutes(
         assignment_type: assignmentType || "resource",
         recipient_email: recipientEmail,
       });
+      const assignNow = new Date().toISOString();
       await supabaseAdmin
         .from("navigator_requests")
-        .update({ routing_history: history })
+        .update({
+          routing_history: history,
+          delivery_status: "delivered",
+        })
         .eq("id", id);
+      if (hasResponseTrackingColumns) {
+        try { await supabaseAdmin.from("navigator_requests").update({ assigned_at: assignNow, email_sent: true, email_sent_at: assignNow, response_status: "pending" }).eq("id", id); } catch {}
+      }
     } catch {}
 
     return res.json({ success: true, sent_to: recipientEmail });

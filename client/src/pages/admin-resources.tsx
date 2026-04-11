@@ -1351,7 +1351,16 @@ function AdminResourcesInner() {
                           <p>Type: {destinationType}</p>
                           <p>Delivery: {deliveryMethod}</p>
                           <p>Status: {deliveryLabel}</p>
+                          <p>Email Sent: {req.email_sent ? "Yes" : "No"}{req.email_sent_at ? ` (${new Date(req.email_sent_at).toLocaleString()})` : ""}</p>
+                          <p>Response: <span className={`font-medium ${
+                            req.response_status === "accepted" ? "text-green-700" :
+                            req.response_status === "declined" ? "text-red-700" :
+                            req.response_status === "completed" ? "text-green-800" :
+                            req.response_status === "need_info" ? "text-amber-700" :
+                            "text-blue-700"
+                          }`}>{(req.response_status || "pending").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p>
                           {recipientEmail && <p>Recipient: {recipientEmail}</p>}
+                          {req.assigned_at && <p>Assigned: {new Date(req.assigned_at).toLocaleString()}</p>}
                         </div>
                         <div className="flex items-center justify-between">
                           {req.routed_at && <p className="text-muted-foreground text-[9px]">Routed: {new Date(req.routed_at).toLocaleString()}</p>}

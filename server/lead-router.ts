@@ -6,6 +6,23 @@ import { toCanonical } from "../shared/canonical-categories";
 import { isLeadEligibleCategory, isLeadEligibleSubcategory } from "../shared/lead-eligibility";
 import { logLeadEvent } from "./lead-events";
 
+let _trackingColumnsAvailable: boolean | null = null;
+
+async function checkTrackingColumns(): Promise<boolean> {
+  if (_trackingColumnsAvailable !== null) return _trackingColumnsAvailable;
+  const { error } = await supabaseAdmin.from("navigator_requests").select("assigned_at, email_sent, response_status").limit(1);
+  _trackingColumnsAvailable = !error || !error.message.includes("does not exist");
+  return _trackingColumnsAvailable;
+}
+
+async function setTrackingFields(leadId: string, fields: Record<string, any>): Promise<void> {
+  if (!(await checkTrackingColumns())) return;
+  const { error } = await supabaseAdmin.from("navigator_requests").update(fields).eq("id", leadId);
+  if (error) {
+    console.log(`[tracking] Failed to set tracking fields for lead ${leadId}:`, error.message);
+  }
+}
+
 const ADMIN_EMAILS = [
   platform.email.defaultNotifyEmail.toLowerCase(),
 ];
@@ -518,6 +535,7 @@ export async function routeLead(leadId: string): Promise<{
         routing_history: hist,
         admin_notes: `Auto-assigned to Resource: ${resourceFallback.name}${resourceFallback.phone ? " | " + resourceFallback.phone : ""}${resourceFallback.email ? " | " + resourceFallback.email : ""}`,
       }).eq("id", leadId);
+      setTrackingFields(leadId, { assigned_at: now, response_status: "pending", email_sent: false });
 
       logLeadEvent({
         event_type: "lead_routed",
@@ -537,7 +555,9 @@ export async function routeLead(leadId: string): Promise<{
         sendLeadNotificationDirect(leadId, resourceFallback.email, resourceFallback.name, null)
           .then(async (result) => {
             if (result.sent) {
+              const emailNow = new Date().toISOString();
               try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
+              setTrackingFields(leadId, { email_sent: true, email_sent_at: emailNow });
               logLeadEvent({
                 event_type: "lead_delivered_to_partner",
                 lead_class: leadClass, action_type: "deliver", source_surface: "lead_router",
@@ -549,7 +569,7 @@ export async function routeLead(leadId: string): Promise<{
             }
           })
           .catch((err) => {
-            console.log(`[router] Resource fallback email failed for lead ${leadId}:`, err?.message);
+            console.error(`[router] Resource fallback email failed for lead ${leadId}:`, err?.message);
           });
       }
 
@@ -604,6 +624,7 @@ export async function routeLead(leadId: string): Promise<{
       routing_history: existingHistory,
     })
     .eq("id", leadId);
+  setTrackingFields(leadId, { assigned_at: now, response_status: "pending", email_sent: false });
 
   if (updateErr) {
     console.log(`[router] Failed to route lead ${leadId}:`, updateErr.message);
@@ -648,7 +669,9 @@ export async function routeLead(leadId: string): Promise<{
         });
 
         if (match.partnerId === primaryMatch.partnerId) {
+          const emailNow = new Date().toISOString();
           try { await supabaseAdmin.from("navigator_requests").update({ delivery_status: "delivered" }).eq("id", leadId); } catch {}
+          setTrackingFields(leadId, { email_sent: true, email_sent_at: emailNow });
         }
 
         createLeadBillingRecord(leadId, match.partnerId, lead.category || null).catch((err) => {
@@ -656,7 +679,7 @@ export async function routeLead(leadId: string): Promise<{
         });
       })
       .catch(async (err) => {
-        console.log(`[router] Email notification failed for lead ${leadId} to ${match.partnerName}:`, err?.message);
+        console.error(`[router] Email notification failed for lead ${leadId} to ${match.partnerName}:`, err?.message);
 
         logLeadEvent({
           event_type: "lead_delivered_to_partner",

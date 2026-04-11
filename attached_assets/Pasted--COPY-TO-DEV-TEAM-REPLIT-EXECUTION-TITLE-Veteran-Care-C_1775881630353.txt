@@ -1,0 +1,177 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 4.1 – Response Tracking Hardening
+
+PRIORITY:
+CRITICAL (Routing Engine Completion – NOT new chunk)
+
+-------------------------------------
+CLARIFICATION (IMPORTANT)
+-------------------------------------
+
+This work is:
+
+✅ PART OF CHUNK 4 (Routing Engine)  
+❌ NOT Chunk 5 (Billing)  
+❌ NOT Chunk 6 (Reporting)  
+❌ NOT Chunk 7 (Scale)  
+❌ NOT Chunk 8 (Future Systems)
+
+We are FINALIZING routing integrity before moving forward.
+
+DO NOT introduce any billing logic, reporting dashboards, or scaling features.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Ensure EVERY routed support request is:
+
+- fully trackable
+- accountable
+- time-aware
+- ready for reassignment logic
+
+Right now:
+Routing works ✅  
+Tracking is NOT complete ❌  
+
+We fix that here.
+
+-------------------------------------
+REQUIREMENT 1 — LEAD TRACKING FIELDS
+-------------------------------------
+
+Add/verify the following fields on the support_requests (or leads) table:
+
+- assigned_at (timestamp)
+- email_sent (boolean, default false)
+- email_sent_at (timestamp, nullable)
+- response_status (string/enum)
+- response_at (timestamp, nullable)
+
+-------------------------------------
+RESPONSE STATUS VALUES (STRICT)
+-------------------------------------
+
+Must support ONLY:
+
+- pending (default)
+- accepted
+- declined
+- need_info
+- completed
+
+No other values allowed.
+
+-------------------------------------
+REQUIREMENT 2 — SET VALUES ON ROUTING
+-------------------------------------
+
+When a lead is assigned (routing occurs):
+
+System MUST:
+
+- set assigned_at = current timestamp
+- set response_status = "pending"
+- set email_sent = false (initially)
+
+-------------------------------------
+REQUIREMENT 3 — EMAIL DELIVERY TRACKING
+-------------------------------------
+
+After email is successfully sent:
+
+System MUST:
+
+- set email_sent = true
+- set email_sent_at = current timestamp
+
+If email fails:
+- leave email_sent = false
+- log error (DO NOT silently fail)
+
+-------------------------------------
+REQUIREMENT 4 — ADMIN PANEL VISIBILITY
+-------------------------------------
+
+Admin panel MUST display:
+
+- Assigned To (already working)
+- Delivery Type (already working)
+- Email Sent (true/false)
+- Response Status
+- Assigned Time
+
+NO ambiguous states allowed.
+
+-------------------------------------
+REQUIREMENT 5 — DATA INTEGRITY RULE
+-------------------------------------
+
+NO lead should exist in system where:
+
+- assigned_at is NULL
+- response_status is NULL
+
+If missing → treat as system error
+
+-------------------------------------
+REQUIREMENT 6 — NO UI OVERBUILD
+-------------------------------------
+
+Do NOT:
+
+- redesign admin panel
+- add filters
+- add dashboards
+- add analytics views
+
+ONLY expose fields already listed.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must confirm:
+
+1. Submit support request → verify:
+   - assigned_at populated
+   - response_status = pending
+
+2. Email sent → verify:
+   - email_sent = true
+   - email_sent_at populated
+
+3. Failed email (simulate) → verify:
+   - email_sent remains false
+   - error logged
+
+4. Admin panel reflects ALL values correctly
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- DB schema update (if needed)
+- backend update for routing + email tracking
+- admin panel field display
+- test confirmation
+
+-------------------------------------
+STRICT RULE
+-------------------------------------
+
+DO NOT TOUCH:
+
+- routing logic
+- category logic
+- partner priority
+- location logic
+
+This is TRACKING ONLY.
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------
