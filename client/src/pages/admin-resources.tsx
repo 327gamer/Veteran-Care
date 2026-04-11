@@ -115,6 +115,10 @@ interface NavigatorRequest {
   response_at: string | null;
   assigned_at: string | null;
   last_action_source: string | null;
+  reassignment_count: number | null;
+  last_reassigned_at: string | null;
+  previous_assigned_to: string | null;
+  escalation_count: number | null;
 }
 
 interface AdminResource {
@@ -1363,11 +1367,14 @@ function AdminResourcesInner() {
                             req.response_status === "declined" ? "text-red-700" :
                             req.response_status === "completed" ? "text-green-800" :
                             req.response_status === "need_info" ? "text-amber-700" :
+                            req.response_status === "escalation_required" ? "text-red-600 font-bold" :
                             "text-blue-700"
                           }`}>{(req.response_status || "pending").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p>
                           {req.response_at && <p>Responded: {new Date(req.response_at).toLocaleString()}{req.last_action_source === "email_link" ? " (via email)" : ""}</p>}
                           {recipientEmail && <p>Recipient: {recipientEmail}</p>}
                           {req.assigned_at && <p>Assigned: {new Date(req.assigned_at).toLocaleString()}</p>}
+                          {(req.reassignment_count ?? 0) > 0 && <p className="text-orange-600">Reassigned: {req.reassignment_count}x{req.last_reassigned_at ? ` (${new Date(req.last_reassigned_at).toLocaleString()})` : ""}</p>}
+                          <p>Delivery: {req.routed_to_partner_id && req.email_sent && req.email_sent_at ? <span className="text-green-700">Verified ✓</span> : req.delivery_status === "delivery_failed" ? <span className="text-red-700">Failed ✗</span> : req.delivery_status === "fallback_manual" ? <span className="text-orange-600">Manual Review</span> : <span className="text-blue-600">Pending</span>}</p>
                         </div>
                         <div className="flex items-center justify-between">
                           {req.routed_at && <p className="text-muted-foreground text-[9px]">Routed: {new Date(req.routed_at).toLocaleString()}</p>}

@@ -1,0 +1,291 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Chunk 4.3 & 4.4 – Failsafe Reassignment + Delivery Validation
+
+PRIORITY:
+CRITICAL (FINALIZING CHUNK 4 – ROUTING ENGINE COMPLETION)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This work is:
+
+✅ FINAL PART OF CHUNK 4 (Routing Engine Completion)  
+❌ NOT Billing  
+❌ NOT Reporting  
+❌ NOT Scale  
+❌ NOT AI expansion  
+
+Dependencies already complete:
+- routing engine ✅
+- response tracking ✅
+- email response loop (Chunk 4.2) ✅
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Complete the FINAL control layer of the routing system:
+
+1) 72-hour failsafe reassignment  
+2) delivery validation + integrity  
+
+At the end of this step:
+→ every lead must be handled, tracked, and verifiable
+
+-------------------------------------
+PART 1 — 72-HOUR FAILSAFE REASSIGNMENT
+-------------------------------------
+
+BUSINESS RULE:
+
+IF:
+- response_status = "pending"
+- AND current_time > assigned_at + 72 hours
+
+THEN:
+- reassign lead to next eligible entity
+- send new email
+- log reassignment
+
+-------------------------------------
+REQUIREMENT 1 — ELIGIBILITY
+-------------------------------------
+
+ONLY reassign if:
+- response_status = pending
+- assigned_at exists
+- NOT accepted
+- NOT completed
+- NOT declined (if handled manually)
+
+DEFAULT:
+- ONLY pending triggers reassignment
+
+-------------------------------------
+REQUIREMENT 2 — NEXT TARGET
+-------------------------------------
+
+Use SAME routing rules:
+
+- strict category match
+- location priority:
+  - city
+  - nearby
+  - state
+  - national
+- trusted partner FIRST
+- resource fallback SECOND
+
+RULES:
+- DO NOT reassign to same entity
+- DO NOT create loops
+
+-------------------------------------
+REQUIREMENT 3 — REASSIGNMENT EXECUTION
+-------------------------------------
+
+On reassignment:
+
+System MUST:
+- update assigned_to
+- update assigned_at (new timestamp)
+- reset response_status → pending
+- reset response_at → NULL
+- set email_sent = false
+
+Then:
+- send new email
+- update email_sent + email_sent_at
+
+-------------------------------------
+REQUIREMENT 4 — REASSIGNMENT TRACKING
+-------------------------------------
+
+Add:
+
+- reassignment_count (integer)
+- last_reassigned_at (timestamp)
+- previous_assigned_to (optional but recommended)
+
+-------------------------------------
+REQUIREMENT 5 — SAFETY LIMIT
+-------------------------------------
+
+Add cap:
+
+- max_reassignments = 3
+
+IF exceeded:
+- flag as:
+  - escalation_required OR
+  - manual_review
+
+DO NOT continue routing.
+
+-------------------------------------
+REQUIREMENT 6 — TRIGGER
+-------------------------------------
+
+Preferred:
+- scheduled job (cron / worker)
+- runs every few minutes
+
+Fallback:
+- admin panel load trigger
+
+Must NOT rely only on admin.
+
+-------------------------------------
+PART 2 — DELIVERY CONFIDENCE VALIDATION
+-------------------------------------
+
+OBJECTIVE:
+Ensure ZERO silent failures before billing.
+
+-------------------------------------
+REQUIREMENT 7 — DELIVERY VALIDATION
+-------------------------------------
+
+Every routed lead MUST have:
+
+- assigned_to
+- email_sent = true
+- email_sent_at populated
+
+IF NOT:
+→ flag as failure
+
+-------------------------------------
+REQUIREMENT 8 — FAILURE DETECTION
+-------------------------------------
+
+Detect:
+- missing email
+- email send failure
+- null assigned_to
+- broken routing cases
+
+System MUST:
+- log failure
+- surface in admin
+- NOT silently pass
+
+-------------------------------------
+REQUIREMENT 9 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin MUST clearly show:
+
+- Assigned To
+- Delivery Type
+- Email Sent (true/false)
+- Email Sent At
+- Response Status
+- Assigned Time
+
+Add simple indicator if needed:
+- Delivered ✅
+- Failed ❌
+
+-------------------------------------
+REQUIREMENT 10 — DATA INTEGRITY CHECK
+-------------------------------------
+
+Run validation on existing data:
+
+Check:
+- missing assigned_at
+- missing response_status
+- assigned leads with email_sent = false
+
+Fix OR flag inconsistencies.
+
+-------------------------------------
+REQUIREMENT 11 — BACKFILL
+-------------------------------------
+
+For legacy records:
+- populate missing fields
+- normalize response_status
+- ensure consistency
+
+-------------------------------------
+REQUIREMENT 12 — ZERO SILENT FAILURE RULE
+-------------------------------------
+
+System must NEVER:
+
+- assign without email attempt
+- mark assigned without delivery attempt
+- hide failures
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Reassignment:
+
+1. pending > 72h → reassigned
+2. new email sent
+3. assigned_at resets
+4. reassignment_count increments
+5. same entity not reused
+6. accepted/completed NOT reassigned
+7. cap at 3 works
+8. admin reflects updates
+
+Delivery Validation:
+
+1. normal routing → email_sent = true
+2. missing email → failure flagged
+3. email failure simulation → logged
+4. admin shows correct status
+5. no ambiguous leads
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return with:
+
+- reassignment engine implemented
+- scheduler active
+- tracking fields added
+- validation checks working
+- admin visibility confirmed
+- failure detection working
+- cleanup completed
+- test cases passed
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+- routing logic
+- category logic
+- subcategory logic
+- location priority
+- partner priority
+- fallback logic
+- billing
+- reporting
+- AI behavior
+
+-------------------------------------
+FINAL GOAL
+-------------------------------------
+
+System must be:
+
+→ 100% reliable  
+→ 100% trackable  
+→ 100% accountable  
+→ READY FOR BILLING  
+
+-------------------------------------
+END INSTRUCTION
+-------------------------------------

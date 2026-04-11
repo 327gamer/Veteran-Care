@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from "./supabase";
 import { findBestPartner } from "./lead-router";
+import { sendLeadNotification } from "./lead-email";
 
 const ESCALATION_WINDOWS: Record<string, number> = {
   immediate: 15 * 60 * 1000,
@@ -9,6 +10,7 @@ const ESCALATION_WINDOWS: Record<string, number> = {
 };
 
 const DEFAULT_WINDOW = 72 * 60 * 60 * 1000;
+const MAX_REASSIGNMENTS = 3;
 
 function getEscalationWindow(urgency: string | null): number {
   return ESCALATION_WINDOWS[urgency || ""] || DEFAULT_WINDOW;
@@ -18,33 +20,70 @@ export async function checkEscalations(): Promise<{
   escalated: number;
   rerouted: number;
   fallback: number;
+  reassigned: number;
+  deliveryFailures: number;
 }> {
   let escalated = 0;
   let rerouted = 0;
   let fallback = 0;
+  let reassigned = 0;
+  let deliveryFailures = 0;
 
   try {
-    const { data: routedLeads, error } = await supabaseAdmin
+    let { data: routedLeads, error } = await supabaseAdmin
       .from("navigator_requests")
-      .select("id, urgency, routed_to_partner_id, routed_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city")
+      .select("id, urgency, routed_to_partner_id, routed_at, assigned_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city, response_status, email_sent, email_sent_at, reassignment_count")
       .in("status", ["new", "in_progress"])
       .not("routed_to_partner_id", "is", null)
       .in("delivery_status", ["pending", "delivered", "ready_for_delivery"]);
 
+    if (error && error.message.includes("does not exist")) {
+      const retry = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, urgency, routed_to_partner_id, routed_at, assigned_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city, response_status, email_sent, email_sent_at")
+        .in("status", ["new", "in_progress"])
+        .not("routed_to_partner_id", "is", null)
+        .in("delivery_status", ["pending", "delivered", "ready_for_delivery"]);
+      routedLeads = retry.data;
+      error = retry.error;
+    }
+
     if (error) {
-      if (error.message.includes("does not exist")) return { escalated: 0, rerouted: 0, fallback: 0 };
+      if (error.message.includes("does not exist")) return { escalated: 0, rerouted: 0, fallback: 0, reassigned: 0, deliveryFailures: 0 };
       console.log("[escalation] Error fetching routed leads:", error.message);
     }
 
     const now = Date.now();
 
     for (const lead of (routedLeads || [])) {
-      const routedAt = new Date(lead.routed_at).getTime();
+      const responseStatus = lead.response_status || "pending";
+
+      if (responseStatus !== "pending") continue;
+
+      const referenceTime = lead.assigned_at
+        ? new Date(lead.assigned_at).getTime()
+        : new Date(lead.routed_at).getTime();
       const window = getEscalationWindow(lead.urgency);
 
-      if (now - routedAt <= window) continue;
+      if (now - referenceTime <= window) continue;
 
       escalated++;
+
+      const currentReassignments = lead.reassignment_count || 0;
+      if (currentReassignments >= MAX_REASSIGNMENTS) {
+        await supabaseAdmin
+          .from("navigator_requests")
+          .update({
+            delivery_status: "fallback_manual",
+            response_status: "escalation_required",
+            escalation_count: (lead.escalation_count || 0) + 1,
+          })
+          .eq("id", lead.id);
+
+        fallback++;
+        console.log(`[escalation] Lead ${lead.id} hit max reassignments (${MAX_REASSIGNMENTS}), flagged for manual review`);
+        continue;
+      }
 
       const history = Array.isArray(lead.routing_history) ? lead.routing_history : [];
       const previousPartnerIds = history.map((h: any) => h.partner_id).filter(Boolean);
@@ -53,8 +92,9 @@ export async function checkEscalations(): Promise<{
       history.push({
         partner_id: lead.routed_to_partner_id,
         routed_at: lead.routed_at,
-        delivery_status: "escalated",
-        escalated_at: new Date().toISOString(),
+        delivery_status: "reassigned",
+        reassigned_at: new Date().toISOString(),
+        reason: "72h_no_response",
       });
 
       const uniqueExcluded = [...new Set(previousPartnerIds)];
@@ -72,27 +112,71 @@ export async function checkEscalations(): Promise<{
       );
 
       if (newMatch) {
+        const reassignNow = new Date().toISOString();
+
         history.push({
           partner_id: newMatch.partnerId,
           partner_name: newMatch.partnerName,
           rule_id: newMatch.ruleId,
-          routed_at: new Date().toISOString(),
+          routed_at: reassignNow,
           delivery_status: "pending",
         });
 
-        await supabaseAdmin
-          .from("navigator_requests")
-          .update({
+        const reassignUpdate: any = {
             routed_to_partner_id: newMatch.partnerId,
-            routed_at: new Date().toISOString(),
+            routed_at: reassignNow,
+            assigned_at: reassignNow,
             delivery_status: "pending",
+            response_status: "pending",
+            response_at: null,
+            email_sent: false,
+            email_sent_at: null,
             escalation_count: (lead.escalation_count || 0) + 1,
+            reassignment_count: currentReassignments + 1,
+            last_reassigned_at: reassignNow,
+            previous_assigned_to: lead.routed_to_partner_id,
             routing_history: history,
-          })
+        };
+
+        let { error: reassignErr } = await supabaseAdmin
+          .from("navigator_requests")
+          .update(reassignUpdate)
           .eq("id", lead.id);
 
+        if (reassignErr && reassignErr.message.includes("does not exist")) {
+          delete reassignUpdate.reassignment_count;
+          delete reassignUpdate.last_reassigned_at;
+          delete reassignUpdate.previous_assigned_to;
+          await supabaseAdmin
+            .from("navigator_requests")
+            .update(reassignUpdate)
+            .eq("id", lead.id);
+        }
+
+        sendLeadNotification(lead.id, newMatch.partnerId)
+          .then(async () => {
+            const emailNow = new Date().toISOString();
+            await supabaseAdmin
+              .from("navigator_requests")
+              .update({
+                delivery_status: "delivered",
+                email_sent: true,
+                email_sent_at: emailNow,
+              })
+              .eq("id", lead.id);
+            console.log(`[escalation] Reassignment email sent for lead ${lead.id} to ${newMatch.partnerName}`);
+          })
+          .catch(async (err: any) => {
+            await supabaseAdmin
+              .from("navigator_requests")
+              .update({ delivery_status: "delivery_failed" })
+              .eq("id", lead.id);
+            console.log(`[escalation] Reassignment email FAILED for lead ${lead.id}: ${err?.message}`);
+          });
+
+        reassigned++;
         rerouted++;
-        console.log(`[escalation] Lead ${lead.id} re-routed to ${newMatch.partnerName}`);
+        console.log(`[escalation] Lead ${lead.id} reassigned to ${newMatch.partnerName} (attempt ${currentReassignments + 1}/${MAX_REASSIGNMENTS})`);
       } else {
         await supabaseAdmin
           .from("navigator_requests")
@@ -104,7 +188,7 @@ export async function checkEscalations(): Promise<{
           .eq("id", lead.id);
 
         fallback++;
-        console.log(`[escalation] Lead ${lead.id} sent to manual fallback queue`);
+        console.log(`[escalation] Lead ${lead.id} sent to manual fallback queue (no new partners)`);
       }
     }
 
@@ -131,16 +215,85 @@ export async function checkEscalations(): Promise<{
         }
       }
     }
+
+    deliveryFailures = await runDeliveryValidation();
+
   } catch (err: any) {
     console.log("[escalation] Error in checkEscalations:", err?.message);
   }
 
-  if (escalated > 0) {
-    console.log(`[escalation] Cycle complete: ${escalated} escalated, ${rerouted} re-routed, ${fallback} fallback`);
+  if (escalated > 0 || deliveryFailures > 0) {
+    console.log(`[escalation] Cycle complete: ${escalated} escalated, ${rerouted} re-routed, ${reassigned} reassigned, ${fallback} fallback, ${deliveryFailures} delivery issues`);
   }
 
-  return { escalated, rerouted, fallback };
+  return { escalated, rerouted, fallback, reassigned, deliveryFailures };
 }
+
+async function runDeliveryValidation(): Promise<number> {
+  let failures = 0;
+  try {
+    const { data: routedLeads } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("id, routed_to_partner_id, email_sent, email_sent_at, assigned_at, delivery_status, response_status, routed_at")
+      .in("status", ["new", "in_progress"])
+      .not("routed_to_partner_id", "is", null);
+
+    if (!routedLeads) return 0;
+
+    for (const lead of routedLeads) {
+      if (lead.delivery_status === "fallback_manual" || lead.delivery_status === "unrouted") continue;
+
+      const issues: string[] = [];
+
+      if (lead.delivery_status === "delivered") {
+        if (!lead.email_sent) issues.push("email_sent=false");
+        if (!lead.email_sent_at) issues.push("missing email_sent_at");
+      }
+
+      if (!lead.assigned_at) issues.push("missing assigned_at");
+      if (!lead.response_status) issues.push("missing response_status");
+
+      if (lead.delivery_status === "ready_for_delivery" && lead.routed_at) {
+        const routedAt = new Date(lead.routed_at).getTime();
+        if (Date.now() - routedAt > 5 * 60 * 1000) {
+          issues.push("stuck in ready_for_delivery > 5min");
+        }
+      }
+
+      if (issues.length > 0) {
+        failures++;
+
+        const backfill: any = {};
+        if (!lead.assigned_at && lead.routed_at) {
+          backfill.assigned_at = lead.routed_at;
+        }
+        if (!lead.email_sent && lead.email_sent_at) {
+          backfill.email_sent = true;
+        }
+        if (!lead.response_status) {
+          backfill.response_status = "pending";
+        }
+        if (issues.includes("stuck in ready_for_delivery > 5min")) {
+          backfill.delivery_status = "delivery_failed";
+        }
+
+        if (Object.keys(backfill).length > 0) {
+          await supabaseAdmin
+            .from("navigator_requests")
+            .update(backfill)
+            .eq("id", lead.id);
+        }
+
+        console.log(`[delivery-validation] Lead ${lead.id} issues: ${issues.join(", ")}${Object.keys(backfill).length > 0 ? " (auto-fixed)" : ""}`);
+      }
+    }
+  } catch (err: any) {
+    console.log("[delivery-validation] Error:", err?.message);
+  }
+  return failures;
+}
+
+export { runDeliveryValidation };
 
 let escalationInterval: ReturnType<typeof setInterval> | null = null;
 

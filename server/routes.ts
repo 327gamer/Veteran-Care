@@ -2558,6 +2558,9 @@ async function checkNavLifecycleColumns() {
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_status TEXT DEFAULT 'pending';");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS response_at TIMESTAMPTZ;");
     console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS last_action_source TEXT;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS reassignment_count INTEGER DEFAULT 0;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS last_reassigned_at TIMESTAMPTZ;");
+    console.log("  ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS previous_assigned_to UUID;");
     console.log("  -- Backfill existing data:");
     console.log("  UPDATE navigator_requests SET assigned_at = routed_at WHERE assigned_at IS NULL AND routed_at IS NOT NULL;");
     console.log("  UPDATE navigator_requests SET email_sent = true, email_sent_at = routed_at WHERE email_sent = false AND delivery_status = 'delivered' AND routed_at IS NOT NULL;");
@@ -7424,6 +7427,8 @@ export async function registerRoutes(
       }
       if (contacted_at !== undefined) updates.contacted_at = contacted_at || null;
       if (resolved_at !== undefined) updates.resolved_at = resolved_at || null;
+      if (req.body.assigned_at !== undefined) updates.assigned_at = req.body.assigned_at || null;
+      if (req.body.routed_at !== undefined) updates.routed_at = req.body.routed_at || null;
       if (status === "resolved" && !resolved_at) {
         updates.resolved_at = new Date().toISOString();
       }
@@ -7438,7 +7443,7 @@ export async function registerRoutes(
     }
 
     if (hasResponseTrackingColumns) {
-      const validResponseStatuses = ["pending", "accepted", "declined", "need_info", "completed"];
+      const validResponseStatuses = ["pending", "accepted", "declined", "need_info", "completed", "escalation_required"];
       if (reqResponseStatus !== undefined) {
         if (validResponseStatuses.includes(reqResponseStatus)) {
           updates.response_status = reqResponseStatus;
@@ -7605,6 +7610,16 @@ export async function registerRoutes(
     const { error } = await supabaseAdmin.from("partner_routing_rules").update({ is_active: false }).eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true });
+  });
+
+  app.post("/api/admin/run-escalation", requireAdmin, async (req, res) => {
+    try {
+      const { checkEscalations } = await import("./lead-escalation");
+      const result = await checkEscalations();
+      return res.json({ success: true, ...result });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
   });
 
   app.post("/api/admin/leads/:id/reroute", requireAdmin, async (req, res) => {
