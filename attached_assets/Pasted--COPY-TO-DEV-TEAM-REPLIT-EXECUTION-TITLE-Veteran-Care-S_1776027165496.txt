@@ -1,0 +1,188 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.3 – Scale Readiness Decision Layer
+
+PRIORITY:
+HIGH (Operational Decision Threshold Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.3 – Scale Readiness Decision Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT dashboards  
+
+This step converts Step 6.2 signals into clear, actionable decision thresholds
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Turn monitoring signals into explicit decision guidance inside admin so the system answers:
+
+- WHEN to move toward batch billing
+- WHEN to add or replace partners
+- WHEN to intervene in lead flow
+- WHEN workload exceeds safe manual handling
+
+-------------------------------------
+REQUIREMENT 1 — SCALE DECISION FLAGS
+-------------------------------------
+
+Add derived flags based on Step 6.2 signals:
+
+- ready_for_batch_review  
+- partner_expansion_needed  
+- partner_replacement_needed  
+- billing_process_review_needed  
+
+-------------------------------------
+REQUIREMENT 2 — DECISION LOGIC (LIGHTWEIGHT)
+-------------------------------------
+
+Use simple threshold combinations:
+
+Example logic:
+
+ready_for_batch_review:
+- HIGH VOLUME + BILLING LOAD HIGH
+
+partner_expansion_needed:
+- HIGH VOLUME + RESPONSE DROPPING
+
+partner_replacement_needed:
+- INACTIVE PARTNERS + ATTENTION QUEUE
+
+billing_process_review_needed:
+- BILLING LOAD HIGH + PAYMENT FAILURES OR HIGH PENDING
+
+Keep logic simple and adjustable later.
+
+-------------------------------------
+REQUIREMENT 3 — ADMIN VISIBILITY
+-------------------------------------
+
+Add section:
+
+→ “Scale Readiness”
+
+Display:
+
+- decision flags (active/inactive)
+- short explanation for each flag
+- recommended action text
+
+Example:
+
+“READY FOR BATCH REVIEW  
+Billing volume is increasing. Consider controlled batch billing.”
+
+-------------------------------------
+REQUIREMENT 4 — RECOMMENDED ACTION TEXT
+-------------------------------------
+
+Each flag should include a short action recommendation:
+
+Examples:
+
+- “Consider adding additional partners in this category”
+- “Review underperforming partners for replacement”
+- “Prepare for controlled batch billing transition”
+- “Review billing queue size and manual load”
+
+-------------------------------------
+REQUIREMENT 5 — LINKED NAVIGATION
+-------------------------------------
+
+Where possible:
+
+- link flags to relevant admin filters or panels
+- allow quick jump to:
+  - partner view
+  - billing queue
+  - attention leads
+
+-------------------------------------
+REQUIREMENT 6 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-trigger batch billing
+- auto-pause partners
+- auto-scale system
+- auto-adjust pricing
+
+This is decision guidance only.
+
+-------------------------------------
+REQUIREMENT 7 — DATA SOURCE
+-------------------------------------
+
+Use existing:
+
+- Step 6.2 signals
+- Step 5.7 performance data
+- Step 5.9 revenue data
+
+No new pipelines.
+
+-------------------------------------
+REQUIREMENT 8 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- decision engines
+- AI scoring
+- dashboards
+- automation workflows
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Decision flags trigger correctly based on signals
+2. Flags update dynamically
+3. Action text displays clearly
+4. Links navigate correctly (if implemented)
+5. No performance impact
+6. No interference with routing, billing, or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- decision flags implemented
+- admin visibility working
+- action text included
+- navigation links working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

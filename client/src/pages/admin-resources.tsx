@@ -2786,6 +2786,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Scale Readiness</h3>
+              <ScaleReadinessPanel adminKey={adminKey} />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Launch Monitoring</h3>
               <LaunchMonitoringPanel adminKey={adminKey} />
             </div>
@@ -3997,6 +4002,73 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function ScaleReadinessPanel({ adminKey }: { adminKey: string }) {
+  const [signals, setSignals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/intelligence/launch-monitoring", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(d => setSignals(d.signals || [])).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading scale readiness...</p>;
+
+  const has = (key: string) => signals.some(s => s.key === key);
+  const decisions = [
+    {
+      key: "batch_review", label: "READY FOR BATCH REVIEW",
+      active: has("high_daily_volume") || has("high_billing_load"),
+      action: "Billing volume is increasing. Consider controlled batch billing to reduce manual workload.",
+      nav: "Review Billing Config panel → billing mode settings",
+    },
+    {
+      key: "partner_expansion", label: "PARTNER EXPANSION NEEDED",
+      active: (has("high_daily_volume") || has("high_pending")) && (has("response_dropping") || has("inactive_partners")),
+      action: "Lead volume is outpacing partner capacity. Consider adding partners in high-demand categories.",
+      nav: "Review Partner Performance → category gaps",
+    },
+    {
+      key: "partner_replacement", label: "PARTNER REPLACEMENT NEEDED",
+      active: has("inactive_partners") && has("high_attention"),
+      action: "Inactive partners are causing attention queue buildup. Review for replacement or pause.",
+      nav: "Review Partner Performance → set underperformers to Paused or Review Only",
+    },
+    {
+      key: "billing_process_review", label: "BILLING PROCESS REVIEW NEEDED",
+      active: has("high_billing_load") && (has("payment_failures") || has("high_pending")),
+      action: "Billing queue pressure detected. Review billing process efficiency and failure patterns.",
+      nav: "Review Billing Runs panel + attention leads → payment_failed",
+    },
+  ];
+
+  const activeDecisions = decisions.filter(d => d.active);
+
+  return (
+    <div className="space-y-2" data-testid="scale-readiness-panel">
+      {activeDecisions.length === 0 ? (
+        <div className="text-[10px] text-green-700 font-medium px-2 py-1 bg-green-50 border border-green-200 rounded" data-testid="scale-all-clear">No scale decisions triggered — system within manual handling capacity</div>
+      ) : (
+        activeDecisions.map(d => (
+          <div key={d.key} className="border rounded p-2 bg-amber-50 border-amber-200" data-testid={`decision-${d.key}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-1.5 py-0.5 rounded border text-[8px] font-bold bg-amber-100 text-amber-800 border-amber-300">{d.label}</span>
+            </div>
+            <p className="text-[10px] text-slate-700">{d.action}</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">{d.nav}</p>
+          </div>
+        ))
+      )}
+      <div className="grid grid-cols-4 gap-1 text-[9px]">
+        {decisions.map(d => (
+          <div key={d.key} className={`rounded px-1.5 py-1 text-center font-semibold ${d.active ? "bg-amber-100 text-amber-800 border border-amber-300" : "bg-slate-100 text-slate-400 border border-slate-200"}`} data-testid={`decision-flag-${d.key}`}>
+            {d.active ? "●" : "○"} {d.label.split(" ").slice(0, 2).join(" ")}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function LaunchMonitoringPanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<any>(null);
