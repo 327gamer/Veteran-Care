@@ -2786,6 +2786,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Execution Visibility</h3>
+              <ExecutionVisibilityPanel adminKey={adminKey} />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Performance Intelligence</h3>
               <PerformanceIntelPanel adminKey={adminKey} />
             </div>
@@ -3982,6 +3987,96 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function ExecutionVisibilityPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/intelligence/execution-visibility", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading execution data...</p>;
+  if (!data) return null;
+
+  const { daily, attention, flow } = data;
+  const totalAttention = (attention?.pending_24h || 0) + (attention?.approaching_72h || 0) + (attention?.disputed || 0) + (attention?.failed_payments || 0) + (attention?.review_required || 0);
+  const attentionLeads = attention?.leads || [];
+  const filteredLeads = filter ? attentionLeads.filter((l: any) => l.reason === filter) : attentionLeads;
+
+  return (
+    <div className="space-y-3" data-testid="execution-visibility-panel">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="border rounded p-2 bg-slate-50">
+          <h4 className="text-[10px] font-semibold text-muted-foreground mb-1">Today's Activity</h4>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+            <div>Created: <span className="font-semibold">{daily?.created || 0}</span></div>
+            <div>Routed: <span className="font-semibold">{daily?.routed || 0}</span></div>
+            <div>Responded: <span className="font-semibold">{daily?.responded || 0}</span></div>
+            <div>Completed: <span className="font-semibold">{daily?.completed || 0}</span></div>
+            <div>Pending: <span className="font-semibold text-amber-600">{daily?.pending || 0}</span></div>
+            <div>Reassigned: <span className="font-semibold text-orange-600">{daily?.reassigned || 0}</span> <span className="text-[8px] text-muted-foreground">total</span></div>
+          </div>
+        </div>
+        <div className="border rounded p-2 bg-slate-50">
+          <h4 className="text-[10px] font-semibold text-muted-foreground mb-1">Lead Flow (All Time)</h4>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">{flow?.new || 0} New</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-semibold">{flow?.routed || 0} Routed</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-semibold">{flow?.responded || 0} Responded</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-semibold">{flow?.completed || 0} Completed</span>
+          </div>
+        </div>
+        <div className={`border rounded p-2 ${totalAttention > 0 ? "bg-red-50 border-red-200" : "bg-slate-50"}`}>
+          <h4 className="text-[10px] font-semibold text-muted-foreground mb-1">
+            Action Required {totalAttention > 0 && <span className="text-red-600">({totalAttention})</span>}
+          </h4>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+            <div>Pending &gt;24h: <span className={`font-semibold ${(attention?.pending_24h || 0) > 0 ? "text-red-600" : ""}`}>{attention?.pending_24h || 0}</span></div>
+            <div>Near 72h: <span className={`font-semibold ${(attention?.approaching_72h || 0) > 0 ? "text-orange-600" : ""}`}>{attention?.approaching_72h || 0}</span></div>
+            <div>Disputed: <span className={`font-semibold ${(attention?.disputed || 0) > 0 ? "text-red-600" : ""}`}>{attention?.disputed || 0}</span></div>
+            <div>Failed pay: <span className={`font-semibold ${(attention?.failed_payments || 0) > 0 ? "text-red-600" : ""}`}>{attention?.failed_payments || 0}</span></div>
+            <div>Review req: <span className={`font-semibold ${(attention?.review_required || 0) > 0 ? "text-amber-600" : ""}`}>{attention?.review_required || 0}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {attentionLeads.length > 0 && (
+        <div className="border rounded p-2">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-[10px] font-semibold">Attention Leads</h4>
+            <div className="flex gap-1">
+              {["", "pending_24h", "approaching_72h", "disputed", "payment_failed", "review_required"].map(f => (
+                <button key={f} data-testid={`attention-filter-${f || "all"}`}
+                  className={`px-1 py-0.5 rounded text-[8px] border ${filter === f ? "bg-red-600 text-white border-red-600" : "bg-white text-slate-600 border-slate-200"}`}
+                  onClick={() => setFilter(f)}>{f ? f.replace(/_/g, " ") : "All"}</button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-0.5 max-h-24 overflow-y-auto">
+            {filteredLeads.map((l: any, i: number) => (
+              <div key={`${l.id}-${i}`} className="flex items-center gap-2 text-[9px] border-b pb-0.5" data-testid={`attention-lead-${l.id}`}>
+                <span className="font-mono truncate max-w-[180px]">{l.id}</span>
+                <span className={`px-1 py-0.5 rounded text-[8px] font-semibold ${
+                  l.reason === "disputed" ? "bg-red-100 text-red-800" :
+                  l.reason === "payment_failed" ? "bg-red-100 text-red-800" :
+                  l.reason === "approaching_72h" ? "bg-orange-100 text-orange-800" :
+                  l.reason === "review_required" ? "bg-amber-100 text-amber-800" :
+                  "bg-yellow-100 text-yellow-800"
+                }`}>{l.reason.replace(/_/g, " ")}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
   const [catPerf, setCatPerf] = useState<any[]>([]);

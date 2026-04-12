@@ -7994,6 +7994,59 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/intelligence/execution-visibility", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads, error: evError } = await supabaseAdmin.from("navigator_requests")
+        .select("id, created_at, routed_at, assigned_at, response_at, response_status, billing_workflow_status, stripe_payment_status, reassignment_count");
+      if (evError || !leads) return res.json({ daily: {}, attention: {}, flow: {}, error: evError?.message });
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const h72ago = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString();
+      let createdToday = 0, routedToday = 0, respondedToday = 0, completedToday = 0, pendingTotal = 0, reassignedTotal = 0;
+      let pending24h = 0, approaching72h = 0, disputedCount = 0, failedPayments = 0, reviewRequired = 0;
+      let flowNew = 0, flowRouted = 0, flowResponded = 0, flowCompleted = 0;
+      const attentionLeads: { id: string; reason: string }[] = [];
+      for (const l of leads) {
+        if (l.created_at && l.created_at >= todayStart) createdToday++;
+        if (l.routed_at && l.routed_at >= todayStart) routedToday++;
+        if (l.response_at && l.response_at >= todayStart) respondedToday++;
+        if ((l.response_status === "completed" || l.response_status === "accepted") && l.response_at && l.response_at >= todayStart) completedToday++;
+        if ((l.reassignment_count || 0) > 0) reassignedTotal++;
+        const isPending = !l.response_status || l.response_status === "pending";
+        if (isPending) pendingTotal++;
+        flowNew++;
+        if (l.routed_at || l.assigned_at) flowRouted++;
+        if (l.response_status && l.response_status !== "pending") flowResponded++;
+        if (l.response_status === "completed" || l.response_status === "accepted") flowCompleted++;
+        if (isPending && l.assigned_at && l.assigned_at < h24ago) {
+          pending24h++;
+          attentionLeads.push({ id: l.id, reason: "pending_24h" });
+        }
+        if (isPending && l.assigned_at && l.assigned_at < h72ago) {
+          approaching72h++;
+        } else if (isPending && l.assigned_at) {
+          const assignedMs = new Date(l.assigned_at).getTime();
+          const hoursLeft = (assignedMs + 72 * 60 * 60 * 1000 - now.getTime()) / (60 * 60 * 1000);
+          if (hoursLeft <= 12 && hoursLeft > 0) {
+            approaching72h++;
+            attentionLeads.push({ id: l.id, reason: "approaching_72h" });
+          }
+        }
+        if (l.billing_workflow_status === "disputed") { disputedCount++; attentionLeads.push({ id: l.id, reason: "disputed" }); }
+        if (l.stripe_payment_status === "failed" || l.billing_workflow_status === "payment_failed") { failedPayments++; attentionLeads.push({ id: l.id, reason: "payment_failed" }); }
+        if (l.billing_workflow_status === "review_required") { reviewRequired++; attentionLeads.push({ id: l.id, reason: "review_required" }); }
+      }
+      return res.json({
+        daily: { created: createdToday, routed: routedToday, responded: respondedToday, completed: completedToday, pending: pendingTotal, reassigned: reassignedTotal },
+        attention: { pending_24h: pending24h, approaching_72h: approaching72h, disputed: disputedCount, failed_payments: failedPayments, review_required: reviewRequired, leads: attentionLeads.slice(0, 20) },
+        flow: { new: flowNew, routed: flowRouted, responded: flowResponded, completed: flowCompleted },
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/intelligence/daily-revenue", requireAdmin, async (_req, res) => {
     try {
       const { data: leads } = await supabaseAdmin.from("navigator_requests")

@@ -1,0 +1,146 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.0 – Execution Visibility Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Operational Clarity Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.0 – Execution Visibility  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT dashboards  
+
+This step enhances visibility of system activity during live operations.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Give admin a clear, real-time understanding of:
+
+- what is happening today
+- what needs attention
+- what actions are pending
+
+-------------------------------------
+STEP 1 — DAILY ACTIVITY SUMMARY
+-------------------------------------
+
+Add admin summary showing:
+
+- leads created today
+- leads routed today
+- leads responded today
+- leads completed today
+- leads pending
+- leads reassigned today
+
+Use existing timestamps and response_status.
+
+-------------------------------------
+STEP 2 — ACTION REQUIRED SUMMARY
+-------------------------------------
+
+Expose:
+
+- pending leads > 24h
+- leads approaching 72h reassignment
+- disputed leads
+- failed payments
+- review_required leads
+
+Purpose:
+→ immediate attention list
+
+-------------------------------------
+STEP 3 — LEAD FLOW SNAPSHOT
+-------------------------------------
+
+Add simple breakdown:
+
+- new → routed → responded → completed
+
+Counts only.
+
+No charts required.
+
+-------------------------------------
+STEP 4 — ADMIN VISIBILITY
+-------------------------------------
+
+Display in admin:
+
+- summary panel (top-level)
+- lightweight rows or counters
+
+Keep UI simple.
+
+-------------------------------------
+STEP 5 — FILTER SUPPORT
+-------------------------------------
+
+Allow quick filtering:
+
+- today’s leads
+- pending leads
+- needs attention
+- reassignment risk
+
+-------------------------------------
+STEP 6 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- dashboards
+- graphs
+- analytics engines
+- automation systems
+
+-------------------------------------
+STEP 7 — VALIDATION
+-------------------------------------
+
+Please validate:
+
+1. Daily counts match database records
+2. Pending/attention flags are accurate
+3. No performance slowdown
+4. No impact to routing or billing
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+A) files changed  
+B) execution summary panel implemented  
+C) action-required indicators working  
+D) lead flow snapshot working  
+E) filters working  
+F) validation results  
+G) confirmation no core logic modified  
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine  
+- billing logic  
+- Stripe integration  
+- tracking system  
+- reassignment logic  
+
+BEGIN EXECUTION
