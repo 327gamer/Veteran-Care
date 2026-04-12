@@ -3990,7 +3990,10 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("");
   const [partnerFilter, setPartnerFilter] = useState("");
+  const [catRevFilter, setCatRevFilter] = useState("");
+  const [partnerRevFilter, setPartnerRevFilter] = useState("");
   const [optLog, setOptLog] = useState<any[]>([]);
+  const [dailyRev, setDailyRev] = useState<any>(null);
   const { toast } = useToast();
 
   const loadData = () => {
@@ -3999,11 +4002,13 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
       fetch("/api/admin/intelligence/partner-performance", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
       fetch("/api/admin/category-action-flags", { headers: { "x-admin-key": adminKey } }).then(r => r.json()).catch(() => ({})),
       fetch("/api/admin/optimization-log", { headers: { "x-admin-key": adminKey } }).then(r => r.json()).catch(() => []),
-    ]).then(([cats, partners, flags, log]) => {
+      fetch("/api/admin/intelligence/daily-revenue", { headers: { "x-admin-key": adminKey } }).then(r => r.json()).catch(() => null),
+    ]).then(([cats, partners, flags, log, rev]) => {
       setCatPerf(Array.isArray(cats) ? cats : []);
       setPartnerPerf(Array.isArray(partners) ? partners : []);
       setCatFlags(typeof flags === "object" && !Array.isArray(flags) ? flags : {});
       setOptLog(Array.isArray(log) ? log : []);
+      setDailyRev(rev);
     }).catch(() => {}).finally(() => setLoading(false));
   };
 
@@ -4011,19 +4016,50 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
 
   if (loading) return <p className="text-xs text-muted-foreground py-4">Loading performance data...</p>;
 
-  const filteredCats = catFilter ? catPerf.filter(c => c.performance_status === catFilter) : catPerf;
-  const filteredPartners = partnerFilter ? partnerPerf.filter(p => p.performance_status === partnerFilter) : partnerPerf;
+  let filteredCats = catFilter ? catPerf.filter(c => c.performance_status === catFilter) : catPerf;
+  if (catRevFilter) filteredCats = filteredCats.filter(c => c.revenue_signal === catRevFilter);
+  let filteredPartners = partnerFilter ? partnerPerf.filter(p => p.performance_status === partnerFilter) : partnerPerf;
+  if (partnerRevFilter) filteredPartners = filteredPartners.filter(p => p.revenue_signal === partnerRevFilter);
+
+  const REV_CAT_BADGE: Record<string, { label: string; cls: string }> = {
+    monetizing: { label: "MONETIZING", cls: "bg-green-100 text-green-800 border-green-300" },
+    underperforming: { label: "UNDERPERF", cls: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+    non_monetizing: { label: "NO REV", cls: "bg-red-100 text-red-800 border-red-300" },
+  };
+  const REV_PART_BADGE: Record<string, { label: string; cls: string }> = {
+    high_revenue: { label: "HIGH REV", cls: "bg-green-100 text-green-800 border-green-300" },
+    low_revenue: { label: "LOW REV", cls: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+    no_revenue: { label: "NO REV", cls: "bg-red-100 text-red-800 border-red-300" },
+  };
 
   return (
     <div className="space-y-4" data-testid="performance-intel-panel">
+      {dailyRev && (
+        <div className="border rounded p-2 bg-slate-50" data-testid="daily-revenue-summary">
+          <h4 className="text-[11px] font-semibold mb-1">Revenue Summary</h4>
+          <div className="grid grid-cols-3 gap-2 text-[10px]">
+            <div><span className="text-muted-foreground">Today:</span> <span className="font-semibold text-green-700">${dailyRev.today?.revenue?.toFixed(2) || "0.00"}</span> <span className="text-muted-foreground">({dailyRev.today?.paid_leads || 0} leads)</span></div>
+            <div><span className="text-muted-foreground">7 days:</span> <span className="font-semibold text-green-700">${dailyRev.last_7_days?.revenue?.toFixed(2) || "0.00"}</span> <span className="text-muted-foreground">({dailyRev.last_7_days?.paid_leads || 0} leads)</span></div>
+            <div><span className="text-muted-foreground">All time:</span> <span className="font-semibold text-green-700">${dailyRev.all_time?.revenue?.toFixed(2) || "0.00"}</span> <span className="text-muted-foreground">({dailyRev.all_time?.paid_leads || 0} leads)</span></div>
+          </div>
+          <div className="text-[9px] text-muted-foreground mt-1">Avg per paid lead: <span className="font-medium">${dailyRev.avg_revenue_per_lead?.toFixed(2) || "0.00"}</span></div>
+        </div>
+      )}
+
       <div>
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold">Category Performance</h4>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {["", "high_value", "emerging", "low_conversion", "inactive"].map(f => (
               <button key={f} data-testid={`cat-perf-filter-${f || "all"}`}
                 className={`px-1.5 py-0.5 rounded text-[9px] border ${catFilter === f ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200"}`}
                 onClick={() => setCatFilter(f)}>{f ? (PERF_BADGE[f]?.label || f) : "All"}</button>
+            ))}
+            <span className="text-[8px] text-muted-foreground mx-0.5">|</span>
+            {["", "monetizing", "underperforming", "non_monetizing"].map(f => (
+              <button key={`rev-${f}`} data-testid={`cat-rev-filter-${f || "all"}`}
+                className={`px-1.5 py-0.5 rounded text-[9px] border ${catRevFilter === f ? "bg-green-700 text-white border-green-700" : "bg-white text-slate-600 border-slate-200"}`}
+                onClick={() => setCatRevFilter(f)}>{f ? (REV_CAT_BADGE[f]?.label || f) : "Rev All"}</button>
             ))}
           </div>
         </div>
@@ -4035,6 +4071,9 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
                 {(PERF_BADGE[c.performance_status] || PERF_BADGE.inactive).label}
               </span>
               {c.alert && <span className="text-[8px] text-red-600 font-semibold">{c.alert}</span>}
+              {c.revenue_signal && REV_CAT_BADGE[c.revenue_signal] && (
+                <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${REV_CAT_BADGE[c.revenue_signal].cls}`}>{REV_CAT_BADGE[c.revenue_signal].label}</span>
+              )}
               <select className="text-[9px] border rounded px-0.5 py-0 h-5" data-testid={`cat-flag-${c.category}`}
                 value={catFlags[c.category] || "normal"}
                 onChange={async (e) => {
@@ -4063,11 +4102,17 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold">Partner Performance</h4>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {["", "strong", "moderate", "weak", "inactive"].map(f => (
               <button key={f} data-testid={`partner-perf-filter-${f || "all"}`}
                 className={`px-1.5 py-0.5 rounded text-[9px] border ${partnerFilter === f ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200"}`}
                 onClick={() => setPartnerFilter(f)}>{f ? (PERF_BADGE[f]?.label || f) : "All"}</button>
+            ))}
+            <span className="text-[8px] text-muted-foreground mx-0.5">|</span>
+            {["", "high_revenue", "low_revenue", "no_revenue"].map(f => (
+              <button key={`rev-${f}`} data-testid={`partner-rev-filter-${f || "all"}`}
+                className={`px-1.5 py-0.5 rounded text-[9px] border ${partnerRevFilter === f ? "bg-green-700 text-white border-green-700" : "bg-white text-slate-600 border-slate-200"}`}
+                onClick={() => setPartnerRevFilter(f)}>{f ? (REV_PART_BADGE[f]?.label || f) : "Rev All"}</button>
             ))}
           </div>
         </div>
@@ -4079,6 +4124,9 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
                 {(PERF_BADGE[p.performance_status] || PERF_BADGE.inactive).label}
               </span>
               {p.alert && <span className="text-[8px] text-red-600 font-semibold">{p.alert}</span>}
+              {p.revenue_signal && REV_PART_BADGE[p.revenue_signal] && (
+                <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${REV_PART_BADGE[p.revenue_signal].cls}`}>{REV_PART_BADGE[p.revenue_signal].label}</span>
+              )}
               <select className="text-[9px] border rounded px-0.5 py-0 h-5" data-testid={`partner-override-${p.partner_id}`}
                 value={p.partner_status_override || "active"}
                 onChange={async (e) => {
@@ -4095,7 +4143,7 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
               </select>
               <span className="text-muted-foreground ml-auto">{p.leads_assigned} assigned</span>
               <span className="text-muted-foreground">{p.response_rate}% resp</span>
-              {p.avg_response_hours !== null && <span className="text-muted-foreground">{p.avg_response_hours}h avg</span>}
+              <span className="text-muted-foreground">{p.conversion_rate}% conv</span>
               <span className="text-green-600">{p.billed} paid</span>
               <span className="text-green-700 font-medium">${p.revenue.toFixed(2)}</span>
             </div>

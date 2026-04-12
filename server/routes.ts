@@ -7994,6 +7994,36 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/intelligence/daily-revenue", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads } = await supabaseAdmin.from("navigator_requests")
+        .select("billed, billed_at, billing_workflow_status, billing_amount, stripe_payment_status");
+      if (!leads) return res.json({ today: { revenue: 0, paid_leads: 0 }, last_7_days: { revenue: 0, paid_leads: 0 }, avg_revenue_per_lead: 0 });
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
+      let todayRev = 0, todayPaid = 0, weekRev = 0, weekPaid = 0, allRev = 0, allPaid = 0;
+      for (const l of leads) {
+        if (!l.billed && l.billing_workflow_status !== "charged") continue;
+        const amt = parseFloat(l.billing_amount) || 49.99;
+        allRev += amt;
+        allPaid++;
+        if (l.billed_at) {
+          if (l.billed_at >= todayStart) { todayRev += amt; todayPaid++; }
+          if (l.billed_at >= weekStart) { weekRev += amt; weekPaid++; }
+        }
+      }
+      return res.json({
+        today: { revenue: Math.round(todayRev * 100) / 100, paid_leads: todayPaid },
+        last_7_days: { revenue: Math.round(weekRev * 100) / 100, paid_leads: weekPaid },
+        all_time: { revenue: Math.round(allRev * 100) / 100, paid_leads: allPaid },
+        avg_revenue_per_lead: allPaid > 0 ? Math.round((allRev / allPaid) * 100) / 100 : 0,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/intelligence/category-performance", requireAdmin, async (_req, res) => {
     try {
       const { data: leads } = await supabaseAdmin.from("navigator_requests")
@@ -8019,7 +8049,10 @@ export async function registerRoutes(
           else if (c.total >= 3 && c.billable === 0) { performance_status = "inactive"; alert = "NO MONETIZATION"; }
           else if (c.billable > 0 && conversion_rate < 5) { performance_status = "low_conversion"; alert = "LOW CONVERSION"; }
           else if (c.total >= 3 && c.paid === 0) performance_status = "emerging";
-          return { ...c, conversion_rate, performance_status, alert };
+          let revenue_signal = "non_monetizing";
+          if (c.paid > 0 && c.revenue > 0) revenue_signal = "monetizing";
+          else if (c.billable > 0 && c.paid === 0) revenue_signal = "underperforming";
+          return { ...c, conversion_rate, performance_status, alert, revenue_signal };
         })
         .sort((a, b) => b.total - a.total);
       return res.json(result);
@@ -8066,6 +8099,10 @@ export async function registerRoutes(
         else if (rr >= 15) performance_status = "moderate";
         else if (rr >= 1) { performance_status = "weak"; alert = "LOW RESPONSE"; }
         else { performance_status = "inactive"; if (p.leads_assigned >= 2) alert = "ATTENTION REQUIRED"; }
+        const conversionRate = p.leads_assigned > 0 ? Math.round((p.billed / p.leads_assigned) * 10000) / 100 : 0;
+        let revenue_signal = "no_revenue";
+        if (p.billed > 0 && rr >= 15) revenue_signal = "high_revenue";
+        else if (p.billed > 0) revenue_signal = "low_revenue";
         return {
           partner_id: p.partner_id,
           partner_name: nameMap[p.partner_id] || "Unknown",
@@ -8077,8 +8114,10 @@ export async function registerRoutes(
           avg_response_hours: avgMs ? Math.round((avgMs / (1000 * 60 * 60)) * 100) / 100 : null,
           billed: p.billed,
           revenue: Math.round(p.revenue * 100) / 100,
+          conversion_rate: conversionRate,
           performance_status,
           alert,
+          revenue_signal,
           partner_status_override: overrideMap[p.partner_id] || "active",
         };
       }).sort((a, b) => b.leads_assigned - a.leads_assigned);

@@ -1,0 +1,208 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 5.9 – Controlled Launch Revenue Review Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Revenue Discipline + Decision Support Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 5.9 – Revenue Review Layer
+❌ NOT pricing changes
+❌ NOT billing logic changes
+❌ NOT routing changes
+❌ NOT automation
+❌ NOT dashboards
+
+This step adds structured revenue review support inside admin.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a lightweight system layer that allows admin to:
+
+- review revenue performance daily
+- understand monetization efficiency
+- identify partner keep / pause / replace decisions
+- identify category expansion or concern signals
+- operate with consistent revenue decision discipline
+
+-------------------------------------
+STEP 1 — DAILY REVENUE SUMMARY
+-------------------------------------
+
+Expose a simple revenue summary inside admin showing:
+
+- total revenue today
+- total revenue last 7 days
+- total paid leads today
+- total paid leads last 7 days
+- average revenue per paid lead
+
+Use existing payment data only.
+
+Do NOT build charts.
+Do NOT build dashboards.
+
+-------------------------------------
+STEP 2 — PARTNER REVENUE PERFORMANCE
+-------------------------------------
+
+Extend partner performance view to include:
+
+- total revenue per partner
+- paid leads per partner
+- conversion rate (assigned → paid)
+- response rate (existing)
+
+Purpose:
+support keep / pause / replace decisions
+
+-------------------------------------
+STEP 3 — CATEGORY REVENUE PERFORMANCE
+-------------------------------------
+
+Extend category performance view to include:
+
+- total revenue per category
+- paid leads per category
+- conversion rate (billable → paid)
+
+Purpose:
+support expand / review / deprioritize decisions
+
+-------------------------------------
+STEP 4 — REVENUE SIGNAL FLAGS
+-------------------------------------
+
+Add derived revenue signals.
+
+For partners:
+- high_revenue
+- low_revenue
+- no_revenue
+
+For categories:
+- monetizing
+- underperforming
+- non_monetizing
+
+Simple initial logic:
+- no_revenue = 0 paid leads
+- low_revenue = low paid % relative to volume
+- high_revenue = at least 1+ paid leads with consistent response
+- monetizing = revenue exists
+- non_monetizing = leads exist but no paid revenue
+- underperforming = activity exists but weak monetization
+
+Keep this lightweight and adjustable later.
+
+-------------------------------------
+STEP 5 — ADMIN VISIBILITY
+-------------------------------------
+
+Display revenue signals alongside existing performance signals in admin:
+
+- partner rows
+- category rows
+
+Use small labels / badges only.
+
+NO charts
+NO dashboards
+NO heavy UI
+
+-------------------------------------
+STEP 6 — DECISION SUPPORT ONLY
+-------------------------------------
+
+Do NOT automatically:
+- pause partners
+- change routing
+- adjust pricing
+- change billing behavior
+
+This is visibility + decision support only.
+
+-------------------------------------
+STEP 7 — DATA SOURCE RULE
+-------------------------------------
+
+Use existing stored data only:
+
+- billing_status
+- billed
+- billed_at
+- stripe_payment_status
+- payment timestamps
+- category mapping
+- partner mapping
+
+Do NOT create new pipelines.
+Do NOT use assumptions.
+
+-------------------------------------
+STEP 8 — FILTER SUPPORT
+-------------------------------------
+
+Allow filtering by:
+
+Partners:
+- high revenue
+- low revenue
+- no revenue
+
+Categories:
+- monetizing
+- underperforming
+- non_monetizing
+
+Keep lightweight.
+Client-side filtering preferred if practical.
+
+-------------------------------------
+STEP 9 — VALIDATION
+-------------------------------------
+
+Please validate all of the following:
+
+1. Revenue totals match Stripe-confirmed payments
+2. Partner revenue metrics match lead/payment data
+3. Category revenue metrics match billing data
+4. Revenue flags update dynamically
+5. No impact to routing, billing, or Stripe logic
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+A) files changed
+B) revenue summary implemented
+C) partner revenue metrics added
+D) category revenue metrics added
+E) revenue flags working
+F) admin visibility confirmed
+G) validation results
+H) confirmation no core logic modified
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+- routing logic
+- tracking system
+- reassignment logic
+- billing logic
+- Stripe integration
+- pricing rules
+
+BEGIN EXECUTION
