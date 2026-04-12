@@ -1,0 +1,224 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.6 – Controlled Batch Execution Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Manual Batch Execution System – Safety First)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.6 – Controlled Batch Execution  
+❌ NOT automation  
+❌ NOT auto-billing  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+
+This step introduces admin-assisted batch charging with strict safety enforcement.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to:
+
+- select a small group of eligible leads
+- execute them as a controlled batch
+- maintain full manual verification
+- enforce eligibility rules before charging
+
+-------------------------------------
+REQUIREMENT 1 — BATCH SELECTION UI
+-------------------------------------
+
+Add selection capability in billing queue:
+
+- checkbox per lead
+- “Select Multiple” mode
+- display selected count
+
+Constraints:
+
+Only allow selection if:
+- billing_workflow_status = queued
+
+Disable selection for:
+- disputed
+- hold
+- already billed
+- failed (without review)
+
+-------------------------------------
+REQUIREMENT 2 — PREVIEW + VALIDATION (CRITICAL)
+-------------------------------------
+
+Before execution:
+
+Display a Batch Preview Panel showing:
+
+- number of selected leads
+- list of lead IDs (or truncated)
+- total amount to be charged
+- validation status
+
+Run validation:
+
+Each lead must:
+- be queued
+- have confirmed delivery
+- have no dispute flag
+- have no hold flag
+- not already billed
+
+If ANY fail:
+→ block execution  
+→ show clear error message  
+
+-------------------------------------
+REQUIREMENT 3 — CONFIRMATION STEP (MANDATORY)
+-------------------------------------
+
+Before executing batch:
+
+Show confirmation dialog:
+
+“Confirm batch charge of X leads ($Y total)”
+
+Require explicit confirmation before proceeding.
+
+-------------------------------------
+REQUIREMENT 4 — BATCH EXECUTION ACTION
+-------------------------------------
+
+Add button:
+
+→ “Execute Batch Charge”
+
+Behavior:
+
+- processes leads sequentially (NOT parallel)
+- uses existing Stripe charge flow per lead
+- respects all existing billing logic
+- stops or skips invalid leads safely
+
+-------------------------------------
+REQUIREMENT 5 — BATCH SIZE LIMIT (SAFETY)
+-------------------------------------
+
+Enforce:
+
+- max 5 leads per batch
+
+If exceeded:
+→ block execution  
+→ show message:  
+“Batch size exceeds safe limit (max 5)”
+
+-------------------------------------
+REQUIREMENT 6 — RESULT SUMMARY
+-------------------------------------
+
+After execution display:
+
+- total attempted
+- successful payments
+- failed payments
+- skipped leads (if any)
+
+-------------------------------------
+REQUIREMENT 7 — FAILURE HANDLING
+-------------------------------------
+
+For failed leads:
+
+- mark as failed (existing logic)
+- exclude from next batch until reviewed
+- preserve retry capability
+
+-------------------------------------
+REQUIREMENT 8 — AUDIT TRAIL
+-------------------------------------
+
+Extend logging:
+
+Each batch execution logs:
+
+- batch_id (simple UUID or timestamp-based)
+- lead_ids included
+- timestamp
+- admin_user
+- success count
+- failure count
+
+-------------------------------------
+REQUIREMENT 9 — ADMIN VISIBILITY
+-------------------------------------
+
+Display:
+
+- selected leads count
+- validation status BEFORE execution
+- confirmation prompt
+- result summary AFTER execution
+
+-------------------------------------
+REQUIREMENT 10 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-trigger batches
+- schedule batches
+- auto-retry failures
+- auto-adjust billing
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Only eligible leads selectable
+2. Invalid leads block execution
+3. Batch size limit enforced
+4. Stripe charges process correctly (sequential)
+5. Results summary accurate
+6. Failed leads handled correctly
+7. No duplicate charges
+8. Confirmation step prevents accidental execution
+9. No impact to routing or tracking
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- batch selection UI implemented
+- preview + validation working
+- confirmation step implemented
+- batch execution working
+- result summary displayed
+- audit logging in place
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- tracking system
+- reassignment logic
+- pricing rules
+
+-------------------------------------
+END
+-------------------------------------

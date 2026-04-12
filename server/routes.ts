@@ -7862,6 +7862,104 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/billing-batch-charge", requireAdmin, async (req, res) => {
+    if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (ids.length > 5) return res.status(400).json({ error: "Batch size exceeds safe limit (max 5)" });
+
+    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+    if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
+
+    const { getBillingConfig, runChargeChecklist, shouldAutoReview, logBillingRun } = await import("./billing-governance");
+    const config = await getBillingConfig();
+    const chargeFields = "id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id, stripe_payment_status, assigned_to, email_sent, is_disputed, reassignment_count, response_status, delivery_status, user_state, retry_count";
+
+    const { data: leads, error: fetchErr } = await supabaseAdmin
+      .from("navigator_requests")
+      .select(chargeFields)
+      .in("id", ids);
+
+    if (fetchErr || !leads) return res.status(500).json({ error: "Failed to fetch leads" });
+
+    const validationErrors: { id: string; error: string }[] = [];
+    const validLeads: any[] = [];
+
+    for (const lead of leads) {
+      if (lead.billed) {
+        validationErrors.push({ id: lead.id, error: "Already billed" });
+      } else if (lead.billing_workflow_status !== "queued" && lead.billing_workflow_status !== "ready") {
+        validationErrors.push({ id: lead.id, error: `Status is ${lead.billing_workflow_status || "unknown"}, must be queued or ready` });
+      } else if (lead.is_disputed) {
+        validationErrors.push({ id: lead.id, error: "Lead is disputed" });
+      } else if (lead.billing_workflow_status === "hold") {
+        validationErrors.push({ id: lead.id, error: "Lead is on hold" });
+      } else {
+        const checklist = runChargeChecklist(lead, config);
+        if (!checklist.pass) {
+          validationErrors.push({ id: lead.id, error: checklist.failures[0] });
+        } else {
+          const review = shouldAutoReview(lead);
+          if (review.flagged) {
+            validationErrors.push({ id: lead.id, error: `Auto-flagged: ${review.reasons[0]}` });
+            try { await supabaseAdmin.from("navigator_requests").update({ billing_workflow_status: "review_required" }).eq("id", lead.id); } catch {}
+          } else {
+            validLeads.push(lead);
+          }
+        }
+      }
+    }
+
+    const missingIds = ids.filter(id => !leads.find((l: any) => l.id === id));
+    missingIds.forEach(id => validationErrors.push({ id, error: "Lead not found" }));
+
+    if (validLeads.length === 0) {
+      return res.json({ batch_id: null, attempted: 0, succeeded: 0, failed: 0, skipped: validationErrors.length, validation_errors: validationErrors, results: [] });
+    }
+
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const results: { id: string; status: string; url?: string; error?: string }[] = [];
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const lead of validLeads) {
+      try {
+        const amount = parseFloat(lead.billing_amount) || 49.99;
+        const partnerName = lead.assigned_to || "Partner";
+        const session = await createLeadChargeCheckout(lead.id, amount, partnerName, lead.category || "general");
+        await supabaseAdmin.from("navigator_requests").update({
+          billing_workflow_status: "queued",
+          stripe_checkout_session_id: session.id,
+          stripe_payment_status: "pending",
+        }).eq("id", lead.id);
+        results.push({ id: lead.id, status: "checkout_created", url: session.url || undefined });
+        succeeded++;
+      } catch (err: any) {
+        try {
+          await supabaseAdmin.from("navigator_requests").update({
+            billing_workflow_status: "failed",
+            stripe_payment_status: "failed",
+          }).eq("id", lead.id);
+        } catch {}
+        results.push({ id: lead.id, status: "failed", error: err?.message || "Charge failed" });
+        failed++;
+      }
+    }
+
+    const totalAmount = validLeads.reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
+    await logBillingRun("admin_batch", succeeded, totalAmount, "batch", validLeads.map(l => l.id));
+
+    return res.json({
+      batch_id: batchId,
+      attempted: validLeads.length,
+      succeeded,
+      failed,
+      skipped: validationErrors.length,
+      validation_errors: validationErrors,
+      results,
+    });
+  });
+
   app.post("/api/admin/billing-bulk-update", requireAdmin, async (req, res) => {
     if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
     const { ids, billing_workflow_status, billing_hold_reason } = req.body;

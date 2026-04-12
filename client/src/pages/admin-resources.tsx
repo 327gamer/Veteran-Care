@@ -2553,6 +2553,76 @@ function AdminResourcesInner() {
 
             <p className="text-xs text-muted-foreground">{billingQueueLeads.length} lead{billingQueueLeads.length !== 1 ? "s" : ""}</p>
 
+            {billingSelectedIds.size > 0 && (() => {
+              const selectedLeads = billingQueueLeads.filter(l => billingSelectedIds.has(l.id));
+              const eligible = selectedLeads.filter(l => {
+                const wfs = l.billing_workflow_status || "";
+                return (wfs === "queued" || wfs === "ready") && !l.billed && !l.is_disputed;
+              });
+              const ineligible = selectedLeads.filter(l => !eligible.find(e => e.id === l.id));
+              const totalAmount = eligible.reduce((sum, l) => sum + (parseFloat(String(l.billing_amount || 49.99))), 0);
+              const overLimit = eligible.length > 5;
+              const canExecute = eligible.length > 0 && !overLimit;
+
+              return (
+                <div className="border rounded p-3 bg-slate-50 space-y-2" data-testid="batch-preview-panel">
+                  <h4 className="text-[11px] font-semibold">Batch Preview</h4>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div><p className="text-[9px] text-muted-foreground">Selected</p><p className="text-sm font-bold">{selectedLeads.length}</p></div>
+                    <div><p className="text-[9px] text-muted-foreground">Eligible</p><p className="text-sm font-bold text-green-600">{eligible.length}</p></div>
+                    <div><p className="text-[9px] text-muted-foreground">Ineligible</p><p className="text-sm font-bold text-red-600">{ineligible.length}</p></div>
+                    <div><p className="text-[9px] text-muted-foreground">Total Amount</p><p className="text-sm font-bold">${totalAmount.toFixed(2)}</p></div>
+                  </div>
+                  {ineligible.length > 0 && (
+                    <div className="text-[9px] bg-red-50 border border-red-200 rounded p-1.5">
+                      <span className="font-semibold text-red-700">Ineligible leads:</span>
+                      {ineligible.map(l => {
+                        const wfs = l.billing_workflow_status || "unknown";
+                        let reason = l.billed ? "already billed" : l.is_disputed ? "disputed" : `status: ${wfs}`;
+                        return <span key={l.id} className="text-red-600 ml-1">{l.id.substring(0, 8)} ({reason})</span>;
+                      })}
+                    </div>
+                  )}
+                  {overLimit && (
+                    <div className="text-[9px] bg-amber-50 border border-amber-200 rounded p-1.5 text-amber-700 font-medium" data-testid="batch-over-limit">
+                      Batch size exceeds safe limit (max 5). Deselect leads to proceed.
+                    </div>
+                  )}
+                  {canExecute && (
+                    <Button
+                      data-testid="batch-execute-btn"
+                      size="sm"
+                      className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white w-full"
+                      onClick={async () => {
+                        if (!window.confirm(`Confirm batch charge of ${eligible.length} leads ($${totalAmount.toFixed(2)} total)?`)) return;
+                        const resp = await fetch("/api/admin/billing-batch-charge", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                          body: JSON.stringify({ ids: eligible.map(l => l.id) }),
+                        });
+                        const result = await resp.json();
+                        if (resp.ok) {
+                          let msg = `Batch ${result.batch_id}: ${result.succeeded} checkout(s) created`;
+                          if (result.failed > 0) msg += `, ${result.failed} failed`;
+                          if (result.skipped > 0) msg += `, ${result.skipped} skipped`;
+                          toast({ description: msg });
+                          if (result.results) {
+                            result.results.filter((r: any) => r.url).forEach((r: any) => window.open(r.url, "_blank"));
+                          }
+                          setBillingSelectedIds(new Set());
+                          queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
+                        } else {
+                          toast({ description: result.error, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Execute Batch Charge ({eligible.length} leads — ${totalAmount.toFixed(2)})
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
+
             {navLoading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
 
             <div className="space-y-1">
