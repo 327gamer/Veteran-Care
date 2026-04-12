@@ -2783,6 +2783,11 @@ function AdminResourcesInner() {
                 </div>
               </div>
             </div>
+
+            <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Performance Intelligence</h3>
+              <PerformanceIntelPanel adminKey={adminKey} />
+            </div>
           </>
         )}
 
@@ -3963,6 +3968,102 @@ function BillingRunsPanel({ adminKey }: { adminKey: string }) {
           <span className="text-muted-foreground">by {run.executed_by}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+const PERF_BADGE: Record<string, { label: string; className: string }> = {
+  strong: { label: "STRONG", className: "bg-green-100 text-green-800 border-green-300" },
+  moderate: { label: "MODERATE", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  weak: { label: "WEAK", className: "bg-orange-100 text-orange-800 border-orange-300" },
+  inactive: { label: "INACTIVE", className: "bg-red-100 text-red-700 border-red-300" },
+  high_value: { label: "HIGH VALUE", className: "bg-green-100 text-green-800 border-green-300" },
+  emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
+  low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
+};
+
+function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
+  const [catPerf, setCatPerf] = useState<any[]>([]);
+  const [partnerPerf, setPartnerPerf] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [catFilter, setCatFilter] = useState("");
+  const [partnerFilter, setPartnerFilter] = useState("");
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/intelligence/category-performance", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+      fetch("/api/admin/intelligence/partner-performance", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    ]).then(([cats, partners]) => {
+      setCatPerf(Array.isArray(cats) ? cats : []);
+      setPartnerPerf(Array.isArray(partners) ? partners : []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading performance data...</p>;
+
+  const filteredCats = catFilter ? catPerf.filter(c => c.performance_status === catFilter) : catPerf;
+  const filteredPartners = partnerFilter ? partnerPerf.filter(p => p.performance_status === partnerFilter) : partnerPerf;
+
+  return (
+    <div className="space-y-4" data-testid="performance-intel-panel">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold">Category Performance</h4>
+          <div className="flex gap-1">
+            {["", "high_value", "emerging", "low_conversion", "inactive"].map(f => (
+              <button key={f} data-testid={`cat-perf-filter-${f || "all"}`}
+                className={`px-1.5 py-0.5 rounded text-[9px] border ${catFilter === f ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200"}`}
+                onClick={() => setCatFilter(f)}>{f ? (PERF_BADGE[f]?.label || f) : "All"}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1 max-h-40 overflow-y-auto">
+          {filteredCats.map(c => (
+            <div key={c.category} className="flex items-center gap-2 text-[10px] border-b pb-1" data-testid={`cat-perf-${c.category}`}>
+              <span className="font-medium min-w-[120px] truncate">{c.category.replace(/-/g, " ")}</span>
+              <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${(PERF_BADGE[c.performance_status] || PERF_BADGE.inactive).className}`}>
+                {(PERF_BADGE[c.performance_status] || PERF_BADGE.inactive).label}
+              </span>
+              {c.alert && <span className="text-[8px] text-red-600 font-semibold">{c.alert}</span>}
+              <span className="text-muted-foreground ml-auto">{c.total} leads</span>
+              <span className="text-muted-foreground">{c.billable} billable</span>
+              <span className="text-green-600">{c.paid} paid</span>
+              <span className="text-green-700 font-medium">${c.revenue.toFixed(2)}</span>
+            </div>
+          ))}
+          {filteredCats.length === 0 && <p className="text-[10px] text-muted-foreground">No categories match filter.</p>}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold">Partner Performance</h4>
+          <div className="flex gap-1">
+            {["", "strong", "moderate", "weak", "inactive"].map(f => (
+              <button key={f} data-testid={`partner-perf-filter-${f || "all"}`}
+                className={`px-1.5 py-0.5 rounded text-[9px] border ${partnerFilter === f ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200"}`}
+                onClick={() => setPartnerFilter(f)}>{f ? (PERF_BADGE[f]?.label || f) : "All"}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1 max-h-40 overflow-y-auto">
+          {filteredPartners.map(p => (
+            <div key={p.partner_id} className="flex items-center gap-2 text-[10px] border-b pb-1" data-testid={`partner-perf-${p.partner_id}`}>
+              <span className="font-medium min-w-[140px] truncate">{p.partner_name}</span>
+              <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${(PERF_BADGE[p.performance_status] || PERF_BADGE.inactive).className}`}>
+                {(PERF_BADGE[p.performance_status] || PERF_BADGE.inactive).label}
+              </span>
+              {p.alert && <span className="text-[8px] text-red-600 font-semibold">{p.alert}</span>}
+              <span className="text-muted-foreground ml-auto">{p.leads_assigned} assigned</span>
+              <span className="text-muted-foreground">{p.response_rate}% resp</span>
+              {p.avg_response_hours !== null && <span className="text-muted-foreground">{p.avg_response_hours}h avg</span>}
+              <span className="text-green-600">{p.billed} paid</span>
+              <span className="text-green-700 font-medium">${p.revenue.toFixed(2)}</span>
+            </div>
+          ))}
+          {filteredPartners.length === 0 && <p className="text-[10px] text-muted-foreground">No partners match filter.</p>}
+        </div>
+      </div>
     </div>
   );
 }

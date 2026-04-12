@@ -8011,7 +8011,16 @@ export async function registerRoutes(
         }
       }
       const result = Object.values(cats)
-        .map(c => ({ ...c, conversion_rate: c.billable > 0 ? Math.round((c.paid / c.billable) * 10000) / 100 : 0 }))
+        .map(c => {
+          const conversion_rate = c.billable > 0 ? Math.round((c.paid / c.billable) * 10000) / 100 : 0;
+          let performance_status = "inactive";
+          let alert = null;
+          if (c.billable > 0 && c.paid > 0) performance_status = "high_value";
+          else if (c.total >= 3 && c.billable === 0) { performance_status = "inactive"; alert = "NO MONETIZATION"; }
+          else if (c.billable > 0 && conversion_rate < 5) { performance_status = "low_conversion"; alert = "LOW CONVERSION"; }
+          else if (c.total >= 3 && c.paid === 0) performance_status = "emerging";
+          return { ...c, conversion_rate, performance_status, alert };
+        })
         .sort((a, b) => b.total - a.total);
       return res.json(result);
     } catch (err: any) {
@@ -8049,17 +8058,26 @@ export async function registerRoutes(
       for (const p of partners || []) nameMap[p.id] = p.name;
       const result = Object.values(pMap).map(p => {
         const avgMs = p.response_times.length > 0 ? p.response_times.reduce((a, b) => a + b, 0) / p.response_times.length : null;
+        const rr = p.leads_assigned > 0 ? Math.round((p.responded / p.leads_assigned) * 10000) / 100 : 0;
+        let performance_status = "inactive";
+        let alert = null;
+        if (rr >= 40) performance_status = "strong";
+        else if (rr >= 15) performance_status = "moderate";
+        else if (rr >= 1) { performance_status = "weak"; alert = "LOW RESPONSE"; }
+        else { performance_status = "inactive"; if (p.leads_assigned >= 2) alert = "ATTENTION REQUIRED"; }
         return {
           partner_id: p.partner_id,
           partner_name: nameMap[p.partner_id] || "Unknown",
           leads_assigned: p.leads_assigned,
           responded: p.responded,
-          response_rate: p.leads_assigned > 0 ? Math.round((p.responded / p.leads_assigned) * 10000) / 100 : 0,
+          response_rate: rr,
           accepted: p.accepted,
           declined: p.declined,
           avg_response_hours: avgMs ? Math.round((avgMs / (1000 * 60 * 60)) * 100) / 100 : null,
           billed: p.billed,
           revenue: Math.round(p.revenue * 100) / 100,
+          performance_status,
+          alert,
         };
       }).sort((a, b) => b.leads_assigned - a.leads_assigned);
       return res.json(result);

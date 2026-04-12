@@ -1,0 +1,146 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 5.7 – Controlled Launch Performance Review Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Operational Optimization Layer)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Convert existing Step 5.6 intelligence endpoints into lightweight, actionable performance signals inside admin.
+
+This is a visibility + decision-support layer only.
+
+-------------------------------------
+IMPLEMENTATION PLAN
+-------------------------------------
+
+STEP 1 — PARTNER PERFORMANCE FLAGS (DERIVED)
+
+Using:
+GET /api/admin/intelligence/partner-performance
+
+Add derived field:
+
+partner_performance_status
+
+Logic:
+
+- strong → response_rate ≥ 40
+- moderate → 15–39
+- weak → 1–14
+- inactive → 0
+
+DO NOT store in DB.
+Compute dynamically.
+
+-------------------------------------
+
+STEP 2 — CATEGORY PERFORMANCE FLAGS (DERIVED)
+
+Using:
+GET /api/admin/intelligence/category-performance
+
+Add:
+
+category_performance_status
+
+Logic:
+
+- high_value → billable > 0 AND paid > 0
+- emerging → high volume + paid = 0
+- low_conversion → billable > 0 AND paid < 5%
+- inactive → leads exist but billable = 0
+
+-------------------------------------
+
+STEP 3 — PERFORMANCE ALERT FLAGS
+
+Partner:
+- response_rate = 0 → ATTENTION REQUIRED
+- response_rate < 10 → LOW RESPONSE
+
+Category:
+- high volume + low payment → LOW CONVERSION
+- no billable leads → NO MONETIZATION
+
+-------------------------------------
+
+STEP 4 — ADMIN VISIBILITY
+
+Add simple badges:
+
+Partner:
+- STRONG (green)
+- MODERATE (yellow)
+- WEAK (orange)
+- INACTIVE (red)
+
+Category:
+- HIGH VALUE (green)
+- EMERGING (blue)
+- LOW CONVERSION (orange)
+- INACTIVE (red)
+
+Add small alert labels.
+
+-------------------------------------
+
+STEP 5 — FILTER SUPPORT
+
+Add filters:
+
+Partners:
+- strong
+- moderate
+- weak
+- inactive
+
+Categories:
+- high_value
+- emerging
+- low_conversion
+- inactive
+
+Client-side filtering only.
+
+-------------------------------------
+
+STEP 6 — DATA SOURCE RULE
+
+Use ONLY:
+- category-performance
+- partner-performance
+- revenue
+- lead-signals
+
+NO duplicate calculations.
+
+-------------------------------------
+
+STEP 7 — VALIDATION
+
+Confirm:
+
+1. Flags match real data
+2. Flags update dynamically
+3. No routing/billing impact
+4. Filters work correctly
+
+-------------------------------------
+
+STRICT RULE
+
+DO NOT MODIFY:
+- routing
+- billing
+- Stripe
+- reassignment
+- tracking
+
+-------------------------------------
+END
+-------------------------------------
