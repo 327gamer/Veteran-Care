@@ -1,0 +1,171 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.5 – Controlled Batch Readiness Playbook Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Batch Transition Discipline Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.5 – Batch Readiness Playbook  
+❌ NOT automation  
+❌ NOT auto-billing  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+
+This step defines HOW admin should safely begin controlled batch billing.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Provide clear, system-embedded guidance for:
+
+- how to move from manual billing → controlled batch review
+- how to maintain billing discipline during increased volume
+- how to prevent errors while improving efficiency
+
+This is a human-operated batch system, not automation.
+
+-------------------------------------
+REQUIREMENT 1 — BATCH READINESS PANEL
+-------------------------------------
+
+Add a new admin section:
+
+→ “Batch Readiness Playbook”
+
+Display:
+
+- when to begin batch review
+- how to execute batch safely
+- what to verify before charging
+
+-------------------------------------
+REQUIREMENT 2 — BATCH ELIGIBILITY GUIDANCE
+-------------------------------------
+
+Display clear rules:
+
+Only include leads in batch if:
+
+- billing_workflow_status = queued
+- delivery confirmed
+- no dispute flags
+- no hold status
+- no anomalies
+- not reassigned recently (optional early rule)
+
+-------------------------------------
+REQUIREMENT 3 — BATCH SIZE GUIDANCE
+-------------------------------------
+
+Display recommendation:
+
+- start with small batch sizes (e.g., 3–5 leads)
+- gradually increase only after clean runs
+- never process full queue immediately
+
+-------------------------------------
+REQUIREMENT 4 — BATCH EXECUTION CHECKLIST
+-------------------------------------
+
+Display checklist:
+
+1. review selected leads
+2. verify eligibility
+3. confirm no disputes
+4. confirm delivery
+5. execute batch charges
+6. verify Stripe results
+7. review failures immediately
+
+-------------------------------------
+REQUIREMENT 5 — FAILURE HANDLING GUIDANCE
+-------------------------------------
+
+Display rules:
+
+- failed payments must be reviewed individually
+- do not include failed leads in next batch without review
+- repeated failures → move to review_required
+
+-------------------------------------
+REQUIREMENT 6 — SAFETY GUARDRAILS
+-------------------------------------
+
+Display rules:
+
+- no auto-billing
+- manual verification always required
+- disputed leads never included
+- hold logic always respected
+- no blind batch execution
+
+-------------------------------------
+REQUIREMENT 7 — ADMIN VISIBILITY
+-------------------------------------
+
+Embed panel near:
+
+- billing queue
+- scale transition panel
+
+Keep consistent UI style (collapsible guidance panel)
+
+-------------------------------------
+REQUIREMENT 8 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- batch automation engine
+- scheduling system
+- background jobs
+- bulk Stripe triggers
+
+This is guidance only.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Panel displays correctly
+2. Guidance text is readable and clear
+3. No performance impact
+4. No impact to billing, routing, or Stripe
+5. Panel integrates cleanly with existing admin UI
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- batch readiness panel implemented
+- guidance visible
+- checklist included
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

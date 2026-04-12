@@ -2791,6 +2791,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Batch Readiness Playbook</h3>
+              <BatchReadinessPlaybook />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Scale Readiness</h3>
               <ScaleReadinessPanel adminKey={adminKey} />
             </div>
@@ -4007,6 +4012,79 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function BatchReadinessPlaybook() {
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const toggle = (key: string) => setExpanded(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+
+  const sections = [
+    { key: "when", title: "When to Begin Batch Review", items: [
+      "Scale Transition Status shows TRANSITION READY",
+      "Billing queue has 5+ eligible leads",
+      "All prior manual runs completed without errors",
+      "No unresolved disputes or failed payments pending",
+    ]},
+    { key: "eligibility", title: "Batch Eligibility Rules", items: [
+      "billing_workflow_status = queued",
+      "Delivery confirmed (email_sent = true, routed_to_partner_id set)",
+      "No dispute flags on the lead",
+      "No hold status (billing_workflow_status ≠ on_hold)",
+      "No anomalies or review_required status",
+      "Not recently reassigned (optional early caution)",
+    ]},
+    { key: "sizing", title: "Batch Size Guidance", items: [
+      "Start with small batches: 3–5 leads per run",
+      "Increase gradually only after consecutive clean runs",
+      "Never process the full queue immediately",
+      "Monitor Stripe results after each batch before proceeding",
+    ]},
+    { key: "checklist", title: "Batch Execution Checklist", items: [
+      "1. Review selected leads in billing queue",
+      "2. Verify eligibility for each lead",
+      "3. Confirm no disputes on any lead",
+      "4. Confirm delivery status for all leads",
+      "5. Execute batch charges via Run Billing",
+      "6. Verify Stripe results in Billing Runs panel",
+      "7. Review any failures immediately — do not defer",
+    ]},
+    { key: "failures", title: "Failure Handling", items: [
+      "Failed payments must be reviewed individually",
+      "Do not include failed leads in next batch without review",
+      "Repeated failures (2+) → move to review_required",
+      "Payment method issues → contact partner before retry",
+    ]},
+    { key: "guardrails", title: "Safety Guardrails", items: [
+      "No auto-billing — all charges require manual trigger",
+      "Manual verification always required before execution",
+      "Disputed leads are never included in any batch",
+      "Hold logic always respected — on_hold leads are skipped",
+      "No blind batch execution — every lead must be reviewed",
+    ]},
+  ];
+
+  return (
+    <div className="space-y-1" data-testid="batch-readiness-playbook">
+      {sections.map(s => (
+        <div key={s.key} className="border rounded">
+          <button className="w-full flex items-center justify-between px-3 py-1.5 text-left" data-testid={`batch-toggle-${s.key}`} onClick={() => toggle(s.key)}>
+            <span className="text-[11px] font-semibold">{s.title}</span>
+            <span className="text-[10px] text-muted-foreground">{expanded.includes(s.key) ? "▾" : "▸"}</span>
+          </button>
+          {expanded.includes(s.key) && (
+            <div className="px-3 pb-2 space-y-0.5">
+              {s.items.map((item, i) => (
+                <div key={i} className="flex items-start gap-1.5 text-[10px]" data-testid={`batch-item-${s.key}-${i}`}>
+                  <span className="text-muted-foreground mt-0.5">{s.key === "checklist" ? "" : "•"}</span>
+                  <span className="text-slate-600">{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ScaleTransitionPanel({ adminKey }: { adminKey: string }) {
   const [signals, setSignals] = useState<any[]>([]);
