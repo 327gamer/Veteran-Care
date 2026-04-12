@@ -8053,9 +8053,10 @@ export async function registerRoutes(
           pMap[pid].revenue += parseFloat(l.billing_amount) || 49.99;
         }
       }
-      const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name");
+      const { data: partners } = await supabaseAdmin.from("partner_organizations").select("id, name, partner_status_override");
       const nameMap: Record<string, string> = {};
-      for (const p of partners || []) nameMap[p.id] = p.name;
+      const overrideMap: Record<string, string> = {};
+      for (const p of partners || []) { nameMap[p.id] = p.name; overrideMap[p.id] = p.partner_status_override || "active"; }
       const result = Object.values(pMap).map(p => {
         const avgMs = p.response_times.length > 0 ? p.response_times.reduce((a, b) => a + b, 0) / p.response_times.length : null;
         const rr = p.leads_assigned > 0 ? Math.round((p.responded / p.leads_assigned) * 10000) / 100 : 0;
@@ -8078,6 +8079,7 @@ export async function registerRoutes(
           revenue: Math.round(p.revenue * 100) / 100,
           performance_status,
           alert,
+          partner_status_override: overrideMap[p.partner_id] || "active",
         };
       }).sort((a, b) => b.leads_assigned - a.leads_assigned);
       return res.json(result);
@@ -8170,6 +8172,83 @@ export async function registerRoutes(
         .filter(([, s]) => s.total >= 3 && (s.responded / s.total) < 0.3)
         .map(([pid, s]) => ({ partner: nameMap[pid] || pid, total: s.total, responded: s.responded, response_rate: Math.round((s.responded / s.total) * 10000) / 100 }));
       return res.json({ high_value_categories: highValueCats, low_conversion_categories: lowConvCats, high_response_low_payment_partners: highRespLowPay, low_response_partners: lowResp });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.patch("/api/admin/partner-status-override/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { partner_status_override } = req.body;
+    const allowed = ["active", "paused", "review_only"];
+    if (!allowed.includes(partner_status_override)) {
+      return res.status(400).json({ error: `Invalid status. Allowed: ${allowed.join(", ")}` });
+    }
+    const { data: current } = await supabaseAdmin.from("partner_organizations")
+      .select("id, name, partner_status_override").eq("id", id).single();
+    const previousValue = current?.partner_status_override || "active";
+    const { data, error } = await supabaseAdmin.from("partner_organizations")
+      .update({ partner_status_override }).eq("id", id).select().single();
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    try {
+      await supabaseAdmin.from("optimization_actions_log").insert({
+        decision_type: "partner",
+        entity_id: id,
+        action_taken: `partner_status_override → ${partner_status_override}`,
+        previous_value: previousValue,
+        new_value: partner_status_override,
+      });
+    } catch {}
+    return res.json(data);
+  });
+
+  app.patch("/api/admin/category-action-flag", requireAdmin, async (req, res) => {
+    const { category, flag } = req.body;
+    const allowed = ["normal", "expand", "review", "deprioritize"];
+    if (!category || !allowed.includes(flag)) {
+      return res.status(400).json({ error: `category required, flag must be: ${allowed.join(", ")}` });
+    }
+    const key = `category_flag:${category}`;
+    const { data: existing } = await supabaseAdmin.from("billing_config")
+      .select("value").eq("key", key).single();
+    const previousValue = existing?.value || "normal";
+    await supabaseAdmin.from("billing_config")
+      .upsert({ key, value: flag, updated_at: new Date().toISOString() });
+    try {
+      await supabaseAdmin.from("optimization_actions_log").insert({
+        decision_type: "category",
+        entity_id: category,
+        action_taken: `category_action_flag → ${flag}`,
+        previous_value: previousValue,
+        new_value: flag,
+      });
+    } catch {}
+    return res.json({ category, flag });
+  });
+
+  app.get("/api/admin/category-action-flags", requireAdmin, async (_req, res) => {
+    try {
+      const { data } = await supabaseAdmin.from("billing_config")
+        .select("key, value").like("key", "category_flag:%");
+      const flags: Record<string, string> = {};
+      for (const row of data || []) {
+        const cat = row.key.replace("category_flag:", "");
+        flags[cat] = row.value;
+      }
+      return res.json(flags);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/optimization-log", requireAdmin, async (_req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin.from("optimization_actions_log")
+        .select("*").order("created_at", { ascending: false }).limit(50);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data || []);
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }

@@ -1,5 +1,6 @@
 
 import { AdminAuthGuard } from "@/components/admin-auth-guard";
+import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -3985,19 +3986,28 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
 function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
   const [catPerf, setCatPerf] = useState<any[]>([]);
   const [partnerPerf, setPartnerPerf] = useState<any[]>([]);
+  const [catFlags, setCatFlags] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("");
   const [partnerFilter, setPartnerFilter] = useState("");
+  const [optLog, setOptLog] = useState<any[]>([]);
+  const { toast } = useToast();
 
-  useEffect(() => {
+  const loadData = () => {
     Promise.all([
       fetch("/api/admin/intelligence/category-performance", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
       fetch("/api/admin/intelligence/partner-performance", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
-    ]).then(([cats, partners]) => {
+      fetch("/api/admin/category-action-flags", { headers: { "x-admin-key": adminKey } }).then(r => r.json()).catch(() => ({})),
+      fetch("/api/admin/optimization-log", { headers: { "x-admin-key": adminKey } }).then(r => r.json()).catch(() => []),
+    ]).then(([cats, partners, flags, log]) => {
       setCatPerf(Array.isArray(cats) ? cats : []);
       setPartnerPerf(Array.isArray(partners) ? partners : []);
+      setCatFlags(typeof flags === "object" && !Array.isArray(flags) ? flags : {});
+      setOptLog(Array.isArray(log) ? log : []);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [adminKey]);
+  };
+
+  useEffect(() => { loadData(); }, [adminKey]);
 
   if (loading) return <p className="text-xs text-muted-foreground py-4">Loading performance data...</p>;
 
@@ -4020,11 +4030,26 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {filteredCats.map(c => (
             <div key={c.category} className="flex items-center gap-2 text-[10px] border-b pb-1" data-testid={`cat-perf-${c.category}`}>
-              <span className="font-medium min-w-[120px] truncate">{c.category.replace(/-/g, " ")}</span>
+              <span className="font-medium min-w-[100px] truncate">{c.category.replace(/-/g, " ")}</span>
               <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${(PERF_BADGE[c.performance_status] || PERF_BADGE.inactive).className}`}>
                 {(PERF_BADGE[c.performance_status] || PERF_BADGE.inactive).label}
               </span>
               {c.alert && <span className="text-[8px] text-red-600 font-semibold">{c.alert}</span>}
+              <select className="text-[9px] border rounded px-0.5 py-0 h-5" data-testid={`cat-flag-${c.category}`}
+                value={catFlags[c.category] || "normal"}
+                onChange={async (e) => {
+                  const resp = await fetch("/api/admin/category-action-flag", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                    body: JSON.stringify({ category: c.category, flag: e.target.value }),
+                  });
+                  if (resp.ok) { setCatFlags(prev => ({ ...prev, [c.category]: e.target.value })); loadData(); toast({ description: `${c.category} → ${e.target.value}` }); }
+                }}>
+                <option value="normal">Normal</option>
+                <option value="expand">Expand</option>
+                <option value="review">Review</option>
+                <option value="deprioritize">Deprioritize</option>
+              </select>
               <span className="text-muted-foreground ml-auto">{c.total} leads</span>
               <span className="text-muted-foreground">{c.billable} billable</span>
               <span className="text-green-600">{c.paid} paid</span>
@@ -4049,11 +4074,25 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {filteredPartners.map(p => (
             <div key={p.partner_id} className="flex items-center gap-2 text-[10px] border-b pb-1" data-testid={`partner-perf-${p.partner_id}`}>
-              <span className="font-medium min-w-[140px] truncate">{p.partner_name}</span>
+              <span className="font-medium min-w-[100px] truncate">{p.partner_name}</span>
               <span className={`px-1 py-0.5 rounded border text-[8px] font-semibold ${(PERF_BADGE[p.performance_status] || PERF_BADGE.inactive).className}`}>
                 {(PERF_BADGE[p.performance_status] || PERF_BADGE.inactive).label}
               </span>
               {p.alert && <span className="text-[8px] text-red-600 font-semibold">{p.alert}</span>}
+              <select className="text-[9px] border rounded px-0.5 py-0 h-5" data-testid={`partner-override-${p.partner_id}`}
+                value={p.partner_status_override || "active"}
+                onChange={async (e) => {
+                  const resp = await fetch(`/api/admin/partner-status-override/${p.partner_id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+                    body: JSON.stringify({ partner_status_override: e.target.value }),
+                  });
+                  if (resp.ok) { loadData(); toast({ description: `${p.partner_name} → ${e.target.value}` }); }
+                }}>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="review_only">Review Only</option>
+              </select>
               <span className="text-muted-foreground ml-auto">{p.leads_assigned} assigned</span>
               <span className="text-muted-foreground">{p.response_rate}% resp</span>
               {p.avg_response_hours !== null && <span className="text-muted-foreground">{p.avg_response_hours}h avg</span>}
@@ -4064,6 +4103,22 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
           {filteredPartners.length === 0 && <p className="text-[10px] text-muted-foreground">No partners match filter.</p>}
         </div>
       </div>
+
+      {optLog.length > 0 && (
+        <div className="border rounded p-2">
+          <h4 className="text-[11px] font-semibold mb-1">Decision Log (Last 10)</h4>
+          <div className="space-y-0.5 max-h-28 overflow-y-auto">
+            {optLog.slice(0, 10).map((l: any) => (
+              <div key={l.id} className="flex items-center gap-2 text-[9px] border-b pb-0.5" data-testid={`opt-log-${l.id}`}>
+                <span className="px-1 py-0.5 rounded bg-gray-100 text-[8px] font-medium">{l.decision_type}</span>
+                <span className="truncate max-w-[120px]">{l.entity_id}</span>
+                <span className="text-muted-foreground">{l.previous_value} → {l.new_value}</span>
+                <span className="text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

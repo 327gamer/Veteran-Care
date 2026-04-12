@@ -142,6 +142,7 @@ function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: s
   return rules.filter((rule) => {
     const partner = rule.partner;
     if (!partner || !partner.is_active || !partner.is_lead_enabled) return false;
+    if (partner.partner_status_override === "paused") return false;
     if (excludePartnerIds.includes(partner.id)) return false;
 
     const ruleCategory = rule.category_slug ? toCanonical(rule.category_slug) : null;
@@ -189,7 +190,7 @@ export async function findCandidatePartners(
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
-    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities)")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities, partner_status_override)")
     .eq("is_active", true);
 
   if (error || !rules || rules.length === 0) return [];
@@ -244,7 +245,7 @@ export async function findMatchingPartners(
 
   const { data: rules, error } = await supabaseAdmin
     .from("partner_routing_rules")
-    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities)")
+    .select("*, partner:partner_organizations!partner_id(id, name, is_active, is_lead_enabled, contact_email, state, cities, partner_status_override)")
     .eq("is_active", true);
 
   if (error || !rules || rules.length === 0) return [];

@@ -1,0 +1,221 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 5.8 – Launch Optimization Decision Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Operational Decision Execution Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 5.8 – Optimization Decision Layer
+❌ NOT automation
+❌ NOT routing changes (except paused partner exclusion)
+❌ NOT pricing changes
+❌ NOT billing logic changes
+❌ NOT dashboards
+
+This step enables controlled admin decision execution based on performance signals from Step 5.7.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to TAKE ACTION directly from performance signals without modifying core system logic.
+
+Convert:
+
+→ “we see weak / strong signals”
+
+into:
+
+→ “we can act on them safely and intentionally”
+
+-------------------------------------
+STEP 1 — PARTNER ACTION CONTROLS
+-------------------------------------
+
+Add admin-level control for each partner:
+
+partner_status_override
+
+Allowed values:
+- active
+- paused
+- review_only
+
+Behavior:
+- active
+  → normal routing
+
+- paused
+  → partner excluded from routing
+  → historical leads remain unchanged
+
+- review_only
+  → partner still visible
+  → clearly flagged for admin review
+  → no automatic routing priority change
+
+IMPORTANT:
+Only paused may affect routing behavior, and only by exclusion.
+
+-------------------------------------
+STEP 2 — CATEGORY ACTION FLAGS
+-------------------------------------
+
+Add admin-level category control:
+
+category_action_flag
+
+Allowed values:
+- normal
+- expand
+- review
+- deprioritize
+
+Purpose:
+- expand
+  → signal to add more partners
+- review
+  → monitor category performance more closely
+- deprioritize
+  → signal weak monetization / weak quality / weak fit
+- normal
+  → no special action
+
+IMPORTANT:
+This is visibility + admin control only.
+No routing or pricing changes from these flags.
+
+-------------------------------------
+STEP 3 — ADMIN VISIBILITY
+-------------------------------------
+
+Expose controls inside admin in lightweight form.
+
+Must show:
+- current performance status from Step 5.7
+- current action control value
+- easy way to change value
+
+Use lightweight UI:
+- dropdown
+- selector
+- badge + control
+
+No redesign.
+
+-------------------------------------
+STEP 4 — DECISION LOGGING
+-------------------------------------
+
+Add lightweight audit log table:
+
+optimization_actions_log
+
+Minimum fields:
+- id
+- decision_type (partner/category)
+- entity_id
+- action_taken
+- timestamp
+- admin_user (if available)
+
+Purpose:
+- audit trail
+- reversibility trace
+- operational accountability
+
+-------------------------------------
+STEP 5 — ROUTING SAFETY
+-------------------------------------
+
+ONLY enforce:
+- paused partners are excluded from routing
+
+DO NOT:
+- auto-promote strong partners
+- auto-replace weak partners
+- auto-adjust category behavior
+- auto-adjust billing behavior
+
+All actions remain manual and reversible.
+
+-------------------------------------
+STEP 6 — REVERSIBILITY
+-------------------------------------
+
+Admin must be able to:
+- change paused back to active
+- change review_only back to active
+- change category flags back to normal
+
+Historical data must remain untouched.
+
+-------------------------------------
+STEP 7 — FILTER SUPPORT
+-------------------------------------
+
+Allow admin to filter by:
+
+Partners:
+- paused
+- review_only
+- active
+
+Categories:
+- expand
+- review
+- deprioritize
+- normal
+
+Keep lightweight.
+Client-side filtering preferred if practical.
+
+-------------------------------------
+STEP 8 — VALIDATION
+-------------------------------------
+
+Please validate:
+
+1. Paused partner is excluded from routing
+2. Active partner remains unchanged
+3. Review_only partner displays correctly and does not auto-change routing
+4. Category flags save and display correctly
+5. Decision logs capture all actions
+6. Reversing decisions works correctly
+7. No impact to billing, Stripe, reassignment, or tracking
+8. No unintended routing side effects beyond paused exclusion
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+- tracking system
+- reassignment logic
+- billing logic
+- Stripe integration
+- pricing rules
+- routing logic beyond paused partner exclusion
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return with:
+
+A) files changed
+B) schema updates
+C) partner action controls implemented
+D) category flags implemented
+E) decision logging confirmed
+F) validation results
+G) confirmation no regression introduced
+
+BEGIN EXECUTION
