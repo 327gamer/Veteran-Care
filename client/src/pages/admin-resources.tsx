@@ -2786,6 +2786,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Launch Monitoring</h3>
+              <LaunchMonitoringPanel adminKey={adminKey} />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Execution Visibility</h3>
               <ExecutionVisibilityPanel adminKey={adminKey} />
             </div>
@@ -3992,6 +3997,71 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function LaunchMonitoringPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/intelligence/launch-monitoring", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading monitoring data...</p>;
+  if (!data) return null;
+
+  const { signals, metrics } = data;
+  const levelCls: Record<string, string> = {
+    alert: "bg-red-100 text-red-800 border-red-300",
+    warning: "bg-amber-100 text-amber-800 border-amber-300",
+    info: "bg-blue-100 text-blue-800 border-blue-300",
+  };
+
+  return (
+    <div className="space-y-3" data-testid="launch-monitoring-panel">
+      {signals && signals.length > 0 ? (
+        <div className="space-y-1">
+          {signals.map((s: any) => (
+            <div key={s.key} className="flex items-center gap-2 text-[10px] border-b pb-1" data-testid={`signal-${s.key}`}>
+              <span className={`px-1.5 py-0.5 rounded border text-[8px] font-bold ${levelCls[s.level] || levelCls.info}`}>{s.label}</span>
+              <span className="text-muted-foreground">{s.detail}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-[10px] text-green-700 font-medium px-2 py-1 bg-green-50 border border-green-200 rounded" data-testid="signal-all-clear">All systems nominal — no pressure signals detected</div>
+      )}
+
+      {metrics && (
+        <div className="grid grid-cols-4 gap-2 text-[10px]">
+          <div className="border rounded p-1.5 bg-slate-50">
+            <div className="text-[8px] text-muted-foreground font-semibold">Volume</div>
+            <div>Today: <span className="font-semibold">{metrics.created_today}</span></div>
+            <div>7d avg: <span className="font-semibold">{metrics.daily_avg_7d}/day</span></div>
+            <div>Total: <span className="font-semibold">{metrics.total_leads}</span></div>
+          </div>
+          <div className="border rounded p-1.5 bg-slate-50">
+            <div className="text-[8px] text-muted-foreground font-semibold">Pending</div>
+            <div>Total: <span className={`font-semibold ${(metrics.pending_total || 0) > 20 ? "text-amber-600" : ""}`}>{metrics.pending_total}</span></div>
+            <div>&gt;24h: <span className={`font-semibold ${(metrics.pending_24h || 0) > 10 ? "text-red-600" : ""}`}>{metrics.pending_24h}</span></div>
+          </div>
+          <div className="border rounded p-1.5 bg-slate-50">
+            <div className="text-[8px] text-muted-foreground font-semibold">Response</div>
+            <div>Avg rate: <span className="font-semibold">{metrics.avg_response_rate}%</span></div>
+            <div>Avg time: <span className="font-semibold">{metrics.avg_response_hours !== null ? `${metrics.avg_response_hours}h` : "N/A"}</span></div>
+            <div>Inactive: <span className={`font-semibold ${(metrics.inactive_partners || 0) > 0 ? "text-red-600" : ""}`}>{metrics.inactive_partners}/{metrics.total_partners}</span></div>
+          </div>
+          <div className="border rounded p-1.5 bg-slate-50">
+            <div className="text-[8px] text-muted-foreground font-semibold">Billing</div>
+            <div>Ready: <span className="font-semibold">{metrics.ready_to_charge}</span></div>
+            <div>Failed: <span className={`font-semibold ${(metrics.failed_payments || 0) > 0 ? "text-red-600" : ""}`}>{metrics.failed_payments}</span></div>
+            <div>Reassigned: <span className="font-semibold">{metrics.reassigned_total} ({metrics.reassignment_rate}%)</span></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ExecutionPlaybookPanel() {
   const [expanded, setExpanded] = useState<string[]>(["morning"]);

@@ -1,0 +1,194 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.2 – Launch Monitoring + Early Scaling Signals Layer
+
+PRIORITY:
+HIGH (Scale Readiness + System Stress Visibility)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.2 – Launch Monitoring + Scaling Signals  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT dashboards  
+
+This step introduces early warning signals for scaling pressure during launch
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to detect when:
+
+- lead volume is increasing beyond manual handling comfort
+- partner responsiveness is degrading under load
+- billing workflow is becoming heavy
+- reassignment frequency is rising
+- system is approaching need for batch/automation
+
+This is monitoring only — no automatic system changes
+
+-------------------------------------
+REQUIREMENT 1 — WORKLOAD PRESSURE SIGNALS
+-------------------------------------
+
+Add derived signals based on current data:
+
+- high_daily_lead_volume
+- high_pending_leads
+- high_attention_queue
+- high_manual_billing_load
+
+Example logic (lightweight thresholds):
+
+- high_daily_lead_volume:
+  > X leads/day (configurable or fixed initial threshold)
+
+- high_pending_leads:
+  pending leads > 50% of daily volume
+
+- high_attention_queue:
+  attention_required leads exceed threshold
+
+- high_manual_billing_load:
+  ready_to_charge leads exceed threshold
+
+-------------------------------------
+REQUIREMENT 2 — RESPONSE DEGRADATION SIGNALS
+-------------------------------------
+
+Add signals for partner performance under load:
+
+- declining_response_rate
+- increased_response_time
+- increasing_inactive_partners
+
+These are derived from:
+- response_status
+- response timestamps
+- partner performance metrics (Step 5.6/5.7)
+
+-------------------------------------
+REQUIREMENT 3 — REASSIGNMENT PRESSURE SIGNAL
+-------------------------------------
+
+Add signal:
+
+- reassignment_pressure
+
+Triggered when:
+- reassignment_count increases above baseline
+- % of leads reassigned exceeds threshold
+
+-------------------------------------
+REQUIREMENT 4 — BILLING LOAD SIGNAL
+-------------------------------------
+
+Add signal:
+
+- billing_queue_pressure
+
+Triggered when:
+- ready_to_charge leads exceed manageable volume
+- failed payments begin increasing
+
+-------------------------------------
+REQUIREMENT 5 — ADMIN VISIBILITY
+-------------------------------------
+
+Expose signals in admin:
+
+- simple badges or labels
+- section titled: “Launch Monitoring”
+
+Examples:
+
+- HIGH VOLUME
+- RESPONSE DROPPING
+- REASSIGNMENT RISING
+- BILLING LOAD HIGH
+
+-------------------------------------
+REQUIREMENT 6 — FILTER SUPPORT
+-------------------------------------
+
+Allow admin to filter by:
+
+- high pressure leads
+- reassigned leads
+- high attention leads
+- high billing load leads
+
+-------------------------------------
+REQUIREMENT 7 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-adjust routing
+- auto-scale system
+- auto-trigger batching
+- auto-change billing
+
+This is awareness only.
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use existing data:
+
+- lead timestamps
+- response_status
+- reassignment_count
+- billing_workflow_status
+- payment status
+
+No new pipelines.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Pressure signals trigger correctly under test conditions
+2. Signals reflect real system load accurately
+3. No performance impact
+4. No interference with routing, billing, or Stripe
+5. Signals update dynamically
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- scaling signals implemented
+- admin visibility working
+- filters working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

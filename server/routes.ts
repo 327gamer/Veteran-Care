@@ -8047,6 +8047,76 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/intelligence/launch-monitoring", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads, error: lmErr } = await supabaseAdmin.from("navigator_requests")
+        .select("id, created_at, assigned_at, response_status, response_at, routed_at, reassignment_count, billing_workflow_status, stripe_payment_status, routed_to_partner_id");
+      if (lmErr || !leads) return res.json({ signals: [], metrics: {} });
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const h7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      let createdToday = 0, created7d = 0, pendingTotal = 0, pending24h = 0;
+      let readyToCharge = 0, failedPayments = 0, reassignedCount = 0, reviewRequired = 0;
+      const partnerResp: Record<string, { assigned: number; responded: number; responseTimes: number[] }> = {};
+      for (const l of leads) {
+        if (l.created_at && l.created_at >= todayStart) createdToday++;
+        if (l.created_at && l.created_at >= h7d) created7d++;
+        const isPending = !l.response_status || l.response_status === "pending";
+        if (isPending) pendingTotal++;
+        if (isPending && l.assigned_at && l.assigned_at < h24ago) pending24h++;
+        if ((l.reassignment_count || 0) > 0) reassignedCount++;
+        if (l.billing_workflow_status === "ready" || l.billing_workflow_status === "queued") readyToCharge++;
+        if (l.stripe_payment_status === "failed" || l.billing_workflow_status === "payment_failed") failedPayments++;
+        if (l.billing_workflow_status === "review_required") reviewRequired++;
+        const pid = l.routed_to_partner_id;
+        if (pid) {
+          if (!partnerResp[pid]) partnerResp[pid] = { assigned: 0, responded: 0, responseTimes: [] };
+          partnerResp[pid].assigned++;
+          if (l.response_status && l.response_status !== "pending") {
+            partnerResp[pid].responded++;
+            if (l.response_at && (l.assigned_at || l.routed_at)) {
+              const diff = new Date(l.response_at).getTime() - new Date(l.assigned_at || l.routed_at).getTime();
+              if (diff > 0) partnerResp[pid].responseTimes.push(diff);
+            }
+          }
+        }
+      }
+      const dailyAvg7d = created7d > 0 ? Math.round((created7d / 7) * 100) / 100 : 0;
+      const totalPartners = Object.keys(partnerResp).length;
+      const inactivePartners = Object.values(partnerResp).filter(p => p.assigned >= 2 && p.responded === 0).length;
+      const allResponseRates = Object.values(partnerResp).filter(p => p.assigned >= 2).map(p => p.responded / p.assigned);
+      const avgResponseRate = allResponseRates.length > 0 ? Math.round((allResponseRates.reduce((a, b) => a + b, 0) / allResponseRates.length) * 10000) / 100 : 0;
+      const allResponseTimes = Object.values(partnerResp).flatMap(p => p.responseTimes);
+      const avgResponseHours = allResponseTimes.length > 0 ? Math.round((allResponseTimes.reduce((a, b) => a + b, 0) / allResponseTimes.length / (1000 * 60 * 60)) * 100) / 100 : null;
+      const reassignmentRate = leads.length > 0 ? Math.round((reassignedCount / leads.length) * 10000) / 100 : 0;
+
+      const signals: { key: string; label: string; level: string; detail: string }[] = [];
+      if (createdToday >= 15) signals.push({ key: "high_daily_volume", label: "HIGH VOLUME", level: "warning", detail: `${createdToday} leads today (avg ${dailyAvg7d}/day)` });
+      if (pendingTotal > 0 && dailyAvg7d > 0 && pendingTotal > dailyAvg7d * 0.5) signals.push({ key: "high_pending", label: "HIGH PENDING", level: "warning", detail: `${pendingTotal} pending (${pending24h} >24h)` });
+      if (pending24h >= 10) signals.push({ key: "high_attention", label: "ATTENTION QUEUE", level: "alert", detail: `${pending24h} leads pending >24h` });
+      if (readyToCharge >= 10) signals.push({ key: "high_billing_load", label: "BILLING LOAD HIGH", level: "warning", detail: `${readyToCharge} leads ready to charge` });
+      if (avgResponseRate < 30 && allResponseRates.length >= 2) signals.push({ key: "response_dropping", label: "RESPONSE DROPPING", level: "alert", detail: `Avg response rate ${avgResponseRate}%` });
+      if (avgResponseHours !== null && avgResponseHours > 48) signals.push({ key: "response_slow", label: "RESPONSE SLOW", level: "warning", detail: `Avg response time ${avgResponseHours}h` });
+      if (inactivePartners >= 2) signals.push({ key: "inactive_partners", label: "INACTIVE PARTNERS", level: "alert", detail: `${inactivePartners} of ${totalPartners} partners inactive` });
+      if (reassignmentRate > 10) signals.push({ key: "reassignment_pressure", label: "REASSIGNMENT RISING", level: "warning", detail: `${reassignmentRate}% leads reassigned` });
+      if (failedPayments >= 3) signals.push({ key: "payment_failures", label: "PAYMENT FAILURES", level: "alert", detail: `${failedPayments} failed payments` });
+
+      return res.json({
+        signals,
+        metrics: {
+          created_today: createdToday, daily_avg_7d: dailyAvg7d, pending_total: pendingTotal, pending_24h: pending24h,
+          ready_to_charge: readyToCharge, failed_payments: failedPayments, review_required: reviewRequired,
+          reassigned_total: reassignedCount, reassignment_rate: reassignmentRate,
+          avg_response_rate: avgResponseRate, avg_response_hours: avgResponseHours,
+          total_partners: totalPartners, inactive_partners: inactivePartners, total_leads: leads.length,
+        },
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/intelligence/daily-revenue", requireAdmin, async (_req, res) => {
     try {
       const { data: leads } = await supabaseAdmin.from("navigator_requests")
