@@ -1,0 +1,180 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.1 – Controlled Launch Execution Playbook Layer
+
+PRIORITY:
+HIGH (Operational Discipline Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.1 – Execution Playbook Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT dashboards  
+
+This step embeds operational guidance directly inside admin to ensure consistent execution during live launch.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Provide admin with a clear, structured workflow inside the system for:
+
+- daily lead review
+- billing execution
+- exception handling
+- partner follow-up cadence
+
+This ensures the platform is run consistently and correctly during launch.
+
+-------------------------------------
+REQUIREMENT 1 — MORNING WORKFLOW PANEL
+-------------------------------------
+
+Add a simple admin panel section titled:
+
+→ “Morning Review”
+
+Display checklist:
+
+- review new leads (last 24h)
+- review pending leads
+- review attention-required leads
+- review reassignment risks
+- review failed payments
+
+Each item should be:
+
+- visible as checklist item
+- optionally linked to relevant filter/view
+
+-------------------------------------
+REQUIREMENT 2 — AFTERNOON / BILLING WORKFLOW PANEL
+-------------------------------------
+
+Add panel section titled:
+
+→ “Billing & Execution”
+
+Display checklist:
+
+- review ready-to-charge leads
+- verify delivery and eligibility
+- move valid leads to queued
+- hold or review questionable leads
+- execute billing run
+- confirm Stripe results
+
+-------------------------------------
+REQUIREMENT 3 — END-OF-DAY REVIEW PANEL
+-------------------------------------
+
+Add panel section titled:
+
+→ “End of Day Review”
+
+Display checklist:
+
+- confirm payments processed
+- review failed payments
+- review disputes
+- log notes (if applicable)
+- confirm no unresolved attention items
+
+-------------------------------------
+REQUIREMENT 4 — EXCEPTION HANDLING PANEL
+-------------------------------------
+
+Add section titled:
+
+→ “Exception Handling”
+
+Display simple rules:
+
+- partner not responding → monitor / escalate
+- disputed lead → hold + review
+- failed payment → retry or review
+- bad lead → do not charge
+- routing issue → flag and hold
+
+-------------------------------------
+REQUIREMENT 5 — LIGHTWEIGHT IMPLEMENTATION
+-------------------------------------
+
+Implementation can be:
+
+- static admin helper panel
+- checklist UI component
+- expandable section
+
+No persistence required.
+
+No tracking required.
+
+-------------------------------------
+REQUIREMENT 6 — LINKED NAVIGATION
+-------------------------------------
+
+Where possible, checklist items should:
+
+- link to relevant filtered views
+- allow admin to jump directly into action
+
+-------------------------------------
+REQUIREMENT 7 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- workflow engines
+- automation
+- tracking of checklist completion
+- dashboards
+- notifications
+
+This is guidance only.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Panels display correctly
+2. Checklist items visible and readable
+3. Links navigate correctly (if implemented)
+4. No performance impact
+5. No impact to routing, billing, or tracking
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- execution playbook panels implemented
+- admin visibility confirmed
+- navigation working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

@@ -2791,6 +2791,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Execution Playbook</h3>
+              <ExecutionPlaybookPanel />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Performance Intelligence</h3>
               <PerformanceIntelPanel adminKey={adminKey} />
             </div>
@@ -3987,6 +3992,69 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function ExecutionPlaybookPanel() {
+  const [expanded, setExpanded] = useState<string[]>(["morning"]);
+  const toggle = (key: string) => setExpanded(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+
+  const sections = [
+    { key: "morning", title: "Morning Review", items: [
+      { label: "Review new leads (last 24h)", hint: "Check Execution Visibility → Today's Activity" },
+      { label: "Review pending leads", hint: "Filter attention leads → pending_24h" },
+      { label: "Review attention-required leads", hint: "Check Action Required panel for red counts" },
+      { label: "Review reassignment risks", hint: "Filter attention leads → approaching_72h" },
+      { label: "Review failed payments", hint: "Filter attention leads → payment_failed" },
+    ]},
+    { key: "billing", title: "Billing & Execution", items: [
+      { label: "Review ready-to-charge leads", hint: "Check leads with billing_workflow_status = ready" },
+      { label: "Verify delivery and eligibility", hint: "Confirm email_sent = true and routed_to_partner_id set" },
+      { label: "Move valid leads to queued", hint: "Use Queue for Billing action on eligible leads" },
+      { label: "Hold or review questionable leads", hint: "Set billing_workflow_status = on_hold or review_required" },
+      { label: "Execute billing run", hint: "Use Run Billing button in Billing Config panel" },
+      { label: "Confirm Stripe results", hint: "Check Billing Runs panel for success/failure counts" },
+    ]},
+    { key: "eod", title: "End of Day Review", items: [
+      { label: "Confirm payments processed", hint: "Check Revenue Summary for today's totals" },
+      { label: "Review failed payments", hint: "Filter attention leads → payment_failed" },
+      { label: "Review disputes", hint: "Filter attention leads → disputed" },
+      { label: "Log notes (if applicable)", hint: "Use billing notes on individual leads" },
+      { label: "Confirm no unresolved attention items", hint: "Action Required count should be 0" },
+    ]},
+    { key: "exceptions", title: "Exception Handling", items: [
+      { label: "Partner not responding → monitor / escalate", hint: "Check Partner Performance for INACTIVE or LOW RESPONSE" },
+      { label: "Disputed lead → hold + review", hint: "Set partner to review_only, hold the lead" },
+      { label: "Failed payment → retry or review", hint: "Use Retry Billing on the lead, max 3 attempts" },
+      { label: "Bad lead → do not charge", hint: "Set billing_workflow_status = review_required, do not queue" },
+      { label: "Routing issue → flag and hold", hint: "Pause partner if needed, reassign lead manually" },
+    ]},
+  ];
+
+  return (
+    <div className="space-y-2" data-testid="execution-playbook-panel">
+      {sections.map(s => (
+        <div key={s.key} className="border rounded">
+          <button className="w-full flex items-center justify-between px-3 py-2 text-left" data-testid={`playbook-toggle-${s.key}`} onClick={() => toggle(s.key)}>
+            <span className="text-[11px] font-semibold">{s.title}</span>
+            <span className="text-[10px] text-muted-foreground">{expanded.includes(s.key) ? "▾" : "▸"} {s.items.length} items</span>
+          </button>
+          {expanded.includes(s.key) && (
+            <div className="px-3 pb-2 space-y-1">
+              {s.items.map((item, i) => (
+                <div key={i} className="flex items-start gap-2 text-[10px]" data-testid={`playbook-item-${s.key}-${i}`}>
+                  <span className="mt-0.5 text-muted-foreground">☐</span>
+                  <div>
+                    <span className="font-medium">{item.label}</span>
+                    <span className="text-[9px] text-muted-foreground ml-1">— {item.hint}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ExecutionVisibilityPanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<any>(null);
