@@ -2786,6 +2786,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Scale Transition Status</h3>
+              <ScaleTransitionPanel adminKey={adminKey} />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Scale Readiness</h3>
               <ScaleReadinessPanel adminKey={adminKey} />
             </div>
@@ -4002,6 +4007,85 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function ScaleTransitionPanel({ adminKey }: { adminKey: string }) {
+  const [signals, setSignals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/intelligence/launch-monitoring", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json()).then(d => setSignals(d.signals || [])).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading transition status...</p>;
+
+  const has = (key: string) => signals.some(s => s.key === key);
+  const pressureKeys = ["high_billing_load", "high_pending", "high_attention"];
+  const transitionKeys = ["high_billing_load", "high_pending"];
+  const pressureCount = pressureKeys.filter(has).length;
+  const batchReady = has("high_daily_volume") || has("high_billing_load");
+  const billingReview = has("high_billing_load") && (has("payment_failures") || has("high_pending"));
+  const transitionCount = transitionKeys.filter(has).length + (batchReady ? 1 : 0) + (billingReview ? 1 : 0);
+
+  let status = "manual_safe";
+  let statusLabel = "MANUAL SAFE";
+  let statusCls = "bg-green-100 text-green-800 border-green-300";
+  let explanation = "System load is within manual handling capacity. Continue standard workflow.";
+  let action = "Continue manual workflow — no transition needed.";
+
+  if (transitionCount >= 2) {
+    status = "transition_ready";
+    statusLabel = "TRANSITION READY";
+    statusCls = "bg-amber-100 text-amber-800 border-amber-300";
+    explanation = "Manual billing load is high across multiple dimensions. Prepare for controlled batch review.";
+    action = "Prepare controlled batch billing process. Review billing queue, verify lead eligibility in bulk, then execute.";
+  } else if (pressureCount >= 1) {
+    status = "approaching_transition";
+    statusLabel = "APPROACHING TRANSITION";
+    statusCls = "bg-yellow-100 text-yellow-800 border-yellow-300";
+    explanation = "One or more pressure signals detected. System is nearing manual handling limits.";
+    action = "Monitor closely and prepare for batch review. No immediate action required.";
+  }
+
+  const guardrails = [
+    "No auto-billing — all charges require manual verification",
+    "Manual verification required before every billing run",
+    "Disputed leads must remain excluded from billing",
+    "Hold logic must remain intact — on_hold leads are never charged",
+  ];
+
+  return (
+    <div className="space-y-3" data-testid="scale-transition-panel">
+      <div className={`border rounded p-3 ${statusCls.replace("text-", "border-").split(" ")[0]} bg-opacity-50`} data-testid={`transition-status-${status}`}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`px-2 py-0.5 rounded border text-[9px] font-bold ${statusCls}`}>{statusLabel}</span>
+          <span className="text-[10px] font-medium text-slate-700">{explanation}</span>
+        </div>
+        <p className="text-[10px] text-slate-600">{action}</p>
+        <div className="flex gap-2 mt-2 text-[9px]">
+          <span className="text-muted-foreground">Quick nav:</span>
+          <span className="text-blue-600">Billing Config</span>
+          <span className="text-muted-foreground">|</span>
+          <span className="text-blue-600">Attention Leads</span>
+          <span className="text-muted-foreground">|</span>
+          <span className="text-blue-600">Performance Intelligence</span>
+        </div>
+      </div>
+
+      <div className="border rounded p-2 bg-slate-50">
+        <h4 className="text-[10px] font-semibold text-muted-foreground mb-1">Safety Guardrails</h4>
+        <div className="space-y-0.5">
+          {guardrails.map((g, i) => (
+            <div key={i} className="flex items-start gap-1.5 text-[9px]" data-testid={`guardrail-${i}`}>
+              <span className="text-green-600 mt-0.5">✓</span>
+              <span className="text-slate-600">{g}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ScaleReadinessPanel({ adminKey }: { adminKey: string }) {
   const [signals, setSignals] = useState<any[]>([]);

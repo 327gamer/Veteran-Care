@@ -1,0 +1,191 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.4 – Controlled Scale Transition Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Manual → Controlled Scale Transition Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.4 – Controlled Scale Transition  
+❌ NOT automation  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+❌ NOT dashboards  
+
+This step defines WHEN and HOW admin should move from manual-only execution toward controlled batch workflows.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Provide clear, system-supported guidance for:
+
+- when manual billing is no longer efficient
+- when controlled batch review should begin
+- how to transition safely without breaking billing discipline
+
+This step introduces transition readiness indicators only.
+No automation.
+
+-------------------------------------
+REQUIREMENT 1 — SCALE TRANSITION STATUS
+-------------------------------------
+
+Add derived field:
+
+- scale_transition_status
+
+Values:
+
+- manual_safe
+- approaching_transition
+- transition_ready
+
+-------------------------------------
+REQUIREMENT 2 — TRANSITION LOGIC (LIGHTWEIGHT)
+-------------------------------------
+
+Use existing signals from Step 6.2 + Step 6.3:
+
+manual_safe:
+- no major pressure signals active
+
+approaching_transition:
+- ONE OR MORE of:
+  - high_billing_load
+  - high_pending
+  - high_attention
+
+transition_ready:
+- TWO OR MORE of:
+  - high_billing_load
+  - high_pending
+  - ready_for_batch_review
+  - billing_process_review_needed
+
+Keep logic simple and adjustable later.
+
+-------------------------------------
+REQUIREMENT 3 — ADMIN VISIBILITY
+-------------------------------------
+
+Add section:
+
+→ “Scale Transition Status”
+
+Display:
+
+- current status
+- short explanation
+- recommended action
+
+Example:
+
+TRANSITION READY  
+“Manual billing load is high. Prepare for controlled batch review.”
+
+-------------------------------------
+REQUIREMENT 4 — TRANSITION GUIDANCE
+-------------------------------------
+
+Include simple guidance per state:
+
+manual_safe:
+- “Continue manual workflow”
+
+approaching_transition:
+- “Monitor closely and prepare for batch review”
+
+transition_ready:
+- “Prepare controlled batch billing process”
+
+-------------------------------------
+REQUIREMENT 5 — SAFETY GUARDRAILS (VISIBLE)
+-------------------------------------
+
+Display rules:
+
+- no auto-billing
+- manual verification required
+- disputed leads must remain excluded
+- hold logic must remain intact
+
+This reinforces discipline during transition.
+
+-------------------------------------
+REQUIREMENT 6 — LINKED NAVIGATION
+-------------------------------------
+
+Allow navigation to:
+
+- billing queue
+- attention leads
+- performance panel
+
+-------------------------------------
+REQUIREMENT 7 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+- trigger batch billing
+- auto-adjust routing
+- auto-change billing behavior
+
+This is readiness + guidance only.
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use:
+- Step 6.2 signals
+- Step 6.3 decision flags
+
+No new backend logic required if client-side derivation is sufficient.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Transition status reflects real signals correctly
+2. Status updates dynamically
+3. Guidance text displays clearly
+4. No performance impact
+5. No interference with routing, billing, or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- transition status implemented
+- admin visibility working
+- guidance displayed
+- navigation links working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------
