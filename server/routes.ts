@@ -8180,7 +8180,7 @@ export async function registerRoutes(
       if (allLeadIds.length > 0) {
         try {
           const { data: batchLeads } = await supabaseAdmin.from("navigator_requests")
-            .select("id, category, routed_to_partner_id, assigned_to, billed, billing_workflow_status, stripe_payment_status")
+            .select("id, category, routed_to_partner_id, assigned_to, stripe_checkout_session_id, billing_workflow_status")
             .in("id", allLeadIds.slice(0, 200));
           if (batchLeads && batchLeads.length > 0) {
             const catMap: Record<string, { total: number; success: number }> = {};
@@ -8189,12 +8189,12 @@ export async function registerRoutes(
               const cat = l.category || "unknown";
               if (!catMap[cat]) catMap[cat] = { total: 0, success: 0 };
               catMap[cat].total++;
-              if (l.billed || l.stripe_payment_status === "paid" || l.billing_workflow_status === "charged") catMap[cat].success++;
+              if (l.stripe_checkout_session_id && l.billing_workflow_status !== "failed") catMap[cat].success++;
               const pid = l.routed_to_partner_id || "unknown";
               const pname = l.assigned_to || pid;
               if (!partMap[pid]) partMap[pid] = { total: 0, success: 0, name: pname };
               partMap[pid].total++;
-              if (l.billed || l.stripe_payment_status === "paid" || l.billing_workflow_status === "charged") partMap[pid].success++;
+              if (l.stripe_checkout_session_id && l.billing_workflow_status !== "failed") partMap[pid].success++;
             }
             categorySignals = Object.entries(catMap).map(([cat, v]) => {
               const rate = v.total > 0 ? (v.success / v.total) * 100 : 0;
