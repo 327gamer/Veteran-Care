@@ -690,6 +690,105 @@ export async function sendPartnerPaymentEmail(
   }
 }
 
+export async function sendPartnerFollowUpEmail(
+  partnerEmail: string,
+  companyName: string,
+  contactName: string | null,
+  checkoutUrl: string,
+  templateType: "reminder" | "urgency" | "payment_recovery"
+): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const greeting = contactName ? escapeHtml(contactName) : escapeHtml(companyName);
+
+    const templates: Record<string, { subject: string; heading: string; headingColor: string; headingBg: string; headingBorder: string; body: string; buttonText: string }> = {
+      reminder: {
+        subject: `${platform.name} — Friendly Reminder: Activate Your Partner Listing`,
+        heading: "Just a Quick Reminder",
+        headingColor: "#1E40AF", headingBg: "#EFF6FF", headingBorder: "#BFDBFE",
+        body: `We noticed you haven't completed your ${platform.name} partner activation yet. Your application was approved and your listing is ready to go — just one step left to start receiving veteran referrals in your area.`,
+        buttonText: "Complete My Activation",
+      },
+      urgency: {
+        subject: `${platform.name} — Your Activation Is Still Pending`,
+        heading: "Your Activation Is Still Pending",
+        headingColor: "#92400E", headingBg: "#FFFBEB", headingBorder: "#FDE68A",
+        body: `Your ${platform.name} partner activation is still pending. Veterans in your area are looking for trusted services like yours. Complete your setup now to begin receiving referrals and grow your business through our veteran community.`,
+        buttonText: "Activate Now",
+      },
+      payment_recovery: {
+        subject: `${platform.name} — Complete Your Subscription Setup`,
+        heading: "Subscription Setup Incomplete",
+        headingColor: "#991B1B", headingBg: "#FEF2F2", headingBorder: "#FECACA",
+        body: `Your subscription setup for ${platform.name} is incomplete. To activate your listing and begin receiving veteran referrals, please complete your payment by clicking the button below. If you experienced any issues during checkout, this link will take you back to where you left off.`,
+        buttonText: "Complete Payment",
+      },
+    };
+
+    const tpl = templates[templateType] || templates.reminder;
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: ${tpl.headingBg}; border: 1px solid ${tpl.headingBorder}; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: ${tpl.headingColor}; font-size: 18px;">${tpl.heading}</h2>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
+
+  <p style="font-size: 15px; line-height: 1.6;">${tpl.body}</p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${escapeHtml(checkoutUrl)}" style="display: inline-block; background: #166534; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+      ${tpl.buttonText}
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
+    Or copy and paste this link into your browser:<br>
+    <a href="${escapeHtml(checkoutUrl)}" style="color: #2563EB; word-break: break-all;">${escapeHtml(checkoutUrl)}</a>
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Thank you for supporting our veterans!
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    — The ${platform.name} Team
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
+    <p>This email was sent by ${platform.name} (${platform.domain}) regarding your partner application.</p>
+    <p>If you did not apply, please disregard this email.</p>
+  </div>
+
+</body>
+</html>`;
+
+    console.log(`[email] Sending ${templateType} follow-up to ${partnerEmail}`);
+
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [partnerEmail],
+      subject: tpl.subject,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Follow-up email (${templateType}) failed:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Follow-up email (${templateType}) sent to ${partnerEmail}`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending follow-up email:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
 export async function sendPartnerWelcomeEmail(
   partnerEmail: string,
   companyName: string,

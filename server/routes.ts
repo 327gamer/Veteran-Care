@@ -8487,9 +8487,19 @@ export async function registerRoutes(
         return res.json({ available: false, message: "onboarding_status column not yet added" });
       }
 
+      let followUpColumnsAvailable = false;
+      const { error: fuErr } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("follow_up_status")
+        .limit(1);
+      followUpColumnsAvailable = !fuErr;
+
+      let selectFields = "id, name, contact_email, is_active, onboarding_status, activation_date, subscription_status, active_paid_partner, created_at";
+      if (followUpColumnsAvailable) selectFields += ", follow_up_status, last_contact_at, last_contact_type";
+
       const { data: partners } = await supabaseAdmin
         .from("partner_organizations")
-        .select("id, name, contact_email, is_active, onboarding_status, activation_date, subscription_status, active_paid_partner, created_at")
+        .select(selectFields)
         .order("name");
 
       const all = partners || [];
@@ -8500,6 +8510,8 @@ export async function registerRoutes(
       const subscribed = all.filter((p: any) => p.onboarding_status === "subscribed");
       const active = all.filter((p: any) => p.onboarding_status === "active");
 
+      const recovered = followUpColumnsAvailable ? all.filter((p: any) => p.follow_up_status === "recovered") : [];
+
       const approvalToInvitePct = approved > 0 ? Math.round(((invited.length + subscribed.length + active.length) / approved) * 1000) / 10 : 0;
       const inviteToSubPct = (invited.length + subscribed.length + active.length) > 0 ? Math.round(((subscribed.length + active.length) / (invited.length + subscribed.length + active.length)) * 1000) / 10 : 0;
       const subToActivePct = (subscribed.length + active.length) > 0 ? Math.round((active.length / (subscribed.length + active.length)) * 1000) / 10 : 0;
@@ -8509,11 +8521,16 @@ export async function registerRoutes(
         .filter((p: any) => p.onboarding_status && p.onboarding_status !== "active")
         .map((p: any) => {
           const createdMs = p.created_at ? new Date(p.created_at).getTime() : now;
-          const activationMs = p.activation_date ? new Date(p.activation_date).getTime() : null;
           const hoursSinceCreation = Math.round((now - createdMs) / (1000 * 60 * 60));
           let urgency = "normal";
           if (hoursSinceCreation > 48) urgency = "follow_up_now";
           else if (hoursSinceCreation > 24) urgency = "follow_up_soon";
+
+          let suggestedAction: string = "resend_activation";
+          if (p.onboarding_status === "invited" && hoursSinceCreation > 48) suggestedAction = "urgency";
+          else if (p.onboarding_status === "invited" && hoursSinceCreation > 24) suggestedAction = "reminder";
+          else if (p.onboarding_status === "subscribed") suggestedAction = "payment_recovery";
+
           return {
             id: p.id,
             name: p.name,
@@ -8525,6 +8542,10 @@ export async function registerRoutes(
             activation_date: p.activation_date,
             hours_since_creation: hoursSinceCreation,
             urgency,
+            suggested_action: suggestedAction,
+            follow_up_status: followUpColumnsAvailable ? (p.follow_up_status || "none") : "none",
+            last_contact_at: followUpColumnsAvailable ? (p.last_contact_at || null) : null,
+            last_contact_type: followUpColumnsAvailable ? (p.last_contact_type || null) : null,
           };
         })
         .sort((a: any, b: any) => {
@@ -8534,12 +8555,14 @@ export async function registerRoutes(
 
       return res.json({
         available: true,
+        follow_up_columns_available: followUpColumnsAvailable,
         funnel: {
           approved,
           pending: pending.length,
           invited: invited.length,
           subscribed: subscribed.length,
           active: active.length,
+          recovered: recovered.length,
         },
         conversion: {
           approval_to_invite_pct: approvalToInvitePct,
@@ -8551,6 +8574,98 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.post("/api/admin/partner-follow-up/:partnerId", requireAdmin, async (req, res) => {
+    try {
+      const { partnerId } = req.params;
+      const { template } = req.body;
+      const validTemplates = ["reminder", "urgency", "payment_recovery", "resend_activation"];
+      if (!template || !validTemplates.includes(template)) {
+        return res.status(400).json({ error: `Invalid template. Must be one of: ${validTemplates.join(", ")}` });
+      }
+
+      let fuSelect = "id, name, contact_email, contact_name, onboarding_status";
+      const { error: fuColCheck } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("follow_up_status")
+        .limit(1);
+      if (!fuColCheck) fuSelect += ", follow_up_status";
+
+      const { data: partner } = await supabaseAdmin
+        .from("partner_organizations")
+        .select(fuSelect)
+        .eq("id", partnerId)
+        .maybeSingle();
+
+      if (!partner) return res.status(404).json({ error: "Partner not found" });
+      if (!partner.contact_email) return res.status(400).json({ error: "Partner has no contact email" });
+      if (partner.onboarding_status === "active") return res.status(400).json({ error: "Partner is already active" });
+
+      let checkoutUrl = "";
+      try {
+        const appRows = await pgQuery(
+          `SELECT id, stripe_checkout_url FROM partner_applications WHERE email = $1 ORDER BY created_at DESC LIMIT 1`,
+          [partner.contact_email]
+        );
+        if (appRows.length > 0 && appRows[0].stripe_checkout_url) {
+          checkoutUrl = appRows[0].stripe_checkout_url;
+        }
+      } catch {}
+
+      if (!checkoutUrl) {
+        checkoutUrl = `https://${platform.domain}/partner-signup`;
+      }
+
+      let emailResult: { sent: boolean; error?: string } = { sent: false };
+
+      if (template === "resend_activation") {
+        const { sendPartnerPaymentEmail } = await import("./lead-email");
+        emailResult = await sendPartnerPaymentEmail(
+          partner.contact_email,
+          partner.name,
+          partner.contact_name || null,
+          checkoutUrl
+        );
+      } else {
+        const { sendPartnerFollowUpEmail } = await import("./lead-email");
+        emailResult = await sendPartnerFollowUpEmail(
+          partner.contact_email,
+          partner.name,
+          partner.contact_name || null,
+          checkoutUrl,
+          template as "reminder" | "urgency" | "payment_recovery"
+        );
+      }
+
+      const followUpStage = template === "resend_activation" ? "sent_1"
+        : template === "reminder" ? "sent_1"
+        : template === "urgency" ? "sent_2"
+        : "sent_2";
+
+      try {
+        await supabaseAdmin
+          .from("partner_organizations")
+          .update({
+            follow_up_status: followUpStage,
+            last_contact_at: new Date().toISOString(),
+            last_contact_type: template,
+          })
+          .eq("id", partnerId);
+      } catch {}
+
+      return res.json({
+        emailSent: emailResult.sent,
+        emailError: emailResult.error,
+        template,
+        follow_up_status: followUpStage,
+        message: emailResult.sent
+          ? `${template} email sent to ${partner.contact_email}`
+          : `Email failed${emailResult.error ? `: ${emailResult.error}` : ""}`,
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
     }
   });
 

@@ -4483,7 +4483,7 @@ function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
 function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [resending, setResending] = useState<string | null>(null);
+  const [sending, setSending] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadData = () => {
@@ -4496,18 +4496,19 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
 
   useEffect(() => { loadData(); }, [adminKey]);
 
-  const handleResend = async (partnerId: string) => {
-    setResending(partnerId);
+  const handleFollowUp = async (partnerId: string, template: string) => {
+    setSending(partnerId);
     try {
-      const r = await fetch(`/api/admin/partner-applications/${partnerId}/resend-activation`, {
+      const r = await fetch(`/api/admin/partner-follow-up/${partnerId}`, {
         method: "POST",
         headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ template }),
       });
       const d = await r.json();
-      if (d.error) toast({ title: "Resend failed", description: d.error, variant: "destructive" });
-      else toast({ title: "Activation email resent" });
-    } catch { toast({ title: "Resend failed", variant: "destructive" }); }
-    setResending(null);
+      if (d.error) toast({ title: "Follow-up failed", description: d.error, variant: "destructive" });
+      else { toast({ title: `${template.replace(/_/g, " ")} sent` }); loadData(); }
+    } catch { toast({ title: "Follow-up failed", variant: "destructive" }); }
+    setSending(null);
   };
 
   if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading activation funnel...</p></Card>;
@@ -4534,12 +4535,30 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
     return "bg-slate-100 text-slate-600";
   };
 
+  const followUpBadge = (status: string) => {
+    if (status === "recovered") return "bg-green-100 text-green-700";
+    if (status === "sent_2") return "bg-red-100 text-red-700";
+    if (status === "sent_1") return "bg-amber-100 text-amber-700";
+    if (status === "inactive") return "bg-slate-200 text-slate-600";
+    return "bg-slate-50 text-slate-500";
+  };
+
+  const actionLabel: Record<string, string> = {
+    resend_activation: "Resend Activation",
+    reminder: "Send Reminder",
+    urgency: "Send Urgency",
+    payment_recovery: "Payment Recovery",
+  };
+
   return (
     <Card className="p-4 space-y-4" data-testid="panel-activation-funnel">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <h3 className="font-semibold text-sm">Activation Funnel</h3>
+          {(funnel.recovered || 0) > 0 && (
+            <span className="px-1.5 py-0.5 rounded text-[8px] font-medium bg-green-100 text-green-700" data-testid="text-recovered-count">{funnel.recovered} recovered</span>
+          )}
         </div>
         <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-funnel">Refresh</button>
       </div>
@@ -4577,28 +4596,47 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
             <Clock className="h-3.5 w-3.5 text-amber-600" />
             <p className="text-[11px] font-semibold text-slate-700">Stalled / Drop-Off Partners ({stalled_count})</p>
           </div>
-          <div className="max-h-56 overflow-y-auto space-y-1">
+          <div className="max-h-72 overflow-y-auto space-y-1.5">
             {stalled_partners.map((p: any) => (
-              <div key={p.id} className={`flex items-center justify-between text-[9px] px-2 py-1.5 rounded border ${urgencyStyle(p.urgency)}`} data-testid={`row-stalled-partner-${p.id}`}>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium truncate block">{p.name}</span>
-                  <span className="text-[8px] text-muted-foreground block">{p.email} | {p.hours_since_creation}h since approval</span>
+              <div key={p.id} className={`text-[9px] px-2 py-2 rounded border ${urgencyStyle(p.urgency)}`} data-testid={`row-stalled-partner-${p.id}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium truncate block">{p.name}</span>
+                    <span className="text-[8px] text-muted-foreground block">{p.email} | {p.hours_since_creation}h since approval</span>
+                  </div>
+                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${onbBadge(p.onboarding_status)}`}>{p.onboarding_status}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
+                      p.urgency === "follow_up_now" ? "bg-red-200 text-red-800" :
+                      p.urgency === "follow_up_soon" ? "bg-amber-200 text-amber-800" :
+                      "bg-slate-200 text-slate-700"
+                    }`} data-testid={`badge-urgency-${p.id}`}>{urgencyLabel(p.urgency)}</span>
+                    {p.follow_up_status !== "none" && (
+                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${followUpBadge(p.follow_up_status)}`} data-testid={`badge-followup-${p.id}`}>{p.follow_up_status}</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${onbBadge(p.onboarding_status)}`}>{p.onboarding_status}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
-                    p.urgency === "follow_up_now" ? "bg-red-200 text-red-800" :
-                    p.urgency === "follow_up_soon" ? "bg-amber-200 text-amber-800" :
-                    "bg-slate-200 text-slate-700"
-                  }`} data-testid={`badge-urgency-${p.id}`}>{urgencyLabel(p.urgency)}</span>
-                  <button
-                    onClick={() => handleResend(p.id)}
-                    disabled={resending === p.id}
-                    className="px-1.5 py-0.5 rounded text-[8px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                    data-testid={`button-resend-${p.id}`}
-                  >
-                    {resending === p.id ? "..." : "Resend"}
-                  </button>
+                <div className="flex items-center gap-1 mt-1">
+                  {p.last_contact_at && (
+                    <span className="text-[8px] text-muted-foreground mr-1">Last contact: {new Date(p.last_contact_at).toLocaleDateString()} ({p.last_contact_type})</span>
+                  )}
+                  <div className="flex items-center gap-1 ml-auto">
+                    {["resend_activation", "reminder", "urgency", "payment_recovery"].map(tpl => (
+                      <button
+                        key={tpl}
+                        onClick={() => handleFollowUp(p.id, tpl)}
+                        disabled={sending === p.id}
+                        className={`px-1.5 py-0.5 rounded text-[8px] border ${
+                          tpl === p.suggested_action
+                            ? "bg-blue-600 text-white border-blue-600 font-semibold"
+                            : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                        } disabled:opacity-50`}
+                        data-testid={`button-followup-${tpl}-${p.id}`}
+                      >
+                        {sending === p.id ? "..." : actionLabel[tpl]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -4616,6 +4654,7 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
         <p><strong>Pending:</strong> {funnel.pending} partner{funnel.pending !== 1 ? "s" : ""} approved but not yet invited</p>
         <p><strong>Invited:</strong> {funnel.invited} partner{funnel.invited !== 1 ? "s" : ""} sent activation email, awaiting subscription</p>
         <p><strong>Subscribed:</strong> {funnel.subscribed} partner{funnel.subscribed !== 1 ? "s" : ""} initiated subscription, awaiting activation</p>
+        {(funnel.recovered || 0) > 0 && <p><strong>Recovered:</strong> {funnel.recovered} partner{funnel.recovered !== 1 ? "s" : ""} activated after follow-up</p>}
       </div>
     </Card>
   );

@@ -1,0 +1,158 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.12 – Partner Activation Recovery / Follow-Up Layer - 4.13.2026
+
+PRIORITY:
+HIGH (Revenue Recovery + Conversion Optimization)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add structured follow-up tools to recover partners who stall in the onboarding funnel.
+
+Goal:
+convert more partners from:
+
+Invited → Subscribed → Active
+
+-------------------------------------
+SECTION 1 — FOLLOW-UP TRIGGERS
+-------------------------------------
+
+Use existing funnel stage + time flags to identify follow-up candidates.
+
+Suggested triggers:
+
+- invited >24h → follow_up_1
+- invited >48h → follow_up_2
+- subscribed but not active >24h → follow_up_payment
+
+This should be visibility + admin action only.
+
+-------------------------------------
+SECTION 2 — FOLLOW-UP ACTIONS
+-------------------------------------
+
+Allow admin to trigger:
+
+- resend activation email
+- send reminder email
+- send payment recovery email
+- trigger quick follow-up manually from Activation Funnel panel
+
+If resend activation already exists, reuse it and surface it clearly.
+
+-------------------------------------
+SECTION 3 — EMAIL TEMPLATES
+-------------------------------------
+
+Add lightweight templates:
+
+1. Reminder (Friendly)
+“Just a quick reminder to activate your Veteran Care partnership…”
+
+2. Urgency
+“Your activation is still pending — complete setup to begin receiving leads…”
+
+3. Payment Recovery
+“Your subscription setup is incomplete — complete activation to begin receiving leads…”
+
+Keep tone:
+- professional
+- clear
+- encouraging
+- non-pushy
+
+-------------------------------------
+SECTION 4 — ADMIN VISIBILITY
+-------------------------------------
+
+In Activation Funnel panel, show:
+
+- follow_up_status
+- follow_up_stage
+- last_contact_at timestamp
+
+This should make it obvious:
+- whether follow-up has already happened
+- what stage the partner is in
+- whether another follow-up is appropriate
+
+-------------------------------------
+SECTION 5 — FOLLOW-UP STATUS FIELD
+-------------------------------------
+
+Add / ensure support for:
+
+follow_up_status:
+- none
+- sent_1
+- sent_2
+- recovered
+- inactive
+
+Optional if useful:
+- last_contact_at
+- last_contact_type
+
+-------------------------------------
+SECTION 6 — RECOVERY LOGIC
+-------------------------------------
+
+When a partner completes activation after follow-up:
+
+- follow_up_status = recovered
+
+This should help show whether follow-up efforts are actually working.
+
+-------------------------------------
+SECTION 7 — NO AUTOMATION YET
+-------------------------------------
+
+IMPORTANT:
+
+- no automatic emails
+- no scheduled sends
+- no background campaign logic
+
+All follow-up remains admin-triggered during launch phase.
+
+-------------------------------------
+SECTION 8 — NO SYSTEM IMPACT
+-------------------------------------
+
+Do NOT modify:
+- routing logic
+- billing logic
+- Stripe logic
+- fairness logic
+- onboarding eligibility rules
+
+This is a recovery / follow-up layer only.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. follow_up_status updates correctly — PASS
+2. reminder / resend emails trigger correctly — PASS
+3. recovered status updates when partner activates — PASS
+4. Activation Funnel reflects follow-up state correctly — PASS
+5. no regression to routing, billing, Stripe, or fairness — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- follow-up system in place
+- recovery actions visible
+- follow-up statuses visible
+- activation funnel updated
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------

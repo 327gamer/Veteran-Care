@@ -63,6 +63,22 @@ export async function syncPartnerOrgSubscriptionStatus(
       if (subscriptionStatus === "active" && activePaidPartner) {
         updatePayload.onboarding_status = "active";
         updatePayload.activation_date = new Date().toISOString();
+
+        const { error: fuCheck } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("follow_up_status")
+          .limit(1);
+        if (!fuCheck || !fuCheck.message?.includes("does not exist")) {
+          const { data: existing } = await supabaseAdmin
+            .from("partner_organizations")
+            .select("follow_up_status")
+            .ilike("contact_email", appEmail)
+            .maybeSingle();
+          if (existing && (existing.follow_up_status === "sent_1" || existing.follow_up_status === "sent_2")) {
+            updatePayload.follow_up_status = "recovered";
+            console.log(`[stripe-sync] Partner ${appEmail} recovered after follow-up (was ${existing.follow_up_status})`);
+          }
+        }
       } else if (subscriptionStatus === "canceled") {
         updatePayload.onboarding_status = "pending";
       }
