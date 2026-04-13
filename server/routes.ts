@@ -8144,6 +8144,23 @@ export async function registerRoutes(
       if (avgRate < 80) safeRange = "CAUTION";
       else if (avgRate < 90) safeRange = "STABLE";
 
+      const recentRates = rates.slice(0, 5);
+      let recommendedBatchSize = "4–5";
+      let guidanceText = "Batch performance is strong. You can cautiously increase batch size.";
+      if (recentRates.length > 0) {
+        const recentAvg = recentRates.reduce((a: number, b: number) => a + b, 0) / recentRates.length;
+        if (recentAvg < 80) { recommendedBatchSize = "1–2"; guidanceText = "Batch performance is declining. Reduce batch size and review failures."; }
+        else if (recentAvg < 90) { recommendedBatchSize = "3–4"; guidanceText = "Batch performance is stable. Maintain current batch size."; }
+      }
+
+      let trendDirection = "stable";
+      if (recentRates.length >= 2) {
+        const lastRate = recentRates[0];
+        const priorAvg = recentRates.slice(1).reduce((a: number, b: number) => a + b, 0) / (recentRates.length - 1);
+        if (lastRate > priorAvg + 5) trendDirection = "improving";
+        else if (lastRate < priorAvg - 5) trendDirection = "declining";
+      }
+
       return res.json({
         total_batches: total,
         avg_batch_size: Math.round(avgSize * 10) / 10,
@@ -8153,6 +8170,9 @@ export async function registerRoutes(
         high_failure_rate_batches: highFailBatches,
         failure_spike: failureSpike,
         safe_batch_size_range: safeRange,
+        recommended_batch_size: recommendedBatchSize,
+        trend_direction: trendDirection,
+        guidance_text: guidanceText,
       });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });

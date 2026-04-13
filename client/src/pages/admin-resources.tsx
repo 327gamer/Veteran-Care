@@ -4121,6 +4121,23 @@ function BatchPerformancePanel({ adminKey }: { adminKey: string }) {
 
   return (
     <div className="space-y-3" data-testid="batch-performance-panel">
+      <div className="border rounded p-3 bg-slate-50 flex items-center gap-4 mb-2" data-testid="batch-guidance-bar">
+        <div className="text-center">
+          <p className="text-[9px] text-muted-foreground">Recommended Batch Size</p>
+          <p className="text-2xl font-bold" data-testid="text-recommended-size">{summary.recommended_batch_size || "3–5"}</p>
+        </div>
+        <div className="text-center">
+          <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${rangeColors[summary.safe_batch_size_range] || rangeColors.SAFE}`} data-testid="text-safe-range">{summary.safe_batch_size_range}</span>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] text-muted-foreground">Trend</p>
+          <span className={`text-sm font-semibold ${summary.trend_direction === "improving" ? "text-green-600" : summary.trend_direction === "declining" ? "text-red-600" : "text-slate-600"}`} data-testid="text-trend">
+            {summary.trend_direction === "improving" ? "↑ Improving" : summary.trend_direction === "declining" ? "↓ Declining" : "→ Stable"}
+          </span>
+        </div>
+        <p className="text-[10px] text-slate-600 flex-1" data-testid="text-guidance">{summary.guidance_text}</p>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div className="border rounded p-2 text-center">
           <p className="text-[9px] text-muted-foreground">Total Batches</p>
@@ -4139,8 +4156,8 @@ function BatchPerformancePanel({ adminKey }: { adminKey: string }) {
           <p className="text-lg font-bold text-green-600">${summary.total_revenue.toFixed(2)}</p>
         </div>
         <div className="border rounded p-2 text-center">
-          <p className="text-[9px] text-muted-foreground">Safe Range</p>
-          <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${rangeColors[summary.safe_batch_size_range] || rangeColors.SAFE}`} data-testid="text-safe-range">{summary.safe_batch_size_range}</span>
+          <p className="text-[9px] text-muted-foreground">Total Failures</p>
+          <p className="text-lg font-bold text-red-600">{summary.total_failures}</p>
         </div>
       </div>
 

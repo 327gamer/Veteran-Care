@@ -1,0 +1,183 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.8 – Adaptive Batch Guidance Layer
+
+PRIORITY:
+HIGH (Batch Optimization + Safe Scaling Guidance)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.8 – Adaptive Batch Guidance  
+❌ NOT automation  
+❌ NOT auto-billing  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+
+This is a READ-ONLY advisory layer using Step 6.7 batch data.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Provide dynamic guidance for batch execution so admin can safely decide:
+
+- how many leads to include in the next batch
+- whether to increase or reduce batch size
+- whether performance is improving or declining
+
+-------------------------------------
+REQUIREMENT 1 — RECOMMENDED BATCH SIZE
+-------------------------------------
+
+Add derived field:
+
+- recommended_batch_size
+
+Based on avg_success_rate from last 3–5 batches:
+
+IF avg_success_rate ≥ 90%:
+→ recommended_batch_size = "4–5"
+
+IF avg_success_rate 80–89%:
+→ recommended_batch_size = "3–4"
+
+IF avg_success_rate < 80%:
+→ recommended_batch_size = "1–2"
+
+-------------------------------------
+REQUIREMENT 2 — TREND ANALYSIS
+-------------------------------------
+
+Use last 3–5 batches:
+
+Compare success_rate trend:
+
+IF increasing:
+→ trend_direction = "improving"
+
+IF roughly equal:
+→ trend_direction = "stable"
+
+IF decreasing:
+→ trend_direction = "declining"
+
+Keep logic simple:
+- compare last batch vs average of prior batches
+
+-------------------------------------
+REQUIREMENT 3 — GUIDANCE TEXT
+-------------------------------------
+
+Return guidance text:
+
+SAFE (≥90%):
+"Batch performance is strong. You can cautiously increase batch size."
+
+STABLE (80–89%):
+"Batch performance is stable. Maintain current batch size."
+
+CAUTION (<80%):
+"Batch performance is declining. Reduce batch size and review failures."
+
+-------------------------------------
+REQUIREMENT 4 — EXTEND EXISTING ENDPOINT
+-------------------------------------
+
+Extend:
+
+GET /api/admin/batch-performance-summary
+
+Add:
+
+- recommended_batch_size
+- trend_direction
+- guidance_text
+
+Do NOT create new endpoints unless necessary.
+
+-------------------------------------
+REQUIREMENT 5 — ADMIN VISIBILITY
+-------------------------------------
+
+Update “Batch Performance” panel to include:
+
+- recommended batch size (large visible text)
+- safety level badge (SAFE / STABLE / CAUTION)
+- trend direction (↑ improving / → stable / ↓ declining)
+- guidance message
+
+-------------------------------------
+REQUIREMENT 6 — FILTER SUPPORT
+-------------------------------------
+
+Allow client-side filters:
+
+- SAFE batches
+- CAUTION batches
+- DECLINING trend
+
+-------------------------------------
+REQUIREMENT 7 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-adjust batch size
+- auto-block execution
+- auto-scale system
+
+This is advisory only.
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use:
+
+- existing batch logs (Step 6.7)
+- success_rate per batch
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Recommended batch size adjusts correctly
+2. Trend detection works correctly
+3. Guidance text matches success rate
+4. No performance impact
+5. No interference with billing or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- recommended batch size implemented
+- trend analysis working
+- guidance visible in admin
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
