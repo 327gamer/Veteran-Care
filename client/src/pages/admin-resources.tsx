@@ -4196,7 +4196,7 @@ const FAIRNESS_BADGE: Record<string, { label: string; className: string }> = {
 function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
   const [partners, setPartners] = useState<any[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string>("");
-  const [data, setData] = useState<{ partner_id: string; scopes: any[]; activity_level?: string; responsiveness_trend?: string } | null>(null);
+  const [data, setData] = useState<{ partner_id: string; scopes: any[]; activity_level?: string; responsiveness_trend?: string; health_status?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -4350,6 +4350,39 @@ function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
               <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Availability</span> — Staying active helps maintain consistent opportunities.</span></div>
               <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Engagement</span> — Engaging with every lead demonstrates commitment and reliability.</span></div>
             </div>
+          </div>
+
+          <div className="border-t pt-2 mt-1 space-y-2">
+            <p className="font-semibold text-[10px] text-slate-800" data-testid="text-status-heading">Your Status</p>
+
+            <div className={`rounded p-3 text-center border ${
+              data.health_status === "healthy" ? "bg-green-50 border-green-200" :
+              data.health_status === "at_risk" ? "bg-amber-50 border-amber-200" :
+              "bg-red-50 border-red-200"
+            }`} data-testid="card-health-status">
+              <p className={`text-sm font-bold ${
+                data.health_status === "healthy" ? "text-green-700" :
+                data.health_status === "at_risk" ? "text-amber-700" :
+                "text-red-700"
+              }`}>{data.health_status === "healthy" ? "Healthy" : data.health_status === "at_risk" ? "At Risk" : "Needs Attention"}</p>
+              <p className="text-[9px] text-slate-600 mt-1">{
+                data.health_status === "healthy"
+                  ? "You are actively engaging and in a strong position."
+                  : data.health_status === "at_risk"
+                  ? "Your engagement has slowed. Staying active will help maintain opportunities."
+                  : "Your activity is currently low. Increasing engagement will help you get more value from the platform."
+              }</p>
+            </div>
+
+            <details className="group text-[9px]">
+              <summary className="cursor-pointer font-semibold text-[10px] text-slate-700 py-1" data-testid="toggle-success-guidance">How to Stay Successful</summary>
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded p-2.5 mt-1 space-y-1.5 text-slate-600" data-testid="block-success-guidance">
+                <div className="flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">•</span><span>Respond to leads as quickly as possible to make the best impression.</span></div>
+                <div className="flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">•</span><span>Stay active on the platform to ensure you remain eligible for new leads.</span></div>
+                <div className="flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">•</span><span>Keep your availability up to date so the system can match you effectively.</span></div>
+                <div className="flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">•</span><span>Engage consistently with every opportunity to build long-term success.</span></div>
+              </div>
+            </details>
           </div>
         </>
       )}

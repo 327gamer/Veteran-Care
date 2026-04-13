@@ -1,0 +1,164 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.9 – Partner Retention / Success Layer
+
+PRIORITY:
+HIGH (Retention + Monetization Protection Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.9 – Partner Retention Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step introduces early retention signals and success guidance for partners.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Help partners:
+
+- understand if they are on a healthy path
+- recognize early warning signs
+- stay engaged before frustration builds
+- increase long-term retention
+
+-------------------------------------
+REQUIREMENT 1 — PARTNER HEALTH STATUS
+-------------------------------------
+
+Add a simple partner-facing status:
+
+- Healthy
+- At Risk
+- Needs Attention
+
+-------------------------------------
+REQUIREMENT 2 — HEALTH LOGIC (LIGHTWEIGHT)
+-------------------------------------
+
+Use existing data only.
+
+Signals may include:
+- activity level
+- responsiveness trend
+- recent engagement
+
+Suggested logic:
+
+Healthy:
+- Activity Level = Active
+- AND Responsiveness Trend = Stable or Improving
+
+At Risk:
+- Activity Level = Moderate
+- OR Responsiveness Trend = Needs Attention
+
+Needs Attention:
+- Activity Level = Low
+- AND responsiveness is weak / inconsistent based on existing indicators
+
+Keep logic lightweight and explainable.
+Do NOT introduce scoring or new backend complexity unless absolutely necessary.
+
+-------------------------------------
+REQUIREMENT 3 — STATUS EXPLANATION
+-------------------------------------
+
+Each status must include simple explanation text.
+
+Examples:
+
+Healthy:
+“You are actively engaging and in a strong position.”
+
+At Risk:
+“Your engagement has slowed. Staying active will help maintain opportunities.”
+
+Needs Attention:
+“Your activity is currently low. Increasing engagement will help you get more value from the platform.”
+
+-------------------------------------
+REQUIREMENT 4 — SUCCESS GUIDANCE BLOCK
+-------------------------------------
+
+Add a section:
+
+→ “How to Stay Successful”
+
+Include simple guidance such as:
+- respond quickly
+- stay active
+- maintain availability
+- engage consistently
+
+-------------------------------------
+REQUIREMENT 5 — POSITIVE, NON-PUNITIVE TONE
+-------------------------------------
+
+STRICT RULE:
+
+- no penalties implied
+- no warnings framed as threats
+- no ranking or comparison
+- no shame-based language
+
+Tone must be:
+- supportive
+- encouraging
+- constructive
+
+-------------------------------------
+REQUIREMENT 6 — NO SYSTEM CHANGE
+-------------------------------------
+
+Do NOT:
+- affect routing
+- affect billing
+- change fairness logic
+- introduce scoring system
+- add partner comparisons
+
+-------------------------------------
+REQUIREMENT 7 — UI PLACEMENT
+-------------------------------------
+
+Place inside Partner Transparency panel:
+
+- below performance section (Step 7.8)
+- clearly labeled as “Your Status”
+
+Keep layout clean and easy to understand.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+1. Status displays correctly
+2. Logic aligns with existing activity data
+3. Explanation text renders correctly
+4. No partner comparison leakage
+5. No performance impact
+6. No regression to routing, billing, or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- partner health status visible
+- explanation text included
+- success guidance included
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------

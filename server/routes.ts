@@ -8504,7 +8504,11 @@ export async function registerRoutes(
         }
       } catch {}
 
-      return res.json({ partner_id: partnerId, scopes, activity_level, responsiveness_trend });
+      let health_status = "healthy";
+      if (activity_level === "low") health_status = "needs_attention";
+      else if (activity_level === "moderate" || responsiveness_trend === "needs_attention") health_status = "at_risk";
+
+      return res.json({ partner_id: partnerId, scopes, activity_level, responsiveness_trend, health_status });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }
