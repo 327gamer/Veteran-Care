@@ -1,0 +1,161 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.11 – Paid Partner Activation Monitoring Layer
+
+PRIORITY:
+HIGH (Revenue Optimization + Funnel Visibility)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add visibility into the paid partner onboarding funnel:
+
+Approved → Invited → Subscribed → Active
+
+The goal is to identify:
+- where partners drop off before activation
+- which stage is slowing conversion
+- which partners need follow-up
+
+-------------------------------------
+SECTION 1 — FUNNEL COUNTS
+-------------------------------------
+
+Display counts for:
+
+- approved partners
+- invited partners
+- subscribed partners
+- active partners
+
+Use existing partner / onboarding data only.
+
+-------------------------------------
+SECTION 2 — CONVERSION METRICS
+-------------------------------------
+
+Calculate and display:
+
+- approval → invite %
+- invite → subscription %
+- subscription → activation %
+
+Keep calculations simple and readable.
+
+-------------------------------------
+SECTION 3 — DROP-OFF DETECTION
+-------------------------------------
+
+Identify partners who are stalled in the funnel, including:
+
+- invited but not subscribed
+- subscribed but not active
+- approved but not invited if applicable
+
+These should be clearly visible to admin.
+
+-------------------------------------
+SECTION 4 — TIME-BASED FLAGS
+-------------------------------------
+
+Track and display:
+
+- time since approval
+- time since invite
+
+Flag examples:
+- >24h without activation
+- >48h without activation
+
+Use simple labels such as:
+- Follow Up Soon
+- Follow Up Now
+
+-------------------------------------
+SECTION 5 — ACTIVATION FUNNEL PANEL
+-------------------------------------
+
+Add a new admin panel:
+
+→ “Activation Funnel”
+
+Display:
+- funnel stage counts
+- conversion percentages
+- stalled / dropped-off partners
+- flagged partners needing follow-up
+
+Keep UI simple:
+- cards
+- counters
+- lightweight table/list
+
+No charts required.
+
+-------------------------------------
+SECTION 6 — ACTION TOOLS
+-------------------------------------
+
+Allow admin to:
+
+- resend activation email
+- open / access partner record quickly
+
+If resend already exists, surface it clearly here rather than rebuilding it.
+
+-------------------------------------
+SECTION 7 — NO SYSTEM IMPACT
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT modify:
+- routing
+- billing
+- Stripe logic
+- fairness logic
+- partner eligibility rules
+
+This is monitoring + admin visibility only.
+
+-------------------------------------
+SECTION 8 — STAGE DEFINITIONS
+-------------------------------------
+
+Use consistent meanings:
+
+- approved = partner approved internally
+- invited = activation email sent
+- subscribed = subscription initiated / created
+- active = fully activated and routing eligible
+
+These definitions must match existing onboarding_status logic.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Funnel counts accurate — PASS
+2. Conversion rates correct — PASS
+3. Drop-offs identified correctly — PASS
+4. Time-based flags working — PASS
+5. Resend / quick access actions visible — PASS
+6. No regression to routing, billing, Stripe, or fairness — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- onboarding funnel visibility
+- conversion tracking
+- drop-off detection
+- time-based follow-up flags
+- admin activation funnel panel
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------

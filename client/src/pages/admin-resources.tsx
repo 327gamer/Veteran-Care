@@ -2444,6 +2444,7 @@ function AdminResourcesInner() {
             <RotationPerformancePanel adminKey={adminKey} />
             <PartnerTransparencyPanel adminKey={adminKey} />
             <PartnerSubscriptionStatusPanel adminKey={adminKey} />
+            <ActivationFunnelPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4474,6 +4475,147 @@ function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
             </div>
           ))}
         </div>
+      </div>
+    </Card>
+  );
+}
+
+function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [resending, setResending] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const loadData = () => {
+    setLoading(true);
+    fetch("/api/admin/activation-funnel", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { loadData(); }, [adminKey]);
+
+  const handleResend = async (partnerId: string) => {
+    setResending(partnerId);
+    try {
+      const r = await fetch(`/api/admin/partner-applications/${partnerId}/resend-activation`, {
+        method: "POST",
+        headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+      });
+      const d = await r.json();
+      if (d.error) toast({ title: "Resend failed", description: d.error, variant: "destructive" });
+      else toast({ title: "Activation email resent" });
+    } catch { toast({ title: "Resend failed", variant: "destructive" }); }
+    setResending(null);
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading activation funnel...</p></Card>;
+  if (!data?.available) return null;
+
+  const { funnel, conversion, stalled_partners, stalled_count } = data;
+
+  const urgencyStyle = (u: string) => {
+    if (u === "follow_up_now") return "bg-red-100 text-red-700 border-red-200";
+    if (u === "follow_up_soon") return "bg-amber-100 text-amber-700 border-amber-200";
+    return "bg-slate-50 text-slate-600 border-slate-200";
+  };
+
+  const urgencyLabel = (u: string) => {
+    if (u === "follow_up_now") return "Follow Up Now";
+    if (u === "follow_up_soon") return "Follow Up Soon";
+    return "Normal";
+  };
+
+  const onbBadge = (status: string) => {
+    if (status === "active") return "bg-green-100 text-green-700";
+    if (status === "invited") return "bg-blue-100 text-blue-700";
+    if (status === "subscribed") return "bg-purple-100 text-purple-700";
+    return "bg-slate-100 text-slate-600";
+  };
+
+  return (
+    <Card className="p-4 space-y-4" data-testid="panel-activation-funnel">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <h3 className="font-semibold text-sm">Activation Funnel</h3>
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-funnel">Refresh</button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2" data-testid="funnel-stage-counts">
+        {[
+          { label: "Approved", count: funnel.approved, color: "bg-slate-50 border-slate-200" },
+          { label: "Invited", count: funnel.invited, color: "bg-blue-50 border-blue-200" },
+          { label: "Subscribed", count: funnel.subscribed, color: "bg-purple-50 border-purple-200" },
+          { label: "Active", count: funnel.active, color: "bg-green-50 border-green-200" },
+        ].map(s => (
+          <div key={s.label} className={`rounded p-2 border text-center ${s.color}`}>
+            <p className="text-[10px] text-muted-foreground uppercase">{s.label}</p>
+            <p className="text-lg font-bold" data-testid={`text-funnel-${s.label.toLowerCase()}`}>{s.count}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2" data-testid="funnel-conversion-rates">
+        {[
+          { label: "Approval -> Invite", pct: conversion.approval_to_invite_pct },
+          { label: "Invite -> Subscribe", pct: conversion.invite_to_subscription_pct },
+          { label: "Subscribe -> Active", pct: conversion.subscription_to_activation_pct },
+        ].map(c => (
+          <div key={c.label} className="bg-white rounded p-2 border text-center">
+            <p className="text-[9px] text-muted-foreground">{c.label}</p>
+            <p className={`text-sm font-bold ${c.pct >= 80 ? "text-green-600" : c.pct >= 50 ? "text-amber-600" : "text-red-600"}`} data-testid={`text-conversion-${c.label.replace(/[^a-zA-Z]/g, "-").toLowerCase()}`}>{c.pct}%</p>
+          </div>
+        ))}
+      </div>
+
+      {stalled_count > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 text-amber-600" />
+            <p className="text-[11px] font-semibold text-slate-700">Stalled / Drop-Off Partners ({stalled_count})</p>
+          </div>
+          <div className="max-h-56 overflow-y-auto space-y-1">
+            {stalled_partners.map((p: any) => (
+              <div key={p.id} className={`flex items-center justify-between text-[9px] px-2 py-1.5 rounded border ${urgencyStyle(p.urgency)}`} data-testid={`row-stalled-partner-${p.id}`}>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium truncate block">{p.name}</span>
+                  <span className="text-[8px] text-muted-foreground block">{p.email} | {p.hours_since_creation}h since approval</span>
+                </div>
+                <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${onbBadge(p.onboarding_status)}`}>{p.onboarding_status}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
+                    p.urgency === "follow_up_now" ? "bg-red-200 text-red-800" :
+                    p.urgency === "follow_up_soon" ? "bg-amber-200 text-amber-800" :
+                    "bg-slate-200 text-slate-700"
+                  }`} data-testid={`badge-urgency-${p.id}`}>{urgencyLabel(p.urgency)}</span>
+                  <button
+                    onClick={() => handleResend(p.id)}
+                    disabled={resending === p.id}
+                    className="px-1.5 py-0.5 rounded text-[8px] bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    data-testid={`button-resend-${p.id}`}
+                  >
+                    {resending === p.id ? "..." : "Resend"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stalled_count === 0 && (
+        <div className="bg-green-50 border border-green-200 rounded p-3 text-center">
+          <p className="text-xs text-green-700 font-medium" data-testid="text-no-stalled">All partners are fully activated</p>
+        </div>
+      )}
+
+      <div className="bg-slate-50 rounded p-2 border text-[9px] text-muted-foreground">
+        <p><strong>Pending:</strong> {funnel.pending} partner{funnel.pending !== 1 ? "s" : ""} approved but not yet invited</p>
+        <p><strong>Invited:</strong> {funnel.invited} partner{funnel.invited !== 1 ? "s" : ""} sent activation email, awaiting subscription</p>
+        <p><strong>Subscribed:</strong> {funnel.subscribed} partner{funnel.subscribed !== 1 ? "s" : ""} initiated subscription, awaiting activation</p>
       </div>
     </Card>
   );

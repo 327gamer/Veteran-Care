@@ -8477,6 +8477,83 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/activation-funnel", requireAdmin, async (_req, res) => {
+    try {
+      const { error: onbErr } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("onboarding_status")
+        .limit(1);
+      if (onbErr) {
+        return res.json({ available: false, message: "onboarding_status column not yet added" });
+      }
+
+      const { data: partners } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("id, name, contact_email, is_active, onboarding_status, activation_date, subscription_status, active_paid_partner, created_at")
+        .order("name");
+
+      const all = partners || [];
+
+      const approved = all.length;
+      const pending = all.filter((p: any) => !p.onboarding_status || p.onboarding_status === "pending");
+      const invited = all.filter((p: any) => p.onboarding_status === "invited");
+      const subscribed = all.filter((p: any) => p.onboarding_status === "subscribed");
+      const active = all.filter((p: any) => p.onboarding_status === "active");
+
+      const approvalToInvitePct = approved > 0 ? Math.round(((invited.length + subscribed.length + active.length) / approved) * 1000) / 10 : 0;
+      const inviteToSubPct = (invited.length + subscribed.length + active.length) > 0 ? Math.round(((subscribed.length + active.length) / (invited.length + subscribed.length + active.length)) * 1000) / 10 : 0;
+      const subToActivePct = (subscribed.length + active.length) > 0 ? Math.round((active.length / (subscribed.length + active.length)) * 1000) / 10 : 0;
+
+      const now = Date.now();
+      const stalledPartners = all
+        .filter((p: any) => p.onboarding_status && p.onboarding_status !== "active")
+        .map((p: any) => {
+          const createdMs = p.created_at ? new Date(p.created_at).getTime() : now;
+          const activationMs = p.activation_date ? new Date(p.activation_date).getTime() : null;
+          const hoursSinceCreation = Math.round((now - createdMs) / (1000 * 60 * 60));
+          let urgency = "normal";
+          if (hoursSinceCreation > 48) urgency = "follow_up_now";
+          else if (hoursSinceCreation > 24) urgency = "follow_up_soon";
+          return {
+            id: p.id,
+            name: p.name,
+            email: p.contact_email || "",
+            onboarding_status: p.onboarding_status,
+            subscription_status: p.subscription_status || "none",
+            active_paid_partner: p.active_paid_partner ?? false,
+            created_at: p.created_at,
+            activation_date: p.activation_date,
+            hours_since_creation: hoursSinceCreation,
+            urgency,
+          };
+        })
+        .sort((a: any, b: any) => {
+          const rank: Record<string, number> = { follow_up_now: 0, follow_up_soon: 1, normal: 2 };
+          return (rank[a.urgency] ?? 2) - (rank[b.urgency] ?? 2);
+        });
+
+      return res.json({
+        available: true,
+        funnel: {
+          approved,
+          pending: pending.length,
+          invited: invited.length,
+          subscribed: subscribed.length,
+          active: active.length,
+        },
+        conversion: {
+          approval_to_invite_pct: approvalToInvitePct,
+          invite_to_subscription_pct: inviteToSubPct,
+          subscription_to_activation_pct: subToActivePct,
+        },
+        stalled_partners: stalledPartners,
+        stalled_count: stalledPartners.length,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/partner-fairness/:partnerId", requireAdmin, async (req, res) => {
     try {
       const { partnerId } = req.params;
