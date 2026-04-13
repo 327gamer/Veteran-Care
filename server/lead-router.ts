@@ -308,9 +308,9 @@ async function getRotatedPartner(
       .from("partner_rotation_state")
       .select("*")
       .eq("routing_scope_key", scopeKey)
-      .single();
+      .maybeSingle();
 
-    if (selectErr && !selectErr.message?.includes("0 rows")) {
+    if (selectErr) {
       console.log(`[rotation] Table may not exist or query failed: ${selectErr.message}`);
       return { match: candidates[0], rotated: false };
     }
@@ -324,7 +324,7 @@ async function getRotatedPartner(
       if (lastIdx >= 0) {
         nextIndex = (lastIdx + 1) % partnerIds.length;
       } else {
-        nextIndex = ((state.rotation_index || 0) + 1) % partnerIds.length;
+        nextIndex = 0;
       }
     }
 
@@ -337,7 +337,6 @@ async function getRotatedPartner(
         .update({
           last_assigned_partner_id: selected.partnerId,
           last_assigned_at: now,
-          rotation_index: nextIndex,
           updated_at: now,
         })
         .eq("routing_scope_key", scopeKey);
@@ -352,7 +351,6 @@ async function getRotatedPartner(
           routing_scope_key: scopeKey,
           last_assigned_partner_id: selected.partnerId,
           last_assigned_at: now,
-          rotation_index: nextIndex,
         });
       if (insErr) {
         console.log(`[rotation] State insert failed: ${insErr.message}`);

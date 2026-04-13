@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS partner_rotation_state (
   routing_scope_key TEXT NOT NULL UNIQUE,
   last_assigned_partner_id UUID,
   last_assigned_at TIMESTAMPTZ DEFAULT NOW(),
-  rotation_index INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
