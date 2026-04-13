@@ -8494,8 +8494,18 @@ export async function registerRoutes(
         .limit(1);
       followUpColumnsAvailable = !fuErr;
 
+      let recoveryColumnsAvailable = false;
+      if (followUpColumnsAvailable) {
+        const { error: rcErr } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("recovery_source")
+          .limit(1);
+        recoveryColumnsAvailable = !rcErr;
+      }
+
       let selectFields = "id, name, contact_email, is_active, onboarding_status, activation_date, subscription_status, active_paid_partner, created_at";
       if (followUpColumnsAvailable) selectFields += ", follow_up_status, last_contact_at, last_contact_type";
+      if (recoveryColumnsAvailable) selectFields += ", recovery_source, recovery_timestamp";
 
       const { data: partners } = await supabaseAdmin
         .from("partner_organizations")
@@ -8553,9 +8563,31 @@ export async function registerRoutes(
           return (rank[a.urgency] ?? 2) - (rank[b.urgency] ?? 2);
         });
 
+      const followUpTypes = ["resend_activation", "reminder", "urgency", "payment_recovery"];
+      const recoveryPerformance = followUpColumnsAvailable ? followUpTypes.map(type => {
+        const sent = all.filter((p: any) => p.last_contact_type === type && (p.follow_up_status === "sent_1" || p.follow_up_status === "sent_2" || p.follow_up_status === "recovered")).length;
+        const recoveredByType = recoveryColumnsAvailable
+          ? all.filter((p: any) => p.follow_up_status === "recovered" && p.recovery_source === type).length
+          : all.filter((p: any) => p.follow_up_status === "recovered" && p.last_contact_type === type).length;
+        const conversionRate = sent > 0 ? Math.round((recoveredByType / sent) * 1000) / 10 : 0;
+        return { type, total_sent: sent, total_recovered: recoveredByType, conversion_rate: conversionRate };
+      }) : [];
+
+      let bestPerforming: string | null = null;
+      let worstPerforming: string | null = null;
+      if (recoveryPerformance.length > 0) {
+        const withSent = recoveryPerformance.filter(r => r.total_sent > 0);
+        if (withSent.length > 0) {
+          bestPerforming = withSent.reduce((a, b) => a.conversion_rate >= b.conversion_rate ? a : b).type;
+          worstPerforming = withSent.reduce((a, b) => a.conversion_rate <= b.conversion_rate ? a : b).type;
+          if (bestPerforming === worstPerforming) worstPerforming = null;
+        }
+      }
+
       return res.json({
         available: true,
         follow_up_columns_available: followUpColumnsAvailable,
+        recovery_columns_available: recoveryColumnsAvailable,
         funnel: {
           approved,
           pending: pending.length,
@@ -8568,6 +8600,11 @@ export async function registerRoutes(
           approval_to_invite_pct: approvalToInvitePct,
           invite_to_subscription_pct: inviteToSubPct,
           subscription_to_activation_pct: subToActivePct,
+        },
+        recovery_performance: recoveryPerformance,
+        insights: {
+          best_performing: bestPerforming,
+          worst_performing: worstPerforming,
         },
         stalled_partners: stalledPartners,
         stalled_count: stalledPartners.length,

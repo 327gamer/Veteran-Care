@@ -1,0 +1,108 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.13 – Partner Activation Conversion Intelligence Layer - 4.13.2026
+
+PRIORITY:
+HIGH (Revenue Intelligence + Conversion Optimization)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Measure and expose which follow-up actions are most effective in converting partners to active paid status.
+
+-------------------------------------
+SECTION 1 — FOLLOW-UP METRICS
+-------------------------------------
+
+Track per follow-up type:
+
+- total_sent
+- total_recovered
+- conversion_rate
+
+-------------------------------------
+SECTION 2 — FOLLOW-UP TYPES
+-------------------------------------
+
+Track separately:
+
+- resend_activation
+- reminder
+- urgency
+- payment_recovery
+
+-------------------------------------
+SECTION 3 — RECOVERY ATTRIBUTION
+-------------------------------------
+
+When partner activates:
+
+- assign recovery_source based on last_contact_type
+- set recovery_timestamp
+
+-------------------------------------
+SECTION 4 — NEW FIELDS
+-------------------------------------
+
+Add:
+
+- recovery_source
+- recovery_timestamp
+
+-------------------------------------
+SECTION 5 — ADMIN PANEL
+-------------------------------------
+
+Add section inside Activation Funnel:
+
+→ "Recovery Performance"
+
+Display:
+
+- follow-up type
+- sent count
+- recovered count
+- conversion %
+- highlight best + worst performing
+
+-------------------------------------
+SECTION 6 — INSIGHT SIGNALS
+-------------------------------------
+
+Highlight:
+
+- highest converting follow-up type
+- lowest converting follow-up type
+
+-------------------------------------
+SECTION 7 — NO AUTOMATION
+-------------------------------------
+
+Do NOT:
+
+- auto-send follow-ups
+- change routing or billing
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Follow-up counts correct — PASS  
+2. Recovery attribution correct — PASS  
+3. Conversion % accurate — PASS  
+4. Panel displays correctly — PASS  
+5. No regression — PASS  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- recovery performance metrics live
+- conversion insights visible
+- admin intelligence panel complete
+
+-------------------------------------
+END
+-------------------------------------

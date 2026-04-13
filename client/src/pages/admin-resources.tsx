@@ -4650,6 +4650,35 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
         </div>
       )}
 
+      {data.recovery_performance && data.recovery_performance.length > 0 && (
+        <div className="space-y-2" data-testid="panel-recovery-performance">
+          <div className="flex items-center gap-2">
+            <Mail className="h-3.5 w-3.5 text-blue-600" />
+            <p className="text-[11px] font-semibold text-slate-700">Recovery Performance</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {data.recovery_performance.map((r: any) => {
+              const isBest = data.insights?.best_performing === r.type;
+              const isWorst = data.insights?.worst_performing === r.type;
+              return (
+                <div key={r.type} className={`rounded p-2 border text-center ${
+                  isBest ? "bg-green-50 border-green-300 ring-1 ring-green-300" :
+                  isWorst ? "bg-red-50 border-red-300 ring-1 ring-red-300" :
+                  "bg-white border-slate-200"
+                }`} data-testid={`card-recovery-${r.type}`}>
+                  <p className="text-[9px] text-muted-foreground uppercase truncate">{r.type.replace(/_/g, " ")}</p>
+                  <p className="text-sm font-bold" data-testid={`text-recovery-sent-${r.type}`}>{r.total_sent} sent</p>
+                  <p className="text-[10px]" data-testid={`text-recovery-recovered-${r.type}`}>{r.total_recovered} recovered</p>
+                  <p className={`text-xs font-bold ${r.conversion_rate >= 50 ? "text-green-600" : r.conversion_rate > 0 ? "text-amber-600" : "text-slate-400"}`} data-testid={`text-recovery-rate-${r.type}`}>{r.conversion_rate}%</p>
+                  {isBest && <span className="text-[8px] font-semibold text-green-700">Best</span>}
+                  {isWorst && <span className="text-[8px] font-semibold text-red-700">Lowest</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-50 rounded p-2 border text-[9px] text-muted-foreground">
         <p><strong>Pending:</strong> {funnel.pending} partner{funnel.pending !== 1 ? "s" : ""} approved but not yet invited</p>
         <p><strong>Invited:</strong> {funnel.invited} partner{funnel.invited !== 1 ? "s" : ""} sent activation email, awaiting subscription</p>

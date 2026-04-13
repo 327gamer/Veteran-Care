@@ -69,14 +69,25 @@ export async function syncPartnerOrgSubscriptionStatus(
           .select("follow_up_status")
           .limit(1);
         if (!fuCheck || !fuCheck.message?.includes("does not exist")) {
+          let fuSelect = "follow_up_status, last_contact_type";
+          const { error: rcCheck } = await supabaseAdmin
+            .from("partner_organizations")
+            .select("recovery_source")
+            .limit(1);
+          const recoveryColsExist = !rcCheck || !rcCheck.message?.includes("does not exist");
+
           const { data: existing } = await supabaseAdmin
             .from("partner_organizations")
-            .select("follow_up_status")
+            .select(fuSelect)
             .ilike("contact_email", appEmail)
             .maybeSingle();
           if (existing && (existing.follow_up_status === "sent_1" || existing.follow_up_status === "sent_2")) {
             updatePayload.follow_up_status = "recovered";
-            console.log(`[stripe-sync] Partner ${appEmail} recovered after follow-up (was ${existing.follow_up_status})`);
+            if (recoveryColsExist) {
+              updatePayload.recovery_source = existing.last_contact_type || "unknown";
+              updatePayload.recovery_timestamp = new Date().toISOString();
+            }
+            console.log(`[stripe-sync] Partner ${appEmail} recovered after follow-up (was ${existing.follow_up_status}, source=${existing.last_contact_type})`);
           }
         }
       } else if (subscriptionStatus === "canceled") {
