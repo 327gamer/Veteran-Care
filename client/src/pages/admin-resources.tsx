@@ -4563,6 +4563,36 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
         <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-funnel">Refresh</button>
       </div>
 
+      {data.insights && data.recovery_performance?.some((r: any) => r.total_sent > 0) && (() => {
+        const best = data.insights.best_performing;
+        const worst = data.insights.worst_performing;
+        const bestData = data.recovery_performance?.find((r: any) => r.type === best);
+        const worstData = data.recovery_performance?.find((r: any) => r.type === worst);
+        const fmtType = (t: string) => t?.replace(/_/g, " ") || "";
+        return (
+          <div className="space-y-1" data-testid="banner-recommended-action">
+            {best && bestData && bestData.total_recovered > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded px-3 py-2 flex items-start gap-2">
+                <span className="text-green-600 text-sm mt-0.5">&#9650;</span>
+                <div>
+                  <p className="text-[11px] font-semibold text-green-800" data-testid="text-best-recommendation">Recommended: {fmtType(best)}</p>
+                  <p className="text-[9px] text-green-700">{fmtType(best)} follow-ups are converting best at {bestData.conversion_rate}% ({bestData.total_recovered}/{bestData.total_sent}) — consider using this first for stalled partners.</p>
+                </div>
+              </div>
+            )}
+            {worst && worstData && worstData.total_sent > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 flex items-start gap-2">
+                <span className="text-amber-600 text-sm mt-0.5">&#9660;</span>
+                <div>
+                  <p className="text-[11px] font-semibold text-amber-800" data-testid="text-worst-recommendation">Low performer: {fmtType(worst)}</p>
+                  <p className="text-[9px] text-amber-700">{fmtType(worst)} emails are converting at {worstData.conversion_rate}% ({worstData.total_recovered}/{worstData.total_sent}) — use cautiously or try a different approach.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-4 gap-2" data-testid="funnel-stage-counts">
         {[
           { label: "Approved", count: funnel.approved, color: "bg-slate-50 border-slate-200" },
@@ -4616,11 +4646,14 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-1">
-                  {p.last_contact_at && (
-                    <span className="text-[8px] text-muted-foreground mr-1">Last contact: {new Date(p.last_contact_at).toLocaleDateString()} ({p.last_contact_type})</span>
-                  )}
-                  <div className="flex items-center gap-1 ml-auto">
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  <div className="flex items-center gap-1 mr-auto text-[8px]">
+                    {p.last_contact_at && (
+                      <span className="text-muted-foreground">Last: {new Date(p.last_contact_at).toLocaleDateString()} ({p.last_contact_type})</span>
+                    )}
+                    <span className="text-blue-700 font-semibold" data-testid={`text-suggested-${p.id}`}>Suggested: {actionLabel[p.suggested_action] || p.suggested_action}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     {["resend_activation", "reminder", "urgency", "payment_recovery"].map(tpl => (
                       <button
                         key={tpl}

@@ -1,0 +1,128 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.14 – Partner Activation Optimization Layer
+
+PRIORITY:
+MEDIUM-HIGH (Conversion Optimization, NO System Complexity)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.14 – Activation Optimization  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step is a guidance-only layer using existing Step 7.13 conversion data.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Guide admin toward the most effective follow-up actions using real conversion performance data.
+
+-------------------------------------
+REQUIREMENT 1 — BEST / WORST ACTION IDENTIFICATION
+-------------------------------------
+
+Use existing recovery performance data to determine:
+
+- best_performing_follow_up_type
+- lowest_performing_follow_up_type
+
+Use:
+- total_sent
+- total_recovered
+- conversion_rate
+
+-------------------------------------
+REQUIREMENT 2 — RECOMMENDED ACTION BANNER
+-------------------------------------
+
+Inside Activation Funnel panel:
+
+Add:
+
+→ “Recommended Action” banner
+
+Examples:
+
+- “Urgency follow-ups are converting best — consider using this first”
+- “Reminder emails are underperforming — use cautiously”
+
+Display only when sufficient data exists.
+
+-------------------------------------
+REQUIREMENT 3 — CONTEXTUAL PARTNER SUGGESTIONS
+-------------------------------------
+
+For each stalled partner row:
+
+Add “Suggested Action”:
+
+IF invited >48h:
+→ suggest: urgency
+
+IF invited 24–48h:
+→ suggest: reminder
+
+IF subscribed but not active:
+→ suggest: payment_recovery
+
+-------------------------------------
+REQUIREMENT 4 — LIGHTWEIGHT RULES ONLY
+-------------------------------------
+
+STRICT:
+
+- no AI
+- no scoring system
+- no automation
+- simple deterministic logic only
+
+-------------------------------------
+REQUIREMENT 5 — UI PLACEMENT
+-------------------------------------
+
+Enhance Activation Funnel panel:
+
+- top banner → recommended action
+- per partner row → suggested action label
+
+-------------------------------------
+REQUIREMENT 6 — NO SYSTEM IMPACT
+-------------------------------------
+
+Do NOT modify:
+
+- routing
+- billing
+- Stripe
+- follow-up sending logic
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Best/worst follow-up identified correctly
+2. Recommendation banner displays correctly
+3. Suggestions match funnel timing/state
+4. No regression to routing/billing/Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- recommendation banner visible
+- partner-level suggestions visible
+- conversion insights actionable
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------
