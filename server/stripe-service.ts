@@ -42,20 +42,62 @@ export async function syncPartnerOrgSubscriptionStatus(
 ): Promise<void> {
   if (!appEmail) return;
   try {
-    const { data, error: checkErr } = await supabaseAdmin
+    const { error: checkErr } = await supabaseAdmin
       .from("partner_organizations")
       .select("subscription_status")
       .limit(1);
     if (checkErr && checkErr.message.includes("does not exist")) return;
 
+    const updatePayload: Record<string, any> = {
+      subscription_status: subscriptionStatus,
+      active_paid_partner: activePaidPartner,
+    };
+
+    const { error: onbCheck } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("onboarding_status")
+      .limit(1);
+    const onbColumnsExist = !onbCheck || !onbCheck.message?.includes("does not exist");
+
+    if (onbColumnsExist) {
+      if (subscriptionStatus === "active" && activePaidPartner) {
+        updatePayload.onboarding_status = "active";
+        updatePayload.activation_date = new Date().toISOString();
+      } else if (subscriptionStatus === "canceled") {
+        updatePayload.onboarding_status = "pending";
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from("partner_organizations")
-      .update({ subscription_status: subscriptionStatus, active_paid_partner: activePaidPartner })
+      .update(updatePayload)
       .ilike("contact_email", appEmail);
     if (error) console.log(`[stripe-sync] Failed to sync partner_org for ${appEmail}:`, error.message);
-    else console.log(`[stripe-sync] partner_organizations synced for ${appEmail}: status=${subscriptionStatus}, paid=${activePaidPartner}`);
+    else console.log(`[stripe-sync] partner_organizations synced for ${appEmail}: status=${subscriptionStatus}, paid=${activePaidPartner}, onboarding=${updatePayload.onboarding_status || 'unchanged'}`);
   } catch (err: any) {
     console.log(`[stripe-sync] Error:`, err.message);
+  }
+}
+
+export async function setPartnerOrgOnboardingStatus(
+  email: string,
+  onboardingStatus: "pending" | "invited" | "subscribed" | "active"
+): Promise<void> {
+  try {
+    const { error: checkErr } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("onboarding_status")
+      .limit(1);
+    if (checkErr && checkErr.message?.includes("does not exist")) return;
+
+    const { error } = await supabaseAdmin
+      .from("partner_organizations")
+      .update({ onboarding_status: onboardingStatus })
+      .ilike("contact_email", email);
+    if (error) console.log(`[onboarding] Failed to set onboarding_status for ${email}:`, error.message);
+    else console.log(`[onboarding] ${email} → onboarding_status=${onboardingStatus}`);
+  } catch (err: any) {
+    console.log(`[onboarding] Error:`, err.message);
   }
 }
 

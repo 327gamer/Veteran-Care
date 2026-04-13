@@ -1,0 +1,191 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.10 – Paid Partner Onboarding + Activation Layer - 4.13.2026
+
+PRIORITY:
+CRITICAL (Revenue Activation + Scale Readiness)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Create a clean onboarding flow that connects:
+
+Partner Approval
+→ Stripe Subscription
+→ active_paid_partner = true
+→ Routing Eligibility
+
+This must create a reliable paid activation path for new partners before scale.
+
+-------------------------------------
+SECTION 1 — ONBOARDING FLOW
+-------------------------------------
+
+Define system flow:
+
+1. Admin approves partner
+2. System generates Stripe subscription checkout link
+3. Partner receives activation email
+4. Partner completes subscription
+5. Stripe webhook updates partner:
+   - subscription_status = active
+   - active_paid_partner = true
+   - onboarding_status = active
+6. Partner automatically enters routing pool
+
+-------------------------------------
+SECTION 2 — EMAIL TRIGGER
+-------------------------------------
+
+When partner is approved:
+
+Send activation email automatically.
+
+Subject:
+“Activate Your Veteran Care Partnership”
+
+Include:
+- Stripe subscription link
+- short explanation
+- next steps
+- note that routing eligibility begins only after successful activation
+
+-------------------------------------
+SECTION 3 — STRIPE HANDLING
+-------------------------------------
+
+Use:
+- Stripe Checkout in subscription mode
+
+Ensure:
+- correct plan attached
+  - State Partner ($99/month)
+  - National Partner ($499/month)
+
+If partner type / coverage determines plan selection, use that logic consistently.
+
+-------------------------------------
+SECTION 4 — WEBHOOK ACTIVATION
+-------------------------------------
+
+On successful subscription:
+
+Automatically update partner record:
+- subscription_status = active
+- active_paid_partner = true
+- onboarding_status = active
+- activation_date populated
+
+Activation must be webhook-driven.
+
+-------------------------------------
+SECTION 5 — ONBOARDING STATUS FIELD
+-------------------------------------
+
+Add / ensure partner model includes:
+
+onboarding_status:
+- pending
+- invited
+- subscribed
+- active
+
+Suggested meaning:
+- pending = approved but not yet invited
+- invited = activation email sent
+- subscribed = checkout/subscription initiated but not fully activated if applicable
+- active = subscription confirmed and routing eligible
+
+-------------------------------------
+SECTION 6 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin panel must show per partner:
+- onboarding_status
+- subscription_status
+- active_paid_partner
+- activation_date
+- routing eligibility state
+
+This should make it obvious where each partner is in the activation pipeline.
+
+-------------------------------------
+SECTION 7 — FAILURE / NON-COMPLETION HANDLING
+-------------------------------------
+
+If partner does NOT subscribe:
+
+- remain inactive
+- do NOT enter routing
+- show as pending activation or invited
+- active_paid_partner must remain false
+
+If checkout expires or onboarding stalls, admin must still see incomplete activation clearly.
+
+-------------------------------------
+SECTION 8 — RESEND / RETRY
+-------------------------------------
+
+Admin can:
+- resend activation email
+- regenerate / refresh subscription link if needed
+
+This should not manually activate the partner.
+It only re-triggers the activation path.
+
+-------------------------------------
+SECTION 9 — NO MANUAL ACTIVATION
+-------------------------------------
+
+STRICT RULE:
+
+Partner activation must happen automatically through successful Stripe webhook confirmation.
+
+Do NOT rely on:
+- manual toggle
+- manual paid flag flip
+- admin-side activation shortcut
+
+Webhook confirmation is the activation source of truth.
+
+-------------------------------------
+SECTION 10 — ROUTING LOCK
+-------------------------------------
+
+Partner must NOT enter routing unless all of the following are true:
+- subscription_status = active
+- active_paid_partner = true
+- onboarding_status = active
+- partner_status_override = active
+- other routing eligibility rules still pass
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Partner receives activation email — PASS
+2. Correct Stripe subscription link generated — PASS
+3. Subscription completes successfully — PASS
+4. Webhook activates partner automatically — PASS
+5. Partner enters routing only after activation — PASS
+6. Unpaid / incomplete partner remains blocked — PASS
+7. Admin visibility reflects each onboarding stage correctly — PASS
+8. No regression to routing, billing, Stripe, or reassignment — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- onboarding flow fully working
+- approval → email → Stripe → activation → routing connected
+- onboarding_status visible in admin
+- resend / retry flow working
+- webhook-based activation confirmed
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------

@@ -4403,12 +4403,14 @@ function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = () => {
     fetch("/api/admin/partner-subscription-status", { headers: { "x-admin-key": adminKey } })
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [adminKey]);
+  };
+
+  useEffect(() => { loadData(); }, [adminKey]);
 
   if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading subscription status...</p></Card>;
   if (!data || !data.partners) return null;
@@ -4416,11 +4418,18 @@ function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
   const eligible = data.partners.filter((p: any) => p.routing_eligible);
   const ineligible = data.partners.filter((p: any) => !p.routing_eligible);
 
+  const onbColor = (status: string) => {
+    if (status === "active") return "bg-green-100 text-green-700";
+    if (status === "invited") return "bg-blue-100 text-blue-700";
+    if (status === "subscribed") return "bg-purple-100 text-purple-700";
+    return "bg-slate-100 text-slate-600";
+  };
+
   return (
     <Card className="p-4 space-y-3" data-testid="panel-subscription-status">
       <div className="flex items-center gap-2">
         <CreditCard className="h-4 w-4 text-blue-600" />
-        <h3 className="font-semibold text-sm">Subscription & Eligibility Status</h3>
+        <h3 className="font-semibold text-sm">Subscription & Onboarding Status</h3>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-[10px]">
@@ -4441,14 +4450,20 @@ function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
       )}
 
       <div className="space-y-1">
-        <p className="text-[10px] font-semibold text-slate-700">Partner Routing Eligibility ({eligible.length} eligible / {ineligible.length} ineligible)</p>
-        <div className="max-h-48 overflow-y-auto space-y-1">
+        <p className="text-[10px] font-semibold text-slate-700">Partner Activation Pipeline ({eligible.length} eligible / {ineligible.length} ineligible)</p>
+        <div className="max-h-64 overflow-y-auto space-y-1">
           {data.partners.map((p: any) => (
-            <div key={p.id} className={`flex items-center justify-between text-[9px] px-2 py-1 rounded border ${
+            <div key={p.id} className={`flex items-center justify-between text-[9px] px-2 py-1.5 rounded border ${
               p.routing_eligible ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
             }`} data-testid={`row-partner-eligibility-${p.id}`}>
-              <span className="font-medium truncate flex-1">{p.name}</span>
-              <div className="flex items-center gap-2 ml-2 shrink-0">
+              <div className="flex-1 min-w-0">
+                <span className="font-medium truncate block">{p.name}</span>
+                {p.activation_date && (
+                  <span className="text-[8px] text-muted-foreground">Activated: {new Date(p.activation_date).toLocaleDateString()}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${onbColor(p.onboarding_status)}`} data-testid={`badge-onboarding-${p.id}`}>{p.onboarding_status}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
                   p.subscription_status === "active" ? "bg-green-100 text-green-700" :
                   p.subscription_status === "past_due" ? "bg-amber-100 text-amber-700" :

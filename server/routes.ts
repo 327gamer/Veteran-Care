@@ -8424,27 +8424,30 @@ export async function registerRoutes(
       const config = await getBillingConfig();
 
       let subsColumnsAvailable = false;
+      let onbColumnsAvailable = false;
       let partners: any[] = [];
 
-      const { data: testData, error: testErr } = await supabaseAdmin
+      const { error: testErr } = await supabaseAdmin
         .from("partner_organizations")
         .select("subscription_status")
         .limit(1);
+      subsColumnsAvailable = !testErr;
 
-      if (!testErr) {
-        subsColumnsAvailable = true;
-        const { data } = await supabaseAdmin
-          .from("partner_organizations")
-          .select("id, name, is_active, is_lead_enabled, partner_status_override, subscription_status, active_paid_partner")
-          .order("name");
-        partners = data || [];
-      } else {
-        const { data } = await supabaseAdmin
-          .from("partner_organizations")
-          .select("id, name, is_active, is_lead_enabled, partner_status_override")
-          .order("name");
-        partners = data || [];
-      }
+      const { error: onbErr } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("onboarding_status")
+        .limit(1);
+      onbColumnsAvailable = !onbErr;
+
+      let selectFields = "id, name, is_active, is_lead_enabled, partner_status_override";
+      if (subsColumnsAvailable) selectFields += ", subscription_status, active_paid_partner";
+      if (onbColumnsAvailable) selectFields += ", onboarding_status, activation_date";
+
+      const { data } = await supabaseAdmin
+        .from("partner_organizations")
+        .select(selectFields)
+        .order("name");
+      partners = data || [];
 
       const partnerList = partners.map((p: any) => ({
         id: p.id,
@@ -8454,13 +8457,19 @@ export async function registerRoutes(
         partner_status_override: p.partner_status_override || "active",
         subscription_status: subsColumnsAvailable ? (p.subscription_status || "active") : "active",
         active_paid_partner: subsColumnsAvailable ? (p.active_paid_partner ?? true) : true,
-        routing_eligible: p.is_active && p.is_lead_enabled && (p.partner_status_override !== "paused") && (subsColumnsAvailable ? p.active_paid_partner !== false : true),
+        onboarding_status: onbColumnsAvailable ? (p.onboarding_status || "pending") : "active",
+        activation_date: onbColumnsAvailable ? (p.activation_date || null) : null,
+        routing_eligible: p.is_active && p.is_lead_enabled
+          && (p.partner_status_override !== "paused")
+          && (subsColumnsAvailable ? p.active_paid_partner !== false : true)
+          && (onbColumnsAvailable ? (!p.onboarding_status || p.onboarding_status === "active") : true),
       }));
 
       return res.json({
         billing_mode: config.billing_mode,
         routing_mode: config.routing_mode,
         subscription_columns_available: subsColumnsAvailable,
+        onboarding_columns_available: onbColumnsAvailable,
         partners: partnerList,
       });
     } catch (err: any) {
@@ -10902,6 +10911,9 @@ export async function registerRoutes(
         );
         emailSent = emailResult.sent;
         emailError = emailResult.error;
+
+        const { setPartnerOrgOnboardingStatus } = await import("./stripe-service");
+        await setPartnerOrgOnboardingStatus(application.email, "invited");
       }
 
       return res.json({
@@ -10913,6 +10925,54 @@ export async function registerRoutes(
         message: emailSent
           ? `Payment link emailed to ${application.email}. Link also available below as backup.`
           : `Checkout session created. Email delivery failed${emailError ? `: ${emailError}` : ""}. Copy the link manually.`,
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/partner-applications/:id/resend-activation", requireAdmin, async (req, res) => {
+    if (!isStripeEnabled()) {
+      return res.status(503).json({ error: "Stripe is not configured" });
+    }
+    try {
+      const appRows = await pgQuery(`SELECT * FROM partner_applications WHERE id = $1`, [req.params.id]);
+      if (appRows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const application = appRows[0];
+
+      if (application.status === "active") return res.status(400).json({ error: "Partner is already active — no activation needed" });
+      if (!application.email) return res.status(400).json({ error: "No email on application" });
+
+      let checkoutUrl = application.stripe_checkout_url;
+
+      if (!checkoutUrl) {
+        let addons = [];
+        if (application.requested_addons) {
+          try { addons = JSON.parse(application.requested_addons); } catch {}
+        }
+        const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+        addons = addons.filter((a: string) => validAddons.includes(a));
+        const result = await createPartnerCheckoutSession({ applicationId: req.params.id, addons });
+        checkoutUrl = result.url;
+      }
+
+      const emailResult = await sendPartnerPaymentEmail(
+        application.email,
+        application.company_name,
+        application.contact_name,
+        checkoutUrl
+      );
+
+      const { setPartnerOrgOnboardingStatus } = await import("./stripe-service");
+      await setPartnerOrgOnboardingStatus(application.email, "invited");
+
+      return res.json({
+        emailSent: emailResult.sent,
+        emailError: emailResult.error,
+        checkoutUrl,
+        message: emailResult.sent
+          ? `Activation email resent to ${application.email}`
+          : `Email failed${emailResult.error ? `: ${emailResult.error}` : ""}. Checkout URL available as backup.`,
       });
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
