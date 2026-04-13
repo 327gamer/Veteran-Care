@@ -1,0 +1,213 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.7 – Batch Performance Tracking Layer
+
+PRIORITY:
+HIGH (Batch Optimization + Scaling Intelligence)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.7 – Batch Performance Tracking  
+❌ NOT automation  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+❌ NOT dashboards  
+
+This is a read + analyze layer on top of Step 6.6 batch execution.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Track how batch execution performs so admin can:
+
+- understand batch safety
+- identify failure patterns
+- determine safe scaling limits
+- improve batch efficiency over time
+
+-------------------------------------
+REQUIREMENT 1 — BATCH METRICS CAPTURE
+-------------------------------------
+
+Extend existing batch logging (billing_runs OR equivalent) to include:
+
+REQUIRED FIELDS:
+
+- batch_id
+- batch_size
+- attempted_count
+- success_count
+- failure_count
+- total_amount_attempted
+- total_amount_successful
+- admin_user
+- created_at (timestamp)
+
+DERIVED (DO NOT STORE IF NOT NEEDED):
+
+- success_rate = success_count / attempted_count
+
+OPTIONAL (IF EASY):
+
+- execution_time_ms
+
+IMPORTANT:
+Do NOT modify existing billing logic.
+Only extend logging.
+
+-------------------------------------
+REQUIREMENT 2 — BATCH PERFORMANCE SUMMARY ENDPOINT
+-------------------------------------
+
+Create endpoint:
+
+GET /api/admin/batch-performance-summary
+
+Return:
+
+- total_batches
+- avg_batch_size
+- avg_success_rate
+- total_revenue_from_batches
+- total_failures
+
+All computed from batch logs.
+
+-------------------------------------
+REQUIREMENT 3 — RECENT BATCHES ENDPOINT
+-------------------------------------
+
+Create endpoint:
+
+GET /api/admin/batch-performance-recent
+
+Return last 10–20 batches with:
+
+- batch_id
+- batch_size
+- attempted_count
+- success_count
+- failure_count
+- success_rate
+- total_amount_attempted
+- total_amount_successful
+- created_at
+
+-------------------------------------
+REQUIREMENT 4 — FAILURE PATTERN SIGNALS
+-------------------------------------
+
+Add lightweight derived signals in summary endpoint:
+
+- high_failure_rate_batches (count where success_rate < 80%)
+- repeated_failed_leads (optional count if easy)
+- failure_spike (boolean if last 3 batches below threshold)
+
+-------------------------------------
+REQUIREMENT 5 — SAFE BATCH SIZE SIGNAL
+-------------------------------------
+
+Add derived signal:
+
+safe_batch_size_range
+
+LOGIC (simple):
+
+- success_rate ≥ 90% → SAFE
+- success_rate 80–89% → STABLE
+- success_rate < 80% → CAUTION
+
+Return this in summary endpoint.
+
+-------------------------------------
+REQUIREMENT 6 — ADMIN VISIBILITY (LIGHTWEIGHT)
+-------------------------------------
+
+Add new admin panel section:
+
+→ “Batch Performance”
+
+Display:
+
+TOP SUMMARY:
+- total batches
+- avg batch size
+- avg success rate
+- total batch revenue
+
+RECENT BATCHES TABLE:
+- batch_id
+- size
+- success / failure
+- success_rate badge (green / yellow / red)
+- amount
+
+SAFE RANGE INDICATOR:
+- SAFE / STABLE / CAUTION
+
+-------------------------------------
+REQUIREMENT 7 — FILTER SUPPORT
+-------------------------------------
+
+Allow simple client-side filters:
+
+- all batches
+- high success (≥90%)
+- caution (<80%)
+
+-------------------------------------
+REQUIREMENT 8 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- charts
+- dashboards
+- predictive models
+- automation
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Batch metrics recorded accurately
+2. Success rate calculations correct
+3. Failure counts match billing outcomes
+4. Summary metrics match batch logs
+5. No performance impact
+6. No interference with billing or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- batch metrics captured
+- summary endpoint working
+- recent batches endpoint working
+- admin visibility added
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END

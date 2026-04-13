@@ -7867,6 +7867,7 @@ export async function registerRoutes(
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
     if (ids.length > 5) return res.status(400).json({ error: "Batch size exceeds safe limit (max 5)" });
+    const execStart = Date.now();
 
     const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
     if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
@@ -7946,8 +7947,30 @@ export async function registerRoutes(
       }
     }
 
-    const totalAmount = validLeads.reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
-    await logBillingRun("admin_batch", succeeded, totalAmount, "batch", validLeads.map(l => l.id));
+    const totalAmountAttempted = validLeads.reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
+    const successfulLeadIds = results.filter(r => r.status === "checkout_created").map(r => r.id);
+    const totalAmountSuccessful = validLeads.filter(l => successfulLeadIds.includes(l.id)).reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
+    const execEnd = Date.now();
+
+    try {
+      await supabaseAdmin.from("billing_runs").insert({
+        executed_by: "admin_batch",
+        number_of_leads_charged: succeeded,
+        total_amount: totalAmountSuccessful,
+        mode: "batch",
+        lead_ids: validLeads.map(l => l.id),
+        batch_id: batchId,
+        batch_size: validLeads.length,
+        attempted_count: validLeads.length,
+        success_count: succeeded,
+        failure_count: failed,
+        total_amount_attempted: totalAmountAttempted,
+        total_amount_successful: totalAmountSuccessful,
+        execution_time_ms: execEnd - execStart,
+      });
+    } catch (logErr: any) {
+      await logBillingRun("admin_batch", succeeded, totalAmountSuccessful, "batch", validLeads.map(l => l.id));
+    }
 
     return res.json({
       batch_id: batchId,
@@ -8087,6 +8110,78 @@ export async function registerRoutes(
         .select("*").order("executed_at", { ascending: false }).limit(50);
       if (error) return res.status(500).json({ error: error.message });
       return res.json(data || []);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/batch-performance-summary", requireAdmin, async (_req, res) => {
+    try {
+      const { data: runs, error } = await supabaseAdmin.from("billing_runs")
+        .select("*").eq("mode", "batch").order("executed_at", { ascending: false });
+      if (error) return res.status(500).json({ error: error.message });
+      const batches = runs || [];
+      const total = batches.length;
+      if (total === 0) {
+        return res.json({ total_batches: 0, avg_batch_size: 0, avg_success_rate: 0, total_revenue: 0, total_failures: 0, high_failure_rate_batches: 0, failure_spike: false, safe_batch_size_range: "SAFE" });
+      }
+
+      const sizes = batches.map(b => b.batch_size || b.number_of_leads_charged || 1);
+      const avgSize = sizes.reduce((a: number, b: number) => a + b, 0) / total;
+      const rates = batches.map(b => {
+        const att = b.attempted_count || b.number_of_leads_charged || 1;
+        const suc = b.success_count ?? b.number_of_leads_charged ?? 0;
+        return att > 0 ? (suc / att) * 100 : 100;
+      });
+      const avgRate = rates.reduce((a: number, b: number) => a + b, 0) / total;
+      const totalRev = batches.reduce((s: number, b: any) => s + (parseFloat(b.total_amount_successful || b.total_amount) || 0), 0);
+      const totalFailures = batches.reduce((s: number, b: any) => s + (b.failure_count || 0), 0);
+      const highFailBatches = rates.filter(r => r < 80).length;
+      const last3 = rates.slice(0, 3);
+      const failureSpike = last3.length >= 3 && last3.every(r => r < 80);
+
+      let safeRange = "SAFE";
+      if (avgRate < 80) safeRange = "CAUTION";
+      else if (avgRate < 90) safeRange = "STABLE";
+
+      return res.json({
+        total_batches: total,
+        avg_batch_size: Math.round(avgSize * 10) / 10,
+        avg_success_rate: Math.round(avgRate * 10) / 10,
+        total_revenue: Math.round(totalRev * 100) / 100,
+        total_failures: totalFailures,
+        high_failure_rate_batches: highFailBatches,
+        failure_spike: failureSpike,
+        safe_batch_size_range: safeRange,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/batch-performance-recent", requireAdmin, async (_req, res) => {
+    try {
+      const { data: runs, error } = await supabaseAdmin.from("billing_runs")
+        .select("*").eq("mode", "batch").order("executed_at", { ascending: false }).limit(20);
+      if (error) return res.status(500).json({ error: error.message });
+      const batches = (runs || []).map((b: any) => {
+        const att = b.attempted_count || b.number_of_leads_charged || 1;
+        const suc = b.success_count ?? b.number_of_leads_charged ?? 0;
+        const fail = b.failure_count || 0;
+        return {
+          batch_id: b.batch_id || b.id,
+          batch_size: b.batch_size || b.number_of_leads_charged || 0,
+          attempted_count: att,
+          success_count: suc,
+          failure_count: fail,
+          success_rate: att > 0 ? Math.round((suc / att) * 1000) / 10 : 100,
+          total_amount_attempted: parseFloat(b.total_amount_attempted || b.total_amount) || 0,
+          total_amount_successful: parseFloat(b.total_amount_successful || b.total_amount) || 0,
+          execution_time_ms: b.execution_time_ms || null,
+          created_at: b.executed_at,
+        };
+      });
+      return res.json(batches);
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }

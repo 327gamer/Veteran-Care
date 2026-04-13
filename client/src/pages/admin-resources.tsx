@@ -2861,6 +2861,11 @@ function AdminResourcesInner() {
             </div>
 
             <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Batch Performance</h3>
+              <BatchPerformancePanel adminKey={adminKey} />
+            </div>
+
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-sm font-semibold mb-3">Batch Readiness Playbook</h3>
               <BatchReadinessPlaybook />
             </div>
@@ -4082,6 +4087,100 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function BatchPerformancePanel({ adminKey }: { adminKey: string }) {
+  const [summary, setSummary] = useState<any>(null);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "high" | "caution">("all");
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/batch-performance-summary", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+      fetch("/api/admin/batch-performance-recent", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    ]).then(([s, r]) => {
+      setSummary(s);
+      setRecent(Array.isArray(r) ? r : []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-4">Loading batch performance...</p>;
+  if (!summary || summary.total_batches === 0) return <p className="text-xs text-muted-foreground py-4">No batch runs recorded yet.</p>;
+
+  const rangeColors: Record<string, string> = {
+    SAFE: "bg-green-100 text-green-800 border-green-300",
+    STABLE: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    CAUTION: "bg-red-100 text-red-800 border-red-300",
+  };
+
+  const filtered = recent.filter(b => {
+    if (filter === "high") return b.success_rate >= 90;
+    if (filter === "caution") return b.success_rate < 80;
+    return true;
+  });
+
+  return (
+    <div className="space-y-3" data-testid="batch-performance-panel">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Total Batches</p>
+          <p className="text-lg font-bold" data-testid="text-batch-total">{summary.total_batches}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Avg Batch Size</p>
+          <p className="text-lg font-bold">{summary.avg_batch_size}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Avg Success Rate</p>
+          <p className={`text-lg font-bold ${summary.avg_success_rate >= 90 ? "text-green-600" : summary.avg_success_rate >= 80 ? "text-yellow-600" : "text-red-600"}`}>{summary.avg_success_rate}%</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Batch Revenue</p>
+          <p className="text-lg font-bold text-green-600">${summary.total_revenue.toFixed(2)}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Safe Range</p>
+          <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${rangeColors[summary.safe_batch_size_range] || rangeColors.SAFE}`} data-testid="text-safe-range">{summary.safe_batch_size_range}</span>
+        </div>
+      </div>
+
+      {summary.failure_spike && (
+        <div className="text-[10px] bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium" data-testid="batch-failure-spike">
+          Failure spike detected — last 3 batches below 80% success rate. Review before next batch.
+        </div>
+      )}
+
+      <div className="flex gap-1.5 items-center">
+        <span className="text-[10px] text-muted-foreground">Filter:</span>
+        {(["all", "high", "caution"] as const).map(f => (
+          <button key={f} data-testid={`batch-filter-${f}`} className={`px-2 py-0.5 rounded text-[9px] border ${filter === f ? "bg-slate-800 text-white" : "bg-white text-slate-600"}`} onClick={() => setFilter(f)}>
+            {f === "all" ? "All" : f === "high" ? "High (≥90%)" : "Caution (<80%)"}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-1">
+        {filtered.map((b, i) => {
+          const rateColor = b.success_rate >= 90 ? "bg-green-100 text-green-800" : b.success_rate >= 80 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800";
+          return (
+            <div key={i} className="flex items-center gap-2 p-2 rounded border text-[10px]" data-testid={`batch-row-${i}`}>
+              <span className="font-mono text-[9px] text-muted-foreground w-16 truncate" title={b.batch_id}>{(b.batch_id || "").substring(0, 14)}</span>
+              <span className="w-8 text-center">{b.batch_size}</span>
+              <span className="text-green-600 w-6 text-center">{b.success_count}</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-red-600 w-6 text-center">{b.failure_count}</span>
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${rateColor}`}>{b.success_rate}%</span>
+              <span className="font-medium">${b.total_amount_successful.toFixed(2)}</span>
+              {b.execution_time_ms && <span className="text-muted-foreground">{b.execution_time_ms}ms</span>}
+              <span className="ml-auto text-muted-foreground text-[9px]">{b.created_at ? new Date(b.created_at).toLocaleString() : ""}</span>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-3">No batches match this filter.</p>}
+      </div>
+    </div>
+  );
+}
 
 function BatchReadinessPlaybook() {
   const [expanded, setExpanded] = useState<string[]>([]);
