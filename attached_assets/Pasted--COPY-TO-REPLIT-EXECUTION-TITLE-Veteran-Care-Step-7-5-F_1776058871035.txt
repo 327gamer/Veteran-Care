@@ -1,0 +1,190 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.5 – Fairness Evidence / Dispute Support Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Partner Trust + Dispute Protection Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.5 – Fairness Evidence / Dispute Support  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step packages existing fairness + history data into clear, dispute-ready evidence views.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to quickly answer:
+
+- Is this partner being treated fairly?
+- What share of leads have they received?
+- Has distribution been consistent over time?
+- Is this a temporary skew or real imbalance?
+
+This is about presenting proof clearly, not just storing data.
+
+-------------------------------------
+REQUIREMENT 1 — PARTNER FAIRNESS VIEW
+-------------------------------------
+
+For each partner inside a scope show:
+
+- total_rotated_leads_received
+- percentage_share
+- expected_share
+- deviation_from_expected
+
+Calculation:
+
+expected_share = 100 / number_of_partners
+
+deviation = percentage_share - expected_share
+
+Display example:
+
+Expected: 50%  
+Actual: 66.7%  
+Deviation: +16.7%
+
+-------------------------------------
+REQUIREMENT 2 — FAIRNESS SUMMARY BLOCK
+-------------------------------------
+
+At top of scope panel display:
+
+- total_rotated_leads
+- number_of_partners
+- expected_share
+- fairness_status
+- advisory_flag
+- trend_direction
+- persistent_imbalance
+
+This must be readable in one compact block.
+
+-------------------------------------
+REQUIREMENT 3 — EXPLAINABILITY TEXT
+-------------------------------------
+
+Add plain-English explanation based on conditions:
+
+balanced:
+→ “Distribution is within acceptable range.”
+
+slight_skew:
+→ “Slight skew detected but within tolerance.”
+
+imbalance_detected:
+→ “Distribution shows imbalance in current assignments.”
+
+persistent_imbalance:
+→ “Persistent imbalance detected — review recommended.”
+
+low_sample:
+→ “Insufficient data for fairness assessment.”
+
+-------------------------------------
+REQUIREMENT 4 — HISTORY DISPLAY (EXTENDED)
+-------------------------------------
+
+Show last 5–10 snapshots:
+
+For each snapshot show:
+
+- timestamp
+- fairness_status
+- advisory_flag
+
+Keep simple list format (no charts).
+
+-------------------------------------
+REQUIREMENT 5 — COPY / EXPORT
+-------------------------------------
+
+Add two actions:
+
+1. Copy Summary (plain text)
+2. Copy JSON (structured)
+
+Summary should include:
+
+- scope
+- partner breakdown
+- expected vs actual
+- deviation
+- fairness status
+- advisory flag
+- trend
+- persistent imbalance
+- short explanation
+
+JSON should include full structured data.
+
+-------------------------------------
+REQUIREMENT 6 — ADMIN VISIBILITY
+-------------------------------------
+
+Upgrade expanded scope panel into:
+
+→ “Fairness Evidence Panel”
+
+Include:
+
+- summary block
+- partner breakdown
+- explanation text
+- history list
+- copy/export actions
+
+-------------------------------------
+REQUIREMENT 7 — NO SYSTEM CHANGE
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+- change routing
+- change billing
+- adjust partner weighting
+- introduce automation
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Expected share calculation correct
+2. Deviation calculation correct
+3. Partner percentages sum correctly (~100%)
+4. History displays correctly
+5. Explanation text matches fairness conditions
+6. Copy Summary returns correct formatted output
+7. Copy JSON returns correct structured data
+8. No regression to routing, billing, Stripe, or reassignment
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- fairness evidence panel built
+- deviation visible
+- explanation text working
+- history extended
+- copy/export working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------
