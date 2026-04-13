@@ -1,0 +1,170 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.8 – Partner Performance Influence Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Retention + Behavior Guidance Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.8 – Performance Influence Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step introduces behavior-based guidance to partners.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Help partners understand:
+
+- what improves their outcomes
+- how to get more value from the platform
+- why performance matters separately from fairness
+
+This reduces:
+- frustration
+- churn
+- misattribution of poor results to fairness
+
+-------------------------------------
+REQUIREMENT 1 — PERFORMANCE CONTEXT BLOCK
+-------------------------------------
+
+Add a new section inside the Partner Transparency panel:
+
+→ “How to Improve Your Results”
+
+Include clear framing such as:
+
+“Lead distribution is fair, but outcomes also depend on partner responsiveness, consistency, and availability.”
+
+-------------------------------------
+REQUIREMENT 2 — KEY PERFORMANCE FACTORS
+-------------------------------------
+
+Explain in simple, non-technical language:
+
+- response speed matters
+- response consistency matters
+- availability matters
+- engagement matters
+
+No technical jargon.
+No internal system language.
+
+-------------------------------------
+REQUIREMENT 3 — LIGHTWEIGHT PERFORMANCE SIGNALS
+-------------------------------------
+
+Show simple partner-facing indicators using existing data only.
+
+Examples:
+
+- response activity level:
+  - Active
+  - Moderate
+  - Low
+
+- recent responsiveness trend:
+  - Improving
+  - Stable
+  - Needs Attention
+
+Use existing Step 4 / Step 5 data only.
+Do NOT add new backend logic if current data is sufficient.
+
+-------------------------------------
+REQUIREMENT 4 — FAIRNESS VS PERFORMANCE CLARITY
+-------------------------------------
+
+Add a clear message such as:
+
+“You are receiving a fair share of leads.
+Your results also depend on how quickly and consistently you engage with those leads.”
+
+This distinction is critical.
+
+-------------------------------------
+REQUIREMENT 5 — POSITIVE REINFORCEMENT
+-------------------------------------
+
+Add supportive, encouraging messaging such as:
+
+- “Partners who respond quickly often see better outcomes.”
+- “Staying active helps maintain consistent opportunities.”
+- “Consistent engagement helps you get more value from the platform.”
+
+Tone must be:
+- encouraging
+- non-punitive
+- trust-building
+
+-------------------------------------
+REQUIREMENT 6 — NO PENALTIES / NO SCORING
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+- rank partners
+- penalize partners
+- change routing weights
+- introduce a scoring system
+- expose internal comparisons
+
+This is guidance only.
+
+-------------------------------------
+REQUIREMENT 7 — UI PLACEMENT
+-------------------------------------
+
+Place this inside the Partner Transparency panel:
+
+- below fairness explanation
+- clearly separated as “Performance Guidance”
+
+Keep the layout clean and readable.
+
+-------------------------------------
+REQUIREMENT 8 — NO NEW DATA EXPOSURE
+-------------------------------------
+
+Do NOT expose:
+- other partner performance
+- partner comparisons
+- internal rankings
+- monetization data beyond what is already visible
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+1. Performance guidance renders correctly
+2. Indicators reflect existing data correctly
+3. No new backend dependency introduced unless truly required
+4. No data leakage between partners
+5. No performance impact
+6. No regression to routing, billing, or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- performance guidance layer implemented
+- fairness vs performance distinction clearly shown
+- UI integrated cleanly
+- validation complete
+- no regression introduced
+
+-------------------------------------
+END
+-------------------------------------

@@ -8479,7 +8479,32 @@ export async function registerRoutes(
           };
         });
 
-      return res.json({ partner_id: partnerId, scopes });
+      let activity_level = "moderate";
+      let responsiveness_trend = "stable";
+      try {
+        const { data: allLeads } = await supabaseAdmin
+          .from("navigator_requests")
+          .select("response_status, response_at, created_at")
+          .eq("routed_to_partner_id", partnerId)
+          .not("routed_to_partner_id", "is", null);
+        if (allLeads && allLeads.length > 0) {
+          const responded = allLeads.filter(l => l.response_status === "accepted" || l.response_status === "contacted");
+          const responseRate = responded.length / allLeads.length;
+          activity_level = responseRate >= 0.6 ? "active" : responseRate >= 0.3 ? "moderate" : "low";
+
+          const now = Date.now();
+          const recent = allLeads.filter(l => l.created_at && (now - new Date(l.created_at).getTime()) < 30 * 86400000);
+          const older = allLeads.filter(l => l.created_at && (now - new Date(l.created_at).getTime()) >= 30 * 86400000 && (now - new Date(l.created_at).getTime()) < 60 * 86400000);
+          if (recent.length >= 2 && older.length >= 2) {
+            const recentRate = recent.filter(l => l.response_status === "accepted" || l.response_status === "contacted").length / recent.length;
+            const olderRate = older.filter(l => l.response_status === "accepted" || l.response_status === "contacted").length / older.length;
+            if (recentRate > olderRate + 0.1) responsiveness_trend = "improving";
+            else if (recentRate < olderRate - 0.1) responsiveness_trend = "needs_attention";
+          }
+        }
+      } catch {}
+
+      return res.json({ partner_id: partnerId, scopes, activity_level, responsiveness_trend });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }

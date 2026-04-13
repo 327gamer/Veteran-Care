@@ -4196,7 +4196,7 @@ const FAIRNESS_BADGE: Record<string, { label: string; className: string }> = {
 function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
   const [partners, setPartners] = useState<any[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string>("");
-  const [data, setData] = useState<{ partner_id: string; scopes: any[] } | null>(null);
+  const [data, setData] = useState<{ partner_id: string; scopes: any[]; activity_level?: string; responsiveness_trend?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -4314,14 +4314,43 @@ function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
             );
           })}
 
-          <details className="group text-[9px]">
-            <summary className="cursor-pointer font-semibold text-[10px] text-slate-700 py-1" data-testid="toggle-guidance">Tips for getting the most from the platform</summary>
-            <div className="bg-blue-50/50 border border-blue-100 rounded p-2.5 mt-1 space-y-1.5 text-slate-600" data-testid="block-guidance">
-              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Staying active helps ensure you receive eligible leads.</span></div>
-              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Responding quickly helps you get the most value from the platform.</span></div>
-              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Consistent availability improves your participation in the rotation.</span></div>
+          <div className="border-t pt-2 mt-1 space-y-2">
+            <p className="font-semibold text-[10px] text-slate-800" data-testid="text-performance-heading">Performance Guidance</p>
+
+            <div className="bg-slate-50 border border-slate-100 rounded p-2.5 text-[9px] text-slate-700 space-y-1" data-testid="block-fairness-vs-performance">
+              <p>You are receiving a fair share of leads.</p>
+              <p>Your results also depend on how quickly and consistently you engage with those leads.</p>
             </div>
-          </details>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="border rounded p-2 text-center" data-testid="card-activity-level">
+                <p className="text-[9px] text-slate-500 mb-0.5">Activity Level</p>
+                <p className={`text-[11px] font-semibold ${
+                  data.activity_level === "active" ? "text-green-700" :
+                  data.activity_level === "low" ? "text-red-600" : "text-amber-600"
+                }`}>{data.activity_level === "active" ? "Active" : data.activity_level === "low" ? "Low" : "Moderate"}</p>
+              </div>
+              <div className="border rounded p-2 text-center" data-testid="card-responsiveness-trend">
+                <p className="text-[9px] text-slate-500 mb-0.5">Responsiveness</p>
+                <p className={`text-[11px] font-semibold ${
+                  data.responsiveness_trend === "improving" ? "text-green-700" :
+                  data.responsiveness_trend === "needs_attention" ? "text-amber-600" : "text-slate-600"
+                }`}>{data.responsiveness_trend === "improving" ? "↑ Improving" : data.responsiveness_trend === "needs_attention" ? "Needs Attention" : "→ Stable"}</p>
+              </div>
+            </div>
+
+            <div className="bg-purple-50/50 border border-purple-100 rounded p-2.5 space-y-1 text-[9px] text-slate-700" data-testid="block-how-to-improve">
+              <p className="font-semibold text-[10px] text-purple-800">How to Improve Your Results</p>
+              <p>Lead distribution is fair, but outcomes also depend on partner responsiveness, consistency, and availability.</p>
+            </div>
+
+            <div className="space-y-1 text-[9px] text-slate-600" data-testid="block-performance-factors">
+              <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Response speed</span> — Partners who respond quickly often see better outcomes.</span></div>
+              <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Consistency</span> — Consistent engagement helps you get more value from the platform.</span></div>
+              <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Availability</span> — Staying active helps maintain consistent opportunities.</span></div>
+              <div className="flex items-start gap-1.5"><span className="text-purple-500 mt-0.5">•</span><span><span className="font-medium">Engagement</span> — Engaging with every lead demonstrates commitment and reliability.</span></div>
+            </div>
+          </div>
         </>
       )}
     </Card>
