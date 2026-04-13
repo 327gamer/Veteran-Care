@@ -285,6 +285,89 @@ export async function findMatchingPartners(
   return matched;
 }
 
+function buildRotationScopeKey(categorySlug: string | null, subcategory: string | null, state: string | null, city: string | null): string {
+  const parts = [
+    categorySlug || "any",
+    subcategory || "any",
+    state?.toUpperCase() || "any",
+    city?.toLowerCase() || "any",
+  ];
+  return parts.join("::");
+}
+
+async function getRotatedPartner(
+  candidates: { partnerId: string; partnerName: string; ruleId: string }[],
+  scopeKey: string
+): Promise<{ match: { partnerId: string; partnerName: string; ruleId: string }; rotated: boolean }> {
+  if (candidates.length <= 1) {
+    return { match: candidates[0], rotated: false };
+  }
+
+  try {
+    const { data: state, error: selectErr } = await supabaseAdmin
+      .from("partner_rotation_state")
+      .select("*")
+      .eq("routing_scope_key", scopeKey)
+      .single();
+
+    if (selectErr && !selectErr.message?.includes("0 rows")) {
+      console.log(`[rotation] Table may not exist or query failed: ${selectErr.message}`);
+      return { match: candidates[0], rotated: false };
+    }
+
+    const partnerIds = candidates.map(c => c.partnerId);
+    let nextIndex = 0;
+
+    if (state) {
+      const lastId = state.last_assigned_partner_id;
+      const lastIdx = partnerIds.indexOf(lastId);
+      if (lastIdx >= 0) {
+        nextIndex = (lastIdx + 1) % partnerIds.length;
+      } else {
+        nextIndex = ((state.rotation_index || 0) + 1) % partnerIds.length;
+      }
+    }
+
+    const selected = candidates[nextIndex];
+    const now = new Date().toISOString();
+
+    if (state) {
+      const { error: updErr } = await supabaseAdmin
+        .from("partner_rotation_state")
+        .update({
+          last_assigned_partner_id: selected.partnerId,
+          last_assigned_at: now,
+          rotation_index: nextIndex,
+          updated_at: now,
+        })
+        .eq("routing_scope_key", scopeKey);
+      if (updErr) {
+        console.log(`[rotation] State update failed: ${updErr.message}`);
+        return { match: candidates[0], rotated: false };
+      }
+    } else {
+      const { error: insErr } = await supabaseAdmin
+        .from("partner_rotation_state")
+        .insert({
+          routing_scope_key: scopeKey,
+          last_assigned_partner_id: selected.partnerId,
+          last_assigned_at: now,
+          rotation_index: nextIndex,
+        });
+      if (insErr) {
+        console.log(`[rotation] State insert failed: ${insErr.message}`);
+        return { match: candidates[0], rotated: false };
+      }
+    }
+
+    console.log(`[rotation] Scope "${scopeKey}" → partner ${selected.partnerName} (index ${nextIndex}/${partnerIds.length})`);
+    return { match: selected, rotated: true };
+  } catch (err: any) {
+    console.log(`[rotation] Fallback to first candidate (error: ${err?.message})`);
+    return { match: candidates[0], rotated: false };
+  }
+}
+
 export async function findBestPartner(
   lead: LeadForRouting,
   excludePartnerIds: string[] = []
@@ -534,6 +617,22 @@ export async function routeLead(leadId: string): Promise<{
   } catch {}
 
   const matches = await findMatchingPartners(lead, excludeIds, MAX_PARTNERS_PER_LEAD);
+
+  let routingMethod = "direct";
+  let routingScopeKey: string | null = null;
+  if (matches.length > 1) {
+    routingScopeKey = buildRotationScopeKey(categorySlug, subcategorySlug, lead.user_state || null, lead.user_city || null);
+    const { match: rotatedMatch, rotated } = await getRotatedPartner(matches, routingScopeKey);
+    if (rotated) {
+      routingMethod = "rotated";
+      const rotatedIdx = matches.findIndex(m => m.partnerId === rotatedMatch.partnerId);
+      if (rotatedIdx > 0) {
+        matches.splice(rotatedIdx, 1);
+        matches.unshift(rotatedMatch);
+      }
+    }
+  }
+
   if (matches.length === 0) {
     console.log(`[router] No matching partner for lead ${leadId} — trying resource fallback`);
 
@@ -639,19 +738,35 @@ export async function routeLead(leadId: string): Promise<{
       rule_id: match.ruleId,
       routed_at: now,
       delivery_status: "ready_for_delivery",
+      routing_method: match.partnerId === primaryMatch.partnerId ? routingMethod : "direct",
     });
   }
 
-  const { error: updateErr } = await supabaseAdmin
-    .from("navigator_requests")
-    .update({
-      routed_to_partner_id: primaryMatch.partnerId,
-      routed_at: now,
-      delivery_status: "ready_for_delivery",
-      routing_history: existingHistory,
-    })
-    .eq("id", leadId);
-  setTrackingFields(leadId, { assigned_at: now, response_status: "pending", email_sent: false });
+  const coreFields: Record<string, any> = {
+    routed_to_partner_id: primaryMatch.partnerId,
+    routed_at: now,
+    delivery_status: "ready_for_delivery",
+    routing_history: existingHistory,
+  };
+
+  let updateErr: any = null;
+  try {
+    const extendedFields: Record<string, any> = {
+      ...coreFields,
+      routing_method: routingMethod,
+    };
+    if (routingScopeKey) extendedFields.routing_scope_key = routingScopeKey;
+    const { error } = await supabaseAdmin.from("navigator_requests").update(extendedFields).eq("id", leadId);
+    if (error && (error.message?.includes("routing_method") || error.message?.includes("routing_scope_key") || error.message?.includes("column"))) {
+      const { error: fallbackErr } = await supabaseAdmin.from("navigator_requests").update(coreFields).eq("id", leadId);
+      updateErr = fallbackErr;
+    } else {
+      updateErr = error;
+    }
+  } catch {
+    const { error } = await supabaseAdmin.from("navigator_requests").update(coreFields).eq("id", leadId);
+    updateErr = error;
+  }
 
   if (updateErr) {
     console.log(`[router] Failed to route lead ${leadId}:`, updateErr.message);
@@ -674,6 +789,8 @@ export async function routeLead(leadId: string): Promise<{
     metadata: {
       partner_count: matches.length,
       partner_ids: matches.map(m => m.partnerId),
+      routing_method: routingMethod,
+      routing_scope_key: routingScopeKey,
       ...attributionFields,
     },
   });

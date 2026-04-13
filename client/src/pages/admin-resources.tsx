@@ -1564,6 +1564,7 @@ function AdminResourcesInner() {
                           <p>Type: {destinationType}</p>
                           <p>Delivery: {deliveryMethod}</p>
                           <p>Status: {deliveryLabel}</p>
+                          {req.routing_method && <p>Routing: <span className={`font-medium ${req.routing_method === "rotated" ? "text-indigo-700" : "text-blue-700"}`}>{req.routing_method === "rotated" ? "Rotated (Round-Robin)" : "Direct"}</span>{req.routing_scope_key ? ` [${req.routing_scope_key}]` : ""}</p>}
                           <p>Email Sent: {req.email_sent ? "Yes" : "No"}{req.email_sent_at ? ` (${new Date(req.email_sent_at).toLocaleString()})` : ""}</p>
                           <p>Response: <span className={`font-medium ${
                             req.response_status === "accepted" ? "text-green-700" :

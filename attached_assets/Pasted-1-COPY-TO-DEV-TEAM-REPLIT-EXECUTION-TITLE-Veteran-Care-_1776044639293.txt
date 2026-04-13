@@ -1,0 +1,182 @@
+1"}
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.1 – Partner Rotation / Fair Distribution Layer
+
+PRIORITY:
+CRITICAL (Scaling + Monetization Protection)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.1 – Partner Rotation / Fair Distribution  
+❌ NOT pricing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT reassignment changes  
+❌ NOT automation  
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Implement a controlled, fair, and auditable lead distribution system across multiple eligible partners using round-robin rotation.
+
+-------------------------------------
+REQUIREMENT 1 — ELIGIBLE PARTNER SET
+-------------------------------------
+
+Build eligible partner pool using existing routing rules:
+
+- strict category match
+- subcategory match if applicable
+- location priority (city → nearby → state)
+- partner must be active
+- partner_status_override = active
+
+Exclude:
+- paused partners
+- review_only (if not eligible for assignment)
+- inactive partners
+
+-------------------------------------
+REQUIREMENT 2 — ROUND-ROBIN ROTATION LOGIC
+-------------------------------------
+
+If multiple eligible partners exist:
+
+- maintain ordered partner list
+- assign next partner in sequence
+- move pointer forward
+- wrap to beginning when end reached
+
+If only one partner:
+→ use existing routing logic
+
+-------------------------------------
+REQUIREMENT 3 — ROTATION SCOPE
+-------------------------------------
+
+Rotation must be scoped by:
+
+- category
+- subcategory (if applicable)
+- location scope (city / nearby / state)
+
+Each scope has independent rotation state.
+
+-------------------------------------
+REQUIREMENT 4 — PERSISTENCE
+-------------------------------------
+
+Store rotation state in database:
+
+Fields:
+- routing_scope_key
+- last_assigned_partner_id
+- last_assigned_at
+
+routing_scope_key must uniquely represent:
+category + subcategory + location_scope + location_value
+
+-------------------------------------
+REQUIREMENT 5 — ROUTING ENGINE INTEGRATION
+-------------------------------------
+
+Update routing:
+
+IF multiple eligible partners exist:
+→ use rotation
+
+ELSE:
+→ existing routing logic unchanged
+
+Fallback logic remains unchanged.
+
+-------------------------------------
+REQUIREMENT 6 — FAIRNESS PROTECTION
+-------------------------------------
+
+Ensure:
+
+- same partner is NOT assigned twice in a row when multiple partners exist
+- paused/ineligible partners are skipped
+- removed partners do not break rotation
+- new partners enter rotation cleanly
+
+-------------------------------------
+REQUIREMENT 7 — ROTATION RESET / REBALANCE (NEW)
+-------------------------------------
+
+When partner pool changes:
+
+- recalculate eligible partner list
+- reset rotation pointer safely
+- ensure no partner receives duplicate assignment due to reset
+
+-------------------------------------
+REQUIREMENT 8 — CONCURRENCY SAFETY (CRITICAL)
+-------------------------------------
+
+Ensure rotation is safe under simultaneous requests:
+
+- use atomic update or transaction when selecting next partner
+- prevent two requests assigning same partner simultaneously
+
+-------------------------------------
+REQUIREMENT 9 — ADMIN VISIBILITY
+-------------------------------------
+
+Display:
+
+- assigned partner
+- routing_method:
+  - direct
+  - rotated
+- routing_scope_key (if feasible)
+
+-------------------------------------
+REQUIREMENT 10 — AUDIT / TRACEABILITY
+-------------------------------------
+
+Store:
+
+- routing_method = rotated
+- routing_scope_key
+- assigned_partner_id
+- timestamp
+
+-------------------------------------
+REQUIREMENT 11 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- weighted routing
+- partner scoring
+- prioritization
+- premium placement
+- automation
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Rotation alternates correctly between partners
+2. No duplicate assignment when multiple partners exist
+3. Paused partner excluded
+4. Separate scopes rotate independently
+5. Rotation persists across refresh/restart
+6. New partner enters rotation cleanly
+7. Simultaneous requests do not break rotation
+8. No impact to billing, Stripe, tracking, reassignment
+
+-------------------------------------
+END
+----------------------------------
