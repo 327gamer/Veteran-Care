@@ -75,6 +75,7 @@ import {
   Trophy,
   Store,
   Menu,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -2442,6 +2443,7 @@ function AdminResourcesInner() {
             <LaunchCommandCenter adminKey={adminKey} />
             <RotationPerformancePanel adminKey={adminKey} />
             <PartnerTransparencyPanel adminKey={adminKey} />
+            <PartnerSubscriptionStatusPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4396,6 +4398,71 @@ const ADVISORY_BADGE: Record<string, { label: string; className: string }> = {
   review_recommended: { label: "Review", className: "bg-amber-50 text-amber-700 border-amber-200" },
   intervention_required: { label: "Intervene", className: "bg-red-50 text-red-700 border-red-200" },
 };
+
+function PartnerSubscriptionStatusPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/partner-subscription-status", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading subscription status...</p></Card>;
+  if (!data || !data.partners) return null;
+
+  const eligible = data.partners.filter((p: any) => p.routing_eligible);
+  const ineligible = data.partners.filter((p: any) => !p.routing_eligible);
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-subscription-status">
+      <div className="flex items-center gap-2">
+        <CreditCard className="h-4 w-4 text-blue-600" />
+        <h3 className="font-semibold text-sm">Subscription & Eligibility Status</h3>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-[10px]">
+        <div className="bg-slate-50 rounded p-2 border">
+          <p className="text-muted-foreground uppercase">Billing Mode</p>
+          <p className="font-bold text-sm" data-testid="text-billing-mode">{data.billing_mode}</p>
+        </div>
+        <div className="bg-slate-50 rounded p-2 border">
+          <p className="text-muted-foreground uppercase">Routing Mode</p>
+          <p className="font-bold text-sm" data-testid="text-routing-mode">{data.routing_mode}</p>
+        </div>
+      </div>
+
+      {!data.subscription_columns_available && (
+        <div className="bg-amber-50 border border-amber-200 rounded p-2 text-[9px] text-amber-700" data-testid="text-migration-needed">
+          Migration needed: Run <code>supabase/pre-scale-subscription-lock.sql</code> in Supabase SQL Editor to enable subscription-based routing lock.
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold text-slate-700">Partner Routing Eligibility ({eligible.length} eligible / {ineligible.length} ineligible)</p>
+        <div className="max-h-48 overflow-y-auto space-y-1">
+          {data.partners.map((p: any) => (
+            <div key={p.id} className={`flex items-center justify-between text-[9px] px-2 py-1 rounded border ${
+              p.routing_eligible ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+            }`} data-testid={`row-partner-eligibility-${p.id}`}>
+              <span className="font-medium truncate flex-1">{p.name}</span>
+              <div className="flex items-center gap-2 ml-2 shrink-0">
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
+                  p.subscription_status === "active" ? "bg-green-100 text-green-700" :
+                  p.subscription_status === "past_due" ? "bg-amber-100 text-amber-700" :
+                  "bg-red-100 text-red-700"
+                }`} data-testid={`badge-sub-status-${p.id}`}>{p.subscription_status}</span>
+                <span className={`w-2 h-2 rounded-full ${p.routing_eligible ? "bg-green-500" : "bg-red-500"}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<{ scopes: any[]; total_scopes: number; total_rotated_leads: number } | null>(null);

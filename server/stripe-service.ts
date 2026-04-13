@@ -35,6 +35,30 @@ export function isStripeEnabled(): boolean {
   return !!stripe;
 }
 
+export async function syncPartnerOrgSubscriptionStatus(
+  appEmail: string | null,
+  subscriptionStatus: "active" | "past_due" | "canceled",
+  activePaidPartner: boolean
+): Promise<void> {
+  if (!appEmail) return;
+  try {
+    const { data, error: checkErr } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("subscription_status")
+      .limit(1);
+    if (checkErr && checkErr.message.includes("does not exist")) return;
+
+    const { error } = await supabaseAdmin
+      .from("partner_organizations")
+      .update({ subscription_status: subscriptionStatus, active_paid_partner: activePaidPartner })
+      .ilike("contact_email", appEmail);
+    if (error) console.log(`[stripe-sync] Failed to sync partner_org for ${appEmail}:`, error.message);
+    else console.log(`[stripe-sync] partner_organizations synced for ${appEmail}: status=${subscriptionStatus}, paid=${activePaidPartner}`);
+  } catch (err: any) {
+    console.log(`[stripe-sync] Error:`, err.message);
+  }
+}
+
 export type AddonKey = "featured" | "near_me_boost" | "sponsored_top" | "sponsored_inline";
 
 export interface CheckoutOptions {
@@ -474,6 +498,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
     }
   }
 
+  await syncPartnerOrgSubscriptionStatus(app.email, "active", true);
+
   try {
     let revenueAmount: number | null = null;
     if (session.amount_total && session.amount_total > 0) {
@@ -610,6 +636,7 @@ async function handleSubscriptionSync(subscription: Stripe.Subscription): Promis
     if (app.converted_provider_id) {
       await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
     }
+    await syncPartnerOrgSubscriptionStatus(app.email, "active", true);
     console.log(`[stripe] Subscription ${subscriptionId} reactivated → application ${app.id} active`);
   } else if (!isActive && (status === "past_due" || status === "unpaid" || status === "canceled")) {
     await pgQuery(
@@ -622,6 +649,8 @@ async function handleSubscriptionSync(subscription: Stripe.Subscription): Promis
         [app.converted_provider_id]
       );
     }
+    const syncStatus = status === "canceled" ? "canceled" : "past_due";
+    await syncPartnerOrgSubscriptionStatus(app.email, syncStatus as any, false);
     console.log(`[stripe] Subscription ${subscriptionId} status ${status} → application ${app.id} inactive`);
   }
 }
@@ -674,6 +703,8 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
       console.log(`[stripe] Failed to deactivate provider:`, err.message);
     }
   }
+
+  await syncPartnerOrgSubscriptionStatus(app.email, "canceled", false);
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
@@ -701,6 +732,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
       await pgQuery(`UPDATE trusted_services SET is_active = true WHERE id = $1`, [app.converted_provider_id]);
       console.log(`[stripe] Provider ${app.converted_provider_id} reactivated (invoice paid, grace period cleared)`);
     }
+    await syncPartnerOrgSubscriptionStatus(app.email, "active", true);
   }
 
   if (stripe) {
@@ -759,6 +791,8 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     );
     console.log(`[stripe] Provider ${app.converted_provider_id}: premium boosts removed, base listing stays active during ${graceDays}-day grace period (until ${graceEnd})`);
   }
+
+  await syncPartnerOrgSubscriptionStatus(app.email, "past_due", false);
 
   if (app.email) {
     try {
@@ -820,6 +854,7 @@ export async function checkGracePeriodExpirations(): Promise<void> {
           [app.converted_provider_id]
         );
       }
+      await syncPartnerOrgSubscriptionStatus(app.email, "canceled", false);
       console.log(`[grace] Grace period expired — application ${app.id} / provider ${app.converted_provider_id} fully deactivated`);
     }
   } catch (err: any) {

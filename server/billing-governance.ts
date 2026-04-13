@@ -1,10 +1,11 @@
 import { supabaseAdmin } from "./supabase";
 
 export interface BillingConfig {
-  billing_mode: "manual_only" | "controlled_batch";
+  billing_mode: "manual_only" | "manual_plus_batch" | "controlled_batch";
   allowed_categories: string[];
   allowed_partners: string[];
   allowed_states: string[];
+  routing_mode: "controlled" | "scaled";
 }
 
 let configCache: BillingConfig | null = null;
@@ -22,11 +23,12 @@ export async function getBillingConfig(): Promise<BillingConfig> {
       allowed_categories: map.allowed_categories_for_billing ? map.allowed_categories_for_billing.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
       allowed_partners: map.allowed_partners_for_billing ? map.allowed_partners_for_billing.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
       allowed_states: map.allowed_states_for_billing ? map.allowed_states_for_billing.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+      routing_mode: (map.routing_mode as any) || "controlled",
     };
     configCacheTime = Date.now();
     return configCache;
   } catch {
-    return { billing_mode: "manual_only", allowed_categories: [], allowed_partners: [], allowed_states: [] };
+    return { billing_mode: "manual_only", allowed_categories: [], allowed_partners: [], allowed_states: [], routing_mode: "controlled" };
   }
 }
 

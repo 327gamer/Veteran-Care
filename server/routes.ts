@@ -8091,7 +8091,7 @@ export async function registerRoutes(
   app.patch("/api/admin/billing-config", requireAdmin, async (req, res) => {
     try {
       const { updateBillingConfig, getBillingConfig } = await import("./billing-governance");
-      const validKeys = ["billing_mode", "allowed_categories_for_billing", "allowed_partners_for_billing", "allowed_states_for_billing"];
+      const validKeys = ["billing_mode", "allowed_categories_for_billing", "allowed_partners_for_billing", "allowed_states_for_billing", "routing_mode"];
       for (const [key, value] of Object.entries(req.body)) {
         if (validKeys.includes(key)) {
           await updateBillingConfig(key, String(value));
@@ -8413,6 +8413,56 @@ export async function registerRoutes(
 
       scopes.sort((a, b) => b.total_rotated_leads - a.total_rotated_leads);
       return res.json({ scopes, total_scopes: scopes.length, total_rotated_leads: (leads || []).length });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
+  app.get("/api/admin/partner-subscription-status", requireAdmin, async (_req, res) => {
+    try {
+      const { getBillingConfig } = await import("./billing-governance");
+      const config = await getBillingConfig();
+
+      let subsColumnsAvailable = false;
+      let partners: any[] = [];
+
+      const { data: testData, error: testErr } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("subscription_status")
+        .limit(1);
+
+      if (!testErr) {
+        subsColumnsAvailable = true;
+        const { data } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name, is_active, is_lead_enabled, partner_status_override, subscription_status, active_paid_partner")
+          .order("name");
+        partners = data || [];
+      } else {
+        const { data } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name, is_active, is_lead_enabled, partner_status_override")
+          .order("name");
+        partners = data || [];
+      }
+
+      const partnerList = partners.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        is_active: p.is_active,
+        is_lead_enabled: p.is_lead_enabled,
+        partner_status_override: p.partner_status_override || "active",
+        subscription_status: subsColumnsAvailable ? (p.subscription_status || "active") : "active",
+        active_paid_partner: subsColumnsAvailable ? (p.active_paid_partner ?? true) : true,
+        routing_eligible: p.is_active && p.is_lead_enabled && (p.partner_status_override !== "paused") && (subsColumnsAvailable ? p.active_paid_partner !== false : true),
+      }));
+
+      return res.json({
+        billing_mode: config.billing_mode,
+        routing_mode: config.routing_mode,
+        subscription_columns_available: subsColumnsAvailable,
+        partners: partnerList,
+      });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }

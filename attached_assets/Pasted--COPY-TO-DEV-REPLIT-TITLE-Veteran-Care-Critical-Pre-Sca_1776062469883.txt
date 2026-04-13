@@ -1,0 +1,139 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Critical Pre-Scale Check – Stripe Subscriptions + Eligibility Lock
+
+PRIORITY:
+CRITICAL (Monetization + Scale Readiness)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Before scaling, confirm and/or implement:
+
+1. Stripe subscription system
+2. Partner eligibility tied to subscription status
+3. Billing mode / routing mode config readiness
+
+-------------------------------------
+SECTION 1 — STRIPE SUBSCRIPTIONS
+-------------------------------------
+
+CONFIRM OR BUILD:
+
+- Stripe products exist:
+  - State Partner ($99/month)
+  - National Partner ($499/month)
+
+- Stripe subscriptions properly linked to partners
+
+- Webhooks implemented and working:
+  - subscription_active
+  - invoice.payment_failed
+  - customer.subscription.deleted
+
+- Webhooks must update partner status in database
+
+-------------------------------------
+SECTION 2 — PARTNER STATUS MODEL
+-------------------------------------
+
+Ensure partner model includes:
+
+- subscription_status:
+  - active
+  - past_due
+  - canceled
+
+- active_paid_partner (boolean)
+
+RULE:
+active_paid_partner = true ONLY when subscription_status = active
+
+-------------------------------------
+SECTION 3 — ROUTING ELIGIBILITY LOCK
+-------------------------------------
+
+UPDATE routing logic:
+
+ONLY route to partners where:
+
+- active_paid_partner = true
+- partner_status_override = active
+- all existing eligibility rules pass
+
+STRICT:
+If active_paid_partner = false → partner MUST NOT receive leads
+
+-------------------------------------
+SECTION 4 — AUTO PAUSE LOGIC
+-------------------------------------
+
+When subscription changes:
+
+IF:
+- past_due
+- canceled
+
+THEN:
+- active_paid_partner = false
+- partner automatically excluded from routing
+
+NO manual intervention required
+
+-------------------------------------
+SECTION 5 — CONFIG SWITCHES
+-------------------------------------
+
+Ensure system-level config exists:
+
+billing_mode:
+- manual_only
+- manual_plus_batch
+- future_auto
+
+routing_mode:
+- controlled
+- scaled
+
+These must be easily adjustable (admin or config file)
+
+-------------------------------------
+SECTION 6 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin must clearly see:
+
+- subscription_status per partner
+- active_paid_partner flag
+- routing eligibility state
+
+Optional (recommended):
+- visual indicator (green = active, red = inactive)
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Dev must confirm:
+
+1. Paid partner receives leads — PASS
+2. Unpaid partner does NOT receive leads — PASS
+3. Subscription cancellation removes eligibility — PASS
+4. Webhooks update status correctly — PASS
+5. No regression to routing, billing, Stripe — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- Stripe subscriptions confirmed working
+- webhook handling confirmed
+- routing locked to paid partners only
+- config switches implemented
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------
