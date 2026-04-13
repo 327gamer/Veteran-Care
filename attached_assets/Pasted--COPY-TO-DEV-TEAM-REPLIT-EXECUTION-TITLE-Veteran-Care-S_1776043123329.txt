@@ -1,0 +1,172 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.0 – Controlled Launch Go-Live Layer
+
+PRIORITY:
+CRITICAL (Live Launch Command Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.0 – Go-Live Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT dashboards  
+
+This step establishes a clear LIVE operating state inside the system
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Provide a clear system-level indication that:
+
+- platform is LIVE
+- operating mode is controlled
+- admin has a central command view during launch
+
+This ensures:
+- no ambiguity
+- consistent operation
+- disciplined launch behavior
+
+-------------------------------------
+REQUIREMENT 1 — SYSTEM STATUS INDICATOR
+-------------------------------------
+
+Add system-level state:
+
+- system_status
+
+Values:
+
+- pre_launch
+- live_controlled
+- scaling
+- maintenance
+
+Set default:
+
+→ live_controlled
+
+-------------------------------------
+REQUIREMENT 2 — GO-LIVE BANNER / HEADER
+-------------------------------------
+
+Add visible indicator in admin:
+
+→ “SYSTEM STATUS: LIVE (CONTROLLED MODE)”
+
+Include small description:
+
+“Manual billing with controlled batch execution. Monitoring active.”
+
+-------------------------------------
+REQUIREMENT 3 — COMMAND CENTER PANEL
+-------------------------------------
+
+Add lightweight panel:
+
+→ “Launch Command Center”
+
+Display:
+
+- current system status
+- key signals:
+  - batch expansion state
+  - scale transition status
+  - active pressure signals
+- quick links:
+  - billing queue
+  - attention leads
+  - batch performance
+  - scale readiness
+
+-------------------------------------
+REQUIREMENT 4 — DAILY STATUS SNAPSHOT
+-------------------------------------
+
+Display:
+
+- leads today
+- pending leads
+- ready to charge
+- batch success rate
+- active alerts count
+
+-------------------------------------
+REQUIREMENT 5 — OPERATION MODE DISPLAY
+-------------------------------------
+
+Display:
+
+→ “Operating Mode: Controlled Manual + Batch”
+
+This reinforces discipline during launch.
+
+-------------------------------------
+REQUIREMENT 6 — NO SYSTEM BEHAVIOR CHANGE
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- modify routing
+- modify billing logic
+- modify Stripe behavior
+- trigger automation
+- change thresholds
+
+This is visibility + clarity only.
+
+-------------------------------------
+REQUIREMENT 7 — LIGHTWEIGHT IMPLEMENTATION
+-------------------------------------
+
+- client-side panel preferred
+- minimal backend (optional system_status field if needed)
+- no persistence required beyond simple state
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Status displays correctly
+2. Command center shows correct live data
+3. No performance impact
+4. No interference with existing systems
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- system status indicator implemented
+- command center panel working
+- go-live banner visible
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

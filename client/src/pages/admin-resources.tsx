@@ -2438,6 +2438,8 @@ function AdminResourcesInner() {
 
         {activeTab === "billing" && (
           <>
+            <LaunchCommandCenter adminKey={adminKey} />
+
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Card className="p-3">
@@ -4087,6 +4089,99 @@ const PERF_BADGE: Record<string, { label: string; className: string }> = {
   emerging: { label: "EMERGING", className: "bg-blue-100 text-blue-800 border-blue-300" },
   low_conversion: { label: "LOW CONVERSION", className: "bg-orange-100 text-orange-800 border-orange-300" },
 };
+
+function LaunchCommandCenter({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<{ monitoring: any; batch: any } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/intelligence/launch-monitoring", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+      fetch("/api/admin/batch-performance-summary", { headers: { "x-admin-key": adminKey } }).then(r => r.json()),
+    ]).then(([m, b]) => setData({ monitoring: m, batch: b })).catch(() => {}).finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <p className="text-xs text-muted-foreground py-2">Loading command center...</p>;
+  const m = data?.monitoring || {};
+  const b = data?.batch || {};
+  const signals = m.signals || [];
+  const metrics = m.metrics || {};
+
+  const has = (key: string) => signals.some((s: any) => s.key === key);
+  const pressureKeys = ["high_billing_load", "high_pending", "high_attention"];
+  const pressureCount = pressureKeys.filter(has).length;
+  const transitionKeys = ["high_billing_load", "high_pending"];
+  const batchReady = has("high_daily_volume") || has("high_billing_load");
+  const billingReview = has("high_billing_load") && (has("payment_failures") || has("high_pending"));
+  const transitionCount = transitionKeys.filter(has).length + (batchReady ? 1 : 0) + (billingReview ? 1 : 0);
+  let scaleStatus = "manual_safe";
+  if (transitionCount >= 2) scaleStatus = "transition_ready";
+  else if (pressureCount >= 1) scaleStatus = "approaching_transition";
+
+  const expansionState = b.batch_expansion_state || "conservative";
+
+  const statusColors: Record<string, string> = {
+    live_controlled: "bg-green-600",
+  };
+
+  return (
+    <div className="space-y-3 mb-4" data-testid="launch-command-center">
+      <div className={`rounded-lg p-3 ${statusColors.live_controlled} text-white`} data-testid="go-live-banner">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold tracking-wide">SYSTEM STATUS: LIVE (CONTROLLED MODE)</p>
+            <p className="text-[10px] opacity-90">Manual billing with controlled batch execution. Monitoring active.</p>
+          </div>
+          <span className="px-2 py-0.5 bg-white/20 rounded text-[9px] font-medium">Operating Mode: Controlled Manual + Batch</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Leads Today</p>
+          <p className="text-lg font-bold" data-testid="cmd-leads-today">{metrics.today_leads || 0}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Pending</p>
+          <p className="text-lg font-bold text-amber-600" data-testid="cmd-pending">{metrics.pending_leads || 0}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Ready to Charge</p>
+          <p className="text-lg font-bold text-blue-600" data-testid="cmd-ready">{metrics.ready_to_charge || 0}</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Batch Success Rate</p>
+          <p className={`text-lg font-bold ${(b.avg_success_rate || 0) >= 90 ? "text-green-600" : (b.avg_success_rate || 0) >= 80 ? "text-yellow-600" : "text-red-600"}`} data-testid="cmd-batch-rate">{b.avg_success_rate || 0}%</p>
+        </div>
+        <div className="border rounded p-2 text-center">
+          <p className="text-[9px] text-muted-foreground">Active Alerts</p>
+          <p className={`text-lg font-bold ${signals.length > 0 ? "text-amber-600" : "text-green-600"}`} data-testid="cmd-alerts">{signals.length}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="border rounded p-1.5">
+          <p className="text-[8px] text-muted-foreground">Expansion</p>
+          <span className={`text-[9px] font-bold ${expansionState === "expansion_ready" ? "text-green-600" : expansionState === "expansion_risk" ? "text-red-600" : "text-slate-600"}`} data-testid="cmd-expansion">
+            {expansionState.replace(/_/g, " ").toUpperCase()}
+          </span>
+        </div>
+        <div className="border rounded p-1.5">
+          <p className="text-[8px] text-muted-foreground">Scale Transition</p>
+          <span className={`text-[9px] font-bold ${scaleStatus === "transition_ready" ? "text-amber-600" : scaleStatus === "approaching_transition" ? "text-yellow-600" : "text-green-600"}`} data-testid="cmd-scale">
+            {scaleStatus.replace(/_/g, " ").toUpperCase()}
+          </span>
+        </div>
+        <div className="border rounded p-1.5">
+          <p className="text-[8px] text-muted-foreground">Trend</p>
+          <span className={`text-[9px] font-bold ${b.trend_direction === "improving" ? "text-green-600" : b.trend_direction === "declining" ? "text-red-600" : "text-slate-600"}`} data-testid="cmd-trend">
+            {b.trend_direction === "improving" ? "↑ IMPROVING" : b.trend_direction === "declining" ? "↓ DECLINING" : "→ STABLE"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function BatchPerformancePanel({ adminKey }: { adminKey: string }) {
   const [summary, setSummary] = useState<any>(null);
