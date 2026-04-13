@@ -1,0 +1,193 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.5 – Fairness Evidence / Dispute Support Layer
+
+PRIORITY:
+HIGH (Partner Trust + Dispute Protection Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.5 – Fairness Evidence / Dispute Support  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step packages existing fairness + history data into clear, dispute-ready evidence views.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to quickly answer:
+
+- “Is this partner being treated fairly?”
+- “What share of leads have they received?”
+- “Has distribution been consistent over time?”
+- “Is this a temporary skew or real imbalance?”
+
+This is about presenting proof clearly, not just storing data.
+
+-------------------------------------
+REQUIREMENT 1 — PARTNER FAIRNESS VIEW
+-------------------------------------
+
+Add ability to view fairness by partner inside a scope.
+
+For each partner:
+
+- total rotated leads received
+- percentage share within scope
+- expected share (based on number of partners)
+- deviation from expected share
+- recent trend (improving / stable / worsening)
+
+-------------------------------------
+REQUIREMENT 2 — DISPUTE SNAPSHOT SUMMARY
+-------------------------------------
+
+Create a compact “Fairness Summary” block per scope:
+
+Display:
+
+- total rotated leads
+- number of partners
+- expected share (e.g., 50% each for 2 partners)
+- actual distribution
+- fairness status
+- advisory flag
+- trend direction
+- persistent imbalance (yes/no)
+
+This should read like a one-screen explanation.
+
+-------------------------------------
+REQUIREMENT 3 — HISTORY SUMMARY (EXPANDED)
+-------------------------------------
+
+Extend Step 7.4 history display:
+
+- show last 5–10 snapshots clearly
+- include:
+  - timestamp
+  - fairness status
+  - advisory flag
+
+Keep simple — list format is fine.
+
+-------------------------------------
+REQUIREMENT 4 — DEVIATION VISIBILITY
+-------------------------------------
+
+Show deviation clearly:
+
+Example:
+
+- Expected: 50%
+- Actual: 66.7%
+- Deviation: +16.7%
+
+This is critical for dispute conversations.
+
+-------------------------------------
+REQUIREMENT 5 — ADMIN “EXPLAINABILITY” TEXT
+-------------------------------------
+
+Add simple explanation text:
+
+Examples:
+
+- “Distribution is within acceptable range.”
+- “Slight skew detected but within tolerance.”
+- “Distribution shows imbalance over time.”
+
+This removes need for admin to interpret raw numbers.
+
+-------------------------------------
+REQUIREMENT 6 — EXPORT / COPY SUPPORT (LIGHTWEIGHT)
+-------------------------------------
+
+Add simple ability to:
+
+- copy fairness summary (text format)
+OR
+- export basic JSON summary
+
+This is for:
+- partner communication
+- internal documentation
+
+Do NOT build full reporting system.
+
+-------------------------------------
+REQUIREMENT 7 — NO SYSTEM INTERVENTION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-adjust routing
+- auto-correct imbalance
+- auto-pause partners
+
+This is evidence + visibility only
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCES
+-------------------------------------
+
+Use existing data only:
+
+- Step 7.2 → rotation performance
+- Step 7.3 → advisory flags
+- Step 7.4 → fairness history
+
+No new core pipelines required.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Partner share and deviation calculate correctly
+2. Expected share logic correct for multi-partner scopes
+3. History displays correctly
+4. Explanation text matches fairness conditions
+5. Copy/export works correctly
+6. No impact to routing, billing, Stripe, or reassignment logic
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- partner fairness breakdown visible
+- dispute summary block implemented
+- deviation calculations correct
+- explanation text displayed
+- copy/export capability working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+- pricing rules
+
+-------------------------------------
+END
+-------------------------------------

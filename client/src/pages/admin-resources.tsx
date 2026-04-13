@@ -4309,58 +4309,188 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
                 </div>
               </button>
 
-              {isOpen && (
-                <div className="mt-2 pl-5 space-y-1">
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[10px] text-muted-foreground border-b pb-1">
-                    <span>Partner</span>
-                    <span className="text-right">Leads</span>
-                    <span className="text-right">Share</span>
+              {isOpen && (() => {
+                const expectedShare = scope.number_of_eligible_partners > 0 ? Math.round(10000 / scope.number_of_eligible_partners) / 100 : 0;
+                const explainText = scope.fairness_status === "balanced" ? "Distribution is within acceptable range."
+                  : scope.fairness_status === "slight_skew" && scope.persistent_imbalance ? "Distribution shows imbalance over time."
+                  : scope.fairness_status === "slight_skew" ? "Slight skew detected but within tolerance."
+                  : scope.fairness_status === "imbalance_detected" && scope.persistent_imbalance ? "Persistent imbalance detected — review recommended."
+                  : scope.fairness_status === "imbalance_detected" ? "Imbalance detected in current distribution."
+                  : "Insufficient data for fairness assessment.";
+
+                const buildSummaryText = () => {
+                  const lines = [
+                    `FAIRNESS SUMMARY — ${scope.routing_scope_key}`,
+                    `Generated: ${new Date().toLocaleString()}`,
+                    ``,
+                    `Total Rotated Leads: ${scope.total_rotated_leads}`,
+                    `Number of Partners: ${scope.number_of_eligible_partners}`,
+                    `Expected Share: ${expectedShare}% each`,
+                    ``,
+                    `Partner Distribution:`,
+                    ...scope.partners.map((p: any) => {
+                      const dev = p.percentage_share - expectedShare;
+                      return `  ${p.partner_name}: ${p.leads_assigned} leads (${p.percentage_share}%, deviation: ${dev >= 0 ? "+" : ""}${dev.toFixed(1)}%)`;
+                    }),
+                    ``,
+                    `Fairness Status: ${scope.fairness_status}`,
+                    `Advisory: ${scope.advisory_flag}`,
+                    `Trend: ${scope.trend_direction}`,
+                    `Persistent Imbalance: ${scope.persistent_imbalance ? "Yes" : "No"}`,
+                    ``,
+                    `Assessment: ${explainText}`,
+                  ];
+                  if (scope.recent_history?.length > 0) {
+                    lines.push(``, `History (newest first):`);
+                    scope.recent_history.forEach((h: any) => {
+                      lines.push(`  ${new Date(h.snapshot_at).toLocaleString()} — ${h.fairness_status} (${h.advisory_flag})`);
+                    });
+                  }
+                  return lines.join("\n");
+                };
+
+                const buildSummaryJson = () => JSON.stringify({
+                  scope: scope.routing_scope_key,
+                  generated_at: new Date().toISOString(),
+                  total_rotated_leads: scope.total_rotated_leads,
+                  number_of_partners: scope.number_of_eligible_partners,
+                  expected_share_pct: expectedShare,
+                  partners: scope.partners.map((p: any) => ({
+                    name: p.partner_name,
+                    leads: p.leads_assigned,
+                    share_pct: p.percentage_share,
+                    deviation_pct: Math.round((p.percentage_share - expectedShare) * 10) / 10,
+                  })),
+                  fairness_status: scope.fairness_status,
+                  advisory_flag: scope.advisory_flag,
+                  trend_direction: scope.trend_direction,
+                  persistent_imbalance: scope.persistent_imbalance,
+                  assessment: explainText,
+                  history: scope.recent_history || [],
+                }, null, 2);
+
+                const copyToClipboard = (text: string) => {
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert("Copied to clipboard");
+                  }).catch(() => {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(ta);
+                    alert("Copied to clipboard");
+                  });
+                };
+
+                return (
+                <div className="mt-2 pl-5 space-y-2" data-testid={`evidence-panel-${scope.routing_scope_key}`}>
+                  <div className="bg-slate-50 rounded p-2 space-y-1.5">
+                    <p className="text-[10px] font-semibold text-slate-700">Fairness Summary</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+                      <span className="text-slate-500">Total Rotated Leads</span>
+                      <span className="font-medium">{scope.total_rotated_leads}</span>
+                      <span className="text-slate-500">Partners in Scope</span>
+                      <span className="font-medium">{scope.number_of_eligible_partners}</span>
+                      <span className="text-slate-500">Expected Share</span>
+                      <span className="font-medium">{expectedShare}% each</span>
+                      <span className="text-slate-500">Fairness Status</span>
+                      <span className="font-medium">{FAIRNESS_BADGE[scope.fairness_status]?.label || scope.fairness_status}</span>
+                      <span className="text-slate-500">Advisory</span>
+                      <span className="font-medium">{ADVISORY_BADGE[scope.advisory_flag]?.label || scope.advisory_flag}</span>
+                      <span className="text-slate-500">Trend</span>
+                      <span className={`font-medium ${scope.trend_direction === "improving" ? "text-green-700" : scope.trend_direction === "worsening" ? "text-red-700" : ""}`}>
+                        {scope.trend_direction === "improving" ? "↑ Improving" : scope.trend_direction === "worsening" ? "↓ Worsening" : "→ Stable"}
+                      </span>
+                      <span className="text-slate-500">Persistent Imbalance</span>
+                      <span className={`font-medium ${scope.persistent_imbalance ? "text-red-700" : "text-green-700"}`}>{scope.persistent_imbalance ? "Yes" : "No"}</span>
+                    </div>
+                    <p className={`text-[9px] italic mt-1 ${
+                      scope.fairness_status === "balanced" ? "text-green-700" :
+                      scope.fairness_status === "imbalance_detected" || scope.persistent_imbalance ? "text-red-700" :
+                      scope.fairness_status === "slight_skew" ? "text-amber-700" : "text-slate-500"
+                    }`} data-testid={`text-explain-${scope.routing_scope_key}`}>{explainText}</p>
                   </div>
-                  {scope.partners.map((p: any) => {
-                    const expectedShare = scope.number_of_eligible_partners > 0 ? 100 / scope.number_of_eligible_partners : 0;
-                    const deviation = expectedShare > 0 ? Math.abs(p.percentage_share - expectedShare) / expectedShare : 0;
-                    const shareColor = deviation <= 0.15 ? "text-green-700" : deviation <= 0.30 ? "text-yellow-700" : "text-red-700";
-                    return (
-                      <div key={p.partner_id} className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[10px]" data-testid={`row-rotation-partner-${p.partner_id}`}>
-                        <span className="truncate">{p.partner_name}</span>
-                        <span className="text-right font-medium">{p.leads_assigned}</span>
-                        <span className={`text-right font-medium ${scope.total_rotated_leads >= 5 ? shareColor : "text-gray-500"}`}>{p.percentage_share}%</span>
-                      </div>
-                    );
-                  })}
-                  <div className="pt-1.5 border-t space-y-0.5">
-                    {scope.advisory_guidance && (
+
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-700 mb-1">Partner Distribution</p>
+                    <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-2 text-[9px] text-muted-foreground border-b pb-0.5 mb-0.5">
+                      <span>Partner</span>
+                      <span className="text-right">Leads</span>
+                      <span className="text-right">Actual</span>
+                      <span className="text-right">Expected</span>
+                      <span className="text-right">Dev</span>
+                    </div>
+                    {scope.partners.map((p: any) => {
+                      const devPct = Math.round((p.percentage_share - expectedShare) * 10) / 10;
+                      const devAbs = Math.abs(devPct);
+                      const devRelative = expectedShare > 0 ? devAbs / expectedShare : 0;
+                      const devColor = devRelative <= 0.15 ? "text-green-700" : devRelative <= 0.30 ? "text-yellow-700" : "text-red-700";
+                      return (
+                        <div key={p.partner_id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-2 text-[10px]" data-testid={`row-evidence-partner-${p.partner_id}`}>
+                          <span className="truncate">{p.partner_name}</span>
+                          <span className="text-right font-medium">{p.leads_assigned}</span>
+                          <span className="text-right font-medium">{p.percentage_share}%</span>
+                          <span className="text-right text-slate-500">{expectedShare}%</span>
+                          <span className={`text-right font-medium ${scope.total_rotated_leads >= 5 ? devColor : "text-gray-400"}`}>
+                            {devPct >= 0 ? "+" : ""}{devPct}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {scope.advisory_guidance && (
+                    <div className="space-y-0.5">
                       <p className="text-[9px]"><span className="font-medium text-slate-700">Advisory:</span> <span className={
                         scope.advisory_flag === "intervention_required" ? "text-red-700 font-medium" :
                         scope.advisory_flag === "review_recommended" ? "text-amber-700" :
-                        scope.advisory_flag === "monitor" ? "text-blue-700" :
-                        "text-green-700"
+                        scope.advisory_flag === "monitor" ? "text-blue-700" : "text-green-700"
                       }>{scope.advisory_guidance}</span></p>
-                    )}
-                    {scope.root_cause_hints?.length > 0 && (
-                      <p className="text-[9px] text-slate-500">Hints: {scope.root_cause_hints.join(" · ")}</p>
-                    )}
-                    {scope.trend_direction && (
-                      <p className="text-[9px]">
-                        <span className="font-medium text-slate-700">Trend:</span>{" "}
-                        <span className={scope.trend_direction === "improving" ? "text-green-700" : scope.trend_direction === "worsening" ? "text-red-700" : "text-gray-600"}>
-                          {scope.trend_direction === "improving" ? "↑ Improving" : scope.trend_direction === "worsening" ? "↓ Worsening" : "→ Stable"}
-                        </span>
-                        {scope.persistent_imbalance && <span className="text-red-700 font-semibold ml-2">⚠ Persistent Imbalance</span>}
-                      </p>
-                    )}
-                    {scope.recent_history?.length > 0 && (
-                      <p className="text-[9px] text-slate-500">History: {scope.recent_history.map((h: any) => {
-                        const labels: Record<string, string> = { balanced: "✓", slight_skew: "~", imbalance_detected: "✗", low_sample: "?" };
-                        return labels[h.fairness_status] || "·";
-                      }).join(" → ")}</p>
-                    )}
-                    {scope.last_assigned_at && (
-                      <p className="text-[9px] text-muted-foreground">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
-                    )}
+                      {scope.root_cause_hints?.length > 0 && (
+                        <p className="text-[9px] text-slate-500">Hints: {scope.root_cause_hints.join(" · ")}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {scope.recent_history?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-700 mb-1">Snapshot History</p>
+                      <div className="space-y-0.5">
+                        {scope.recent_history.map((h: any, i: number) => {
+                          const fb = FAIRNESS_BADGE[h.fairness_status] || { label: h.fairness_status, className: "" };
+                          const ab = ADVISORY_BADGE[h.advisory_flag] || { label: h.advisory_flag, className: "" };
+                          return (
+                            <div key={i} className="flex items-center gap-2 text-[9px]" data-testid={`row-history-${i}`}>
+                              <span className="text-slate-400 w-[120px] shrink-0">{new Date(h.snapshot_at).toLocaleString()}</span>
+                              <Badge variant="outline" className={`text-[8px] ${fb.className}`}>{fb.label}</Badge>
+                              <Badge variant="outline" className={`text-[8px] ${ab.className}`}>{ab.label}</Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {scope.last_assigned_at && (
+                    <p className="text-[9px] text-muted-foreground">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
+                  )}
+
+                  <div className="flex gap-2 pt-1 border-t">
+                    <button onClick={() => copyToClipboard(buildSummaryText())}
+                      className="text-[9px] px-2 py-0.5 rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50"
+                      data-testid={`button-copy-text-${scope.routing_scope_key}`}>
+                      Copy Summary
+                    </button>
+                    <button onClick={() => copyToClipboard(buildSummaryJson())}
+                      className="text-[9px] px-2 py-0.5 rounded border bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      data-testid={`button-copy-json-${scope.routing_scope_key}`}>
+                      Copy JSON
+                    </button>
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
           );
         })}

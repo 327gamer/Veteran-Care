@@ -8390,7 +8390,7 @@ export async function registerRoutes(
       const FAIRNESS_RANK: Record<string, number> = { balanced: 0, low_sample: 1, slight_skew: 2, imbalance_detected: 3 };
       for (const scope of scopes) {
         const history = (historyMap[scope.routing_scope_key] || []).slice(0, 10);
-        scope.recent_history = history.slice(0, 5).map((h: any) => ({ fairness_status: h.fairness_status, advisory_flag: h.advisory_flag, snapshot_at: h.snapshot_at }));
+        scope.recent_history = history.slice(0, 10).map((h: any) => ({ fairness_status: h.fairness_status, advisory_flag: h.advisory_flag, snapshot_at: h.snapshot_at }));
 
         let trend_direction = "stable";
         if (history.length >= 3) {
