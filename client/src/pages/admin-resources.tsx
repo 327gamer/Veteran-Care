@@ -4161,9 +4161,64 @@ function BatchPerformancePanel({ adminKey }: { adminKey: string }) {
         </div>
       </div>
 
+      {summary.batch_expansion_state && (
+        <div className={`border rounded p-2 flex items-center gap-3 ${
+          summary.batch_expansion_state === "expansion_ready" ? "bg-green-50 border-green-200" :
+          summary.batch_expansion_state === "expansion_risk" ? "bg-red-50 border-red-200" :
+          summary.batch_expansion_state === "stable" ? "bg-blue-50 border-blue-200" : "bg-slate-50"
+        }`} data-testid={`expansion-state-${summary.batch_expansion_state}`}>
+          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+            summary.batch_expansion_state === "expansion_ready" ? "bg-green-100 text-green-800 border-green-300" :
+            summary.batch_expansion_state === "expansion_risk" ? "bg-red-100 text-red-800 border-red-300" :
+            summary.batch_expansion_state === "stable" ? "bg-blue-100 text-blue-800 border-blue-300" :
+            "bg-slate-100 text-slate-700 border-slate-300"
+          }`}>{summary.batch_expansion_state.replace(/_/g, " ").toUpperCase()}</span>
+          <span className="text-[10px] text-slate-600">{summary.expansion_guidance}</span>
+        </div>
+      )}
+
       {summary.failure_spike && (
         <div className="text-[10px] bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium" data-testid="batch-failure-spike">
           Failure spike detected — last 3 batches below 80% success rate. Review before next batch.
+        </div>
+      )}
+
+      {(summary.category_signals?.length > 0 || summary.partner_signals?.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {summary.category_signals?.length > 0 && (
+            <div className="border rounded p-2">
+              <h5 className="text-[10px] font-semibold text-muted-foreground mb-1">Category Scaling Signals</h5>
+              <div className="space-y-0.5">
+                {summary.category_signals.map((c: any, i: number) => {
+                  const sigCls = c.signal === "SAFE" ? "bg-green-100 text-green-800" : c.signal === "STABLE" ? "bg-blue-100 text-blue-800" : c.signal === "RISK" ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-600";
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 text-[9px]" data-testid={`cat-signal-${i}`}>
+                      <span className="truncate w-24">{(c.category || "").replace(/-/g, " ")}</span>
+                      <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${sigCls}`}>{c.signal}</span>
+                      <span className="text-muted-foreground">{c.success}/{c.total} ({c.rate}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {summary.partner_signals?.length > 0 && (
+            <div className="border rounded p-2">
+              <h5 className="text-[10px] font-semibold text-muted-foreground mb-1">Partner Scaling Signals</h5>
+              <div className="space-y-0.5">
+                {summary.partner_signals.map((p: any, i: number) => {
+                  const sigCls = p.signal === "SAFE" ? "bg-green-100 text-green-800" : p.signal === "STABLE" ? "bg-blue-100 text-blue-800" : p.signal === "RISK" ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-600";
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 text-[9px]" data-testid={`partner-signal-${i}`}>
+                      <span className="truncate w-24">{p.partner_name}</span>
+                      <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${sigCls}`}>{p.signal}</span>
+                      <span className="text-muted-foreground">{p.success}/{p.total} ({p.rate}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,0 +1,207 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 6.9 – Controlled Batch Expansion Strategy Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Advanced Safe Scaling Strategy Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 6.9 – Batch Expansion Strategy  
+❌ NOT automation  
+❌ NOT auto-billing  
+❌ NOT routing changes  
+❌ NOT billing logic changes  
+❌ NOT Stripe changes  
+
+This step defines how batch size should evolve safely over time.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Help admin determine:
+
+- when it is safe to increase batch size
+- when batch size should be reduced
+- how different categories behave at scale
+- how partner performance affects safe scaling
+
+This builds structured scaling discipline without automation.
+
+-------------------------------------
+REQUIREMENT 1 — BATCH EXPANSION STATE
+-------------------------------------
+
+Add derived field:
+
+- batch_expansion_state
+
+Values:
+
+- conservative
+- stable
+- expansion_ready
+- expansion_risk
+
+-------------------------------------
+REQUIREMENT 2 — EXPANSION LOGIC
+-------------------------------------
+
+Use recent batch performance:
+
+expansion_ready:
+- SAFE performance
+- stable or improving trend
+- at least 2–3 successful batches
+
+stable:
+- SAFE or STABLE performance
+- no significant failures
+
+conservative:
+- CAUTION state
+- or limited batch history
+
+expansion_risk:
+- declining trend
+- failure spikes
+- repeated failures
+
+Keep logic lightweight and adjustable later.
+
+-------------------------------------
+REQUIREMENT 3 — CATEGORY-SPECIFIC SIGNALS
+-------------------------------------
+
+Add visibility for:
+
+- category_batch_performance
+
+Examples:
+
+- Housing → SAFE / expansion_ready
+- Financial → NO DATA / conservative
+
+Purpose:
+identify which categories scale safely.
+
+-------------------------------------
+REQUIREMENT 4 — PARTNER-SPECIFIC SIGNALS
+-------------------------------------
+
+Add visibility for:
+
+- partner_batch_performance
+
+Examples:
+
+- Tri-County → SAFE
+- Boot Print → RISK
+
+Purpose:
+identify which partners support scaling.
+
+-------------------------------------
+REQUIREMENT 5 — GUIDANCE TEXT
+-------------------------------------
+
+Display guidance:
+
+expansion_ready:
+→ “You can cautiously increase batch size.”
+
+stable:
+→ “Maintain current batch size.”
+
+conservative:
+→ “Increase slowly and monitor closely.”
+
+expansion_risk:
+→ “Reduce batch size and review failures.”
+
+-------------------------------------
+REQUIREMENT 6 — ADMIN VISIBILITY
+-------------------------------------
+
+Extend Batch Performance section.
+
+Display:
+
+- expansion state
+- category scaling signals
+- partner scaling signals
+- guidance message
+
+Keep this lightweight.
+No dashboards.
+No charts.
+
+-------------------------------------
+REQUIREMENT 7 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+- auto-increase batch size
+- auto-adjust limits
+- auto-scale categories
+- auto-adjust partner weighting
+
+This is guidance only.
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use:
+- Step 6.7 batch metrics
+- Step 6.8 guidance data
+- category + partner mapping
+
+No new pipelines unless absolutely required.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Expansion state reflects real batch performance
+2. Category signals align with data
+3. Partner signals align with data
+4. Guidance messaging is correct
+5. No performance impact
+6. No impact to billing or Stripe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- expansion state implemented
+- category signals working
+- partner signals working
+- guidance messaging displayed
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+
+-------------------------------------
+END
+-------------------------------------

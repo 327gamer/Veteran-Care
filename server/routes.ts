@@ -8161,6 +8161,63 @@ export async function registerRoutes(
         else if (lastRate < priorAvg - 5) trendDirection = "declining";
       }
 
+      let expansionState = "conservative";
+      let expansionGuidance = "Increase slowly and monitor closely.";
+      if (trendDirection === "declining" || failureSpike) {
+        expansionState = "expansion_risk";
+        expansionGuidance = "Reduce batch size and review failures.";
+      } else if (safeRange === "SAFE" && (trendDirection === "stable" || trendDirection === "improving") && total >= 2) {
+        expansionState = "expansion_ready";
+        expansionGuidance = "You can cautiously increase batch size.";
+      } else if (safeRange === "SAFE" || safeRange === "STABLE") {
+        expansionState = "stable";
+        expansionGuidance = "Maintain current batch size.";
+      }
+
+      const allLeadIds = batches.flatMap(b => b.lead_ids || []);
+      let categorySignals: any[] = [];
+      let partnerSignals: any[] = [];
+      if (allLeadIds.length > 0) {
+        try {
+          const { data: batchLeads } = await supabaseAdmin.from("navigator_requests")
+            .select("id, category, routed_to_partner_id, assigned_to, billed, billing_workflow_status, stripe_payment_status")
+            .in("id", allLeadIds.slice(0, 200));
+          if (batchLeads && batchLeads.length > 0) {
+            const catMap: Record<string, { total: number; success: number }> = {};
+            const partMap: Record<string, { total: number; success: number; name: string }> = {};
+            for (const l of batchLeads) {
+              const cat = l.category || "unknown";
+              if (!catMap[cat]) catMap[cat] = { total: 0, success: 0 };
+              catMap[cat].total++;
+              if (l.billed || l.stripe_payment_status === "paid" || l.billing_workflow_status === "charged") catMap[cat].success++;
+              const pid = l.routed_to_partner_id || "unknown";
+              const pname = l.assigned_to || pid;
+              if (!partMap[pid]) partMap[pid] = { total: 0, success: 0, name: pname };
+              partMap[pid].total++;
+              if (l.billed || l.stripe_payment_status === "paid" || l.billing_workflow_status === "charged") partMap[pid].success++;
+            }
+            categorySignals = Object.entries(catMap).map(([cat, v]) => {
+              const rate = v.total > 0 ? (v.success / v.total) * 100 : 0;
+              let signal = "NO DATA";
+              if (v.total >= 2 && rate >= 90) signal = "SAFE";
+              else if (v.total >= 2 && rate >= 70) signal = "STABLE";
+              else if (v.total >= 2) signal = "RISK";
+              else signal = "LIMITED DATA";
+              return { category: cat, total: v.total, success: v.success, rate: Math.round(rate), signal };
+            }).sort((a, b) => b.total - a.total);
+            partnerSignals = Object.entries(partMap).map(([pid, v]) => {
+              const rate = v.total > 0 ? (v.success / v.total) * 100 : 0;
+              let signal = "NO DATA";
+              if (v.total >= 2 && rate >= 90) signal = "SAFE";
+              else if (v.total >= 2 && rate >= 70) signal = "STABLE";
+              else if (v.total >= 2) signal = "RISK";
+              else signal = "LIMITED DATA";
+              return { partner_id: pid, partner_name: v.name, total: v.total, success: v.success, rate: Math.round(rate), signal };
+            }).sort((a, b) => b.total - a.total);
+          }
+        } catch {}
+      }
+
       return res.json({
         total_batches: total,
         avg_batch_size: Math.round(avgSize * 10) / 10,
@@ -8173,6 +8230,10 @@ export async function registerRoutes(
         recommended_batch_size: recommendedBatchSize,
         trend_direction: trendDirection,
         guidance_text: guidanceText,
+        batch_expansion_state: expansionState,
+        expansion_guidance: expansionGuidance,
+        category_signals: categorySignals,
+        partner_signals: partnerSignals,
       });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
