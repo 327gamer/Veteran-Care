@@ -8375,6 +8375,42 @@ export async function registerRoutes(
         };
       });
 
+      let historyMap: Record<string, any[]> = {};
+      try {
+        const histRows = await pgQuery(
+          `SELECT routing_scope_key, snapshot_at, fairness_status, advisory_flag, total_rotated_leads
+           FROM rotation_fairness_history ORDER BY snapshot_at DESC LIMIT 500`
+        );
+        for (const h of histRows || []) {
+          if (!historyMap[h.routing_scope_key]) historyMap[h.routing_scope_key] = [];
+          historyMap[h.routing_scope_key].push(h);
+        }
+      } catch {}
+
+      const FAIRNESS_RANK: Record<string, number> = { balanced: 0, low_sample: 1, slight_skew: 2, imbalance_detected: 3 };
+      for (const scope of scopes) {
+        const history = (historyMap[scope.routing_scope_key] || []).slice(0, 10);
+        scope.recent_history = history.slice(0, 5).map((h: any) => ({ fairness_status: h.fairness_status, advisory_flag: h.advisory_flag, snapshot_at: h.snapshot_at }));
+
+        let trend_direction = "stable";
+        if (history.length >= 3) {
+          const recent3 = history.slice(0, 3);
+          const ranks = recent3.map((h: any) => FAIRNESS_RANK[h.fairness_status] ?? 1);
+          if (ranks[0] < ranks[2]) trend_direction = "improving";
+          else if (ranks[0] > ranks[2]) trend_direction = "worsening";
+        }
+        scope.trend_direction = trend_direction;
+
+        let persistent_imbalance = false;
+        if (history.length >= 3) {
+          const recentForPersist = history.slice(0, 5);
+          const imbalanceCount = recentForPersist.filter((h: any) => h.fairness_status === "imbalance_detected").length;
+          const hasEnoughLeads = scope.total_rotated_leads >= 5;
+          persistent_imbalance = imbalanceCount >= 3 && hasEnoughLeads;
+        }
+        scope.persistent_imbalance = persistent_imbalance;
+      }
+
       scopes.sort((a, b) => b.total_rotated_leads - a.total_rotated_leads);
       return res.json({ scopes, total_scopes: scopes.length, total_rotated_leads: (leads || []).length });
     } catch (err: any) {

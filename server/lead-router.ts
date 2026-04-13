@@ -366,6 +366,52 @@ async function getRotatedPartner(
   }
 }
 
+async function recordFairnessSnapshot(scopeKey: string): Promise<void> {
+  try {
+    const { data: leads } = await supabaseAdmin
+      .from("navigator_requests")
+      .select("routed_to_partner_id")
+      .eq("routing_method", "rotated")
+      .eq("routing_scope_key", scopeKey)
+      .not("routed_to_partner_id", "is", null);
+
+    if (!leads || leads.length === 0) return;
+
+    const partnerCounts: Record<string, number> = {};
+    for (const l of leads) {
+      partnerCounts[l.routed_to_partner_id] = (partnerCounts[l.routed_to_partner_id] || 0) + 1;
+    }
+    const totalRotated = leads.length;
+    const numPartners = Object.keys(partnerCounts).length;
+
+    let fairness_status = "low_sample";
+    if (totalRotated >= 5 && numPartners > 0) {
+      const expectedShare = 1 / numPartners;
+      let maxDev = 0;
+      for (const count of Object.values(partnerCounts)) {
+        const dev = Math.abs((count / totalRotated) - expectedShare) / expectedShare;
+        if (dev > maxDev) maxDev = dev;
+      }
+      if (maxDev <= 0.15) fairness_status = "balanced";
+      else if (maxDev <= 0.30) fairness_status = "slight_skew";
+      else fairness_status = "imbalance_detected";
+    }
+
+    let advisory_flag = "no_action";
+    if (fairness_status === "imbalance_detected" && totalRotated >= 10) advisory_flag = "intervention_required";
+    else if ((fairness_status === "slight_skew" && totalRotated >= 5) || (fairness_status === "imbalance_detected" && totalRotated >= 5 && totalRotated < 10)) advisory_flag = "review_recommended";
+    else if (fairness_status === "slight_skew" || (fairness_status === "low_sample" && totalRotated >= 3)) advisory_flag = "monitor";
+
+    await pgQuery(
+      `INSERT INTO rotation_fairness_history (routing_scope_key, total_rotated_leads, partner_distribution_json, fairness_status, advisory_flag)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [scopeKey, totalRotated, JSON.stringify(partnerCounts), fairness_status, advisory_flag]
+    );
+  } catch (err: any) {
+    console.log(`[rotation] Snapshot failed for ${scopeKey}: ${err?.message}`);
+  }
+}
+
 export async function findBestPartner(
   lead: LeadForRouting,
   excludePartnerIds: string[] = []
@@ -792,6 +838,10 @@ export async function routeLead(leadId: string): Promise<{
       ...attributionFields,
     },
   });
+
+  if (routingMethod === "rotated" && routingScopeKey) {
+    recordFairnessSnapshot(routingScopeKey).catch(() => {});
+  }
 
   for (const match of matches) {
     sendLeadNotification(leadId, match.partnerId)

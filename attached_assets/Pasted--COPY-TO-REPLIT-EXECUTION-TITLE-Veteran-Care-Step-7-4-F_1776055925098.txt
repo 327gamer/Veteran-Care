@@ -1,0 +1,213 @@
+🚨 COPY TO REPLIT (EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.4 – Fairness History / Trend Layer - 4.12.2026
+
+PRIORITY:
+HIGH (Fairness Persistence + Dispute Protection Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.4 – Fairness History / Trend Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step adds historical tracking of fairness over time.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to understand:
+
+- whether fairness issues are temporary or persistent
+- how rotation behaves over time within each scope
+- whether a scope is trending toward balance or imbalance
+- provide evidence for partner disputes or fairness audits
+
+-------------------------------------
+REQUIREMENT 1 — FAIRNESS HISTORY SNAPSHOT
+-------------------------------------
+
+Track periodic fairness snapshots for each routing scope.
+
+Each snapshot should include:
+
+- routing_scope_key
+- snapshot_at
+- total_rotated_leads
+- partner_distribution_json
+- fairness_status
+- advisory_flag
+
+partner_distribution_json may store either counts or percentages per partner.
+Counts preferred if simple.
+
+-------------------------------------
+REQUIREMENT 2 — STORAGE STRATEGY
+-------------------------------------
+
+Preferred implementation:
+
+Create table:
+- rotation_fairness_history
+
+Suggested fields:
+- id
+- routing_scope_key
+- snapshot_at
+- total_rotated_leads
+- partner_distribution_json
+- fairness_status
+- advisory_flag
+
+Preferred snapshot trigger:
+- create snapshot on each new rotated lead assignment
+
+This is preferred because it keeps history tied to real routing events and avoids scheduler complexity.
+
+Optional:
+- if helpful, allow manual backfill / refresh later
+- but do NOT build scheduler or automation in this step
+
+-------------------------------------
+REQUIREMENT 3 — TREND DIRECTION
+-------------------------------------
+
+Add derived trend per routing scope:
+
+- improving
+- stable
+- worsening
+
+Logic:
+- compare the most recent 3–5 snapshots
+- improving = fairness moving toward balanced
+- stable = little meaningful change
+- worsening = fairness moving toward imbalance_detected
+
+Keep logic simple and explainable.
+
+-------------------------------------
+REQUIREMENT 4 — PERSISTENT IMBALANCE
+-------------------------------------
+
+Add derived flag:
+
+- persistent_imbalance = true / false
+
+Logic:
+- imbalance_detected appears across multiple consecutive snapshots
+- AND sufficient sample size exists
+
+Suggested minimum:
+- at least 3 relevant snapshots
+- and enough rotated leads to avoid false alarms
+
+This is important for dispute protection.
+
+-------------------------------------
+REQUIREMENT 5 — ADMIN VISIBILITY
+-------------------------------------
+
+Extend Rotation Performance panel.
+
+Add:
+
+- trend direction indicator
+  - ↑ improving
+  - → stable
+  - ↓ worsening
+- short history summary
+  - example: last 3 states
+- persistent imbalance badge if applicable
+
+Keep UI lightweight:
+- no charts
+- no dashboard
+- simple text + indicators only
+
+-------------------------------------
+REQUIREMENT 6 — FILTER SUPPORT
+-------------------------------------
+
+Add filters:
+
+- persistent_imbalance
+- worsening_trend
+- improving_trend
+
+Keep consistent with existing fairness / advisory filters.
+
+-------------------------------------
+REQUIREMENT 7 — DATA INTEGRATION
+-------------------------------------
+
+Use:
+- Step 7.2 fairness data
+- Step 7.3 advisory data
+- new fairness history snapshots
+
+Do NOT create a separate analytics pipeline.
+
+-------------------------------------
+REQUIREMENT 8 — NO SYSTEM INTERVENTION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+- auto-correct rotation
+- auto-adjust partner distribution
+- auto-pause partners
+- auto-change routing behavior
+
+This is visibility + historical intelligence only.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Snapshots store correctly over time
+2. Trend direction calculates correctly
+3. Persistent imbalance triggers only with sufficient history
+4. History reflects real fairness progression
+5. Filters work correctly
+6. No impact to routing, billing, Stripe, or reassignment logic
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- fairness history tracking implemented
+- trend logic working
+- persistent imbalance detection working
+- admin visibility added
+- filters working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+- pricing rules
+
+-------------------------------------
+END
+-------------------------------------

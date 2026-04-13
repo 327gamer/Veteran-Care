@@ -4204,6 +4204,7 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
   const [loading, setLoading] = useState(true);
   const [fairnessFilter, setFairnessFilter] = useState<string>("all");
   const [advisoryFilter, setAdvisoryFilter] = useState<string>("all");
+  const [trendFilter, setTrendFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -4227,6 +4228,8 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
   const filtered = data.scopes.filter(s => {
     if (fairnessFilter !== "all" && s.fairness_status !== fairnessFilter) return false;
     if (advisoryFilter !== "all" && s.advisory_flag !== advisoryFilter) return false;
+    if (trendFilter === "persistent_imbalance" && !s.persistent_imbalance) return false;
+    else if (trendFilter !== "all" && trendFilter !== "persistent_imbalance" && s.trend_direction !== trendFilter) return false;
     return true;
   });
   const toggle = (key: string) => setExpanded(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
@@ -4261,6 +4264,21 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
             </button>
           ))}
         </div>
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[9px] text-muted-foreground w-12 shrink-0">Trend:</span>
+          {[
+            { key: "all", label: "All" },
+            { key: "improving", label: "↑ Improving" },
+            { key: "stable", label: "→ Stable" },
+            { key: "worsening", label: "↓ Worsening" },
+            { key: "persistent_imbalance", label: "⚠ Persistent" },
+          ].map(f => (
+            <button key={f.key} onClick={() => setTrendFilter(f.key)} data-testid={`button-trend-filter-${f.key}`}
+              className={`text-[10px] px-2 py-0.5 rounded border ${trendFilter === f.key ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold" : "bg-white text-gray-600 border-gray-200"}`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {filtered.length === 0 && <p className="text-xs text-muted-foreground">No scopes match this filter.</p>}
@@ -4282,6 +4300,12 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
                   {(() => { const ab = ADVISORY_BADGE[scope.advisory_flag] || ADVISORY_BADGE.no_action; return (
                     <Badge variant="outline" className={`text-[9px] ${ab.className}`} data-testid={`badge-advisory-${scope.routing_scope_key}`}>{ab.label}</Badge>
                   ); })()}
+                  <span className={`text-[10px] font-medium ${scope.trend_direction === "improving" ? "text-green-600" : scope.trend_direction === "worsening" ? "text-red-600" : "text-gray-400"}`} data-testid={`trend-${scope.routing_scope_key}`}>
+                    {scope.trend_direction === "improving" ? "↑" : scope.trend_direction === "worsening" ? "↓" : "→"}
+                  </span>
+                  {scope.persistent_imbalance && (
+                    <Badge variant="outline" className="text-[9px] bg-red-100 text-red-800 border-red-300 font-semibold" data-testid={`badge-persistent-${scope.routing_scope_key}`}>Persistent</Badge>
+                  )}
                 </div>
               </button>
 
@@ -4315,6 +4339,21 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
                     )}
                     {scope.root_cause_hints?.length > 0 && (
                       <p className="text-[9px] text-slate-500">Hints: {scope.root_cause_hints.join(" · ")}</p>
+                    )}
+                    {scope.trend_direction && (
+                      <p className="text-[9px]">
+                        <span className="font-medium text-slate-700">Trend:</span>{" "}
+                        <span className={scope.trend_direction === "improving" ? "text-green-700" : scope.trend_direction === "worsening" ? "text-red-700" : "text-gray-600"}>
+                          {scope.trend_direction === "improving" ? "↑ Improving" : scope.trend_direction === "worsening" ? "↓ Worsening" : "→ Stable"}
+                        </span>
+                        {scope.persistent_imbalance && <span className="text-red-700 font-semibold ml-2">⚠ Persistent Imbalance</span>}
+                      </p>
+                    )}
+                    {scope.recent_history?.length > 0 && (
+                      <p className="text-[9px] text-slate-500">History: {scope.recent_history.map((h: any) => {
+                        const labels: Record<string, string> = { balanced: "✓", slight_skew: "~", imbalance_detected: "✗", low_sample: "?" };
+                        return labels[h.fairness_status] || "·";
+                      }).join(" → ")}</p>
                     )}
                     {scope.last_assigned_at && (
                       <p className="text-[9px] text-muted-foreground">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
