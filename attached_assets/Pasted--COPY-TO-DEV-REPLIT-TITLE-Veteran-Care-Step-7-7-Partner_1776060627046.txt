@@ -1,0 +1,174 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.7 – Partner Confidence / Communication Layer
+
+PRIORITY:
+HIGH (Retention + Monetization Protection Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.7 – Partner Communication Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step improves HOW the system communicates with partners.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Reduce partner confusion and prevent disputes by:
+
+- clearly explaining how leads are distributed  
+- clarifying why lead volume may vary  
+- reinforcing fairness and system logic  
+- aligning partner expectations with system behavior  
+
+-------------------------------------
+REQUIREMENT 1 — LEAD DELIVERY EXPLANATION
+-------------------------------------
+
+Add a clearly visible section in the Partner Transparency panel:
+
+Explain:
+
+- how leads are assigned  
+- what determines eligibility  
+- why a partner may or may not receive a lead  
+
+Example messaging:
+
+“Leads are assigned based on category, location, and availability.  
+You receive leads when you match the user’s request and are eligible at that time.”
+
+-------------------------------------
+REQUIREMENT 2 — FAIRNESS EXPLANATION BLOCK
+-------------------------------------
+
+Add a persistent explanation block:
+
+“Veteran Care uses a fair rotation system to distribute leads evenly across eligible partners.  
+No manual favoritism is applied.”
+
+This should be clearly visible (not hidden).
+
+-------------------------------------
+REQUIREMENT 3 — VARIABILITY EXPLANATION
+-------------------------------------
+
+Add a section explaining fluctuations:
+
+“Lead volume may vary due to:
+- demand in your category  
+- geographic matching  
+- timing of requests  
+- partner availability”
+
+This is critical for expectation management.
+
+-------------------------------------
+REQUIREMENT 4 — “WHY AM I SEEING THIS?” TOOLTIP
+-------------------------------------
+
+Add a small info icon or tooltip near fairness metrics.
+
+Tooltip should explain:
+
+- why the partner is seeing their current share  
+- that distribution depends on eligibility + timing  
+
+Keep short and simple.
+
+-------------------------------------
+REQUIREMENT 5 — PARTNER EXPECTATION GUIDANCE
+-------------------------------------
+
+Add short advisory guidance (non-technical):
+
+Examples:
+
+- “Staying active helps ensure you receive eligible leads”  
+- “Responding quickly helps you get the most value from the platform”  
+- “Consistent availability improves your participation”
+
+IMPORTANT:
+- This is guidance only  
+- NOT tied to routing logic  
+- NOT presented as a requirement or rule  
+
+-------------------------------------
+REQUIREMENT 6 — TONE + LANGUAGE
+-------------------------------------
+
+STRICT RULE:
+
+Language must be:
+- clear  
+- non-technical  
+- neutral and non-defensive  
+- trust-building  
+
+Avoid:
+- internal terminology  
+- system jargon  
+- anything that sounds like justification or excuse  
+
+-------------------------------------
+REQUIREMENT 7 — NO DATA EXPANSION
+-------------------------------------
+
+Do NOT add:
+
+- new metrics  
+- new calculations  
+- new backend logic  
+- new endpoints  
+
+This is a communication layer only.
+
+-------------------------------------
+REQUIREMENT 8 — UI STRUCTURE
+-------------------------------------
+
+Place inside Partner Transparency panel.
+
+Use:
+
+- clear sections  
+- short text blocks  
+- optional collapsible sections  
+- good spacing for readability  
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. All explanation text renders correctly  
+2. Tooltip displays correctly  
+3. No new data exposure  
+4. No performance impact  
+5. No regression to routing, billing, or Stripe  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- communication layer implemented  
+- explanation text visible  
+- tooltips working  
+- guidance text added  
+- validation complete  
+- no regression introduced  
+
+-------------------------------------
+END
+-------------------------------------

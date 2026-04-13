@@ -4250,11 +4250,30 @@ function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
             <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200" data-testid="badge-rotation-enabled">ROTATION SYSTEM ENABLED</Badge>
           </div>
 
-          <div className="bg-blue-50/50 rounded p-2 space-y-1 text-[9px] text-slate-600">
-            <p>Leads are distributed evenly across eligible partners.</p>
-            <p>Your share reflects fair rotation based on availability.</p>
-            <p>Small variations can occur due to timing and availability.</p>
+          <div className="bg-green-50/60 border border-green-100 rounded p-2.5 space-y-1 text-[9px] text-slate-700" data-testid="block-fairness-explanation">
+            <p className="font-semibold text-green-800 text-[10px]">Fair Lead Distribution</p>
+            <p>Veteran Care uses a fair rotation system to distribute leads evenly across eligible partners. No manual favoritism is applied.</p>
           </div>
+
+          <div className="bg-slate-50 border border-slate-100 rounded p-2.5 space-y-1.5 text-[9px] text-slate-700" data-testid="block-lead-delivery">
+            <p className="font-semibold text-slate-800 text-[10px]">How Leads Are Assigned</p>
+            <p>Leads are assigned based on category, location, and availability. You receive leads when you match the user's request and are eligible at that time.</p>
+            <p>Each eligible partner takes turns receiving leads within their service area, ensuring everyone gets a fair opportunity.</p>
+          </div>
+
+          <details className="group text-[9px]">
+            <summary className="cursor-pointer font-semibold text-[10px] text-slate-700 py-1" data-testid="toggle-variability">Why does lead volume vary?</summary>
+            <div className="bg-amber-50/50 border border-amber-100 rounded p-2.5 mt-1 space-y-1 text-slate-600" data-testid="block-variability">
+              <p>Lead volume may vary due to:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                <li>Demand in your category</li>
+                <li>Geographic matching with veteran requests</li>
+                <li>Timing of incoming requests</li>
+                <li>Partner availability within the rotation</li>
+              </ul>
+              <p className="mt-1">These fluctuations are normal and do not indicate a problem with your account.</p>
+            </div>
+          </details>
 
           {data.scopes.length === 0 && (
             <p className="text-xs text-muted-foreground">No rotated leads found for this partner.</p>
@@ -4264,7 +4283,15 @@ function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
             const devColor = Math.abs(s.deviation_pct) <= 7.5 ? "text-green-700" : Math.abs(s.deviation_pct) <= 15 ? "text-yellow-700" : "text-red-700";
             return (
               <div key={s.scope} className="border rounded p-2 space-y-1.5" data-testid={`card-transparency-scope-${s.scope}`}>
-                <p className="text-[10px] font-mono text-slate-600 truncate">{s.scope}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[10px] font-mono text-slate-600 truncate flex-1">{s.scope}</p>
+                  <span className="relative group cursor-help" data-testid={`tooltip-trigger-${s.scope}`}>
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 text-slate-500 text-[8px] font-bold">?</span>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 bg-slate-800 text-white text-[8px] rounded px-2 py-1.5 hidden group-hover:block z-10 shadow-lg" data-testid={`tooltip-content-${s.scope}`}>
+                      Your current share reflects the rotation system distributing leads based on eligibility and timing. Small variations are normal.
+                    </span>
+                  </span>
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
                   <span className="text-slate-500">Your Leads</span>
                   <span className="font-medium" data-testid={`text-your-leads-${s.scope}`}>{s.your_leads}</span>
@@ -4286,6 +4313,15 @@ function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
               </div>
             );
           })}
+
+          <details className="group text-[9px]">
+            <summary className="cursor-pointer font-semibold text-[10px] text-slate-700 py-1" data-testid="toggle-guidance">Tips for getting the most from the platform</summary>
+            <div className="bg-blue-50/50 border border-blue-100 rounded p-2.5 mt-1 space-y-1.5 text-slate-600" data-testid="block-guidance">
+              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Staying active helps ensure you receive eligible leads.</span></div>
+              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Responding quickly helps you get the most value from the platform.</span></div>
+              <div className="flex items-start gap-1.5"><span className="text-blue-500 mt-0.5">•</span><span>Consistent availability improves your participation in the rotation.</span></div>
+            </div>
+          </details>
         </>
       )}
     </Card>
