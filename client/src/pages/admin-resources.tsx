@@ -4192,10 +4192,18 @@ const FAIRNESS_BADGE: Record<string, { label: string; className: string }> = {
   low_sample: { label: "Low Sample", className: "bg-gray-100 text-gray-600 border-gray-300" },
 };
 
+const ADVISORY_BADGE: Record<string, { label: string; className: string }> = {
+  no_action: { label: "No Action", className: "bg-green-50 text-green-700 border-green-200" },
+  monitor: { label: "Monitor", className: "bg-blue-50 text-blue-700 border-blue-200" },
+  review_recommended: { label: "Review", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  intervention_required: { label: "Intervene", className: "bg-red-50 text-red-700 border-red-200" },
+};
+
 function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<{ scopes: any[]; total_scopes: number; total_rotated_leads: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [fairnessFilter, setFairnessFilter] = useState<string>("all");
+  const [advisoryFilter, setAdvisoryFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -4216,7 +4224,11 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
     );
   }
 
-  const filtered = fairnessFilter === "all" ? data.scopes : data.scopes.filter(s => s.fairness_status === fairnessFilter);
+  const filtered = data.scopes.filter(s => {
+    if (fairnessFilter !== "all" && s.fairness_status !== fairnessFilter) return false;
+    if (advisoryFilter !== "all" && s.advisory_flag !== advisoryFilter) return false;
+    return true;
+  });
   const toggle = (key: string) => setExpanded(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
 
   return (
@@ -4230,13 +4242,25 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
         </div>
       </div>
 
-      <div className="flex gap-1 flex-wrap">
-        {["all", "balanced", "slight_skew", "imbalance_detected", "low_sample"].map(f => (
-          <button key={f} onClick={() => setFairnessFilter(f)} data-testid={`button-fairness-filter-${f}`}
-            className={`text-[10px] px-2 py-0.5 rounded border ${fairnessFilter === f ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold" : "bg-white text-gray-600 border-gray-200"}`}>
-            {f === "all" ? "All" : (FAIRNESS_BADGE[f]?.label || f)}
-          </button>
-        ))}
+      <div className="space-y-1">
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[9px] text-muted-foreground w-12 shrink-0">Fairness:</span>
+          {["all", "balanced", "slight_skew", "imbalance_detected", "low_sample"].map(f => (
+            <button key={f} onClick={() => setFairnessFilter(f)} data-testid={`button-fairness-filter-${f}`}
+              className={`text-[10px] px-2 py-0.5 rounded border ${fairnessFilter === f ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold" : "bg-white text-gray-600 border-gray-200"}`}>
+              {f === "all" ? "All" : (FAIRNESS_BADGE[f]?.label || f)}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[9px] text-muted-foreground w-12 shrink-0">Advisory:</span>
+          {["all", "no_action", "monitor", "review_recommended", "intervention_required"].map(f => (
+            <button key={f} onClick={() => setAdvisoryFilter(f)} data-testid={`button-advisory-filter-${f}`}
+              className={`text-[10px] px-2 py-0.5 rounded border ${advisoryFilter === f ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold" : "bg-white text-gray-600 border-gray-200"}`}>
+              {f === "all" ? "All" : (ADVISORY_BADGE[f]?.label || f)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {filtered.length === 0 && <p className="text-xs text-muted-foreground">No scopes match this filter.</p>}
@@ -4252,9 +4276,12 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
                   <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
                   <span className="text-xs font-mono truncate">{scope.routing_scope_key}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                   <span className="text-[10px] text-muted-foreground">{scope.total_rotated_leads} lead{scope.total_rotated_leads !== 1 ? "s" : ""} · {scope.number_of_eligible_partners} partner{scope.number_of_eligible_partners !== 1 ? "s" : ""}</span>
                   <Badge variant="outline" className={`text-[9px] ${badge.className}`} data-testid={`badge-fairness-${scope.routing_scope_key}`}>{badge.label}</Badge>
+                  {(() => { const ab = ADVISORY_BADGE[scope.advisory_flag] || ADVISORY_BADGE.no_action; return (
+                    <Badge variant="outline" className={`text-[9px] ${ab.className}`} data-testid={`badge-advisory-${scope.routing_scope_key}`}>{ab.label}</Badge>
+                  ); })()}
                 </div>
               </button>
 
@@ -4277,9 +4304,22 @@ function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
                       </div>
                     );
                   })}
-                  {scope.last_assigned_at && (
-                    <p className="text-[9px] text-muted-foreground pt-1 border-t">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
-                  )}
+                  <div className="pt-1.5 border-t space-y-0.5">
+                    {scope.advisory_guidance && (
+                      <p className="text-[9px]"><span className="font-medium text-slate-700">Advisory:</span> <span className={
+                        scope.advisory_flag === "intervention_required" ? "text-red-700 font-medium" :
+                        scope.advisory_flag === "review_recommended" ? "text-amber-700" :
+                        scope.advisory_flag === "monitor" ? "text-blue-700" :
+                        "text-green-700"
+                      }>{scope.advisory_guidance}</span></p>
+                    )}
+                    {scope.root_cause_hints?.length > 0 && (
+                      <p className="text-[9px] text-slate-500">Hints: {scope.root_cause_hints.join(" · ")}</p>
+                    )}
+                    {scope.last_assigned_at && (
+                      <p className="text-[9px] text-muted-foreground">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

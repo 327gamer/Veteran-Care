@@ -1,0 +1,199 @@
+🚨 COPY TO DEV TEAM (REPLIT EXECUTION)
+
+TITLE:
+Veteran Care – Step 7.3 – Rotation Advisory / Fairness Intervention Layer
+
+PRIORITY:
+HIGH (Fairness Protection + Early Intervention Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.3 – Rotation Advisory / Intervention  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+❌ NOT partner scoring  
+
+This step adds advisory signals + admin guidance when rotation fairness begins to drift.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Help admin identify:
+
+- when a rotation scope may require attention
+- when fairness drift is meaningful
+- when partner setup or coverage may be causing imbalance
+
+This step is early-warning + guidance only.
+
+-------------------------------------
+REQUIREMENT 1 — ADVISORY FLAGS
+-------------------------------------
+
+Add derived advisory flag per routing scope:
+
+- no_action
+- monitor
+- review_recommended
+- intervention_required
+
+-------------------------------------
+REQUIREMENT 2 — ADVISORY LOGIC
+-------------------------------------
+
+Use Step 7.2 data:
+
+Inputs:
+- fairness_status
+- total_rotated_leads
+
+Logic:
+
+no_action:
+- fairness_status = balanced
+
+monitor:
+- fairness_status = slight_skew
+- OR total_rotated_leads between 3–4 (approaching sample threshold)
+
+review_recommended:
+- fairness_status = slight_skew AND total_rotated_leads >= 5
+- OR fairness_status = imbalance_detected AND total_rotated_leads between 5–9
+
+intervention_required:
+- fairness_status = imbalance_detected AND total_rotated_leads >= 10
+
+-------------------------------------
+REQUIREMENT 3 — ROOT CAUSE HINTS
+-------------------------------------
+
+Add simple derived hints per scope:
+
+Possible outputs:
+
+- “Low partner count in scope”
+- “Small sample size”
+- “New partner recently added” (optional if data available)
+- “Uneven eligibility filtering”
+
+Basic logic examples:
+
+- partner_count ≤ 2 → “Low partner count”
+- total_rotated_leads < 5 → “Small sample size”
+
+Keep this lightweight — no deep diagnostics.
+
+-------------------------------------
+REQUIREMENT 4 — ADMIN VISIBILITY
+-------------------------------------
+
+Extend Rotation Performance panel.
+
+For each scope display:
+
+- advisory_flag badge
+- short explanation text
+- root cause hint (if available)
+- recommended action
+
+-------------------------------------
+REQUIREMENT 5 — RECOMMENDED ACTIONS
+-------------------------------------
+
+Map each advisory flag to guidance:
+
+no_action:
+→ “No action needed.”
+
+monitor:
+→ “Monitor this scope as volume increases.”
+
+review_recommended:
+→ “Review partner eligibility and recent assignments.”
+
+intervention_required:
+→ “Investigate imbalance. Review partner coverage and rotation scope.”
+
+-------------------------------------
+REQUIREMENT 6 — FILTER SUPPORT
+-------------------------------------
+
+Add filters:
+
+- all
+- monitor
+- review_recommended
+- intervention_required
+
+-------------------------------------
+REQUIREMENT 7 — NO SYSTEM INTERVENTION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT:
+
+- auto-adjust rotation
+- auto-pause partners
+- auto-rebalance leads
+- modify routing logic
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use:
+
+- GET /api/admin/rotation-performance
+- fairness_status
+- total_rotated_leads
+- partner distribution
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Advisory flags align with fairness + volume logic
+2. Low sample scopes do not trigger false alerts
+3. High imbalance scopes correctly flagged
+4. Guidance text displays clearly
+5. Filters work correctly
+6. No impact to routing, billing, Stripe, or reassignment logic
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- advisory flags implemented
+- admin visibility added
+- guidance text displayed
+- root cause hints included
+- filters working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+- pricing rules
+
+-------------------------------------
+END
+-------------------------------------

@@ -8333,6 +8333,33 @@ export async function registerRoutes(
           else fairness_status = "imbalance_detected";
         }
 
+        let advisory_flag = "no_action";
+        if (fairness_status === "imbalance_detected" && totalRotated >= 10) {
+          advisory_flag = "intervention_required";
+        } else if (
+          (fairness_status === "slight_skew" && totalRotated >= 5) ||
+          (fairness_status === "imbalance_detected" && totalRotated >= 5 && totalRotated < 10)
+        ) {
+          advisory_flag = "review_recommended";
+        } else if (
+          fairness_status === "slight_skew" ||
+          (fairness_status === "low_sample" && totalRotated >= 3 && totalRotated < 5)
+        ) {
+          advisory_flag = "monitor";
+        }
+
+        const root_cause_hints: string[] = [];
+        if (totalRotated < 5) root_cause_hints.push("Small sample size");
+        if (numPartners <= 2) root_cause_hints.push("Low partner count in scope");
+        if (numPartners === 1) root_cause_hints.push("Single partner — no rotation possible");
+
+        const ADVISORY_GUIDANCE: Record<string, string> = {
+          no_action: "No action needed.",
+          monitor: "Monitor this scope as volume increases.",
+          review_recommended: "Review partner eligibility and recent assignments.",
+          intervention_required: "Investigate imbalance. Review partner coverage and rotation scope.",
+        };
+
         const state = stateMap[scopeKey];
         return {
           routing_scope_key: scopeKey,
@@ -8341,6 +8368,9 @@ export async function registerRoutes(
           last_assigned_partner_id: state?.last_assigned_partner_id || null,
           last_assigned_at: state?.last_assigned_at || null,
           fairness_status,
+          advisory_flag,
+          advisory_guidance: ADVISORY_GUIDANCE[advisory_flag] || "",
+          root_cause_hints,
           partners,
         };
       });
