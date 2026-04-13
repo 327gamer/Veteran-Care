@@ -2440,6 +2440,7 @@ function AdminResourcesInner() {
         {activeTab === "billing" && (
           <>
             <LaunchCommandCenter adminKey={adminKey} />
+            <RotationPerformancePanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4181,6 +4182,111 @@ function LaunchCommandCenter({ adminKey }: { adminKey: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+const FAIRNESS_BADGE: Record<string, { label: string; className: string }> = {
+  balanced: { label: "Balanced", className: "bg-green-100 text-green-800 border-green-300" },
+  slight_skew: { label: "Slight Skew", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  imbalance_detected: { label: "Imbalance", className: "bg-red-100 text-red-800 border-red-300" },
+  low_sample: { label: "Low Sample", className: "bg-gray-100 text-gray-600 border-gray-300" },
+};
+
+function RotationPerformancePanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<{ scopes: any[]; total_scopes: number; total_rotated_leads: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fairnessFilter, setFairnessFilter] = useState<string>("all");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetch("/api/admin/rotation-performance", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [adminKey]);
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading rotation performance...</p></Card>;
+  if (!data || !data.scopes || data.scopes.length === 0) {
+    return (
+      <Card className="p-4">
+        <h3 className="text-sm font-semibold flex items-center gap-2"><ArrowRightLeft className="h-4 w-4" /> Rotation Performance</h3>
+        <p className="text-xs text-muted-foreground mt-1">No rotated leads yet. Rotation activates when multiple partners match the same lead criteria.</p>
+      </Card>
+    );
+  }
+
+  const filtered = fairnessFilter === "all" ? data.scopes : data.scopes.filter(s => s.fairness_status === fairnessFilter);
+  const toggle = (key: string) => setExpanded(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="text-sm font-semibold flex items-center gap-2" data-testid="text-rotation-performance-title">
+          <ArrowRightLeft className="h-4 w-4" /> Rotation Performance
+        </h3>
+        <div className="flex items-center gap-2 text-[10px]">
+          <span className="text-muted-foreground">{data.total_scopes} scope{data.total_scopes !== 1 ? "s" : ""} · {data.total_rotated_leads} rotated lead{data.total_rotated_leads !== 1 ? "s" : ""}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {["all", "balanced", "slight_skew", "imbalance_detected", "low_sample"].map(f => (
+          <button key={f} onClick={() => setFairnessFilter(f)} data-testid={`button-fairness-filter-${f}`}
+            className={`text-[10px] px-2 py-0.5 rounded border ${fairnessFilter === f ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold" : "bg-white text-gray-600 border-gray-200"}`}>
+            {f === "all" ? "All" : (FAIRNESS_BADGE[f]?.label || f)}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 && <p className="text-xs text-muted-foreground">No scopes match this filter.</p>}
+
+      <div className="space-y-2">
+        {filtered.map((scope: any) => {
+          const badge = FAIRNESS_BADGE[scope.fairness_status] || FAIRNESS_BADGE.low_sample;
+          const isOpen = expanded.has(scope.routing_scope_key);
+          return (
+            <div key={scope.routing_scope_key} className="border rounded p-2" data-testid={`card-rotation-scope-${scope.routing_scope_key}`}>
+              <button onClick={() => toggle(scope.routing_scope_key)} className="w-full text-left flex items-center justify-between gap-2" data-testid={`button-expand-scope-${scope.routing_scope_key}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+                  <span className="text-xs font-mono truncate">{scope.routing_scope_key}</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">{scope.total_rotated_leads} lead{scope.total_rotated_leads !== 1 ? "s" : ""} · {scope.number_of_eligible_partners} partner{scope.number_of_eligible_partners !== 1 ? "s" : ""}</span>
+                  <Badge variant="outline" className={`text-[9px] ${badge.className}`} data-testid={`badge-fairness-${scope.routing_scope_key}`}>{badge.label}</Badge>
+                </div>
+              </button>
+
+              {isOpen && (
+                <div className="mt-2 pl-5 space-y-1">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[10px] text-muted-foreground border-b pb-1">
+                    <span>Partner</span>
+                    <span className="text-right">Leads</span>
+                    <span className="text-right">Share</span>
+                  </div>
+                  {scope.partners.map((p: any) => {
+                    const expectedShare = scope.number_of_eligible_partners > 0 ? 100 / scope.number_of_eligible_partners : 0;
+                    const deviation = expectedShare > 0 ? Math.abs(p.percentage_share - expectedShare) / expectedShare : 0;
+                    const shareColor = deviation <= 0.15 ? "text-green-700" : deviation <= 0.30 ? "text-yellow-700" : "text-red-700";
+                    return (
+                      <div key={p.partner_id} className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[10px]" data-testid={`row-rotation-partner-${p.partner_id}`}>
+                        <span className="truncate">{p.partner_name}</span>
+                        <span className="text-right font-medium">{p.leads_assigned}</span>
+                        <span className={`text-right font-medium ${scope.total_rotated_leads >= 5 ? shareColor : "text-gray-500"}`}>{p.percentage_share}%</span>
+                      </div>
+                    );
+                  })}
+                  {scope.last_assigned_at && (
+                    <p className="text-[9px] text-muted-foreground pt-1 border-t">Last rotation: {new Date(scope.last_assigned_at).toLocaleString()}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

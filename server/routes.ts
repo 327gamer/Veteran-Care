@@ -8268,6 +8268,90 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/rotation-performance", requireAdmin, async (_req, res) => {
+    try {
+      const { data: leads, error } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, routing_method, routing_scope_key, routed_to_partner_id, routed_at")
+        .eq("routing_method", "rotated")
+        .not("routing_scope_key", "is", null)
+        .not("routed_to_partner_id", "is", null);
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const partnerIds = [...new Set((leads || []).map((l: any) => l.routed_to_partner_id).filter(Boolean))];
+      let partnerMap: Record<string, string> = {};
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name")
+          .in("id", partnerIds);
+        for (const p of partners || []) partnerMap[p.id] = p.name;
+      }
+
+      const scopeMap: Record<string, { leads: any[] }> = {};
+      for (const l of leads || []) {
+        const sk = l.routing_scope_key;
+        if (!scopeMap[sk]) scopeMap[sk] = { leads: [] };
+        scopeMap[sk].leads.push(l);
+      }
+
+      const { data: rotationStates } = await supabaseAdmin
+        .from("partner_rotation_state")
+        .select("routing_scope_key, last_assigned_partner_id, last_assigned_at");
+      const stateMap: Record<string, any> = {};
+      for (const s of rotationStates || []) stateMap[s.routing_scope_key] = s;
+
+      const scopes = Object.entries(scopeMap).map(([scopeKey, info]) => {
+        const partnerCounts: Record<string, number> = {};
+        for (const l of info.leads) {
+          const pid = l.routed_to_partner_id;
+          partnerCounts[pid] = (partnerCounts[pid] || 0) + 1;
+        }
+        const totalRotated = info.leads.length;
+        const partnerEntries = Object.entries(partnerCounts);
+        const numPartners = partnerEntries.length;
+
+        const partners = partnerEntries.map(([pid, count]) => ({
+          partner_id: pid,
+          partner_name: partnerMap[pid] || "Unknown",
+          leads_assigned: count,
+          percentage_share: totalRotated > 0 ? Math.round((count / totalRotated) * 1000) / 10 : 0,
+        })).sort((a, b) => b.leads_assigned - a.leads_assigned);
+
+        let fairness_status = "low_sample";
+        if (totalRotated >= 5 && numPartners > 0) {
+          const expectedShare = 1 / numPartners;
+          let maxDeviation = 0;
+          for (const p of partners) {
+            const actualShare = p.leads_assigned / totalRotated;
+            const deviation = Math.abs(actualShare - expectedShare) / expectedShare;
+            if (deviation > maxDeviation) maxDeviation = deviation;
+          }
+          if (maxDeviation <= 0.15) fairness_status = "balanced";
+          else if (maxDeviation <= 0.30) fairness_status = "slight_skew";
+          else fairness_status = "imbalance_detected";
+        }
+
+        const state = stateMap[scopeKey];
+        return {
+          routing_scope_key: scopeKey,
+          number_of_eligible_partners: numPartners,
+          total_rotated_leads: totalRotated,
+          last_assigned_partner_id: state?.last_assigned_partner_id || null,
+          last_assigned_at: state?.last_assigned_at || null,
+          fairness_status,
+          partners,
+        };
+      });
+
+      scopes.sort((a, b) => b.total_rotated_leads - a.total_rotated_leads);
+      return res.json({ scopes, total_scopes: scopes.length, total_rotated_leads: (leads || []).length });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/intelligence/execution-visibility", requireAdmin, async (_req, res) => {
     try {
       const { data: leads, error: evError } = await supabaseAdmin.from("navigator_requests")

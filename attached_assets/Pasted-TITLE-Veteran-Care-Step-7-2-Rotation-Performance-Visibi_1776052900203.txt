@@ -1,0 +1,236 @@
+TITLE:
+Veteran Care – Step 7.2 – Rotation Performance Visibility Layer
+
+PRIORITY:
+HIGH (Fairness Monitoring + Rotation Audit Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.2 – Rotation Performance Visibility  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT reassignment changes  
+❌ NOT automation  
+
+This step is STRICTLY visibility + fairness monitoring.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow admin to verify that the round-robin system is distributing leads fairly within each routing scope.
+
+System must answer:
+
+- Are partners receiving balanced distribution?
+- Is one partner getting too many leads?
+- Is rotation behaving correctly per scope?
+- Is fairness improving or drifting over time?
+
+-------------------------------------
+REQUIREMENT 1 — ROTATION PERFORMANCE METRICS
+-------------------------------------
+
+Build a lightweight endpoint or query:
+
+GET /api/admin/rotation-performance
+
+Return grouped by routing_scope_key:
+
+For each scope:
+
+- routing_scope_key
+- number_of_eligible_partners
+- total_rotated_leads
+- last_assigned_partner_id
+- last_assigned_at
+
+Nested per partner:
+
+- partner_id
+- partner_name
+- leads_assigned
+- percentage_share
+
+IMPORTANT:
+- ONLY include leads where routing_method = 'rotated'
+- EXCLUDE direct assignments completely
+
+-------------------------------------
+REQUIREMENT 2 — FAIRNESS STATUS LOGIC
+-------------------------------------
+
+Add derived field:
+
+- fairness_status
+
+Values:
+
+- balanced
+- slight_skew
+- imbalance_detected
+- low_sample (NEW – critical)
+
+-------------------------------------
+FAIRNESS LOGIC
+-------------------------------------
+
+IF total_rotated_leads < 5:
+→ fairness_status = low_sample
+
+ELSE:
+
+Calculate expected share:
+→ 1 / number_of_partners
+
+Measure max deviation from expected share:
+
+- balanced:
+  deviation ≤ 15%
+
+- slight_skew:
+  deviation between 15%–30%
+
+- imbalance_detected:
+  deviation > 30%
+
+Keep logic lightweight and adjustable.
+
+-------------------------------------
+REQUIREMENT 3 — MINIMUM SAMPLE PROTECTION
+-------------------------------------
+
+CRITICAL:
+
+Do NOT flag imbalance when:
+- total_rotated_leads < 5
+
+Instead:
+→ show "LOW SAMPLE" (neutral / gray)
+
+This prevents false alarms during early usage.
+
+-------------------------------------
+REQUIREMENT 4 — ADMIN VISIBILITY
+-------------------------------------
+
+Add section:
+
+→ “Rotation Performance”
+
+Display:
+
+- routing scope
+- participating partners
+- leads per partner
+- % share per partner
+- fairness badge
+
+UI format:
+- compact table OR cards
+- expandable rows if needed
+
+NO dashboards  
+NO charts  
+
+-------------------------------------
+REQUIREMENT 5 — FAIRNESS BADGES
+-------------------------------------
+
+Use simple color indicators:
+
+- balanced → green
+- slight_skew → yellow
+- imbalance_detected → red
+- low_sample → gray
+
+-------------------------------------
+REQUIREMENT 6 — FILTER SUPPORT
+-------------------------------------
+
+Allow admin filtering:
+
+- balanced
+- slight_skew
+- imbalance_detected
+- low_sample
+
+-------------------------------------
+REQUIREMENT 7 — SCOPE ISOLATION
+-------------------------------------
+
+STRICT:
+
+All calculations MUST be scoped by:
+
+- routing_scope_key
+
+Do NOT mix scopes.
+
+-------------------------------------
+REQUIREMENT 8 — DATA SOURCE
+-------------------------------------
+
+Use existing fields:
+
+- routing_method
+- routing_scope_key
+- assigned_to
+- assigned_at
+
+NO new tracking required.
+
+-------------------------------------
+REQUIREMENT 9 — PERFORMANCE SAFETY
+-------------------------------------
+
+- single query or efficient aggregation
+- avoid heavy joins where possible
+- must perform under real load
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+Dev must validate:
+
+1. Rotated leads grouped correctly by scope
+2. Direct leads excluded completely
+3. Partner percentages accurate
+4. Low sample scopes show LOW SAMPLE (not imbalance)
+5. Fairness status updates dynamically
+6. Filters work correctly
+7. No impact to routing, billing, Stripe, or reassignment
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- rotation performance endpoint implemented
+- fairness logic working
+- admin visibility added
+- filters working
+- validation complete
+- no regression introduced
+
+-------------------------------------
+STRICT DO-NOT-TOUCH
+-------------------------------------
+
+Do NOT modify:
+
+- routing engine
+- billing logic
+- Stripe integration
+- tracking system
+- reassignment logic
+- pricing rules
+
+-------------------------------------
+END
+-------------------------------------
