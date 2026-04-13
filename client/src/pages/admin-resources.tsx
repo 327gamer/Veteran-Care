@@ -2441,6 +2441,7 @@ function AdminResourcesInner() {
           <>
             <LaunchCommandCenter adminKey={adminKey} />
             <RotationPerformancePanel adminKey={adminKey} />
+            <PartnerTransparencyPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4191,6 +4192,105 @@ const FAIRNESS_BADGE: Record<string, { label: string; className: string }> = {
   imbalance_detected: { label: "Imbalance", className: "bg-red-100 text-red-800 border-red-300" },
   low_sample: { label: "Low Sample", className: "bg-gray-100 text-gray-600 border-gray-300" },
 };
+
+function PartnerTransparencyPanel({ adminKey }: { adminKey: string }) {
+  const [partners, setPartners] = useState<any[]>([]);
+  const [selectedPartner, setSelectedPartner] = useState<string>("");
+  const [data, setData] = useState<{ partner_id: string; scopes: any[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/partners", { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setPartners(d); })
+      .catch(() => {});
+  }, [adminKey]);
+
+  const loadPartnerFairness = (pid: string) => {
+    setSelectedPartner(pid);
+    if (!pid) { setData(null); return; }
+    setLoading(true);
+    fetch(`/api/admin/partner-fairness/${pid}`, { headers: { "x-admin-key": adminKey } })
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  const trendIcon = (t: string) => t === "improving" ? "↑" : t === "slight_skew" ? "↓" : "→";
+  const trendColor = (t: string) => t === "improving" ? "text-green-600" : t === "slight_skew" ? "text-amber-600" : "text-gray-500";
+  const trendLabel = (t: string) => t === "improving" ? "Improving" : t === "slight_skew" ? "Slight Skew" : "Stable";
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="text-sm font-semibold flex items-center gap-2" data-testid="text-partner-transparency-title">
+          <ShieldCheck className="h-4 w-4" /> Partner Transparency
+        </h3>
+        <select value={selectedPartner} onChange={e => loadPartnerFairness(e.target.value)}
+          className="text-[11px] border rounded px-2 py-1 bg-white max-w-[200px]"
+          data-testid="select-partner-transparency">
+          <option value="">Select partner…</option>
+          {partners.map((p: any) => (
+            <option key={p.id} value={p.id}>{p.name || p.organization_name || p.id}</option>
+          ))}
+        </select>
+      </div>
+
+      {!selectedPartner && (
+        <p className="text-xs text-muted-foreground">Select a partner to view their fairness data.</p>
+      )}
+
+      {loading && <p className="text-xs text-muted-foreground">Loading…</p>}
+
+      {data && !loading && (
+        <>
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200" data-testid="badge-fair-distribution">FAIR DISTRIBUTION ACTIVE</Badge>
+            <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200" data-testid="badge-rotation-enabled">ROTATION SYSTEM ENABLED</Badge>
+          </div>
+
+          <div className="bg-blue-50/50 rounded p-2 space-y-1 text-[9px] text-slate-600">
+            <p>Leads are distributed evenly across eligible partners.</p>
+            <p>Your share reflects fair rotation based on availability.</p>
+            <p>Small variations can occur due to timing and availability.</p>
+          </div>
+
+          {data.scopes.length === 0 && (
+            <p className="text-xs text-muted-foreground">No rotated leads found for this partner.</p>
+          )}
+
+          {data.scopes.map((s: any) => {
+            const devColor = Math.abs(s.deviation_pct) <= 7.5 ? "text-green-700" : Math.abs(s.deviation_pct) <= 15 ? "text-yellow-700" : "text-red-700";
+            return (
+              <div key={s.scope} className="border rounded p-2 space-y-1.5" data-testid={`card-transparency-scope-${s.scope}`}>
+                <p className="text-[10px] font-mono text-slate-600 truncate">{s.scope}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+                  <span className="text-slate-500">Your Leads</span>
+                  <span className="font-medium" data-testid={`text-your-leads-${s.scope}`}>{s.your_leads}</span>
+                  <span className="text-slate-500">Partners in Scope</span>
+                  <span className="font-medium">{s.partners_in_scope}</span>
+                  <span className="text-slate-500">Expected Share</span>
+                  <span className="font-medium">{s.expected_share_pct}%</span>
+                  <span className="text-slate-500">Your Share</span>
+                  <span className="font-medium">{s.your_share_pct}%</span>
+                  <span className="text-slate-500">Deviation</span>
+                  <span className={`font-medium ${devColor}`} data-testid={`text-deviation-${s.scope}`}>
+                    {s.deviation_pct >= 0 ? "+" : ""}{s.deviation_pct}%
+                  </span>
+                  <span className="text-slate-500">Trend</span>
+                  <span className={`font-medium ${trendColor(s.trend)}`} data-testid={`text-trend-${s.scope}`}>
+                    {trendIcon(s.trend)} {trendLabel(s.trend)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </Card>
+  );
+}
 
 const ADVISORY_BADGE: Record<string, { label: string; className: string }> = {
   no_action: { label: "No Action", className: "bg-green-50 text-green-700 border-green-200" },

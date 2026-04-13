@@ -8418,6 +8418,73 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/partner-fairness/:partnerId", requireAdmin, async (req, res) => {
+    try {
+      const { partnerId } = req.params;
+      const { data: leads } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("routing_scope_key, routed_to_partner_id")
+        .eq("routing_method", "rotated")
+        .not("routed_to_partner_id", "is", null)
+        .not("routing_scope_key", "is", null);
+
+      if (!leads || leads.length === 0) return res.json({ scopes: [] });
+
+      const scopeMap: Record<string, { total: number; partnerLeads: number; partnerIds: Set<string> }> = {};
+      for (const l of leads) {
+        if (!scopeMap[l.routing_scope_key]) scopeMap[l.routing_scope_key] = { total: 0, partnerLeads: 0, partnerIds: new Set() };
+        scopeMap[l.routing_scope_key].total++;
+        scopeMap[l.routing_scope_key].partnerIds.add(l.routed_to_partner_id);
+        if (l.routed_to_partner_id === partnerId) scopeMap[l.routing_scope_key].partnerLeads++;
+      }
+
+      let historyMap: Record<string, any[]> = {};
+      try {
+        const histRows = await pgQuery(
+          `SELECT routing_scope_key, fairness_status FROM rotation_fairness_history ORDER BY snapshot_at DESC LIMIT 500`
+        );
+        for (const h of histRows || []) {
+          if (!historyMap[h.routing_scope_key]) historyMap[h.routing_scope_key] = [];
+          historyMap[h.routing_scope_key].push(h);
+        }
+      } catch {}
+
+      const RANK: Record<string, number> = { balanced: 0, low_sample: 1, slight_skew: 2, imbalance_detected: 3 };
+      const scopes = Object.entries(scopeMap)
+        .filter(([_, v]) => v.partnerLeads > 0)
+        .map(([key, v]) => {
+          const numPartners = v.partnerIds.size;
+          const expectedShare = Math.round(10000 / numPartners) / 100;
+          const actualShare = Math.round((v.partnerLeads / v.total) * 1000) / 10;
+          const deviation = Math.round((actualShare - expectedShare) * 10) / 10;
+
+          const hist = (historyMap[key] || []).slice(0, 5);
+          let trend = "stable";
+          if (hist.length >= 3) {
+            const ranks = hist.slice(0, 3).map(h => RANK[h.fairness_status] ?? 1);
+            if (ranks[0] < ranks[2]) trend = "improving";
+            else if (ranks[0] > ranks[2]) trend = "worsening";
+          }
+          const trendLabel = trend === "improving" ? "improving" : trend === "worsening" ? "slight_skew" : "stable";
+
+          return {
+            scope: key,
+            your_leads: v.partnerLeads,
+            total_leads_in_scope: v.total,
+            partners_in_scope: numPartners,
+            expected_share_pct: expectedShare,
+            your_share_pct: actualShare,
+            deviation_pct: deviation,
+            trend: trendLabel,
+          };
+        });
+
+      return res.json({ partner_id: partnerId, scopes });
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message });
+    }
+  });
+
   app.get("/api/admin/intelligence/execution-visibility", requireAdmin, async (_req, res) => {
     try {
       const { data: leads, error: evError } = await supabaseAdmin.from("navigator_requests")

@@ -1,0 +1,141 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 7.6 – Partner Transparency Layer
+
+PRIORITY:
+HIGH (Trust + Retention + Monetization Layer)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 7.6 – Partner Transparency  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This step exposes limited, privacy-protected fairness data to partners.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Allow partners to:
+
+- understand how leads are distributed  
+- see their own performance within a scope  
+- trust the fairness of the system  
+- reduce disputes proactively  
+
+-------------------------------------
+REQUIREMENT 1 — PARTNER-SCOPED VIEW
+-------------------------------------
+
+Create a partner-facing view (admin-only for now, filtered by partner_id):
+
+Show ONLY:
+
+- total leads received  
+- percentage share  
+- expected share  
+- deviation from expected share  
+
+-------------------------------------
+REQUIREMENT 2 — STRICT PRIVACY RULES
+-------------------------------------
+
+Partners MUST NOT see:
+
+- other partner names  
+- other partner lead counts  
+- full distribution breakdown  
+
+Partners MAY see:
+
+- total number of partners in the scope  
+- expected share (e.g., “50% with 2 partners”)  
+
+-------------------------------------
+REQUIREMENT 3 — FAIRNESS EXPLANATION
+-------------------------------------
+
+Include simple explanation text:
+
+- “Leads are distributed evenly across eligible partners.”  
+- “Your share reflects fair rotation based on availability.”  
+- “Small variations can occur due to timing and availability.”  
+
+-------------------------------------
+REQUIREMENT 4 — TRUST INDICATOR
+-------------------------------------
+
+Display visible trust badges:
+
+- FAIR DISTRIBUTION ACTIVE  
+- ROTATION SYSTEM ENABLED  
+
+-------------------------------------
+REQUIREMENT 5 — LIGHT TREND INDICATOR
+-------------------------------------
+
+Show simple trend:
+
+- improving  
+- stable  
+- slight_skew  
+
+-------------------------------------
+REQUIREMENT 6 — STRICT INTERNAL DATA PROTECTION
+-------------------------------------
+
+Do NOT expose:
+
+- advisory flags  
+- persistent imbalance  
+- fairness history snapshots  
+- admin-only intervention signals  
+
+-------------------------------------
+REQUIREMENT 7 — UI SIMPLICITY
+-------------------------------------
+
+Use simple layout:
+
+- card or panel  
+- clean, readable  
+- non-technical language  
+
+-------------------------------------
+REQUIREMENT 8 — DELIVERY FORMAT
+-------------------------------------
+
+Implement inside admin panel with partner filter OR lightweight endpoint.
+
+-------------------------------------
+TEST CASES REQUIRED
+-------------------------------------
+
+1. Partner sees only their own data  
+2. Expected share correct  
+3. Deviation calculation correct  
+4. No other partner data exposed  
+5. Explanation text visible  
+6. No regression  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- partner transparency view implemented  
+- privacy rules enforced  
+- explanation + trust indicators visible  
+- validation complete  
+- no regression introduced  
+
+-------------------------------------
+END
+-------------------------------------
