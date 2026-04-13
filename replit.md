@@ -70,6 +70,8 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `server/ai/stream.ts` - OpenAI chat completions streaming wrapper
 - `server/ai/usage-logger.ts` - Logs AI usage to ai_usage_log table (graceful if missing)
 - `server/stripe-service.ts` - Stripe subscription workflow (checkout sessions, webhook handlers, auto-activation/deactivation)
+- `server/monetization-audit.ts` - Monetization hardening audit log (routing_blocked, billing_blocked, eligibility_failure, subscription_mismatch events with partner_id, lead_id, reason, metadata)
+- `server/billing-governance.ts` - Billing governance (charge checklist, partner eligibility verification, billing config, auto-review flags)
 - `server/pg-client.ts` - Direct PostgreSQL client (bypasses Supabase PostgREST for trusted_services, trusted_service_categories, trusted_service_leads, partner_applications — NEVER use supabaseAdmin for these tables)
 
 ## Dev vs Production Database

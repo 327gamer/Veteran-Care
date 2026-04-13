@@ -76,6 +76,7 @@ import {
   Store,
   Menu,
   CreditCard,
+  Shield,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -2445,6 +2446,7 @@ function AdminResourcesInner() {
             <PartnerTransparencyPanel adminKey={adminKey} />
             <PartnerSubscriptionStatusPanel adminKey={adminKey} />
             <ActivationFunnelPanel adminKey={adminKey} />
+            <MonetizationHardeningPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4718,6 +4720,121 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
         <p><strong>Subscribed:</strong> {funnel.subscribed} partner{funnel.subscribed !== 1 ? "s" : ""} initiated subscription, awaiting activation</p>
         {(funnel.recovered || 0) > 0 && <p><strong>Recovered:</strong> {funnel.recovered} partner{funnel.recovered !== 1 ? "s" : ""} activated after follow-up</p>}
       </div>
+    </Card>
+  );
+}
+
+function MonetizationHardeningPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/monetization-hardening", { headers: { "x-admin-key": adminKey } });
+      if (res.ok) setData(await res.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading hardening status...</p></Card>;
+  if (!data?.available) return null;
+
+  const s = data.summary;
+  const mismatches = data.mismatch_warnings || [];
+  const eligibility = data.eligibility || [];
+  const recent = data.recent_blocks || [];
+  const eligible = eligibility.filter((e: any) => e.eligible);
+  const blocked = eligibility.filter((e: any) => !e.eligible);
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-monetization-hardening">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-red-600" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-hardening-title">Monetization Hardening</h3>
+          {s.last_24h > 0 && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-100 text-red-700" data-testid="text-blocks-24h">{s.last_24h} blocks (24h)</span>}
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-hardening">Refresh</button>
+      </div>
+
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2" data-testid="hardening-summary">
+        {[
+          { label: "Total Blocks", count: s.total_blocks, color: "bg-slate-50" },
+          { label: "Routing Blocked", count: s.routing_blocked, color: "bg-red-50" },
+          { label: "Billing Blocked", count: s.billing_blocked, color: "bg-amber-50" },
+          { label: "Eligibility Fail", count: s.eligibility_failures, color: "bg-orange-50" },
+          { label: "Sub Mismatch", count: s.subscription_mismatches, color: "bg-purple-50" },
+          { label: "Onb Mismatch", count: s.onboarding_mismatches, color: "bg-blue-50" },
+        ].map(({ label, count, color }) => (
+          <div key={label} className={`rounded p-2 border text-center ${color}`}>
+            <p className="text-[9px] text-muted-foreground uppercase truncate">{label}</p>
+            <p className="text-lg font-bold">{count}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-green-50 border border-green-200 rounded p-2">
+          <p className="text-[10px] font-semibold text-green-800">Eligible Partners</p>
+          <p className="text-lg font-bold text-green-700" data-testid="text-eligible-count">{eligible.length}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded p-2">
+          <p className="text-[10px] font-semibold text-red-800">Blocked Partners</p>
+          <p className="text-lg font-bold text-red-700" data-testid="text-blocked-count">{blocked.length}</p>
+        </div>
+      </div>
+
+      {mismatches.length > 0 && (
+        <div className="space-y-1" data-testid="mismatch-warnings">
+          <p className="text-[10px] font-bold text-amber-800 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Mismatch Warnings ({mismatches.length})</p>
+          {mismatches.map((m: any) => (
+            <div key={m.partner_id} className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5" data-testid={`warning-mismatch-${m.partner_id}`}>
+              <p className="text-[10px] font-semibold text-amber-900">{m.name}</p>
+              <p className="text-[9px] text-amber-700">{m.issues.join(" | ")}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {blocked.length > 0 && (
+        <div className="space-y-1" data-testid="blocked-partners">
+          <p className="text-[10px] font-bold text-red-800">Blocked Partners</p>
+          {blocked.slice(0, 10).map((b: any) => (
+            <div key={b.partner_id} className="flex items-center justify-between bg-red-50 border border-red-100 rounded px-2 py-1" data-testid={`blocked-${b.partner_id}`}>
+              <span className="text-[10px] font-medium text-red-900 truncate">{b.name}</span>
+              <span className="text-[8px] text-red-600">{b.blockers.join(", ")}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {recent.length > 0 && (
+        <div className="space-y-1" data-testid="recent-blocks">
+          <p className="text-[10px] font-bold text-slate-700">Recent Blocked Actions ({recent.length})</p>
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            {recent.slice(0, 15).map((r: any, i: number) => (
+              <div key={r.id || i} className="flex items-start gap-2 bg-slate-50 border rounded px-2 py-1 text-[9px]">
+                <span className={`px-1 py-0.5 rounded font-medium ${
+                  r.event_type === "routing_blocked" ? "bg-red-100 text-red-700" :
+                  r.event_type === "billing_blocked" ? "bg-amber-100 text-amber-700" :
+                  r.event_type === "subscription_mismatch" ? "bg-purple-100 text-purple-700" :
+                  "bg-slate-100 text-slate-600"
+                }`}>{r.event_type.replace(/_/g, " ")}</span>
+                <span className="text-muted-foreground truncate flex-1">{r.reason}</span>
+                <span className="text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {s.total_blocks === 0 && mismatches.length === 0 && (
+        <div className="bg-green-50 border border-green-200 rounded p-3 text-center">
+          <p className="text-xs text-green-700 font-medium" data-testid="text-all-clear">All systems clear — no blocked actions or mismatches detected</p>
+        </div>
+      )}
     </Card>
   );
 }

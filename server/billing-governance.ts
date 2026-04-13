@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "./supabase";
+import { logMonetizationAudit } from "./monetization-audit";
 
 export interface BillingConfig {
   billing_mode: "manual_only" | "manual_plus_batch" | "controlled_batch";
@@ -82,6 +83,31 @@ export function shouldAutoReview(lead: any): { flagged: boolean; reasons: string
   if (lead.response_status === "declined") reasons.push("Partner declined this lead");
   if (lead.delivery_status === "delivery_failed") reasons.push("Delivery failed");
   return { flagged: reasons.length > 0, reasons };
+}
+
+export async function verifyPartnerBillingEligibility(partnerId: string): Promise<{ eligible: boolean; reason?: string }> {
+  try {
+    const { data: partner } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("id, name, is_active, subscription_status, active_paid_partner, onboarding_status, partner_status_override")
+      .eq("id", partnerId)
+      .single();
+    if (!partner) return { eligible: false, reason: "partner_not_found" };
+    const failures: string[] = [];
+    if (!partner.is_active) failures.push("is_active=false");
+    if (partner.active_paid_partner === false) failures.push("active_paid_partner=false");
+    if (partner.subscription_status && partner.subscription_status !== "active") failures.push(`subscription_status=${partner.subscription_status}`);
+    if (partner.onboarding_status && partner.onboarding_status !== "active") failures.push(`onboarding_status=${partner.onboarding_status}`);
+    if (partner.partner_status_override === "paused") failures.push("partner_status_override=paused");
+    if (failures.length > 0) {
+      logMonetizationAudit({ event_type: "billing_blocked", partner_id: partnerId, lead_id: null, reason: failures.join("; "), metadata: { partner_name: partner.name } });
+      return { eligible: false, reason: failures.join("; ") };
+    }
+    return { eligible: true };
+  } catch (err: any) {
+    logMonetizationAudit({ event_type: "billing_blocked", partner_id: partnerId, lead_id: null, reason: "eligibility_check_failed", metadata: { error: err?.message } });
+    return { eligible: false, reason: "eligibility_check_failed" };
+  }
 }
 
 export async function logBillingRun(executedBy: string, leadsCharged: number, totalAmount: number, mode: string, leadIds: string[]): Promise<void> {

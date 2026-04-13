@@ -1,0 +1,175 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.0 – Monetization Hardening Layer
+
+PRIORITY:
+CRITICAL (Final Revenue Protection Before Scale)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 8.0 – Monetization Hardening  
+❌ NOT new billing model  
+❌ NOT new pricing  
+❌ NOT new routing architecture  
+❌ NOT automation rollout  
+
+This is a HARDENING + VALIDATION layer only.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Eliminate all edge-case revenue leakage by enforcing strict eligibility, billing integrity, and execution-time validation.
+
+-------------------------------------
+REQUIREMENT 1 — FINAL ELIGIBILITY LOCK
+-------------------------------------
+
+Routing MUST require ALL of the following at execution time:
+
+- subscription_status = active
+- active_paid_partner = true
+- onboarding_status = active
+- partner_status_override = active
+- category + location rules pass
+
+If ANY condition fails → partner is NOT eligible.
+
+-------------------------------------
+REQUIREMENT 2 — EXECUTION-TIME FAILSAFE
+-------------------------------------
+
+Before assigning ANY routed lead:
+
+Re-check eligibility live.
+
+If partner fails:
+- block assignment
+- log blocked attempt
+- continue searching next eligible partner
+
+NO cached eligibility allowed.
+
+-------------------------------------
+REQUIREMENT 3 — BILLING HARDENING
+-------------------------------------
+
+Ensure:
+
+- no lead can be billed twice
+- no non-billable lead enters billing flow
+- failed-payment leads require review before retry
+- disputed / hold leads are NEVER chargeable
+
+-------------------------------------
+REQUIREMENT 4 — SUBSCRIPTION EDGE CASE HANDLING
+-------------------------------------
+
+Handle:
+
+- webhook delay
+- past_due during routing
+- canceled mid-flow
+- Stripe/local mismatch
+
+RULE:
+
+If mismatch exists:
+→ treat partner as INELIGIBLE
+→ surface admin warning
+
+-------------------------------------
+REQUIREMENT 5 — GRACE PERIOD CONTROL
+-------------------------------------
+
+IMPORTANT:
+
+Grace period may exist for admin visibility ONLY.
+
+It does NOT preserve routing eligibility.
+
+past_due OR non-active = NO LEADS
+
+-------------------------------------
+REQUIREMENT 6 — ADMIN WARNING FLAGS
+-------------------------------------
+
+Display clear warnings for:
+
+- blocked routing attempt
+- blocked billing attempt
+- subscription mismatch
+- onboarding mismatch
+- eligibility failure reason
+
+Keep lightweight and readable.
+
+-------------------------------------
+REQUIREMENT 7 — AUDIT LOGGING
+-------------------------------------
+
+Log:
+
+- blocked routing attempts
+- blocked billing attempts
+- eligibility failures
+- subscription mismatches
+
+Include:
+- partner_id
+- reason
+- timestamp
+- lead_id (if applicable)
+
+-------------------------------------
+REQUIREMENT 8 — ADMIN VISIBILITY
+-------------------------------------
+
+Admin must see:
+
+- eligibility status
+- why a partner is blocked
+- mismatch flags
+- recent blocked actions (light list)
+
+-------------------------------------
+REQUIREMENT 9 — NO OVERBUILD
+-------------------------------------
+
+Do NOT build:
+
+- automation
+- new pricing
+- ranking systems
+- weighted routing
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Ineligible partner NEVER receives leads  
+2. Invalid lead NEVER enters billing  
+3. past_due / canceled blocked immediately  
+4. Stripe mismatch handled safely  
+5. No duplicate billing possible  
+6. No regression anywhere  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- eligibility hard lock enforced
+- execution-time validation active
+- billing protections enforced
+- warning flags visible
+- audit logging in place
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------

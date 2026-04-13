@@ -5,6 +5,7 @@ import { query as pgQuery } from "./pg-client";
 import { toCanonical } from "../shared/canonical-categories";
 import { isLeadEligibleCategory, isLeadEligibleSubcategory } from "../shared/lead-eligibility";
 import { logLeadEvent } from "./lead-events";
+import { logMonetizationAudit } from "./monetization-audit";
 
 let _trackingColumnsAvailable: boolean | null = null;
 let _billingColumnsAvailable: boolean | null = null;
@@ -160,7 +161,8 @@ function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: s
     if (!partner || !partner.is_active || !partner.is_lead_enabled) return false;
     if (partner.partner_status_override === "paused") return false;
     if (excludePartnerIds.includes(partner.id)) return false;
-    if (subscriptionLockEnabled && partner.active_paid_partner === false) return false;
+    if (subscriptionLockEnabled && partner.active_paid_partner !== true) return false;
+    if (subscriptionLockEnabled && partner.subscription_status && partner.subscription_status !== "active") return false;
     if (onboardingLockEnabled && partner.onboarding_status && partner.onboarding_status !== "active") return false;
 
     const ruleCategory = rule.category_slug ? toCanonical(rule.category_slug) : null;
@@ -794,7 +796,58 @@ export async function routeLead(leadId: string): Promise<{
     return { routed: false };
   }
 
-  const primaryMatch = matches[0];
+  const subsColumnsReady2 = await checkSubscriptionColumns();
+  const onbColumnsReady2 = await checkOnboardingColumns();
+  const verifiedMatches: typeof matches = [];
+  for (const match of matches) {
+    let recheckFields = "id, is_active, is_lead_enabled, partner_status_override";
+    if (subsColumnsReady2) recheckFields += ", subscription_status, active_paid_partner";
+    if (onbColumnsReady2) recheckFields += ", onboarding_status";
+    try {
+      const { data: p } = await supabaseAdmin.from("partner_organizations").select(recheckFields).eq("id", match.partnerId).single();
+      if (!p) {
+        logMonetizationAudit({ event_type: "routing_blocked", partner_id: match.partnerId, lead_id: leadId, reason: "partner_not_found_at_assignment", metadata: { partner_name: match.partnerName } });
+        continue;
+      }
+      const failures: string[] = [];
+      if (!p.is_active) failures.push("is_active=false");
+      if (!p.is_lead_enabled) failures.push("is_lead_enabled=false");
+      if (p.partner_status_override === "paused") failures.push("partner_status_override=paused");
+      if (subsColumnsReady2) {
+        if (p.active_paid_partner !== true) failures.push("active_paid_partner=false");
+        if (p.subscription_status && p.subscription_status !== "active") failures.push(`subscription_status=${p.subscription_status}`);
+      }
+      if (onbColumnsReady2) {
+        if (p.onboarding_status && p.onboarding_status !== "active") failures.push(`onboarding_status=${p.onboarding_status}`);
+      }
+      if (failures.length > 0) {
+        const eventType = failures.some(f => f.includes("subscription")) ? "subscription_mismatch" as const
+          : failures.some(f => f.includes("onboarding")) ? "onboarding_mismatch" as const
+          : "routing_blocked" as const;
+        logMonetizationAudit({ event_type: eventType, partner_id: match.partnerId, lead_id: leadId, reason: failures.join("; "), metadata: { partner_name: match.partnerName, recheck: true } });
+        console.log(`[router] BLOCKED: partner ${match.partnerName} failed execution-time re-check: ${failures.join(", ")}`);
+        continue;
+      }
+      verifiedMatches.push(match);
+    } catch (recheckErr: any) {
+      console.log(`[router] BLOCKED: partner ${match.partnerName} re-check query failed (fail-closed): ${recheckErr?.message}`);
+      logMonetizationAudit({ event_type: "routing_blocked", partner_id: match.partnerId, lead_id: leadId, reason: "recheck_query_failed", metadata: { partner_name: match.partnerName, error: recheckErr?.message } });
+    }
+  }
+
+  if (verifiedMatches.length === 0) {
+    console.log(`[router] All ${matches.length} candidate(s) failed execution-time re-check for lead ${leadId}`);
+    logLeadEvent({
+      event_type: "lead_unrouted", lead_class: leadClass, action_type: "route", source_surface: "lead_router",
+      category_slug: categorySlug || "unknown", subcategory_slug: subcategorySlug,
+      state: lead.user_state || null, city: lead.user_city || null, delivery_status: "unrouted",
+      metadata: { reason: "all_candidates_failed_recheck", original_count: matches.length, ...attributionFields },
+    });
+    await markLeadUnrouted(leadId);
+    return { routed: false };
+  }
+
+  const primaryMatch = verifiedMatches[0];
   const now = new Date().toISOString();
 
   let existingHistory: any[] = [];
@@ -807,7 +860,7 @@ export async function routeLead(leadId: string): Promise<{
     existingHistory = Array.isArray(hist?.routing_history) ? hist.routing_history : [];
   } catch {}
 
-  for (const match of matches) {
+  for (const match of verifiedMatches) {
     existingHistory.push({
       partner_id: match.partnerId,
       partner_name: match.partnerName,
@@ -849,7 +902,7 @@ export async function routeLead(leadId: string): Promise<{
     return { routed: false };
   }
 
-  console.log(`[router] Lead ${leadId} routed to ${matches.length} partner(s): ${matches.map(m => m.partnerName).join(", ")}`);
+  console.log(`[router] Lead ${leadId} routed to ${verifiedMatches.length} partner(s): ${verifiedMatches.map(m => m.partnerName).join(", ")}`);
 
   logLeadEvent({
     event_type: "lead_routed",
@@ -863,8 +916,8 @@ export async function routeLead(leadId: string): Promise<{
     city: lead.user_city || null,
     delivery_status: "ready_for_delivery",
     metadata: {
-      partner_count: matches.length,
-      partner_ids: matches.map(m => m.partnerId),
+      partner_count: verifiedMatches.length,
+      partner_ids: verifiedMatches.map(m => m.partnerId),
       routing_method: routingMethod,
       routing_scope_key: routingScopeKey,
       ...attributionFields,
@@ -875,7 +928,7 @@ export async function routeLead(leadId: string): Promise<{
     recordFairnessSnapshot(routingScopeKey).catch(() => {});
   }
 
-  for (const match of matches) {
+  for (const match of verifiedMatches) {
     sendLeadNotification(leadId, match.partnerId)
       .then(async () => {
         logLeadEvent({
@@ -930,7 +983,7 @@ export async function routeLead(leadId: string): Promise<{
     routed: true,
     partnerId: primaryMatch.partnerId,
     partnerName: primaryMatch.partnerName,
-    partnerIds: matches.map(m => m.partnerId),
+    partnerIds: verifiedMatches.map(m => m.partnerId),
   };
 }
 

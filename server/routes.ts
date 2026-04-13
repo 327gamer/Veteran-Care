@@ -11,6 +11,7 @@ import { platform } from "../shared/platform";
 import { getLeadEligibility, getLeadEligibleCategorySlugs, getLeadEligibleSubcategorySlugs, isLeadEligibleCategory } from "../shared/lead-eligibility";
 import { toCanonical, toLegacy, normalizeCategoryList } from "../shared/canonical-categories";
 import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
+import { ensureMonetizationAuditTable } from "./monetization-audit";
 import { query as pgQuery } from "./pg-client";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -2751,6 +2752,7 @@ export async function registerRoutes(
   await ensurePartnerReferrals();
   await ensureLeadBilling();
   await ensureLeadEventsTable();
+  await ensureMonetizationAuditTable();
   await backfillNavAmbassadorId();
   await alignCategoryNames();
   await ensureEndOfLifeCategory();
@@ -7621,11 +7623,18 @@ export async function registerRoutes(
 
     if (fetchErr || !lead) return res.status(404).json({ error: "Lead not found" });
 
-    const { getBillingConfig, runChargeChecklist, shouldAutoReview } = await import("./billing-governance");
+    const { getBillingConfig, runChargeChecklist, shouldAutoReview, verifyPartnerBillingEligibility } = await import("./billing-governance");
     const config = await getBillingConfig();
     const checklist = runChargeChecklist(lead, config);
     if (!checklist.pass) {
       return res.status(400).json({ error: checklist.failures[0], checklist_failures: checklist.failures });
+    }
+
+    if (lead.routed_to_partner_id) {
+      const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+      if (!partnerCheck.eligible) {
+        return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
+      }
     }
 
     const review = shouldAutoReview(lead);
@@ -7828,6 +7837,12 @@ export async function registerRoutes(
     if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold first" });
     if (lead.billing_workflow_status !== "failed") return res.status(400).json({ error: `Retry is only for failed leads. Current: ${lead.billing_workflow_status}` });
 
+    if (lead.routed_to_partner_id) {
+      const { verifyPartnerBillingEligibility } = await import("./billing-governance");
+      const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+      if (!partnerCheck.eligible) return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
+    }
+
     const currentRetry = lead.retry_count || 0;
     if (currentRetry >= 3) return res.status(400).json({ error: `Retry cap reached (${currentRetry}/3). Manual review required.` });
 
@@ -7872,7 +7887,7 @@ export async function registerRoutes(
     const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
     if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
 
-    const { getBillingConfig, runChargeChecklist, shouldAutoReview, logBillingRun } = await import("./billing-governance");
+    const { getBillingConfig, runChargeChecklist, shouldAutoReview, logBillingRun, verifyPartnerBillingEligibility } = await import("./billing-governance");
     const config = await getBillingConfig();
     const chargeFields = "id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id, stripe_payment_status, assigned_to, email_sent, is_disputed, reassignment_count, response_status, delivery_status, user_state, retry_count";
 
@@ -7899,6 +7914,19 @@ export async function registerRoutes(
         const checklist = runChargeChecklist(lead, config);
         if (!checklist.pass) {
           validationErrors.push({ id: lead.id, error: checklist.failures[0] });
+        } else if (lead.routed_to_partner_id) {
+          const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+          if (!partnerCheck.eligible) {
+            validationErrors.push({ id: lead.id, error: `Partner ineligible: ${partnerCheck.reason}` });
+          } else {
+            const review = shouldAutoReview(lead);
+            if (review.flagged) {
+              validationErrors.push({ id: lead.id, error: `Auto-flagged: ${review.reasons[0]}` });
+              try { await supabaseAdmin.from("navigator_requests").update({ billing_workflow_status: "review_required" }).eq("id", lead.id); } catch {}
+            } else {
+              validLeads.push(lead);
+            }
+          }
         } else {
           const review = shouldAutoReview(lead);
           if (review.flagged) {
@@ -12580,6 +12608,65 @@ export async function registerRoutes(
         prizeImageUrl: r.prize_image_url,
         rulesText: r.rules_text,
         status: r.status,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/monetization-hardening", requireAdmin, async (_req, res) => {
+    try {
+      const { getAuditSummary, getRecentAuditEntries } = await import("./monetization-audit");
+      const summary = await getAuditSummary();
+      const recent = await getRecentAuditEntries(30);
+
+      let mismatchWarnings: any[] = [];
+      try {
+        const { data: partners } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name, is_active, subscription_status, active_paid_partner, onboarding_status, partner_status_override, is_lead_enabled")
+          .or("is_active.eq.true,active_paid_partner.eq.true");
+        for (const p of partners || []) {
+          const issues: string[] = [];
+          if (p.is_active && p.active_paid_partner === false) issues.push("active but not paid");
+          if (p.active_paid_partner && p.subscription_status && p.subscription_status !== "active") issues.push(`paid but subscription_status=${p.subscription_status}`);
+          if (p.is_active && p.onboarding_status && p.onboarding_status !== "active") issues.push(`active but onboarding_status=${p.onboarding_status}`);
+          if (p.active_paid_partner && !p.is_lead_enabled) issues.push("paid but is_lead_enabled=false");
+          if (p.active_paid_partner && p.partner_status_override === "paused") issues.push("paid but partner_status_override=paused");
+          if (issues.length > 0) {
+            mismatchWarnings.push({ partner_id: p.id, name: p.name, issues, subscription_status: p.subscription_status, active_paid_partner: p.active_paid_partner, onboarding_status: p.onboarding_status, is_active: p.is_active });
+          }
+        }
+      } catch {}
+
+      let eligibilitySummary: any[] = [];
+      try {
+        const { data: allPartners } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name, is_active, is_lead_enabled, subscription_status, active_paid_partner, onboarding_status, partner_status_override")
+          .order("name");
+        eligibilitySummary = (allPartners || []).map(p => {
+          const eligible = p.is_active && p.is_lead_enabled && p.active_paid_partner !== false
+            && (!p.subscription_status || p.subscription_status === "active")
+            && (!p.onboarding_status || p.onboarding_status === "active")
+            && p.partner_status_override !== "paused";
+          const blockers: string[] = [];
+          if (!p.is_active) blockers.push("inactive");
+          if (!p.is_lead_enabled) blockers.push("leads disabled");
+          if (p.active_paid_partner === false) blockers.push("not paid");
+          if (p.subscription_status && p.subscription_status !== "active") blockers.push(`subscription: ${p.subscription_status}`);
+          if (p.onboarding_status && p.onboarding_status !== "active") blockers.push(`onboarding: ${p.onboarding_status}`);
+          if (p.partner_status_override === "paused") blockers.push("paused");
+          return { partner_id: p.id, name: p.name, eligible, blockers };
+        });
+      } catch {}
+
+      return res.json({
+        available: true,
+        summary,
+        mismatch_warnings: mismatchWarnings,
+        eligibility: eligibilitySummary,
+        recent_blocks: recent,
       });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
