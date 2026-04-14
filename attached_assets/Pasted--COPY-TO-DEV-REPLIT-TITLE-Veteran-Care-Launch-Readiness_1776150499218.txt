@@ -1,0 +1,141 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Launch Readiness Audit – Phase 0 to Phase 2 Only
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Do NOT run the full launch program yet.
+
+First, perform ONLY the early readiness audit layers:
+
+- Phase 0 — System Self-Audit
+- Phase 1 — Stripe Live Mode + Webhook Readiness
+- Phase 2 — Supabase + Data Integrity Readiness
+
+The purpose of this first pass is to separate:
+
+1. issues Replit can fix directly
+2. issues Colin must complete manually
+3. blockers that prevent later launch testing
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Do NOT silently fix anything
+- Do NOT move into later phases yet
+- Do NOT bundle unrelated fixes together
+- Report findings first in a structured format
+
+For each issue found, classify it as:
+
+- REPLIT FIX
+- MANUAL COLIN STEP
+- BLOCKER
+
+-------------------------------------
+PHASE 0 — SYSTEM SELF-AUDIT
+-------------------------------------
+
+Check and report:
+
+1. Environment configuration
+- production domain values
+- Supabase production connection
+- Resend environment values
+- Stripe config present
+- webhook secret present
+- live vs test mismatch detection
+
+2. Core database / schema readiness
+- required columns/tables exist
+- onboarding fields present
+- subscription fields present
+- follow-up fields present
+- recovery fields present
+- monetization / automation audit tables present
+
+3. Feature flag / automation config
+- automation_mode status
+- system_mode status
+- feature flags status
+- safety thresholds loaded correctly
+
+4. Production endpoint readiness
+- Stripe webhook endpoint exists
+- health endpoint exists
+- attribution endpoints working
+- admin endpoints working
+- automation supervision endpoints working
+
+5. Launch-critical logic checks
+- routing eligibility lock
+- paid partner lock
+- onboarding_status lock
+- execution-time failsafe
+- duplicate billing protection
+- disputed / hold billing block
+- automation safety gates
+- confidence escalation gates
+
+-------------------------------------
+PHASE 1 — STRIPE LIVE MODE + WEBHOOK READINESS
+-------------------------------------
+
+Check and report ONLY readiness:
+
+- live products exist
+- live prices exist
+- correct live price IDs wired into production
+- live secret key configured
+- live public key configured
+- live webhook secret configured
+- webhook endpoint points to production
+- required Stripe events enabled
+
+Required events:
+- checkout.session.completed
+- invoice.payment_succeeded or invoice.paid
+- invoice.payment_failed
+- customer.subscription.updated
+- customer.subscription.deleted
+
+If live manual testing cannot be completed without Colin action, state EXACTLY what Colin must do.
+
+-------------------------------------
+PHASE 2 — SUPABASE + DATA INTEGRITY READINESS
+-------------------------------------
+
+Check and report:
+
+- production DB connection healthy
+- required launch columns populated
+- no missing defaults
+- partner_organizations data consistent
+- ambassador data present
+- attribution / short link data present
+- no critical test contamination
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return a structured report with 3 sections:
+
+SECTION A — READY
+SECTION B — REPLIT CAN FIX
+SECTION C — MANUAL COLIN STEPS / BLOCKERS
+
+For every item include:
+- exact issue
+- why it matters
+- whether it blocks later phases
+- exact next step
+
+Do NOT proceed to later launch phases until this readiness audit is complete.
