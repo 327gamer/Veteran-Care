@@ -1,0 +1,105 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Launch Execution Protocol Lock (Manual + Phase-Control)
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+We are executing a structured launch validation.
+
+We will NOT:
+- skip ahead
+- assume test mode is acceptable
+- batch fixes together
+- leave manual steps for later
+
+We WILL:
+- fix issues immediately during each phase
+- complete live configuration now
+- rerun each phase after fixes
+
+-------------------------------------
+CRITICAL RULES
+-------------------------------------
+
+1. If a step requires Colin to do anything manually:
+   (Stripe / Replit / Supabase / Resend / DNS / Env)
+
+   → You MUST provide step-by-step instructions.
+
+2. Instructions must include:
+
+- exact platform (Stripe, Replit, Supabase, etc.)
+- exact page/menu to open
+- exact fields to update
+- exact values to enter
+- what to copy from where
+- how to verify success
+- what to do next after completion
+
+NO vague instructions allowed.
+
+-------------------------------------
+EXECUTION FLOW
+-------------------------------------
+
+For EACH phase:
+
+1. Run phase
+2. Return:
+   - PASS / FAIL
+   - blockers
+   - exact issue
+3. IF FIXABLE:
+   - fix immediately
+4. IF MANUAL:
+   - provide step-by-step instructions
+   - WAIT for Colin to complete
+5. RERUN phase
+6. Confirm PASS before moving on
+
+-------------------------------------
+CURRENT DIRECTION
+-------------------------------------
+
+We will:
+
+1. FINALIZE Phase 0 corrections
+2. IMMEDIATELY move to Phase 1 (Stripe Live)
+
+DO NOT skip Stripe live setup.
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+We are preparing for launch in days.
+
+Everything must be:
+- live-ready
+- tested
+- verified
+
+-------------------------------------
+NEXT ACTION
+-------------------------------------
+
+Start with:
+
+→ Phase 1 — Stripe Live Mode + Webhook Readiness
+
+If ANY manual setup is required:
+
+STOP
+Provide step-by-step instructions
+WAIT for completion
+THEN rerun validation
+
+-------------------------------------
+END
+-------------------------------------
