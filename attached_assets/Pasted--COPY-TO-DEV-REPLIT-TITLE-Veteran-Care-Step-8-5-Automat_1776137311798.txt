@@ -1,0 +1,193 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.5 – Automation Confidence & Escalation Layer
+
+PRIORITY:
+HIGH (Final Control Layer Before Scale Confidence)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Introduce a confidence-based automation evaluation layer that:
+
+- distinguishes high-confidence vs low-confidence automation actions
+- escalates uncertain cases back to admin
+- prevents risky automation decisions
+- strengthens trust before full automation rollout
+
+-------------------------------------
+WHAT TO BUILD
+-------------------------------------
+
+1. CONFIDENCE SCORING ENGINE (LIGHTWEIGHT)
+
+Each automation action should receive a confidence level:
+
+- high_confidence
+- medium_confidence
+- low_confidence
+
+Derived from:
+
+- eligibility clarity (clean vs borderline)
+- billing readiness (clean vs edge case)
+- safety flags present
+- past failure patterns
+- mismatch presence
+
+Implementation Notes:
+- deterministic logic only (no AI / ML)
+- simple rule-based scoring is sufficient
+- must run BEFORE automation execution
+
+-------------------------------------
+2. ESCALATION RULES
+
+Define escalation behavior:
+
+HIGH CONFIDENCE:
+→ allow automation (normal flow)
+
+MEDIUM CONFIDENCE:
+→ allow BUT log as “watch”
+
+LOW CONFIDENCE:
+→ DO NOT AUTO EXECUTE
+→ send to admin review queue
+
+STRICT RULE:
+Low-confidence actions must NEVER auto-run.
+
+-------------------------------------
+3. ADMIN ESCALATION QUEUE
+
+Add new admin section:
+
+→ “Automation Review Queue”
+
+Display:
+
+- action type (billing / follow-up)
+- partner
+- lead (if applicable)
+- confidence level (badge)
+- escalation reason
+- suggested action
+- timestamp
+
+Sort:
+- newest first
+- priority: low confidence first
+
+-------------------------------------
+4. ESCALATION REASONS (STANDARDIZED)
+
+Use consistent taxonomy:
+
+- eligibility_borderline
+- recent_failure_pattern
+- stripe_status_inconsistency
+- mismatch_detected
+- safety_threshold_proximity
+- unknown_risk
+
+Each escalated item must include:
+- 1 primary reason
+- optional supporting context
+
+-------------------------------------
+5. ADMIN ACTION OPTIONS
+
+For each escalated item:
+
+- approve_and_run
+- reject
+- mark_safe_for_future
+- investigate
+
+Rules:
+
+- confirmation required for all actions
+- approval executes original action safely
+- “mark_safe_for_future” reduces future escalations for similar cases
+
+-------------------------------------
+6. CONFIDENCE VISIBILITY
+
+Enhance Automation panel:
+
+Show:
+
+- confidence badge per action
+- summary counts:
+  - high_confidence
+  - medium_confidence
+  - low_confidence
+
+Add visual cues:
+- green = high
+- amber = medium
+- red = low
+
+-------------------------------------
+7. AUDIT LOGGING EXTENSION
+
+Extend automation audit logs:
+
+Add fields:
+
+- confidence_level
+- escalation_reason
+- escalation_action_taken
+- reviewed_by
+- reviewed_at
+
+All escalated actions must be traceable.
+
+-------------------------------------
+8. SAFETY INTEGRATION
+
+Confidence layer must respect:
+
+- Step 8.0 eligibility lock
+- Step 8.2 safety limits
+- Step 8.3 automation modes
+- Step 8.4 supervision system
+
+NO overrides allowed.
+
+-------------------------------------
+9. NO SYSTEM REGRESSION
+
+Do NOT modify:
+
+- routing logic
+- billing logic
+- Stripe logic
+- automation execution rules (only gate them)
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Low-confidence actions do NOT auto-run — PASS  
+2. High-confidence actions run normally — PASS  
+3. Escalation queue populates correctly — PASS  
+4. Admin actions work correctly — PASS  
+5. No regression — PASS  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- confidence scoring active
+- escalation rules enforced
+- review queue implemented
+- admin controls working
+- audit logging extended
+- validation complete
+
+-------------------------------------
+END

@@ -12892,5 +12892,30 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/escalation-queue", requireAdmin, async (_req, res) => {
+    try {
+      const { getEscalationQueue, getConfidenceSummary } = await import("./automation-confidence");
+      const [queue, summary] = await Promise.all([getEscalationQueue(), getConfidenceSummary()]);
+      return res.json({ queue, confidence_summary: summary });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/escalation-queue/resolve", requireAdmin, async (req, res) => {
+    try {
+      const { id, action } = req.body;
+      if (!id || !action) return res.status(400).json({ error: "id and action required" });
+      if (!["approve_and_run", "reject", "mark_safe_for_future", "investigate"].includes(action)) {
+        return res.status(400).json({ error: "Invalid action" });
+      }
+      const { resolveEscalation } = await import("./automation-confidence");
+      const result = await resolveEscalation(id, action, "admin");
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
 }

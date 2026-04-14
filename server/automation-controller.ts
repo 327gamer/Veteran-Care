@@ -3,6 +3,7 @@ import { query as pgQuery } from "./pg-client";
 import { logMonetizationAudit } from "./monetization-audit";
 import { getSystemMode, getSafetyLimits, evaluateAutomationReadiness, checkBillingRateLimit } from "./system-safety";
 import { verifyPartnerBillingEligibility, runChargeChecklist, getBillingConfig } from "./billing-governance";
+import { assessBillingConfidence, assessFollowUpConfidence, escalateToReviewQueue, ensureConfidenceColumns } from "./automation-confidence";
 
 export type AutomationMode = "manual_only" | "assisted" | "semi_auto";
 
@@ -165,6 +166,24 @@ export async function runAutoBatchBilling(): Promise<{
 
     for (const lead of leads || []) {
       const checklist = runChargeChecklist(lead, config);
+      const eligibility = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+
+      const confidence = await assessBillingConfidence(
+        lead, lead.routed_to_partner_id, checklist.pass, eligibility.eligible, eligibility.reason
+      );
+
+      if (!confidence.allow_auto) {
+        const action: AutomationAction = {
+          action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
+          result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
+          timestamp: new Date().toISOString(),
+        };
+        recordAction(action);
+        results.push(action);
+        await escalateToReviewQueue("billing", lead.routed_to_partner_id, lead.id, confidence, "Review billing eligibility and approve manually");
+        continue;
+      }
+
       if (!checklist.pass) {
         const action: AutomationAction = {
           action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
@@ -179,12 +198,11 @@ export async function runAutoBatchBilling(): Promise<{
           reason: `Auto billing skipped: checklist failed`,
           mismatch_type: "automation_billing", severity: "warning",
           exception_type: "skipped", failure_reason: "validation_failure",
-          metadata: { action_type: "auto_charge", failures: checklist.failures },
+          metadata: { action_type: "auto_charge", failures: checklist.failures, confidence_level: confidence.confidence, confidence_score: confidence.score },
         });
         continue;
       }
 
-      const eligibility = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
       if (!eligibility.eligible) {
         const action: AutomationAction = {
           action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
@@ -199,14 +217,14 @@ export async function runAutoBatchBilling(): Promise<{
           reason: `Auto billing skipped: partner ineligible — ${eligibility.reason}`,
           mismatch_type: "automation_billing", severity: "warning",
           exception_type: "skipped", failure_reason: "eligibility_failure",
-          metadata: { action_type: "auto_charge", eligibility_reason: eligibility.reason },
+          metadata: { action_type: "auto_charge", eligibility_reason: eligibility.reason, confidence_level: confidence.confidence, confidence_score: confidence.score },
         });
         continue;
       }
 
       const action: AutomationAction = {
         action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
-        result: "success", reason: "Lead queued for billing",
+        result: "success", reason: `Lead queued for billing (confidence: ${confidence.confidence})`,
         timestamp: new Date().toISOString(),
       };
 
@@ -226,7 +244,7 @@ export async function runAutoBatchBilling(): Promise<{
         reason: `Auto billing: ${action.result} — ${action.reason}`,
         mismatch_type: "automation_billing", severity: action.result === "failed" ? "critical" : "warning",
         exception_type: action.result, failure_reason: failureReason,
-        metadata: { automation_mode: "semi_auto", action_type: "auto_charge", result: action.result },
+        metadata: { automation_mode: "semi_auto", action_type: "auto_charge", result: action.result, confidence_level: confidence.confidence, confidence_score: confidence.score },
       });
     }
 
@@ -329,10 +347,24 @@ export async function runAutoFollowUps(): Promise<{
         continue;
       }
 
+      const confidence = await assessFollowUpConfidence(p);
+
+      if (!confidence.allow_auto) {
+        const action: AutomationAction = {
+          action_type: "auto_follow_up", partner_id: p.id,
+          result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
+          timestamp: new Date().toISOString(),
+        };
+        recordAction(action);
+        results.push(action);
+        await escalateToReviewQueue("follow_up", p.id, null, confidence, `Review follow-up (${template}) for ${p.name}`);
+        continue;
+      }
+
       const action: AutomationAction = {
         action_type: "auto_follow_up", partner_id: p.id,
         result: "success",
-        reason: `Follow-up scheduled: ${template} for ${p.name}`,
+        reason: `Follow-up scheduled: ${template} for ${p.name} (confidence: ${confidence.confidence})`,
         timestamp: new Date().toISOString(),
       };
 
@@ -357,7 +389,7 @@ export async function runAutoFollowUps(): Promise<{
         mismatch_type: "automation_follow_up", severity: action.result === "failed" ? "critical" : "warning",
         exception_type: action.result,
         failure_reason: action.result === "failed" ? "unknown_error" : undefined,
-        metadata: { automation_mode: "semi_auto", template, partner_name: p.name, result: action.result },
+        metadata: { automation_mode: "semi_auto", template, partner_name: p.name, result: action.result, confidence_level: confidence.confidence, confidence_score: confidence.score },
       });
     }
 

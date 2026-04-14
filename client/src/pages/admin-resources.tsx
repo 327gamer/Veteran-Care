@@ -2452,6 +2452,7 @@ function AdminResourcesInner() {
             <SystemSafetyPanel adminKey={adminKey} />
             <AutomationControlPanel adminKey={adminKey} />
             <AutomationSupervisionPanel adminKey={adminKey} />
+            <AutomationReviewQueuePanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -6719,6 +6720,173 @@ function AutomationSupervisionPanel({ adminKey }: { adminKey: string }) {
               }}
                 className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700"
                 data-testid="button-confirm-action">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function AutomationReviewQueuePanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; action: string } | null>(null);
+  const { toast: showToast } = useToast();
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/escalation-queue", { headers: { "x-admin-key": adminKey } });
+      if (res.ok) setData(await res.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleResolve = async (id: string, action: string) => {
+    setConfirmAction(null);
+    setActionLoading(id);
+    try {
+      const res = await fetch("/api/admin/escalation-queue/resolve", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      if (res.ok) { showToast({ title: "Updated", description: `Action: ${action.replace(/_/g, " ")}` }); loadData(); }
+      else { const r = await res.json(); showToast({ title: "Failed", description: r.error, variant: "destructive" }); }
+    } catch { showToast({ title: "Error", description: "Network error", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading review queue...</p></Card>;
+  if (!data) return null;
+
+  const { queue, confidence_summary: cs } = data;
+  const confidenceColors: Record<string, string> = {
+    high_confidence: "bg-green-100 text-green-800",
+    medium_confidence: "bg-amber-100 text-amber-800",
+    low_confidence: "bg-red-100 text-red-800",
+  };
+  const confidenceLabels: Record<string, string> = {
+    high_confidence: "HIGH", medium_confidence: "MEDIUM", low_confidence: "LOW",
+  };
+  const reasonLabels: Record<string, string> = {
+    eligibility_borderline: "Eligibility Borderline",
+    recent_failure_pattern: "Recent Failures",
+    stripe_status_inconsistency: "Stripe Inconsistency",
+    mismatch_detected: "Mismatch Detected",
+    safety_threshold_proximity: "Safety Threshold",
+    unknown_risk: "Unknown Risk",
+  };
+  const actionLabels: Record<string, { label: string; color: string }> = {
+    approve_and_run: { label: "Approve & Run", color: "bg-green-100 text-green-700 hover:bg-green-200" },
+    reject: { label: "Reject", color: "bg-red-100 text-red-700 hover:bg-red-200" },
+    mark_safe_for_future: { label: "Mark Safe", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
+    investigate: { label: "Investigate", color: "bg-purple-100 text-purple-700 hover:bg-purple-200" },
+  };
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-review-queue">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-purple-500" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-review-queue-title">Automation Review Queue</h3>
+          {queue.length > 0 && (
+            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800 border border-red-300"
+              data-testid="badge-queue-count">{queue.length} pending</span>
+          )}
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-queue">Refresh</button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2" data-testid="confidence-summary">
+        <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
+          <p className="text-[8px] text-green-600 uppercase">High</p>
+          <p className="text-lg font-bold text-green-700" data-testid="text-confidence-high">{cs?.high || 0}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded p-2 text-center">
+          <p className="text-[8px] text-amber-600 uppercase">Medium</p>
+          <p className="text-lg font-bold text-amber-700" data-testid="text-confidence-medium">{cs?.medium || 0}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
+          <p className="text-[8px] text-red-600 uppercase">Low</p>
+          <p className="text-lg font-bold text-red-700" data-testid="text-confidence-low">{cs?.low || 0}</p>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded p-2 text-center">
+          <p className="text-[8px] text-purple-600 uppercase">Escalated</p>
+          <p className="text-lg font-bold text-purple-700" data-testid="text-confidence-escalated">{cs?.escalated || 0}</p>
+        </div>
+      </div>
+
+      {queue.length > 0 ? (
+        <div className="space-y-1" data-testid="escalation-queue-list">
+          <p className="text-[10px] font-bold text-slate-700">Pending Review ({queue.length})</p>
+          <div className="max-h-56 overflow-y-auto space-y-0.5">
+            {queue.map((item: any) => (
+              <div key={item.id} className="border rounded px-2 py-1.5 bg-white text-[9px] space-y-0.5" data-testid={`escalation-item-${item.id}`}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`px-1.5 py-0.5 rounded font-bold text-[8px] ${confidenceColors[item.confidence_level] || "bg-slate-100"}`}>
+                    {confidenceLabels[item.confidence_level] || item.confidence_level}
+                  </span>
+                  <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 text-[8px] font-medium">
+                    {(item.action_type || "").replace(/_/g, " ")}
+                  </span>
+                  <span className="px-1 py-0.5 rounded bg-purple-50 text-purple-700 text-[8px]">
+                    {reasonLabels[item.escalation_reason] || item.escalation_reason}
+                  </span>
+                  <span className="text-muted-foreground ml-auto whitespace-nowrap">{new Date(item.created_at).toLocaleString()}</span>
+                </div>
+                <div className="text-muted-foreground">{item.context}</div>
+                <div className="text-[8px] text-blue-600 italic">{item.suggested_action}</div>
+                <div className="flex items-center gap-1 text-[8px]">
+                  {item.partner_id && <span className="text-blue-600">Partner: {item.partner_id.substring(0, 8)}...</span>}
+                  {item.lead_id && <span className="text-purple-600">Lead: {item.lead_id.substring(0, 8)}...</span>}
+                  <div className="ml-auto flex gap-1">
+                    {Object.entries(actionLabels).map(([key, val]) => (
+                      <button key={key}
+                        disabled={actionLoading === item.id}
+                        onClick={() => setConfirmAction({ id: item.id, action: key })}
+                        className={`px-1.5 py-0.5 rounded disabled:opacity-50 ${val.color}`}
+                        data-testid={`button-${key}-${item.id}`}>{val.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-3 text-[10px] text-green-600 font-medium" data-testid="text-no-escalations">
+          No escalations pending — all actions within confidence thresholds.
+        </div>
+      )}
+
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-escalation-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              {confirmAction.action === "approve_and_run" ? "Approve & Execute" :
+               confirmAction.action === "reject" ? "Reject Escalation" :
+               confirmAction.action === "mark_safe_for_future" ? "Mark Safe for Future" :
+               "Mark for Investigation"}
+            </h4>
+            <p className="text-xs text-slate-600 mb-3">
+              {confirmAction.action === "approve_and_run"
+                ? "This approves the escalated action and flags it for manual execution. The action will need to be run from Automation Control."
+                : confirmAction.action === "reject"
+                ? "This rejects the escalation. The action will not be executed."
+                : confirmAction.action === "mark_safe_for_future"
+                ? "This marks similar cases as safe, reducing future escalations for this pattern."
+                : "This flags the item for deeper investigation by an admin."}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmAction(null)}
+                className="px-3 py-1.5 rounded text-xs bg-slate-100 text-slate-700 hover:bg-slate-200"
+                data-testid="button-escalation-cancel">Cancel</button>
+              <button onClick={() => handleResolve(confirmAction.id, confirmAction.action)}
+                className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700"
+                data-testid="button-escalation-confirm">Confirm</button>
             </div>
           </div>
         </div>
