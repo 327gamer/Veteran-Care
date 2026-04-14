@@ -12775,5 +12775,76 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/automation-status", requireAdmin, async (_req, res) => {
+    try {
+      const { getAutomationStatus } = await import("./automation-controller");
+      const status = await getAutomationStatus();
+      return res.json({ available: true, ...status });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-mode", requireAdmin, async (req, res) => {
+    const { mode } = req.body;
+    if (!["manual_only", "assisted", "semi_auto"].includes(mode)) {
+      return res.status(400).json({ error: "Invalid mode. Must be: manual_only, assisted, semi_auto" });
+    }
+    try {
+      const { setAutomationMode } = await import("./automation-controller");
+      await setAutomationMode(mode, "admin");
+      return res.json({ success: true, mode });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-pause", requireAdmin, async (req, res) => {
+    const { action, reason } = req.body;
+    try {
+      const { pauseAutomation, resumeAutomation } = await import("./automation-controller");
+      if (action === "pause") {
+        pauseAutomation(reason || "Admin paused");
+        return res.json({ success: true, paused: true });
+      } else if (action === "resume") {
+        resumeAutomation();
+        return res.json({ success: true, paused: false });
+      }
+      return res.status(400).json({ error: "action must be 'pause' or 'resume'" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-run/billing", requireAdmin, async (req, res) => {
+    try {
+      const { runAutoBatchBilling } = await import("./automation-controller");
+      const result = await runAutoBatchBilling();
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-run/follow-ups", requireAdmin, async (req, res) => {
+    try {
+      const { runAutoFollowUps } = await import("./automation-controller");
+      const result = await runAutoFollowUps();
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/automation-suggestions", requireAdmin, async (_req, res) => {
+    try {
+      const { suggestBillingActions, suggestFollowUpActions } = await import("./automation-controller");
+      const [billing, followUps] = await Promise.all([suggestBillingActions(), suggestFollowUpActions()]);
+      return res.json({ available: true, billing_suggestions: billing.suggestions, follow_up_suggestions: followUps.suggestions });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
 }

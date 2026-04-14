@@ -1,0 +1,215 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.3 – Controlled Automation Rollout Layer
+
+PRIORITY:
+HIGH (Automation with Safety Guardrails)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 8.3 – Controlled Automation Rollout  
+❌ NOT full automation  
+❌ NOT new routing model  
+❌ NOT new billing model  
+❌ NOT removal of admin control  
+
+This step introduces limited, observable, reversible automation under existing safety and monetization guardrails.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Introduce controlled, opt-in automation for key workflows while preserving:
+
+- admin control
+- safety guardrails (Step 8.2)
+- monetization protection (Step 8.0)
+
+Automation must be:
+- limited
+- observable
+- reversible
+
+-------------------------------------
+SECTION 1 — AUTOMATION MODES
+-------------------------------------
+
+Add automation_mode config:
+
+- manual_only (default)
+- assisted
+- semi_auto
+
+Definitions:
+
+manual_only:
+- no automation runs
+
+assisted:
+- system suggests actions
+- admin must approve execution
+
+semi_auto:
+- system executes limited actions only when safety conditions pass
+- admin override always available
+
+-------------------------------------
+SECTION 2 — AUTOMATED BILLING (CONTROLLED)
+-------------------------------------
+
+Enable optional controlled auto-batch billing.
+
+Required conditions:
+- automation_mode = semi_auto
+- safety_checks_passed = true
+- system_mode != safe_mode
+
+Rules:
+- max_batch_size respected
+- execution-time eligibility re-check enforced
+- failed leads excluded automatically
+- disputed / hold leads excluded automatically
+- unpaid / ineligible partner leads excluded automatically
+
+Behavior:
+- run only small batches (example: 3–5)
+- log all actions
+- surface result summary to admin
+
+-------------------------------------
+SECTION 3 — AUTOMATED FOLLOW-UP
+-------------------------------------
+
+Enable optional controlled follow-up automation.
+
+Triggers:
+- invited >24h → reminder
+- invited >48h → urgency
+- subscribed >24h → payment_recovery
+
+Rules:
+- max 2 follow-ups per partner
+- stop immediately once recovered
+- log every action
+- respect current funnel / follow-up state
+
+-------------------------------------
+SECTION 4 — AUTOMATION SAFETY GATES
+-------------------------------------
+
+Automation must automatically pause or revert if:
+
+- system_mode = safe_mode
+- high failure rate detected
+- Stripe errors spike
+- mismatch count above threshold
+- safety_checks_passed = false
+
+Behavior:
+- revert to assisted mode or pause execution
+- surface alert to admin immediately
+- do not continue running silently
+
+-------------------------------------
+SECTION 5 — ADMIN CONTROL PANEL
+-------------------------------------
+
+Extend System Safety Panel with:
+
+→ “Automation Control”
+
+Display:
+- current automation_mode
+- automation status (active / paused / restricted)
+- last automation actions
+- automation warnings
+- pause reason if applicable
+
+Controls:
+- switch modes
+- pause automation
+- resume automation
+- revert to manual_only instantly
+
+-------------------------------------
+SECTION 6 — AUTOMATION LOGGING
+-------------------------------------
+
+Extend audit logging to include:
+
+- automation_action_type
+- affected_lead_id
+- affected_partner_id
+- result (success / failed / skipped / blocked)
+- timestamp
+- reason if blocked or skipped
+
+-------------------------------------
+SECTION 7 — VISIBILITY
+-------------------------------------
+
+Admin must clearly see:
+
+- what automation is doing
+- what was executed automatically
+- what was skipped
+- what was blocked
+- why something did not run
+
+This must be readable and immediate.
+
+-------------------------------------
+SECTION 8 — HARD SAFETY RULE
+-------------------------------------
+
+Automation must NEVER:
+
+- override monetization eligibility lock
+- bypass billing validation
+- charge disputed / held leads
+- route to unpaid partners
+- continue running when safety mode blocks it
+
+-------------------------------------
+SECTION 9 — ROLLOUT DISCIPLINE
+-------------------------------------
+
+Start small.
+
+Suggested rollout:
+- assisted mode first
+- then semi_auto for one narrow workflow at a time
+- validate before expanding
+
+Do NOT enable everything at once.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Automation runs only in allowed modes — PASS
+2. Safety gates stop automation when needed — PASS
+3. Automated billing respects limits and eligibility — PASS
+4. Automated follow-ups trigger correctly — PASS
+5. Admin can override instantly — PASS
+6. No regression to routing, billing, Stripe, fairness, or safety systems — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- automation modes active
+- controlled billing automation working
+- controlled follow-up automation working
+- safety integration complete
+- audit logging active
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------

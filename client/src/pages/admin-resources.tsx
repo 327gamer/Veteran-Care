@@ -77,6 +77,7 @@ import {
   Menu,
   CreditCard,
   Shield,
+  Zap,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -2448,6 +2449,7 @@ function AdminResourcesInner() {
             <ActivationFunnelPanel adminKey={adminKey} />
             <MonetizationHardeningPanel adminKey={adminKey} />
             <SystemSafetyPanel adminKey={adminKey} />
+            <AutomationControlPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -5147,6 +5149,239 @@ function SystemSafetyPanel({ adminKey }: { adminKey: string }) {
                 data-testid="button-cancel-mode">Cancel</button>
               <button onClick={() => handleModeChange(confirmMode)} className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
                 data-testid="button-confirm-mode">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function AutomationControlPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [suggestions, setSuggestions] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState<string | null>(null);
+  const [confirmMode, setConfirmMode] = useState<string | null>(null);
+  const [confirmRun, setConfirmRun] = useState<string | null>(null);
+  const { toast: showToast } = useToast();
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [statusRes, suggestRes] = await Promise.all([
+        fetch("/api/admin/automation-status", { headers: { "x-admin-key": adminKey } }),
+        fetch("/api/admin/automation-suggestions", { headers: { "x-admin-key": adminKey } }),
+      ]);
+      if (statusRes.ok) setData(await statusRes.json());
+      if (suggestRes.ok) setSuggestions(await suggestRes.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleModeChange = async (mode: string) => {
+    setConfirmMode(null);
+    try {
+      const res = await fetch("/api/admin/automation-mode", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      if (res.ok) { showToast({ title: "Mode changed", description: `Automation set to ${mode.replace(/_/g, " ")}` }); loadData(); }
+      else { const r = await res.json(); showToast({ title: "Failed", description: r.error, variant: "destructive" }); }
+    } catch { showToast({ title: "Failed", description: "Network error", variant: "destructive" }); }
+  };
+
+  const handlePauseResume = async (action: string) => {
+    try {
+      const res = await fetch("/api/admin/automation-pause", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reason: "Admin manual control" }),
+      });
+      if (res.ok) { showToast({ title: action === "pause" ? "Paused" : "Resumed", description: `Automation ${action}d` }); loadData(); }
+    } catch {}
+  };
+
+  const handleRunAutomation = async (type: string) => {
+    setConfirmRun(null);
+    setRunning(type);
+    try {
+      const res = await fetch(`/api/admin/automation-run/${type}`, {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+      });
+      const result = await res.json();
+      if (res.ok) {
+        const successCount = (result.results || []).filter((r: any) => r.result === "success").length;
+        const skippedCount = (result.results || []).filter((r: any) => r.result === "skipped").length;
+        showToast({ title: result.executed ? "Automation ran" : "Blocked", description: result.blocked_reason || `${successCount} success, ${skippedCount} skipped` });
+        loadData();
+      } else {
+        showToast({ title: "Failed", description: result.error, variant: "destructive" });
+      }
+    } catch { showToast({ title: "Failed", description: "Network error", variant: "destructive" }); }
+    finally { setRunning(null); }
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading automation control...</p></Card>;
+  if (!data?.available) return null;
+
+  const modeColors: Record<string, string> = {
+    manual_only: "bg-slate-500 text-white", assisted: "bg-blue-500 text-white", semi_auto: "bg-green-600 text-white",
+  };
+  const modeLabels: Record<string, string> = {
+    manual_only: "MANUAL ONLY", assisted: "ASSISTED", semi_auto: "SEMI-AUTO",
+  };
+  const statusColors: Record<string, string> = {
+    active: "bg-green-100 text-green-800", paused: "bg-amber-100 text-amber-800",
+    restricted: "bg-red-100 text-red-800", disabled: "bg-slate-100 text-slate-600",
+  };
+
+  const billingS = suggestions?.billing_suggestions || [];
+  const followUpS = suggestions?.follow_up_suggestions || [];
+  const recentActions: any[] = data.recent_actions || [];
+  const warnings: string[] = data.warnings || [];
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-automation-control">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-amber-500" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-automation-title">Automation Control</h3>
+          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${modeColors[data.automation_mode] || "bg-slate-200"}`}
+            data-testid="badge-automation-mode">{modeLabels[data.automation_mode] || data.automation_mode}</span>
+          <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${statusColors[data.status] || "bg-slate-100"}`}
+            data-testid="badge-automation-status">{data.status?.toUpperCase()}</span>
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-automation">Refresh</button>
+      </div>
+
+      {warnings.length > 0 && (
+        <div className="space-y-1" data-testid="automation-warnings">
+          {warnings.map((w: string, i: number) => (
+            <div key={i} className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5 text-[9px] text-amber-800 flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 shrink-0" /> {w}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-bold text-slate-700">Mode Control</p>
+        <div className="flex gap-1.5 flex-wrap">
+          {(["manual_only", "assisted", "semi_auto"] as const).map(m => (
+            <button key={m} disabled={data.automation_mode === m}
+              onClick={() => setConfirmMode(m)}
+              className={`px-2.5 py-1 rounded text-[9px] font-medium border ${
+                data.automation_mode === m ? modeColors[m] + " cursor-default" :
+                "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              } disabled:opacity-60`}
+              data-testid={`button-auto-mode-${m}`}>{modeLabels[m]}</button>
+          ))}
+          <div className="ml-auto flex gap-1">
+            {!data.is_paused ? (
+              <button onClick={() => handlePauseResume("pause")}
+                className="px-2 py-1 rounded text-[9px] font-medium bg-red-100 text-red-700 border border-red-200 hover:bg-red-200"
+                data-testid="button-pause-automation">Pause</button>
+            ) : (
+              <button onClick={() => handlePauseResume("resume")}
+                className="px-2 py-1 rounded text-[9px] font-medium bg-green-100 text-green-700 border border-green-200 hover:bg-green-200"
+                data-testid="button-resume-automation">Resume</button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {data.automation_mode !== "manual_only" && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-slate-700">Run Automation</p>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmRun("billing")} disabled={!!running}
+              className="px-3 py-1.5 rounded text-[9px] font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              data-testid="button-run-billing">{running === "billing" ? "Running..." : "Run Auto Billing"}</button>
+            <button onClick={() => setConfirmRun("follow-ups")} disabled={!!running}
+              className="px-3 py-1.5 rounded text-[9px] font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+              data-testid="button-run-followups">{running === "follow-ups" ? "Running..." : "Run Auto Follow-Ups"}</button>
+          </div>
+        </div>
+      )}
+
+      {data.automation_mode === "assisted" && (billingS.length > 0 || followUpS.length > 0) && (
+        <div className="space-y-1.5" data-testid="automation-suggestions">
+          <p className="text-[10px] font-bold text-slate-700">Suggestions (Assisted Mode)</p>
+          {billingS.length > 0 && (
+            <div className="space-y-0.5">
+              <p className="text-[9px] text-blue-700 font-medium">Billing ({billingS.length})</p>
+              {billingS.slice(0, 5).map((s: any) => (
+                <div key={s.lead_id} className="bg-blue-50 border border-blue-100 rounded px-2 py-1 text-[9px]">
+                  <span className="font-medium">{s.partner_name}</span> — {s.category} — {s.reason}
+                </div>
+              ))}
+            </div>
+          )}
+          {followUpS.length > 0 && (
+            <div className="space-y-0.5">
+              <p className="text-[9px] text-purple-700 font-medium">Follow-Ups ({followUpS.length})</p>
+              {followUpS.slice(0, 5).map((s: any) => (
+                <div key={s.partner_id} className="bg-purple-50 border border-purple-100 rounded px-2 py-1 text-[9px]">
+                  <span className="font-medium">{s.partner_name}</span> — {s.template} — {s.reason}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {recentActions.length > 0 && (
+        <div className="space-y-1" data-testid="automation-recent-actions">
+          <p className="text-[10px] font-bold text-slate-700">Recent Actions ({recentActions.length})</p>
+          <div className="max-h-32 overflow-y-auto space-y-0.5">
+            {recentActions.map((a: any, i: number) => (
+              <div key={i} className="flex items-start gap-1.5 bg-slate-50 border rounded px-2 py-1 text-[9px]">
+                <span className={`px-1 py-0.5 rounded font-medium shrink-0 ${
+                  a.result === "success" ? "bg-green-100 text-green-700" :
+                  a.result === "blocked" ? "bg-red-100 text-red-700" :
+                  a.result === "skipped" ? "bg-amber-100 text-amber-700" :
+                  "bg-slate-100 text-slate-600"
+                }`}>{a.result}</span>
+                <span className="text-slate-500 shrink-0">{a.action_type.replace(/_/g, " ")}</span>
+                <span className="text-muted-foreground truncate flex-1">{a.reason}</span>
+                <span className="text-muted-foreground whitespace-nowrap shrink-0">{new Date(a.timestamp).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {confirmMode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-auto-mode-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Change Automation Mode</h4>
+            <p className="text-xs text-slate-600 mb-1">Switch to:</p>
+            <p className="text-sm font-bold mb-3">{modeLabels[confirmMode] || confirmMode}</p>
+            {confirmMode === "semi_auto" && (
+              <p className="text-[10px] text-amber-700 mb-2">Semi-auto will execute limited actions when safety conditions pass. Admin override always available.</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmMode(null)} className="px-3 py-1.5 rounded text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                data-testid="button-cancel-auto-mode">Cancel</button>
+              <button onClick={() => handleModeChange(confirmMode)} className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
+                data-testid="button-confirm-auto-mode">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRun && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-run-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Run Automation</h4>
+            <p className="text-xs text-slate-600 mb-3">Execute <span className="font-semibold">{confirmRun === "billing" ? "auto batch billing" : "auto follow-ups"}</span>?</p>
+            <p className="text-[10px] text-slate-500 mb-3">Safety gates will be checked before execution. Actions are logged and reversible.</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmRun(null)} className="px-3 py-1.5 rounded text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                data-testid="button-cancel-run">Cancel</button>
+              <button onClick={() => handleRunAutomation(confirmRun)} className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
+                data-testid="button-confirm-run">Run</button>
             </div>
           </div>
         </div>
