@@ -12846,5 +12846,51 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/automation-supervision", requireAdmin, async (_req, res) => {
+    try {
+      const { getAutomationSupervisionData } = await import("./monetization-audit");
+      const data = await getAutomationSupervisionData();
+      return res.json(data);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-supervision/review", requireAdmin, async (req, res) => {
+    try {
+      const { id, resolution } = req.body;
+      if (!id || !resolution) return res.status(400).json({ error: "id and resolution required" });
+      const { updateAuditResolution, logMonetizationAudit } = await import("./monetization-audit");
+      await updateAuditResolution(id, resolution, "admin");
+      await logMonetizationAudit({
+        event_type: "admin_action_taken" as any,
+        partner_id: null, lead_id: null,
+        reason: `Exception ${id} marked as ${resolution}`,
+        metadata: { action: "exception_review", audit_id: id, resolution },
+      });
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/automation-supervision/retry", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ error: "id required" });
+      const { markRetryAttempted, logMonetizationAudit } = await import("./monetization-audit");
+      await markRetryAttempted(id);
+      await logMonetizationAudit({
+        event_type: "admin_action_taken" as any,
+        partner_id: null, lead_id: null,
+        reason: `Manual retry flagged for exception ${id}`,
+        metadata: { action: "retry_attempted", audit_id: id },
+      });
+      return res.json({ success: true, message: "Retry flagged — execute manually from automation controls" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
 }

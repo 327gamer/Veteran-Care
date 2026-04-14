@@ -1,0 +1,200 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.4 – Automation Supervision & Exception Review Layer
+
+PRIORITY:
+HIGH (Critical for Controlled Automation Stability)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 8.4 – Automation Supervision  
+❌ NOT automation logic changes  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+
+This is a monitoring + visibility + intervention layer ONLY.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Introduce a supervision layer to monitor automation behavior, surface exceptions, and allow fast intervention.
+
+Automation must remain:
+- visible
+- controlled
+- correctable
+
+-------------------------------------
+SECTION 1 — AUTOMATION EXCEPTION TYPES
+-------------------------------------
+
+Standardize automation outcome classification:
+
+- success
+- skipped
+- blocked
+- failed
+
+Additionally classify failure_reason:
+
+- eligibility_failure
+- billing_failure
+- stripe_error
+- rate_limit_block
+- safety_gate_block
+- validation_failure
+- unknown_error
+
+Use existing automation logs (Step 8.3) — do NOT create a separate system.
+
+-------------------------------------
+SECTION 2 — AUTOMATION SUPERVISION PANEL
+-------------------------------------
+
+Add new admin section:
+
+→ “Automation Supervision”
+
+Display summary:
+
+- total automation actions (today)
+- success count
+- skipped count
+- blocked count
+- failed count
+
+-------------------------------------
+SECTION 3 — FAILURE / BLOCK FEED (CRITICAL)
+-------------------------------------
+
+Show real-time feed of:
+
+- failed actions
+- blocked actions
+
+Each row must include:
+
+- action_type (billing / follow-up)
+- partner_id (and name if available)
+- lead_id (if applicable)
+- result (failed / blocked)
+- failure_reason
+- timestamp
+
+Sort:
+→ newest first
+
+-------------------------------------
+SECTION 4 — PRIORITY FLAGS
+-------------------------------------
+
+Highlight conditions:
+
+- repeated failures (same partner or lead)
+- failure spikes (short time window)
+- Stripe-related errors
+
+Display simple visual indicators (badge / color only — no overbuild)
+
+-------------------------------------
+SECTION 5 — QUICK ACTIONS (ADMIN)
+-------------------------------------
+
+Allow admin to:
+
+- retry action (manual only — do NOT auto retry)
+- mark as reviewed
+- pause automation (global control)
+- navigate to partner or lead
+
+All actions must:
+- require confirmation where appropriate
+- be audit logged
+
+-------------------------------------
+SECTION 6 — AUTOMATION HEALTH SCORE
+-------------------------------------
+
+Display system health score:
+
+- HEALTHY (≥90% success)
+- STABLE (80–89%)
+- CAUTION (<80%)
+
+Calculation:
+(success / total actionable executions)
+
+Exclude:
+- skipped actions
+
+-------------------------------------
+SECTION 7 — ALERT CONDITIONS
+-------------------------------------
+
+Trigger clear alerts:
+
+- HIGH FAILURE RATE
+- REPEATED BLOCKS
+- STRIPE FAILURE SPIKE
+
+Rules:
+- visible immediately
+- plain English
+- tied to real thresholds
+
+-------------------------------------
+SECTION 8 — AUDIT EXTENSION
+-------------------------------------
+
+Extend automation audit logs to include:
+
+- exception_type (success/skipped/blocked/failed)
+- failure_reason
+- retry_attempted (true/false)
+- resolution_status (open / reviewed / resolved)
+
+Reuse existing monetization_audit_log or automation log system.
+
+-------------------------------------
+SECTION 9 — HARD RULE
+-------------------------------------
+
+DO NOT:
+
+- change automation execution logic
+- change routing behavior
+- change billing behavior
+- introduce auto-retry loops
+- introduce hidden automation paths
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Failures correctly classified — PASS
+2. Exception feed accurate — PASS
+3. Health score reflects real data — PASS
+4. Admin actions work correctly — PASS
+5. No regression — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- Automation Supervision panel active
+- real-time exception feed visible
+- health scoring active
+- admin controls working
+- audit logging extended
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------

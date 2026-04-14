@@ -78,6 +78,7 @@ import {
   CreditCard,
   Shield,
   Zap,
+  Eye,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -2450,6 +2451,7 @@ function AdminResourcesInner() {
             <MonetizationHardeningPanel adminKey={adminKey} />
             <SystemSafetyPanel adminKey={adminKey} />
             <AutomationControlPanel adminKey={adminKey} />
+            <AutomationSupervisionPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -6478,6 +6480,250 @@ function PerformanceIntelPanel({ adminKey }: { adminKey: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+function AutomationSupervisionPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: string; id: string } | null>(null);
+  const { toast: showToast } = useToast();
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/automation-supervision", { headers: { "x-admin-key": adminKey } });
+      if (res.ok) setData(await res.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleReview = async (id: string, resolution: string) => {
+    setConfirmAction(null);
+    setActionLoading(id);
+    try {
+      const res = await fetch("/api/admin/automation-supervision/review", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ id, resolution }),
+      });
+      if (res.ok) { showToast({ title: "Updated", description: `Exception marked as ${resolution}` }); loadData(); }
+      else { const r = await res.json(); showToast({ title: "Failed", description: r.error, variant: "destructive" }); }
+    } catch { showToast({ title: "Error", description: "Network error", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleRetry = async (id: string) => {
+    setConfirmAction(null);
+    setActionLoading(id);
+    try {
+      const res = await fetch("/api/admin/automation-supervision/retry", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) { showToast({ title: "Retry flagged", description: "Execute manually from Automation Control" }); loadData(); }
+      else { const r = await res.json(); showToast({ title: "Failed", description: r.error, variant: "destructive" }); }
+    } catch { showToast({ title: "Error", description: "Network error", variant: "destructive" }); }
+    finally { setActionLoading(null); }
+  };
+
+  const handlePauseGlobal = async () => {
+    try {
+      const res = await fetch("/api/admin/automation-pause", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pause", reason: "Paused from supervision panel" }),
+      });
+      if (res.ok) showToast({ title: "Paused", description: "Automation globally paused" });
+    } catch {}
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading automation supervision...</p></Card>;
+  if (!data) return null;
+
+  const { summary, health_score, health_label, exceptions, alerts, priority_flags } = data;
+  const healthColors: Record<string, string> = {
+    HEALTHY: "bg-green-100 text-green-800 border-green-300",
+    STABLE: "bg-amber-100 text-amber-800 border-amber-300",
+    CAUTION: "bg-red-100 text-red-800 border-red-300",
+  };
+
+  const failureReasonLabels: Record<string, string> = {
+    eligibility_failure: "Eligibility",
+    billing_failure: "Billing",
+    stripe_error: "Stripe",
+    rate_limit_block: "Rate Limit",
+    safety_gate_block: "Safety Gate",
+    validation_failure: "Validation",
+    unknown_error: "Unknown",
+  };
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-automation-supervision">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Eye className="h-4 w-4 text-blue-500" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-supervision-title">Automation Supervision</h3>
+          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${healthColors[health_label] || "bg-slate-100"}`}
+            data-testid="badge-health-label">{health_label} ({health_score}%)</span>
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-supervision">Refresh</button>
+      </div>
+
+      {alerts.length > 0 && (
+        <div className="space-y-1" data-testid="supervision-alerts">
+          {alerts.map((a: any, i: number) => (
+            <div key={i} className={`rounded px-2 py-1.5 text-[9px] flex items-center gap-1 border ${
+              a.severity === "critical" ? "bg-red-50 border-red-300 text-red-800" : "bg-amber-50 border-amber-300 text-amber-800"
+            }`}>
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              <span className="font-bold">{a.alert_type}</span>
+              <span>{a.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-5 gap-2" data-testid="supervision-summary">
+        <div className="bg-slate-50 border rounded p-2 text-center">
+          <p className="text-[8px] text-muted-foreground uppercase">Total</p>
+          <p className="text-lg font-bold text-slate-700" data-testid="text-supervision-total">{summary.total}</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
+          <p className="text-[8px] text-green-600 uppercase">Success</p>
+          <p className="text-lg font-bold text-green-700" data-testid="text-supervision-success">{summary.success}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded p-2 text-center">
+          <p className="text-[8px] text-amber-600 uppercase">Skipped</p>
+          <p className="text-lg font-bold text-amber-700" data-testid="text-supervision-skipped">{summary.skipped}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
+          <p className="text-[8px] text-red-600 uppercase">Blocked</p>
+          <p className="text-lg font-bold text-red-700" data-testid="text-supervision-blocked">{summary.blocked}</p>
+        </div>
+        <div className="bg-red-50 border border-red-300 rounded p-2 text-center">
+          <p className="text-[8px] text-red-700 uppercase">Failed</p>
+          <p className="text-lg font-bold text-red-800" data-testid="text-supervision-failed">{summary.failed}</p>
+        </div>
+      </div>
+
+      {priority_flags.length > 0 && (
+        <div className="space-y-0.5" data-testid="supervision-priority-flags">
+          <p className="text-[10px] font-bold text-slate-700">Priority Flags</p>
+          {priority_flags.map((f: any, i: number) => (
+            <div key={i} className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded px-2 py-1 text-[9px] text-orange-800">
+              <span className="px-1 py-0.5 rounded bg-orange-200 text-orange-900 text-[8px] font-bold shrink-0">
+                {f.type === "repeated_partner_failure" ? "REPEAT" : f.type === "repeated_lead_failure" ? "LEAD" : "HEALTH"}
+              </span>
+              <span>{f.detail}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {exceptions.length > 0 && (
+        <div className="space-y-1" data-testid="supervision-exception-feed">
+          <p className="text-[10px] font-bold text-slate-700">Exception Feed ({exceptions.length})</p>
+          <div className="max-h-48 overflow-y-auto space-y-0.5">
+            {exceptions.map((e: any) => (
+              <div key={e.id} className="border rounded px-2 py-1.5 bg-white text-[9px] space-y-0.5" data-testid={`exception-row-${e.id}`}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`px-1 py-0.5 rounded font-bold text-[8px] ${
+                    e.exception_type === "failed" ? "bg-red-200 text-red-800" : "bg-amber-200 text-amber-800"
+                  }`}>{e.exception_type?.toUpperCase()}</span>
+                  <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 text-[8px] font-medium">
+                    {(e.mismatch_type || e.event_type || "").replace(/_/g, " ")}
+                  </span>
+                  {e.failure_reason && (
+                    <span className="px-1 py-0.5 rounded bg-purple-100 text-purple-700 text-[8px] font-medium">
+                      {failureReasonLabels[e.failure_reason] || e.failure_reason}
+                    </span>
+                  )}
+                  {e.retry_attempted && (
+                    <span className="px-1 py-0.5 rounded bg-blue-100 text-blue-700 text-[8px]">Retry flagged</span>
+                  )}
+                  {e.resolution_status && e.resolution_status !== "open" && (
+                    <span className="px-1 py-0.5 rounded bg-green-100 text-green-700 text-[8px] font-medium">{e.resolution_status}</span>
+                  )}
+                  <span className="text-muted-foreground ml-auto whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
+                </div>
+                <div className="text-muted-foreground truncate">{e.reason}</div>
+                <div className="flex items-center gap-1 text-[8px]">
+                  {e.partner_id && <span className="text-blue-600">Partner: {e.partner_id.substring(0, 8)}...</span>}
+                  {e.lead_id && <span className="text-purple-600">Lead: {e.lead_id.substring(0, 8)}...</span>}
+                  <div className="ml-auto flex gap-1">
+                    {(!e.resolution_status || e.resolution_status === "open") && (
+                      <>
+                        <button
+                          disabled={actionLoading === e.id}
+                          onClick={() => setConfirmAction({ type: "retry", id: e.id })}
+                          className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50"
+                          data-testid={`button-retry-${e.id}`}>Retry</button>
+                        <button
+                          disabled={actionLoading === e.id}
+                          onClick={() => setConfirmAction({ type: "reviewed", id: e.id })}
+                          className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                          data-testid={`button-review-${e.id}`}>Mark Reviewed</button>
+                        <button
+                          disabled={actionLoading === e.id}
+                          onClick={() => setConfirmAction({ type: "resolved", id: e.id })}
+                          className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-50"
+                          data-testid={`button-resolve-${e.id}`}>Resolve</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {exceptions.length === 0 && summary.total === 0 && (
+        <div className="text-center py-3 text-[10px] text-muted-foreground" data-testid="text-no-automation-data">
+          No automation actions recorded in the last 24 hours.
+        </div>
+      )}
+
+      {exceptions.length === 0 && summary.total > 0 && (
+        <div className="text-center py-2 text-[10px] text-green-600 font-medium" data-testid="text-no-exceptions">
+          No exceptions — all automation actions successful.
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button onClick={handlePauseGlobal} className="px-2 py-1 rounded text-[9px] font-medium bg-red-100 text-red-700 border border-red-200 hover:bg-red-200"
+          data-testid="button-supervision-pause">Emergency Pause</button>
+      </div>
+
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-supervision-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              {confirmAction.type === "retry" ? "Confirm Retry" : confirmAction.type === "reviewed" ? "Mark as Reviewed" : "Mark as Resolved"}
+            </h4>
+            <p className="text-xs text-slate-600 mb-3">
+              {confirmAction.type === "retry"
+                ? "This will flag the exception for manual retry. You'll need to execute the retry from the Automation Control panel."
+                : confirmAction.type === "reviewed"
+                ? "This marks the exception as reviewed by an admin. No action will be taken automatically."
+                : "This marks the exception as resolved. It will no longer appear as an open issue."}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmAction(null)}
+                className="px-3 py-1.5 rounded text-xs bg-slate-100 text-slate-700 hover:bg-slate-200"
+                data-testid="button-confirm-cancel">Cancel</button>
+              <button onClick={() => {
+                if (confirmAction.type === "retry") handleRetry(confirmAction.id);
+                else handleReview(confirmAction.id, confirmAction.type);
+              }}
+                className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700"
+                data-testid="button-confirm-action">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 

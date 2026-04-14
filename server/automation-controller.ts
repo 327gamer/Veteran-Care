@@ -124,6 +124,7 @@ export async function runAutoBatchBilling(): Promise<{
       event_type: "admin_action_taken" as any, partner_id: null, lead_id: null,
       reason: `Auto billing blocked: ${safety.reason}`,
       mismatch_type: "automation_blocked", severity: "warning",
+      exception_type: "blocked", failure_reason: "safety_gate_block",
       metadata: { action_type: "auto_batch_billing", block_reason: safety.reason },
     });
     return { executed: false, results: [action], blocked_reason: safety.reason };
@@ -137,6 +138,13 @@ export async function runAutoBatchBilling(): Promise<{
       reason: "Billing rate limit exceeded", timestamp: new Date().toISOString(),
     };
     recordAction(action);
+    await logMonetizationAudit({
+      event_type: "admin_action_taken" as any, partner_id: null, lead_id: null,
+      reason: "Auto billing blocked: rate limit exceeded",
+      mismatch_type: "automation_blocked", severity: "warning",
+      exception_type: "blocked", failure_reason: "rate_limit_block",
+      metadata: { action_type: "auto_batch_billing" },
+    });
     return { executed: false, results: [action], blocked_reason: "Rate limit exceeded" };
   }
 
@@ -165,6 +173,14 @@ export async function runAutoBatchBilling(): Promise<{
         };
         recordAction(action);
         results.push(action);
+        await logMonetizationAudit({
+          event_type: "admin_action_taken" as any,
+          partner_id: lead.routed_to_partner_id, lead_id: lead.id,
+          reason: `Auto billing skipped: checklist failed`,
+          mismatch_type: "automation_billing", severity: "warning",
+          exception_type: "skipped", failure_reason: "validation_failure",
+          metadata: { action_type: "auto_charge", failures: checklist.failures },
+        });
         continue;
       }
 
@@ -177,6 +193,14 @@ export async function runAutoBatchBilling(): Promise<{
         };
         recordAction(action);
         results.push(action);
+        await logMonetizationAudit({
+          event_type: "admin_action_taken" as any,
+          partner_id: lead.routed_to_partner_id, lead_id: lead.id,
+          reason: `Auto billing skipped: partner ineligible — ${eligibility.reason}`,
+          mismatch_type: "automation_billing", severity: "warning",
+          exception_type: "skipped", failure_reason: "eligibility_failure",
+          metadata: { action_type: "auto_charge", eligibility_reason: eligibility.reason },
+        });
         continue;
       }
 
@@ -195,11 +219,13 @@ export async function runAutoBatchBilling(): Promise<{
 
       recordAction(action);
       results.push(action);
+      const failureReason = action.result === "skipped" ? "validation_failure" : action.result === "failed" ? "billing_failure" : undefined;
       await logMonetizationAudit({
         event_type: "admin_action_taken" as any,
         partner_id: lead.routed_to_partner_id, lead_id: lead.id,
         reason: `Auto billing: ${action.result} — ${action.reason}`,
         mismatch_type: "automation_billing", severity: action.result === "failed" ? "critical" : "warning",
+        exception_type: action.result, failure_reason: failureReason,
         metadata: { automation_mode: "semi_auto", action_type: "auto_charge", result: action.result },
       });
     }
@@ -218,6 +244,14 @@ export async function runAutoBatchBilling(): Promise<{
     };
     recordAction(action);
     results.push(action);
+    await logMonetizationAudit({
+      event_type: "admin_action_taken" as any,
+      partner_id: null, lead_id: null,
+      reason: `Auto billing failed: ${err?.message}`,
+      mismatch_type: "automation_billing", severity: "critical",
+      exception_type: "failed", failure_reason: "unknown_error",
+      metadata: { action_type: "auto_batch_billing", error: err?.message },
+    });
   }
 
   return { executed: true, results };
@@ -241,6 +275,13 @@ export async function runAutoFollowUps(): Promise<{
       reason: safety.reason || "Safety gate blocked", timestamp: new Date().toISOString(),
     };
     recordAction(action);
+    await logMonetizationAudit({
+      event_type: "admin_action_taken" as any, partner_id: null, lead_id: null,
+      reason: `Auto follow-up blocked: ${safety.reason}`,
+      mismatch_type: "automation_blocked", severity: "warning",
+      exception_type: "blocked", failure_reason: "safety_gate_block",
+      metadata: { action_type: "auto_follow_up", block_reason: safety.reason },
+    });
     return { executed: false, results: [action], blocked_reason: safety.reason };
   }
 
@@ -314,6 +355,8 @@ export async function runAutoFollowUps(): Promise<{
         partner_id: p.id, lead_id: null,
         reason: `Auto follow-up: ${template} — ${action.result}`,
         mismatch_type: "automation_follow_up", severity: action.result === "failed" ? "critical" : "warning",
+        exception_type: action.result,
+        failure_reason: action.result === "failed" ? "unknown_error" : undefined,
         metadata: { automation_mode: "semi_auto", template, partner_name: p.name, result: action.result },
       });
     }
@@ -332,6 +375,14 @@ export async function runAutoFollowUps(): Promise<{
     };
     recordAction(action);
     results.push(action);
+    await logMonetizationAudit({
+      event_type: "admin_action_taken" as any,
+      partner_id: null, lead_id: null,
+      reason: `Auto follow-up failed: ${err?.message}`,
+      mismatch_type: "automation_follow_up", severity: "critical",
+      exception_type: "failed", failure_reason: "unknown_error",
+      metadata: { action_type: "auto_follow_up", error: err?.message },
+    });
   }
 
   return { executed: true, results };

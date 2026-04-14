@@ -29,6 +29,10 @@ export async function ensureMonetizationAuditTable(): Promise<void> {
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS resolution_action TEXT`).catch(() => {});
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS resolved_by TEXT`).catch(() => {});
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`).catch(() => {});
+    await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS exception_type TEXT`).catch(() => {});
+    await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS failure_reason TEXT`).catch(() => {});
+    await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS retry_attempted BOOLEAN DEFAULT FALSE`).catch(() => {});
+    await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS resolution_status TEXT DEFAULT 'open'`).catch(() => {});
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_mon_audit_type ON monetization_audit_log(event_type)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_mon_audit_created ON monetization_audit_log(created_at)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_mon_audit_partner ON monetization_audit_log(partner_id)`);
@@ -40,12 +44,12 @@ export async function ensureMonetizationAuditTable(): Promise<void> {
   }
 }
 
-export async function logMonetizationAudit(entry: AuditEntry & { mismatch_type?: string; severity?: string }): Promise<void> {
+export async function logMonetizationAudit(entry: AuditEntry & { mismatch_type?: string; severity?: string; exception_type?: string; failure_reason?: string }): Promise<void> {
   try {
     await ensureMonetizationAuditTable();
     await pgQuery(
-      `INSERT INTO monetization_audit_log (event_type, partner_id, lead_id, reason, metadata, mismatch_type, severity) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [entry.event_type, entry.partner_id, entry.lead_id, entry.reason, entry.metadata ? JSON.stringify(entry.metadata) : null, entry.mismatch_type || null, entry.severity || null]
+      `INSERT INTO monetization_audit_log (event_type, partner_id, lead_id, reason, metadata, mismatch_type, severity, exception_type, failure_reason, resolution_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [entry.event_type, entry.partner_id, entry.lead_id, entry.reason, entry.metadata ? JSON.stringify(entry.metadata) : null, entry.mismatch_type || null, entry.severity || null, entry.exception_type || null, entry.failure_reason || null, entry.exception_type ? "open" : null]
     );
   } catch (err: any) {
     console.error("[monetization-audit] Failed to log:", err.message);
@@ -105,6 +109,111 @@ export async function getAuditSummary(): Promise<{
     return rows[0] || { total_blocks: 0, routing_blocked: 0, billing_blocked: 0, eligibility_failures: 0, subscription_mismatches: 0, onboarding_mismatches: 0, last_24h: 0, resolved_today: 0, unresolved: 0 };
   } catch {
     return { total_blocks: 0, routing_blocked: 0, billing_blocked: 0, eligibility_failures: 0, subscription_mismatches: 0, onboarding_mismatches: 0, last_24h: 0, resolved_today: 0, unresolved: 0 };
+  }
+}
+
+export async function getAutomationSupervisionData(): Promise<{
+  summary: { total: number; success: number; skipped: number; blocked: number; failed: number };
+  health_score: number;
+  health_label: "HEALTHY" | "STABLE" | "CAUTION";
+  exceptions: any[];
+  alerts: { alert_type: string; severity: "warning" | "critical"; message: string }[];
+  priority_flags: { type: string; detail: string }[];
+}> {
+  try {
+    await ensureMonetizationAuditTable();
+    const summaryRows = await pgQuery(`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE exception_type = 'success')::int AS success,
+        COUNT(*) FILTER (WHERE exception_type = 'skipped')::int AS skipped,
+        COUNT(*) FILTER (WHERE exception_type = 'blocked')::int AS blocked,
+        COUNT(*) FILTER (WHERE exception_type = 'failed')::int AS failed
+      FROM monetization_audit_log
+      WHERE mismatch_type IN ('automation_billing','automation_follow_up','automation_blocked')
+        AND created_at > NOW() - INTERVAL '24 hours'
+    `);
+    const s = summaryRows[0] || { total: 0, success: 0, skipped: 0, blocked: 0, failed: 0 };
+    const actionable = s.success + s.failed + s.blocked;
+    const healthPct = actionable > 0 ? (s.success / actionable) * 100 : 100;
+    const healthLabel: "HEALTHY" | "STABLE" | "CAUTION" = healthPct >= 90 ? "HEALTHY" : healthPct >= 80 ? "STABLE" : "CAUTION";
+
+    const exceptions = await pgQuery(`
+      SELECT id, event_type, partner_id, lead_id, reason, metadata, mismatch_type, severity,
+             exception_type, failure_reason, retry_attempted, resolution_status, created_at
+      FROM monetization_audit_log
+      WHERE exception_type IN ('failed','blocked')
+        AND mismatch_type IN ('automation_billing','automation_follow_up','automation_blocked')
+        AND created_at > NOW() - INTERVAL '48 hours'
+      ORDER BY created_at DESC LIMIT 50
+    `);
+
+    const alerts: { alert_type: string; severity: "warning" | "critical"; message: string }[] = [];
+    if (s.failed >= 5) alerts.push({ alert_type: "HIGH FAILURE RATE", severity: "critical", message: `${s.failed} failed automation actions in 24h` });
+    if (s.blocked >= 10) alerts.push({ alert_type: "REPEATED BLOCKS", severity: "warning", message: `${s.blocked} blocked actions in 24h` });
+
+    const stripeFailRows = await pgQuery(
+      `SELECT COUNT(*)::int AS cnt FROM monetization_audit_log WHERE failure_reason = 'stripe_error' AND created_at > NOW() - INTERVAL '24 hours'`
+    ).catch(() => [{ cnt: 0 }]);
+    if ((stripeFailRows[0]?.cnt || 0) >= 3) {
+      alerts.push({ alert_type: "STRIPE FAILURE SPIKE", severity: "critical", message: `${stripeFailRows[0].cnt} Stripe errors in 24h` });
+    }
+
+    const priorityFlags: { type: string; detail: string }[] = [];
+    try {
+      const repeatedPartners = await pgQuery(`
+        SELECT partner_id, COUNT(*)::int AS cnt
+        FROM monetization_audit_log
+        WHERE exception_type IN ('failed','blocked') AND partner_id IS NOT NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY partner_id HAVING COUNT(*) >= 3
+        ORDER BY cnt DESC LIMIT 5
+      `);
+      for (const rp of repeatedPartners) {
+        priorityFlags.push({ type: "repeated_partner_failure", detail: `Partner ${rp.partner_id} has ${rp.cnt} failures/blocks in 24h` });
+      }
+    } catch {}
+    try {
+      const repeatedLeads = await pgQuery(`
+        SELECT lead_id, COUNT(*)::int AS cnt
+        FROM monetization_audit_log
+        WHERE exception_type IN ('failed','blocked') AND lead_id IS NOT NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY lead_id HAVING COUNT(*) >= 2
+        ORDER BY cnt DESC LIMIT 5
+      `);
+      for (const rl of repeatedLeads) {
+        priorityFlags.push({ type: "repeated_lead_failure", detail: `Lead ${rl.lead_id} has ${rl.cnt} failures/blocks` });
+      }
+    } catch {}
+    if (healthLabel === "CAUTION") {
+      priorityFlags.push({ type: "low_health_score", detail: `Health score at ${healthPct.toFixed(0)}% — below 80% threshold` });
+    }
+
+    return { summary: s, health_score: Math.round(healthPct), health_label: healthLabel, exceptions, alerts, priority_flags: priorityFlags };
+  } catch {
+    return { summary: { total: 0, success: 0, skipped: 0, blocked: 0, failed: 0 }, health_score: 100, health_label: "HEALTHY", exceptions: [], alerts: [], priority_flags: [] };
+  }
+}
+
+export async function updateAuditResolution(id: string, resolution: string, resolvedBy: string): Promise<void> {
+  try {
+    await ensureMonetizationAuditTable();
+    await pgQuery(
+      `UPDATE monetization_audit_log SET resolution_status = $1, resolved_by = $2, resolved_at = NOW() WHERE id = $3`,
+      [resolution, resolvedBy, id]
+    );
+  } catch (err: any) {
+    console.error("[monetization-audit] Failed to update resolution:", err.message);
+  }
+}
+
+export async function markRetryAttempted(id: string): Promise<void> {
+  try {
+    await ensureMonetizationAuditTable();
+    await pgQuery(`UPDATE monetization_audit_log SET retry_attempted = TRUE WHERE id = $1`, [id]);
+  } catch (err: any) {
+    console.error("[monetization-audit] Failed to mark retry:", err.message);
   }
 }
 
