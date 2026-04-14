@@ -1,0 +1,198 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.1 – Monetization Warning & Reconciliation Review Layer
+
+PRIORITY:
+HIGH (Pre-Scale Visibility + Revenue Protection)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 8.1 – Monetization Warning & Reconciliation Review  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This is a visibility + control layer built on top of Step 8.0.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Enhance visibility and resolution of monetization inconsistencies.
+
+Focus:
+- faster mismatch detection
+- clear reconciliation workflow
+- admin-friendly investigation tools
+
+-------------------------------------
+SECTION 1 — MISMATCH CLASSIFICATION
+-------------------------------------
+
+Extend mismatch detection logic.
+
+Each mismatch must include:
+
+- mismatch_type:
+  - subscription_mismatch
+  - eligibility_mismatch
+  - onboarding_mismatch
+  - configuration_mismatch
+
+- severity:
+  - warning
+  - critical
+
+- partner_id
+
+-------------------------------------
+SECTION 2 — RECONCILIATION PANEL
+-------------------------------------
+
+Extend Monetization Hardening panel.
+
+Add section:
+
+→ “Reconciliation Review”
+
+Display per row:
+
+- partner_name
+- mismatch_type
+- severity badge
+- Stripe state vs local state
+- routing eligibility status
+- billing eligibility status
+- recommended_action
+
+-------------------------------------
+SECTION 3 — RECOMMENDED ACTION ENGINE
+-------------------------------------
+
+For each mismatch, generate plain-English guidance.
+
+Examples:
+
+- subscription_mismatch:
+  → “Sync subscription status from Stripe”
+
+- eligibility_mismatch:
+  → “Enable lead eligibility for this partner”
+
+- onboarding_mismatch:
+  → “Complete onboarding activation”
+
+- configuration_mismatch:
+  → “Review partner configuration settings”
+
+-------------------------------------
+SECTION 4 — QUICK FIX ACTIONS (ADMIN)
+-------------------------------------
+
+Add admin-triggered actions:
+
+- sync_from_stripe
+- toggle_lead_enable
+- reset_onboarding_status
+- mark_reviewed
+
+Rules:
+- require confirmation modal
+- must be audit logged
+- NO automatic execution
+
+-------------------------------------
+SECTION 5 — MISMATCH FILTERS
+-------------------------------------
+
+Add filter controls:
+
+- all
+- critical
+- warning
+- subscription issues
+- eligibility issues
+- onboarding issues
+
+-------------------------------------
+SECTION 6 — AUDIT EXTENSION
+-------------------------------------
+
+Extend monetization_audit_log with:
+
+- mismatch_type
+- resolution_action
+- resolved_by
+- resolved_at
+
+Log events:
+- mismatch_detected
+- mismatch_resolved
+- admin_action_taken
+
+-------------------------------------
+SECTION 7 — SUMMARY METRICS
+-------------------------------------
+
+Top of panel should show:
+
+- total_mismatches
+- critical_mismatches
+- unresolved_count
+- resolved_today
+
+-------------------------------------
+SECTION 8 — FAIL-SAFE CLARITY
+-------------------------------------
+
+For affected partners, clearly show:
+
+- “BLOCKED FROM ROUTING”
+- “BLOCKED FROM BILLING”
+
+These must be visually obvious.
+
+-------------------------------------
+SECTION 9 — NO SYSTEM IMPACT
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT modify:
+- routing logic
+- billing logic
+- Stripe behavior
+- automation
+
+This is visibility + admin control only.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Mismatches categorized correctly — PASS
+2. Admin can identify issue quickly — PASS
+3. Recommended actions accurate — PASS
+4. Manual fixes update state correctly — PASS
+5. Audit logging records resolution — PASS
+6. No regression — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- reconciliation panel active
+- mismatch categories visible
+- admin actions available
+- audit logging extended
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------
