@@ -2447,6 +2447,7 @@ function AdminResourcesInner() {
             <PartnerSubscriptionStatusPanel adminKey={adminKey} />
             <ActivationFunnelPanel adminKey={adminKey} />
             <MonetizationHardeningPanel adminKey={adminKey} />
+            <SystemSafetyPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -4935,6 +4936,217 @@ function MonetizationHardeningPanel({ adminKey }: { adminKey: string }) {
               <button onClick={() => handleQuickFix(confirmAction.partnerId, confirmAction.action)}
                 className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
                 data-testid="button-execute-confirm">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function SystemSafetyPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [modeChanging, setModeChanging] = useState(false);
+  const [limitEditing, setLimitEditing] = useState<string | null>(null);
+  const [limitValue, setLimitValue] = useState("");
+  const [confirmMode, setConfirmMode] = useState<string | null>(null);
+  const { toast: showToast } = useToast();
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/system-safety", { headers: { "x-admin-key": adminKey } });
+      if (res.ok) setData(await res.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleModeChange = async (mode: string) => {
+    setModeChanging(true);
+    setConfirmMode(null);
+    try {
+      const res = await fetch("/api/admin/system-safety/mode", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, reason: "Manual admin change" }),
+      });
+      if (res.ok) {
+        showToast({ title: "Mode changed", description: `System mode set to ${mode}` });
+        loadData();
+      } else {
+        const r = await res.json();
+        showToast({ title: "Failed", description: r.error, variant: "destructive" });
+      }
+    } catch { showToast({ title: "Failed", description: "Network error", variant: "destructive" }); }
+    finally { setModeChanging(false); }
+  };
+
+  const handleLimitUpdate = async (key: string) => {
+    const val = parseInt(limitValue);
+    if (!val || val < 1) return;
+    try {
+      const res = await fetch("/api/admin/system-safety/limits", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value: val }),
+      });
+      if (res.ok) {
+        showToast({ title: "Limit updated", description: `${key} set to ${val}` });
+        setLimitEditing(null);
+        setLimitValue("");
+        loadData();
+      }
+    } catch {}
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading system safety...</p></Card>;
+  if (!data?.available) return null;
+
+  const modeColors: Record<string, string> = {
+    normal: "bg-green-600 text-white",
+    restricted: "bg-amber-500 text-white",
+    safe_mode: "bg-red-600 text-white",
+  };
+  const modeLabels: Record<string, string> = {
+    normal: "NORMAL", restricted: "RESTRICTED", safe_mode: "SAFE MODE",
+  };
+
+  const limitLabels: Record<string, string> = {
+    max_leads_per_partner_per_day: "Max Leads/Partner/Day",
+    max_batch_size: "Max Batch Size",
+    max_daily_billing_attempts: "Max Daily Billing Attempts",
+    max_failed_payments_threshold: "Failed Payment Threshold",
+    routing_rate_per_minute: "Routing Rate/Min",
+    billing_rate_per_minute: "Billing Rate/Min",
+  };
+
+  const alerts: any[] = data.alerts || [];
+  const checks: any[] = data.readiness?.checks || [];
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-system-safety">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-blue-600" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-safety-title">System Safety Panel</h3>
+          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${modeColors[data.system_mode] || "bg-slate-200"}`}
+            data-testid="badge-system-mode">{modeLabels[data.system_mode] || data.system_mode}</span>
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-safety">Refresh</button>
+      </div>
+
+      {alerts.length > 0 && (
+        <div className="space-y-1" data-testid="safety-alerts">
+          {alerts.map((a: any, i: number) => (
+            <div key={i} className={`rounded border px-3 py-2 flex items-center gap-2 ${a.severity === "critical" ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-300"}`}
+              data-testid={`alert-${i}`}>
+              <AlertTriangle className={`h-4 w-4 shrink-0 ${a.severity === "critical" ? "text-red-600" : "text-amber-600"}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-[10px] font-bold ${a.severity === "critical" ? "text-red-800" : "text-amber-800"}`}>{a.alert_type}</p>
+                <p className="text-[9px] text-slate-600">{a.message}</p>
+              </div>
+              <span className={`px-1.5 py-0.5 rounded text-[7px] font-bold uppercase ${a.severity === "critical" ? "bg-red-600 text-white" : "bg-amber-500 text-white"}`}>{a.severity}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2" data-testid="safety-readiness">
+        <div className={`rounded border p-2 text-center ${data.readiness?.automation_ready ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          <p className="text-[8px] text-muted-foreground uppercase">Automation Ready</p>
+          <p className={`text-sm font-bold ${data.readiness?.automation_ready ? "text-green-700" : "text-red-700"}`}
+            data-testid="text-automation-ready">{data.readiness?.automation_ready ? "YES" : "NO"}</p>
+        </div>
+        <div className={`rounded border p-2 text-center ${data.readiness?.safety_checks_passed ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+          <p className="text-[8px] text-muted-foreground uppercase">Safety Checks</p>
+          <p className={`text-sm font-bold ${data.readiness?.safety_checks_passed ? "text-green-700" : "text-amber-700"}`}
+            data-testid="text-safety-passed">{data.readiness?.safety_checks_passed ? "PASSED" : "ISSUES"}</p>
+        </div>
+        <div className="rounded border p-2 text-center bg-slate-50">
+          <p className="text-[8px] text-muted-foreground uppercase">Routing Rate</p>
+          <p className="text-sm font-bold" data-testid="text-routing-rate">{data.rate_limits?.routing?.current || 0}/{data.rate_limits?.routing?.limit || 0}</p>
+        </div>
+        <div className="rounded border p-2 text-center bg-slate-50">
+          <p className="text-[8px] text-muted-foreground uppercase">Billing Rate</p>
+          <p className="text-sm font-bold" data-testid="text-billing-rate">{data.rate_limits?.billing?.current || 0}/{data.rate_limits?.billing?.limit || 0}</p>
+        </div>
+      </div>
+
+      {checks.length > 0 && (
+        <div className="space-y-1" data-testid="readiness-checks">
+          <p className="text-[10px] font-bold text-slate-700">Readiness Checks</p>
+          {checks.map((c: any, i: number) => (
+            <div key={i} className="flex items-center justify-between bg-slate-50 border rounded px-2 py-1">
+              <span className="text-[9px] text-slate-800">{c.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] text-muted-foreground">{c.detail}</span>
+                <span className={`px-1 py-0.5 rounded text-[7px] font-bold ${c.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                  data-testid={`check-${i}`}>{c.passed ? "PASS" : "FAIL"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-1.5" data-testid="safety-mode-control">
+        <p className="text-[10px] font-bold text-slate-700">System Mode Control</p>
+        <div className="flex gap-1.5">
+          {(["normal", "restricted", "safe_mode"] as const).map(m => (
+            <button key={m} disabled={data.system_mode === m || modeChanging}
+              onClick={() => setConfirmMode(m)}
+              className={`px-2.5 py-1 rounded text-[9px] font-medium border ${
+                data.system_mode === m ? modeColors[m] + " cursor-default" :
+                "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              } disabled:opacity-50`}
+              data-testid={`button-mode-${m}`}>{modeLabels[m]}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1.5" data-testid="safety-limits">
+        <p className="text-[10px] font-bold text-slate-700">Safety Limits</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+          {Object.entries(data.limits || {}).map(([key, val]) => (
+            <div key={key} className="bg-slate-50 border rounded px-2 py-1.5">
+              <p className="text-[8px] text-muted-foreground uppercase truncate">{limitLabels[key] || key}</p>
+              <div className="flex items-center justify-between mt-0.5">
+                {limitEditing === key ? (
+                  <div className="flex items-center gap-1">
+                    <input type="number" value={limitValue} onChange={e => setLimitValue(e.target.value)}
+                      className="w-14 text-xs border rounded px-1 py-0.5" min={1}
+                      data-testid={`input-limit-${key}`} />
+                    <button onClick={() => handleLimitUpdate(key)} className="text-[8px] text-green-600 font-medium" data-testid={`button-save-${key}`}>Save</button>
+                    <button onClick={() => { setLimitEditing(null); setLimitValue(""); }} className="text-[8px] text-slate-400">X</button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold" data-testid={`text-limit-${key}`}>{String(val)}</p>
+                    <button onClick={() => { setLimitEditing(key); setLimitValue(String(val)); }}
+                      className="text-[8px] text-blue-600 hover:underline" data-testid={`button-edit-${key}`}>Edit</button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {confirmMode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-mode-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Confirm Mode Change</h4>
+            <p className="text-xs text-slate-600 mb-1">Switch system to:</p>
+            <p className={`text-sm font-bold mb-1 ${confirmMode === "safe_mode" ? "text-red-700" : confirmMode === "restricted" ? "text-amber-700" : "text-green-700"}`}>
+              {modeLabels[confirmMode] || confirmMode}
+            </p>
+            {confirmMode === "safe_mode" && (
+              <p className="text-[10px] text-red-600 mb-3">Safe mode will pause batch billing and restrict routing to minimal flow.</p>
+            )}
+            <div className="flex gap-2 justify-end mt-3">
+              <button onClick={() => setConfirmMode(null)} className="px-3 py-1.5 rounded text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                data-testid="button-cancel-mode">Cancel</button>
+              <button onClick={() => handleModeChange(confirmMode)} className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
+                data-testid="button-confirm-mode">Confirm</button>
             </div>
           </div>
         </div>

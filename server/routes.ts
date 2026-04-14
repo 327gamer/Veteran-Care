@@ -12732,5 +12732,48 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/system-safety", requireAdmin, async (_req, res) => {
+    try {
+      const { getSystemSafetyStatus } = await import("./system-safety");
+      const status = await getSystemSafetyStatus();
+      return res.json({ available: true, ...status });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/system-safety/mode", requireAdmin, async (req, res) => {
+    const { mode, reason } = req.body;
+    if (!["normal", "restricted", "safe_mode"].includes(mode)) return res.status(400).json({ error: "Invalid mode. Must be: normal, restricted, safe_mode" });
+    try {
+      const { setSystemMode } = await import("./system-safety");
+      await setSystemMode(mode, "admin", reason || "Manual mode change");
+      return res.json({ success: true, mode });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/system-safety/limits", requireAdmin, async (req, res) => {
+    const { key, value } = req.body;
+    if (!key || typeof value !== "number" || value < 1) return res.status(400).json({ error: "key and value (positive number) required" });
+    try {
+      const { updateSafetyLimit } = await import("./system-safety");
+      await updateSafetyLimit(key, value);
+      const { logMonetizationAudit } = await import("./monetization-audit");
+      await logMonetizationAudit({
+        event_type: "admin_action_taken" as any,
+        partner_id: null, lead_id: null,
+        reason: `Safety limit updated: ${key} = ${value}`,
+        mismatch_type: "safety_limit_change",
+        severity: "warning",
+        metadata: { key, value, changed_by: "admin" },
+      });
+      return res.json({ success: true, key, value });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
 }

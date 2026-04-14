@@ -1,0 +1,194 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.2 – Pre-Automation Safety Layer
+
+PRIORITY:
+CRITICAL (Final Safety Gate Before Scale & Future Automation)
+
+-------------------------------------
+CLARIFICATION
+-------------------------------------
+
+This step is:
+
+✅ Step 8.2 – Pre-Automation Safety Layer  
+❌ NOT routing changes  
+❌ NOT billing changes  
+❌ NOT Stripe changes  
+❌ NOT automation  
+
+This is a system-wide safety enforcement layer before automation and scale.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Enforce system guardrails to prevent:
+
+- runaway routing
+- uncontrolled billing
+- silent failures at scale
+- loss of admin control
+
+This is the final safety gate before automation.
+
+-------------------------------------
+SECTION 1 — GLOBAL SAFETY LIMITS
+-------------------------------------
+
+Introduce configurable limits:
+
+- max_leads_per_partner_per_day
+- max_batch_size (reinforce existing)
+- max_daily_billing_attempts
+- max_failed_payments_threshold
+
+Behavior:
+
+IF any limit is exceeded:
+→ block action
+→ log event
+→ surface admin warning
+
+-------------------------------------
+SECTION 2 — RATE LIMITING (SOFT CONTROL)
+-------------------------------------
+
+Add soft rate limits:
+
+- routing_rate_per_minute
+- billing_rate_per_minute
+
+Behavior:
+
+- throttle safely (do NOT crash system)
+- queue or delay execution if needed
+- log rate_limit_events
+
+-------------------------------------
+SECTION 3 — FAIL-SAFE MODE
+-------------------------------------
+
+Introduce system_mode:
+
+- normal
+- restricted
+- safe_mode
+
+Trigger safe_mode if:
+
+- high billing failure rate
+- Stripe error spike
+- routing failure spike
+- system instability detected
+
+Behavior in safe_mode:
+
+- pause batch billing
+- restrict routing to safe minimal flow
+- show admin alert banner
+
+-------------------------------------
+SECTION 4 — AUTOMATION READINESS FLAGS
+-------------------------------------
+
+Add derived flags:
+
+- automation_ready (true/false)
+- safety_checks_passed (true/false)
+
+Derived from:
+
+- low mismatch count
+- stable billing success rate
+- low failure rate
+- no critical alerts
+
+VISIBILITY ONLY — no automation triggered
+
+-------------------------------------
+SECTION 5 — SYSTEM SAFETY PANEL
+-------------------------------------
+
+Add new admin section:
+
+→ “System Safety Panel”
+
+Display:
+
+- current system_mode
+- safety limits status
+- active warnings
+- rate limit triggers
+- readiness flags
+
+-------------------------------------
+SECTION 6 — ALERT CONDITIONS
+-------------------------------------
+
+Surface clear alerts:
+
+- HIGH FAILURE RATE
+- BILLING FAILURE SPIKE
+- ROUTING BLOCK SPIKE
+- STRIPE ERROR DETECTED
+
+Rules:
+
+- visible immediately
+- plain English
+- actionable
+
+-------------------------------------
+SECTION 7 — AUDIT LOGGING
+-------------------------------------
+
+Extend audit system:
+
+Log:
+
+- safety_trigger_events
+- rate_limit_events
+- fail_safe_activation
+- system_mode_changes
+
+-------------------------------------
+SECTION 8 — NO AUTOMATION
+-------------------------------------
+
+STRICT RULE:
+
+Do NOT build:
+
+- auto billing engine
+- auto routing changes
+- partner ranking
+- automation triggers
+
+This prepares the system for automation.
+It does NOT enable automation.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Safety limits enforce correctly — PASS
+2. Rate limiting prevents overload — PASS
+3. Fail-safe mode activates correctly — PASS
+4. Admin sees clear warnings — PASS
+5. No regression — PASS
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- safety layer active
+- system limits enforced
+- fail-safe mode available
+- admin visibility complete
+- validation complete
+
+-------------------------------------
+END
+-------------------------------------
