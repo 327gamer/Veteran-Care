@@ -12917,5 +12917,36 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/feature-flags", requireAdmin, async (_req, res) => {
+    try {
+      const { getAllFeatureFlags, getFeatureToggleLog } = await import("./automation-feature-flags");
+      const { getAutomationMode } = await import("./automation-controller");
+      const { getSystemMode } = await import("./system-safety");
+      const [flags, toggleLog, automationMode, systemMode] = await Promise.all([
+        getAllFeatureFlags(), getFeatureToggleLog(), getAutomationMode(), getSystemMode(),
+      ]);
+      return res.json({ flags, toggle_log: toggleLog, automation_mode: automationMode, system_mode: systemMode });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/feature-flags/toggle", requireAdmin, async (req, res) => {
+    try {
+      const { feature_name, enabled } = req.body;
+      if (!feature_name || typeof enabled !== "boolean") {
+        return res.status(400).json({ error: "feature_name and enabled (boolean) required" });
+      }
+      const { setFeatureFlag, ALL_FLAGS } = await import("./automation-feature-flags");
+      if (!ALL_FLAGS.includes(feature_name)) {
+        return res.status(400).json({ error: `Invalid feature: ${feature_name}` });
+      }
+      const result = await setFeatureFlag(feature_name, enabled, "admin");
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
 }

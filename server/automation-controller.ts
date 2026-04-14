@@ -4,6 +4,7 @@ import { logMonetizationAudit } from "./monetization-audit";
 import { getSystemMode, getSafetyLimits, evaluateAutomationReadiness, checkBillingRateLimit } from "./system-safety";
 import { verifyPartnerBillingEligibility, runChargeChecklist, getBillingConfig } from "./billing-governance";
 import { assessBillingConfidence, assessFollowUpConfidence, escalateToReviewQueue, ensureConfidenceColumns } from "./automation-confidence";
+import { isFeatureEnabled } from "./automation-feature-flags";
 
 export type AutomationMode = "manual_only" | "assisted" | "semi_auto";
 
@@ -109,6 +110,12 @@ export async function runAutoBatchBilling(): Promise<{
   blocked_reason?: string;
 }> {
   const results: AutomationAction[] = [];
+
+  const billingEnabled = await isFeatureEnabled("auto_billing_enabled");
+  if (!billingEnabled) {
+    return { executed: false, results: [], blocked_reason: "Feature flag auto_billing_enabled is OFF" };
+  }
+
   const mode = await getAutomationMode();
   if (mode !== "semi_auto") {
     return { executed: false, results: [], blocked_reason: `Automation mode is ${mode}, not semi_auto` };
@@ -168,20 +175,27 @@ export async function runAutoBatchBilling(): Promise<{
       const checklist = runChargeChecklist(lead, config);
       const eligibility = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
 
-      const confidence = await assessBillingConfidence(
-        lead, lead.routed_to_partner_id, checklist.pass, eligibility.eligible, eligibility.reason
-      );
+      const confidenceEnabled = await isFeatureEnabled("confidence_scoring_enabled");
+      const escalationEnabled = await isFeatureEnabled("escalation_enabled");
 
-      if (!confidence.allow_auto) {
-        const action: AutomationAction = {
-          action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
-          result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
-          timestamp: new Date().toISOString(),
-        };
-        recordAction(action);
-        results.push(action);
-        await escalateToReviewQueue("billing", lead.routed_to_partner_id, lead.id, confidence, "Review billing eligibility and approve manually");
-        continue;
+      if (confidenceEnabled) {
+        const confidence = await assessBillingConfidence(
+          lead, lead.routed_to_partner_id, checklist.pass, eligibility.eligible, eligibility.reason
+        );
+
+        if (!confidence.allow_auto) {
+          const action: AutomationAction = {
+            action_type: "auto_charge", lead_id: lead.id, partner_id: lead.routed_to_partner_id,
+            result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
+            timestamp: new Date().toISOString(),
+          };
+          recordAction(action);
+          results.push(action);
+          if (escalationEnabled) {
+            await escalateToReviewQueue("billing", lead.routed_to_partner_id, lead.id, confidence, "Review billing eligibility and approve manually");
+          }
+          continue;
+        }
       }
 
       if (!checklist.pass) {
@@ -281,6 +295,12 @@ export async function runAutoFollowUps(): Promise<{
   blocked_reason?: string;
 }> {
   const results: AutomationAction[] = [];
+
+  const followUpEnabled = await isFeatureEnabled("auto_follow_up_enabled");
+  if (!followUpEnabled) {
+    return { executed: false, results: [], blocked_reason: "Feature flag auto_follow_up_enabled is OFF" };
+  }
+
   const mode = await getAutomationMode();
   if (mode !== "semi_auto") {
     return { executed: false, results: [], blocked_reason: `Automation mode is ${mode}, not semi_auto` };
@@ -347,18 +367,24 @@ export async function runAutoFollowUps(): Promise<{
         continue;
       }
 
-      const confidence = await assessFollowUpConfidence(p);
+      const confEnabled = await isFeatureEnabled("confidence_scoring_enabled");
+      const escEnabled = await isFeatureEnabled("escalation_enabled");
 
-      if (!confidence.allow_auto) {
-        const action: AutomationAction = {
-          action_type: "auto_follow_up", partner_id: p.id,
-          result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
-          timestamp: new Date().toISOString(),
-        };
-        recordAction(action);
-        results.push(action);
-        await escalateToReviewQueue("follow_up", p.id, null, confidence, `Review follow-up (${template}) for ${p.name}`);
-        continue;
+      if (confEnabled) {
+        const confidence = await assessFollowUpConfidence(p);
+        if (!confidence.allow_auto) {
+          const action: AutomationAction = {
+            action_type: "auto_follow_up", partner_id: p.id,
+            result: "blocked", reason: `Low confidence (${confidence.score}%): ${confidence.context}`,
+            timestamp: new Date().toISOString(),
+          };
+          recordAction(action);
+          results.push(action);
+          if (escEnabled) {
+            await escalateToReviewQueue("follow_up", p.id, null, confidence, `Review follow-up (${template}) for ${p.name}`);
+          }
+          continue;
+        }
       }
 
       const action: AutomationAction = {

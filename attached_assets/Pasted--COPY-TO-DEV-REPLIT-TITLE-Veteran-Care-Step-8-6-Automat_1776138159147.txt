@@ -1,0 +1,163 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Step 8.6 – Automation Trust & Release Discipline Layer
+
+PRIORITY:
+HIGH (Final Trust Layer Before Full Scale)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Establish strict release discipline for all automation behavior to ensure:
+
+- safe incremental rollout
+- no regression risk
+- controlled validation before expansion
+- long-term trust in automation system
+
+-------------------------------------
+WHAT TO BUILD
+-------------------------------------
+
+1. AUTOMATION FEATURE FLAGS
+
+Introduce feature flags for automation behaviors:
+
+- auto_billing_enabled
+- auto_follow_up_enabled
+- escalation_enabled
+- confidence_scoring_enabled
+
+Requirements:
+
+- each flag independently toggleable
+- changes apply immediately (no redeploy)
+- default state = OFF
+
+-------------------------------------
+2. STORAGE (LIGHTWEIGHT)
+
+Use existing config system (billing_config or system_config)
+
+Fields:
+
+- feature_name
+- enabled_status (true/false)
+- enabled_at
+- last_modified_by
+
+-------------------------------------
+3. RUNTIME ENFORCEMENT
+
+Wrap automation logic with feature checks:
+
+IF auto_billing_enabled != true  
+→ block auto billing execution
+
+IF auto_follow_up_enabled != true  
+→ block follow-up automation
+
+IF escalation_enabled != true  
+→ fallback to normal automation flow (no queue)
+
+IF confidence_scoring_enabled != true  
+→ bypass confidence layer (but log)
+
+STRICT RULE:
+Feature flags must gate execution, not just visibility.
+
+-------------------------------------
+4. SAFE RELEASE WORKFLOW (ENFORCED)
+
+Define internal discipline:
+
+Step 1:
+→ enable feature (limited observation mode)
+
+Step 2:
+→ monitor via:
+   - supervision panel (8.4)
+   - confidence layer (8.5)
+   - safety panel (8.2)
+
+Step 3:
+→ expand usage only after stability confirmed
+
+-------------------------------------
+5. AUTOMATION CHANGE LOG
+
+Add audit tracking for feature toggles:
+
+Log:
+
+- feature_name
+- previous_state
+- new_state
+- changed_by
+- changed_at
+
+Use existing audit system:
+→ event_type: "feature_toggle"
+
+-------------------------------------
+6. RELEASE STATUS PANEL
+
+Add admin section:
+
+→ “Automation Release Status”
+
+Display:
+
+- each feature flag (ON / OFF badge)
+- last modified timestamp
+- last modified by
+- system_mode (from safety layer)
+- automation_mode (from 8.3)
+
+Keep UI simple:
+- card layout
+- no dashboard complexity
+
+-------------------------------------
+7. CONFIRMATION + SAFETY
+
+All toggles must:
+
+- require confirmation modal
+- clearly state impact:
+  “This will enable automated billing behavior”
+
+No silent activation allowed.
+
+-------------------------------------
+8. HARD RULES
+
+- default = OFF for all automation features
+- no automatic enablement
+- no background changes
+- no bypass of safety or eligibility layers
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. Feature flags toggle correctly — PASS  
+2. Changes reflect immediately — PASS  
+3. Automation respects flags at runtime — PASS  
+4. Audit log captures all changes — PASS  
+5. No regression — PASS  
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- feature flag system active
+- runtime gating enforced
+- release status panel visible
+- audit logging active
+- validation complete
+
+-------------------------------------
+END

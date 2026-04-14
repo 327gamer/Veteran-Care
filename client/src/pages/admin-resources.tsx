@@ -2453,6 +2453,7 @@ function AdminResourcesInner() {
             <AutomationControlPanel adminKey={adminKey} />
             <AutomationSupervisionPanel adminKey={adminKey} />
             <AutomationReviewQueuePanel adminKey={adminKey} />
+            <AutomationReleaseStatusPanel adminKey={adminKey} />
 
             {billingSummary?.available && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -6887,6 +6888,155 @@ function AutomationReviewQueuePanel({ adminKey }: { adminKey: string }) {
               <button onClick={() => handleResolve(confirmAction.id, confirmAction.action)}
                 className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700"
                 data-testid="button-escalation-confirm">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function AutomationReleaseStatusPanel({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [confirmToggle, setConfirmToggle] = useState<{ name: string; enabled: boolean } | null>(null);
+  const { toast: showToast } = useToast();
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/feature-flags", { headers: { "x-admin-key": adminKey } });
+      if (res.ok) setData(await res.json());
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleToggle = async (name: string, enabled: boolean) => {
+    setConfirmToggle(null);
+    setToggling(name);
+    try {
+      const res = await fetch("/api/admin/feature-flags/toggle", {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ feature_name: name, enabled }),
+      });
+      if (res.ok) {
+        showToast({ title: enabled ? "Enabled" : "Disabled", description: `${name.replace(/_/g, " ")} is now ${enabled ? "ON" : "OFF"}` });
+        loadData();
+      } else {
+        const r = await res.json();
+        showToast({ title: "Failed", description: r.error, variant: "destructive" });
+      }
+    } catch { showToast({ title: "Error", description: "Network error", variant: "destructive" }); }
+    finally { setToggling(null); }
+  };
+
+  if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading release status...</p></Card>;
+  if (!data) return null;
+
+  const { flags, toggle_log: toggleLog, automation_mode: autoMode, system_mode: sysMode } = data;
+  const flagDescriptions: Record<string, string> = {
+    auto_billing_enabled: "Controls whether automated billing can execute. When OFF, all auto-billing requests are blocked.",
+    auto_follow_up_enabled: "Controls whether automated follow-ups can execute. When OFF, all auto follow-up requests are blocked.",
+    escalation_enabled: "Controls whether low-confidence actions are sent to the review queue. When OFF, escalation is skipped.",
+    confidence_scoring_enabled: "Controls whether confidence scoring runs before automation. When OFF, confidence checks are bypassed.",
+  };
+  const flagLabels: Record<string, string> = {
+    auto_billing_enabled: "Auto Billing",
+    auto_follow_up_enabled: "Auto Follow-Up",
+    escalation_enabled: "Escalation Queue",
+    confidence_scoring_enabled: "Confidence Scoring",
+  };
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="panel-release-status">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-green-600" />
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-release-status-title">Automation Release Status</h3>
+        </div>
+        <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-release">Refresh</button>
+      </div>
+
+      <div className="flex gap-2 flex-wrap text-[9px]">
+        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 border font-medium">
+          System: <span className="font-bold">{(sysMode || "normal").toUpperCase()}</span>
+        </span>
+        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 border font-medium">
+          Automation: <span className="font-bold">{(autoMode || "manual_only").replace(/_/g, " ").toUpperCase()}</span>
+        </span>
+      </div>
+
+      <div className="space-y-1.5" data-testid="feature-flags-list">
+        {(flags || []).map((f: any) => (
+          <div key={f.feature_name} className="flex items-center gap-2 border rounded px-3 py-2 bg-white" data-testid={`flag-row-${f.feature_name}`}>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-800">{flagLabels[f.feature_name] || f.feature_name}</span>
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${f.enabled ? "bg-green-100 text-green-800 border border-green-300" : "bg-red-100 text-red-800 border border-red-300"}`}
+                  data-testid={`badge-flag-${f.feature_name}`}>{f.enabled ? "ON" : "OFF"}</span>
+              </div>
+              {f.enabled_at && (
+                <p className="text-[8px] text-muted-foreground mt-0.5">Last modified: {new Date(f.enabled_at).toLocaleString()}</p>
+              )}
+            </div>
+            <button
+              disabled={toggling === f.feature_name}
+              onClick={() => setConfirmToggle({ name: f.feature_name, enabled: !f.enabled })}
+              className={`px-2.5 py-1 rounded text-[9px] font-medium border disabled:opacity-50 ${
+                f.enabled
+                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                  : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+              }`}
+              data-testid={`button-toggle-${f.feature_name}`}>{toggling === f.feature_name ? "..." : f.enabled ? "Disable" : "Enable"}</button>
+          </div>
+        ))}
+      </div>
+
+      {toggleLog && toggleLog.length > 0 && (
+        <div className="space-y-0.5" data-testid="feature-toggle-log">
+          <p className="text-[10px] font-bold text-slate-700">Change Log</p>
+          <div className="max-h-28 overflow-y-auto space-y-0.5">
+            {toggleLog.slice(0, 10).map((l: any, i: number) => (
+              <div key={l.id || i} className="flex items-center gap-1.5 text-[9px] border-b pb-0.5">
+                <span className="font-medium text-slate-700">{flagLabels[l.feature_name] || l.feature_name}</span>
+                <span className={`px-1 py-0.5 rounded text-[8px] ${l.previous_state ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {l.previous_state ? "ON" : "OFF"}
+                </span>
+                <span className="text-muted-foreground">→</span>
+                <span className={`px-1 py-0.5 rounded text-[8px] ${l.new_state ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {l.new_state ? "ON" : "OFF"}
+                </span>
+                <span className="text-muted-foreground ml-auto">{l.changed_by}</span>
+                <span className="text-muted-foreground">{new Date(l.changed_at).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {confirmToggle && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-toggle-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              {confirmToggle.enabled ? "Enable" : "Disable"} {flagLabels[confirmToggle.name] || confirmToggle.name}
+            </h4>
+            <p className="text-xs text-slate-600 mb-1">
+              {confirmToggle.enabled
+                ? flagDescriptions[confirmToggle.name] || "This will enable this automation feature."
+                : `This will disable ${flagLabels[confirmToggle.name] || confirmToggle.name}. The feature will stop executing immediately.`}
+            </p>
+            <p className="text-[10px] text-amber-600 font-medium mb-3">
+              {confirmToggle.enabled ? "This change takes effect immediately." : "Any in-progress actions will complete, but no new actions will start."}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmToggle(null)}
+                className="px-3 py-1.5 rounded text-xs bg-slate-100 text-slate-700 hover:bg-slate-200"
+                data-testid="button-toggle-cancel">Cancel</button>
+              <button onClick={() => handleToggle(confirmToggle.name, confirmToggle.enabled)}
+                className={`px-3 py-1.5 rounded text-xs text-white ${confirmToggle.enabled ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                data-testid="button-toggle-confirm">{confirmToggle.enabled ? "Enable" : "Disable"}</button>
             </div>
           </div>
         </div>
