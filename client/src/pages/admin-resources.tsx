@@ -4727,6 +4727,10 @@ function ActivationFunnelPanel({ adminKey }: { adminKey: string }) {
 function MonetizationHardeningPanel({ adminKey }: { adminKey: string }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+  const [fixing, setFixing] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ partnerId: string; partnerName: string; action: string } | null>(null);
+  const { toast: showToast } = useToast();
 
   const loadData = async () => {
     setLoading(true);
@@ -4738,92 +4742,172 @@ function MonetizationHardeningPanel({ adminKey }: { adminKey: string }) {
 
   useEffect(() => { loadData(); }, []);
 
+  const handleQuickFix = async (partnerId: string, action: string) => {
+    setFixing(partnerId);
+    setConfirmAction(null);
+    try {
+      const res = await fetch(`/api/admin/monetization-quick-fix/${partnerId}`, {
+        method: "POST", headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showToast({ title: "Action completed", description: `${action.replace(/_/g, " ")} applied to ${result.partner_name || "partner"}` });
+        loadData();
+      } else {
+        showToast({ title: "Action failed", description: result.error || "Unknown error", variant: "destructive" });
+      }
+    } catch { showToast({ title: "Action failed", description: "Network error", variant: "destructive" }); }
+    finally { setFixing(null); }
+  };
+
   if (loading) return <Card className="p-4"><p className="text-xs text-muted-foreground">Loading hardening status...</p></Card>;
   if (!data?.available) return null;
 
   const s = data.summary;
-  const mismatches = data.mismatch_warnings || [];
+  const mismatches: any[] = data.mismatches || [];
   const eligibility = data.eligibility || [];
-  const recent = data.recent_blocks || [];
+  const recent: any[] = data.recent_blocks || [];
   const eligible = eligibility.filter((e: any) => e.eligible);
   const blocked = eligibility.filter((e: any) => !e.eligible);
+
+  const actionLabels: Record<string, string> = {
+    sync_from_stripe: "Sync Stripe", toggle_lead_enable: "Toggle Leads",
+    reset_onboarding_status: "Reset Onboarding", mark_reviewed: "Mark Reviewed",
+  };
+  const mismatchActionMap: Record<string, string> = {
+    subscription_mismatch: "sync_from_stripe", eligibility_mismatch: "toggle_lead_enable",
+    onboarding_mismatch: "reset_onboarding_status", configuration_mismatch: "mark_reviewed",
+  };
+
+  const filteredMismatches = mismatches.filter((m: any) => {
+    if (filter === "all") return true;
+    if (filter === "critical") return m.severity === "critical";
+    if (filter === "warning") return m.severity === "warning";
+    if (filter === "subscription") return m.mismatch_type === "subscription_mismatch";
+    if (filter === "eligibility") return m.mismatch_type === "eligibility_mismatch";
+    if (filter === "onboarding") return m.mismatch_type === "onboarding_mismatch";
+    return true;
+  });
 
   return (
     <Card className="p-4 space-y-3" data-testid="panel-monetization-hardening">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-red-600" />
-          <h3 className="text-sm font-bold text-slate-900" data-testid="text-hardening-title">Monetization Hardening</h3>
+          <h3 className="text-sm font-bold text-slate-900" data-testid="text-hardening-title">Monetization Hardening & Reconciliation</h3>
           {s.last_24h > 0 && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-100 text-red-700" data-testid="text-blocks-24h">{s.last_24h} blocks (24h)</span>}
         </div>
         <button onClick={loadData} className="text-[9px] text-blue-600 hover:underline" data-testid="button-refresh-hardening">Refresh</button>
       </div>
 
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2" data-testid="hardening-summary">
+      <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5" data-testid="hardening-summary">
         {[
-          { label: "Total Blocks", count: s.total_blocks, color: "bg-slate-50" },
+          { label: "Total Mismatches", count: s.total_mismatches || 0, color: "bg-slate-50" },
+          { label: "Critical", count: s.critical_mismatches || 0, color: "bg-red-50" },
+          { label: "Unresolved", count: s.unresolved || 0, color: "bg-amber-50" },
+          { label: "Resolved Today", count: s.resolved_today || 0, color: "bg-green-50" },
           { label: "Routing Blocked", count: s.routing_blocked, color: "bg-red-50" },
           { label: "Billing Blocked", count: s.billing_blocked, color: "bg-amber-50" },
-          { label: "Eligibility Fail", count: s.eligibility_failures, color: "bg-orange-50" },
-          { label: "Sub Mismatch", count: s.subscription_mismatches, color: "bg-purple-50" },
-          { label: "Onb Mismatch", count: s.onboarding_mismatches, color: "bg-blue-50" },
+          { label: "Eligible", count: eligible.length, color: "bg-green-50" },
+          { label: "Blocked", count: blocked.length, color: "bg-red-50" },
         ].map(({ label, count, color }) => (
-          <div key={label} className={`rounded p-2 border text-center ${color}`}>
-            <p className="text-[9px] text-muted-foreground uppercase truncate">{label}</p>
-            <p className="text-lg font-bold">{count}</p>
+          <div key={label} className={`rounded p-1.5 border text-center ${color}`}>
+            <p className="text-[8px] text-muted-foreground uppercase truncate">{label}</p>
+            <p className="text-sm font-bold">{count}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-green-50 border border-green-200 rounded p-2">
-          <p className="text-[10px] font-semibold text-green-800">Eligible Partners</p>
-          <p className="text-lg font-bold text-green-700" data-testid="text-eligible-count">{eligible.length}</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded p-2">
-          <p className="text-[10px] font-semibold text-red-800">Blocked Partners</p>
-          <p className="text-lg font-bold text-red-700" data-testid="text-blocked-count">{blocked.length}</p>
-        </div>
-      </div>
-
       {mismatches.length > 0 && (
-        <div className="space-y-1" data-testid="mismatch-warnings">
-          <p className="text-[10px] font-bold text-amber-800 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Mismatch Warnings ({mismatches.length})</p>
-          {mismatches.map((m: any) => (
-            <div key={m.partner_id} className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5" data-testid={`warning-mismatch-${m.partner_id}`}>
-              <p className="text-[10px] font-semibold text-amber-900">{m.name}</p>
-              <p className="text-[9px] text-amber-700">{m.issues.join(" | ")}</p>
+        <div className="space-y-2" data-testid="reconciliation-section">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> Reconciliation Review ({filteredMismatches.length})
+            </p>
+            <div className="flex gap-1 flex-wrap" data-testid="mismatch-filters">
+              {[
+                { key: "all", label: "All" }, { key: "critical", label: "Critical" }, { key: "warning", label: "Warning" },
+                { key: "subscription", label: "Subscription" }, { key: "eligibility", label: "Eligibility" }, { key: "onboarding", label: "Onboarding" },
+              ].map(f => (
+                <button key={f.key} onClick={() => setFilter(f.key)}
+                  className={`px-1.5 py-0.5 rounded text-[8px] border ${filter === f.key ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                  data-testid={`filter-${f.key}`}>{f.label}</button>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
 
-      {blocked.length > 0 && (
-        <div className="space-y-1" data-testid="blocked-partners">
-          <p className="text-[10px] font-bold text-red-800">Blocked Partners</p>
-          {blocked.slice(0, 10).map((b: any) => (
-            <div key={b.partner_id} className="flex items-center justify-between bg-red-50 border border-red-100 rounded px-2 py-1" data-testid={`blocked-${b.partner_id}`}>
-              <span className="text-[10px] font-medium text-red-900 truncate">{b.name}</span>
-              <span className="text-[8px] text-red-600">{b.blockers.join(", ")}</span>
-            </div>
-          ))}
+          <div className="space-y-1.5 max-h-80 overflow-y-auto">
+            {filteredMismatches.map((m: any, i: number) => {
+              const primaryAction = mismatchActionMap[m.mismatch_type] || "mark_reviewed";
+              return (
+                <div key={`${m.partner_id}-${m.mismatch_type}-${i}`}
+                  className={`rounded border px-3 py-2 ${m.severity === "critical" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}
+                  data-testid={`mismatch-row-${m.partner_id}-${m.mismatch_type}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-900 truncate">{m.name}</span>
+                        <span className={`px-1 py-0.5 rounded text-[7px] font-bold uppercase ${m.severity === "critical" ? "bg-red-600 text-white" : "bg-amber-500 text-white"}`}
+                          data-testid={`badge-severity-${m.partner_id}`}>{m.severity}</span>
+                        <span className="px-1 py-0.5 rounded text-[7px] font-medium bg-slate-200 text-slate-700"
+                          data-testid={`badge-type-${m.partner_id}`}>{m.mismatch_type.replace(/_/g, " ")}</span>
+                      </div>
+                      <p className="text-[9px] text-slate-600 mt-0.5">{m.issues.join(" | ")}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {!m.routing_eligible && (
+                          <span className="px-1.5 py-0.5 rounded text-[7px] font-bold bg-red-700 text-white" data-testid={`blocked-routing-${m.partner_id}`}>BLOCKED FROM ROUTING</span>
+                        )}
+                        {!m.billing_eligible && (
+                          <span className="px-1.5 py-0.5 rounded text-[7px] font-bold bg-red-700 text-white" data-testid={`blocked-billing-${m.partner_id}`}>BLOCKED FROM BILLING</span>
+                        )}
+                        {m.routing_eligible && m.billing_eligible && (
+                          <span className="px-1.5 py-0.5 rounded text-[7px] font-medium bg-green-100 text-green-800">Active</span>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-blue-700 font-medium mt-1" data-testid={`action-${m.partner_id}`}>{m.recommended_action}</p>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        onClick={() => setConfirmAction({ partnerId: m.partner_id, partnerName: m.name, action: primaryAction })}
+                        disabled={fixing === m.partner_id}
+                        className="px-2 py-1 rounded text-[8px] font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        data-testid={`button-fix-${m.partner_id}`}>
+                        {fixing === m.partner_id ? "..." : actionLabels[primaryAction]}
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction({ partnerId: m.partner_id, partnerName: m.name, action: "mark_reviewed" })}
+                        disabled={fixing === m.partner_id}
+                        className="px-2 py-1 rounded text-[8px] font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
+                        data-testid={`button-review-${m.partner_id}`}>
+                        Reviewed
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {recent.length > 0 && (
         <div className="space-y-1" data-testid="recent-blocks">
-          <p className="text-[10px] font-bold text-slate-700">Recent Blocked Actions ({recent.length})</p>
+          <p className="text-[10px] font-bold text-slate-700">Audit Log ({recent.length})</p>
           <div className="max-h-40 overflow-y-auto space-y-1">
-            {recent.slice(0, 15).map((r: any, i: number) => (
+            {recent.slice(0, 20).map((r: any, i: number) => (
               <div key={r.id || i} className="flex items-start gap-2 bg-slate-50 border rounded px-2 py-1 text-[9px]">
-                <span className={`px-1 py-0.5 rounded font-medium ${
+                <span className={`px-1 py-0.5 rounded font-medium shrink-0 ${
                   r.event_type === "routing_blocked" ? "bg-red-100 text-red-700" :
                   r.event_type === "billing_blocked" ? "bg-amber-100 text-amber-700" :
+                  r.event_type === "admin_action_taken" ? "bg-blue-100 text-blue-700" :
+                  r.event_type === "mismatch_resolved" ? "bg-green-100 text-green-700" :
                   r.event_type === "subscription_mismatch" ? "bg-purple-100 text-purple-700" :
                   "bg-slate-100 text-slate-600"
                 }`}>{r.event_type.replace(/_/g, " ")}</span>
                 <span className="text-muted-foreground truncate flex-1">{r.reason}</span>
-                <span className="text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</span>
+                {r.resolved_at && <span className="text-green-600 text-[8px] shrink-0">resolved</span>}
+                <span className="text-muted-foreground whitespace-nowrap shrink-0">{new Date(r.created_at).toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -4833,6 +4917,26 @@ function MonetizationHardeningPanel({ adminKey }: { adminKey: string }) {
       {s.total_blocks === 0 && mismatches.length === 0 && (
         <div className="bg-green-50 border border-green-200 rounded p-3 text-center">
           <p className="text-xs text-green-700 font-medium" data-testid="text-all-clear">All systems clear — no blocked actions or mismatches detected</p>
+        </div>
+      )}
+
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="confirm-modal">
+          <div className="bg-white rounded-lg p-5 max-w-sm mx-4 shadow-xl">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Confirm Action</h4>
+            <p className="text-xs text-slate-600 mb-1">
+              Apply <span className="font-semibold">{confirmAction.action.replace(/_/g, " ")}</span> to:
+            </p>
+            <p className="text-sm font-semibold text-slate-900 mb-4">{confirmAction.partnerName}</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmAction(null)}
+                className="px-3 py-1.5 rounded text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+                data-testid="button-cancel-confirm">Cancel</button>
+              <button onClick={() => handleQuickFix(confirmAction.partnerId, confirmAction.action)}
+                className="px-3 py-1.5 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 font-medium"
+                data-testid="button-execute-confirm">Confirm</button>
+            </div>
+          </div>
         </div>
       )}
     </Card>

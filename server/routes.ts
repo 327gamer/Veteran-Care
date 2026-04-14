@@ -12616,35 +12616,21 @@ export async function registerRoutes(
 
   app.get("/api/admin/monetization-hardening", requireAdmin, async (_req, res) => {
     try {
-      const { getAuditSummary, getRecentAuditEntries } = await import("./monetization-audit");
+      const { getAuditSummary, getRecentAuditEntries, classifyMismatches } = await import("./monetization-audit");
       const summary = await getAuditSummary();
-      const recent = await getRecentAuditEntries(30);
+      const recent = await getRecentAuditEntries(50);
 
-      let mismatchWarnings: any[] = [];
-      try {
-        const { data: partners } = await supabaseAdmin
-          .from("partner_organizations")
-          .select("id, name, is_active, subscription_status, active_paid_partner, onboarding_status, partner_status_override, is_lead_enabled")
-          .or("is_active.eq.true,active_paid_partner.eq.true");
-        for (const p of partners || []) {
-          const issues: string[] = [];
-          if (p.is_active && p.active_paid_partner === false) issues.push("active but not paid");
-          if (p.active_paid_partner && p.subscription_status && p.subscription_status !== "active") issues.push(`paid but subscription_status=${p.subscription_status}`);
-          if (p.is_active && p.onboarding_status && p.onboarding_status !== "active") issues.push(`active but onboarding_status=${p.onboarding_status}`);
-          if (p.active_paid_partner && !p.is_lead_enabled) issues.push("paid but is_lead_enabled=false");
-          if (p.active_paid_partner && p.partner_status_override === "paused") issues.push("paid but partner_status_override=paused");
-          if (issues.length > 0) {
-            mismatchWarnings.push({ partner_id: p.id, name: p.name, issues, subscription_status: p.subscription_status, active_paid_partner: p.active_paid_partner, onboarding_status: p.onboarding_status, is_active: p.is_active });
-          }
-        }
-      } catch {}
-
+      let classifiedMismatches: any[] = [];
       let eligibilitySummary: any[] = [];
       try {
         const { data: allPartners } = await supabaseAdmin
           .from("partner_organizations")
           .select("id, name, is_active, is_lead_enabled, subscription_status, active_paid_partner, onboarding_status, partner_status_override")
           .order("name");
+        if (allPartners) {
+          const activeOrPaid = allPartners.filter(p => p.is_active || p.active_paid_partner);
+          classifiedMismatches = classifyMismatches(activeOrPaid);
+        }
         eligibilitySummary = (allPartners || []).map(p => {
           const eligible = p.is_active && p.is_lead_enabled && p.active_paid_partner !== false
             && (!p.subscription_status || p.subscription_status === "active")
@@ -12661,13 +12647,86 @@ export async function registerRoutes(
         });
       } catch {}
 
+      const criticalCount = classifiedMismatches.filter((m: any) => m.severity === "critical").length;
+
       return res.json({
         available: true,
-        summary,
-        mismatch_warnings: mismatchWarnings,
+        summary: { ...summary, total_mismatches: classifiedMismatches.length, critical_mismatches: criticalCount },
+        mismatches: classifiedMismatches,
         eligibility: eligibilitySummary,
         recent_blocks: recent,
       });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/monetization-quick-fix/:partnerId", requireAdmin, async (req, res) => {
+    const { partnerId } = req.params;
+    const { action } = req.body;
+    const validActions = ["sync_from_stripe", "toggle_lead_enable", "reset_onboarding_status", "mark_reviewed"];
+    if (!validActions.includes(action)) return res.status(400).json({ error: `Invalid action. Must be: ${validActions.join(", ")}` });
+
+    const { logMonetizationAudit, logMismatchResolution } = await import("./monetization-audit");
+    const adminActor = "admin";
+
+    try {
+      const { data: partner } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("id, name, contact_email, is_active, is_lead_enabled, subscription_status, active_paid_partner, onboarding_status, partner_status_override")
+        .eq("id", partnerId)
+        .single();
+      if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+      let result: Record<string, any> = { action, partner_id: partnerId, partner_name: partner.name };
+
+      if (action === "sync_from_stripe") {
+        let stripeStatus: string | null = null;
+        let stripePaid = false;
+        try {
+          const rows = await pgQuery(
+            `SELECT subscription_status, billing_active FROM partner_applications WHERE email = $1 ORDER BY updated_at DESC LIMIT 1`,
+            [partner.contact_email]
+          );
+          if (rows.length > 0) {
+            stripeStatus = rows[0].subscription_status;
+            stripePaid = rows[0].billing_active === true && stripeStatus === "active";
+            const updatePayload: Record<string, any> = { subscription_status: stripeStatus || "canceled", active_paid_partner: stripePaid };
+            if (stripeStatus === "active" && stripePaid) updatePayload.onboarding_status = "active";
+            await supabaseAdmin.from("partner_organizations").update(updatePayload).eq("id", partnerId);
+            result.synced = true;
+            result.stripe_status = stripeStatus;
+            result.active_paid = stripePaid;
+          } else {
+            result.synced = false;
+            result.note = "No partner_applications record found";
+          }
+        } catch (err: any) {
+          result.synced = false;
+          result.error = err?.message;
+        }
+      } else if (action === "toggle_lead_enable") {
+        const newValue = !partner.is_lead_enabled;
+        await supabaseAdmin.from("partner_organizations").update({ is_lead_enabled: newValue }).eq("id", partnerId);
+        result.is_lead_enabled = newValue;
+      } else if (action === "reset_onboarding_status") {
+        await supabaseAdmin.from("partner_organizations").update({ onboarding_status: "active" }).eq("id", partnerId);
+        result.onboarding_status = "active";
+      } else if (action === "mark_reviewed") {
+        result.reviewed = true;
+      }
+
+      await logMonetizationAudit({
+        event_type: "admin_action_taken",
+        partner_id: partnerId,
+        lead_id: null,
+        reason: `Admin quick-fix: ${action}`,
+        mismatch_type: action === "sync_from_stripe" ? "subscription_mismatch" : action === "toggle_lead_enable" ? "eligibility_mismatch" : action === "reset_onboarding_status" ? "onboarding_mismatch" : "configuration_mismatch",
+        severity: "warning",
+        metadata: { ...result, resolved_by: adminActor },
+      });
+
+      return res.json({ success: true, ...result });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
