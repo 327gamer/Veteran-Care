@@ -378,6 +378,7 @@ async function ensureAttributionTables() {
           case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
           partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
           general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
+          homepage:      { path: "/",                campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
         };
         const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
         const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
@@ -411,6 +412,7 @@ async function ensureAttributionTables() {
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth" },
         general:       { path: "/get-help",        campaign: "sc_launch" },
+        homepage:      { path: "/",                campaign: "sc_homepage_traffic" },
       };
       for (const [audienceKey, aud] of Object.entries(AUDIENCE_PATHS)) {
         await pgQuery(
@@ -468,6 +470,31 @@ async function ensureAttributionTables() {
       console.log(`[schema] Renamed ${oldGenNames[0].cnt} link names: General Outreach → Get Help Now`);
     }
 
+    // === MIGRATION: Seed homepage links for existing ambassadors ===
+    const homepageLinksCheck = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'homepage'");
+    if (parseInt(homepageLinksCheck[0].cnt, 10) === 0) {
+      console.log("[migration] Seeding homepage links for all ambassadors...");
+      const allAmbassadors = await pgQuery<{id: string; code: string; display_name: string}>("SELECT id, code, display_name FROM ambassadors");
+      const HP_CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
+      const HP_CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
+      let hpCount = 0;
+      for (const a of allAmbassadors) {
+        for (const channel of HP_CHANNELS) {
+          const linkName = `${a.display_name} – ${HP_CHANNEL_LABELS[channel]} – General Share Link (Homepage)`;
+          const utmId = `${a.code}_homepage_${channel}`;
+          const fullUrl = `https://veterancare.com/?utm_source=ambassador&utm_medium=${channel}&utm_campaign=sc_homepage_traffic&utm_content=${a.code}&utm_id=${utmId}`;
+          await pgQuery(
+            `INSERT INTO ambassador_links (ambassador_id, ambassador_code, ambassador_name, link_name, utm_id, base_path, utm_source, utm_medium, utm_campaign, utm_content, full_url, short_url, audience_type, channel_type, is_active, click_count, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 0, NOW())
+             ON CONFLICT DO NOTHING`,
+            [a.id, a.code, a.display_name, linkName, utmId, '/', 'ambassador', channel, 'sc_homepage_traffic', a.code, fullUrl, `/a/${utmId}`, 'homepage', channel]
+          );
+          hpCount++;
+        }
+      }
+      console.log(`[migration] Seeded ${hpCount} homepage links for ${allAmbassadors.length} ambassadors`);
+    }
+
     // === FIX: Remove test commission data ===
     const testCommissions = await pgQuery("SELECT COUNT(*) as cnt FROM commissions WHERE ambassador_code = 'test_john'");
     if (parseInt(testCommissions[0].cnt, 10) > 0) {
@@ -504,6 +531,7 @@ async function ensureAttributionTables() {
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
         general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
+        homepage:      { path: "/",                campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
       };
       const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
       const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
@@ -4533,6 +4561,7 @@ export async function registerRoutes(
         case_manager: { title: "Case Manager Outreach", description: "Recruit organizations, case managers, and nonprofits", audience: "case_manager" },
         partner: { title: "Partner / Business Outreach", description: "Recruit paying business partners for the directory", audience: "partner" },
         general: { title: "Get Help Now", description: "General awareness and community sharing — direct help flow", audience: "general" },
+        homepage: { title: "General Share Link (Homepage)", description: "Soft entry homepage traffic — broad sharing for awareness", audience: "homepage" },
       };
 
       const OUTREACH_TEMPLATES: Record<string, Record<string, { subject?: string; body: string }>> = {
@@ -4576,6 +4605,16 @@ export async function registerRoutes(
           instagram: { body: "🇺🇸 Veteran Care is a free platform connecting veterans with the resources they need — housing, jobs, benefits, mental health & more.\n\nShare with someone who served: {{link}}\n\n#VeteranCare #Veterans #SupportOurVets" },
           linkedin: { body: "I'm sharing Veteran Care — a platform connecting U.S. military veterans with critical resources including housing, employment, benefits assistance, and mental health support. All free.\n\nIf you know a veteran or work with the military community, please share: {{link}}" },
         },
+        homepage: {
+          email: {
+            subject: "Veteran Care — Free Resources for Veterans",
+            body: "Hi,\n\nI wanted to share Veteran Care — a free platform built for U.S. military veterans and their families. It connects veterans with housing, employment, benefits, mental health support, and more — all in one place.\n\nVisit the site: {{link}}\n\nFeel free to share with anyone who could benefit!"
+          },
+          text: { body: "Check out Veteran Care — free resources for veterans including housing, jobs, benefits & more. Visit: {{link}}" },
+          facebook: { body: "🇺🇸 Veteran Care is a free platform connecting veterans with housing, jobs, benefits, mental health support & more. Visit and share: {{link}} #VeteranCare #SupportOurVeterans" },
+          instagram: { body: "🇺🇸 Veteran Care — free resources for U.S. military veterans.\n\nHousing, jobs, benefits, mental health & more — all in one place.\n\nVisit: {{link}}\n\n#VeteranCare #Veterans #SupportOurVets" },
+          linkedin: { body: "Veteran Care is a free platform connecting U.S. military veterans with critical resources — housing, employment, benefits, mental health support, and more.\n\nVisit and share with your network: {{link}}" },
+        },
       };
 
       for (const [campaignKey, meta] of Object.entries(CAMPAIGN_META)) {
@@ -4597,6 +4636,7 @@ export async function registerRoutes(
           case_manager: "Explore Resources",
           partner: "Apply Now",
           general: "Learn More",
+          homepage: "Visit Veteran Care",
         };
 
         const templates: Record<string, any> = {};

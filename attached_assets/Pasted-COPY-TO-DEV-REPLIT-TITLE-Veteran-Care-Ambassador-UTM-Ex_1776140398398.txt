@@ -1,0 +1,135 @@
+COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Ambassador UTM Expansion – Homepage Traffic Links
+
+PRIORITY:
+HIGH (Pre-Launch Tracking Requirement)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Add a second type of ambassador tracking link:
+
+→ “General / Homepage Link”
+
+This allows ambassadors to send traffic to the homepage while preserving full UTM attribution across the entire user journey.
+
+-------------------------------------
+WHAT TO BUILD
+-------------------------------------
+
+1. HOMEPAGE UTM LINK GENERATION
+
+For every ambassador + campaign:
+
+Generate an additional tracking URL:
+
+BASE:
+https://veterancare.com/
+
+OR:
+/start (if required by routing logic)
+
+-------------------------------------
+2. UTM STRUCTURE (MUST MATCH EXISTING SYSTEM)
+
+Use the SAME UTM framework already implemented:
+
+- utm_source = ambassador_code (e.g. colin_slaven)
+- utm_medium = ambassador
+- utm_campaign = campaign_name (e.g. launch)
+- utm_content = homepage
+
+IMPORTANT:
+utm_content must clearly distinguish link type.
+
+Examples:
+- homepage
+- landing_housing
+- landing_jobs
+
+-------------------------------------
+3. EXAMPLE OUTPUT
+
+https://veterancare.com/?utm_source=colin_slaven&utm_medium=ambassador&utm_campaign=launch&utm_content=homepage
+
+-------------------------------------
+4. ATTRIBUTION BEHAVIOR (CRITICAL)
+
+Ensure homepage traffic behaves IDENTICALLY to landing pages:
+
+- UTM captured immediately on page load
+- stored as first-touch attribution in localStorage
+- persists across navigation
+- NOT overwritten unless new UTM intentionally replaces it
+
+-------------------------------------
+5. EVENT ATTACHMENT (MANDATORY)
+
+Stored UTM must attach to:
+
+- lead submissions
+- navigator requests
+- partner signups
+- any tracked events (GA4 / internal analytics)
+
+-------------------------------------
+6. NO LOSS OF ATTRIBUTION
+
+Even if user:
+
+- lands on homepage
+- browses multiple pages
+- converts later
+
+→ original UTM MUST remain attached
+
+-------------------------------------
+7. AMBASSADOR KIT UPDATE
+
+Update Ambassador Kit to include:
+
+SECTION: TRACKING LINKS
+
+Add:
+
+1. “General Share Link (Homepage)”  
+→ soft entry / broad sharing
+
+2. “Direct Action Links (Landing Pages)”  
+→ high-intent conversions
+
+Make both clearly labeled and easy to copy.
+
+-------------------------------------
+8. VALIDATION REQUIRED
+
+1. Homepage link loads correctly — PASS  
+2. UTM captured on arrival — PASS  
+3. UTM persists across navigation — PASS  
+4. Later conversion still attributes correctly — PASS  
+5. No conflict with landing page UTMs — PASS  
+
+-------------------------------------
+9. DO NOT CHANGE
+
+- existing UTM structure
+- attribution model
+- GA4 tracking
+- backend attribution storage
+
+This is an extension, not a rewrite.
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+- homepage UTM links generated
+- attribution preserved across sessions
+- ambassador kit updated
+- validation complete
+
+-------------------------------------
+END

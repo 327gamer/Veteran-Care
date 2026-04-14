@@ -19,15 +19,17 @@ const CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; color: string;
   case_manager: { title: "Case Manager Outreach", icon: Briefcase, color: "border-blue-500", badgeColor: "bg-blue-100 text-blue-800" },
   partner: { title: "Partner / Business Outreach", icon: Building2, color: "border-purple-500", badgeColor: "bg-purple-100 text-purple-800" },
   general: { title: "Get Help Now", icon: Globe, color: "border-gray-500", badgeColor: "bg-gray-100 text-gray-800" },
+  homepage: { title: "General Share Link (Homepage)", icon: Link2, color: "border-amber-500", badgeColor: "bg-amber-100 text-amber-800" },
 };
 
-const CAMPAIGN_ORDER = ["veteran", "case_manager", "partner", "general"];
+const CAMPAIGN_ORDER = ["veteran", "case_manager", "partner", "general", "homepage"];
 
 const AUDIENCE_CTA: Record<string, string> = {
   veteran: "Get Help Now",
   case_manager: "Explore Resources",
   partner: "Become a Trusted Partner",
   general: "Learn More",
+  homepage: "Visit Veteran Care",
 };
 
 const CHANNEL_ICONS: Record<string, any> = {
@@ -127,7 +129,7 @@ function SafeButtonPreview({ url, label }: { url: string; label: string }) {
 }
 
 function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<string, any>; onDownloadKit: () => void }) {
-  const audienceOrder = ["veteran", "case_manager", "partner", "general"];
+  const audienceOrder = ["veteran", "case_manager", "partner", "general", "homepage"];
   const availableAudiences = audienceOrder.filter(a => campaigns[a]);
 
   if (availableAudiences.length === 0) return null;
@@ -606,7 +608,7 @@ export default function AmbassadorDashboard() {
     sections.push(`Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`);
     sections.push(``);
 
-    const campaignOrder = ["veteran", "case_manager", "partner", "general"];
+    const campaignOrder = ["veteran", "case_manager", "partner", "general", "homepage"];
     for (const key of campaignOrder) {
       const campaign = data.campaigns[key];
       if (!campaign) continue;
