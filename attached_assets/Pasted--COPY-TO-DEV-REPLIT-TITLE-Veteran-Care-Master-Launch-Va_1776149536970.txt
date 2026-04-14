@@ -1,0 +1,442 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Master Launch Validation Program – Phase-Based System Check
+
+PRIORITY:
+CRITICAL (Pre-Launch / Go-Live Validation)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Run a complete phased system validation for Veteran Care.
+
+This is NOT one giant test.
+This must be executed in sections.
+
+The goal is:
+
+1. Replit performs a full self-audit first
+2. all blockers are identified clearly
+3. fixes are applied in controlled phases
+4. the full test suite is rerun after fixes
+5. final GO / HOLD launch recommendation is produced
+
+IMPORTANT:
+Do NOT silently fix things without reporting them.
+Do NOT bundle unrelated fixes together.
+Do NOT skip sections.
+
+Each phase must return:
+- PASS / FAIL
+- blockers
+- exact issue found
+- whether Replit can fix it directly
+- whether Colin/dev must do a manual live step
+- rerun result after fix
+
+-------------------------------------
+PHASE 0 — SYSTEM SELF-AUDIT (REPLIT FIRST)
+-------------------------------------
+
+Replit must inspect the current system and report readiness for all critical launch components before we do live user testing.
+
+CHECK:
+
+1. Environment configuration
+- production domain values
+- Supabase production connection
+- Resend environment values
+- Stripe config present
+- webhook secret present
+- live vs test key mismatch detection
+
+2. Core database / schema readiness
+- all required columns exist
+- all required tables exist
+- onboarding fields present
+- subscription fields present
+- follow-up fields present
+- recovery fields present
+- automation audit / monetization audit tables present
+
+3. Feature flag / automation config
+- automation_mode status
+- system_mode status
+- feature flags status
+- safety thresholds loaded correctly
+
+4. Production endpoint readiness
+- Stripe webhook endpoint exists
+- health endpoint exists
+- attribution endpoints working
+- admin endpoints working
+- automation supervision endpoints working
+
+5. Known launch-critical logic checks
+- routing eligibility lock
+- paid partner lock
+- onboarding_status lock
+- execution-time failsafe
+- billing duplicate protection
+- disputed / hold billing block
+- automation safety gates
+- confidence escalation gates
+
+OUTPUT REQUIRED:
+Return a structured Self-Audit Report with:
+- READY
+- NEEDS MANUAL LIVE CONFIG
+- BLOCKED
+for each area.
+
+-------------------------------------
+PHASE 1 — STRIPE LIVE MODE + WEBHOOK READINESS
+-------------------------------------
+
+This phase is ONLY about Stripe live readiness.
+
+CHECK:
+- live products exist
+- live prices exist
+- correct price IDs wired into production
+- live secret key configured
+- live public key configured
+- live webhook secret configured
+- webhook endpoint points to production
+- required Stripe events enabled
+
+REQUIRED EVENTS:
+- checkout.session.completed
+- invoice.payment_succeeded / invoice.paid
+- invoice.payment_failed
+- customer.subscription.updated
+- customer.subscription.deleted
+
+TESTS:
+1. Controlled live subscription test
+2. Webhook receipt confirmation
+3. Partner activation update confirmation
+4. Subscription cancellation / past_due protection confirmation
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- missing live values
+- exact manual steps needed if keys/products/webhooks are not live
+- rerun after correction
+
+-------------------------------------
+PHASE 2 — SUPABASE + DATA INTEGRITY READINESS
+-------------------------------------
+
+CHECK:
+- production database connection healthy
+- required launch columns populated correctly
+- no missing critical defaults
+- partner_organizations live data consistent
+- ambassador data present in production
+- short links / attribution data present in production
+- no critical test data contaminating launch flows
+
+VERIFY:
+- live partners have correct subscription/onboarding fields
+- ambassadors and campaign packs exist
+- resources are approved and usable
+- no broken references
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- data inconsistencies
+- rows/records requiring correction
+- recommended cleanup actions
+
+-------------------------------------
+PHASE 3 — AMBASSADOR / UTM / ATTRIBUTION VALIDATION
+-------------------------------------
+
+Run all launch-critical attribution tests.
+
+TEST FLOWS:
+1. Homepage ambassador link
+2. Veteran landing page link
+3. Case manager link
+4. Partner link
+5. General start-page link
+
+VERIFY:
+- correct page loads
+- UTM captured on first touch
+- ambassador_id persists
+- attribution survives navigation
+- attribution reaches lead submission / request support / partner signup
+- no redirect issues
+- no /home misrouting
+- homepage links and landing page links do not conflict
+
+OUTPUT REQUIRED:
+- PASS / FAIL per flow
+- attribution leak checks
+- session creation confirmation
+- exact source of any lost attribution
+
+-------------------------------------
+PHASE 4 — USER / VETERAN FLOW VALIDATION
+-------------------------------------
+
+TEST:
+- homepage entry
+- signup / login
+- onboarding
+- AI Guide
+- Get Help / Request Support
+- self-serve fallback
+- navigation across resources
+
+VERIFY:
+- no dead ends
+- no broken CTA paths
+- request is stored correctly
+- correct experience on desktop + mobile
+
+OUTPUT REQUIRED:
+- PASS / FAIL per sub-flow
+- screenshots if helpful
+- exact blocker list
+
+-------------------------------------
+PHASE 5 — PARTNER FLOW VALIDATION
+-------------------------------------
+
+TEST:
+- Become Trusted Partner page
+- pricing visibility
+- application form
+- approval flow
+- activation email
+- Stripe subscription checkout
+- onboarding_status transitions
+- active_paid_partner activation
+- routing eligibility after activation
+
+VERIFY:
+- approved but unpaid partner stays blocked
+- paid active partner becomes eligible
+- resend activation works
+- follow-up and recovery states work
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- broken partner onboarding steps
+- exact issue location
+
+-------------------------------------
+PHASE 6 — REQUEST SUPPORT / LEAD ROUTING VALIDATION
+-------------------------------------
+
+CRITICAL PHASE.
+
+TEST 2–3 real requests across different categories:
+- mortgage / housing
+- insurance / financial
+- legal
+
+VERIFY:
+- request stored in Supabase
+- routed correctly
+- correct partner selected
+- if no partner exists, self-serve/fallback works
+- requests do NOT incorrectly route to Colin unless intentionally configured
+- admin reflects routing clearly
+- billable state set correctly where applicable
+
+OUTPUT REQUIRED:
+- PASS / FAIL per category
+- actual routed destination
+- whether current routing behavior is correct
+- whether any requests still go to Colin and why
+
+-------------------------------------
+PHASE 7 — BILLING + MONETIZATION VALIDATION
+-------------------------------------
+
+TEST:
+- lead enters billing queue
+- correct billable status
+- single billing run
+- batch billing run (small)
+- no duplicate charge path
+- no non-billable charge path
+- no hold/dispute charge path
+
+VERIFY:
+- Stripe session creation
+- payment success
+- correct audit logs
+- correct billing workflow status
+- partner eligibility checked before billing
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- exact billing blockers
+- payment confirmation results
+
+-------------------------------------
+PHASE 8 — EMAIL + NOTIFICATION VALIDATION
+-------------------------------------
+
+TEST:
+- activation emails
+- reminder emails
+- urgency emails
+- payment recovery emails
+- request support email flow
+- partner application confirmations
+- AI Guide email feature if active
+
+VERIFY:
+- correct recipient
+- correct template
+- working links
+- no formatting issues
+- unsubscribe where appropriate
+- transactional emails not broken
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- templates that need correction
+- broken or missing email triggers
+
+-------------------------------------
+PHASE 9 — ADMIN PANEL / OPS PANEL VALIDATION
+-------------------------------------
+
+VERIFY ALL OF THESE:
+- billing panel
+- automation control panel
+- safety panel
+- supervision panel
+- reconciliation panel
+- activation funnel
+- recovery performance
+- revenue review
+- performance intelligence
+- launch monitoring
+- launch command center
+
+OUTPUT REQUIRED:
+- PASS / FAIL per panel
+- missing data
+- stale data
+- broken controls
+- misleading states
+
+-------------------------------------
+PHASE 10 — AUTOMATION / SAFETY VALIDATION
+-------------------------------------
+
+CHECK:
+- automation_mode behavior
+- feature flags ON/OFF behavior
+- safe_mode behavior
+- semi_auto behavior
+- supervised automation logging
+- confidence-based escalation
+- escalation queue
+- pause/resume controls
+
+VERIFY:
+- automation respects locks
+- low-confidence actions do not auto-run
+- high-confidence actions run when allowed
+- blocked/failed/skipped are visible
+
+OUTPUT REQUIRED:
+- PASS / FAIL
+- any automation unsafe behavior
+- any missing guardrails
+
+-------------------------------------
+PHASE 11 — EDGE CASE + FAILURE TESTING
+-------------------------------------
+
+TEST:
+- invalid or expired links
+- missing UTM
+- canceled subscription
+- past_due partner
+- unpaid partner
+- disputed lead
+- refresh mid-flow
+- slow connection
+- back button navigation
+- duplicate submission attempt
+
+OUTPUT REQUIRED:
+- PASS / FAIL per edge case
+- exact behavior observed
+- whether safe fallback occurred
+
+-------------------------------------
+PHASE 12 — MOBILE UX SWEEP
+-------------------------------------
+
+MANDATORY MOBILE TESTS:
+- iPhone Safari
+- Android Chrome
+
+VERIFY:
+- no cut-off content
+- no bottom-nav overlap
+- no horizontal scroll
+- forms usable
+- CTA buttons clickable
+- admin critical views at least minimally usable if needed
+
+OUTPUT REQUIRED:
+- PASS / FAIL per critical page
+- screenshots of issues
+- pages needing cleanup
+
+-------------------------------------
+PHASE 13 — FINAL FULL SYSTEM RERUN
+-------------------------------------
+
+After any fixes and live configuration changes are complete:
+
+Replit must rerun the entire critical suite:
+- Stripe
+- attribution
+- user flow
+- partner flow
+- routing
+- billing
+- emails
+- admin
+- automation
+- mobile
+
+This is the final certification pass.
+
+OUTPUT REQUIRED:
+1. FINAL PASS / FAIL by phase
+2. unresolved blockers
+3. manual actions still required by Colin
+4. GO / HOLD recommendation for launch
+
+-------------------------------------
+FINAL RULE
+-------------------------------------
+
+Do NOT tell us “launch ready” unless:
+- live Stripe tested
+- live attribution tested
+- real or controlled lead flow tested
+- routing works
+- billing works
+- admin visibility works
+- no critical blocker remains
+
+-------------------------------------
+END
+-------------------------------------
