@@ -41,6 +41,33 @@ Preview passing is NOT sufficient. After every publish:
 - [ ] Health endpoint responds (if configured)
 - [ ] Deployment logs show clean startup with no errors
 
+## Supabase RLS Security Rule (PERMANENT / STANDING)
+**Every table in the public schema MUST have Row Level Security enabled. No exceptions.**
+
+Any time a table is created or modified in Supabase public schema, ALL of the following must be completed before the change is considered done:
+
+1. **Classify** the table: SERVER-ONLY / AUTHENTICATED USER / PUBLIC READ ONLY / INTERNAL OPS
+2. **Enable RLS** immediately if not already enabled
+3. **Apply correct policies** based on classification:
+   - SERVER-ONLY / INTERNAL OPS: No anon access, no public insert/update/delete, service-role only
+   - AUTHENTICATED: Restrict by user_id or scoped ownership
+   - PUBLIC READ: Read-only, no public write
+4. **Verify**: No anon write access, no unintended public exposure
+5. **Regression test**: routing, billing, admin panel, automation, attribution, partner onboarding, resource reads
+6. **Report**: Table name, type, RLS before/after, policy applied, anon access (no), service-role-only (yes), regression PASS/FAIL
+
+### Hard Rules
+- NO table leaves development without RLS review
+- NO database change is complete without this validation
+- Do NOT wait for Supabase warnings — enforce proactively
+- Do NOT assume backend-only = safe
+- If uncertain → STOP and report before applying changes
+
+### Current Status (as of April 2026)
+- 24/24 public schema tables have RLS enabled
+- 3 tables have explicit policies (partner_applications: admin-only, trusted_service_categories: public read, trusted_services: public read)
+- 21 tables are server-only (service role bypasses RLS, no anon/authenticated policies needed)
+
 ## Platform Architecture
 - **Config-driven design**: All platform identity, terminology, and behavior controlled from `shared/platform.ts`
 - **Reusable engine**: Auth, geocoding, resource DB, admin tools, lead routing, escalation, saved resources are platform-agnostic

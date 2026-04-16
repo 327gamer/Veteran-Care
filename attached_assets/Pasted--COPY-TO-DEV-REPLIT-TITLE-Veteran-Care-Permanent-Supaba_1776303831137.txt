@@ -1,0 +1,106 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Permanent Supabase RLS Security Rule (Standing Requirement)
+
+PRIORITY:
+CRITICAL / ONGOING
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+This is now a permanent standing development rule for Veteran Care.
+
+Every time ANY table is created or modified in Supabase public schema, a full security review MUST be completed before the change is considered finished.
+
+This is required to:
+- prevent public exposure
+- eliminate security regressions
+- protect the platform at national scale
+
+-------------------------------------
+STANDING RULE
+-------------------------------------
+
+For every new or modified public-schema table, Replit MUST complete ALL of the following:
+
+1. Identify the table
+2. Classify the table type:
+   - SERVER-ONLY
+   - AUTHENTICATED USER
+   - PUBLIC READ ONLY (rare)
+   - INTERNAL OPS
+3. Check whether RLS is enabled
+4. Enable RLS immediately if missing
+5. Apply correct policies based on classification
+6. Explicitly verify:
+   - NO anon write access
+   - NO unintended public access
+   - NO accidental read/write exposure
+7. Rerun impacted regression tests
+8. Confirm system functionality remains intact
+9. Report results clearly
+
+-------------------------------------
+MANDATORY VALIDATION
+-------------------------------------
+
+After ANY RLS or policy change, Replit MUST rerun and confirm:
+
+- routing
+- billing
+- admin panel
+- automation
+- attribution (UTM / ambassador)
+- partner onboarding / activation
+- resource center reads
+
+-------------------------------------
+REQUIRED OUTPUT (EVERY TIME)
+-------------------------------------
+
+For EACH affected table, return:
+
+- table name
+- table type
+- RLS status (before / after)
+- policy type applied
+- anon access (yes / no)
+- authenticated access (yes / no)
+- service-role-only confirmation (yes / no)
+- confirmation NO public write exposure remains
+- regression result (PASS / FAIL)
+
+-------------------------------------
+HARD RULES
+-------------------------------------
+
+- NO table leaves development without RLS review
+- NO database change is considered complete without validation
+- DO NOT wait for Supabase warnings
+- DO NOT assume backend-only = safe
+- DO NOT apply blanket policies without classification
+- If uncertain → STOP and report before applying changes
+
+-------------------------------------
+DEFINITION OF COMPLETE
+-------------------------------------
+
+A database change is NOT complete until ALL of the following are true:
+
+- RLS is enabled
+- policies are correctly applied
+- no public exposure exists
+- regression tests PASS
+- output is documented and returned
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make RLS enforcement a built-in development discipline so public exposure cannot happen again as Veteran Care scales nationally.
+
+-------------------------------------
+END
+-------------------------------------
