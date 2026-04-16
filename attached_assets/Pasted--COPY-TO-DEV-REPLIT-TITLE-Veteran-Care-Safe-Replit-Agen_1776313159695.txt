@@ -1,0 +1,240 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Safe Replit Agent Operating Protocol
+
+PRIORITY:
+HIGH (Cost Control + Context Retention + App Safety)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Going forward, all Replit Agent work for Veteran Care must follow this operating protocol to reduce wasted spend, preserve project continuity, and avoid risky actions that could damage the app, database, routing, billing, automation, or launch readiness.
+
+This protocol is mandatory for every new Agent chat.
+
+-------------------------------------
+RULE 1 — ONE TASK PER CHAT
+-------------------------------------
+
+Each new Agent chat must focus on ONE clearly defined task only.
+
+Examples:
+- Stripe live setup
+- webhook validation
+- ambassador UTM testing
+- billing panel check
+- mobile UX bug
+- Supabase RLS audit
+
+Do NOT mix multiple unrelated tasks in one Agent session.
+
+-------------------------------------
+RULE 2 — ALWAYS START WITH PROJECT MEMORY SUMMARY
+-------------------------------------
+
+At the start of every new Agent chat, first restate the critical project rules and current system posture before making changes.
+
+Minimum summary must include:
+- Veteran Care is in controlled launch mode
+- monetization hardening is already built
+- automation is controlled, not fully autonomous
+- safety, supervision, escalation, and feature flags already exist
+- do not weaken routing, billing, Stripe, RLS, attribution, or automation safety rules
+- no schema changes without RLS check + regression test
+- no broad redesigns unless explicitly requested
+- preserve existing launch logic and admin visibility
+
+-------------------------------------
+RULE 3 — CREATE / UPDATE A CHANGELOG EVERY TIME
+-------------------------------------
+
+Before making changes, Agent must create or update a short changelog containing:
+
+- current task
+- files likely to change
+- risks
+- what must NOT be broken
+- how success will be validated
+
+At the end of the task, Agent must append:
+- files changed
+- what was done
+- what was NOT changed
+- validation results
+- any manual steps still required
+
+This changelog must be referenced in future sessions.
+
+-------------------------------------
+RULE 4 — DO NOT USE DANGEROUS RESET ACTIONS
+-------------------------------------
+
+Agent / dev must NOT:
+- rollback prior work blindly
+- delete tables
+- mass-delete records
+- reset production data
+- replace environment variables without explicit confirmation
+- run destructive Git resets on production work without backup review
+
+If rollback is ever needed:
+- explain the exact rollback scope first
+- identify affected files/data first
+- use the safest targeted method only
+
+-------------------------------------
+RULE 5 — USE ECONOMY MODE FIRST WHERE POSSIBLE
+-------------------------------------
+
+For these tasks, try Economy Mode first:
+- debugging UI issues
+- wording changes
+- CSS cleanup
+- small validation checks
+- screenshot-based inspection
+
+Use full Agent only for:
+- backend logic
+- Stripe/webhook setup
+- Supabase schema/policies
+- routing / billing / automation logic
+- multi-file debugging
+
+-------------------------------------
+RULE 6 — ALWAYS USE SCREENSHOTS / EVIDENCE
+-------------------------------------
+
+If an error, warning, broken page, failed route, or admin issue exists:
+- review screenshots first
+- inspect exact logs / exact panel state first
+- do not guess
+
+If a Supabase / Stripe / admin warning exists, Agent must explain:
+- what the warning actually means
+- whether it is config, schema, policy, or logic related
+- what exact fix is needed
+
+-------------------------------------
+RULE 7 — NO SILENT FIXES
+-------------------------------------
+
+Agent must NOT silently fix things and move on.
+
+For every task, Agent must clearly report:
+- root cause
+- fix applied
+- what was tested
+- what still needs manual verification
+
+-------------------------------------
+RULE 8 — NO NEW TABLES OR DB CHANGES WITHOUT SECURITY PASS
+-------------------------------------
+
+Any time a table is created or modified in Supabase/public schema, Agent must immediately:
+
+1. check whether RLS is enabled
+2. classify the table type correctly
+3. apply correct policies
+4. rerun regression tests
+5. confirm no public exposure remains
+
+No database work is complete until this security pass is done.
+
+-------------------------------------
+RULE 9 — PROTECT EXISTING CORE SYSTEMS
+-------------------------------------
+
+The following systems are considered protected and must not be weakened without explicit approval:
+
+- routing engine
+- monetization hardening
+- Stripe activation / billing flow
+- partner eligibility lock
+- automation safety gates
+- confidence escalation layer
+- supervision / audit logging
+- ambassador attribution / UTM persistence
+- admin launch panels
+- RLS security enforcement
+
+-------------------------------------
+RULE 10 — VALIDATION REQUIRED FOR EVERY TASK
+-------------------------------------
+
+Every task must end with explicit validation.
+
+Return:
+- PASS / FAIL
+- exact tests run
+- what was verified
+- whether live/manual testing is still required
+
+Do not say “done” without validation.
+
+-------------------------------------
+RULE 11 — PRESERVE LAUNCH DISCIPLINE
+-------------------------------------
+
+Unless explicitly told otherwise:
+
+- default system posture remains controlled
+- do not force full automation
+- do not expand scope
+- do not redesign unrelated sections
+- do not introduce feature creep during launch phase
+
+-------------------------------------
+RULE 12 — SAFE CONTAINER / SESSION RECOVERY ONLY
+-------------------------------------
+
+If Agent gets stuck or session hangs:
+- use safe container reset only if necessary
+- refresh page
+- reopen chat with changelog + task summary
+
+Do NOT treat session reset as permission to lose project rules.
+Always restate the current system posture before continuing.
+
+-------------------------------------
+STANDARD STARTER BLOCK FOR EVERY NEW CHAT
+-------------------------------------
+
+Paste this at the top of each new Replit Agent session:
+
+PROJECT: Veteran Care
+
+CURRENT POSTURE:
+- controlled launch mode
+- monetization hardening complete
+- reconciliation complete
+- safety layer complete
+- controlled automation complete
+- supervision complete
+- confidence escalation complete
+- release-discipline flags complete
+- RLS enforcement workflow complete
+
+DO NOT BREAK:
+- routing
+- billing
+- Stripe
+- attribution
+- admin panels
+- automation safety
+- Supabase security
+
+TASK FOR THIS CHAT:
+[INSERT SINGLE TASK]
+
+REQUIRED OUTPUT:
+1. root cause / plan
+2. files likely to change
+3. changes made
+4. validation results
+5. manual steps remaining
+
+-------------------------------------
+END
+-------------------------------------

@@ -1,5 +1,40 @@
 # Veteran Care
 
+## Safe Operating Protocol (MANDATORY — READ FIRST)
+
+### Current System Posture
+- Controlled launch mode
+- Monetization hardening complete
+- Reconciliation complete
+- Safety layer complete
+- Controlled automation complete (manual_only mode)
+- Supervision, confidence escalation, release-discipline flags complete
+- RLS enforcement workflow complete (24/24 tables secured)
+
+### Core Rules
+1. **One task per chat** — do not mix unrelated tasks
+2. **No silent fixes** — always report root cause, fix applied, tests run, and manual steps remaining
+3. **No dangerous resets** — no table deletions, mass record deletes, production data resets, or blind rollbacks without explicit confirmation
+4. **No schema changes without security pass** — every new/modified table requires RLS check + regression test before completion
+5. **Validation required for every task** — return PASS/FAIL with exact tests run
+6. **Preserve launch discipline** — do not force full automation, expand scope, or introduce feature creep
+
+### Protected Systems (do NOT weaken without explicit approval)
+- Routing engine
+- Monetization hardening / billing flow
+- Stripe activation / partner eligibility lock
+- Automation safety gates / confidence escalation / supervision
+- Ambassador attribution / UTM persistence
+- Admin launch panels
+- RLS security enforcement
+
+### Required Task Output
+1. Root cause / plan
+2. Files likely to change
+3. Changes made
+4. Validation results (PASS/FAIL with evidence)
+5. Manual steps remaining
+
 ## Platform Blueprint
 - **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
 
