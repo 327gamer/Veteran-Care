@@ -1,0 +1,149 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 1 Correction + Resend Full Step-by-Step Instructions
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+STOP — DO NOT PROCEED WITH CURRENT INSTRUCTIONS
+-------------------------------------
+
+The Stripe setup instructions provided are NOT aligned with the actual platform.
+
+We must correct the product structure BEFORE Colin creates anything in live mode.
+
+-------------------------------------
+ACTUAL MONETIZATION MODEL (CONFIRMED)
+-------------------------------------
+
+SUBSCRIPTIONS (Stripe recurring):
+1. State Partner Plan — $99/month  
+2. National Partner Plan — $499/month  
+3. Featured Partner Placement — $49.99/month  
+4. Near Me Boost — $29.99/month  
+
+USAGE-BASED (NOT subscription):
+5. Direct Lead Delivery — $49.99 per qualified lead  
+
+-------------------------------------
+ISSUE WITH YOUR CURRENT INSTRUCTIONS
+-------------------------------------
+
+You instructed creating:
+- Sponsored Top Slot ❌  
+- Sponsored Inline ❌  
+
+These are NOT part of the current system and must NOT be created.
+
+-------------------------------------
+REQUIRED ACTION (MANDATORY)
+-------------------------------------
+
+Before we continue Phase 1, you must:
+
+1. Confirm the correct Stripe architecture:
+   - which items are subscriptions
+   - how Direct Lead Delivery is handled (one-time charge, invoice item, metered billing, etc.)
+
+2. Update your implementation plan to match the REAL system
+
+-------------------------------------
+THEN — RESEND FULL INSTRUCTIONS
+-------------------------------------
+
+After correcting the model, you must resend a COMPLETE step-by-step guide for Colin.
+
+-------------------------------------
+INSTRUCTION REQUIREMENTS (VERY IMPORTANT)
+-------------------------------------
+
+Colin is NOT a developer.
+
+So your instructions MUST be:
+
+- click-by-click
+- zero assumptions
+- extremely clear
+- in exact order
+
+-------------------------------------
+YOU MUST INCLUDE
+-------------------------------------
+
+A. FULL STEP-BY-STEP GUIDE
+
+Break into:
+
+STEP 1  
+STEP 2  
+STEP 3  
+etc.
+
+For EACH step include:
+- platform (Stripe / Replit)
+- exact navigation path
+- exactly what to click
+- exactly what to copy
+- exactly where to paste it
+- how to confirm it worked
+
+-------------------------------------
+B. CORRECT PRODUCT SETUP
+
+ONLY include:
+
+Subscriptions:
+- State Partner Plan ($99/mo)
+- National Partner Plan ($499/mo)
+- Featured Partner Placement ($49.99/mo)
+- Near Me Boost ($29.99/mo)
+
+Explain EXACTLY how to create each.
+
+-------------------------------------
+C. DIRECT LEAD DELIVERY (CRITICAL)
+
+Explain EXACTLY:
+
+- how Direct Lead Delivery is implemented in Stripe
+- whether it uses:
+  - one-time charges
+  - invoice items
+  - metered billing
+  - or another method
+
+Then explain:
+- what Colin must do (if anything)
+- what Replit handles automatically
+
+-------------------------------------
+D. REPLIT SECRETS CHECKLIST
+
+List ONLY the secrets actually required based on corrected setup.
+
+-------------------------------------
+E. WEBHOOK CONFIGURATION
+
+List:
+- exact events required
+- exact setup steps
+- exact verification steps
+
+-------------------------------------
+F. FINAL STEP
+
+Tell Colin EXACTLY what to reply when finished:
+
+→ “DONE – Phase 1 Complete”
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+We complete Phase 1 correctly the FIRST time, fully aligned with the real monetization system, with no rework later.
+
+-------------------------------------
+END
+-------------------------------------
