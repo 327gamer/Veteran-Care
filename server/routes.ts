@@ -2792,6 +2792,22 @@ export async function registerRoutes(
   await seedStatewideResources();
   await cleanupTestRecords();
 
+  // === RLS ENFORCEMENT (MANDATORY — runs every startup) ===
+  try {
+    const { validateRlsIntegrity, enforceRls } = await import("./rls-validator");
+    const check = await validateRlsIntegrity();
+    if (!check.passed) {
+      console.log(`[RLS] WARNING: ${check.rls_disabled_count} tables without RLS detected — auto-enforcing...`);
+      const fix = await enforceRls();
+      console.log(`[RLS] Fixed ${fix.fixed.length} tables: ${fix.fixed.join(", ")}`);
+      console.log(`[RLS] RESULT: ${fix.result.passed ? "ALL TABLES SECURED" : "STILL EXPOSED: " + fix.result.exposed_tables.join(", ")}`);
+    } else {
+      console.log(`[RLS] All ${check.total_tables} tables have RLS enabled — no exposure detected`);
+    }
+  } catch (rlsErr: any) {
+    console.error(`[RLS] Validation failed:`, rlsErr.message);
+  }
+
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
   }
@@ -12982,6 +12998,26 @@ export async function registerRoutes(
         return res.status(400).json({ error: `Invalid feature: ${feature_name}` });
       }
       const result = await setFeatureFlag(feature_name, enabled, "admin");
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/rls-validation", requireAdmin, async (_req, res) => {
+    try {
+      const { validateRlsIntegrity } = await import("./rls-validator");
+      const result = await validateRlsIntegrity();
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/rls-enforce", requireAdmin, async (_req, res) => {
+    try {
+      const { enforceRls } = await import("./rls-validator");
+      const result = await enforceRls();
       return res.json(result);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });

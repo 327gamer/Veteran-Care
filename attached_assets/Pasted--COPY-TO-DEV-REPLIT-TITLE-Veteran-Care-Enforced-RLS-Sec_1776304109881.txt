@@ -1,0 +1,108 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Enforced RLS Security Workflow (NOT Documentation Only)
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+CONTEXT
+-------------------------------------
+
+The RLS rule has been added to documentation.
+
+This is NOT sufficient.
+
+We now need to enforce this rule at the workflow level so it cannot be skipped.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Convert the RLS rule from documentation into an enforced development step.
+
+-------------------------------------
+REQUIRED ENFORCEMENT
+-------------------------------------
+
+For ANY database change (table create / modify / migration):
+
+RLS validation must be executed as a REQUIRED step — not optional.
+
+-------------------------------------
+IMPLEMENTATION REQUIREMENTS
+-------------------------------------
+
+1. Every schema change must trigger:
+
+→ RLS CHECK STEP
+
+This must run automatically or be manually executed every time before completion.
+
+-------------------------------------
+2. Add REQUIRED OUTPUT CHECK
+
+No database change should be marked complete unless the following is returned:
+
+- table classification
+- RLS status before / after
+- policy applied
+- anon access = NO
+- public write exposure = NONE
+- regression result = PASS
+
+If this output is missing:
+→ task is NOT complete
+
+-------------------------------------
+3. ADD FAILURE BLOCK
+
+If ANY of the following is detected:
+
+- RLS disabled
+- anon write access present
+- incorrect policy
+- regression failure
+
+Then:
+→ STOP execution
+→ DO NOT proceed
+→ return issue immediately
+
+-------------------------------------
+4. ADD POST-CHANGE VALIDATION HOOK
+
+After every schema change:
+
+- run regression checks
+- confirm no exposure
+- confirm system still works
+
+-------------------------------------
+5. OPTIONAL (RECOMMENDED)
+
+Add a simple check command or function:
+
+→ “validate_rls_integrity”
+
+This can:
+- scan public schema
+- confirm all tables have RLS
+- flag any exposure
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Ensure RLS security is:
+
+- enforced
+- repeatable
+- non-skippable
+
+NOT dependent on memory or documentation.
+
+-------------------------------------
+END
+-------------------------------------
