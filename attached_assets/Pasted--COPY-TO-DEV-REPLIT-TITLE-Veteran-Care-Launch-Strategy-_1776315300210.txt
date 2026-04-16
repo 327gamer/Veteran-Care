@@ -1,0 +1,174 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Launch Strategy Reset + Phase 1 Execution (Stripe Live Mode)
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+PART 1 — STRATEGY RESET (READ FIRST)
+-------------------------------------
+
+We are updating the launch execution strategy.
+
+We are NO LONGER using the 13-phase system.
+
+We are now using a controlled 6-phase launch model:
+
+PHASE 0 — System Self-Audit  
+PHASE 1 — Stripe Live Mode + Billing Readiness  
+PHASE 2 — Supabase + Data Integrity  
+PHASE 3 — Attribution + User Flow  
+PHASE 4 — Partner Flow + Routing  
+PHASE 5 — Billing + Monetization Validation  
+PHASE 6 — Final System Validation + GO / HOLD  
+
+-------------------------------------
+NEW EXECUTION RULES (MANDATORY)
+-------------------------------------
+
+From this point forward:
+
+1. We ONLY work ONE PHASE at a time  
+2. Each phase must be:
+   - clearly executed
+   - clearly validated
+   - PASS or FAIL
+3. If FAIL:
+   - identify blockers
+   - fix ONLY that phase
+   - rerun validation
+4. DO NOT:
+   - jump ahead
+   - bundle fixes across phases
+   - silently fix issues without reporting
+5. ALWAYS return:
+   - PASS / FAIL
+   - blockers
+   - what was fixed
+   - what requires Colin manual action
+   - rerun result
+
+-------------------------------------
+CRITICAL NOTE ABOUT COLIN
+-------------------------------------
+
+Colin is NOT a developer.
+
+For ANY manual step involving:
+- Stripe
+- Replit
+- Supabase
+
+You must give:
+- click-by-click instructions
+- exact menus
+- exact fields
+- exact values to paste
+- how to verify each step worked
+
+NO assumptions.
+
+-------------------------------------
+PART 2 — PHASE 1 EXECUTION REQUEST
+-------------------------------------
+
+We are now starting:
+
+→ PHASE 1 — Stripe Live Mode + Webhook Readiness
+
+Your job:
+
+Provide a COMPLETE, NON-TECHNICAL, STEP-BY-STEP GUIDE for Colin to complete ALL required manual steps.
+
+-------------------------------------
+YOU MUST INCLUDE
+-------------------------------------
+
+A. STEP-BY-STEP GUIDE
+
+Break everything into:
+
+STEP 1  
+STEP 2  
+STEP 3  
+etc.
+
+For EACH step include:
+- platform (Stripe / Replit)
+- exact navigation path
+- what to click
+- what to copy
+- what to paste
+- where to paste it
+- how to confirm it worked
+
+-------------------------------------
+B. REPLIT SECRETS CHECKLIST
+
+List ALL secrets that must be set or updated:
+
+- STRIPE_SECRET_KEY  
+- VITE_STRIPE_PUBLIC_KEY  
+- STRIPE_PARTNER_PRICE_ID_STATE  
+- STRIPE_PARTNER_PRICE_ID_NATIONAL  
+- STRIPE_ADDON_PRICE_FEATURED  
+- STRIPE_ADDON_PRICE_NEAR_ME_BOOST  
+- STRIPE_ADDON_PRICE_SPONSORED_TOP  
+- STRIPE_ADDON_PRICE_SPONSORED_INLINE  
+- STRIPE_WEBHOOK_SECRET  
+
+-------------------------------------
+C. STRIPE PRODUCTS CHECKLIST
+
+List EXACTLY what Colin must create in LIVE mode:
+
+- product name  
+- price  
+- billing type (monthly recurring)  
+
+-------------------------------------
+D. WEBHOOK CONFIG
+
+List EXACT webhook setup:
+
+Required events:
+- checkout.session.completed  
+- invoice.paid  
+- invoice.payment_failed  
+- customer.subscription.updated  
+- customer.subscription.deleted  
+
+-------------------------------------
+E. VERIFICATION STEP
+
+After Colin finishes:
+
+Tell us EXACTLY:
+- what you will check
+- what endpoints you will test
+- how you confirm PASS vs FAIL
+
+-------------------------------------
+F. FINAL RESPONSE FORMAT
+
+Return:
+
+1. FULL STEP-BY-STEP GUIDE  
+2. CHECKLIST (Secrets + Products + Webhook)  
+3. WHAT COLIN MUST DO  
+4. WHAT YOU WILL DO AFTER  
+5. CLEAR INSTRUCTION:
+
+→ “Colin, complete these steps and reply DONE”
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+We complete Phase 1 cleanly, correctly, and in full live mode so we can immediately validate and move to Phase 2.
+
+-------------------------------------
+END
+-------------------------------------
