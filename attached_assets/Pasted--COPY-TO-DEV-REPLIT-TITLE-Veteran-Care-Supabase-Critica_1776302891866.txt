@@ -1,0 +1,156 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Supabase Critical Security Warning – RLS Enforcement on New Tables
+
+PRIORITY:
+CRITICAL (Pre-Launch Security Fix)
+
+-------------------------------------
+CONTEXT
+-------------------------------------
+
+Supabase has issued a critical warning:
+
+“Table publicly accessible – RLS disabled in public schema”
+
+This is likely caused by one or more recently created tables that do not yet have Row-Level Security (RLS) enabled.
+
+We must fix this immediately WITHOUT breaking any working system flows.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+1. Identify every affected table with RLS disabled
+2. Classify each table correctly by usage
+3. Enable RLS safely
+4. Apply correct policies based on real usage
+5. rerun core system regression checks
+6. confirm the security warning is resolved
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Do NOT blindly enable restrictive policies on all tables at once
+- Do NOT break admin panel queries
+- Do NOT break routing, billing, attribution, automation, or partner flows
+- Report findings FIRST before applying risky fixes if there is uncertainty
+- If a table is backend/service-role only, say that clearly
+- If any manual Colin step is needed in Supabase, explain it step by step
+
+-------------------------------------
+PHASE 1 — IDENTIFY AFFECTED TABLES
+-------------------------------------
+
+From Supabase Advisors or database inspection:
+
+List ALL public-schema tables where:
+- RLS is disabled
+
+Return for each:
+- table name
+- purpose of table
+- likely system owner/use
+- whether it appears recently created if determinable
+
+-------------------------------------
+PHASE 2 — CLASSIFY TABLE TYPE
+-------------------------------------
+
+For each affected table, classify as:
+
+A. SERVER-ONLY TABLE
+→ backend/service-role only
+Examples:
+- billing
+- routing
+- audit logs
+- automation logs
+- ops / admin control tables
+
+B. AUTHENTICATED USER TABLE
+→ user-scoped access needed
+
+C. PUBLIC READ TABLE
+→ intentionally readable, never publicly writable
+
+D. INTERNAL OPS TABLE
+→ must NOT be exposed publicly
+
+-------------------------------------
+PHASE 3 — APPLY RLS SAFELY
+-------------------------------------
+
+For each table:
+
+1. Enable RLS
+
+2. Apply correct policy pattern:
+
+SERVER / INTERNAL / OPS TABLES:
+- no anon access
+- no public insert/update/delete
+- service-role/backend only
+
+AUTHENTICATED TABLES:
+- restrict by user_id or scoped ownership
+
+PUBLIC READ TABLES:
+- read-only only
+- no public write access
+
+If a table is Supabase-only but the app accesses it through service role on the backend, do NOT add unnecessary client-facing policies.
+
+-------------------------------------
+PHASE 4 — REGRESSION-SAFE EXECUTION
+-------------------------------------
+
+Apply changes in a controlled way.
+
+After each affected table or logical group:
+- test impacted flow immediately
+- do not batch unrelated risky changes together
+
+-------------------------------------
+PHASE 5 — FULL SYSTEM REGRESSION TEST
+-------------------------------------
+
+After RLS fixes, test these critical flows:
+
+- admin panel loads
+- request support flow
+- lead routing
+- billing queue + Stripe paths
+- partner onboarding + activation
+- automation logs + audit logs
+- ambassador / UTM tracking
+- resource center reads
+
+Return PASS / FAIL per flow.
+
+-------------------------------------
+PHASE 6 — FINAL REPORT REQUIRED
+-------------------------------------
+
+Provide:
+
+1. affected tables list
+2. RLS status before / after
+3. policy type applied to each table
+4. confirmation no public write exposure remains
+5. confirmation system flows still work
+6. any remaining security risks
+7. whether Supabase warning should now clear
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Remove the Supabase security warning completely
+while preserving all system functionality.
+
+-------------------------------------
+END
+-------------------------------------
