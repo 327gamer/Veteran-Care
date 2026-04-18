@@ -1,0 +1,125 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Admin Delete Permissions + Test Company Cleanup + Admin Page Map Review
+
+PRIORITY:
+HIGH – MASTER ADMIN CONTROL / DATA HYGIENE / OPERATIONS
+
+IMPORTANT CONTEXT:
+The recent mobile admin polish looks good.
+
+However, while reviewing the Trusted Partner Applications section, attempting to delete a company triggered this database error:
+
+update or delete on table "partner_applications" violates foreign key constraint "partner_attribution_application_id_fkey" on table "partner_attribution"
+
+This means Master Admin delete control needs review.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Run a full assessment (NO CHANGES YET) covering 3 areas:
+
+=====================================
+PART 1 — MASTER ADMIN DELETE CONTROL
+=====================================
+
+Explain clearly why the delete failed.
+
+Need to know:
+
+1. What records are linked from partner_applications into partner_attribution?
+2. Why is Master Admin blocked from deleting?
+3. Which other tables may also block deletion?
+4. What is safest delete model for Master Admin?
+
+Examples:
+
+A. Soft Delete / Archive  
+- hides company from admin lists + public view  
+- preserves reporting / history
+
+B. Safe Cascade Delete Tool  
+- removes child references first, then parent row
+
+C. Convert to Inactive / Test Status
+
+D. True Hard Delete (only when zero dependencies exist)
+
+Need recommendation for best long-term Master Admin controls.
+
+=====================================
+PART 2 — TEST / JUNK COMPANY CLEANUP
+=====================================
+
+Review obvious test/demo rows such as:
+
+- ABC-7
+- ABC-6
+- ABC-5
+- ABC 4
+- ABC-2
+- Test Company ABC
+- ABC Company
+
+(and similar rows)
+
+Classify into:
+
+1. Safe Delete
+2. Archive / Hide
+3. Linked / Needs cleanup first
+4. Keep
+
+=====================================
+PART 3 — ADMIN PAGE MAP / DAILY OWNER TOOLS
+=====================================
+
+I need clarity on the admin areas already built.
+
+Please provide a simple map of where to find:
+
+1. Daily executive metrics dashboard
+2. Traffic / visitors dashboard
+3. AI activity dashboard
+4. Trusted service leads page
+5. Partner applications page
+6. Billing dashboard
+7. Ambassadors / commissions
+8. Any other high-value founder daily pages
+
+Include the exact routes.
+
+Also tell me:
+
+If I only check 3 pages each morning, which 3 should they be and why?
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+Return:
+
+1. Why delete failed
+2. Best Master Admin delete model
+3. Cleanup classification list
+4. Full admin page map with routes
+5. Best 3 daily pages for owner review
+6. Recommend next small safe slice
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Assessment only
+- No code changes yet
+- No deletes yet
+- Preserve billing integrity
+- Preserve attribution history
+- Preserve commissions
+- Preserve routing data
+
+-------------------------------------
+END
+-------------------------------------
