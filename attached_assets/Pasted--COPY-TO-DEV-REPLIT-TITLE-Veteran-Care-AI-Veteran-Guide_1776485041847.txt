@@ -1,0 +1,221 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – AI Veteran Guide Monetization + Procedural Response Upgrade
+
+PRIORITY:
+HIGH (Revenue Expansion + AI Guide Optimization)
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Upgrade the AI Veteran Guide to:
+
+1. Improve procedural usefulness (step-by-step guidance)
+2. Detect monetizable intent accurately
+3. Convert strong intent into clean lead opportunities
+4. Route users into correct category / subcategory / partner flow
+
+WITHOUT:
+- becoming pushy
+- damaging trust
+- forcing lead capture too early
+
+-------------------------------------
+CRITICAL RULE
+-------------------------------------
+
+This is NOT a rebuild.
+
+This is:
+→ a structured upgrade to EXISTING logic and prompts
+
+Focus on:
+- improving intelligence
+- improving response structure
+- improving conversion timing
+
+NOT:
+- adding complex new systems
+- overengineering
+
+-------------------------------------
+PHASE 1 — CURRENT STATE ASSESSMENT
+-------------------------------------
+
+Review current AI Guide implementation:
+
+Return:
+
+1. How intent is currently detected
+2. Whether monetizable intent is recognized today
+3. How responses are structured now
+4. Where (if anywhere) conversion hooks exist
+5. Where routing into lead flow currently happens
+
+-------------------------------------
+PHASE 2 — INTENT CLASSIFICATION MAP
+-------------------------------------
+
+Define a clean, canonical intent map the AI should use:
+
+Minimum categories:
+
+1. Housing / Mortgage / VA Loans
+2. Legal / Attorneys / Claims / Discharge Upgrade
+3. Financial / Credit / Debt / Bankruptcy
+4. Insurance / Life / Disability
+5. Education / Trade Schools / Training
+6. Employment / Resume / Job Placement
+7. Benefits / VA Claims / Navigation
+8. End of Life / Funeral / Wills / Survivor Support
+9. Healthcare / Mental Health
+10. Community / Transportation / Food Support
+
+Return:
+- category → subcategory structure
+- mapping logic (how AI detects each)
+
+-------------------------------------
+PHASE 3 — PROCEDURAL RESPONSE FRAMEWORK
+-------------------------------------
+
+Define a STANDARD response structure for monetizable categories:
+
+AI MUST follow:
+
+STEP 1 — Acknowledge + explain clearly  
+STEP 2 — Clarify intent:
+   - information only
+   - resources
+   - help connecting to someone  
+STEP 3 — Provide helpful guidance / resources  
+STEP 4 — IF strong intent → offer next step naturally  
+STEP 5 — IF accepted → route into correct flow  
+
+Return:
+- exact response template
+- examples
+
+-------------------------------------
+PHASE 4 — MONETIZATION PRIORITY LOGIC
+-------------------------------------
+
+Define Tier system:
+
+TIER 1 (high monetization priority):
+- Mortgage / VA Loans
+- Credit / Debt
+- Legal
+- Insurance
+- Education / Training
+- End of Life
+
+TIER 2:
+- Employment
+- Benefits navigation
+
+TIER 3:
+- Community / support services
+
+Return:
+- how AI behaves differently per tier
+- when escalation to lead flow is appropriate
+
+-------------------------------------
+PHASE 5 — CONVERSION HOOK DESIGN
+-------------------------------------
+
+Define EXACT phrasing AI should use.
+
+Examples:
+- “Would you like help connecting with a trusted partner?”
+- “I can help guide you through the next step if you’d like.”
+- “Do you want me to help you request support for this?”
+
+Return:
+- 5–10 approved phrases
+- when each should be used
+
+-------------------------------------
+PHASE 6 — TRUST SAFEGUARDS
+-------------------------------------
+
+Define rules AI MUST follow:
+
+- never push too early
+- always provide free guidance first
+- never force lead flow
+- never sound scripted or salesy
+
+Return:
+- enforcement rules
+- detection logic for “strong intent”
+
+-------------------------------------
+PHASE 7 — IMPLEMENTATION PLAN
+-------------------------------------
+
+Return EXACT implementation plan:
+
+1. Which files / prompts need updating
+2. Whether changes are:
+   - prompt-only
+   - backend logic
+   - mixed
+3. Minimal changes required to go live fast
+4. Safe rollout approach (feature flag if needed)
+
+-------------------------------------
+PHASE 8 — VALIDATION TESTS
+-------------------------------------
+
+Test these prompts:
+
+- “I want to buy a house with a VA loan”
+- “I need help fixing my credit”
+- “I need a lawyer for VA disability”
+- “I need life insurance”
+- “I want trade school training”
+- “I need help planning a funeral”
+
+For EACH:
+- detected category
+- response quality
+- monetization hook (if appropriate)
+- routing behavior
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return:
+
+1. Current-state analysis
+2. Intent classification map
+3. Procedural response framework
+4. Conversion hook strategy
+5. Files / logic to update
+6. Validation test results
+7. FASTEST SAFE rollout recommendation
+
+-------------------------------------
+FINAL RULE
+-------------------------------------
+
+Do NOT:
+- overbuild
+- add complexity
+- reduce trust
+
+We want:
+
+→ helpful first  
+→ smart second  
+→ monetizable when appropriate  
+→ scalable  
+
+-------------------------------------
+END
+-------------------------------------
