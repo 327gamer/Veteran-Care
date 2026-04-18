@@ -1,0 +1,106 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Category Display Fix – APPROVED NEXT STEPS (SLICED)
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+DIRECTION
+-------------------------------------
+
+Your diagnosis is useful.
+
+Do NOT execute F1 + F2 + F3 all at once.
+
+Proceed in controlled slices only.
+
+-------------------------------------
+APPROVED NEXT STEPS
+-------------------------------------
+
+APPROVED:
+- F1 (partial only)
+- F2
+
+HOLD:
+- F3
+
+-------------------------------------
+F1 — APPROVED (PARTIAL ONLY)
+-------------------------------------
+
+Execute ONLY these items in F1:
+
+1. clean / hide junk test rows that are already inactive
+2. trace the exact surface where Boot Print / Tri-County are appearing
+3. trace the exact surface where ABC-2 is appearing if found
+4. return findings clearly
+
+IMPORTANT:
+Do NOT manually assign new subcategories to Boot Print / Tri-County based on guesswork.
+
+Only map them if the correct category / subcategory is already supported by existing business data in the system.
+If not, return them as unresolved data-quality items for review.
+
+-------------------------------------
+F2 — APPROVED
+-------------------------------------
+
+Proceed with the canonical category mapping layer.
+
+Goal:
+- one canonical mapping between Resources and Trusted Services
+- no duplicate category worlds
+- read-only mapping logic first
+- preserve existing routing / billing / seeded-provider protections
+
+Return:
+- exact files changed
+- exact mapping structure
+- validation results
+
+-------------------------------------
+F3 — HOLD
+-------------------------------------
+
+Do NOT change the display endpoints yet.
+
+Do NOT modify /api/resources or /api/trusted-services query behavior until F2 is complete and validated.
+
+We want the architecture fix first, then the display-layer implementation second.
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- execute only the approved slice
+- do not silently fix extra items
+- preserve routing / billing / monetization protections
+- seeded providers must remain blocked from routing and billing
+- keep canonical category logic as the long-term source of truth
+
+If any DB table is created or modified:
+- apply the standing Supabase / RLS review rule
+- confirm no public exposure
+- rerun impacted regression checks
+- report results explicitly
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+Return after F1 partial + F2:
+
+1. root cause confirmation
+2. exact files changed
+3. exact canonical mapping approach
+4. junk/test cleanup performed
+5. exact unresolved data-quality items (if any)
+6. PASS / FAIL
+7. blockers if any
+
+-------------------------------------
+END
+-------------------------------------
