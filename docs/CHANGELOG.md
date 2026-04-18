@@ -4,6 +4,65 @@ Reverse-chronological. Operator-mode slices only.
 
 ---
 
+## 2026-04-18 — Upgrade #6: Master Admin Safe-Delete Toolkit
+
+**Type:** Additive endpoints + admin-UI rebuild on one page. Zero schema. Zero engine touched.
+
+### Why
+A `DELETE` from `/admin/partner-prospects` produced a raw Postgres FK
+violation. Master Admin had no controlled way to remove test/junk
+companies without breaking attribution, Stripe, or converted-provider
+history. Operator needed three power levels — Archive, Safe Delete,
+Force Delete — each with explicit guardrails.
+
+### What changed
+
+**Server (`server/routes.ts`):**
+- NEW `GET /api/admin/partner-applications/:id/delete-preflight`
+  — read-only blocker check, returns `{ blockers, recommended_action,
+  can_hard_delete }`
+- NEW `POST /api/admin/partner-applications/:id/archive`
+  — soft-archive (status='archived'), reversible, audit-logged
+- NEW `POST /api/admin/partner-applications/:id/unarchive`
+  — restore to prospect
+- HARDENED `DELETE /api/admin/partner-applications/:id`
+  - blocks with HTTP 409 if any FK dependency exists
+  - bypass requires `?force=true&confirm_company=<exact name>`
+  - cascade path deletes attribution rows first, then writes
+    high-severity audit-log entry
+
+**Client (`client/src/pages/admin-partner-prospects.tsx`):**
+- "Archived" tab added to status filter row
+- Action row rebuilt: **Archive** (primary) + **Delete…** (opens panel)
+- "Restore from Archive" button on archived rows
+- Inline delete-preview panel showing blockers + severity dots
+- Force-Delete sub-panel requires typing exact company name to enable
+
+### End-to-end validation (all PASS)
+1. Preflight on FK-loaded row → 3 blockers returned, recommended:force_delete_required
+2. Preflight on clean prospect → 0 blockers, can_hard_delete:true
+3. Archive → status='archived'
+4. Unarchive → status='prospect' restored
+5. DELETE on FK-loaded row → HTTP 409 with blocker JSON
+6. DELETE with force + wrong company name → HTTP 400 with expected_name
+
+### Files
+- `server/routes.ts` (+~165 LOC)
+- `client/src/pages/admin-partner-prospects.tsx` (+~140 LOC)
+
+### Protected systems
+Routing · Billing · Attribution (cascade is explicit force-only) · AI ·
+Escalation · Founder Digest · Stripe (no Stripe API calls in these
+endpoints — operator must cancel subscriptions in Stripe dashboard
+before any force-delete) · Commissions · Payouts — all UNTOUCHED.
+
+### Deferred
+- Apply same toolkit to `/admin/trusted-services` (3 incoming FKs)
+- Bulk archive UI for one-shot test-row cleanup
+- Audit-log viewer page
+
+---
+
 ## 2026-04-18 — Upgrade #4: Admin Mobile Panel Polish
 
 **Type:** UI/responsive polish only. Zero schema. Zero new endpoints. Zero engine touched.

@@ -1,0 +1,109 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Upgrade #6 Master Admin Safe-Delete Toolkit
+
+PRIORITY:
+HIGH – MASTER ADMIN CONTROL / CLEANUP SAFETY
+
+APPROVED.
+
+We need to solve the real admin deletion problem before scaling further.
+
+OBJECTIVE:
+Build a safe Master Admin deletion / archive toolkit for Trusted Partner Applications so admin can manage test, junk, stale, and real company rows safely without breaking attribution, billing, Stripe history, or reporting.
+
+-------------------------------------
+REQUIRED MODEL
+-------------------------------------
+
+Need 3 levels of admin control:
+
+1. ARCHIVE
+- default action
+- hides company from active lists
+- preserves history
+- reversible
+
+2. SAFE DELETE
+- only allowed when no linked dependencies exist
+
+3. FORCE DELETE
+- master-admin only
+- requires explicit warning / confirmation
+- only after showing exactly what linked records will be affected
+
+-------------------------------------
+REQUIRED FEATURES
+-------------------------------------
+
+1. Preflight delete check
+Show:
+- attribution row count
+- Stripe subscription present / not present
+- converted_provider_id present / not present
+- blocker list
+- recommended action
+
+2. Archive action
+- set status = archived
+- do not break history
+- reversible
+
+3. Delete action
+- block delete if dependencies exist
+- return clear blocker message
+
+4. Optional force-delete path
+- only for Master Admin
+- explicit confirm
+- company-name typed confirmation if needed
+- audit log entry required
+
+5. Admin UI improvement
+On /admin/partner-prospects:
+- replace simple Delete button with:
+  - Archive
+  - Delete…
+- show blocker summary before destructive actions
+- support Archived tab cleanly
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- no schema changes
+- no routing logic changes
+- no billing engine changes
+- no attribution engine changes
+- no AI changes
+- no Stripe logic changes beyond safe status awareness
+- preserve commission / attribution history by default
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Return:
+1. files changed
+2. exact endpoint behavior
+3. archive flow behavior
+4. safe delete flow behavior
+5. force delete behavior
+6. example blocker scenarios
+7. PASS / FAIL
+
+After completion:
+- update replit.md
+- update changelog
+- return rollout summary
+- recommend next safest slice
+
+-------------------------------------
+NEXT TARGET AFTER THIS
+-------------------------------------
+
+After Upgrade #6, next likely slice should be:
+Upgrade #5 – National Geo-Reporting Foundation
+
+END

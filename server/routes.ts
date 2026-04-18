@@ -11629,15 +11629,206 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/admin/partner-applications/:id", requireAdmin, async (req, res) => {
+  // ===== Upgrade #6: Master Admin Safe-Delete Toolkit =====
+  // Pre-flight: returns blockers + recommended action so admin UI can warn before destructive ops.
+  // Reads only — never mutates.
+  app.get("/api/admin/partner-applications/:id/delete-preflight", requireAdmin, async (req, res) => {
     try {
-      const rows = await pgQuery(`DELETE FROM partner_applications WHERE id = $1 RETURNING id`, [req.params.id]);
-      if (rows.length === 0) return res.status(404).json({ error: "Application not found" });
-      return res.json({ deleted: true, id: rows[0].id });
+      const id = req.params.id;
+      const appRows = await pgQuery(
+        `SELECT id, company_name, status, stripe_subscription_id, stripe_customer_id,
+                converted_provider_id, subscription_status
+         FROM partner_applications WHERE id = $1`,
+        [id]
+      );
+      if (appRows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const app = appRows[0];
+
+      const attrRows = await pgQuery(
+        `SELECT COUNT(*)::int AS n FROM partner_attribution WHERE application_id = $1`,
+        [id]
+      );
+      const attribution_rows = attrRows[0]?.n || 0;
+
+      const blockers: { type: string; message: string; severity: "high" | "medium" | "low" }[] = [];
+      if (attribution_rows > 0) {
+        blockers.push({
+          type: "attribution_history",
+          message: `${attribution_rows} attribution row(s) reference this application — deleting destroys ambassador commission history.`,
+          severity: "high",
+        });
+      }
+      if (app.stripe_subscription_id) {
+        blockers.push({
+          type: "stripe_subscription",
+          message: `Live Stripe subscription ${String(app.stripe_subscription_id).slice(0, 22)}… still attached. Cancel in Stripe before hard-deleting.`,
+          severity: "high",
+        });
+      }
+      if (app.converted_provider_id) {
+        blockers.push({
+          type: "converted_provider",
+          message: `Already converted to a Trusted Services provider (${String(app.converted_provider_id).slice(0, 12)}…). Provider listing would be orphaned.`,
+          severity: "medium",
+        });
+      }
+
+      const recommended_action: "archive" | "hard_delete" | "force_delete_required" =
+        blockers.length === 0
+          ? "hard_delete"
+          : blockers.some(b => b.severity === "high")
+            ? "force_delete_required"
+            : "archive";
+
+      return res.json({
+        id,
+        company_name: app.company_name,
+        status: app.status,
+        attribution_rows,
+        has_stripe_subscription: !!app.stripe_subscription_id,
+        has_stripe_customer: !!app.stripe_customer_id,
+        converted_provider_id: app.converted_provider_id || null,
+        blockers,
+        recommended_action,
+        can_hard_delete: blockers.length === 0,
+      });
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
   });
+
+  // Archive: soft-hide. Sets status='archived'. Reversible. Preserves all FK relationships.
+  app.post("/api/admin/partner-applications/:id/archive", requireAdmin, async (req, res) => {
+    try {
+      const rows = await pgQuery(
+        `UPDATE partner_applications
+           SET status = 'archived', updated_at = NOW()
+         WHERE id = $1
+         RETURNING id, company_name, status`,
+        [req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Application not found" });
+      try {
+        await pgQuery(
+          `INSERT INTO monetization_audit_log (event_type, partner_id, reason, metadata)
+           VALUES ('partner_application_archived', $1, $2, $3::jsonb)`,
+          [req.params.id, "Master Admin archive", JSON.stringify({ company_name: rows[0].company_name })]
+        );
+      } catch (_e) { /* audit log is best-effort */ }
+      return res.json({ archived: true, id: rows[0].id, company_name: rows[0].company_name, status: rows[0].status });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  // Unarchive: restore to 'prospect' (operator can move to active/etc afterwards).
+  app.post("/api/admin/partner-applications/:id/unarchive", requireAdmin, async (req, res) => {
+    try {
+      const rows = await pgQuery(
+        `UPDATE partner_applications
+           SET status = 'prospect', updated_at = NOW()
+         WHERE id = $1 AND status = 'archived'
+         RETURNING id, company_name, status`,
+        [req.params.id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Application not found or not archived" });
+      try {
+        await pgQuery(
+          `INSERT INTO monetization_audit_log (event_type, partner_id, reason, metadata)
+           VALUES ('partner_application_unarchived', $1, $2, $3::jsonb)`,
+          [req.params.id, "Master Admin unarchive", JSON.stringify({ company_name: rows[0].company_name })]
+        );
+      } catch (_e) { /* audit log is best-effort */ }
+      return res.json({ unarchived: true, id: rows[0].id, company_name: rows[0].company_name, status: rows[0].status });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+
+  // Safe-Delete: blocks if any FK dependency exists, unless `?force=true&confirm_company=<exact name>`
+  // Force path cascades partner_attribution rows + writes a high-severity audit log entry.
+  app.delete("/api/admin/partner-applications/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const appRows = await pgQuery(
+        `SELECT id, company_name, stripe_subscription_id, converted_provider_id
+         FROM partner_applications WHERE id = $1`,
+        [id]
+      );
+      if (appRows.length === 0) return res.status(404).json({ error: "Application not found" });
+      const app = appRows[0];
+
+      const attrCount = (await pgQuery(
+        `SELECT COUNT(*)::int AS n FROM partner_attribution WHERE application_id = $1`,
+        [id]
+      ))[0]?.n || 0;
+
+      const force = String(req.query.force || "") === "true";
+      const confirmCompany = String(req.query.confirm_company || "");
+
+      const hasBlockers = attrCount > 0 || !!app.stripe_subscription_id || !!app.converted_provider_id;
+
+      if (hasBlockers && !force) {
+        return res.status(409).json({
+          error: "delete_blocked",
+          message: "This application has linked records. Archive instead, or force-delete with explicit confirmation.",
+          blockers: {
+            attribution_rows: attrCount,
+            has_stripe_subscription: !!app.stripe_subscription_id,
+            converted_provider_id: app.converted_provider_id || null,
+          },
+          suggested_action: "archive",
+        });
+      }
+
+      if (hasBlockers && force) {
+        // Force path requires exact company-name confirmation
+        if (confirmCompany.trim() !== String(app.company_name || "").trim()) {
+          return res.status(400).json({
+            error: "company_name_confirmation_required",
+            message: "Force-delete requires exact company-name confirmation in ?confirm_company=",
+            expected_company_name: app.company_name,
+          });
+        }
+        // Cascade: delete attribution rows first
+        if (attrCount > 0) {
+          await pgQuery(`DELETE FROM partner_attribution WHERE application_id = $1`, [id]);
+        }
+        // Loud, durable audit trail
+        try {
+          await pgQuery(
+            `INSERT INTO monetization_audit_log (event_type, partner_id, reason, severity, metadata)
+             VALUES ('partner_application_force_deleted', $1, $2, 'high', $3::jsonb)`,
+            [
+              id,
+              "Master Admin force-delete with cascade",
+              JSON.stringify({
+                company_name: app.company_name,
+                attribution_rows_destroyed: attrCount,
+                had_stripe_subscription: !!app.stripe_subscription_id,
+                converted_provider_id: app.converted_provider_id || null,
+              }),
+            ]
+          );
+        } catch (_e) { /* audit log is best-effort */ }
+      }
+
+      const rows = await pgQuery(
+        `DELETE FROM partner_applications WHERE id = $1 RETURNING id, company_name`,
+        [id]
+      );
+      return res.json({
+        deleted: true,
+        id: rows[0].id,
+        company_name: rows[0].company_name,
+        cascaded_attribution_rows: hasBlockers && force ? attrCount : 0,
+        forced: hasBlockers && force,
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+  // ===== End Upgrade #6 =====
 
   app.post("/api/admin/partner-applications/:id/approve", requireAdmin, async (req, res) => {
     if (!isStripeEnabled()) {

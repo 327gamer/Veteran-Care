@@ -872,3 +872,112 @@ have honest gaps that compound at scale.
 - Mobile panel polish on the remaining 11 admin sub-pages
   (apply same 4 patterns when each is next opened)
 - Bottom-aligned floating "scroll to top" button on long pages
+
+## SHIPPED — Upgrade #6: Master Admin Safe-Delete Toolkit (2026-04-18)
+
+**Status:** LIVE. Additive endpoints + UI rebuild on one admin page. ZERO schema changes. ZERO engine touches.
+
+### Why
+Master Admin tried to delete a test row from `/admin/partner-prospects`
+and hit a raw Postgres FK violation (`partner_attribution_application_id_fkey`).
+The old `DELETE` handler ran `DELETE FROM partner_applications WHERE id=$1`
+with no FK awareness — every row tied to attribution / Stripe / a
+converted provider was undeletable, with no recovery path. Operator
+needed three controlled levels of admin power: Archive (default),
+Safe Delete (clean rows only), Force Delete (cascade with audit trail).
+
+### What was added
+
+1. **NEW `GET /api/admin/partner-applications/:id/delete-preflight`**
+   — Read-only. Returns:
+   `{ attribution_rows, has_stripe_subscription, has_stripe_customer,
+      converted_provider_id, blockers[], recommended_action,
+      can_hard_delete }`
+   - blockers[] severity: high / medium / low
+   - recommended_action: `archive` | `hard_delete` | `force_delete_required`
+
+2. **NEW `POST /api/admin/partner-applications/:id/archive`**
+   — Sets `status='archived'`, preserves all FKs. Reversible.
+   Best-effort audit-log entry: `partner_application_archived`.
+   ('archived' was already a valid status in the existing PATCH
+    validator — no schema change needed.)
+
+3. **NEW `POST /api/admin/partner-applications/:id/unarchive`**
+   — Restores `status='prospect'`. Idempotent (404s if not archived).
+   Best-effort audit-log entry: `partner_application_unarchived`.
+
+4. **HARDENED `DELETE /api/admin/partner-applications/:id`**
+   — Pre-flight gate before any row touch:
+   - If ANY blocker (attribution > 0 OR stripe_subscription_id OR
+     converted_provider_id) and no `?force=true` → returns HTTP 409
+     `{ error: 'delete_blocked', blockers: {...}, suggested_action: 'archive' }`
+   - If `?force=true` and `?confirm_company=` does not match exact
+     `company_name` → returns HTTP 400
+     `{ error: 'company_name_confirmation_required', expected_company_name }`
+   - If forced + confirmed: cascades `partner_attribution` rows first,
+     then deletes parent. Writes a high-severity audit-log entry:
+     `partner_application_force_deleted` with metadata
+     `{ company_name, attribution_rows_destroyed, had_stripe_subscription,
+        converted_provider_id }`
+   - If no blockers: hard-deletes immediately (no force needed).
+
+5. **Admin UI rebuild** on `/admin/partner-prospects`:
+   - "Archived" tab added to the status filter row (with live count)
+   - `archived` status added to STATUS_CONFIG with slate badge
+   - Bottom action row replaced single "Delete" with:
+     **Archive** (primary, browser confirm) + **Delete…** (opens panel)
+   - When viewing an archived row: "Restore from Archive" button instead
+   - Inline delete-preview panel (no Dialog dependency) shows preflight
+     blockers, severity dots, and a Force-Delete sub-panel that requires
+     typing the exact company name to enable the cascade button
+   - Archived rows visible only when "Archived" tab is selected
+
+### End-to-end validation (all 6 scenarios PASSED)
+
+| # | Scenario | Expected | Actual |
+|---|---|---|---|
+| 1 | Preflight on row with attribution + Stripe sub + converted_provider | 3 blockers, force_delete_required | ✅ All 3 blockers returned with correct severity (high/high/medium) |
+| 2 | Preflight on clean prospect | 0 blockers, can_hard_delete:true | ✅ Empty blockers, recommended_action:hard_delete |
+| 3 | Archive clean prospect | status→archived | ✅ `{archived:true, status:"archived"}` |
+| 4 | Unarchive | status→prospect | ✅ `{unarchived:true, status:"prospect"}` |
+| 5 | DELETE row with FK chain (no force) | HTTP 409, suggest archive | ✅ HTTP 409, blocker JSON, suggested_action:"archive" |
+| 6 | DELETE with force but wrong company name | HTTP 400, expected_name returned | ✅ HTTP 400, `expected_company_name` in body |
+
+### Files changed
+- `server/routes.ts` (+~165 LOC: 3 new endpoints + hardened DELETE)
+- `client/src/pages/admin-partner-prospects.tsx` (+~140 LOC: 3 new mutations,
+  preflight loader, Archived tab, action row, inline delete panel)
+
+### Schema / engine impact
+- Schema: NONE
+- New tables: NONE
+- New columns: NONE
+- ALTER TABLE: NONE
+- Routing engine: UNTOUCHED
+- Billing engine: UNTOUCHED — Stripe writes never invoked by these endpoints
+- Attribution engine: PROTECTED — cascade only via explicit force+confirm
+- AI engine: UNTOUCHED
+- Escalation engine: UNTOUCHED
+- Founder digest: UNTOUCHED
+- Stripe / commissions / payouts: UNTOUCHED (Stripe sub remains live
+  even when its application row is archived — operator must cancel in
+  Stripe dashboard before any force-delete)
+
+### Example blocker scenarios (from real production data)
+
+- **LIVE PAYMENT TEST** (active partner) — preflight returned 3 blockers:
+  1 attribution row (HIGH), live Stripe sub `sub_1TNOXFGdqk7jVmGZ23…` (HIGH),
+  converted to provider `693538fe-4f6…` (MEDIUM). Recommended: force-delete
+  required. UI correctly disables hard-delete button.
+- **Brand New Veteran Services LLC** (prospect, no Stripe, no attribution)
+  → preflight returned 0 blockers, `can_hard_delete:true`. UI shows
+  "Permanently Delete" button enabled immediately.
+
+### Known follow-ups (intentionally deferred)
+- Apply same toolkit to `/admin/trusted-services` (delete blocked by
+  3 incoming FKs: partner_applications, trusted_service_leads,
+  trusted_service_categories — bigger surface)
+- Bulk archive ("Archive all rows matching `ABC%`") for one-time
+  cleanup of test data — current per-row UX is enough for now
+- Audit-log viewer page — entries are written but not yet surfaced
+  in admin UI
