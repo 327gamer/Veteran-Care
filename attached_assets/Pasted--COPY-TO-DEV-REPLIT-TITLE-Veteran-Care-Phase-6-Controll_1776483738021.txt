@@ -1,0 +1,198 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 6 – Controlled Full System Simulation (Launch Test)
+
+PRIORITY:
+CRITICAL – FINAL PRE-LAUNCH VALIDATION
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Run a FULL SYSTEM SIMULATION under controlled live conditions.
+
+This is a REALISTIC test of:
+- traffic
+- leads
+- routing
+- billing
+- attribution
+- admin monitoring
+
+BUT must be done in a **controlled environment** to prevent:
+- accidental revenue impact
+- dirty production data
+- confusion during analysis
+
+-------------------------------------
+CRITICAL PRE-RULES (MANDATORY)
+-------------------------------------
+
+Before starting ANY simulation:
+
+1. Tag ALL test data:
+   - use naming convention:
+     "PHASE6_TEST_[timestamp]_[scenario]"
+   - emails:
+     phase6+[scenario]@veterancare.com
+
+2. Ensure billing safety:
+   - DO NOT auto-charge real customers
+   - if Stripe sessions are created:
+     → either cancel OR refund after validation
+
+3. Log ALL test IDs:
+   - leads created
+   - Stripe sessions
+   - partner IDs used
+   - attribution session IDs
+
+4. DO NOT modify production logic
+   - validation only
+
+-------------------------------------
+SIMULATION SCENARIOS
+-------------------------------------
+
+SCENARIO 1 — Ambassador Traffic Simulation
+
+- Generate traffic using:
+  - homepage UTM links
+  - landing page links
+- Use multiple ambassadors
+- Use multiple channels:
+  - email
+  - sms
+  - social
+
+VERIFY:
+- attribution captured
+- sessions created
+- no conflicts
+
+-------------------------------------
+
+SCENARIO 2 — Multi-User Lead Submission
+
+- Create 10–20 test leads
+- Mix entry points:
+  - homepage
+  - /start
+  - ambassador links
+  - resource center
+
+VERIFY:
+- all leads created successfully
+- no dropped submissions
+- correct status assigned
+
+-------------------------------------
+
+SCENARIO 3 — Partner Routing Distribution
+
+- Use current eligible partners
+- Observe routing behavior
+
+VERIFY:
+- only eligible partners receive leads
+- no routing to ineligible partners
+- distribution is fair (no single partner overloaded)
+- fallback_manual used when appropriate
+
+-------------------------------------
+
+SCENARIO 4 — Billing Under Load
+
+- Use billable leads only
+- Trigger billing flows
+
+VERIFY:
+- Stripe checkout sessions created correctly
+- no duplicate sessions
+- billing only for eligible leads
+- no billing on fallback leads
+- logs correctly recorded
+
+IMPORTANT:
+- DO NOT leave subscriptions active
+- cancel or refund test transactions
+
+-------------------------------------
+
+SCENARIO 5 — Admin Live Monitoring
+
+During simulation, monitor:
+
+- billing panel
+- automation panel
+- supervision panel
+- attribution dashboard
+- partner activity
+
+VERIFY:
+- data updates in real-time
+- no stale states
+- no missing logs
+
+-------------------------------------
+
+SCENARIO 6 — Edge Case Simulation
+
+Test:
+
+1. Disable a partner mid-flow
+   → verify routing stops immediately
+
+2. No eligible partner
+   → verify fallback_manual triggered
+
+3. Attempt billing on invalid lead
+   → verify blocked
+
+4. Duplicate submission attempt
+   → verify safe handling
+
+-------------------------------------
+
+VALIDATION REQUIRED
+-------------------------------------
+
+- lead creation integrity — PASS
+- routing accuracy — PASS
+- billing correctness — PASS
+- attribution persistence — PASS
+- admin visibility — PASS
+- safe failure behavior — PASS
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return FULL structured report:
+
+1. Simulation summary
+2. Lead creation logs
+3. Routing logs
+4. Billing logs (Stripe session IDs)
+5. Attribution session samples
+6. Admin panel observations
+7. Edge case results
+8. Any issues found
+
+-------------------------------------
+FINAL RULE
+-------------------------------------
+
+This is a REAL SYSTEM SIMULATION.
+
+Treat it as a **dress rehearsal for launch**.
+
+Do NOT:
+- skip logging
+- skip cleanup
+- skip reporting
+
+-------------------------------------
+END
+-------------------------------------
