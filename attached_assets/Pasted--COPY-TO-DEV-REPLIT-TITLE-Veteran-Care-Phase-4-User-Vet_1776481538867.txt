@@ -1,0 +1,167 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 4 – User / Veteran Flow Validation
+
+PRIORITY:
+CRITICAL – REAL USER EXPERIENCE VALIDATION
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Validate the full real-world user journey from entry point to help request submission and system response.
+
+This phase is focused on the actual human experience:
+- how clear the site feels
+- how easy it is to navigate
+- whether the request flow feels intuitive
+- whether the system responds correctly after submission
+
+NO CODE CHANGES.
+VALIDATION ONLY.
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Test the following real user flows:
+
+1. Homepage → Help Request
+2. Ambassador Link → Help Request
+3. Resource Center → Help Request
+4. Confused User Navigation
+5. Post-Submission Experience
+
+-------------------------------------
+WHAT TO EVALUATE
+-------------------------------------
+
+For each flow, evaluate both:
+
+A. USER EXPERIENCE
+- clear navigation
+- intuitive CTA placement
+- understandable wording
+- low friction in form completion
+- no dead ends
+- no confusing loops
+
+B. SYSTEM RESPONSE
+- lead / request created correctly
+- routing trigger fires correctly
+- confirmation messaging is clear
+- no broken next-step experience
+
+-------------------------------------
+TEST FLOWS REQUIRED
+-------------------------------------
+
+FLOW 1 — Homepage → Help Request
+- enter from homepage
+- navigate naturally as a first-time user
+- request help
+- evaluate clarity and friction
+
+FLOW 2 — Ambassador Link → Help Request
+- enter through tracked ambassador link
+- move through normal user journey
+- submit help request
+- evaluate if experience still feels smooth
+
+FLOW 3 — Resource Center → Help Request
+- start from resource browsing
+- pivot into requesting help
+- evaluate if this transition feels obvious and easy
+
+FLOW 4 — Confused User Navigation
+Simulate a user who is not sure where to go:
+- click around
+- enter wrong section first
+- backtrack
+- try to find help
+
+Evaluate:
+- whether the platform still guides them correctly
+- whether the system reduces confusion or increases it
+
+FLOW 5 — Post-Submission Experience
+After submission, evaluate:
+- confirmation page / message
+- whether the user knows what happens next
+- whether the response feels reassuring and clear
+- whether any next step is missing or confusing
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+For each flow, return PASS / FAIL on:
+
+- navigation clarity
+- CTA clarity
+- form experience
+- submission success
+- system response quality
+- confirmation clarity
+
+-------------------------------------
+FAIL CONDITIONS
+-------------------------------------
+
+Any of the following is a FAIL:
+
+- user confusion not resolved by interface
+- broken navigation path
+- unclear or weak messaging
+- form friction / hesitation point
+- submission problem
+- incorrect or unclear system response
+- post-submission uncertainty
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return a structured Phase 4 report including:
+
+1. screenshots of each flow where helpful
+2. observed friction points
+3. confirmation of lead / request creation
+4. confirmation of routing trigger / system response
+5. confirmation of post-submission behavior
+6. recommended UX improvements (if any)
+7. PASS / FAIL per flow
+8. blockers if any exist
+
+Do NOT just say “looks good.”
+Return actual observations from the user journey.
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+This phase is validation only.
+Do NOT silently fix UX issues.
+Do NOT change wording or layout yet.
+
+If issues are found:
+- report them clearly
+- classify severity
+- recommend improvements separately
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+Phase 4 is PASS only if:
+- user paths are understandable
+- help submission is low-friction
+- requests are created correctly
+- system response is correct
+- confirmation experience is clear
+- no critical confusion path exists
+
+-------------------------------------
+END
+-------------------------------------
