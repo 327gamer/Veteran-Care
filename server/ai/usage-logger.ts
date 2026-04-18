@@ -31,6 +31,9 @@ export async function logUsage(params: {
   outputTokens: number;
   totalTokens: number;
   navigatorSuggested: boolean;
+  // Upgrade #5: optional geo context (set only when caller already has it; never invented)
+  userState?: string | null;
+  userCity?: string | null;
 }): Promise<void> {
   await ensureTableCheck();
   if (!hasUsageTable) return;
@@ -45,6 +48,8 @@ export async function logUsage(params: {
       output_tokens: params.outputTokens,
       total_tokens: params.totalTokens,
       navigator_suggested: params.navigatorSuggested,
+      user_state: params.userState ?? null,
+      user_city: params.userCity ?? null,
     });
   } catch (err) {
     console.log("[ai] Usage log insert failed:", (err as Error).message);

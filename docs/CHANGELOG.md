@@ -4,6 +4,47 @@ Reverse-chronological. Operator-mode slices only.
 
 ---
 
+## 2026-04-18 — Upgrade #5: National Geo-Reporting Foundation
+
+**Type:** Additive schema columns + endpoint state filter + admin UI selector + founder-digest grouping. Zero engine touched.
+
+**Why:** SC pilot success → Georgia next. Single national platform must report ANY state cleanly without duplicating systems. Drives the "one engine, multi-state data layers" architecture in `replit.md`.
+
+**Schema (all idempotent, NULL-only backfills, non-PK additive columns):**
+- `ambassadors`: `+state TEXT`, `+city TEXT`, `idx_ambassadors_state`. Backfilled SC pilot rows from existing `region_type`/`region_value`.
+- `page_views`: `+user_state TEXT`, `+user_city TEXT`, `idx_page_views_user_state`.
+- `ai_usage_log`: `+user_state TEXT`, `+user_city TEXT`, `idx_ai_usage_log_user_state`.
+- All wrapped in try/catch — survives table-not-yet-created envs.
+
+**Loggers (additive optional fields, never invented):**
+- `server/page-view-logger.ts` `PageViewIngest`: `+userState?`, `+userCity?` (nullable pass-through).
+- `server/ai/usage-logger.ts` `logUsage`: `+userState?`, `+userCity?` (nullable pass-through).
+
+**Endpoint — `GET /api/admin/exec-summary`:**
+- New `?state=XX` filter (uppercase 2-letter US code; invalid → null = all).
+- New top-level `state_filter: string | null`.
+- New top-level `available_states: string[]` derived from real signals (navigator_requests, resource_clicks, paid partners) — only states with actual data appear.
+- New `metrics.top_cities_30d: { city, state, clicks, help_requests, total }[]` — state-aware, never collides Charleston-SC with Charleston-WV.
+- Back-compat: `metrics.top_sc_cities_30d` retained (filtered subset of new shape) so older clients keep working.
+
+**Admin UI — `client/src/pages/admin-executive.tsx`:**
+- State selector dropdown (header) populated from `available_states` + "All states".
+- Top-cities card retitled to `Top {state} Cities (30d)` or `Top Cities — All States (30d)`.
+- City rows show state badge when viewing All states; hidden when filter is set.
+
+**Founder digest — `server/founder-digest.ts`:**
+- `topCities7d` window expanded 5 → 12 to support multi-state breakdown.
+- HTML output now grouped by state block (state header + total + top 5 cities) instead of flat mixed list — readable as more states activate.
+
+**Validation (E2E via curl against `/api/admin/exec-summary`):**
+- ✅ Unfiltered: `state_filter=null`, `available_states=["PA","SC"]`, `top_cities_30d` returns 9 rows with state per row, back-compat `top_sc_cities_30d` count=9.
+- ✅ `?state=SC`: `state_filter="SC"`, paid_partners scoped to SC only.
+- ✅ Schema boot: `[geo-backfill] ambassadors`, `[schema] page_views/ai_usage_log columns ensured` log lines fire idempotently.
+
+**Protected engines untouched:** routing, billing, attribution, AI, escalation, founder-digest sender.
+
+---
+
 ## 2026-04-18 — Upgrade #6: Master Admin Safe-Delete Toolkit
 
 **Type:** Additive endpoints + admin-UI rebuild on one page. Zero schema. Zero engine touched.

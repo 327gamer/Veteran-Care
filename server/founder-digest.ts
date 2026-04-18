@@ -170,7 +170,8 @@ async function assembleDigestData(): Promise<DigestData> {
   });
   const topCategories7d = Array.from(catMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([category, count]) => ({ category, count }));
 
-  // Top cities (last 7d) — exclude unknowns
+  // Top cities (last 7d) — exclude unknowns. Upgrade #5: keep enough rows
+  // to render multi-state breakdown without flattening growth across states.
   const cityMap = new Map<string, { city: string; state: string | null; count: number }>();
   leads7d.forEach(l => {
     if (!l.user_city) return;
@@ -179,7 +180,7 @@ async function assembleDigestData(): Promise<DigestData> {
     if (existing) existing.count += 1;
     else cityMap.set(key, { city: l.user_city, state: l.user_state, count: 1 });
   });
-  const topCities7d = Array.from(cityMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+  const topCities7d = Array.from(cityMap.values()).sort((a, b) => b.count - a.count).slice(0, 12);
 
   // Outcomes (last 7d) — capture rate among routed leads
   const routed7d = leads7d.filter(l => l.routed_to_partner_id);
@@ -289,10 +290,33 @@ function buildDigestHtml(d: DigestData): string {
         `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F3F4F6;font-size:13px;"><span style="color:#374151;">${c.category}</span><span style="color:#111827;font-weight:600;">${c.count}</span></div>`
       ).join("");
 
+  // Upgrade #5: group cities by state so multi-state growth stays readable
+  // instead of being flattened into one mixed list.
+  const byState = new Map<string, { city: string; count: number }[]>();
+  d.topCities7d.forEach(c => {
+    const stateKey = c.state || "Unknown";
+    const arr = byState.get(stateKey) || [];
+    arr.push({ city: c.city, count: c.count });
+    byState.set(stateKey, arr);
+  });
+  // Sort states by total volume desc; cities within each state by count desc
+  const stateBlocks = Array.from(byState.entries())
+    .map(([st, cities]) => ({
+      state: st,
+      total: cities.reduce((s, c) => s + c.count, 0),
+      cities: cities.sort((a, b) => b.count - a.count).slice(0, 5),
+    }))
+    .sort((a, b) => b.total - a.total);
+
   const topCityHtml = d.topCities7d.length === 0
     ? `<div style="color:#9CA3AF;font-size:12px;">No located leads in last 7 days</div>`
-    : d.topCities7d.map(c =>
-        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F3F4F6;font-size:13px;"><span style="color:#374151;">${c.city}${c.state ? `, ${c.state}` : ""}</span><span style="color:#111827;font-weight:600;">${c.count}</span></div>`
+    : stateBlocks.map(block => `
+        <div style="margin-bottom:6px;">
+          <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;padding:4px 0 2px 0;">${block.state} <span style="color:#9CA3AF;font-weight:400;">· ${block.total} total</span></div>
+          ${block.cities.map(c =>
+            `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #F3F4F6;font-size:13px;"><span style="color:#374151;">&nbsp;&nbsp;${c.city}</span><span style="color:#111827;font-weight:600;">${c.count}</span></div>`
+          ).join("")}
+        </div>`
       ).join("");
 
   return `<!DOCTYPE html>

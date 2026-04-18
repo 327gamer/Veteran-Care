@@ -129,8 +129,40 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS payout_details TEXT`);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS w9_status TEXT DEFAULT 'not_submitted'`);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS tax_notes TEXT`);
+    // Upgrade #5: additive geo columns for clean multi-state segmentation
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS state TEXT`);
+    await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS city TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_code ON ambassadors(code)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_status ON ambassadors(status)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ambassadors_state ON ambassadors(state)`);
+    // Backfill SC pilot ambassadors — NULL-only writes, never overwrites
+    try {
+      const r1 = await pgQuery(`UPDATE ambassadors SET state='SC' WHERE state IS NULL AND region_type='state' AND region_value='SC' RETURNING id`);
+      const r2 = await pgQuery(`UPDATE ambassadors SET state='SC', city = SPLIT_PART(region_value, ',', 1) WHERE state IS NULL AND region_type='city' AND region_value ILIKE '%, SC' RETURNING id`);
+      const r3 = await pgQuery(`UPDATE ambassadors SET state='SC' WHERE state IS NULL AND region_type IS NULL AND region_value IS NULL RETURNING id`);
+      const total = (r1?.length || 0) + (r2?.length || 0) + (r3?.length || 0);
+      if (total > 0) console.log(`[geo-backfill] ambassadors: ${total} SC pilot row(s) backfilled (state/city)`);
+    } catch (e: any) {
+      console.log(`[geo-backfill] ambassadors backfill skipped: ${e.message}`);
+    }
+
+    // Upgrade #5: additive geo context on traffic + AI logs (non-PK, nullable, IF NOT EXISTS)
+    try {
+      await pgQuery(`ALTER TABLE page_views ADD COLUMN IF NOT EXISTS user_state TEXT`);
+      await pgQuery(`ALTER TABLE page_views ADD COLUMN IF NOT EXISTS user_city TEXT`);
+      await pgQuery(`CREATE INDEX IF NOT EXISTS idx_page_views_user_state ON page_views(user_state)`);
+      console.log("[schema] page_views user_state/user_city columns ensured");
+    } catch (e: any) {
+      console.log(`[schema] page_views geo columns skipped (table may not exist yet): ${e.message}`);
+    }
+    try {
+      await pgQuery(`ALTER TABLE ai_usage_log ADD COLUMN IF NOT EXISTS user_state TEXT`);
+      await pgQuery(`ALTER TABLE ai_usage_log ADD COLUMN IF NOT EXISTS user_city TEXT`);
+      await pgQuery(`CREATE INDEX IF NOT EXISTS idx_ai_usage_log_user_state ON ai_usage_log(user_state)`);
+      console.log("[schema] ai_usage_log user_state/user_city columns ensured");
+    } catch (e: any) {
+      console.log(`[schema] ai_usage_log geo columns skipped (table may not exist yet): ${e.message}`);
+    }
 
     // === USER ATTRIBUTION SESSIONS ===
     await pgQuery(`
@@ -9955,7 +9987,7 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/admin/exec-summary", requireAdmin, async (_req, res) => {
+  app.get("/api/admin/exec-summary", requireAdmin, async (req, res) => {
     try {
       const now = new Date();
       const startOfToday = new Date(now); startOfToday.setUTCHours(0, 0, 0, 0);
@@ -9964,6 +9996,10 @@ export async function registerRoutes(
       const isoToday = startOfToday.toISOString();
       const iso7d = start7d.toISOString();
       const iso30d = start30d.toISOString();
+
+      // Upgrade #5: optional state filter — uppercase 2-letter US code
+      const rawState = String(req.query.state || "").trim().toUpperCase();
+      const stateFilter: string | null = /^[A-Z]{2}$/.test(rawState) ? rawState : null;
 
       const inWindow = (createdAt: string | null, since: string) =>
         !!createdAt && createdAt >= since;
@@ -9974,7 +10010,7 @@ export async function registerRoutes(
       const [aiRes, navRes, clickRes, resRes, paidPartnersRes] = await Promise.all([
         supabaseAdmin
           .from("ai_usage_log")
-          .select("id, detected_category, is_guest, navigator_suggested, created_at")
+          .select("id, detected_category, is_guest, navigator_suggested, created_at, user_state, user_city")
           .gte("created_at", iso30d)
           .order("created_at", { ascending: false })
           .limit(ROW_CAP),
@@ -10001,12 +10037,38 @@ export async function registerRoutes(
           .eq("is_lead_enabled", true),
       ]);
 
-      const aiRows = aiRes.data || [];
-      const navAll = navRes.data || [];
-      const clicks = clickRes.data || [];
+      const aiRowsAll = aiRes.data || [];
+      const navAllRaw = navRes.data || [];
+      const clicksAll = clickRes.data || [];
       const resources = resRes.data || [];
-      const paidPartners = paidPartnersRes.data || [];
+      const paidPartnersAll = paidPartnersRes.data || [];
       const traffic = await trafficP;
+
+      // Upgrade #5: derive available_states from real signal sources
+      // (navigator_requests, resource_clicks, paid partners) so the UI
+      // selector lists only states that actually have data.
+      const stateSet = new Set<string>();
+      navAllRaw.forEach((n: any) => { if (n.user_state) stateSet.add(String(n.user_state).toUpperCase()); });
+      clicksAll.forEach((c: any) => { if (c.user_state) stateSet.add(String(c.user_state).toUpperCase()); });
+      paidPartnersAll.forEach((p: any) => { if (p.state) stateSet.add(String(p.state).toUpperCase()); });
+      const availableStates = Array.from(stateSet).sort();
+
+      // Apply state filter to source rows BEFORE aggregation.
+      // ai_usage_log may not have user_state populated yet (column added in
+      // Upgrade #5; legacy rows are NULL), so when filtering we conservatively
+      // include only rows that match — never invent geo for legacy data.
+      const navAll = stateFilter
+        ? navAllRaw.filter((n: any) => String(n.user_state || "").toUpperCase() === stateFilter)
+        : navAllRaw;
+      const clicks = stateFilter
+        ? clicksAll.filter((c: any) => String(c.user_state || "").toUpperCase() === stateFilter)
+        : clicksAll;
+      const aiRows = stateFilter
+        ? aiRowsAll.filter((r: any) => String((r as any).user_state || "").toUpperCase() === stateFilter)
+        : aiRowsAll;
+      const paidPartners = stateFilter
+        ? paidPartnersAll.filter((p: any) => String(p.state || "").toUpperCase() === stateFilter)
+        : paidPartnersAll;
 
       // resource_id → all category names (for click attribution, multi-category aware)
       const resourceToCats = new Map<string, string[]>();
@@ -10079,20 +10141,23 @@ export async function registerRoutes(
         .slice(0, 10)
         .map(([category, clicks]) => ({ category, clicks }));
 
-      // 6. Top SC cities (30d) — combine click signals + help-request signals from SC only
-      const cityScore: Record<string, { clicks: number; help_requests: number }> = {};
-      clicks.filter((c: any) => c.user_state === "SC" && c.user_city).forEach((c: any) => {
-        const k = c.user_city;
-        cityScore[k] = cityScore[k] || { clicks: 0, help_requests: 0 };
+      // 6. Top cities (30d) — Upgrade #5: when state filter is set, scoped to
+      // that state; when unfiltered, top across ALL states. City rows now
+      // include state so the UI never collapses Charleston-SC and
+      // Charleston-WV into the same row.
+      const cityScore: Record<string, { city: string; state: string; clicks: number; help_requests: number }> = {};
+      clicks.filter((c: any) => c.user_city && c.user_state).forEach((c: any) => {
+        const k = `${c.user_city}|${String(c.user_state).toUpperCase()}`;
+        cityScore[k] = cityScore[k] || { city: c.user_city, state: String(c.user_state).toUpperCase(), clicks: 0, help_requests: 0 };
         cityScore[k].clicks++;
       });
-      navAll.filter((n: any) => n.user_state === "SC" && n.user_city && inWindow(n.created_at, iso30d)).forEach((n: any) => {
-        const k = n.user_city;
-        cityScore[k] = cityScore[k] || { clicks: 0, help_requests: 0 };
+      navAll.filter((n: any) => n.user_city && n.user_state && inWindow(n.created_at, iso30d)).forEach((n: any) => {
+        const k = `${n.user_city}|${String(n.user_state).toUpperCase()}`;
+        cityScore[k] = cityScore[k] || { city: n.user_city, state: String(n.user_state).toUpperCase(), clicks: 0, help_requests: 0 };
         cityScore[k].help_requests++;
       });
-      const topScCities30d = Object.entries(cityScore)
-        .map(([city, v]) => ({ city, clicks: v.clicks, help_requests: v.help_requests, total: v.clicks + v.help_requests }))
+      const topCities30d = Object.values(cityScore)
+        .map(v => ({ city: v.city, state: v.state, clicks: v.clicks, help_requests: v.help_requests, total: v.clicks + v.help_requests }))
         .sort((a, b) => b.total - a.total)
         .slice(0, 10);
 
@@ -10133,13 +10198,17 @@ export async function registerRoutes(
       return res.json({
         generated_at: now.toISOString(),
         windows: { today_start: isoToday, since_7d: iso7d, since_30d: iso30d },
+        // Upgrade #5: geo metadata for multi-state operations
+        state_filter: stateFilter,
+        available_states: availableStates,
         metrics: {
           ai_chats: aiChats,
           top_ai_categories_30d: topAiCategories30d,
           help_requests: help,
           partner_leads: partnerLeads,
           top_clicked_categories_30d: topClickedCategories30d,
-          top_sc_cities_30d: topScCities30d,
+          top_cities_30d: topCities30d,                  // new state-aware shape
+          top_sc_cities_30d: topCities30d.filter(c => c.state === "SC"), // back-compat for older clients
           revenue,
           paid_partners: paidPartners.map((p: any) => ({ name: p.name, state: p.state })),
           traffic,

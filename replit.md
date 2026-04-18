@@ -75,7 +75,7 @@ Geo reporting and admin segmentation must be tightened **before Georgia opens** 
 - **Strong (state+city+zip native):** navigator_requests, resources, partner_organizations, partner_routing_rules, trusted_services, trusted_service_leads, partner_applications, user_profiles, resource_clicks, states registry
 - **Gap — needs state/city columns:** ambassadors (uses free-text region_type/region_value only), ai_usage_log, page_views
 - **Gap — hard-coded SC filter:** exec-summary "Top Cities" panel (`server/routes.ts:10082-10093`); founder digest mixes states in flat city list
-- **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation (additive ALTER TABLE ADD COLUMN + `?state=` filter + state selector). No engine touches.
+- **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation **SHIPPED 2026-04-18** ✅ (additive `state`/`city` cols on ambassadors + `user_state`/`user_city` on page_views & ai_usage_log + `?state=` filter on exec-summary + admin state selector + founder-digest by-state grouping). No engine touches. See CHANGELOG for E2E validation.
 
 ## Platform Blueprint
 - **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
@@ -872,6 +872,20 @@ have honest gaps that compound at scale.
 - Mobile panel polish on the remaining 11 admin sub-pages
   (apply same 4 patterns when each is next opened)
 - Bottom-aligned floating "scroll to top" button on long pages
+
+## SHIPPED — Upgrade #5: National Geo-Reporting Foundation (2026-04-18)
+
+**One platform, multi-state data layers. Georgia activation now unblocked.**
+
+- **Schema (additive, idempotent, NULL-only backfills):** `ambassadors.+state/+city` (SC pilot backfilled from region_type/region_value); `page_views.+user_state/+user_city`; `ai_usage_log.+user_state/+user_city`. All `IF NOT EXISTS` + try/catch — no engine, no PK changes.
+- **Loggers** accept optional `userState`/`userCity` pass-through (never invented).
+- **`GET /api/admin/exec-summary`** now accepts `?state=XX`; returns `state_filter` + `available_states` (derived from real signals) + `top_cities_30d` (state-aware shape) + `top_sc_cities_30d` (back-compat).
+- **Admin UI** (`/admin/executive`) gained header state selector populated from `available_states`; city card retitles + shows state badge when viewing all states.
+- **Founder digest** groups top cities by state block (state header + total + top 5) instead of flat mixed list.
+- **E2E validated:** `available_states=["PA","SC"]`; `?state=SC` filters paid_partners correctly; back-compat preserved.
+- **Files:** `server/routes.ts` (boot ALTER block + exec-summary refactor), `server/page-view-logger.ts`, `server/ai/usage-logger.ts`, `server/founder-digest.ts`, `client/src/pages/admin-executive.tsx`.
+
+---
 
 ## SHIPPED — Upgrade #6: Master Admin Safe-Delete Toolkit (2026-04-18)
 

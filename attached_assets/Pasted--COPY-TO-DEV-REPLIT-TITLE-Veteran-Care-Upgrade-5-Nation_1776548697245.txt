@@ -1,0 +1,100 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Upgrade #5 National Geo-Reporting Foundation
+
+PRIORITY:
+HIGH – PRE-GEORGIA HARDENING
+
+Approved.
+
+Now that Upgrade #6 is complete, proceed with Upgrade #5.
+
+OBJECTIVE:
+Strengthen geographic reporting and operational segmentation before Georgia opens, while keeping Veteran Care as ONE national platform.
+
+This is a geo-reporting / admin-structure slice only.
+
+DO NOT:
+- change routing logic
+- change billing logic
+- change attribution core logic
+- change AI core logic
+- fork the platform by state
+- touch protected systems
+- overbuild region / metro architecture beyond what is needed now
+
+-------------------------------------
+CORE RULE
+-------------------------------------
+
+Veteran Care remains:
+- one codebase
+- one admin system
+- one backend
+- one national platform
+
+This slice exists so reporting, ambassadors, analytics, and dashboards do NOT become one giant clustered view as states expand.
+
+-------------------------------------
+APPROVED SCOPE
+-------------------------------------
+
+1. AMBASSADOR GEO STRUCTURE
+Add additive geographic fields so ambassadors can be segmented cleanly by:
+- state
+- city
+
+Keep current fields intact.
+Backfill current South Carolina ambassadors cleanly where possible.
+
+2. AI / TRAFFIC GEO CONTEXT
+Add additive geographic context fields to:
+- ai_usage_log
+- page_views
+
+Populate when known from existing flows / known context only.
+Do NOT invent data.
+
+3. EXECUTIVE SUMMARY STATE FILTER
+Add optional state filtering to executive summary:
+- endpoint supports ?state=
+- UI includes state selector
+- default behavior should remain safe and sensible
+
+4. FOUNDER DIGEST GEO READABILITY
+Restructure top city / location reporting so multi-state growth stays readable and not flattened into one mixed list.
+
+-------------------------------------
+IMPORTANT LIMITS
+-------------------------------------
+
+Do NOT build:
+- full metro-region system
+- county analytics overhaul
+- separate state dashboards
+- separate state sites
+
+This is a clean geo-reporting foundation only.
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Return:
+
+1. files changed
+2. exact columns added
+3. exact backfills performed
+4. confirmation executive summary can filter by state
+5. confirmation ambassador structure is cleaner for future GA / NC / FL growth
+6. confirmation no protected engine was touched
+7. PASS / FAIL
+
+After completion:
+- update replit.md
+- update changelog
+- return rollout summary
+- recommend next safest slice
+
+END

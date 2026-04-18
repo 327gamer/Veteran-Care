@@ -1,8 +1,12 @@
 import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useLocation } from "wouter";
 import {
   ChevronLeft,
@@ -24,6 +28,8 @@ import {
 interface ExecSummary {
   generated_at: string;
   windows: { today_start: string; since_7d: string; since_30d: string };
+  state_filter?: string | null;
+  available_states?: string[];
   metrics: {
     ai_chats: {
       today: number;
@@ -48,7 +54,8 @@ interface ExecSummary {
       conversion_rate_pct: number;
     };
     top_clicked_categories_30d: { category: string; clicks: number }[];
-    top_sc_cities_30d: { city: string; clicks: number; help_requests: number; total: number }[];
+    top_sc_cities_30d: { city: string; state?: string; clicks: number; help_requests: number; total: number }[];
+    top_cities_30d?: { city: string; state: string; clicks: number; help_requests: number; total: number }[];
     revenue: {
       billable_total: number;
       billed_total: number;
@@ -153,11 +160,15 @@ function ListBlock({
 function AdminExecutiveInner() {
   const [, setLocation] = useLocation();
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("adminKey") : null;
+  const [selectedState, setSelectedState] = useState<string>("ALL");
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery<ExecSummary>({
-    queryKey: ["/api/admin/exec-summary", adminKey],
+    queryKey: ["/api/admin/exec-summary", adminKey, selectedState],
     queryFn: async () => {
-      const r = await fetch("/api/admin/exec-summary", { headers: getAdminHeaders() });
+      const url = selectedState && selectedState !== "ALL"
+        ? `/api/admin/exec-summary?state=${encodeURIComponent(selectedState)}`
+        : "/api/admin/exec-summary";
+      const r = await fetch(url, { headers: getAdminHeaders() });
       if (!r.ok) throw new Error("Unauthorized or failed");
       return r.json();
     },
@@ -184,6 +195,17 @@ function AdminExecutiveInner() {
             <h1 className="text-base sm:text-lg font-semibold truncate">Executive Summary</h1>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+            <Select value={selectedState} onValueChange={setSelectedState}>
+              <SelectTrigger className="h-9 w-[110px] text-xs" data-testid="select-state-filter">
+                <SelectValue placeholder="All states" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" data-testid="state-option-all">All states</SelectItem>
+                {(data.available_states || []).map((s) => (
+                  <SelectItem key={s} value={s} data-testid={`state-option-${s}`}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <span className="hidden sm:inline" data-testid="text-generated-at">Updated {timeAgo(data.generated_at)}</span>
             <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => refetch()} disabled={isFetching} data-testid="button-refresh">
               {isFetching ? "…" : "Refresh"}
@@ -310,16 +332,37 @@ function AdminExecutiveInner() {
             emptyMsg="No clicks captured yet."
             testId="card-top-clicked-categories"
           />
-          <ListBlock
-            title="Top SC Cities (30d)"
-            icon={<MapPin className="h-4 w-4" />}
-            items={m.top_sc_cities_30d}
-            leftKey="city"
-            rightKey="total"
-            rightSuffix=" signals"
-            emptyMsg="No SC location signals yet."
-            testId="card-top-sc-cities"
-          />
+          <Card data-testid="card-top-cities">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                {data.state_filter ? `Top ${data.state_filter} Cities (30d)` : "Top Cities — All States (30d)"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {(() => {
+                const cities = m.top_cities_30d ?? m.top_sc_cities_30d ?? [];
+                if (cities.length === 0) {
+                  return <p className="text-sm text-muted-foreground">No location signals yet.</p>;
+                }
+                return (
+                  <ul className="divide-y">
+                    {cities.map((c: any, idx: number) => (
+                      <li key={`${c.city}-${c.state ?? ""}-${idx}`} className="flex items-center justify-between py-2" data-testid={`row-top-city-${idx}`}>
+                        <span className="text-sm flex items-center gap-2">
+                          <span>{c.city}</span>
+                          {c.state && !data.state_filter && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">{c.state}</Badge>
+                          )}
+                        </span>
+                        <Badge variant="secondary">{fmtNum(c.total)} signals</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </CardContent>
+          </Card>
           <Card data-testid="card-help-funnel">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">

@@ -41,6 +41,9 @@ export type PageViewIngest = {
   utmTerm: string | null;
   utmId: string | null;
   ambassadorCode: string | null;
+  // Upgrade #5: optional geo context (only set when caller already has it; never invented)
+  userState?: string | null;
+  userCity?: string | null;
 };
 
 // Tiny in-memory rate limit per session_id to dampen accidental loops.
@@ -72,8 +75,8 @@ export async function ingestPageView(p: PageViewIngest): Promise<void> {
       `INSERT INTO page_views (
         session_id, path, referrer, is_mobile, user_agent,
         utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id,
-        ambassador_code
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        ambassador_code, user_state, user_city
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         p.sessionId,
         p.path,
@@ -82,6 +85,8 @@ export async function ingestPageView(p: PageViewIngest): Promise<void> {
         p.userAgent ? p.userAgent.slice(0, 500) : null,
         p.utmSource, p.utmMedium, p.utmCampaign, p.utmContent, p.utmTerm, p.utmId,
         p.ambassadorCode,
+        p.userState ?? null,
+        p.userCity ?? null,
       ]
     );
   } catch (err) {
