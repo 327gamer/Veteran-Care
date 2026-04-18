@@ -1,0 +1,115 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Category 1 Cleanup Slice APPROVED (R1 + R3 + R4 + R2 decision)
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH FOUNDATION CLEANUP
+
+-------------------------------------
+APPROVAL
+-------------------------------------
+
+Approve the Category 1 cleanup slice with the following directions.
+
+Execute:
+- R1
+- R3
+- R4
+
+Also execute:
+- R2 with the decision below
+
+-------------------------------------
+R1 — PLACEHOLDER PARTNER CLEANUP
+-------------------------------------
+
+Approved.
+
+Action:
+- reset the 41 placeholder “Network” partner organizations so they no longer present as paid / active subscription partners
+
+Direction:
+- set active_paid_partner = false
+- set subscription_status = 'placeholder' OR NULL (use whichever is cleaner / more consistent with current architecture)
+- do NOT delete them in this step
+
+-------------------------------------
+R2 — HOUSING INTAKE PILOTS
+-------------------------------------
+
+Decision:
+Retire them for launch for now.
+
+Action:
+- set is_lead_enabled = false on:
+  - SC Housing Statewide Intake
+  - Midlands Housing Intake Pilot
+  - Charleston Housing Intake Pilot
+
+Do NOT activate them in this step.
+
+-------------------------------------
+R3 — INSURANCE SUBCATEGORIES
+-------------------------------------
+
+Approved.
+
+Please add this baseline insurance subcategory set:
+
+- Life Insurance
+- Disability Income
+- Health Insurance
+- Long-Term Care
+- Burial / Final Expense
+- Auto / Home Insurance
+- VA / Military Insurance Programs
+
+Use the most structurally correct slugs consistent with the existing category system.
+
+-------------------------------------
+R4 — NPRC RESOURCE CLEANUP
+-------------------------------------
+
+Approved.
+
+Action:
+- re-tag the Missouri NPRC resource to state = NULL
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- no schema changes
+- no routing logic changes
+- no billing logic changes
+- no seeded-provider protection changes
+- no deletion of placeholder rows
+- no additional cleanup beyond this slice
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Return:
+
+1. exact rows updated
+2. confirmation placeholder partners no longer appear as paid / active subscription partners
+3. confirmation housing intake pilots are no longer lead-enabled
+4. confirmation insurance subcategories created correctly
+5. confirmation NPRC state cleanup completed
+6. confirmation no routing / billing regression
+7. PASS / FAIL
+
+-------------------------------------
+POST-LAUNCH / HOLD
+-------------------------------------
+
+Defer for later:
+- AI resource ranking tuning
+- ambassador rollout
+- architecture consolidation for multi-state scale
+
+-------------------------------------
+END
+-------------------------------------
