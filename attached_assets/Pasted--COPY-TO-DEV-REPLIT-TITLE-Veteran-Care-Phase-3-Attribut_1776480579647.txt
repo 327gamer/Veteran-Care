@@ -1,0 +1,132 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 3 – Attribution + User Flow Validation
+
+PRIORITY:
+CRITICAL – TRACKING + ATTRIBUTION VALIDATION
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Validate that ambassador UTMs and attribution tracking persist correctly across real user flows and attach to leads without loss.
+
+This phase must validate the FULL attribution lifecycle, not just URL capture.
+
+NO CODE CHANGES.
+VALIDATION ONLY.
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Test the full attribution lifecycle across both homepage and landing-page entry paths:
+
+- homepage UTM entry
+- landing page UTM entry
+- multi-page navigation
+- delayed submission
+- cross-session persistence
+- lead creation + attribution storage
+- admin visibility of attribution
+- database visibility of attribution
+
+-------------------------------------
+CRITICAL ATTRIBUTION RULES TO VERIFY
+-------------------------------------
+
+Verify the real first-touch model:
+
+1. UTM captured on entry
+2. ambassador_id / session attribution stored correctly
+3. attribution persists across navigation
+4. attribution persists if user delays submission
+5. attribution attaches to lead / navigator request correctly
+6. attribution is visible in admin and database
+7. homepage links and landing-page links do NOT conflict
+8. attribution is NOT overwritten mid-flow unless intentionally designed to do so
+
+-------------------------------------
+TEST FLOWS REQUIRED
+-------------------------------------
+
+Run and document at minimum these flows:
+
+FLOW A — Homepage Ambassador Link
+- enter via homepage UTM link
+- browse multiple pages
+- submit request / lead later
+- verify attribution survives full journey
+
+FLOW B — Landing Page Ambassador Link
+- enter via direct landing page UTM link
+- navigate elsewhere
+- submit request / lead
+- verify attribution survives
+
+FLOW C — Delayed Submission
+- enter with UTM
+- wait / delay
+- continue navigation
+- submit later
+- verify attribution is still present
+
+FLOW D — Cross-Session Persistence
+- enter via UTM
+- confirm storage
+- reload / revisit flow
+- confirm first-touch attribution still persists correctly
+
+FLOW E — Conflict Check
+- ensure homepage UTM attribution and landing-page UTM attribution do not break each other
+- verify no /home or redirect issue resets attribution
+- verify no mid-session loss
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+1. UTM captured on entry — PASS / FAIL
+2. UTM persists across navigation — PASS / FAIL
+3. UTM persists across session delay — PASS / FAIL
+4. UTM attached to lead record — PASS / FAIL
+5. UTM visible in admin + DB — PASS / FAIL
+6. ambassador_id / attribution session preserved correctly — PASS / FAIL
+7. no overwrite / no reset mid-session — PASS / FAIL
+
+-------------------------------------
+FAIL CONDITIONS
+-------------------------------------
+
+Any of the following is a FAIL:
+
+- attribution missing
+- attribution overwritten unexpectedly
+- attribution reset mid-session
+- ambassador_id lost
+- lead created without correct attribution
+- admin / DB does not reflect stored attribution
+- homepage and landing-page flows conflict
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return a structured Phase 3 report including:
+
+1. test URLs used
+2. captured UTM values
+3. ambassador_id / attribution session values observed
+4. lead / request records showing attribution attached
+5. admin visibility confirmation
+6. DB visibility confirmation
+7. persistence confirmation across all tested flows
+8. exact blockers if any exist
+
+Do NOT return only summaries.
+Include actual observed values.
+
+-------------------------------------
+END
+-------------------------------------
