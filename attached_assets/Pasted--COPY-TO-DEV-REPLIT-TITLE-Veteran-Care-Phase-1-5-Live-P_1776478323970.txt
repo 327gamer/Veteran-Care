@@ -1,0 +1,198 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 1.5 – Live Payment + Activation Validation (CRITICAL)
+
+PRIORITY:
+CRITICAL – MUST COMPLETE BEFORE MOVING TO PHASE 2
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+We must validate the FULL real-world monetization flow using a LIVE Stripe transaction.
+
+This is NOT a config check.
+This is a REAL payment + REAL webhook + REAL activation.
+
+-------------------------------------
+CRITICAL INSTRUCTION
+-------------------------------------
+
+I am NOT a developer.
+
+You must guide me step-by-step, click-by-click for ANY manual actions required inside:
+- Stripe
+- Replit
+- Supabase
+
+DO NOT skip steps
+DO NOT assume knowledge
+DO NOT group steps together
+
+-------------------------------------
+WHAT MUST BE PROVEN
+-------------------------------------
+
+We must confirm end-to-end:
+
+Stripe Checkout →
+Webhook →
+Partner Activation →
+Routing Eligibility
+
+-------------------------------------
+STEP 1 — PREP TEST PARTNER
+-------------------------------------
+
+Identify OR create a test partner.
+
+Then show me EXACTLY where to verify:
+
+- onboarding_status = pending OR invited
+- subscription_status ≠ active
+- active_paid_partner = false
+- routing eligibility = false
+
+Tell me EXACTLY where to click to confirm this.
+
+-------------------------------------
+STEP 2 — TRIGGER CHECKOUT
+-------------------------------------
+
+Guide me step-by-step:
+
+- where to go in the app
+- what to click
+- how to trigger the Stripe checkout
+
+This must use LIVE Stripe (not test).
+
+-------------------------------------
+STEP 3 — COMPLETE PAYMENT
+-------------------------------------
+
+Tell me:
+
+- exactly what I should see on screen
+- how to confirm I’m in LIVE mode
+
+I will complete a real payment.
+
+-------------------------------------
+STEP 4 — STRIPE VERIFICATION
+-------------------------------------
+
+Guide me step-by-step:
+
+Stripe Dashboard →
+
+Confirm:
+- payment success
+- subscription created
+- correct product used
+
+Tell me EXACTLY where to click.
+
+-------------------------------------
+STEP 5 — WEBHOOK VALIDATION
+-------------------------------------
+
+Guide me:
+
+Stripe → Developers → Webhooks → Logs
+
+I need to confirm:
+
+- checkout.session.completed
+- invoice.paid
+- customer.subscription.updated
+
+ALL must show:
+→ 200 OK
+
+Tell me exactly how to check this.
+
+If anything fails:
+→ STOP immediately
+
+-------------------------------------
+STEP 6 — DATABASE VALIDATION
+-------------------------------------
+
+Guide me:
+
+Supabase →
+
+Show me EXACTLY how to locate the partner record.
+
+Confirm:
+
+- subscription_status = active
+- active_paid_partner = true
+- onboarding_status = active
+- activation_date populated
+
+-------------------------------------
+STEP 7 — ADMIN PANEL VALIDATION
+-------------------------------------
+
+Guide me:
+
+Admin Panel →
+
+Confirm:
+
+- partner shows ACTIVE
+- routing eligibility = TRUE
+- partner is now eligible for leads
+
+-------------------------------------
+STEP 8 — FAIL-SAFE CHECK
+-------------------------------------
+
+If ANY of the following fail:
+
+- webhook not firing
+- webhook not 200 OK
+- activation not automatic
+- eligibility not turning ON
+
+You must:
+- STOP
+- identify root cause
+- fix it
+- rerun test
+
+-------------------------------------
+SUCCESS CRITERIA (STRICT)
+-------------------------------------
+
+PASS ONLY IF:
+
+1. Live payment succeeds
+2. Webhook returns 200 OK
+3. Activation is automatic (no manual fix)
+4. Routing eligibility turns ON
+5. No regression
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return:
+
+- confirmation of successful live transaction
+- webhook log confirmation (200 OK)
+- BEFORE + AFTER partner state
+- confirmation routing eligibility updated automatically
+
+-------------------------------------
+FINAL RULE
+-------------------------------------
+
+DO NOT allow moving to Phase 2 unless this PASSES.
+
+-------------------------------------
+END
+-------------------------------------
