@@ -1,0 +1,111 @@
+🚨 COPY TO DEV / REPLIT
+
+🚨 STANDING RULES — VETERAN CARE (DO NOT IGNORE)
+
+- Execute ONLY this approved step
+- Do NOT bundle additional fixes
+- Do NOT silently change architecture
+- Preserve ALL routing / billing / attribution / monetization protections
+- Seeded providers must NEVER receive leads
+- Seeded providers must NEVER trigger billing
+
+CRITICAL ARCHITECTURE RULE:
+- Supabase partner_organizations is the SINGLE source of truth
+- Any pg-side trusted_services usage is DISPLAY ONLY
+- Do NOT create a second canonical system
+- Do NOT introduce long-term dual-write architecture
+
+If any change risks architecture drift:
+→ STOP
+→ RETURN BREAKOUT PLAN
+→ WAIT FOR APPROVAL
+
+SUPABASE SECURITY RULE:
+- Check RLS for any DB change
+- Apply policies if needed
+- Confirm no public exposure
+- Re-run regression tests
+- Report before/after
+
+-------------------------------------
+
+TITLE:
+Veteran Care – F2.5 Seeded Display Sync + Architecture Guardrail
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+
+OBJECTIVE:
+Fix seeded provider visibility WITHOUT compromising long-term scalability.
+
+-------------------------------------
+
+EXECUTE:
+
+1. Perform controlled sync of seeded providers:
+   - Copy existing seeded providers into pg-side trusted_services (display layer)
+   - Maintain labels (National Provider / Directory Provider)
+
+2. Update seeded-provider creation flow:
+   - Ensure future seeded providers correctly populate display layer
+   - WITHOUT breaking canonical Supabase structure
+
+3. Maintain strict separation:
+   - Supabase = canonical system (identity, routing, billing)
+   - pg-side = display layer only
+
+-------------------------------------
+
+DO NOT:
+
+- Do NOT modify routing logic
+- Do NOT modify billing logic
+- Do NOT weaken seeded protections
+- Do NOT attempt full DB consolidation
+- Do NOT introduce uncontrolled dual-write patterns
+
+-------------------------------------
+
+VALIDATION REQUIRED:
+
+- Seeded providers now visible across categories
+- Housing shows Mortgage + Moving providers correctly
+- Legal, Financial, Insurance, Education categories populate correctly
+- No category leakage
+- Boot Print / Tri-County remain housing-only
+- Seeded providers remain routing-ineligible
+- Seeded providers remain billing-ineligible
+
+-------------------------------------
+
+SCALABILITY NOTE (IMPORTANT):
+
+This is a controlled display-layer fix for launch.
+
+Future multi-state scaling MAY require:
+- consolidation of display + canonical data layers
+
+DO NOT attempt that now.
+
+If future scaling requires architectural change:
+→ STOP
+→ RETURN BREAKOUT PLAN
+→ WAIT FOR APPROVAL
+
+-------------------------------------
+
+DELIVERABLE:
+
+- files changed
+- sync method
+- confirmation all seeded providers visible
+- confirmation protections intact
+- PASS / FAIL
+- blockers
+
+-------------------------------------
+
+END
+-------------------------------------

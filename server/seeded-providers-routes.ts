@@ -46,6 +46,15 @@ async function pgInsertSeededDisplayRow(args: {
 }): Promise<{ id: string } | null> {
   try {
     const linkNote = `SEEDED|supabase_org_id=${args.supabaseOrgId}|supabase_ts_id=${args.supabaseTsId}|seeded_source=${args.seededSource || ""}`;
+    // Idempotency: skip if a pg-side row already exists for this supabase org id
+    const existing = await pgQuery<{ id: string }>(
+      `SELECT id FROM trusted_services WHERE notes_internal LIKE $1 LIMIT 1`,
+      [`SEEDED|%supabase_org_id=${args.supabaseOrgId}%`],
+    );
+    if (existing[0]) {
+      console.log(`[seeded-providers] pg-side row already exists for supabase_org_id=${args.supabaseOrgId}, skipping insert`);
+      return { id: existing[0].id };
+    }
     const rows = await pgQuery(
       `INSERT INTO trusted_services
         (category_id,name,short_description,website_url,phone,email,state,
@@ -81,7 +90,7 @@ async function pgUpdateSeededDisplayActive(
     await pgQuery(
       `UPDATE trusted_services SET is_active = $1
        WHERE notes_internal LIKE $2`,
-      [isActive, `%supabase_org_id=${supabaseOrgId}%`],
+      [isActive, `SEEDED|%supabase_org_id=${supabaseOrgId}%`],
     );
   } catch (err: any) {
     console.log("[seeded-providers] pg-side visibility update failed:", err.message);
