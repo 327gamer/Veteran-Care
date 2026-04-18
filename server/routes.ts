@@ -9951,6 +9951,183 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/admin/exec-summary", requireAdmin, async (_req, res) => {
+    try {
+      const now = new Date();
+      const startOfToday = new Date(now); startOfToday.setUTCHours(0, 0, 0, 0);
+      const start7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const start30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const isoToday = startOfToday.toISOString();
+      const iso7d = start7d.toISOString();
+      const iso30d = start30d.toISOString();
+
+      const inWindow = (createdAt: string | null, since: string) =>
+        !!createdAt && createdAt >= since;
+
+      const ROW_CAP = 5000; // safety cap; current data well under
+      const [aiRes, navRes, clickRes, resRes, paidPartnersRes] = await Promise.all([
+        supabaseAdmin
+          .from("ai_usage_log")
+          .select("id, detected_category, is_guest, navigator_suggested, created_at")
+          .gte("created_at", iso30d)
+          .order("created_at", { ascending: false })
+          .limit(ROW_CAP),
+        supabaseAdmin
+          .from("navigator_requests")
+          .select("id, status, category, user_state, user_city, routed_to_partner_id, partner_outcome, is_billable, billed, billing_amount, created_at")
+          .gte("created_at", iso30d)
+          .order("created_at", { ascending: false })
+          .limit(ROW_CAP),
+        supabaseAdmin
+          .from("resource_clicks")
+          .select("id, resource_id, user_state, user_city, created_at")
+          .gte("created_at", iso30d)
+          .limit(ROW_CAP),
+        supabase
+          .from("resources")
+          .select("id, resource_categories(categories(name, slug))")
+          .eq("status", "approved"),
+        supabaseAdmin
+          .from("partner_organizations")
+          .select("name, state")
+          .eq("active_paid_partner", true)
+          .eq("is_active", true)
+          .eq("is_lead_enabled", true),
+      ]);
+
+      const aiRows = aiRes.data || [];
+      const navAll = navRes.data || [];
+      const clicks = clickRes.data || [];
+      const resources = resRes.data || [];
+      const paidPartners = paidPartnersRes.data || [];
+
+      // resource_id → all category names (for click attribution, multi-category aware)
+      const resourceToCats = new Map<string, string[]>();
+      resources.forEach((r: any) => {
+        const links = Array.isArray(r.resource_categories)
+          ? r.resource_categories
+          : (r.resource_categories ? [r.resource_categories] : []);
+        const names: string[] = [];
+        links.forEach((rc: any) => {
+          const cats = Array.isArray(rc?.categories) ? rc.categories : (rc?.categories ? [rc.categories] : []);
+          cats.forEach((c: any) => { if (c?.name) names.push(c.name); });
+        });
+        resourceToCats.set(r.id, names.length ? names : ["Uncategorized"]);
+      });
+
+      const countWindow = <T extends { created_at: string | null }>(rows: T[], since: string) =>
+        rows.filter(r => inWindow(r.created_at, since)).length;
+
+      // 1. AI chats
+      const aiChats = {
+        today: countWindow(aiRows, isoToday),
+        last_7d: countWindow(aiRows, iso7d),
+        last_30d: aiRows.length,
+        navigator_suggested_30d: aiRows.filter(r => r.navigator_suggested).length,
+        guest_share_30d: aiRows.length ? Math.round(100 * aiRows.filter(r => r.is_guest).length / aiRows.length) : 0,
+      };
+
+      // 2. Top AI categories (30d)
+      const aiCatCount: Record<string, number> = {};
+      aiRows.forEach(r => {
+        const c = (r.detected_category || "").trim();
+        if (c && c !== "blocked" && c !== "unknown") aiCatCount[c] = (aiCatCount[c] || 0) + 1;
+      });
+      const topAiCategories30d = Object.entries(aiCatCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([category, count]) => ({ category, count }));
+
+      // 3. Help requests
+      const navByStatus: Record<string, number> = {};
+      navAll.forEach((n: any) => { navByStatus[n.status || "unknown"] = (navByStatus[n.status || "unknown"] || 0) + 1; });
+      const help = {
+        today: countWindow(navAll, isoToday),
+        last_7d: countWindow(navAll, iso7d),
+        last_30d: countWindow(navAll, iso30d),
+        total: navAll.length,
+        by_status: navByStatus,
+      };
+
+      // 4. Partner lead routings + outcomes
+      const routedAll = navAll.filter((n: any) => n.routed_to_partner_id);
+      const routedConverted = routedAll.filter((n: any) => ["accepted", "won", "converted", "completed"].includes((n.partner_outcome || "").toLowerCase()));
+      const partnerLeads = {
+        last_7d: routedAll.filter((n: any) => inWindow(n.created_at, iso7d)).length,
+        last_30d: routedAll.filter((n: any) => inWindow(n.created_at, iso30d)).length,
+        total_routed: routedAll.length,
+        converted: routedConverted.length,
+        conversion_rate_pct: routedAll.length ? Math.round(100 * routedConverted.length / routedAll.length) : 0,
+      };
+
+      // 5. Top clicked categories (30d) — clicks already filtered to 30d.
+      // Multi-category resources contribute one click to each linked category.
+      const clickCat: Record<string, number> = {};
+      clicks.forEach((c: any) => {
+        const cats = resourceToCats.get(c.resource_id) || ["Uncategorized"];
+        cats.forEach((cat) => { clickCat[cat] = (clickCat[cat] || 0) + 1; });
+      });
+      const topClickedCategories30d = Object.entries(clickCat)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([category, clicks]) => ({ category, clicks }));
+
+      // 6. Top SC cities (30d) — combine click signals + help-request signals from SC only
+      const cityScore: Record<string, { clicks: number; help_requests: number }> = {};
+      clicks.filter((c: any) => c.user_state === "SC" && c.user_city).forEach((c: any) => {
+        const k = c.user_city;
+        cityScore[k] = cityScore[k] || { clicks: 0, help_requests: 0 };
+        cityScore[k].clicks++;
+      });
+      navAll.filter((n: any) => n.user_state === "SC" && n.user_city && inWindow(n.created_at, iso30d)).forEach((n: any) => {
+        const k = n.user_city;
+        cityScore[k] = cityScore[k] || { clicks: 0, help_requests: 0 };
+        cityScore[k].help_requests++;
+      });
+      const topScCities30d = Object.entries(cityScore)
+        .map(([city, v]) => ({ city, clicks: v.clicks, help_requests: v.help_requests, total: v.clicks + v.help_requests }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+      // 7. Revenue / billing events (lifetime + windowed)
+      const billable = navAll.filter((n: any) => n.is_billable);
+      const billed = navAll.filter((n: any) => n.billed);
+      const billedAmountTotal = billed.reduce((sum: number, n: any) => sum + (parseFloat(n.billing_amount) || 0), 0);
+      const billed30d = billed.filter((n: any) => inWindow(n.created_at, iso30d));
+      const revenue = {
+        billable_total: billable.length,
+        billed_total: billed.length,
+        billed_last_30d: billed30d.length,
+        billed_amount_usd_total: Math.round(billedAmountTotal * 100) / 100,
+        billed_amount_usd_30d: Math.round(billed30d.reduce((s: number, n: any) => s + (parseFloat(n.billing_amount) || 0), 0) * 100) / 100,
+        active_paid_partners: paidPartners.length,
+      };
+
+      return res.json({
+        generated_at: now.toISOString(),
+        windows: { today_start: isoToday, since_7d: iso7d, since_30d: iso30d },
+        metrics: {
+          ai_chats: aiChats,
+          top_ai_categories_30d: topAiCategories30d,
+          help_requests: help,
+          partner_leads: partnerLeads,
+          top_clicked_categories_30d: topClickedCategories30d,
+          top_sc_cities_30d: topScCities30d,
+          revenue,
+          paid_partners: paidPartners.map((p: any) => ({ name: p.name, state: p.state })),
+        },
+        unmeasured: [
+          { metric: "daily_visitors",  reason: "no page-view tracking yet — AI chats started is the closest proxy" },
+          { metric: "device_split",    reason: "user-agent not captured on any event yet" },
+          { metric: "bounce_rate",     reason: "no page-view + session-exit tracking yet" },
+        ],
+      });
+    } catch (e: any) {
+      console.error("[exec-summary] error:", e);
+      return res.status(500).json({ error: e?.message || "exec-summary failed" });
+    }
+  });
+
   app.get("/api/admin/ai-insights", requireAdmin, async (_req, res) => {
     try {
       const { data: logs, error } = await supabaseAdmin
