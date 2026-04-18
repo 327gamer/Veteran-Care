@@ -39,6 +39,59 @@ export function verifyLeadActionToken(token: string): { leadId: string; action: 
   } catch { return null; }
 }
 
+// ── Partner Outcome Capture (Won / Lost / No Contact) ──
+// Distinct token namespace from lead-action so the two cannot collide.
+const OUTCOME_VALID = ["won", "lost", "no_contact"] as const;
+type OutcomeValue = typeof OUTCOME_VALID[number];
+
+export function generateOutcomeToken(leadId: string, outcome: OutcomeValue): string {
+  const ts = Date.now().toString(36);
+  const payload = `outcome:${leadId}:${outcome}:${ts}`;
+  const hmac = crypto.createHmac("sha256", ACTION_SECRET).update(payload).digest("hex").slice(0, 16);
+  return Buffer.from(`${payload}:${hmac}`).toString("base64url");
+}
+
+export function verifyOutcomeToken(token: string): { leadId: string; outcome: OutcomeValue } | null {
+  try {
+    const decoded = Buffer.from(token, "base64url").toString();
+    const parts = decoded.split(":");
+    if (parts.length < 5) return null;
+    const hmac = parts.pop()!;
+    const ts = parts.pop()!;
+    const outcome = parts.pop()!;
+    const namespace = parts.shift()!;
+    const leadId = parts.join(":");
+    if (namespace !== "outcome") return null;
+    if (!(OUTCOME_VALID as readonly string[]).includes(outcome)) return null;
+    const expectedHmac = crypto.createHmac("sha256", ACTION_SECRET).update(`outcome:${leadId}:${outcome}:${ts}`).digest("hex").slice(0, 16);
+    if (hmac.length !== expectedHmac.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(expectedHmac))) return null;
+    const tokenTime = parseInt(ts, 36);
+    if (isNaN(tokenTime) || Date.now() - tokenTime > TOKEN_EXPIRY_MS) return null;
+    return { leadId, outcome: outcome as OutcomeValue };
+  } catch { return null; }
+}
+
+function buildOutcomeButtonsHtml(leadId: string): string {
+  const baseUrl = getBaseUrl();
+  const outcomes: { key: OutcomeValue; label: string; color: string; bg: string; border: string }[] = [
+    { key: "won",        label: "Won — Veteran Became a Client",      color: "#15803D", bg: "#F0FDF4", border: "#BBF7D0" },
+    { key: "lost",       label: "Lost — Did Not Convert",              color: "#B91C1C", bg: "#FEF2F2", border: "#FECACA" },
+    { key: "no_contact", label: "No Contact — Could Not Reach Veteran", color: "#6B7280", bg: "#F9FAFB", border: "#E5E7EB" },
+  ];
+  const buttons = outcomes.map(o => {
+    const token = generateOutcomeToken(leadId, o.key);
+    const url = `${baseUrl}/api/partner/lead-outcome?token=${token}`;
+    return `<a href="${url}" style="display:block;text-align:center;padding:10px 16px;margin:6px 0;background:${o.bg};border:1px solid ${o.border};border-radius:6px;color:${o.color};font-weight:600;font-size:14px;text-decoration:none;">${o.label}</a>`;
+  }).join("");
+  return `
+  <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;padding:16px;margin-bottom:20px;">
+    <p style="margin:0 0 6px 0;font-size:14px;font-weight:600;color:#111827;">Final Outcome (after veteran contact)</p>
+    <p style="margin:0 0 12px 0;font-size:12px;color:#6B7280;">Once you've worked with this veteran, please record the final outcome. This helps us track conversion and keep pricing fair.</p>
+    ${buttons}
+  </div>`;
+}
+
 function getBaseUrl(): string {
   if (process.env.NODE_ENV === "production" && platform.domain) {
     return `https://${platform.domain}`;
@@ -218,6 +271,8 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
   </div>
 
   ${buildActionButtonsHtml(lead.leadId)}
+
+  ${buildOutcomeButtonsHtml(lead.leadId)}
 
   <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; text-align: center;">
     <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #0C4A6E;">Want to help more veterans?</p>

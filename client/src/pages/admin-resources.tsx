@@ -1953,6 +1953,58 @@ function AdminResourcesInner() {
                       </div>
                     )}
 
+                    {req.routed_to_partner_id && (
+                      <div className="bg-white border border-slate-200 rounded p-2 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide">Conversion Outcome</p>
+                          {req.partner_outcome && (
+                            <Badge variant="outline" className={`text-[9px] ${
+                              req.partner_outcome === "won" ? "bg-green-50 text-green-700 border-green-300" :
+                              req.partner_outcome === "lost" ? "bg-red-50 text-red-700 border-red-300" :
+                              req.partner_outcome === "no_contact" ? "bg-slate-50 text-slate-600 border-slate-300" :
+                              "bg-slate-50 text-slate-600 border-slate-300"
+                            }`}>{req.partner_outcome.replace(/_/g, " ")}</Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-1.5 flex-wrap">
+                          <Button
+                            data-testid={`lead-outcome-won-${req.id}`}
+                            size="sm"
+                            variant={req.partner_outcome === "won" ? "default" : "outline"}
+                            className={`h-6 text-[10px] px-2 ${req.partner_outcome === "won" ? "bg-green-600 hover:bg-green-700" : "border-green-300 text-green-700 hover:bg-green-50"}`}
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { partner_outcome: "won" } })}
+                            disabled={navPatchMutation.isPending}
+                          >Won</Button>
+                          <Button
+                            data-testid={`lead-outcome-lost-${req.id}`}
+                            size="sm"
+                            variant={req.partner_outcome === "lost" ? "default" : "outline"}
+                            className={`h-6 text-[10px] px-2 ${req.partner_outcome === "lost" ? "bg-red-600 hover:bg-red-700" : "border-red-300 text-red-700 hover:bg-red-50"}`}
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { partner_outcome: "lost" } })}
+                            disabled={navPatchMutation.isPending}
+                          >Lost</Button>
+                          <Button
+                            data-testid={`lead-outcome-no-contact-${req.id}`}
+                            size="sm"
+                            variant={req.partner_outcome === "no_contact" ? "default" : "outline"}
+                            className={`h-6 text-[10px] px-2 ${req.partner_outcome === "no_contact" ? "bg-slate-600 hover:bg-slate-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"}`}
+                            onClick={() => navPatchMutation.mutate({ id: req.id, updates: { partner_outcome: "no_contact" } })}
+                            disabled={navPatchMutation.isPending}
+                          >No Contact</Button>
+                          {req.partner_outcome && (
+                            <Button
+                              data-testid={`lead-outcome-clear-${req.id}`}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[10px] px-2 text-muted-foreground"
+                              onClick={() => navPatchMutation.mutate({ id: req.id, updates: { partner_outcome: "" } })}
+                              disabled={navPatchMutation.isPending}
+                            >Clear</Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-2 pt-1 flex-wrap">
                       {req.status === "new" && (
                         <Button

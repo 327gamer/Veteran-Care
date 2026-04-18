@@ -508,3 +508,62 @@ have honest gaps that compound at scale.
 - 2 paid routable partners: Tri-County Veteran Support Network
   (Charleston), Boot Print (Greenville)
 - Awaiting approval on Upgrade #1 before any code change
+
+## SHIPPED — Upgrade #1: Partner Outcome Capture Loop (2026-04-18)
+
+**Status:** LIVE. Additive only. No engine touched.
+
+### What was added
+1. **Email footer block** in lead notification email (`server/lead-email.ts`,
+   added below existing action buttons inside `buildLeadEmailHtml`):
+   three new tokenized buttons — Won (green), Lost (red), No Contact
+   (gray). HMAC-signed with `ADMIN_KEY`, 7-day expiry, distinct token
+   namespace from lead-action so they cannot collide.
+
+2. **Two new public endpoints** in `server/routes.ts`:
+   - `GET  /api/partner/lead-outcome?token=...` — confirmation page
+     (server-rendered HTML, mobile-viewport meta tag included)
+   - `POST /api/partner/lead-outcome` (urlencoded) — verifies token,
+     writes `navigator_requests.partner_outcome`, returns success page
+   - Idempotent: re-clicking the same outcome shows "Already Recorded"
+   - Logs every change with previous + new value
+
+3. **Admin row UI** in `client/src/pages/admin-resources.tsx` Support
+   Requests tab: a small "Conversion Outcome" panel for routed leads
+   with three buttons (Won / Lost / No Contact) and a Clear button.
+   Highlights the active outcome. Reuses existing `navPatchMutation`.
+   Test IDs: `lead-outcome-{won|lost|no-contact|clear}-${id}`.
+
+### Schema
+- ZERO schema changes. `navigator_requests.partner_outcome` column
+  already existed (TEXT, no CHECK constraint).
+- Values written: `won` | `lost` | `no_contact` | `null` (cleared).
+- Conversion-rate calc at routes.ts L10054 already counts
+  `["accepted","won","converted","completed"]` as converted, so "won"
+  flows directly into Executive Summary metrics.
+
+### Protected systems
+- Routing engine — UNTOUCHED
+- Billing flow — UNTOUCHED
+- Attribution — UNTOUCHED
+- response_status / status / outcome (workflow column) — UNTOUCHED
+- HMAC token machinery — REUSED, namespace isolated
+
+### Files changed
+- `server/lead-email.ts` (+59 LOC: helpers + button block + injection)
+- `server/routes.ts` (+99 LOC: confirmation page + 2 endpoints)
+- `client/src/pages/admin-resources.tsx` (+50 LOC: outcome panel)
+
+### Validation
+- Workflow restarted clean — no TypeScript errors
+- Server boot logs show all schema checks pass
+- Manual test path: send a lead → email contains 3 outcome buttons →
+  click → confirmation page → submit → DB updated → conversion rate
+  on Executive Summary reflects new outcome
+
+### Known follow-ups (intentionally deferred)
+- Backfill plan for historical leads (decide after we see capture rate)
+- `partner_outcome_set_at` + `partner_outcome_set_by` audit columns
+  (only add when there's a reason — current logging is sufficient)
+- "Outcome captured today" KPI tile on Executive Summary (bundle into
+  Upgrade #3 daily digest)
