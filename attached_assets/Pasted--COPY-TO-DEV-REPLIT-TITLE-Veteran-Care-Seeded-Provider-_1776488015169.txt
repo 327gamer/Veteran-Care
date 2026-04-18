@@ -1,0 +1,345 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Seeded Provider System (Controlled Marketplace Bootstrap + Conversion Logic)
+
+PRIORITY:
+HIGH – MONETIZATION + DATA INTEGRITY
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Implement a controlled “seeded provider” system to populate key monetizable categories before full partner onboarding, while preserving:
+
+- zero routing leakage
+- strict monetization enforcement
+- clean single-record data structure
+- seamless conversion to paid partners
+- no duplicate company records
+- strong launch credibility for users
+
+-------------------------------------
+CRITICAL SYSTEM PRINCIPLE
+-------------------------------------
+
+Seeded providers are DISPLAY-ONLY.
+
+They exist to:
+- improve user trust and marketplace completeness
+- support AI Guide category responses
+- support outbound partner sales
+- create a clean upgrade path to paid partner status
+
+They must NEVER:
+- receive routed leads
+- trigger billing
+- bypass monetization logic
+- be treated as Trusted Partners until converted
+
+-------------------------------------
+1. DATABASE / RECORD MODEL (REQUIRED)
+-------------------------------------
+
+Use ONE provider record only.
+
+System must support this lifecycle:
+
+seeded → claimed → paid partner
+
+NOT:
+- seeded record + new partner record
+- duplicate company entries
+- split analytics / split attribution histories
+
+Add / confirm fields on the provider record:
+
+- provider_type:
+  ENUM → ['seeded', 'partner']
+
+- is_seeded:
+  BOOLEAN
+
+- is_paid:
+  BOOLEAN
+
+- is_lead_enabled:
+  BOOLEAN
+
+- subscription_status
+- onboarding_status
+
+If a company starts as seeded and later signs up, the SAME record must be converted.
+
+-------------------------------------
+2. HARD ROUTING LOCK (CRITICAL)
+-------------------------------------
+
+Seeded providers must NEVER receive leads.
+
+Enforce this at system level:
+
+IF provider_type = 'seeded'
+→ ALWAYS EXCLUDE from routing
+
+This must be enforced at:
+- routing layer
+- billing layer
+- any fallback lead-assignment logic
+
+Even if:
+- is_lead_enabled = true by mistake
+- admin toggles something incorrectly
+- other monetization flags are set
+
+Seeded providers must remain display-only until converted to a paid partner record.
+
+-------------------------------------
+3. DISPLAY LABELING (UI)
+-------------------------------------
+
+Seeded providers must be visually distinct from paid partners.
+
+Allowed labels:
+- Directory Provider
+- National Provider
+- Featured Listing
+
+Do NOT label seeded providers as:
+- Trusted Partner
+- Verified Partner
+
+Upon conversion to paid partner:
+- listing remains in place
+- label updates appropriately
+- paid partner priority may increase
+
+-------------------------------------
+4. CATEGORY SEEDING RULES
+-------------------------------------
+
+Seed ONLY priority categories first:
+
+- Mortgage / VA Loans
+- Legal
+- Credit / Financial
+- Insurance
+- Education / Training
+
+Optional but strongly desired if clean:
+- End of Life
+- Moving & Storage
+
+Limit:
+- 2–3 providers per category MAX
+
+Do NOT overpopulate.
+
+-------------------------------------
+5. MOVING & STORAGE CATEGORY / SUBCATEGORY REQUIREMENT
+-------------------------------------
+
+Moving & Storage must be added into the data model for seeding and AI compatibility.
+
+Preferred instruction:
+- create Moving & Storage as a monetizable handling path
+- place it under Housing if that best fits the existing category structure
+- if the current taxonomy already supports a better canonical placement, report that and use the most structurally correct option
+
+Return clearly:
+- whether Moving & Storage was added as a category or subcategory
+- where it lives in the taxonomy
+- how it will appear in UI / seeded provider listings
+- how AI Guide can reference it later
+
+Do NOT skip this.
+
+-------------------------------------
+6. PROVIDER DATA REQUIREMENTS
+-------------------------------------
+
+Each seeded provider must include at minimum:
+
+- business_name
+- website/domain (REQUIRED)
+- primary category
+- subcategory (if applicable)
+- service_type (national / local / regional)
+- city / state coverage if applicable
+- public contact reference if available
+
+Do NOT seed low-quality or incomplete records.
+
+-------------------------------------
+7. DATA SOURCE APPROACH
+-------------------------------------
+
+DO NOT blindly scrape and publish.
+
+Instead:
+- research reputable providers
+- curate manually or semi-manually
+- prefer recognizable national brands or strong regional players
+- avoid weak or duplicate listings
+
+-------------------------------------
+8. MATCHING LOGIC (STRICT ORDER)
+-------------------------------------
+
+When a company later signs up, the system must attempt to match to an existing seeded provider BEFORE creating a new partner record.
+
+Use this order:
+
+1. website domain (PRIMARY — highest confidence)
+2. email domain
+3. exact normalized business name
+4. phone number
+
+IF MATCH FOUND:
+- DO NOT create a new record
+- DO NOT duplicate the company
+- convert the existing seeded record
+
+If NO MATCH FOUND:
+- create a new partner record normally
+
+-------------------------------------
+9. STATE TRANSITION (REQUIRED)
+-------------------------------------
+
+On successful partner activation, update the SAME existing record:
+
+- provider_type: seeded → partner
+- is_seeded: true → false
+- is_paid: false → true
+- is_lead_enabled: true
+- subscription_status: active
+- onboarding_status: active
+
+This must happen on the same listing / provider identity.
+
+-------------------------------------
+10. DATA CONTINUITY (CRITICAL)
+-------------------------------------
+
+When converting seeded → partner, preserve:
+
+- listing ID
+- views
+- clicks
+- attribution data
+- any historical engagement metrics
+
+DO NOT:
+- reset analytics
+- create a second provider listing
+- break continuity
+
+-------------------------------------
+11. RANKING / PRIORITY RULE
+-------------------------------------
+
+Paid partners must always rank above seeded providers.
+
+Recommended order:
+
+1. Paid + Featured
+2. Paid
+3. Seeded
+
+Seeded providers help fill the marketplace, but must not outrank paid partners.
+
+-------------------------------------
+12. USER INTERACTION BEHAVIOR
+-------------------------------------
+
+When a user interacts with a seeded provider:
+
+DO NOT:
+- send direct routed lead
+- trigger billing
+- bypass monetization flow
+
+Instead:
+- allow viewing of listing information
+- allow normal request-help CTA
+- route through the normal lead flow
+- preserve existing monetization protections
+
+-------------------------------------
+13. ADMIN CONTROLS
+-------------------------------------
+
+Admin must be able to:
+
+- toggle seeded providers ON/OFF
+- convert seeded → partner manually if needed
+- merge duplicates as a fallback tool
+- control display priority
+- review seeded vs partner status clearly
+
+-------------------------------------
+14. AI GUIDE COMPATIBILITY
+-------------------------------------
+
+Seeded providers must be usable by AI Guide as category support inventory.
+
+That means:
+- they can appear in AI category suggestions
+- they can help avoid empty-looking categories
+- they can support future monetizable responses
+
+But:
+- they must NOT interfere with routing logic
+- they must NOT be treated as routed lead destinations
+- they must NOT trigger billing
+
+-------------------------------------
+15. MONETIZATION PROTECTION RULES
+-------------------------------------
+
+Seeded providers:
+- must not receive leads
+- must not trigger billing
+- must not be treated as paid partners
+
+Routing must:
+- ONLY go to paid, eligible partners
+- fallback safely when no paid partner exists
+
+This rule must remain intact no matter how seeded providers are displayed.
+
+-------------------------------------
+16. DELIVERABLE REQUIRED
+-------------------------------------
+
+Return:
+
+1. proposed data model / field changes
+2. seeded provider strategy by category
+3. exact approach for Moving & Storage placement
+4. exact duplicate-prevention / conversion logic
+5. exact routing protections for seeded providers
+6. admin controls required
+7. whether this is:
+   - backend-only
+   - frontend-only
+   - mixed work
+8. safest rollout recommendation
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Create a strong early marketplace experience while maintaining:
+
+- zero monetization leakage
+- strict routing control
+- clean database structure
+- seamless upgrade path to paid partners
+- no duplicates
+- long-term scalability
+
+-------------------------------------
+END
+-------------------------------------
