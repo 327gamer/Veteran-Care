@@ -434,3 +434,77 @@ Apply this exact system. Not a variation. Not a partial fix. It works first time
 - Location filtering via Zustand store (stateCode, state, city, zip)
 - Auto-geolocation via browser + OpenStreetMap Nominatim reverse geocoding (cached 1hr in localStorage)
 - All platform branding reads from shared/platform.ts — zero hardcoded platform names in components
+
+## Operations Bible — Current Assessment (2026-04-18)
+
+Source: dev review request "Veteran Care – Operations Bible Systemization
++ Permanent Growth Layer." Review-only assessment, no code changed.
+
+### Maturity Score: 7.5 / 10
+Engines (routing, billing, attribution, AI, RLS, payouts) are
+production-tested in SC. Visibility surfaces on top of those engines
+have honest gaps that compound at scale.
+
+### Biggest Operator Blind Spots
+1. Partner outcome unwritten → conversion rate displays 0% everywhere
+2. Zero visitor instrumentation (no page_views table or beacon)
+3. No aged-lead alert on home admin screen
+4. No MRR trend line (only point-in-time totals)
+5. No partner churn signal (renewal failures, decline rate, slowing
+   response speed not flagged)
+6. Per-partner median response time not surfaced
+7. Per-channel ROI breakdown (Facebook vs flyer vs QR) not surfaced
+8. AI top-prompts and unmet-demand are qualitative, not clustered
+
+### Next Priorities (in order)
+1. **Partner Outcome Capture Loop** (DO IMMEDIATELY — ~1 day)
+   - Tokenized email link to partner with Won/Lost/No-Contact buttons
+   - One-click row action on admin Support Requests tab
+   - Writes navigator_requests.partner_outcome (column already exists)
+   - Unlocks conversion rate, pricing math, churn signal, close-rate
+   - Purely additive, zero engine touched
+2. **Visitor + Pipeline Beacon** (~1 day)
+   - New Supabase page_views table + client fire-and-forget beacon
+   - Adds visitor tiles + mobile share + top landing pages to Executive
+     Summary
+   - Plus an aged-leads tile (>24h still new/in_progress)
+3. **Daily Ops Heartbeat email** (~half day)
+   - 8 AM digest to founder via Resend
+   - Yesterday KPIs, stuck leads, failed payments, new applications,
+     commissions awaiting approval
+   - Cloneable per-state (each state owner gets their own digest)
+
+### Deferred / Wait-Until-Georgia
+- Two-database consolidation (Supabase + Drizzle bridge by email/UTM).
+  Do just before state #3 onboarding when routing-scope code is
+  already being opened. Hard rule: if a third dual-write entity is
+  about to be added, stop and consolidate first.
+- Per-channel ROI breakdown — only meaningful with 2+ states' channel
+  mix to compare
+- AI ranking refinement (3 of 6 baseline prompts surfaced imperfect
+  ranking) — earmark for measurable improvement before state #3
+- MRR trend line — bundle into the Visitor Beacon slice
+- partner_outcome backfill plan — once the capture loop is live,
+  decide whether to retroactively call past partners
+
+### Risks if Ignored
+- No outcome capture → cannot defend $25/lead in renewal conversations
+- No visitor beacon → marketing spend on instinct; gets worse with
+  multi-state launch
+- No daily digest → founder visibility decays at scale
+- Two-DB tech debt → every new dual-write entity is more debt
+- AI ranking drift → becomes user-perceived product quality
+- MRR invisible → flat/declining subscription revenue unnoticed 30+ d
+
+### Hard Rules (preserved from existing protocol)
+- Small safe slices only
+- No bundled fixes / no silent architecture change
+- Preserve routing / billing / attribution / monetization integrity
+- Do not weaken any protected system listed at top of replit.md
+- Update replit.md + changelog discipline on every shipped slice
+
+### Standing Status
+- SC pilot live; Georgia prep next
+- 2 paid routable partners: Tri-County Veteran Support Network
+  (Charleston), Boot Print (Greenville)
+- Awaiting approval on Upgrade #1 before any code change

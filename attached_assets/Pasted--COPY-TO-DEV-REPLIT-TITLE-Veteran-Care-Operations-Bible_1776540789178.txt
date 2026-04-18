@@ -1,0 +1,159 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Operations Bible Systemization + Permanent Growth Layer
+
+PRIORITY:
+HIGH – INTERNAL OPERATING SYSTEM / SCALE READINESS
+
+-------------------------------------
+EXECUTION MODE
+-------------------------------------
+
+This is a REVIEW + STRATEGY task.
+
+Do NOT make code changes yet.
+
+Assess current system position and recommend the smartest next operational upgrades using our standing build rules:
+
+- small safe slices only
+- no overengineering
+- preserve routing / billing / attribution integrity
+- reusable systems over one-off hacks
+- founder visibility first
+- state expansion readiness always considered
+- update replit.md / changelog discipline
+
+-------------------------------------
+CURRENT POSITION (KNOWN)
+-------------------------------------
+
+South Carolina is live as blueprint.
+
+Already built:
+
+PLATFORM
+- website
+- AI Guide
+- resources
+- trusted services
+- seeded providers
+- lead routing
+- billing rails
+- attribution logic
+- admin tools
+- executive dashboard
+
+OPERATING SYSTEM
+- analytics dashboards
+- executive summary
+- category logic
+- seeded provider controls
+- launch readiness reviews
+- blueprint docs
+- operations bible foundation
+
+-------------------------------------
+ASSESSMENT REQUEST
+-------------------------------------
+
+Please review current admin / backend / operator visibility and recommend best lightweight upgrades for ownership control.
+
+Focus areas:
+
+1. Daily truth metrics
+- visitors
+- AI chats
+- help requests
+- routed leads
+- partner revenue
+- unresolved issues
+
+2. Lead pipeline visibility
+- new leads
+- aged leads
+- closed / unresolved
+- response speed
+
+3. Partner pipeline
+- prospects
+- active paying
+- churn risk
+- close rate
+
+4. Billing health
+- successful charges
+- failed charges
+- unpaid balances
+- monthly recurring revenue trend
+
+5. AI trends
+- top prompts
+- monetizable categories
+- unmet demand
+- escalation triggers
+
+6. Growth systems
+- ambassadors
+- top channels
+- best cities
+- referral performance
+
+-------------------------------------
+SCALE MINDSET RULE
+-------------------------------------
+
+Any recommendation should be:
+
+- reusable for Georgia / NC / FL
+- simple to operate
+- measurable
+- low maintenance
+- cloneable later
+
+No bloated enterprise nonsense.
+
+-------------------------------------
+CHANGELOG DISCIPLINE
+-------------------------------------
+
+Continue maintaining strong memory in:
+
+- replit.md
+- changelog
+- deferred list
+- risks list
+- next priorities
+
+So future sessions instantly understand:
+
+- what exists
+- what changed
+- what broke
+- what matters now
+
+-------------------------------------
+DELIVERABLE REQUIRED
+-------------------------------------
+
+Return:
+
+1. Current system maturity score (1-10)
+2. Biggest operator blind spots remaining
+3. Smartest next 3 upgrades in order
+4. Which one should be done immediately
+5. Which can wait until Georgia
+6. Any hidden risks if ignored
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+No code changes yet.
+Assessment only.
+
+Then wait for approval for one small slice.
+
+-------------------------------------
+END
+-------------------------------------
