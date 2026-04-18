@@ -1,0 +1,96 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Seeded Provider System – APPROVED TO BEGIN STAGE B ONLY
+
+PRIORITY:
+HIGH
+
+-------------------------------------
+APPROVAL
+-------------------------------------
+
+Stage A is fully live and confirmed.
+
+You are approved to begin:
+
+→ STAGE B ONLY — Matching Helper + Log-Only Seeded Detection
+
+Do NOT proceed to Stage C or Stage D yet.
+
+-------------------------------------
+STAGE B SCOPE
+-------------------------------------
+
+Execute ONLY the following:
+
+1. build matching helper logic
+- website domain
+- email domain
+- normalized business name
+- phone number
+
+2. wire matching helper into partner application submission flow
+
+3. if a likely seeded-provider match is detected:
+- LOG the match
+- report confidence / match key
+- DO NOT auto-convert yet
+- DO NOT change the existing record yet
+- DO NOT create UI changes yet
+
+-------------------------------------
+DO NOT DO YET
+-------------------------------------
+
+Do NOT do any of the following in Stage B:
+
+- no seeded provider data inserts
+- no admin seeded-providers page
+- no convert seeded → partner action
+- no auto-conversion
+- no merge tool
+- no seeded-provider public listing rollout
+- no AI Guide seeded-provider surfacing
+- no Stage C / D work
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+After Stage B is complete, return:
+
+1. exact files changed
+2. exact matching logic added
+3. exact logging behavior added
+4. match confidence logic
+5. examples of detected matches
+6. confirmation that no auto-conversion occurs yet
+7. confirmation that no UI changed
+8. PASS / FAIL
+9. blockers if any
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Run regression checks after Stage B:
+
+- normal partner applications still submit correctly
+- likely seeded matches are logged but not converted
+- no duplicate creation behavior changed yet
+- no regression to existing onboarding flow
+- no regression to current routing / billing / monetization flow
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+This is a controlled step-by-step rollout.
+
+Complete Stage B only.
+Wait for review before moving forward.
+
+-------------------------------------
+END
+-------------------------------------

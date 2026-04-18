@@ -11128,6 +11128,64 @@ export async function registerRoutes(
           console.log(`[partner-referral] Auto-track failed:`, refErr.message);
         }
       }
+
+      // Stage B: Seeded-Provider matching — LOG ONLY, no conversion.
+      // Failures here must never break the application submission.
+      if (rows.length > 0) {
+        try {
+          const { findExistingProvider } = await import("./partner-matching");
+          const match = await findExistingProvider({
+            websiteUrl: website || null,
+            contactEmail: email || null,
+            name: company_name || null,
+            phone: phone || null,
+          });
+          if (match.matchedId) {
+            const isSeeded = match.matchedIsSeeded === true || match.matchedProviderType === "seeded";
+            console.log(
+              `[partner-matching] application=${rows[0].id} matched existing provider=${match.matchedId} ` +
+              `(name="${match.matchedName}", type=${match.matchedProviderType}, seeded=${isSeeded}, ` +
+              `key=${match.matchKey}, confidence=${match.confidence}, candidates_scanned=${match.candidatesScanned}) ` +
+              `— LOG ONLY, no auto-conversion`
+            );
+            try {
+              const { logMonetizationAudit } = await import("./monetization-audit");
+              await logMonetizationAudit({
+                event_type: "mismatch_detected",
+                partner_id: match.matchedId,
+                lead_id: null,
+                reason: `Seeded-provider match candidate detected on partner application (LOG ONLY)`,
+                mismatch_type: isSeeded ? "seeded_provider_match_candidate" : "duplicate_provider_match_candidate",
+                severity: isSeeded ? "info" : "low",
+                metadata: {
+                  application_id: rows[0].id,
+                  application_company_name: company_name,
+                  application_email: email,
+                  application_website: website || null,
+                  application_phone: phone || null,
+                  matched_provider_name: match.matchedName,
+                  matched_provider_type: match.matchedProviderType,
+                  matched_is_seeded: isSeeded,
+                  match_key: match.matchKey,
+                  confidence: match.confidence,
+                  candidates_scanned: match.candidatesScanned,
+                  stage: "B-log-only",
+                },
+              });
+            } catch (auditErr: any) {
+              console.log(`[partner-matching] audit log failed (non-fatal): ${auditErr?.message}`);
+            }
+          } else {
+            console.log(
+              `[partner-matching] application=${rows[0].id} no existing provider match ` +
+              `(candidates_scanned=${match.candidatesScanned})`
+            );
+          }
+        } catch (matchErr: any) {
+          console.log(`[partner-matching] cascade failed (non-fatal, application succeeded): ${matchErr?.message}`);
+        }
+      }
+
       return res.json(rows[0]);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
