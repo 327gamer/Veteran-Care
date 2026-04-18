@@ -797,3 +797,78 @@ have honest gaps that compound at scale.
 - Per-state traffic split (cheap once launched in GA — add then)
 - Add traffic block to founder daily digest (1-line follow-up)
 - Server-side IP→country enrichment (defer until needed)
+
+## SHIPPED — Upgrade #4: Admin Mobile Panel Polish (2026-04-18)
+
+**Status:** LIVE. UI/responsive only. No engine, schema, or endpoint touched.
+
+### What was added (4 admin pages, surgical edits only)
+
+1. **Sticky page header on mobile** — `/admin/executive` and
+   `/admin/trusted-service-leads` now have sticky headers with shadow.
+   `/admin/ai-insights` and `/admin/resources` already had sticky
+   headers — left untouched.
+
+2. **Larger tap targets** — Back buttons bumped from `h-8` to `h-10`,
+   Refresh / Today / status-select buttons all to `h-9` minimum on
+   mobile. Hit areas now meet ≥36-40px comfort threshold.
+
+3. **Bottom safe-area padding** — All four pages now apply
+   `pb-[calc(env(safe-area-inset-bottom)+...)]` so iPhone gesture
+   bar / notch never clips the last card. Uses the existing
+   `safe-area-inset-bottom` pattern already in `client/src/index.css`.
+
+4. **Width / overflow handling** — Lead rows on Trusted Service Leads
+   converted from 2-column grid to 1-column on mobile (was clipping
+   long emails) and added `min-w-0` + `truncate` on email/phone/city
+   spans. Status select on each lead row stayed `flex-shrink-0` so it
+   never disappears.
+
+5. **One-tap copy for phone & email** — New inline `CopyButton`
+   component on Trusted Service Leads adds a small clipboard icon
+   next to every email and phone number. Tap → copies to clipboard,
+   icon flashes green check for 1.5s. Uses `navigator.clipboard.writeText`
+   with silent fallback.
+
+6. **"Today" filter chip** — Trusted Service Leads has a new toggle
+   button left of the status dropdown. Shows live count `Today (N)`
+   when there are any leads from today. Filters by client local-time
+   day; works alongside status + state + search filters.
+
+7. **Header truncation rules** — Long page titles now truncate
+   instead of wrapping or overflowing the sticky header on narrow
+   screens. "Updated Xs ago" timestamp hidden on mobile to free
+   header space; visible at `sm:` breakpoint and above.
+
+### Files changed
+- `client/src/pages/admin-executive.tsx` (header sticky + safe-area pb + tighter mobile spacing)
+- `client/src/pages/admin-trusted-service-leads.tsx` (sticky header wrapper, CopyButton, Today chip, larger tap targets, single-column mobile lead rows, safe-area pb)
+- `client/src/pages/admin-ai-insights.tsx` (safe-area pb on main container; header was already sticky)
+- `client/src/pages/admin-resources.tsx` (safe-area pb on root; header was already sticky)
+
+### Schema / engine impact
+- Schema: NONE
+- New tables: NONE
+- ALTER TABLE: NONE
+- New endpoints: NONE
+- Routing engine: UNTOUCHED
+- Billing engine: UNTOUCHED
+- Attribution engine: UNTOUCHED
+- AI engine: UNTOUCHED
+- Escalation engine: UNTOUCHED
+- Founder digest: UNTOUCHED
+- Stripe / commissions / payouts: UNTOUCHED
+
+### Validation
+- Workflow restarted clean — no TypeScript errors
+- JSX balance verified (div opens=18, closes=18 in trusted-service-leads)
+- Vite HMR pushed all four edits without console errors
+- Auth wall blocks deeper visual mobile screenshot validation
+  but desktop layout unchanged at `sm:` breakpoint and above
+  (additive `sm:` modifiers only)
+
+### Known follow-ups (intentionally deferred)
+- One-tap copy on `/admin/executive` paid-partner rows (low priority)
+- Mobile panel polish on the remaining 11 admin sub-pages
+  (apply same 4 patterns when each is next opened)
+- Bottom-aligned floating "scroll to top" button on long pages

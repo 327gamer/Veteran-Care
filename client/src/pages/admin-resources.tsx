@@ -1013,7 +1013,7 @@ function AdminResourcesInner() {
   const pendingCount = resources.filter(r => r.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden pb-[env(safe-area-inset-bottom)]">
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">

@@ -174,24 +174,25 @@ function AdminExecutiveInner() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="bg-background border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
-              <ChevronLeft className="h-4 w-4 mr-1" /> Admin
+      <header className="bg-background border-b sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Button variant="ghost" size="sm" className="h-9 px-2 sm:px-3" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
+              <ChevronLeft className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Admin</span>
             </Button>
-            <h1 className="text-lg font-semibold">Executive Summary</h1>
+            <h1 className="text-base sm:text-lg font-semibold truncate">Executive Summary</h1>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span data-testid="text-generated-at">Updated {timeAgo(data.generated_at)}</span>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} data-testid="button-refresh">
-              {isFetching ? "Refreshing…" : "Refresh"}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+            <span className="hidden sm:inline" data-testid="text-generated-at">Updated {timeAgo(data.generated_at)}</span>
+            <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => refetch()} disabled={isFetching} data-testid="button-refresh">
+              {isFetching ? "…" : "Refresh"}
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
         {/* Top KPI row */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiTile

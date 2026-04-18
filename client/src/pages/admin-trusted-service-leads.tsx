@@ -24,8 +24,42 @@ import {
   MessageSquare,
   Building2,
   Search,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useLocation } from "wouter";
+
+function CopyButton({ value, label, testId }: { value: string; label: string; testId: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable, ignore */
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={`Copy ${label}`}
+      className="inline-flex items-center justify-center h-7 w-7 rounded hover:bg-muted active:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+      data-testid={testId}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
 
 interface TrustedServiceLead {
   id: string;
@@ -65,6 +99,7 @@ function AdminTrustedServiceLeadsInner() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("");
+  const [todayOnly, setTodayOnly] = useState(false);
 
   const adminKey = localStorage.getItem("adminKey") || "";
   if (!adminKey) {
@@ -114,25 +149,32 @@ function AdminTrustedServiceLeadsInner() {
         if (![l.provider_name, l.name, l.email, l.phone].some(v => v?.toLowerCase().includes(q))) return false;
       }
       if (stateFilter && l.state !== stateFilter) return false;
+      if (todayOnly && !isToday(l.created_at)) return false;
       return true;
     });
-  }, [leads, searchQuery, stateFilter]);
+  }, [leads, searchQuery, stateFilter, todayOnly]);
+
+  const todayCount = useMemo(() => leads.filter(l => isToday(l.created_at)).length, [leads]);
 
   const newCount = filteredLeads.filter(l => l.status === "new").length;
   const contactedCount = filteredLeads.filter(l => l.status === "contacted").length;
   const closedCount = filteredLeads.filter(l => l.status === "closed").length;
 
   return (
-    <div className="p-4 space-y-4 animate-in fade-in duration-300">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-heading font-bold text-primary" data-testid="text-admin-leads-title">Trusted Partner Leads</h1>
-          <p className="text-xs text-muted-foreground">Veteran connection requests submitted to trusted partners</p>
+    <div className="min-h-screen bg-background animate-in fade-in duration-300 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base sm:text-lg font-heading font-bold text-primary truncate" data-testid="text-admin-leads-title">Trusted Partner Leads</h1>
+            <p className="text-[11px] text-muted-foreground truncate">Veteran connection requests</p>
+          </div>
         </div>
-      </div>
+      </header>
+
+      <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
 
       <div className="grid grid-cols-3 gap-2">
         <Card>
@@ -167,8 +209,18 @@ function AdminTrustedServiceLeadsInner() {
           />
         </div>
         <div className="flex gap-2 flex-wrap items-center">
+          <Button
+            variant={todayOnly ? "default" : "outline"}
+            size="sm"
+            className="h-9 px-3 text-xs"
+            onClick={() => setTodayOnly(v => !v)}
+            data-testid="button-filter-today"
+          >
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+            Today{todayCount > 0 ? ` (${todayCount})` : ""}
+          </Button>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-8 text-xs w-[130px]" data-testid="select-filter-lead-status">
+            <SelectTrigger className="h-9 text-xs w-[130px]" data-testid="select-filter-lead-status">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -179,7 +231,7 @@ function AdminTrustedServiceLeadsInner() {
             </SelectContent>
           </Select>
           <Select value={stateFilter || "all"} onValueChange={v => setStateFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs w-[110px]" data-testid="select-filter-lead-state">
+            <SelectTrigger className="h-9 text-xs w-[110px]" data-testid="select-filter-lead-state">
               <SelectValue placeholder="All States" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
@@ -241,7 +293,7 @@ function AdminTrustedServiceLeadsInner() {
                     value={lead.status}
                     onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v })}
                   >
-                    <SelectTrigger className="h-7 text-[10px] w-[100px]" data-testid={`select-status-${lead.id}`}>
+                    <SelectTrigger className="h-9 text-xs w-[110px] flex-shrink-0" data-testid={`select-status-${lead.id}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -252,26 +304,28 @@ function AdminTrustedServiceLeadsInner() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    <a href={`mailto:${lead.email}`} className="text-primary hover:underline truncate">{lead.email}</a>
-                  </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Mail className="h-3 w-3 flex-shrink-0" />
+                    <a href={`mailto:${lead.email}`} className="text-primary hover:underline truncate flex-1 min-w-0">{lead.email}</a>
+                    <CopyButton value={lead.email} label="email" testId={`button-copy-email-${lead.id}`} />
+                  </div>
                   {lead.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      <a href={`tel:${lead.phone}`} className="text-primary hover:underline">{lead.phone}</a>
-                    </span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Phone className="h-3 w-3 flex-shrink-0" />
+                      <a href={`tel:${lead.phone}`} className="text-primary hover:underline flex-1 min-w-0 truncate">{lead.phone}</a>
+                      <CopyButton value={lead.phone} label="phone" testId={`button-copy-phone-${lead.id}`} />
+                    </div>
                   )}
                   {(lead.city || lead.state) && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {[lead.city, lead.state].filter(Boolean).join(", ")}
+                    <span className="flex items-center gap-1 min-w-0">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{[lead.city, lead.state].filter(Boolean).join(", ")}</span>
                     </span>
                   )}
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(lead.created_at).toLocaleDateString()} {new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <span className="flex items-center gap-1 min-w-0">
+                    <Calendar className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{new Date(lead.created_at).toLocaleDateString()} {new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </span>
                 </div>
 
@@ -293,6 +347,7 @@ function AdminTrustedServiceLeadsInner() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

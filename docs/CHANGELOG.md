@@ -4,6 +4,51 @@ Reverse-chronological. Operator-mode slices only.
 
 ---
 
+## 2026-04-18 — Upgrade #4: Admin Mobile Panel Polish
+
+**Type:** UI/responsive polish only. Zero schema. Zero new endpoints. Zero engine touched.
+
+### Why
+Founder operates the platform from a phone. Daily admin work was
+clipped headers, small tap targets, no safe-area padding behind the
+iPhone gesture bar, and copy/paste-by-hand for every phone & email.
+This slice fixes the daily friction without redesigning anything.
+
+### What changed (4 pages)
+- `/admin/executive` — sticky header, safe-area bottom padding, tighter
+  mobile spacing, larger tap targets on Back/Refresh
+- `/admin/trusted-service-leads` — full mobile pass: sticky header,
+  Today filter chip with live count, one-tap copy buttons next to
+  every email & phone, single-column mobile lead rows (no more clipping),
+  larger status select, safe-area bottom padding
+- `/admin/ai-insights` — safe-area bottom padding (header was already sticky)
+- `/admin/resources` — safe-area bottom padding (header was already sticky)
+
+### Files
+- `client/src/pages/admin-executive.tsx`
+- `client/src/pages/admin-trusted-service-leads.tsx`
+- `client/src/pages/admin-ai-insights.tsx`
+- `client/src/pages/admin-resources.tsx`
+
+### Protected systems
+Routing · Billing · Attribution · AI · Escalation · Founder Digest ·
+Stripe · Commissions · Payouts — all UNTOUCHED.
+
+### Validation
+- Workflow restart clean, no TypeScript errors
+- JSX div balance verified (18=18 in restructured file)
+- Vite HMR pushed edits without console errors
+- Desktop layout unchanged (additive `sm:` modifiers only;
+  every mobile rule is `<sm` and falls back at the `sm:` breakpoint)
+
+### Deferred
+- Mobile polish on the other 11 admin sub-pages (apply same 4 patterns
+  when each is next opened)
+- One-tap copy on Executive paid-partner rows
+- Floating scroll-to-top on long pages
+
+---
+
 ## 2026-04-18 — Upgrade #3: Visitor / Traffic Beacon Metrics
 
 **Type:** Additive feature. ONE new table. Zero existing tables touched. Zero engine touched.

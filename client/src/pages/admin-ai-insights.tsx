@@ -112,7 +112,7 @@ function AdminAiInsightsInner() {
         <h1 className="font-heading font-bold text-lg">AI Insights</h1>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3 sm:space-y-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
 
         <div className="grid grid-cols-2 gap-3">
           <Card>
