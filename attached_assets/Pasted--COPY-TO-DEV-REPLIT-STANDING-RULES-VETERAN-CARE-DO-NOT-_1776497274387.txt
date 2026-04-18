@@ -1,0 +1,136 @@
+🚨 COPY TO DEV / REPLIT
+
+🚨 STANDING RULES — VETERAN CARE (DO NOT IGNORE)
+
+- Execute ONLY the approved slice
+- Do NOT bundle unrelated work
+- Do NOT silently fix extra items
+- Preserve ALL routing / billing / attribution / monetization protections
+- Seeded providers must NEVER receive leads
+- Seeded providers must NEVER trigger billing
+- Keep Supabase partner_organizations as the canonical partner / seeded identity source
+- Do NOT update Master Blueprint style records — execution only
+
+SUPABASE SECURITY RULE (MANDATORY IF ANY DB CHANGE):
+- Identify affected table(s)
+- Confirm RLS status
+- Apply correct policies if needed
+- Confirm no public exposure
+- Re-run regression checks
+- Report before/after
+
+If scope expands:
+→ STOP and return the breakout plan first
+
+-------------------------------------
+
+TITLE:
+Veteran Care – APPROVED NEXT STEP: F2.5 Seeded Display Sync Fix ONLY
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+DECISION
+-------------------------------------
+
+Your diagnosis is accepted.
+
+The main blocker is the two-DB split:
+- seeded providers were created in the Supabase-side trusted_services / partner flow
+- public trusted-services surfaces read from the pg-side trusted_services table
+
+Do NOT proceed to F3 yet.
+
+-------------------------------------
+APPROVED NEXT STEP
+-------------------------------------
+
+Proceed with a NEW sliced step only:
+
+→ F2.5 — Seeded Display Sync Fix
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Make the existing 18 seeded providers visible on the public-facing trusted-services surfaces without changing routing / billing / seeded protections.
+
+-------------------------------------
+RULES
+-------------------------------------
+
+1. Supabase partner_organizations remains the canonical source of truth for:
+- seeded / partner identity
+- routing eligibility
+- monetization state
+
+2. pg-side trusted_services remains the current public display surface
+
+3. This step should sync DISPLAY rows only
+- do NOT create a second canonical identity model
+- do NOT weaken the single-record lifecycle principle
+- do NOT introduce permanent messy dual-write architecture beyond what is strictly needed for current display compatibility
+
+-------------------------------------
+EXECUTE ONLY THESE ITEMS
+-------------------------------------
+
+1. one-time sync / copy of the existing 18 seeded providers into the public-facing pg-side trusted_services layer
+
+2. update the admin seeded-provider creation flow so future seeded provider inserts create the required public-facing display row as part of the same controlled workflow
+
+3. preserve label distinction:
+- seeded = National Provider / Directory Provider
+- not Trusted Partner / Verified Partner
+
+4. preserve all seeded protections:
+- no routing
+- no billing
+- no lead leakage
+
+-------------------------------------
+DO NOT DO YET
+-------------------------------------
+
+- do NOT begin F3
+- do NOT change routing logic
+- do NOT change billing logic
+- do NOT attempt full DB consolidation
+- do NOT solve insurance/resource category gaps in this same step
+- do NOT guess category fixes beyond what is already proven
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+Return:
+
+1. exact files changed
+2. exact sync approach used
+3. confirmation that all 18 seeded providers now exist on the public trusted-services surface
+4. confirmation that public display now shows them correctly
+5. confirmation that seeded protections still hold
+6. confirmation that future seeded inserts will write to the correct public display layer
+7. PASS / FAIL
+8. blockers if any
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Verify after F2.5:
+
+- Housing shows the Stage C seeded providers correctly
+- Legal shows seeded providers correctly
+- Financial / Credit shows seeded providers correctly
+- Insurance shows seeded providers correctly in Trusted Services
+- Education / Training shows seeded providers correctly
+- no unrelated providers bleed across categories
+- Boot Print / Tri-County remain housing only
+- seeded providers remain routing-ineligible
+- seeded providers remain billing-ineligible
+
+-------------------------------------
+END
+-------------------------------------

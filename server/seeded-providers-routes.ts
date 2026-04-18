@@ -1,5 +1,92 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { supabaseAdmin } from "./supabase";
+import { query as pgQuery } from "./pg-client";
+
+/**
+ * F2.5 — pg-side display sync helpers
+ * -----------------------------------
+ * Supabase remains the canonical identity store for partner_organizations
+ * and the seeded trusted_services row. The pg-side `trusted_services` table
+ * is the public display surface. We mirror seeded display rows there so
+ * /api/trusted-services and /api/trusted-partners-for-category include them.
+ *
+ * Identity vs display:
+ *   - identity (supabase): partner_organizations + linked trusted_services row
+ *   - display  (pg-side):  trusted_services row tagged with verification_label
+ *                          'National Provider' and notes_internal containing
+ *                          the supabase ids for backlinking.
+ *
+ * Routing/billing protections are unchanged — pg-side trusted_services is a
+ * pure display table, never used for matching, lead routing, or billing.
+ */
+async function pgFindCategoryIdBySlug(slug: string): Promise<string | null> {
+  try {
+    const rows = await pgQuery(
+      "SELECT id FROM trusted_service_categories WHERE slug = $1 LIMIT 1",
+      [slug],
+    );
+    return rows[0]?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+async function pgInsertSeededDisplayRow(args: {
+  pgCategoryId: string;
+  name: string;
+  shortDescription: string | null;
+  websiteUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  state: string | null;
+  isActive: boolean;
+  supabaseOrgId: string;
+  supabaseTsId: string;
+  seededSource: string | null;
+}): Promise<{ id: string } | null> {
+  try {
+    const linkNote = `SEEDED|supabase_org_id=${args.supabaseOrgId}|supabase_ts_id=${args.supabaseTsId}|seeded_source=${args.seededSource || ""}`;
+    const rows = await pgQuery(
+      `INSERT INTO trusted_services
+        (category_id,name,short_description,website_url,phone,email,state,
+         verification_status,verification_label,is_active,is_featured,is_national,
+         display_order,program_area,group_type,listing_type,cta_text,notes_internal)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'national-provider','National Provider',$8,false,true,
+         100,'trusted_services','service','directory','Visit Website',$9)
+       RETURNING id`,
+      [
+        args.pgCategoryId,
+        args.name,
+        args.shortDescription,
+        args.websiteUrl,
+        args.phone,
+        args.email,
+        args.state,
+        args.isActive,
+        linkNote,
+      ],
+    );
+    return rows[0] ? { id: rows[0].id } : null;
+  } catch (err: any) {
+    console.log("[seeded-providers] pg-side insert failed:", err.message);
+    return null;
+  }
+}
+
+async function pgUpdateSeededDisplayActive(
+  supabaseOrgId: string,
+  isActive: boolean,
+): Promise<void> {
+  try {
+    await pgQuery(
+      `UPDATE trusted_services SET is_active = $1
+       WHERE notes_internal LIKE $2`,
+      [isActive, `%supabase_org_id=${supabaseOrgId}%`],
+    );
+  } catch (err: any) {
+    console.log("[seeded-providers] pg-side visibility update failed:", err.message);
+  }
+}
 
 let _seededColumnsAvailable: boolean | null = null;
 async function checkSeededColumns(): Promise<boolean> {
@@ -201,13 +288,45 @@ export function registerSeededProviderRoutes(
         return res.status(500).json({ error: "Failed to create directory entry", detail: msg });
       }
 
+      // F2.5: Mirror display row into pg-side trusted_services so it
+      // appears on /api/trusted-services and /api/trusted-partners-for-category.
+      // Identity stays canonical in supabase; this is display-only.
+      let pgDisplayId: string | null = null;
+      const pgCategoryId = await pgFindCategoryIdBySlug(cat.slug);
+      if (pgCategoryId) {
+        const pgRow = await pgInsertSeededDisplayRow({
+          pgCategoryId,
+          name: name.trim(),
+          shortDescription: short_description || null,
+          websiteUrl: website_url || null,
+          phone: phone || null,
+          email: contact_email || null,
+          state: is_national === false ? state || null : null,
+          isActive: true,
+          supabaseOrgId: org.id,
+          supabaseTsId: ts.id,
+          seededSource: seeded_source || "admin-curated",
+        });
+        pgDisplayId = pgRow?.id || null;
+        if (!pgDisplayId) {
+          console.log(
+            `[seeded-providers] WARN: supabase rows created but pg-side display insert failed for "${name.trim()}". Identity preserved; display will need re-sync.`,
+          );
+        }
+      } else {
+        console.log(
+          `[seeded-providers] WARN: pg-side has no category slug="${cat.slug}". Display row not created.`,
+        );
+      }
+
       console.log(
-        `[seeded-providers] created provider="${name.trim()}" org_id=${org.id} ts_id=${ts.id} category=${cat.slug}`,
+        `[seeded-providers] created provider="${name.trim()}" org_id=${org.id} ts_id=${ts.id} pg_display_id=${pgDisplayId || "—"} category=${cat.slug}`,
       );
       return res.status(201).json({
         ok: true,
         partner_organization_id: org.id,
         trusted_service_id: ts.id,
+        pg_display_id: pgDisplayId,
         category: cat,
       });
     } catch (err: any) {
@@ -240,7 +359,10 @@ export function registerSeededProviderRoutes(
         .eq("partner_organization_id", id);
       if (error) return res.status(500).json({ error: error.message });
 
-      console.log(`[seeded-providers] visibility id=${id} -> is_active=${is_active}`);
+      // F2.5: mirror visibility into pg-side display row
+      await pgUpdateSeededDisplayActive(id, is_active);
+
+      console.log(`[seeded-providers] visibility id=${id} -> is_active=${is_active} (pg-side mirrored)`);
       return res.json({ ok: true, id, is_active });
     } catch (err: any) {
       return res.status(500).json({ error: "Failed to update visibility" });
@@ -270,7 +392,10 @@ export function registerSeededProviderRoutes(
         .update({ is_active: false })
         .eq("id", id);
 
-      console.log(`[seeded-providers] soft-deleted id=${id}`);
+      // F2.5: hide pg-side display row too
+      await pgUpdateSeededDisplayActive(id, false);
+
+      console.log(`[seeded-providers] soft-deleted id=${id} (pg-side mirrored)`);
       return res.json({ ok: true, id, deleted: true });
     } catch (err: any) {
       return res.status(500).json({ error: "Failed to delete seeded provider" });
