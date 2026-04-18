@@ -8523,9 +8523,17 @@ export async function registerRoutes(
         .limit(1);
       onbColumnsAvailable = !onbErr;
 
+      let seededColumnsAvailable = false;
+      const { error: seededErr } = await supabaseAdmin
+        .from("partner_organizations")
+        .select("provider_type, is_seeded")
+        .limit(1);
+      seededColumnsAvailable = !seededErr;
+
       let selectFields = "id, name, is_active, is_lead_enabled, partner_status_override";
       if (subsColumnsAvailable) selectFields += ", subscription_status, active_paid_partner";
       if (onbColumnsAvailable) selectFields += ", onboarding_status, activation_date";
+      if (seededColumnsAvailable) selectFields += ", provider_type, is_seeded";
 
       const { data } = await supabaseAdmin
         .from("partner_organizations")
@@ -8543,10 +8551,13 @@ export async function registerRoutes(
         active_paid_partner: subsColumnsAvailable ? (p.active_paid_partner ?? true) : true,
         onboarding_status: onbColumnsAvailable ? (p.onboarding_status || "pending") : "active",
         activation_date: onbColumnsAvailable ? (p.activation_date || null) : null,
+        provider_type: seededColumnsAvailable ? (p.provider_type || "partner") : "partner",
+        is_seeded: seededColumnsAvailable ? (p.is_seeded === true) : false,
         routing_eligible: p.is_active && p.is_lead_enabled
           && (p.partner_status_override !== "paused")
           && (subsColumnsAvailable ? p.active_paid_partner !== false : true)
-          && (onbColumnsAvailable ? (!p.onboarding_status || p.onboarding_status === "active") : true),
+          && (onbColumnsAvailable ? (!p.onboarding_status || p.onboarding_status === "active") : true)
+          && (seededColumnsAvailable ? (p.provider_type !== "seeded" && p.is_seeded !== true) : true),
       }));
 
       return res.json({

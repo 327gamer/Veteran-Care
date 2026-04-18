@@ -6,6 +6,7 @@ import {
   Wrench,
   Building2,
   ShieldAlert,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -66,5 +67,12 @@ export const HOUSING_SUBCATEGORIES: HousingSubcategory[] = [
     icon: ShieldAlert,
     description: "Legal help, counseling, and assistance to prevent foreclosure",
     keywords: ["foreclosure", "mortgage help", "loan modification", "housing counseling", "delinquent"],
+  },
+  {
+    name: "Moving & Storage",
+    slug: "moving-relocation",
+    icon: Truck,
+    description: "Moving companies, PCS relocation help, and storage solutions for veterans",
+    keywords: ["moving", "movers", "moving company", "storage", "relocation", "PCS", "pack out", "household goods"],
   },
 ];

@@ -26,6 +26,14 @@ async function checkOnboardingColumns(): Promise<boolean> {
   return _onboardingColumnsAvailable;
 }
 
+let _seededColumnsAvailable: boolean | null = null;
+async function checkSeededColumns(): Promise<boolean> {
+  if (_seededColumnsAvailable !== null) return _seededColumnsAvailable;
+  const { error } = await supabaseAdmin.from("partner_organizations").select("provider_type, is_seeded").limit(1);
+  _seededColumnsAvailable = !error || !error.message.includes("does not exist");
+  return _seededColumnsAvailable;
+}
+
 async function checkBillingColumns(): Promise<boolean> {
   if (_billingColumnsAvailable !== null) return _billingColumnsAvailable;
   const { error } = await supabaseAdmin.from("navigator_requests").select("is_billable, billing_status").limit(1);
@@ -155,7 +163,7 @@ export interface PartnerCandidate {
   partnerCategory?: string;
 }
 
-function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: string | null, excludePartnerIds: string[], subscriptionLockEnabled: boolean = false, onboardingLockEnabled: boolean = false): any[] {
+function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: string | null, excludePartnerIds: string[], subscriptionLockEnabled: boolean = false, onboardingLockEnabled: boolean = false, seededLockEnabled: boolean = false): any[] {
   return rules.filter((rule) => {
     const partner = rule.partner;
     if (!partner || !partner.is_active || !partner.is_lead_enabled) return false;
@@ -164,6 +172,7 @@ function applyRoutingFilters(rules: any[], lead: LeadForRouting, categorySlug: s
     if (subscriptionLockEnabled && partner.active_paid_partner !== true) return false;
     if (subscriptionLockEnabled && partner.subscription_status && partner.subscription_status !== "active") return false;
     if (onboardingLockEnabled && partner.onboarding_status && partner.onboarding_status !== "active") return false;
+    if (seededLockEnabled && (partner.provider_type === "seeded" || partner.is_seeded === true)) return false;
 
     const ruleCategory = rule.category_slug ? toCanonical(rule.category_slug) : null;
     if (ruleCategory && categorySlug && ruleCategory !== categorySlug) return false;
@@ -210,9 +219,11 @@ export async function findCandidatePartners(
 
   const subsColumnsReady = await checkSubscriptionColumns();
   const onbColumnsReady = await checkOnboardingColumns();
+  const seededColumnsReady = await checkSeededColumns();
   let selectFields = "id, name, is_active, is_lead_enabled, contact_email, state, cities, partner_status_override";
   if (subsColumnsReady) selectFields += ", subscription_status, active_paid_partner";
   if (onbColumnsReady) selectFields += ", onboarding_status";
+  if (seededColumnsReady) selectFields += ", provider_type, is_seeded";
   const selectCols = `*, partner:partner_organizations!partner_id(${selectFields})`;
 
   const { data: rules, error } = await supabaseAdmin
@@ -222,7 +233,7 @@ export async function findCandidatePartners(
 
   if (error || !rules || rules.length === 0) return [];
 
-  const filtered = applyRoutingFilters(rules as any[], lead, categorySlug, excludePartnerIds, subsColumnsReady, onbColumnsReady);
+  const filtered = applyRoutingFilters(rules as any[], lead, categorySlug, excludePartnerIds, subsColumnsReady, onbColumnsReady, seededColumnsReady);
 
   filtered.sort((a, b) => {
     if (a.priority !== b.priority) return a.priority - b.priority;
@@ -272,9 +283,11 @@ export async function findMatchingPartners(
 
   const subsColumnsReady = await checkSubscriptionColumns();
   const onbColumnsReady = await checkOnboardingColumns();
+  const seededColumnsReady = await checkSeededColumns();
   let selectFields = "id, name, is_active, is_lead_enabled, contact_email, state, cities, partner_status_override";
   if (subsColumnsReady) selectFields += ", subscription_status, active_paid_partner";
   if (onbColumnsReady) selectFields += ", onboarding_status";
+  if (seededColumnsReady) selectFields += ", provider_type, is_seeded";
   const selectCols = `*, partner:partner_organizations!partner_id(${selectFields})`;
 
   const { data: rules, error } = await supabaseAdmin
@@ -798,13 +811,15 @@ export async function routeLead(leadId: string): Promise<{
 
   const subsColumnsReady2 = await checkSubscriptionColumns();
   const onbColumnsReady2 = await checkOnboardingColumns();
+  const seededColumnsReady2 = await checkSeededColumns();
   const verifiedMatches: typeof matches = [];
   for (const match of matches) {
     let recheckFields = "id, is_active, is_lead_enabled, partner_status_override";
     if (subsColumnsReady2) recheckFields += ", subscription_status, active_paid_partner";
     if (onbColumnsReady2) recheckFields += ", onboarding_status";
+    if (seededColumnsReady2) recheckFields += ", provider_type, is_seeded";
     try {
-      const { data: p } = await supabaseAdmin.from("partner_organizations").select(recheckFields).eq("id", match.partnerId).single();
+      const { data: p } = await supabaseAdmin.from("partner_organizations").select(recheckFields).eq("id", match.partnerId).single() as { data: any };
       if (!p) {
         logMonetizationAudit({ event_type: "routing_blocked", partner_id: match.partnerId, lead_id: leadId, reason: "partner_not_found_at_assignment", metadata: { partner_name: match.partnerName } });
         continue;
@@ -819,6 +834,9 @@ export async function routeLead(leadId: string): Promise<{
       }
       if (onbColumnsReady2) {
         if (p.onboarding_status && p.onboarding_status !== "active") failures.push(`onboarding_status=${p.onboarding_status}`);
+      }
+      if (seededColumnsReady2) {
+        if (p.provider_type === "seeded" || p.is_seeded === true) failures.push(`provider_type=seeded`);
       }
       if (failures.length > 0) {
         const eventType = failures.some(f => f.includes("subscription")) ? "subscription_mismatch" as const

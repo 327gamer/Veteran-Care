@@ -1,0 +1,104 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Seeded Provider System – APPROVED TO BEGIN STAGE A ONLY
+
+PRIORITY:
+HIGH
+
+-------------------------------------
+APPROVAL
+-------------------------------------
+
+Your seeded provider strategy and build plan is approved in principle.
+
+You are authorized to begin:
+
+→ STAGE A — Schema + Locks ONLY
+
+Do NOT proceed to Stage B, C, or D yet.
+
+-------------------------------------
+STAGE A SCOPE
+-------------------------------------
+
+Execute ONLY the following:
+
+1. schema changes
+- add provider_type
+- add is_seeded
+- add seeded_source
+- add trusted_services.partner_organization_id
+- add required indexes
+- add DB constraint preventing seeded providers from ever being active_paid_partner
+
+2. routing / billing protection
+- add the 6th lock so seeded providers are always excluded
+- enforce this at:
+  - eligibility query layer
+  - routing layer
+  - assignment-time recheck
+  - billing-time recheck
+
+3. Moving & Storage taxonomy support
+- add / expose Moving & Storage under Housing using the structurally correct existing path you identified
+- do NOT seed providers yet
+- do NOT change AI Guide behavior yet beyond taxonomy support required for this stage
+
+-------------------------------------
+DO NOT DO YET
+-------------------------------------
+
+Do NOT do any of the following in Stage A:
+
+- no seeded provider data inserts
+- no admin seeded-providers page
+- no matching helper
+- no conversion helper
+- no auto-conversion
+- no merge tool
+- no UI label rollout
+- no AI Guide seeded-provider surfacing
+- no Stage B / C / D work
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+After Stage A is complete, return:
+
+1. exact files changed
+2. exact schema changes applied
+3. exact lock logic added
+4. confirmation that seeded providers cannot receive leads
+5. confirmation that existing routing still works
+6. confirmation that existing billing still works
+7. confirmation that Moving & Storage now exists in the taxonomy where intended
+8. PASS / FAIL
+9. blockers if any
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Run regression checks after Stage A:
+
+- routing still works for paid eligible partners
+- billing still works for valid leads
+- seeded-provider lock cannot be bypassed
+- no regression to current monetization flow
+- no regression to current AI / category system
+- no regression to admin visibility
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+This is a controlled step-by-step rollout.
+
+Complete Stage A only.
+Wait for review before moving forward.
+
+-------------------------------------
+END
+-------------------------------------
