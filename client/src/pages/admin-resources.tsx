@@ -79,6 +79,7 @@ import {
   Shield,
   Zap,
   Eye,
+  LogOut,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -1012,18 +1013,23 @@ function AdminResourcesInner() {
   const pendingCount = resources.filter(r => r.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground shadow-md">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            <span className="font-heading font-bold">Admin — Resource Review</span>
+        <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
+          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+            <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+            <span className="font-heading font-bold truncate">
+              <span className="sm:hidden">Admin</span>
+              <span className="hidden sm:inline">Admin — Resource Review</span>
+            </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button data-testid="menu-analytics" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
-                  <BarChart3 className="h-4 w-4 mr-1.5" /> Analytics <ChevronDown className="h-3 w-3 ml-1" />
+                <Button data-testid="menu-analytics" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 px-2 sm:px-3">
+                  <BarChart3 className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Analytics</span>
+                  <ChevronDown className="h-3 w-3 ml-1 hidden sm:inline-block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -1041,8 +1047,10 @@ function AdminResourcesInner() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button data-testid="menu-ambassadors" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
-                  <Users className="h-4 w-4 mr-1.5" /> Ambassadors <ChevronDown className="h-3 w-3 ml-1" />
+                <Button data-testid="menu-ambassadors" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 px-2 sm:px-3">
+                  <Users className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Ambassadors</span>
+                  <ChevronDown className="h-3 w-3 ml-1 hidden sm:inline-block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -1064,8 +1072,10 @@ function AdminResourcesInner() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button data-testid="menu-partners" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
-                  <Handshake className="h-4 w-4 mr-1.5" /> Partners <ChevronDown className="h-3 w-3 ml-1" />
+                <Button data-testid="menu-partners" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 px-2 sm:px-3">
+                  <Handshake className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Partners</span>
+                  <ChevronDown className="h-3 w-3 ml-1 hidden sm:inline-block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -1088,15 +1098,16 @@ function AdminResourcesInner() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10" onClick={() => { setAuthenticated(false); setAdminKey(""); localStorage.removeItem("adminKey"); }}>
-              Sign Out
+            <Button data-testid="button-sign-out" variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => { setAuthenticated(false); setAdminKey(""); localStorage.removeItem("adminKey"); }} aria-label="Sign Out">
+              <LogOut className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
-        <div className="flex gap-2 border-b pb-3">
+        <div className="flex gap-2 border-b pb-3 overflow-x-auto flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-thin">
           <Button
             data-testid="tab-resources"
             variant={activeTab === "resources" ? "default" : "ghost"}
