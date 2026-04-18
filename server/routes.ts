@@ -13,6 +13,7 @@ import { toCanonical, toLegacy, normalizeCategoryList } from "../shared/canonica
 import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { ensureMonetizationAuditTable } from "./monetization-audit";
 import { query as pgQuery } from "./pg-client";
+import { registerSeededProviderRoutes } from "./seeded-providers-routes";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
@@ -2777,6 +2778,9 @@ export async function registerRoutes(
   await ensureAttributionTables();
   await ensureReferralSweepstakesTables();
   await ensurePartnerSubcategories();
+
+  // Stage C: seeded providers admin endpoints
+  registerSeededProviderRoutes(app, requireAdmin);
   await ensurePartnerReferrals();
   await ensureLeadBilling();
   await ensureLeadEventsTable();

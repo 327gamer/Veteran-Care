@@ -1,0 +1,88 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Seeded Provider System – APPROVED TO BEGIN STAGE C ONLY
+
+PRIORITY:
+HIGH
+
+-------------------------------------
+APPROVAL
+-------------------------------------
+
+Stage B is complete and validated.
+
+You are approved to begin:
+
+→ STAGE C ONLY — Admin Seeded-Providers Page + Seed First Category Only
+
+Do NOT proceed to Stage D yet.
+
+-------------------------------------
+STAGE C SCOPE
+-------------------------------------
+
+Execute ONLY the following:
+
+1. build admin seeded-providers page / controls
+2. seed ONE category only:
+   - Mortgage / VA Loans
+3. create only 2–3 seeded provider records for that category
+4. ensure seeded providers appear correctly in admin
+5. ensure seeded providers remain blocked from routing and billing
+6. ensure labels / display distinction are correct at admin level
+
+-------------------------------------
+DO NOT DO YET
+-------------------------------------
+
+Do NOT do any of the following in Stage C:
+
+- no auto-conversion
+- no merge tool
+- no public full multi-category rollout
+- no seeding of Legal / Credit / Insurance / Education yet
+- no AI Guide seeded-provider surfacing changes yet
+- no Stage D work
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+After Stage C is complete, return:
+
+1. exact files changed
+2. exact admin controls added
+3. exact seeded provider records created
+4. confirmation of category placement for Mortgage / VA Loans
+5. confirmation seeded providers are visible where intended
+6. confirmation seeded providers still cannot receive leads
+7. confirmation seeded providers still cannot trigger billing
+8. PASS / FAIL
+9. blockers if any
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Run regression checks after Stage C:
+
+- seeded providers appear correctly in admin
+- Mortgage / VA Loans category seeded correctly
+- no duplicate records created
+- seeded providers remain routing-ineligible
+- seeded providers remain billing-ineligible
+- no regression to current partner / billing / routing flow
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+This is a controlled step-by-step rollout.
+
+Complete Stage C only.
+Wait for review before moving forward.
+
+-------------------------------------
+END
+-------------------------------------

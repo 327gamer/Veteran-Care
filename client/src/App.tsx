@@ -20,6 +20,7 @@ import AdminAnalytics from "@/pages/admin-analytics";
 import AdminAiInsights from "@/pages/admin-ai-insights";
 import AdminTrustedServices from "@/pages/admin-trusted-services";
 import AdminTrustedServiceLeads from "@/pages/admin-trusted-service-leads";
+import AdminSeededProviders from "@/pages/admin-seeded-providers";
 import AdminPartnerProspects from "@/pages/admin-partner-prospects";
 import PartnerApply from "@/pages/partner-apply";
 import PartnerPaymentSuccess from "@/pages/partner-payment-success";
@@ -147,6 +148,7 @@ function Router() {
       <Route path="/admin/ai-insights" component={AdminAiInsights} />
       <Route path="/admin/trusted-services" component={AdminTrustedServices} />
       <Route path="/admin/trusted-service-leads" component={AdminTrustedServiceLeads} />
+      <Route path="/admin/seeded-providers" component={AdminSeededProviders} />
       <Route path="/admin/partner-prospects" component={AdminPartnerProspects} />
       <Route path="/admin/vob" component={AdminVob} />
       <Route path="/admin/ambassadors" component={AdminAmbassadors} />
