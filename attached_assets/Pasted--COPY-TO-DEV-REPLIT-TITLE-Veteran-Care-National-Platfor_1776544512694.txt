@@ -1,0 +1,179 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – National Platform Expansion Architecture Clarification
+
+PRIORITY:
+HIGH – FUTURE SCALE STRUCTURE
+
+-------------------------------------
+IMPORTANT CLARIFICATION
+-------------------------------------
+
+Veteran Care should remain:
+
+ONE NATIONAL PLATFORM  
+ONE CODEBASE  
+ONE ADMIN SYSTEM  
+ONE BACKEND  
+ONE AI / ROUTING / BILLING ENGINE
+
+We are NOT building separate state websites or separate duplicated systems.
+
+We are expanding coverage inside one operating platform.
+
+-------------------------------------
+CORE MODEL
+-------------------------------------
+
+Think of the system as:
+
+LAYER 1 — NATIONAL OPERATING SYSTEM
+- platform logic
+- AI Guide
+- routing engine
+- billing engine
+- attribution engine
+- seeded provider logic
+- partner systems
+- dashboards
+- admin tools
+
+LAYER 2 — STATE DATA LAYER
+- South Carolina resources
+- Georgia resources
+- North Carolina resources
+- Florida resources
+- etc.
+
+LAYER 3 — LOCAL COVERAGE LAYER
+- cities
+- counties
+- metro areas
+- service zones
+- partner territories
+- ambassador territories
+
+-------------------------------------
+VERY IMPORTANT SCALE RULE
+-------------------------------------
+
+We do NOT want future growth to become one giant clustered database view where everything is mixed together with poor filtering.
+
+Everything must remain controllable and reportable by geography.
+
+-------------------------------------
+NEEDED FILTER / SEGMENTATION MODEL
+-------------------------------------
+
+Please ensure current and future systems support filtering / grouping by:
+
+- national
+- state
+- region
+- metro area
+- county
+- city
+- zip (where relevant)
+
+Across these modules:
+
+1. Resources
+2. Leads
+3. Partner organizations
+4. Trusted Services
+5. Seeded providers
+6. Ambassadors
+7. Attribution / UTM traffic
+8. Billing
+9. Commissions
+10. AI demand analytics
+11. Conversion reporting
+12. Executive dashboards
+
+-------------------------------------
+AMBASSADOR STRUCTURE (VERY IMPORTANT)
+-------------------------------------
+
+We do NOT want one giant ambassador list later.
+
+Need clean organizational structure such as:
+
+STATE → CITY / REGION → Ambassador
+
+Examples:
+
+Georgia
+- Atlanta
+- Savannah
+- Augusta
+
+New York
+- NYC
+- Buffalo
+- Albany
+- Long Island
+
+Florida
+- Miami
+- Orlando
+- Tampa
+- Jacksonville
+
+Allow future ability to sort ambassadors by:
+
+- state
+- city
+- region
+- active/inactive
+- traffic generated
+- leads generated
+- conversions
+- commissions
+- signup date
+
+-------------------------------------
+REPORTING REQUIREMENT
+-------------------------------------
+
+Ownership must be able to quickly answer:
+
+- How many leads came from Georgia this week?
+- Which city in Florida is hottest?
+- Which ambassadors drive Atlanta traffic?
+- Which state has strongest conversion rate?
+- Which cities need partner coverage?
+- Which categories are trending in NC?
+- Revenue by state / city / category?
+- AI demand by geography?
+
+-------------------------------------
+IMPORTANT NOTE
+-------------------------------------
+
+This is NOT asking for overbuild now.
+
+This is asking that future slices respect geographic segmentation so growth stays organized and not messy.
+
+South Carolina is the blueprint.
+
+Future states should be ACTIVATED inside the same system — but with clean reporting and operational separation.
+
+-------------------------------------
+ACTION REQUEST
+-------------------------------------
+
+Please review current architecture and confirm:
+
+1. What already supports this today
+2. What needs light upgrades later
+3. Any hidden clustering risks now
+4. Smartest future low-risk slice to strengthen geo reporting
+
+No changes yet unless separately approved.
+
+Assessment only.
+
+-------------------------------------
+END
+-------------------------------------
