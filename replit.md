@@ -567,3 +567,96 @@ have honest gaps that compound at scale.
   (only add when there's a reason — current logging is sufficient)
 - "Outcome captured today" KPI tile on Executive Summary (bundle into
   Upgrade #3 daily digest)
+
+## SHIPPED — Upgrade #2: Founder Daily Command Center Email (2026-04-18)
+
+**Status:** LIVE. Additive only. No engine touched.
+
+### What was added
+1. **New module** `server/founder-digest.ts` (~370 LOC):
+   - `assembleDigestData()` — pulls last 30d of leads in one query
+     (covers yesterday, 7d trend, stuck, top categories/cities,
+     outcomes), plus separate light queries for AI activity
+     (yesterday) and partner applications. Pure read; never writes.
+   - `buildDigestHtml(data)` — clean mobile-readable email
+     (560px max width, 13–22px font sizes, single-column blocks)
+     with sections: Alerts → Yesterday → 7-Day Trend → Stuck Leads
+     → Payments → Partner Applications → Top Categories → Top
+     Cities → Conversion Outcomes → Open Admin link.
+   - `sendFounderDigest({reason})` — assembles + builds + sends
+     via Resend. Fail-soft. Returns {sent, recipients, error}.
+   - `startFounderDigestTimer()` — 5-min ticker; fires once per ET
+     day at/after 8:00 AM ET. Dedup via in-memory `lastSentEtDate`.
+     Failed sends clear the dedup so the next tick retries.
+   - Kill switch: `FOUNDER_DIGEST_DISABLED=1` (instant, no deploy).
+
+2. **Wired into boot** (`server/routes.ts`):
+   - Import added next to escalation timer import.
+   - `startFounderDigestTimer(5 * 60 * 1000)` called right after
+     `startEscalationTimer`. No conditions — runs in all envs but
+     respects kill switch.
+
+3. **Admin test endpoint** `POST /api/admin/founder-digest/send-now`
+   (admin-key gated). Lets the founder fire a test on demand.
+   Returns 423 if kill switch is on, 500 on assembly/send error.
+
+### Configuration (env vars)
+- `FOUNDER_DIGEST_TO` — comma-separated recipient emails. Defaults
+  to `platform.email.defaultNotifyEmail` (info@veterancare.com).
+- `FOUNDER_DIGEST_DISABLED=1` — instant kill switch.
+- Reuses existing `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+
+### What the digest reports
+- **Alerts** (red/amber): failed billing, leads stuck > 72h, ≥5
+  leads aged > 24h, billing items needing manual review, ≥3
+  partner applications waiting.
+- **Yesterday**: leads received, leads routed, AI chats, navigator
+  suggested, billed amount + count, won/lost/no-contact counts.
+- **7-Day Lead Trend**: ASCII-style horizontal bar per day.
+- **Stuck Leads**: count > 24h, count > 72h, sample of 5 oldest
+  with name, category, age in hours, status.
+- **Payments (rolling 30d)**: failed / hold / review_required /
+  pending unbilled (count + dollar amount).
+- **Partner Applications**: new in last 24h + awaiting your review.
+- **Top Categories (7d)**: top 5 by lead count.
+- **Top Cities (7d)**: top 5 by lead count (with state).
+- **Conversion Outcomes (7d)**: routed total, won/lost/no-contact,
+  outcome capture rate, conversion rate, count still missing
+  outcome. Direct payoff from Upgrade #1.
+
+### Subject line example
+`Veteran Care Daily — 7 leads · $349.93 billed · 2 red alerts`
+
+### Schema
+- ZERO schema changes.
+- Tables read: `navigator_requests`, `partner_applications`,
+  `ai_usage_log`. All existing.
+
+### Protected systems
+- Routing engine — UNTOUCHED
+- Billing flow — UNTOUCHED
+- Attribution — UNTOUCHED
+- Stripe / commissions / payouts — UNTOUCHED
+- Escalation engine — UNTOUCHED (digest timer is parallel, separate)
+
+### Files changed
+- `server/founder-digest.ts` (NEW, ~370 LOC)
+- `server/routes.ts` (+8 LOC: import + timer start + admin endpoint)
+
+### Validation
+- Workflow restarted clean — no TypeScript errors
+- Boot log shows `[founder-digest] Timer started — fires daily at
+  8:00 ET (kill: FOUNDER_DIGEST_DISABLED=1)`
+- Smoke test (mock invalid Resend key) confirmed full assembly +
+  HTML build runs without error against live Supabase data.
+  Resolved cleanly to `info@veterancare.com` recipient.
+
+### Known follow-ups (intentionally deferred)
+- Per-state filtering once GA launches (each state owner gets own
+  digest filtered by `user_state`)
+- "Outcome captured today" tile (needs `partner_outcome_set_at`
+  audit column — defer until column is justified)
+- DST-precise yesterday-window math (current ET-05:00 anchor is
+  off by 1h during DST window; daily window granularity makes this
+  irrelevant for digest purposes)
+- Optional Slack/SMS mirror

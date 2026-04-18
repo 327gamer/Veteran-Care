@@ -5,6 +5,7 @@ import { supabase, supabaseAdmin, supabaseForUser } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
+import { startFounderDigestTimer, sendFounderDigest } from "./founder-digest";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
@@ -2815,6 +2816,8 @@ export async function registerRoutes(
   if (hasPartnerTable && hasRoutingColumns) {
     startEscalationTimer(5 * 60 * 1000);
   }
+
+  startFounderDigestTimer(5 * 60 * 1000);
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -11197,6 +11200,13 @@ export async function registerRoutes(
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
     }
+  });
+
+  // ── Founder Daily Command Center — admin test send ──
+  app.post("/api/admin/founder-digest/send-now", requireAdmin, async (_req, res) => {
+    const result = await sendFounderDigest({ reason: "manual" });
+    if (result.sent) return res.json({ ok: true, recipients: result.recipients });
+    return res.status(result.error === "disabled" ? 423 : 500).json({ ok: false, error: result.error, recipients: result.recipients });
   });
 
   // ── Partner Outcome Capture (Won / Lost / No Contact) ──
