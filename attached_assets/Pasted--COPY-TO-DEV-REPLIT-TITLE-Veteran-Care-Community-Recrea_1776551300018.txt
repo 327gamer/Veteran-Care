@@ -1,0 +1,278 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Community Recreation Expansion + Disabled Veterans Mirror Logic
+
+PRIORITY:
+HIGH – COMMUNITY / ACCESSIBILITY / CATEGORY IMPROVEMENT
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Expand the Community resource section so it better serves veterans looking for:
+
+- connection
+- activities
+- recreation
+- social groups
+- outings
+- peer engagement
+- belonging
+
+At the same time, ensure Disabled Veterans users can discover relevant adaptive recreation resources directly through the Disabled Veterans category without creating duplicate records.
+
+This should improve usability, discoverability, and category intelligence across the platform.
+
+-------------------------------------
+CORE DIRECTION
+-------------------------------------
+
+Create a clearer Community category structure with a dedicated subsection:
+
+Veteran Recreation & Community Life
+
+At the same time, implement mirrored category visibility for relevant adaptive / disabled-focused resources under:
+
+Disabled Veterans
+
+Important:
+This should use the same underlying records where appropriate.
+
+DO NOT create duplicate rows when mirroring categories.
+
+-------------------------------------
+PART 1 — COMMUNITY CATEGORY REBUILD
+-------------------------------------
+
+Please refine Community into the following structure:
+
+1. Veteran Chapters & Posts
+- American Legion
+- VFW
+- DAV chapters
+- chapter-based meetups
+- local veteran halls / posts
+
+2. Peer Support & Social Groups
+- coffee groups
+- breakfast clubs
+- companionship programs
+- local meetups
+- peer connection groups
+
+3. Veteran Recreation & Community Life
+
+Create these child subcategories:
+
+A. Outdoor Recreation
+- fishing
+- hunting
+- boating
+- kayaking
+- hiking
+- camping
+- archery
+- outdoor trips
+
+B. Farm, Ranch & Equine Programs
+- veteran farms
+- ranch retreats
+- equine therapy
+- gardening
+- agriculture programs
+
+C. Fitness, Sports & Wellness Groups
+- running clubs
+- cycling
+- golf
+- pickleball
+- gym / fitness groups
+- yoga
+- Team RWB-style programs
+
+D. Events, Trips & Retreats
+- retreats
+- camps
+- day trips
+- veteran outings
+- family retreats
+- morale events
+
+E. Creative Arts, Music & Hobbies
+- art programs
+- music groups
+- woodworking
+- writing clubs
+- photography
+- hobby clubs
+
+F. Volunteer & Mission-Based Community
+- Team Rubicon-style service
+- volunteer projects
+- mentoring
+- mission groups
+
+G. Senior / Retired Veteran Social Programs
+- retired veteran meetups
+- daytime activities
+- companionship groups
+- low-impact recreation
+
+H. Adaptive Recreation
+- wheelchair-accessible activities
+- adaptive fishing
+- adaptive boating
+- adaptive hunting
+- adaptive sports
+- disability-friendly outings
+
+I. Family-Friendly Veteran Activities
+- spouse-inclusive events
+- kids events
+- family outings
+- veteran family recreation days
+
+-------------------------------------
+PART 2 — DISABLED VETERANS MIRROR LOGIC
+-------------------------------------
+
+When a resource is especially relevant to disabled veterans, it should also be visible inside:
+
+Disabled Veterans
+
+Examples:
+
+1. Adaptive Recreation
+- adaptive sports
+- wheelchair recreation
+- adaptive fishing
+- accessible boating
+- adaptive travel outings
+
+2. Disability Wellness & Activity Programs
+- mobility fitness
+- adaptive yoga
+- rehab recreation
+- wellness groups
+
+3. Accessible Community Groups
+- disabled veteran social groups
+- peer support
+- accessible outings
+
+-------------------------------------
+IMPORTANT DATABASE RULE
+-------------------------------------
+
+Use mirrored category assignments or many-to-many category linking.
+
+DO NOT create duplicate listings.
+
+One provider/resource should be able to appear in:
+
+- Community > Adaptive Recreation
+AND
+- Disabled Veterans
+
+while remaining one canonical record.
+
+This same mirror logic should be reviewed across the platform where relevant.
+
+-------------------------------------
+PART 3 — EXISTING RESOURCE CLEANUP
+-------------------------------------
+
+Please review current resources already in the system and reclassify where appropriate:
+
+Examples:
+- American Legion → Veteran Chapters & Posts
+- VFW → Veteran Chapters & Posts
+- DAV → Veteran Chapters & Posts / Disabled Veterans where relevant
+- adaptive organizations → Community + Disabled Veterans mirror placement
+
+-------------------------------------
+PART 4 — RESOURCE POPULATION TASK
+-------------------------------------
+
+Please research and populate resources using internet research.
+
+Priority order:
+
+1. South Carolina first
+2. Georgia-ready resources where easy
+3. strong national organizations
+
+Focus on quality over quantity.
+
+Do NOT add junk listings.
+
+-------------------------------------
+PART 5 — UX GOAL
+-------------------------------------
+
+When a veteran clicks Community they should quickly find:
+
+- people
+- events
+- fun
+- connection
+- purpose
+
+When a disabled veteran clicks Disabled Veterans they should quickly find:
+
+- adaptive recreation
+- accessible programs
+- specialized support
+- social connection
+- mobility-friendly opportunities
+
+-------------------------------------
+PART 6 — IMPLEMENTATION DISCIPLINE
+-------------------------------------
+
+Please execute in safe sequence:
+
+STEP A
+Assessment of current Community + Disabled Veterans taxonomy and existing records.
+
+STEP B
+Return proposed taxonomy + mirror logic before mass inserts.
+
+STEP C
+After approval, populate quality resources in controlled batches.
+
+STEP D
+Validate AI Guide surfacing and search discoverability.
+
+No junk imports.
+No duplicate records.
+No bloated lists.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Please return:
+
+1. final taxonomy structure
+2. mirrored category logic used
+3. resources added by category
+4. resources reclassified
+5. disabled-veteran mirror coverage summary
+6. recommended featured tiles for homepage / AI Guide surfacing
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Keep this clean, practical, searchable, and scalable.
+
+The goal is to make Veteran Care feel alive, useful, welcoming, and intelligently organized.
+
+This category should emotionally feel like:
+“life after service still has community, purpose, and fun.”
+
+-------------------------------------
+END
+-------------------------------------
