@@ -35,6 +35,48 @@
 4. Validation results (PASS/FAIL with evidence)
 5. Manual steps remaining
 
+## National Expansion Model (FOUNDATIONAL — READ BEFORE ANY GEO/STATE WORK)
+
+**Veteran Care is ONE national platform with geography layers. We are NOT duplicating separate state systems.**
+
+### Architecture Model
+- **ONE ENGINE** — single codebase, single backend, single admin, single AI/Routing/Billing/Attribution
+- **MULTI-STATE DATA LAYERS** — state-tagged resources, state/city partners, state/city ambassadors
+- **FILTERED OPERATIONS** — geo-filtered reporting; never one giant clustered view
+
+### Three Logical Layers
+1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
+2. **State Data Layer** — South Carolina (LIVE), Georgia (next), North Carolina, Florida, etc.
+3. **Local Coverage Layer** — cities, counties, metro areas, service zones, partner territories, ambassador territories
+
+### Expansion Rule
+Adding a state means **activating** new rows/tags in the existing system, NEVER forking the codebase or spinning up a parallel deployment.
+
+### Geo Segmentation Required Across These Modules
+Resources · Leads · Partner organizations · Trusted Services · Seeded providers · Ambassadors · Attribution/UTM traffic · Billing · Commissions · AI demand analytics · Conversion reporting · Executive dashboards
+
+### Ambassador Hierarchy (NEVER one giant flat list)
+**State → City/Region → Ambassador.** Sortable by state, city, region, active/inactive, traffic generated, leads generated, conversions, commissions, signup date.
+
+### Reporting Must Answer
+- Leads from any given state this week
+- Hottest city in any state
+- Ambassadors driving any city's traffic
+- State with strongest conversion rate
+- Cities needing partner coverage
+- Categories trending in any state
+- Revenue by state / city / category
+- AI demand by geography
+
+### Pre-Georgia Hardening Mandate
+Geo reporting and admin segmentation must be tightened **before Georgia opens** to prevent future clustering. South Carolina is the live blueprint; future states must launch into a clean structure, not a retrofit.
+
+### Current Geo Coverage Status (as of Apr 2026 audit)
+- **Strong (state+city+zip native):** navigator_requests, resources, partner_organizations, partner_routing_rules, trusted_services, trusted_service_leads, partner_applications, user_profiles, resource_clicks, states registry
+- **Gap — needs state/city columns:** ambassadors (uses free-text region_type/region_value only), ai_usage_log, page_views
+- **Gap — hard-coded SC filter:** exec-summary "Top Cities" panel (`server/routes.ts:10082-10093`); founder digest mixes states in flat city list
+- **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation (additive ALTER TABLE ADD COLUMN + `?state=` filter + state selector). No engine touches.
+
 ## Platform Blueprint
 - **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
 
