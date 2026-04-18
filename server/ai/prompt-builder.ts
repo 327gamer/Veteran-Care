@@ -24,11 +24,38 @@ interface MatchedResource {
   category_name: string | null;
 }
 
+export interface IntentContext {
+  tier: 1 | 2 | 3 | null;
+  isStrong: boolean;
+  userDeclined: boolean;
+  hookPhrase: string | null;
+  detectedCategory: string | null;
+}
+
 export function buildSystemPrompt(
   userContext: UserContext,
   matchedResources: MatchedResource[],
+  options?: { useV2?: boolean; intent?: IntentContext },
 ): string {
-  const parts: string[] = [aiConfig.systemPrompt];
+  const useV2 = !!options?.useV2;
+  const basePrompt = useV2 ? aiConfig.systemPromptV2 : aiConfig.systemPrompt;
+  const parts: string[] = [basePrompt];
+
+  if (useV2 && options?.intent) {
+    const i = options.intent;
+    const shouldOfferHook = i.tier === 1 && i.isStrong && !i.userDeclined && !!i.hookPhrase;
+    parts.push("\n\nINTENT_CONTEXT:");
+    parts.push(`- DETECTED_CATEGORY: ${i.detectedCategory || "none"}`);
+    parts.push(`- TIER: ${i.tier ?? "none"}`);
+    parts.push(`- INTENT_STRENGTH: ${i.isStrong ? "strong" : "weak"}`);
+    parts.push(`- USER_DECLINED: ${i.userDeclined ? "true" : "false"}`);
+    parts.push(`- OFFER_HOOK: ${shouldOfferHook ? "YES" : "NO"}`);
+    if (shouldOfferHook && i.hookPhrase) {
+      parts.push(`- HOOK_PHRASE (use this exact line at the end of your response): "${i.hookPhrase}"`);
+    } else {
+      parts.push(`- HOOK_PHRASE: (none — do NOT offer a connection this turn)`);
+    }
+  }
 
   parts.push("\n\nUSER CONTEXT:");
   if (userContext.state) {

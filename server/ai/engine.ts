@@ -10,6 +10,8 @@ import { checkBudget, invalidateBudgetCache } from "./budget-guard";
 import { aiConfig } from "./config";
 import { routeToTrustedServices, type TrustedServiceSuggestion } from "../service-router";
 import { logLeadEvent } from "../lead-events";
+import { computeIntentSignal, pickHook, detectUserDecline, getTier } from "./intent-tiers";
+import { isFeatureEnabled } from "../automation-feature-flags";
 
 interface ChatRequest {
   messages: Array<{ role: string; content: string }>;
@@ -18,6 +20,7 @@ interface ChatRequest {
   userZip?: string;
   interests?: string[];
   branch?: string;
+  userDeclinedHelp?: boolean;
 }
 
 export async function handleAiChat(req: Request, res: Response): Promise<void> {
@@ -103,6 +106,18 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
 
   const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
   const detectedCats = detectCategories(lastUserMsg.content);
+
+  const v2Enabled = await isFeatureEnabled("ai_guide_v2_enabled").catch(() => false);
+  const tier1Cat = detectedCats.find(c => getTier(c) === 1) || null;
+  const primaryCat = tier1Cat || detectedCats[0] || null;
+  const intentSignal = computeIntentSignal(lastUserMsg.content, primaryCat);
+  const explicitDeclineThisTurn = detectUserDecline(lastUserMsg.content);
+  const sessionDeclined = !!body.userDeclinedHelp || explicitDeclineThisTurn;
+  const tier = getTier(primaryCat);
+  const tierBasedHookEligible = tier === 1 && intentSignal.isStrong && !sessionDeclined;
+  const hookPhrase = tierBasedHookEligible
+    ? pickHook(`${primaryCat}|${userState || ""}|${lastUserMsg.content.slice(0, 24)}`)
+    : null;
 
   if (detectedCats.length > 0) {
     logLeadEvent({
@@ -200,7 +215,16 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
     isGuest,
   };
 
-  const systemPrompt = buildSystemPrompt(userContext, matchedResources);
+  const systemPrompt = buildSystemPrompt(userContext, matchedResources, {
+    useV2: v2Enabled,
+    intent: {
+      tier,
+      isStrong: intentSignal.isStrong,
+      userDeclined: sessionDeclined,
+      hookPhrase,
+      detectedCategory: primaryCat,
+    },
+  });
   const fullMessages = buildMessageHistory(messages, systemPrompt);
 
   await streamCompletion({
@@ -209,8 +233,12 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       res.write(`data: ${JSON.stringify({ type: "chunk", text })}\n\n`);
     },
     onDone: (fullText, usage) => {
-      const navigatorSuggested = isEscalation || fullText.toLowerCase().includes("navigator") ||
-        fullText.toLowerCase().includes("request support");
+      const navigatorSuggested = !sessionDeclined && (
+        isEscalation ||
+        tierBasedHookEligible ||
+        fullText.toLowerCase().includes("navigator") ||
+        fullText.toLowerCase().includes("request support")
+      );
 
       res.write(`data: ${JSON.stringify({
         type: "done",

@@ -5,13 +5,15 @@ export type FeatureFlagName =
   | "auto_billing_enabled"
   | "auto_follow_up_enabled"
   | "escalation_enabled"
-  | "confidence_scoring_enabled";
+  | "confidence_scoring_enabled"
+  | "ai_guide_v2_enabled";
 
 export const ALL_FLAGS: FeatureFlagName[] = [
   "auto_billing_enabled",
   "auto_follow_up_enabled",
   "escalation_enabled",
   "confidence_scoring_enabled",
+  "ai_guide_v2_enabled",
 ];
 
 export interface FeatureFlagState {

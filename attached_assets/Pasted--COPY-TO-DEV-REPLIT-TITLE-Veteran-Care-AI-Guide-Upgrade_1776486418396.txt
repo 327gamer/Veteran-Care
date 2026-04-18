@@ -1,0 +1,149 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – AI Guide Upgrade Execution Plan (v1 + v2 Strategy)
+
+PRIORITY:
+HIGH – MONETIZATION + AI BEHAVIOR OPTIMIZATION
+
+-------------------------------------
+DECISION
+-------------------------------------
+
+We are proceeding with a TWO-STAGE rollout:
+
+STAGE 1 → v1 (Immediate Monetization Fix)
+STAGE 2 → v2 (Full Framework, Feature-Flagged)
+
+This must be executed in order.
+
+-------------------------------------
+STAGE 1 — v1 (DEPLOY LIVE IMMEDIATELY)
+-------------------------------------
+
+Implement ONLY these low-risk fixes:
+
+1. Expand keyword detection for Tier 1 categories
+Focus especially on housing / mortgage / VA loans so phrases like:
+- “buy a house”
+- “VA loan”
+- “home loan”
+- “mortgage”
+- “purchase a home”
+are detected correctly
+
+2. Update conversion hook trigger logic
+Rule:
+- Tier 1 + strong intent = ONE monetization hook
+- do NOT rely only on escalation keywords
+- keep hook natural and trust-first
+
+3. Do NOT change in v1:
+- response structure
+- UI layout
+- existing handoff flow
+- current overall conversation style
+
+-------------------------------------
+STAGE 1 GOAL
+-------------------------------------
+
+Fix missed monetization opportunities immediately with minimal UX risk.
+
+This is a precision fix, not a redesign.
+
+-------------------------------------
+STAGE 1 REQUIRED OUTPUT
+-------------------------------------
+
+After implementation, return:
+
+1. exact files changed
+2. exact logic changed
+3. validation results on these prompts:
+   - “I want to buy a house with a VA loan”
+   - “I need help fixing my credit”
+   - “I need life insurance”
+   - “I want trade school training”
+4. whether the monetization hook now appears correctly
+5. PASS / FAIL
+
+-------------------------------------
+STAGE 2 — v2 (BUILD BEHIND FEATURE FLAG)
+-------------------------------------
+
+After v1 is complete, build v2 with:
+
+Feature Flag:
+- ai_guide_v2_enabled = OFF by default
+
+Build the following behind the flag:
+
+- procedural response framework (5-step)
+- intent strength scoring
+- Tier-based monetization logic
+- trust safeguards
+- userDeclinedHelp suppression
+
+Target files:
+- server/ai/config.ts
+- server/ai/engine.ts
+- server/ai/prompt-builder.ts
+- client/src/components/ai-guide.tsx
+
+-------------------------------------
+STAGE 2 GOAL
+-------------------------------------
+
+Create the full upgraded AI Guide without affecting live users until internal validation is complete.
+
+-------------------------------------
+ROLLOUT RULES
+-------------------------------------
+
+1. Deploy v1 LIVE immediately
+2. Build and deploy v2 with flag OFF
+3. Test v2 internally
+4. Enable v2 gradually only after validation
+
+-------------------------------------
+SUCCESS METRICS TO MONITOR
+-------------------------------------
+
+Monitor:
+- increase in conversion hook trigger rate
+- increase in lead submissions from AI Guide
+- no drop in user engagement
+- no increase in user confusion
+- no trust degradation
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+DO NOT:
+- make AI overly sales-driven
+- stack multiple hooks
+- remove guidance-first behavior
+- bypass feature flag
+- overbuild v1
+
+Goal:
+- helpful first
+- monetization-aware second
+- conversion-capable when appropriate
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return:
+1. v1 implementation summary
+2. v1 validation results
+3. v2 build plan confirmation
+4. feature flag confirmation
+5. recommended next step after v1 goes live
+
+-------------------------------------
+END
+-------------------------------------

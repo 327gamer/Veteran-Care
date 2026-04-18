@@ -96,6 +96,7 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
   const [emailInput, setEmailInput] = useState("");
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [userDeclinedHelp, setUserDeclinedHelp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -178,6 +179,7 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
           userZip: userLocation.zip || undefined,
           interests: interests.length > 0 ? interests : undefined,
           branch: serviceProfile.branch || undefined,
+          userDeclinedHelp,
         }),
         signal: controller.signal,
       });
@@ -551,6 +553,14 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
                   <Handshake className="h-4 w-4" />
                   Yes, connect me with a provider
                 </Button>
+                <button
+                  type="button"
+                  data-testid="button-decline-connect"
+                  className="mt-2 w-full text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  onClick={() => { setUserDeclinedHelp(true); setShowNavigatorHint(false); }}
+                >
+                  No thanks, just info
+                </button>
               </div>
             )}
           </div>
