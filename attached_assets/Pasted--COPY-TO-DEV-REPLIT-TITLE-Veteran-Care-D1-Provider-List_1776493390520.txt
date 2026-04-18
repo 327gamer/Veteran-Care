@@ -1,0 +1,102 @@
+}
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – D1 Provider List – APPROVED WITH ADJUSTMENTS
+
+PRIORITY:
+HIGH
+
+-------------------------------------
+APPROVAL STATUS
+-------------------------------------
+
+D1 is APPROVED with adjustments below.
+
+Do NOT insert anything until you follow this updated list exactly.
+
+-------------------------------------
+FINAL APPROVED PROVIDER LIST
+-------------------------------------
+
+LEGAL SERVICES (3)
+- Stateside Legal
+- ABA Veterans Claims Assistance Network (VCAN)
+- Veterans Consortium Pro Bono Program
+
+-------------------------------------
+
+FINANCIAL / CREDIT (4)
+- National Foundation for Credit Counseling (NFCC)
+- Operation Homefront — Financial Assistance
+- Veterans Benefits Banking Program (VBBP)
+- ADD:
+  - Freedom Debt Relief (or equivalent national debt solution provider)
+
+-------------------------------------
+
+INSURANCE (3)
+- Navy Mutual Aid Association
+- AAFMAA
+- VA Life Insurance (VALife)
+
+-------------------------------------
+
+EDUCATION / TRAINING (3)
+- VA Education Benefits (GI Bill)
+- Hire Heroes USA
+- REPLACE Student Veterans of America WITH:
+  - Onward to Opportunity (IVMF Syracuse)
+
+-------------------------------------
+
+MOVING & STORAGE (2)
+- PCSgrades
+- Military OneSource — Moving / PCS
+
+-------------------------------------
+
+END OF LIFE
+-------------------------------------
+
+DO NOT INCLUDE in D1.
+
+This category will be handled separately after proper category structure is finalized.
+
+-------------------------------------
+RULES (RECONFIRMED)
+-------------------------------------
+
+- 2–3 providers per category MAX (exception: Financial = 4 approved)
+- NO duplicates
+- DO NOT seed USAA or Navy Federal again in other categories
+- All must include website/domain
+- All must be marked:
+  - provider_type = seeded
+  - is_seeded = true
+  - is_lead_enabled = false
+  - active_paid_partner = false
+
+-------------------------------------
+NEXT STEP
+-------------------------------------
+
+Proceed with D1 inserts using ONLY this approved list.
+
+After inserts are complete, return:
+
+1. confirmation of records created
+2. category placement confirmation
+3. verification of routing block (0 seeded eligible)
+4. verification of billing block
+5. UI visibility confirmation
+
+-------------------------------------
+DO NOT START D2 OR D3
+-------------------------------------
+
+Wait for approval after D1 validation.
+
+-------------------------------------
+END
+------------------------------------
