@@ -44,9 +44,8 @@ export const CANONICAL_PAIRS: CanonicalPair[] = [
   { resourceSlug: "va-benefits",        trustedSlug: "benefits-assistance",status: "paired" },
   { resourceSlug: "substance-recovery", trustedSlug: "wellness-recovery",  status: "paired" },
 
-  // Trusted-services-only (no Resources counterpart yet)
-  { resourceSlug: null, trustedSlug: "insurance", status: "trusted-only",
-    note: "Insurance Services exists in trusted_service_categories but has no row in `categories`. Resources surface cannot link to it until a `categories` row is added." },
+  // F2.6: Insurance promoted to paired (categories row added 2026-04-18)
+  { resourceSlug: "insurance", trustedSlug: "insurance", status: "paired" },
 
   // Resource-only (no Trusted Services counterpart yet)
   { resourceSlug: "healthcare",          trustedSlug: null, status: "resource-only",

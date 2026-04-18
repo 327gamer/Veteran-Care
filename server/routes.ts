@@ -5136,8 +5136,42 @@ export async function registerRoutes(
       trustedMatches = await searchTrustedServicesForResources(q as string);
     }
     const baseResults = normalizeAllFieldsList(data || []);
-    if (trustedMatches.length > 0) {
-      return res.json([...baseResults, ...trustedMatches]);
+
+    // F2.6: Insurance cross-population — surface seeded insurance providers
+    // (pg-side trusted_services) inside the Resources insurance category.
+    // Narrowly gated to the insurance category until full F3 cross-pop is approved.
+    let seededInsurance: any[] = [];
+    if (
+      category &&
+      hasTrustedServicesTable &&
+      toCanonical(category as string) === "insurance"
+    ) {
+      try {
+        const rows = await pgQuery(
+          `SELECT ts.id, ts.name AS title, ts.short_description, ts.website_url,
+                  ts.phone, ts.email, ts.address, ts.city, ts.state, ts.zip,
+                  ts.is_featured, ts.is_featured AS sponsored, ts.is_national,
+                  ts.verification_label,
+                  json_build_object('slug', tsc.slug, 'name', tsc.name) AS trusted_service_categories,
+                  'trusted_service' AS source_type
+           FROM trusted_services ts
+           INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+           WHERE tsc.slug = 'insurance' AND ts.is_active = true
+           ORDER BY ts.is_featured DESC, ts.display_order ASC NULLS LAST, ts.name ASC`
+        );
+        seededInsurance = rows.map((r: any) => ({
+          ...r,
+          id: `ts-${r.id}`,
+          _trusted_service_id: r.id,
+          source_type: "trusted_service",
+        }));
+      } catch (err: any) {
+        console.log(`[/api/resources insurance cross-pop] error: ${err.message}`);
+      }
+    }
+
+    if (trustedMatches.length > 0 || seededInsurance.length > 0) {
+      return res.json([...baseResults, ...seededInsurance, ...trustedMatches]);
     }
     return res.json(baseResults);
   });
