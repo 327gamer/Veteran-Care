@@ -1,0 +1,90 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Seeded Provider System – APPROVED TO BEGIN D1 ONLY (PROVIDER LIST FIRST)
+
+PRIORITY:
+HIGH
+
+-------------------------------------
+APPROVAL
+-------------------------------------
+
+The Stage D breakout plan is approved in structure.
+
+You are approved to proceed with:
+
+→ D1 ONLY — Seed Remaining Approved Categories
+
+Do NOT begin D2 or D3 yet.
+
+-------------------------------------
+IMPORTANT CONDITION
+-------------------------------------
+
+Before inserting any new seeded providers, return the PROPOSED PROVIDER LIST for approval first.
+
+Do NOT seed blindly.
+
+-------------------------------------
+D1 SCOPE
+-------------------------------------
+
+Prepare provider candidates for these categories only:
+
+1. Legal Services
+2. Financial / Credit
+3. Insurance
+4. Education / Training
+
+Optional only if clean and high quality:
+5. End of Life
+6. Moving & Storage
+
+-------------------------------------
+SEEDING RULES
+-------------------------------------
+
+Per category:
+- 2–3 providers MAX
+- prioritize recognizable national brands or strong regional players
+- no low-quality listings
+- no duplicate companies
+- website/domain required
+- contact reference required if publicly available
+
+-------------------------------------
+REQUIRED OUTPUT BEFORE ANY INSERTS
+-------------------------------------
+
+Return a proposed provider list for each category including:
+
+1. business name
+2. website/domain
+3. category
+4. subcategory if applicable
+5. service type (national / regional / local)
+6. brief reason for inclusion
+7. any duplicate / matching concern if applicable
+
+-------------------------------------
+DO NOT DO YET
+-------------------------------------
+
+Do NOT do any of the following yet:
+
+- no provider inserts until the list is approved
+- no D2 work
+- no D3 work
+- no auto-conversion
+- no AI Guide seeded-provider surfacing
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+We want a curated, revenue-aligned seeded inventory list first, then we will approve the actual D1 insert step.
+
+-------------------------------------
+END
+-------------------------------------
