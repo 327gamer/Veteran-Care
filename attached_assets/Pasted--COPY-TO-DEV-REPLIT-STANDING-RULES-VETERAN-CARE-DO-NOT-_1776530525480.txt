@@ -1,0 +1,232 @@
+🚨 COPY TO DEV / REPLIT
+
+🚨 STANDING RULES — VETERAN CARE (DO NOT IGNORE)
+
+- Execute ONLY the approved review / validation scope
+- Do NOT bundle unrelated fixes
+- Do NOT silently change architecture
+- Preserve ALL routing / billing / attribution / monetization protections
+- Seeded providers must NEVER receive leads
+- Seeded providers must NEVER trigger billing
+- Supabase partner_organizations remains the canonical source of truth
+- Any pg-side trusted_services logic remains display-layer only unless separately approved
+
+SUPABASE / SECURITY RULE (MANDATORY IF ANY DB OBJECT IS TOUCHED):
+- identify affected table(s)
+- confirm RLS before / after
+- apply correct policy pattern if needed
+- confirm no public exposure remains
+- rerun impacted regression checks
+- report results explicitly
+
+If this review reveals a fix larger than a safe launch slice:
+→ STOP
+→ RETURN BREAKOUT PLAN
+→ WAIT FOR APPROVAL
+
+-------------------------------------
+
+TITLE:
+Veteran Care – Final Blueprint Foundation Review + Live Validation Pass
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH FOUNDATION LOCK
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Before launch, complete one final combined review covering:
+
+1. live user / monetization validation after recent AI + Seeded Provider upgrades
+2. blueprint foundation hardening so South Carolina becomes the clean cloneable model for every future state
+
+This is NOT a request to overbuild all 50 states now.
+
+This IS a request to ensure the core architecture, data model, category system, protections, and duplication path are correct NOW so expansion later is fast, clean, and repeatable.
+
+-------------------------------------
+PART A — LIVE VALIDATION PASS
+-------------------------------------
+
+Now that:
+- AI Guide v1 monetization upgrades are live
+- AI Guide v2 is built behind flag OFF
+- Seeded Provider Stages A / B / C complete
+- F2.5 / F2.6 display fixes complete
+- Stripe live validated
+- routing / billing / attribution already passed
+
+Run one combined live validation pass covering:
+
+-------------------------------------
+1. AI GUIDE UX + MONETIZATION CHECK
+-------------------------------------
+
+Test prompts:
+- I want to buy a house with a VA loan
+- I need help fixing my credit
+- I need life insurance
+- I want trade school training
+- I need a lawyer for VA disability
+- I need help planning a funeral
+
+Validate:
+- category detection correct
+- monetization hook appears naturally
+- trust-first tone preserved
+- no spammy behavior
+- decline suppression works
+- no repeated prompts
+
+-------------------------------------
+2. SEEDED PROVIDER DISPLAY CHECK
+-------------------------------------
+
+Validate public display for:
+- Housing / Mortgage
+- Insurance
+- Legal
+- Financial / Credit
+- Education / Training
+
+Confirm:
+- seeded providers visible
+- National Provider badges correct
+- Trusted Partner badges correct
+- paid partners rank above seeded
+- no duplicates
+- no awkward empty categories
+
+-------------------------------------
+3. FULL USER EXPERIENCE CHECK
+-------------------------------------
+
+Validate platform feels like one unified system:
+- Resources
+- Trusted Services
+- AI Guide
+- Help Request flows
+- category browsing
+
+Confirm user can naturally move from:
+question → help → resources → provider options → request support
+
+-------------------------------------
+4. PROTECTION CHECK
+-------------------------------------
+
+Reconfirm:
+- seeded providers cannot route
+- seeded providers cannot bill
+- paid partners still route correctly
+- monetization locks intact
+- no leakage
+
+-------------------------------------
+5. MATCH / DUPLICATE SAFETY CHECK
+-------------------------------------
+
+Validate:
+- seeded + paid provider matching still works
+- no duplicate listing risk
+- conversion path remains clean
+
+-------------------------------------
+PART B — BLUEPRINT FOUNDATION LOCK
+-------------------------------------
+
+South Carolina must become the MASTER TEMPLATE for every future state.
+
+Review and classify the current architecture into:
+
+-------------------------------------
+CATEGORY 1 — MUST FIX NOW BEFORE LAUNCH
+-------------------------------------
+
+Anything blueprint-critical that would become expensive or messy if duplicated later.
+
+Examples may include:
+- canonical source of truth issues
+- category / slug inconsistencies
+- resource vs trusted-service mismatch
+- seeded vs paid identity conflicts
+- routing lock weaknesses
+- billing attribution risks
+- RLS / security gaps
+- state-scaling data model issues
+
+-------------------------------------
+CATEGORY 2 — SAFE FOR SOUTH CAROLINA LAUNCH
+-------------------------------------
+
+Launch-compatible bridge items that are acceptable now and can scale short-term without harming system integrity.
+
+Examples:
+- temporary display sync layers
+- limited seeded category rollout
+- narrow compatibility bridges
+
+Only if these preserve a clean expansion path.
+
+-------------------------------------
+CATEGORY 3 — POST-LAUNCH SCALE TASKS
+-------------------------------------
+
+Important but not required for South Carolina launch.
+
+Examples:
+- mass seeded rollout
+- multi-state ingestion tooling
+- deeper analytics
+- advanced automation layers
+- UI polish for scale
+
+-------------------------------------
+FOUNDATION QUESTIONS TO ANSWER
+-------------------------------------
+
+Please answer clearly:
+
+1. Can South Carolina be cloned into Georgia / NC / FL without major rewrites?
+2. Are categories unified enough now that future states only require data population, not logic rewrites?
+3. Is the provider model clean enough now that seeded / paid / converted providers can scale nationally?
+4. Is routing architecture state-ready?
+5. Is billing / attribution architecture state-ready?
+6. Is security / RLS architecture durable for scale?
+7. If we opened Georgia next week, what exact steps would be required?
+8. What must be tightened NOW so expansion later is simple?
+
+-------------------------------------
+IMPORTANT BUSINESS POSITION
+-------------------------------------
+
+We are willing to spend time NOW to harden the skeleton and foundation.
+
+We are NOT asking to overbuild unnecessary features.
+
+We ARE asking to eliminate future pain, forgotten fixes, and architecture shortcuts before launch.
+
+South Carolina is the pilot.
+It must also be the blueprint.
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return:
+
+1. PASS / FAIL for Part A validation
+2. Architecture review for Part B
+3. Category 1 / 2 / 3 classification list
+4. Any must-fix-now items
+5. Confidence score (1–10) that the platform can be duplicated state-by-state cleanly
+6. Recommended next move before launch
+7. Separate clearly:
+   - Replit-fixable items
+   - manual Colin steps
+   - non-blocking observations
+
+-------------------------------------
+END
+-------------------------------------
