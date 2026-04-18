@@ -1,0 +1,169 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 5 – Partner Flow Validation
+
+PRIORITY:
+CRITICAL – MONETIZATION ENGINE VALIDATION
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Validate the full partner lifecycle from application → activation → routing → billing → admin visibility.
+
+This phase must prove that the partner-side monetization engine works correctly under real conditions.
+
+NO CODE CHANGES.
+VALIDATION ONLY.
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Test and validate these flows:
+
+1. Partner Application Submission
+2. Admin Approval → Stripe Activation
+3. Routing to Paid Partner Only
+4. Billing Trigger Flow
+5. Edge Cases
+6. Admin Visibility
+
+-------------------------------------
+WHAT MUST BE PROVEN
+-------------------------------------
+
+The system must correctly handle:
+
+- onboarding states
+- Stripe activation
+- webhook-driven activation updates
+- paid eligibility enforcement
+- routing eligibility enforcement
+- billing trigger correctness
+- duplicate billing protection
+- safe fallback behavior
+- correct admin visibility at every stage
+
+-------------------------------------
+TEST FLOWS REQUIRED
+-------------------------------------
+
+FLOW 1 — Partner Application Submission
+Validate:
+- application submits successfully
+- partner_application record created correctly
+- correct default onboarding / subscription / active flags
+- admin can see the application
+
+FLOW 2 — Admin Approval → Stripe Activation
+Validate:
+- admin approval flow works
+- activation link / checkout flow works
+- live Stripe activation path updates correctly
+- webhook triggers status transitions correctly
+- onboarding_status moves correctly
+- active_paid_partner turns on correctly
+
+FLOW 3 — Routing to Paid Partner Only
+Validate:
+- only active, paid, onboarded, eligible partners can receive leads
+- unpaid partners do NOT receive leads
+- canceled partners do NOT receive leads
+- past_due / inactive partners do NOT receive leads
+
+FLOW 4 — Billing Trigger Flow
+Validate:
+- billing triggers only when lead is valid
+- billing does NOT trigger for non-billable states
+- duplicate billing protection holds
+- disputed / hold leads are blocked
+- partner eligibility is rechecked before billing
+
+FLOW 5 — Edge Cases
+Test at minimum:
+- canceled subscription
+- unpaid partner
+- no eligible partner
+- webhook delay / missing activation update if reproducible
+- partner stuck in onboarding
+- duplicate billing attempt
+
+FLOW 6 — Admin Visibility
+Validate all relevant admin surfaces reflect correct states:
+- application status
+- onboarding_status
+- subscription_status
+- active_paid_partner
+- routing eligibility
+- billing state
+- audit / event visibility
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Return PASS / FAIL for each of the following:
+
+1. correct onboarding states
+2. correct Stripe activation
+3. routing respects paid eligibility
+4. billing triggers only when valid
+5. no duplicate billing
+6. fallback behavior works safely
+7. admin panel reflects all states correctly
+8. webhook behavior is correct
+
+-------------------------------------
+FAIL CONDITIONS
+-------------------------------------
+
+Any of the following is a FAIL:
+
+- unpaid partner receives lead
+- canceled / ineligible partner receives lead
+- billing fires incorrectly
+- duplicate billing path succeeds
+- partner stuck in onboarding incorrectly
+- missing admin visibility
+- webhook failure breaks activation state
+- fallback behavior is unsafe
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return a structured Phase 5 report including:
+
+1. test logs
+2. screenshots where helpful
+3. billing events observed
+4. routing outcomes
+5. onboarding BEFORE / AFTER states
+6. webhook outcome confirmation
+7. edge-case results
+8. exact blockers, if any
+9. whether blocker is:
+   - REPLIT FIX
+   - MANUAL COLIN STEP
+   - NON-BLOCKING OBSERVATION
+
+Do NOT return only summaries.
+Include actual observed state transitions and outcomes.
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+Phase 5 is PASS only if:
+- partner lifecycle works end-to-end
+- paid eligibility is enforced correctly
+- routing and billing honor all locks
+- fallback is safe
+- admin visibility is reliable
+- no critical monetization leakage exists
+
+-------------------------------------
+END
+-------------------------------------
