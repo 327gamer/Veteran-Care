@@ -1,0 +1,192 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Canonical Category Display Rule + Cross-Population Fix (Resources + Trusted Services)
+
+PRIORITY:
+CRITICAL – DISPLAY / DATA INTEGRITY REGRESSION
+
+-------------------------------------
+CORE RULE (UNIVERSAL)
+-------------------------------------
+
+We already established this rule earlier and it must be enforced again:
+
+There should NOT be two separate display systems.
+
+Trusted Services / provider listings must also populate in regular Resources where applicable.
+
+This means:
+- provider/category mapping must be canonical
+- category filtering must be strict
+- paid partners must appear at the top of the category
+- seeded providers may appear for coverage, but remain visually distinct
+- seeded providers must NEVER receive leads
+- no unrelated providers may bleed into the wrong categories
+
+-------------------------------------
+PROBLEM OBSERVED
+-------------------------------------
+
+Current issues include:
+- wrong providers showing in incorrect categories
+  (example: Boot Print / Tri-County showing where they do not belong)
+
+- seeded / provider listings missing in the categories where they SHOULD appear
+  (example: Insurance, Moving & Storage)
+
+- mismatch between Resources and Trusted Services display
+
+- test / junk data still appearing
+  (example: ABC-2)
+
+-------------------------------------
+REQUIRED RULES TO ENFORCE
+-------------------------------------
+
+1. SINGLE CANONICAL CATEGORY LOGIC
+
+Do NOT treat Resources and Trusted Services as separate category worlds.
+
+Use one canonical category/subcategory mapping so that provider listings can appear correctly in BOTH contexts.
+
+-------------------------------------
+
+2. CROSS-POPULATION RULE
+
+If a provider belongs to a category, it should be able to appear in:
+
+- Trusted Services
+- regular Resources
+
+using the same category logic
+
+This is especially important for:
+- Mortgage / VA Loans
+- Legal
+- Financial / Credit
+- Insurance
+- Education / Training
+- Moving & Storage
+
+-------------------------------------
+
+3. DISPLAY PRIORITY RULE
+
+Within a category:
+
+1. Paid / active / eligible partners appear first
+2. Seeded providers appear after them
+3. Nothing unrelated appears
+
+Paid partners should show:
+- Trusted Partner
+- Verified Partner
+- priority placement if applicable
+
+Seeded providers should show:
+- Directory Provider
+- National Provider
+- Featured Listing
+
+Seeded providers must NOT appear as Trusted / Verified partners.
+
+-------------------------------------
+
+4. HARD CATEGORY FILTER
+
+Queries must strictly filter by:
+- category_slug
+- subcategory_slug where applicable
+
+REMOVE any fallback logic that causes unrelated providers to appear just because a category is otherwise sparse.
+
+If a category is empty, show an empty state.
+Do NOT show random providers.
+
+-------------------------------------
+
+5. MOVING & STORAGE
+
+Moving & Storage must show correctly under Housing / Home Services using the existing moving-relocation path.
+
+The newly seeded Moving & Storage entries must appear where intended.
+If they are missing, fix the display mapping.
+
+-------------------------------------
+
+6. TEST DATA CLEANUP / EXCLUSION
+
+Remove or exclude junk / test data from rendering.
+
+Examples:
+- ABC-2
+- TEST rows
+- sample rows
+
+They must not appear in public-facing category displays.
+
+-------------------------------------
+
+7. VALIDATION REQUIRED
+
+For each of these categories, verify both display contexts:
+
+- Housing / Mortgage / Moving
+- Legal
+- Financial / Credit
+- Insurance
+- Education / Training
+
+For EACH category confirm:
+- correct providers appear
+- no unrelated providers appear
+- paid partners rank above seeded
+- seeded remain visually distinct
+- category appears consistently in Resources and Trusted Services
+- no test data appears
+
+-------------------------------------
+
+8. DO NOT CHANGE
+-------------------------------------
+
+Do NOT modify:
+- routing logic
+- billing logic
+- seeded-provider protections
+- monetization locks
+
+This is a display / category integrity fix only.
+
+-------------------------------------
+DELIVERABLE
+-------------------------------------
+
+Return:
+
+1. root cause of the bad display behavior
+2. files changed
+3. exact query / mapping fix
+4. confirmation that Resources + Trusted Services now use the same canonical provider/category logic
+5. screenshots or examples by category
+6. confirmation no unrelated providers appear
+7. confirmation paid partners rank first
+8. confirmation seeded providers remain blocked from routing/billing
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Restore the universal rule:
+
+- one canonical category/provider system
+- correct cross-population into both Resources and Trusted Services
+- clean display
+- no category leakage
+- no junk data
+- no monetization leakage
+
+-------------------------------------
+END
+-------------------------------------
