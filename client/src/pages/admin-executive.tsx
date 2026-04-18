@@ -15,6 +15,10 @@ import {
   Sparkles,
   Activity,
   AlertCircle,
+  Eye,
+  Smartphone,
+  Clock,
+  Compass,
 } from "lucide-react";
 
 interface ExecSummary {
@@ -54,6 +58,21 @@ interface ExecSummary {
       active_paid_partners: number;
     };
     paid_partners: { name: string; state: string }[];
+    traffic?: {
+      enabled: boolean;
+      visitors_today: number;
+      visitors_7d: number;
+      visitors_30d: number;
+      page_views_30d: number;
+      mobile_share_pct_30d: number;
+      utm_attributed_views_30d: number;
+      ambassador_attributed_views_30d: number;
+      top_landing_paths_7d: { path: string; views: number }[];
+    };
+    stuck?: {
+      over_24h: number;
+      over_72h: number;
+    };
   };
   unmeasured: { metric: string; reason: string }[];
 }
@@ -204,6 +223,71 @@ function AdminExecutiveInner() {
             testId="kpi-revenue"
           />
         </section>
+
+        {/* Visitor / Traffic KPI row */}
+        {m.traffic && (
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiTile
+              icon={<Eye className="h-4 w-4" />}
+              label="Visitors — Today"
+              value={m.traffic.enabled ? fmtNum(m.traffic.visitors_today) : "—"}
+              sub={m.traffic.enabled
+                ? `${fmtNum(m.traffic.visitors_7d)} past 7d · ${fmtNum(m.traffic.visitors_30d)} past 30d`
+                : "Beacon table not yet created"}
+              testId="kpi-visitors"
+            />
+            <KpiTile
+              icon={<Smartphone className="h-4 w-4" />}
+              label="Mobile Share (30d)"
+              value={m.traffic.enabled ? `${m.traffic.mobile_share_pct_30d}%` : "—"}
+              sub={m.traffic.enabled
+                ? `${fmtNum(m.traffic.page_views_30d)} page views`
+                : "Pending beacon data"}
+              testId="kpi-mobile-share"
+            />
+            <KpiTile
+              icon={<Compass className="h-4 w-4" />}
+              label="UTM-Tagged Views (30d)"
+              value={m.traffic.enabled ? fmtNum(m.traffic.utm_attributed_views_30d) : "—"}
+              sub={m.traffic.enabled
+                ? `${fmtNum(m.traffic.ambassador_attributed_views_30d)} ambassador-attributed`
+                : "Pending beacon data"}
+              testId="kpi-utm-views"
+            />
+            <KpiTile
+              icon={<Clock className="h-4 w-4" />}
+              label="Stuck Leads"
+              value={m.stuck ? fmtNum(m.stuck.over_24h) : "—"}
+              sub={m.stuck
+                ? `${fmtNum(m.stuck.over_72h)} aged > 72h · open & in_progress`
+                : ""}
+              testId="kpi-stuck-leads"
+            />
+          </section>
+        )}
+
+        {/* Top Landing Paths */}
+        {m.traffic?.enabled && m.traffic.top_landing_paths_7d.length > 0 && (
+          <section>
+            <Card data-testid="card-top-landing-paths">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Eye className="h-4 w-4" /> Top Landing Paths (7d)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ul className="divide-y">
+                  {m.traffic.top_landing_paths_7d.map((p, idx) => (
+                    <li key={p.path} className="flex items-center justify-between py-2" data-testid={`row-landing-path-${idx}`}>
+                      <span className="text-sm font-mono truncate mr-3" title={p.path}>{p.path}</span>
+                      <Badge variant="secondary">{fmtNum(p.views)} views</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </section>
+        )}
 
         {/* Two-column lists */}
         <section className="grid md:grid-cols-2 gap-4">

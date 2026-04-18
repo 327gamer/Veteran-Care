@@ -6,6 +6,7 @@ import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
 import { startFounderDigestTimer, sendFounderDigest } from "./founder-digest";
+import { ingestPageView, getPageViewMetrics } from "./page-view-logger";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
@@ -9968,6 +9969,8 @@ export async function registerRoutes(
         !!createdAt && createdAt >= since;
 
       const ROW_CAP = 5000; // safety cap; current data well under
+      const trafficP = getPageViewMetrics({ isoToday, iso7d, iso30d });
+
       const [aiRes, navRes, clickRes, resRes, paidPartnersRes] = await Promise.all([
         supabaseAdmin
           .from("ai_usage_log")
@@ -10003,6 +10006,7 @@ export async function registerRoutes(
       const clicks = clickRes.data || [];
       const resources = resRes.data || [];
       const paidPartners = paidPartnersRes.data || [];
+      const traffic = await trafficP;
 
       // resource_id → all category names (for click attribution, multi-category aware)
       const resourceToCats = new Map<string, string[]>();
@@ -10106,6 +10110,26 @@ export async function registerRoutes(
         active_paid_partners: paidPartners.length,
       };
 
+      // 8. Visitors / Traffic (from page_views beacon — pg-direct)
+      // (computed above into `traffic` via getPageViewMetrics)
+
+      // 9. Stuck leads (mirror digest definition for dashboard consistency)
+      const stuckCutoff24 = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const stuckCutoff72 = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString();
+      const stuckRows = navAll.filter(
+        (n: any) => (n.status === "new" || n.status === "in_progress") && n.created_at && n.created_at < stuckCutoff24
+      );
+      const stuck = {
+        over_24h: stuckRows.length,
+        over_72h: stuckRows.filter((n: any) => n.created_at < stuckCutoff72).length,
+      };
+
+      const unmeasured: { metric: string; reason: string }[] = [];
+      if (!traffic.enabled) {
+        unmeasured.push({ metric: "daily_visitors", reason: "page_views table not yet created — run supabase/create_page_views.sql" });
+      }
+      unmeasured.push({ metric: "bounce_rate", reason: "no session-exit tracking yet — page_views captures arrivals only" });
+
       return res.json({
         generated_at: now.toISOString(),
         windows: { today_start: isoToday, since_7d: iso7d, since_30d: iso30d },
@@ -10118,12 +10142,10 @@ export async function registerRoutes(
           top_sc_cities_30d: topScCities30d,
           revenue,
           paid_partners: paidPartners.map((p: any) => ({ name: p.name, state: p.state })),
+          traffic,
+          stuck,
         },
-        unmeasured: [
-          { metric: "daily_visitors",  reason: "no page-view tracking yet — AI chats started is the closest proxy" },
-          { metric: "device_split",    reason: "user-agent not captured on any event yet" },
-          { metric: "bounce_rate",     reason: "no page-view + session-exit tracking yet" },
-        ],
+        unmeasured,
       });
     } catch (e: any) {
       console.error("[exec-summary] error:", e);
@@ -11199,6 +11221,39 @@ export async function registerRoutes(
     } catch (err: any) {
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
+    }
+  });
+
+  // ── Visitor / Traffic Beacon — public, fire-and-forget ──
+  // Pure ingest. Never blocks. Never throws. Never touches existing tables.
+  app.post("/api/beacon/page-view", async (req, res) => {
+    try {
+      const b = req.body || {};
+      const path = typeof b.path === "string" && b.path.length > 0 && b.path.length < 500 ? b.path : null;
+      if (!path) return res.status(204).end();
+      const ua = req.headers["user-agent"];
+      const uaStr = typeof ua === "string" ? ua : null;
+      const isMobile = typeof b.isMobile === "boolean"
+        ? b.isMobile
+        : (uaStr ? /Mobi|Android|iPhone|iPad|iPod/i.test(uaStr) : false);
+      // fire-and-forget; do not await
+      ingestPageView({
+        sessionId: typeof b.sessionId === "string" ? b.sessionId.slice(0, 100) : null,
+        path: path.slice(0, 300),
+        referrer: typeof b.referrer === "string" ? b.referrer.slice(0, 500) : null,
+        isMobile,
+        userAgent: uaStr,
+        utmSource: typeof b.utm_source === "string" ? b.utm_source.slice(0, 100) : null,
+        utmMedium: typeof b.utm_medium === "string" ? b.utm_medium.slice(0, 100) : null,
+        utmCampaign: typeof b.utm_campaign === "string" ? b.utm_campaign.slice(0, 100) : null,
+        utmContent: typeof b.utm_content === "string" ? b.utm_content.slice(0, 100) : null,
+        utmTerm: typeof b.utm_term === "string" ? b.utm_term.slice(0, 100) : null,
+        utmId: typeof b.utm_id === "string" ? b.utm_id.slice(0, 100) : null,
+        ambassadorCode: typeof b.ambassador_code === "string" ? b.ambassador_code.slice(0, 100) : null,
+      }).catch(() => {});
+      return res.status(204).end();
+    } catch {
+      return res.status(204).end();
     }
   });
 

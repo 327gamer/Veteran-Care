@@ -119,15 +119,63 @@ function debugFlag(): Record<string, boolean> {
   return isDebug() ? { debug_mode: true } : {};
 }
 
+const AMBASSADOR_CODE_KEY = "vc_ambassador_code";
+
+function getAmbassadorCode(): string | null {
+  try {
+    return localStorage.getItem(AMBASSADOR_CODE_KEY)
+      || sessionStorage.getItem(AMBASSADOR_CODE_KEY)
+      || null;
+  } catch { return null; }
+}
+
+function isMobileUA(): boolean {
+  try {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  } catch { return false; }
+}
+
+function sendPageViewBeacon(path: string): void {
+  try {
+    const utm = getUTMParams();
+    const payload = {
+      sessionId: getOrCreateSessionId(),
+      path,
+      referrer: document.referrer || null,
+      isMobile: isMobileUA(),
+      ambassador_code: getAmbassadorCode(),
+      ...utm,
+    };
+    const body = JSON.stringify(payload);
+    const url = "/api/beacon/page-view";
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" });
+      const ok = navigator.sendBeacon(url, blob);
+      if (ok) return;
+    }
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {}
+}
+
 export function trackPageView(path: string): void {
-  if (typeof window.gtag !== "function") return;
-  if (path === lastTrackedPath) return;
+  if (path === lastTrackedPath) {
+    // Already counted — skip GA + beacon
+    return;
+  }
   lastTrackedPath = path;
-  window.gtag("event", "page_view", {
-    page_path: path,
-    ...getUTMParams(),
-    ...debugFlag(),
-  });
+  sendPageViewBeacon(path);
+  if (typeof window.gtag === "function") {
+    window.gtag("event", "page_view", {
+      page_path: path,
+      ...getUTMParams(),
+      ...debugFlag(),
+    });
+  }
 }
 
 export function trackEvent(

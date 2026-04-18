@@ -660,3 +660,98 @@ have honest gaps that compound at scale.
   off by 1h during DST window; daily window granularity makes this
   irrelevant for digest purposes)
 - Optional Slack/SMS mirror
+
+## SHIPPED — Upgrade #3: Visitor / Traffic Beacon Metrics (2026-04-18)
+
+**Status:** LIVE. Additive only. No engine touched.
+
+### What was added
+1. **New table** `page_views` (event log, never written to by any
+   existing system):
+   - id UUID, session_id, path, referrer, is_mobile, user_agent,
+     utm_source/medium/campaign/content/term/id, ambassador_code,
+     created_at. RLS enabled, 5 indexes.
+   - DDL: `supabase/create_page_views.sql`
+   - Created in DB via existing pg pool (same path the project uses
+     for `trusted_service_categories`).
+
+2. **Server ingest** `server/page-view-logger.ts`:
+   - `ingestPageView()` — pg-direct insert, fire-and-forget, with
+     in-memory rate-limit (max 1 write / 750ms / session) and
+     soft table-detect.
+   - `getPageViewMetrics()` — pg-direct aggregations (visitors
+     today/7d/30d via DISTINCT session_id, mobile share, UTM share,
+     ambassador share, top 10 landing paths 7d).
+
+3. **Public beacon endpoint** `POST /api/beacon/page-view`:
+   - Always responds 204 (never blocks the page)
+   - Accepts JSON: { sessionId, path, referrer, isMobile, utm_*,
+     ambassador_code }
+   - Server-side mobile fallback from User-Agent if client omits it
+   - All fields length-clamped before insert
+
+4. **Client beacon** in `client/src/lib/analytics.ts`:
+   - `sendPageViewBeacon()` reuses existing UTM session cache and
+     reads ambassador_code from local/session storage
+   - Uses `navigator.sendBeacon()` (silent on tab close) with
+     fetch+keepalive fallback
+   - Wired into existing `trackPageView()` — same dedup as GA so
+     no double counting
+
+5. **Executive Summary endpoint** `/api/admin/exec-summary`
+   extended with two new blocks:
+   - `metrics.traffic` (visitors_today/7d/30d, page_views_30d,
+     mobile_share_pct_30d, utm_attributed_views_30d,
+     ambassador_attributed_views_30d, top_landing_paths_7d, enabled)
+   - `metrics.stuck` (over_24h, over_72h) — mirrors digest definition
+   - `unmeasured` no longer hard-codes daily_visitors / device_split
+     — auto-removes them once page_views has data
+
+6. **Executive Summary UI** (`client/src/pages/admin-executive.tsx`):
+   - New 4-tile row: Visitors Today, Mobile Share, UTM-Tagged Views,
+     Stuck Leads
+   - New panel: Top Landing Paths (7d)
+   - Tiles gracefully render "—" when traffic.enabled=false
+
+### Schema
+- ONE new table `page_views` (UUID PK, matches `ai_usage_log` pattern)
+- ZERO modifications to existing tables
+- ZERO ID column type changes
+- Project's event-style tables intentionally live in raw SQL files
+  in `supabase/`, not in Drizzle schema — followed convention exactly.
+
+### Protected systems
+- Routing engine — UNTOUCHED
+- Billing flow — UNTOUCHED
+- Attribution — UNTOUCHED (we READ ambassador_code from existing
+  client storage but never write it back to attribution tables)
+- Stripe / commissions / payouts — UNTOUCHED
+- Escalation engine — UNTOUCHED
+- Founder digest — UNTOUCHED (will pick up traffic block in a future
+  slice if/when desired)
+
+### Files changed
+- `supabase/create_page_views.sql` (NEW)
+- `server/page-view-logger.ts` (NEW, ingest + metrics helpers)
+- `server/routes.ts` (+~50 LOC: import, public POST endpoint,
+  exec-summary traffic+stuck blocks)
+- `client/src/lib/analytics.ts` (+~50 LOC: sendBeacon helper +
+  trackPageView wire-up; preserves existing GA behavior)
+- `client/src/pages/admin-executive.tsx` (+~80 LOC: traffic KPI row,
+  stuck-leads tile, top landing paths panel, type extensions)
+
+### Validation
+- Workflow restarted clean — no TypeScript errors
+- `[page-views] page_views table detected — beacon enabled`
+  appears on first call
+- 3 sample beacons → 204 → rows landed → exec-summary returns:
+  traffic.enabled=true, visitors_today=3, mobile_share=100,
+  utm_attributed=3, ambassador_attributed=3, top path=/get-help
+- Stuck-leads tile shows real numbers (over_24h: 118, over_72h: 118)
+- Smoke rows cleaned up immediately after validation
+
+### Known follow-ups (intentionally deferred)
+- Bounce rate (needs session-exit tracking — separate slice)
+- Per-state traffic split (cheap once launched in GA — add then)
+- Add traffic block to founder daily digest (1-line follow-up)
+- Server-side IP→country enrichment (defer until needed)
