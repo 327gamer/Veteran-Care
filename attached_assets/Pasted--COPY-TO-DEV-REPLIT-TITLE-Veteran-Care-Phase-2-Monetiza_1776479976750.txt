@@ -1,0 +1,135 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Phase 2 – Monetization Flow Validation
+
+PRIORITY:
+CRITICAL – CORE SYSTEM VALIDATION
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Validate routing, billing, and monetization behavior under real conditions following the successful Stripe activation test.
+
+This phase is validation only.
+
+DO NOT modify system behavior unless a blocker is found and explicitly reported first.
+
+Continue using the same structured testing approach as previous phases.
+
+-------------------------------------
+FOCUS AREAS
+-------------------------------------
+
+Test and validate:
+
+1. lead routing accuracy
+2. eligibility enforcement
+3. billing trigger correctness
+4. audit logging completeness
+5. fail-safe behavior under edge cases
+
+-------------------------------------
+TEST SCOPE
+-------------------------------------
+
+Run controlled validation across real monetization paths and routing outcomes.
+
+Include at minimum:
+
+A. ROUTING VALIDATION
+- confirm correct destination selection
+- confirm ineligible partners are excluded
+- confirm paid / active / onboarded locks are enforced
+- confirm fallback behavior when no eligible partner exists
+- confirm requests do NOT incorrectly route to Colin unless intentionally configured
+
+B. BILLING VALIDATION
+- confirm billable leads enter correct billing path
+- confirm non-billable leads do NOT enter billing
+- confirm duplicate billing protections hold
+- confirm disputed / hold leads are blocked
+- confirm partner eligibility is rechecked before billing
+
+C. MONETIZATION VALIDATION
+- confirm correct billing workflow status transitions
+- confirm Stripe session generation behavior is correct
+- confirm no leakage path exists for unpaid / ineligible partner flows
+
+D. AUDIT / LOGGING VALIDATION
+- confirm billing logs exist
+- confirm routing logs exist
+- confirm monetization audit entries are complete
+- confirm failed / blocked actions are captured correctly
+
+E. EDGE CASE VALIDATION
+Test at least these:
+- unpaid partner
+- canceled partner
+- past_due partner
+- disputed lead
+- hold lead
+- duplicate submission / duplicate billing attempt
+- no eligible partner available
+- blocked billing path
+- blocked routing path
+
+-------------------------------------
+REQUIRED OUTPUT
+-------------------------------------
+
+Return a structured Phase 2 report including:
+
+1. PASS / FAIL by section
+2. routing outputs
+3. billing logs
+4. audit log entries
+5. edge case behavior confirmation
+6. exact blockers, if any
+7. whether blocker is:
+   - REPLIT FIX
+   - MANUAL COLIN STEP
+   - NON-BLOCKING OBSERVATION
+
+-------------------------------------
+EVIDENCE REQUIRED
+-------------------------------------
+
+For each major validation area, include actual evidence such as:
+
+- routed destination
+- eligibility state observed
+- billing workflow status before / after
+- audit log event names / outcomes
+- blocked reason text where applicable
+
+Do NOT return only summaries.
+Include concrete observed results.
+
+-------------------------------------
+RULES
+-------------------------------------
+
+- validation only unless blocker found
+- do NOT silently fix anything
+- do NOT skip failed cases
+- do NOT bundle unrelated fixes
+- if something fails, stop and report clearly
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+Phase 2 is PASS only if:
+
+- routing behavior is correct
+- monetization locks are enforced
+- billing behavior is correct
+- audit visibility is complete
+- edge cases fail safely
+- no critical leakage path exists
+
+-------------------------------------
+END
+-------------------------------------
