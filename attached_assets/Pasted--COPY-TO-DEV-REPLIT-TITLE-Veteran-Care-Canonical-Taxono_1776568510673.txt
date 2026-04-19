@@ -1,0 +1,80 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Canonical Taxonomy Hardening – Step 2 Plan
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH DATA INTEGRITY FIX
+
+Step 1 is approved as complete.
+
+The canonical category foundation is now locked.
+
+We can now move safely to Step 2 planning.
+
+-------------------------------------
+APPROVED NOW: STEP 2 PLAN ONLY
+-------------------------------------
+
+OBJECTIVE:
+Audit and correct provider/resource tagging issues so records stop surfacing in the wrong categories / subcategories.
+
+This includes user-confirmed concerns such as:
+- Boot Print appearing where it should not
+- Tri-County Veteran Support Network appearing where it should not
+- any other stale or incorrect resource_categories / resource_subcategories / partner-subcategory placements
+
+-------------------------------------
+IMPORTANT SCOPE
+-------------------------------------
+
+Step 2 is DATA INTEGRITY only.
+
+This is:
+- record tagging cleanup
+- join-table audit
+- category/subcategory placement correction
+
+This is NOT:
+- UI work
+- drilldown work
+- trusted-partner cross-population work
+- AI work
+- schema work
+
+-------------------------------------
+RETURN REQUIRED
+-------------------------------------
+
+For Step 2 plan only, return:
+
+1. exact tables / joins that need to be audited
+2. how you will detect incorrect placements
+3. how you will distinguish:
+   - truly wrong category assignment
+   - legacy carryover
+   - intentional mirror placement
+4. whether an admin preview / diff report is needed before changes
+5. exact validation method after cleanup
+6. whether cleanup can be done safely as pure data updates
+7. PASS / FAIL readiness for executing Step 2
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Step 2 planning / execution scope only
+- no Step 3 yet
+- no UI changes yet
+- no AI changes yet
+- no schema changes
+- no giant sprint behavior
+- SC only
+
+-------------------------------------
+NOTE
+-------------------------------------
+
+Now that canonical taxonomy is locked, we want the record-placement layer cleaned methodically under that stable foundation.
+
+END
