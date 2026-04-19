@@ -13,6 +13,10 @@ interface MatchedResource {
   subcategory: string | null;
   category_slug: string | null;
   category_name: string | null;
+  // Pass 5: ALL category slugs this resource is joined to (m2m). Used by the
+  // primary-category boost so multi-category records get +6 reliably even
+  // when category_slug from the join order happens to be a secondary one.
+  category_slugs?: string[];
 }
 
 const MIN_RESULTS = 5;
@@ -39,8 +43,21 @@ export async function matchResources(
   if (userCity) {
     for (const w of userCity.toLowerCase().split(/\s+/)) extraStop.add(w);
   }
-  const searchTerms = extractSearchTerms(userMessage).filter(t => !extraStop.has(t));
-  const termSet = new Set(searchTerms);
+  const rawTerms = extractSearchTerms(userMessage).filter(t => !extraStop.has(t));
+  // Pass 5 (2026-04-19): lightweight stemming — strip trailing "s" on tokens
+  // length ≥4 so "jobs"/"job", "veterans"/"veteran", "clinics"/"clinic",
+  // "benefits"/"benefit" all collapse to a single canonical form. Because
+  // scoring uses .includes(), the singular form matches both inflections in
+  // record text. Skip "ss"-ending words (e.g. "access", "address").
+  const stemmed = rawTerms.map(stem);
+  // Pass 5: employment-synonym layer. If any employment cue is present (e.g.
+  // user types "jobs"), broaden the term set to include the canonical
+  // employment vocabulary used by record titles ("hiring", "career",
+  // "employment") so employer-program records surface even when their titles
+  // don't contain the literal word "jobs".
+  const expanded = expandEmploymentSynonyms(stemmed);
+  const termSet = new Set(expanded);
+  const primarySlug: string | undefined = detectedCategories[0];
 
   const tasks: Promise<MatchedResource[]>[] = [];
 
@@ -63,8 +80,8 @@ export async function matchResources(
   // Always run text search in parallel (no longer gated by MIN_RESULTS).
   // This guarantees title / subcategory / short_description matches surface
   // even when a broad category bucket already returned plenty of generic rows.
-  if (searchTerms.length > 0) {
-    const textQuery = searchTerms.slice(0, 4).join(" ");
+  if (rawTerms.length > 0) {
+    const textQuery = rawTerms.slice(0, 4).join(" ");
     if (userState) tasks.push(searchByText(textQuery, userState, userCity));
     tasks.push(searchByText(textQuery));
   }
@@ -72,10 +89,23 @@ export async function matchResources(
   const allBatches = await Promise.all(tasks);
 
   // Merge by id, keeping the best instance and computing a relevance score.
+  // Pass 5: primary-category boost. Records whose joined category_slug
+  // matches the FIRST detected category get +6, ensuring primary-intent
+  // results win over secondary-category leakage. Magnitude is roughly half a
+  // title hit (+10), so it tilts ties without overpowering true keyword hits.
   const seen = new Map<string, { r: MatchedResource; score: number }>();
   for (const batch of allBatches) {
     for (const r of batch) {
-      const score = scoreResource(r, termSet, userCity, userState);
+      let score = scoreResource(r, termSet, userCity, userState);
+      // Pass 5 reliability fix: check ALL joined slugs, not just the
+      // arbitrary first-joined one (especially important for searchByText
+      // results, where the join order is non-deterministic for m2m records).
+      if (primarySlug) {
+        const slugs = r.category_slugs && r.category_slugs.length > 0
+          ? r.category_slugs
+          : (r.category_slug ? [r.category_slug] : []);
+        if (slugs.includes(primarySlug)) score += 6;
+      }
       const existing = seen.get(r.id);
       if (!existing || score > existing.score) {
         seen.set(r.id, { r, score });
@@ -88,8 +118,8 @@ export async function matchResources(
     .map(x => x.r);
 
   // Last-resort fallback: nothing matched at all → broad text search in user state
-  if (merged.length === 0 && userState && searchTerms.length > 0) {
-    const broad = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
+  if (merged.length === 0 && userState && rawTerms.length > 0) {
+    const broad = await searchByText(rawTerms.slice(0, 3).join(" "), userState);
     return broad.slice(0, limit);
   }
 
@@ -135,13 +165,21 @@ function scoreResource(
 
 export function detectCategories(message: string): string[] {
   const lower = message.toLowerCase();
+  // Pass 5 (2026-04-19): also build a stem-normalized haystack so that
+  // pluralized user words like "jobs"/"clinics"/"benefits"/"veterans"
+  // still match singular keyword entries like "job"/"clinic"/"benefits".
+  // Word-boundary matching is preserved on this stemmed copy.
+  const stemmedHaystack = lower
+    .split(/\b/)
+    .map(t => /^[a-z]{4,}$/.test(t) ? stem(t) : t)
+    .join("");
   const scored: { slug: string; bestLen: number; matchCount: number }[] = [];
 
   for (const [slug, keywords] of Object.entries(aiConfig.categoryKeywords)) {
     let bestLen = 0;
     let matchCount = 0;
     for (const kw of keywords) {
-      if (matchesKeyword(lower, kw)) {
+      if (matchesKeyword(lower, kw) || matchesKeyword(stemmedHaystack, kw)) {
         matchCount++;
         if (kw.length > bestLen) bestLen = kw.length;
       }
@@ -173,6 +211,43 @@ function matchesKeyword(haystack: string, kw: string): boolean {
   // Escape regex metacharacters in keyword (defensive — current set has none)
   const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`\\b${escaped}\\b`).test(haystack);
+}
+
+/**
+ * Pass 5 (2026-04-19): lightweight stemming. Strips a trailing "s" on tokens
+ * length ≥4, except double-"s" endings ("access", "address", "business").
+ * Intentionally minimal — only solves the singular/plural mismatch that hurt
+ * the 26-query validation suite ("jobs"/"job", "veterans"/"veteran",
+ * "benefits"/"benefit", "clinics"/"clinic"). Not a full Porter stemmer.
+ */
+function stem(token: string): string {
+  if (token.length < 4) return token;
+  // Skip endings that aren't English plural markers:
+  //   "ss"  → access, address, business
+  //   "is"  → crisis, analysis, basis, diagnosis
+  //   "us"  → bonus, focus, virus, campus
+  //   "ous" → famous, serious (already covered by "us")
+  if (token.endsWith("ss") || token.endsWith("is") || token.endsWith("us")) return token;
+  if (token.endsWith("s")) return token.slice(0, -1);
+  return token;
+}
+
+const EMPLOYMENT_CUES = new Set(["job", "hire", "hiring", "career", "employment", "employer", "employed"]);
+const EMPLOYMENT_EXPANSIONS = ["job", "hiring", "career", "employment", "employer"];
+
+/**
+ * Pass 5 (2026-04-19): employment-synonym expansion. If any employment cue
+ * appears in the user's stemmed terms, broaden the term set to include the
+ * canonical employment vocabulary used by record titles. Used at scoring
+ * time only — does NOT influence category routing (avoids over-routing
+ * non-employment queries that happen to mention work).
+ */
+function expandEmploymentSynonyms(terms: string[]): string[] {
+  const has = terms.some(t => EMPLOYMENT_CUES.has(t));
+  if (!has) return terms;
+  const out = new Set(terms);
+  for (const e of EMPLOYMENT_EXPANSIONS) out.add(e);
+  return Array.from(out);
 }
 
 function extractSearchTerms(message: string): string[] {
@@ -253,19 +328,25 @@ async function searchByCategory(
   const { data, error } = await query;
   if (error || !data) return [];
 
-  return (data as any[]).map(r => ({
-    id: r.id,
-    title: r.title,
-    short_description: r.short_description,
-    phone: r.phone,
-    website_url: r.website_url,
-    city: r.city,
-    state: r.state,
-    eligibility: r.eligibility,
-    subcategory: r.subcategory,
-    category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
-    category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
-  })).sort((a, b) => {
+  return (data as any[]).map(r => {
+    const slugs = Array.isArray(r.resource_categories)
+      ? r.resource_categories.map((rc: any) => rc?.categories?.slug).filter(Boolean)
+      : [];
+    return {
+      id: r.id,
+      title: r.title,
+      short_description: r.short_description,
+      phone: r.phone,
+      website_url: r.website_url,
+      city: r.city,
+      state: r.state,
+      eligibility: r.eligibility,
+      subcategory: r.subcategory,
+      category_slug: slugs[0] || null,
+      category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
+      category_slugs: slugs,
+    };
+  }).sort((a, b) => {
     const aScore = getLocationScore(a.city, a.state, userCity, userState);
     const bScore = getLocationScore(b.city, b.state, userCity, userState);
     return aScore - bScore;
@@ -298,19 +379,25 @@ async function searchByText(
   const { data, error } = await query;
   if (error || !data) return [];
 
-  return (data as any[]).map(r => ({
-    id: r.id,
-    title: r.title,
-    short_description: r.short_description,
-    phone: r.phone,
-    website_url: r.website_url,
-    city: r.city,
-    state: r.state,
-    eligibility: r.eligibility,
-    subcategory: r.subcategory,
-    category_slug: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.slug || null,
-    category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
-  })).sort((a, b) => {
+  return (data as any[]).map(r => {
+    const slugs = Array.isArray(r.resource_categories)
+      ? r.resource_categories.map((rc: any) => rc?.categories?.slug).filter(Boolean)
+      : [];
+    return {
+      id: r.id,
+      title: r.title,
+      short_description: r.short_description,
+      phone: r.phone,
+      website_url: r.website_url,
+      city: r.city,
+      state: r.state,
+      eligibility: r.eligibility,
+      subcategory: r.subcategory,
+      category_slug: slugs[0] || null,
+      category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
+      category_slugs: slugs,
+    };
+  }).sort((a, b) => {
     const aScore = getLocationScore(a.city, a.state, userCity, userState);
     const bScore = getLocationScore(b.city, b.state, userCity, userState);
     return aScore - bScore;
