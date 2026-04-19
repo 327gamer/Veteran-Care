@@ -47,8 +47,8 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
   "healthcare": {
     testidPrefix: "hc",
     trackPrefix: "hc",
-    viewAllSlug: "healthcare-services",
-    aiContext: "healthcare-services",
+    viewAllSlug: "healthcare",
+    aiContext: "healthcare",
     name: "Healthcare",
     icon: HeartPulse,
     iconBgClass: "bg-red-50",

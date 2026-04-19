@@ -1,0 +1,102 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Immediate Launch Refocus Directive
+
+PRIORITY:
+CRITICAL
+
+-------------------------------------
+MESSAGE
+-------------------------------------
+
+Appreciate the work completed.
+
+However, we need to immediately shift into LAUNCH MODE.
+
+The current objective is no longer broad platform improvement.
+
+The objective is:
+
+South Carolina soft launch in the next 1–2 days with maximum confidence.
+
+That means all work now must be measured against one question:
+
+“Does this directly help launch South Carolina immediately?”
+
+If not, defer it.
+
+-------------------------------------
+ONLY APPROVED TASKS NOW
+-------------------------------------
+
+1. Final Resources vs Trusted Services mirror audit
+
+2. Final category + subcategory parity audit
+
+3. AI Veteran Guide routing / category accuracy audit
+
+4. Browse flow audit:
+- Home
+- Category drilldowns
+- Resources
+- Trusted Services
+- AI Guide
+
+5. Mobile QA:
+- iPhone usability
+- tap targets
+- scroll issues
+- layout breaks
+
+6. Dead links / empty states / broken flows
+
+7. Revenue path confirmation:
+- partner signup
+- subscriptions
+- lead capture
+- forms
+- email confirmations
+
+-------------------------------------
+PAUSE FOR NOW
+-------------------------------------
+
+- new architecture work
+- new frameworks
+- future-state enhancements
+- analytics expansion
+- broad feature additions
+- anything not launch critical
+
+-------------------------------------
+DELIVERABLE REQUEST TODAY
+-------------------------------------
+
+Please return only:
+
+RED = blockers to launch now  
+YELLOW = should fix before launch if fast  
+GREEN = safe to launch
+
+Then execute RED items first.
+
+Also include:
+- estimated time per RED item
+- owner responsible
+- proof once fixed
+- final confidence score out of 100%
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+South Carolina launch confidence.
+
+Not feature expansion.
+
+We launch strong, then expand.
+
+-------------------------------------
+END
+-------------------------------------
