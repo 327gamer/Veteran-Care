@@ -30,26 +30,16 @@ export async function checkEscalations(): Promise<{
   let deliveryFailures = 0;
 
   try {
-    let { data: routedLeads, error } = await supabaseAdmin
+    // Post-migration (Chunk 4.3): reassignment columns are guaranteed live.
+    // Column-missing fallback retry removed.
+    const { data: routedLeads, error } = await supabaseAdmin
       .from("navigator_requests")
       .select("id, urgency, routed_to_partner_id, routed_at, assigned_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city, response_status, email_sent, email_sent_at, reassignment_count")
       .in("status", ["new", "in_progress"])
       .not("routed_to_partner_id", "is", null)
       .in("delivery_status", ["pending", "delivered", "ready_for_delivery"]);
 
-    if (error && error.message.includes("does not exist")) {
-      const retry = await supabaseAdmin
-        .from("navigator_requests")
-        .select("id, urgency, routed_to_partner_id, routed_at, assigned_at, delivery_status, escalation_count, routing_history, category, subcategory, user_state, user_city, response_status, email_sent, email_sent_at")
-        .in("status", ["new", "in_progress"])
-        .not("routed_to_partner_id", "is", null)
-        .in("delivery_status", ["pending", "delivered", "ready_for_delivery"]);
-      routedLeads = retry.data;
-      error = retry.error;
-    }
-
     if (error) {
-      if (error.message.includes("does not exist")) return { escalated: 0, rerouted: 0, fallback: 0, reassigned: 0, deliveryFailures: 0 };
       console.log("[escalation] Error fetching routed leads:", error.message);
     }
 
@@ -138,19 +128,15 @@ export async function checkEscalations(): Promise<{
             routing_history: history,
         };
 
-        let { error: reassignErr } = await supabaseAdmin
+        // Post-migration (Chunk 4.3): reassignment tracking columns are live;
+        // no fallback needed.
+        const { error: reassignErr } = await supabaseAdmin
           .from("navigator_requests")
           .update(reassignUpdate)
           .eq("id", lead.id);
 
-        if (reassignErr && reassignErr.message.includes("does not exist")) {
-          delete reassignUpdate.reassignment_count;
-          delete reassignUpdate.last_reassigned_at;
-          delete reassignUpdate.previous_assigned_to;
-          await supabaseAdmin
-            .from("navigator_requests")
-            .update(reassignUpdate)
-            .eq("id", lead.id);
+        if (reassignErr) {
+          console.log(`[escalation] Reassignment update failed for ${lead.id}: ${reassignErr.message}`);
         }
 
         sendLeadNotification(lead.id, newMatch.partnerId)
