@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
 import { useSavedResources } from "@/lib/store";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { trackEvent } from "@/lib/analytics";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
@@ -224,6 +224,7 @@ function AutocompleteInput({
 
 export default function Resources() {
   const [location, setLocation] = useLocation();
+  const search = useSearch();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
@@ -476,7 +477,7 @@ export default function Resources() {
   }, [selectedState, cityFilter, zipFilter, locationMode, setStoreLocation]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(search);
     const categoryParam = params.get("category");
     if (categoryParam && categories.length > 0) {
       const cat = categories.find(c => c.name === decodeURIComponent(categoryParam) || c.slug === decodeURIComponent(categoryParam));
@@ -484,6 +485,9 @@ export default function Resources() {
         setSelectedSlug(cat.slug);
         setSelectedName(cat.name);
       }
+    } else if (!categoryParam) {
+      setSelectedSlug(null);
+      setSelectedName(null);
     }
     const qParam = params.get("q");
     if (qParam) {
@@ -509,7 +513,7 @@ export default function Resources() {
     } else if (locationMode === "nearme") {
       setLocationMode("national");
     }
-  }, [location, categories]);
+  }, [location, search, categories]);
 
   const handleToggleSave = (e: React.MouseEvent, resource: ResourceItem) => {
     e.stopPropagation();
@@ -528,8 +532,13 @@ export default function Resources() {
     "housing-home": "/housing",
     "employment-support": "/employment",
     "benefits-assistance": "/benefits-assistance",
-    "healthcare-services": "/healthcare",
+    "healthcare": "/healthcare",
     "financial-credit": "/financial-services",
+    "insurance": "/insurance",
+    "legal-services": "/legal-services",
+    "education-training": "/education-training",
+    "family-support": "/family-support",
+    "community-support": "/community-support",
   };
 
   const selectCategory = (cat: SupabaseCategory) => {
