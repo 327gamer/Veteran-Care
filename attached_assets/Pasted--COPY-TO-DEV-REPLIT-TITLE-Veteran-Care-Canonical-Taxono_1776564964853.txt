@@ -1,0 +1,141 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Canonical Taxonomy / Mirror Logic Emergency Review
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH SYSTEM INTEGRITY
+
+IMPORTANT:
+This is now a launch-critical issue.
+
+Recent screenshots confirm that Resources and Trusted Services are still behaving like partially separate systems instead of one canonical system with mirrored taxonomy and trust-tier layering.
+
+This must be reviewed and corrected methodically before launch expansion.
+
+-------------------------------------
+CORE PROBLEM
+-------------------------------------
+
+We are seeing evidence that:
+
+1. Resources and Trusted Services do NOT consistently share the same category / subcategory structure
+2. Some categories mirror correctly, others do not
+3. Paid / verified partners can appear at the top of regular Resources, but underlying subcategory structure is still inconsistent
+4. Some providers are still surfacing in the wrong category/subcategory placements
+5. This may also be affecting AI discovery consistency
+
+-------------------------------------
+CONFIRMED EXAMPLES
+-------------------------------------
+
+1. INSURANCE
+Resources side:
+- label = "Insurance"
+- appears as flat resource list
+- no mirrored trusted-style subcategory drilldown visible
+
+Trusted Services side:
+- label = "Insurance Services"
+- full subcategory drilldown exists
+- example subcategories visible:
+  - Health Insurance
+  - Life Insurance
+  - Auto Insurance
+  - Home Insurance
+  - Renters Insurance
+  - Disability Insurance
+  - Long-Term Care Insurance
+  - Supplemental Insurance
+  - Medicare & VA Plans
+
+This confirms mismatch.
+
+2. LEGAL
+Trusted Services:
+- structured subcategory drilldown exists
+
+Resources:
+- flat list of resources instead of the same subcategory drilldown
+
+Mismatch confirmed.
+
+3. PAID PARTNER ELEVATION
+On Resources > Insurance, a Verified Partner card is surfacing at the top.
+This means the trusted-partner elevation logic is partially working.
+However, the underlying taxonomy is still not mirrored correctly.
+
+4. HOUSING / MOVING / STORAGE
+Boot Print and Tri-County Veteran Support Network still appear in places they should not.
+This indicates provider placement / category assignment integrity is still not fully locked.
+
+5. COMMUNITY / HEALTHCARE / FAMILY SUPPORT
+These also appear inconsistent on the Resources side and need review for the same canonical mirror issue.
+
+-------------------------------------
+OBJECTIVE
+-------------------------------------
+
+Run a full assessment first.
+
+Determine exactly where the disconnect still exists between:
+
+- Resources taxonomy
+- Trusted Services taxonomy
+- provider placement
+- trusted / verified partner elevation
+- seeded provider display
+- AI matcher source logic
+
+-------------------------------------
+REQUIRED QUESTIONS TO ANSWER
+-------------------------------------
+
+1. What is the true canonical source of category + subcategory truth?
+2. Which endpoints / tables power Resources category browsing?
+3. Which endpoints / tables power Trusted Services category browsing?
+4. Why do some categories mirror and others do not?
+5. Why does Insurance still differ in name and structure?
+6. Why does Legal still differ in behavior?
+7. Why is Community Support still not properly surfaced on Resources?
+8. Why is Healthcare flat on Resources?
+9. Why are some providers still surfacing in wrong subcategories?
+10. Is AI matcher reading the same canonical taxonomy or a partial copy?
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return:
+
+1. root cause analysis
+2. exact systems / tables / endpoints involved
+3. which categories are currently mirrored correctly
+4. which categories are broken / split
+5. recommended fix sequence
+6. identify whether this is:
+   - data issue
+   - endpoint issue
+   - mapping issue
+   - UI flow issue
+   - or mixed
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+Assessment first.
+No blind fixes yet.
+No more layering new category work until this is understood.
+
+We need one system:
+- same category logic
+- same subcategory logic
+- same record placement logic
+- trusted tiers layered on top
+- AI reading the same truth
+
+South Carolina is the blueprint.
+This must be fixed there before Georgia.
+
+END
