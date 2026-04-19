@@ -1,0 +1,80 @@
+🚨 COPY TO DEV / REPLIT
+
+We need to stop mixing solved layers with unsolved layers.
+
+Here is the correct state of the project:
+
+-------------------------------------
+LAYER STATUS
+-------------------------------------
+
+LAYER 1 — Resource-side display parity
+Status: largely fixed today
+
+LAYER 2 — Shared category / subcategory parity between Resources and Trusted Services
+Status: NOT finished
+
+LAYER 3 — Seeded / trusted / verified partner placement into the correct subcategories
+Status: NOT finished
+
+LAYER 4 — Cross-pop display logic after correct mapping
+Status: NOT finished
+
+LAYER 5 — Final AI alignment after structure is clean
+Status: partially tested, not final until Layers 2–4 are complete
+
+-------------------------------------
+WHAT WE NEED NOW
+-------------------------------------
+
+We need the next steps executed in the correct order.
+
+STEP A
+Fix the safety patch first.
+
+STEP B
+Return a SHARED CATEGORY PARITY ACTION GRID for all categories that exist in BOTH Resources and Trusted Services.
+
+For each shared category, return:
+
+- Resources category name
+- Trusted Services category name
+- Resources subcategories
+- Trusted Services subcategories
+- exact mismatch
+- exact canonical subcategory list that both should use
+- ETA to fix
+
+STEP C
+Return a SEEDED / TRUSTED PARTNER MAPPING GRID
+
+For each shared category and subcategory, return:
+
+- which seeded partners should appear there
+- which trusted partners should appear there
+- which are currently unmapped
+- which are wrongly mapped
+- exact fix required
+
+STEP D
+Then execute those fixes in sequence:
+1. subcategory parity
+2. partner/seeded placement
+3. cross-pop display confirmation
+4. AI confirmation
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+Do not answer with broad summaries.
+
+Do not say “mostly fixed.”
+
+Do not jump ahead to launch language until Layers 2–4 are actually complete.
+
+We need the remaining real work isolated and executed step-by-step.
+
+This is the game plan now.
+
+END
