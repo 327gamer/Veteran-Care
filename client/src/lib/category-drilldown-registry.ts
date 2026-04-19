@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal } from "lucide-react";
+import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale } from "lucide-react";
 import type { CategoryDrilldownConfig } from "@/components/category-drilldown";
 import { MH_SUBCATEGORIES } from "@/lib/mh-subcategories";
 import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
@@ -8,6 +8,8 @@ import { HOUSING_SUBCATEGORIES } from "@/lib/housing-subcategories";
 import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { DV_SUBCATEGORIES } from "@/lib/dv-subcategories";
+import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
+import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
 
 /**
  * Step 3 Slice 3a — single source of truth for category drilldown config.
@@ -159,6 +161,44 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
     introLinks: [
       { slug: "disability-benefits-claims", label: "Disability Benefits & Claims", testidKey: "benefits" },
       { slug: "healthcare-rehabilitation", label: "Healthcare & Rehabilitation", testidKey: "health" },
+    ],
+  },
+  // Slice 3b additions: Insurance + Legal — first new categories rendered via
+  // the shared drilldown system. Both viewAllSlugs match canonical taxonomy
+  // (`insurance`, `legal-services`) so the existing /resources?category=
+  // filter resolves the right rows without any backend change.
+  "insurance": {
+    testidPrefix: "ins",
+    trackPrefix: "ins",
+    viewAllSlug: "insurance",
+    aiContext: "insurance",
+    name: "Insurance Services",
+    icon: Shield,
+    iconBgClass: "bg-cyan-50",
+    iconTextClass: "text-cyan-700",
+    description:
+      "Health, life, auto, home, disability, long-term care, and supplemental insurance options for veterans and their families.",
+    subcategories: INSURANCE_SUBCATEGORIES,
+    introLinks: [
+      { slug: "health-insurance", label: "Health Insurance", testidKey: "health" },
+      { slug: "life-insurance", label: "Life Insurance", testidKey: "life" },
+    ],
+  },
+  "legal-services": {
+    testidPrefix: "legal",
+    trackPrefix: "legal",
+    viewAllSlug: "legal-services",
+    aiContext: "legal-services",
+    name: "Legal Services",
+    icon: Scale,
+    iconBgClass: "bg-indigo-50",
+    iconTextClass: "text-indigo-700",
+    description:
+      "Estate planning, VA appeals legal help, family law, consumer protection, expungement, landlord-tenant, and veteran-focused legal services.",
+    subcategories: LEGAL_SUBCATEGORIES,
+    introLinks: [
+      { slug: "estate-planning-wills", label: "Estate Planning & Wills", testidKey: "estate" },
+      { slug: "va-claims-appeals-legal", label: "VA Claims & Appeals", testidKey: "appeals" },
     ],
   },
 };

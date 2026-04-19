@@ -63,6 +63,7 @@ import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
 import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
+import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
 import type { LucideIcon } from "lucide-react";
 
 interface RichSubcategory {
@@ -72,12 +73,15 @@ interface RichSubcategory {
   description: string;
 }
 
+// Slice 3b: Legal added so Trusted Services renders the same rich
+// subcategory grid that Resources now does. Insurance was already present.
 const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "housing-home": HOUSING_SUBCATEGORIES,
   "financial-credit": FIN_SUBCATEGORIES,
   "insurance": INSURANCE_SUBCATEGORIES,
   "employment-support": EMP_SUBCATEGORIES,
   "end-of-life-services": EOL_SUBCATEGORIES,
+  "legal-services": LEGAL_SUBCATEGORIES,
 };
 
 interface TrustedCategory {
