@@ -1120,7 +1120,18 @@ export default function Resources() {
             {isLoading && !geo.loading && (
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
             )}
-            {trustedPartners.length > 0 && (
+            {/*
+              RED #1 fix (2026-04-19): Verified Partners are mapped at the
+              CATEGORY level, not the subcategory level. Showing the same
+              category-wide partner list on a subcategory page (e.g. Moving &
+              Storage, Foreclosure Prevention, Home Modifications) created a
+              relevance mismatch and trust loss. Until per-subcategory partner
+              routing data is populated (partner_routing_rules table), we hide
+              the strip on subcategory pages. The drilldown's top-of-category
+              strip is unaffected — those partners ARE accurate for the parent
+              category.
+            */}
+            {!subFilter && trustedPartners.length > 0 && (
               <div className="space-y-3 mb-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-600" />
