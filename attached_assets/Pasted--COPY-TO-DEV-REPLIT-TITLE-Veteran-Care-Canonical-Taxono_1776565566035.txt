@@ -1,0 +1,89 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Canonical Taxonomy Hardening – Step 1
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH FOUNDATION FIX
+
+Your assessment is approved.
+
+We will NOT bundle this into one giant sprint.
+
+We will execute this methodically in dependency order.
+
+-------------------------------------
+APPROVED ORDER
+-------------------------------------
+
+Step 1
+Canonical taxonomy lock
+
+Step 2
+Provider tagging cleanup
+
+Step 3
+Generic subcategory drilldown system
+
+Step 4
+Generalize trusted-partner cross-population
+
+Step 5
+AI matcher / catalog alignment
+
+Do NOT skip ahead.
+
+Do NOT bundle all 5 together.
+
+-------------------------------------
+APPROVED NOW: STEP 1 ONLY
+-------------------------------------
+
+OBJECTIVE:
+Designate and enforce the true canonical category / subcategory source of truth so Resources and Trusted Services stop drifting.
+
+Use:
+shared/canonical-categories.ts
+
+as the authoritative taxonomy source.
+
+Need a safe implementation plan for Step 1 only.
+
+-------------------------------------
+RETURN REQUIRED
+-------------------------------------
+
+For Step 1 only, return:
+
+1. exact files that would change
+2. exact boot / sync behavior proposed
+3. how Resources categories would stay aligned
+4. how Trusted Services categories would stay aligned
+5. how drift would be detected
+6. what validation would confirm canonical lock worked
+7. whether any existing live category labels / slugs would change
+8. PASS / FAIL readiness for executing Step 1
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Step 1 planning / execution scope only
+- do not touch Step 2 yet
+- do not touch AI yet
+- do not touch UI drilldown yet
+- preserve live slugs where possible
+- no unnecessary renames
+- no giant sprint behavior
+
+-------------------------------------
+NOTE
+-------------------------------------
+
+We agree the platform currently behaves like two partially stitched systems.
+This must be corrected in ordered slices.
+
+South Carolina is the blueprint.
+We are fixing the foundation before Georgia.
+
+END
