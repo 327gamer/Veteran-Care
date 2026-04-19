@@ -1,0 +1,152 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Return to Core Mission: Launch Integrity Execution Plan
+
+PRIORITY:
+URGENT – SOUTH CAROLINA LAUNCH BLOCKER
+
+---
+
+## MESSAGE
+
+Please read carefully.
+
+We need to reset back to the TRUE objective of today.
+
+Today was never about random feature work, experiments, or side improvements.
+
+The real mission was:o
+
+Create ONE seamless veteran experience where these systems mirror each other perfectly:
+
+1. Resources
+2. Trusted Services
+3. AI Veteran Guide
+4. Category Drilldown Pages
+5. Search / Browse Flow
+6. Revenue / Partner Visibility
+
+Right now the platform has strong parts, but some systems were built at different times and do not fully behave as one connected ecosystem.
+
+That must be fixed now before South Carolina launch.
+
+---
+
+## WHAT THIS MEANS IN REAL LIFE
+
+If a veteran clicks Housing, Legal, Mental Health, Benefits, Family Support, Community Support, etc...
+
+They should feel one connected ecosystem.
+
+Example: Housing should naturally include:
+
+- housing resources
+- rent help
+- shelters
+- transitional housing
+- trusted housing partners
+- seeded providers where approved
+- AI routing to same housing logic
+- matching subcategories everywhere
+
+NOT:
+
+- resources in one place
+- partners hidden elsewhere
+- different subcategories on another page
+- AI routing somewhere different
+
+---
+
+## CORE PROBLEMS TO SOLVE NOW
+
+RED ITEMS ONLY:
+
+1. Final category mirror audit
+
+Ensure category meaning is identical across:
+
+- Resources
+- Trusted Services
+- AI Guide
+- Drilldown Pages
+- Search/Browse
+
+2. Final subcategory parity audit
+
+If Housing has 4 subcategories in one surface, it should not have 2 elsewhere.
+
+3. Trusted Services visibility parity
+
+Paid / verified / seeded providers should appear naturally inside veteran browse flow where appropriate.
+
+4. AI Guide routing accuracy
+
+AI must route users into the same ecosystem logic.
+
+5. Mobile flow QA
+
+6. Dead links / empty states
+
+7. Revenue forms / subscriptions / lead capture validation
+
+8. Final user journey test
+
+---
+
+## WHAT TO PAUSE RIGHT NOW
+
+Do NOT spend time on:
+
+- future architecture debates
+- non-launch experiments
+- unnecessary analytics expansion
+- backend perfection loops
+- cosmetic extras
+
+Useful later. Not now.
+
+---
+
+## WHAT WE NEED FROM DEV
+
+Please send ONE clean report using this format:
+
+GREEN = already launch ready
+YELLOW = quick fix (<1 hour)
+RED = launch blocker
+
+For each item above.
+
+Then we attack RED only first.
+
+---
+
+## IMPORTANT BUSINESS TRUTH
+
+The biggest remaining launch need is NOT more features.
+
+It is SYSTEM COHESION.
+
+Veterans must feel:
+
+“This platform makes sense.”
+
+That creates trust, conversions, referrals, and retention.
+
+---
+
+## OWNER DIRECTIVE
+
+South Carolina launches first as the blueprint state.
+
+Everything now should answer one question:
+
+Does this help launch at 100% confidence?
+
+If no, defer it.
+
+---
+
+## END

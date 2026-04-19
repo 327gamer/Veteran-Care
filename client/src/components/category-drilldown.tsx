@@ -22,8 +22,8 @@ export interface DrilldownIntroLink {
 export interface CategoryDrilldownConfig {
   testidPrefix: string;
   trackPrefix: string;
-  viewAllSlug: string;
-  aiContext: string;
+  viewAllSlug: import("@shared/canonical-categories").ResourceCategorySlug;
+  aiContext: import("@shared/canonical-categories").ResourceCategorySlug;
   name: string;
   icon: LucideIcon;
   iconBgClass: string;

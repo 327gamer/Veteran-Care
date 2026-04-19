@@ -285,6 +285,47 @@ export function getResourceSlugs(): string[] {
     .sort();
 }
 
+/**
+ * LIVE Resource Category slugs as exist in the production `categories.slug`
+ * column. This is the AUTHORITATIVE allowlist any client/server surface must
+ * match against (drilldown registry, AI Guide context, View-All links,
+ * search filters, lead routing). Verified live 2026-04-19.
+ *
+ * Adding a new resource category? Add the slug here FIRST, then everywhere
+ * that consumes ResourceCategorySlug will fail to compile until updated.
+ * This is the permanent guard against the `healthcare-services` style drift.
+ */
+export const RESOURCE_CATEGORY_SLUGS = [
+  "benefits-assistance",
+  "community-support",
+  "crisis-help",
+  "disabled-veterans",
+  "education-training",
+  "employment-support",
+  "end-of-life-services",
+  "family-support",
+  "financial-credit",
+  "food-assistance",
+  "healthcare",
+  "housing-home",
+  "insurance",
+  "legal-services",
+  "mental-health",
+  "transportation",
+  "wellness-recovery",
+] as const;
+
+export type ResourceCategorySlug = (typeof RESOURCE_CATEGORY_SLUGS)[number];
+
+const RESOURCE_CATEGORY_SLUG_SET: ReadonlySet<string> = new Set(
+  RESOURCE_CATEGORY_SLUGS,
+);
+
+/** Runtime guard: returns true if `slug` is a live resource category. */
+export function isResourceCategorySlug(slug: string): slug is ResourceCategorySlug {
+  return RESOURCE_CATEGORY_SLUG_SET.has(slug);
+}
+
 /** All slugs known on the Trusted Services side (trusted_service_categories.slug). */
 export function getTrustedSlugs(): string[] {
   return CANONICAL_PAIRS
