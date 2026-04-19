@@ -11,7 +11,8 @@ import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPart
 import { handleAiChat } from "./ai/engine";
 import { platform } from "../shared/platform";
 import { getLeadEligibility, getLeadEligibleCategorySlugs, getLeadEligibleSubcategorySlugs, isLeadEligibleCategory } from "../shared/lead-eligibility";
-import { toCanonical, toLegacy, normalizeCategoryList } from "../shared/canonical-categories";
+import { toCanonical, toLegacy, normalizeCategoryList, getResourceRenames, getTrustedRegistry } from "../shared/canonical-categories";
+import { assertTaxonomyLock, getLastLockReport } from "./taxonomy-lock";
 import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { ensureMonetizationAuditTable } from "./monetization-audit";
 import { query as pgQuery } from "./pg-client";
@@ -1376,24 +1377,10 @@ async function repairOrphanedServices() {
 }
 
 async function alignCategoryNames() {
-  const RENAMES: Record<string, string> = {
-    "crisis-help": "Crisis Help",
-    "mental-health": "Mental Health",
-    "disabled-veterans": "Disabled Veterans",
-    "housing": "Housing & Home Services",
-    "food-assistance": "Food Assistance",
-    "va-benefits": "Benefits Assistance",
-    "family-support": "Family Support",
-    "community-support": "Community Support",
-    "employment": "Employment Support",
-    "education": "Education & Training",
-    "transportation": "Transportation",
-    "financial": "Financial & Credit Services",
-    "legal": "Legal Services",
-    "healthcare": "Healthcare",
-    "substance-recovery": "Wellness & Recovery",
-    "end-of-life-services": "End of Life Services",
-  };
+  // Step 1 (canonical taxonomy lock): RENAMES now derives from
+  // shared/canonical-categories.ts so there is ONE source of truth.
+  // Values are byte-identical to the previous hardcoded constant.
+  const RENAMES = getResourceRenames();
   try {
     const { data: cats } = await supabaseAdmin.from("categories").select("id, name, slug");
     if (!cats) return;
@@ -1414,54 +1401,29 @@ async function alignCategoryNames() {
 }
 
 async function ensureAllTrustedServiceCategories() {
-  const activeTrusted = [
-    { name: 'Housing & Home Services', slug: 'housing-home', description: 'Trusted housing, moving, and home services for veterans and families', icon: 'home', display_order: 1 },
-    { name: 'Legal Services', slug: 'legal-services', description: 'Vetted legal professionals experienced with veteran-specific needs', icon: 'scale', display_order: 2 },
-    { name: 'Financial & Credit Services', slug: 'financial-credit', description: 'Trusted financial advisors, credit counseling, and lending partners', icon: 'dollar-sign', display_order: 3 },
-    { name: 'Insurance Services', slug: 'insurance', description: 'Insurance providers offering veteran-friendly coverage options', icon: 'shield', display_order: 4 },
-    { name: 'Education & Training', slug: 'education-training', description: 'Accredited programs and training providers supporting veteran success', icon: 'graduation-cap', display_order: 5 },
-    { name: 'Employment Support', slug: 'employment-support', description: 'Employers and staffing partners committed to hiring veterans', icon: 'briefcase', display_order: 6 },
-    { name: 'End of Life Services', slug: 'end-of-life-services', description: 'Hospice, funeral services, estate planning, and survivor benefits', icon: 'flower-2', display_order: 7 },
-    { name: 'Auto Services', slug: 'auto-services', description: 'Trusted auto repair, sales, and vehicle services for veterans', icon: 'car', display_order: 8 },
-    { name: 'Travel Services', slug: 'travel-services', description: 'Veteran-friendly travel, lodging, and recreation services', icon: 'plane', display_order: 9 },
-  ];
-  const partnerSignupOnly = [
-    { name: 'Benefits Assistance', slug: 'benefits-assistance', description: 'Claims assistance, VSO support, and benefits navigation for veterans', icon: 'file-text', display_order: 20 },
-    { name: 'Wellness & Recovery', slug: 'wellness-recovery', description: 'Wellness programs, substance recovery, and holistic support', icon: 'heart', display_order: 21 },
-    { name: 'Healthcare', slug: 'healthcare-services', description: 'Healthcare providers and medical support for veterans', icon: 'heart-pulse', display_order: 22 },
-  ];
-  const productsLocalOffers = [
-    { name: 'Restaurants', slug: 'restaurants', description: 'Restaurants offering veteran discounts and specials', icon: 'utensils', display_order: 30, program_area: 'veteran_discount_services' },
-    { name: 'Retail Discounts', slug: 'retail-discounts', description: 'Retail stores with veteran discount programs', icon: 'shopping-bag', display_order: 31, program_area: 'veteran_discount_services' },
-    { name: 'Hotels', slug: 'hotels', description: 'Hotels and lodging with veteran rates and military discounts', icon: 'bed', display_order: 32, program_area: 'veteran_discount_services' },
-    { name: 'Car Dealerships', slug: 'car-dealerships', description: 'Car dealerships offering veteran pricing and military discounts', icon: 'car', display_order: 33, program_area: 'veteran_discount_services' },
-    { name: 'Gyms & Fitness', slug: 'gyms-fitness', description: 'Gyms and fitness centers with veteran memberships and discounts', icon: 'dumbbell', display_order: 34, program_area: 'veteran_discount_services' },
-    { name: 'Local Businesses', slug: 'local-businesses', description: 'Local businesses supporting veterans with special offers', icon: 'store', display_order: 35, program_area: 'veteran_discount_services' },
-  ];
+  // Step 1 (canonical taxonomy lock): registry now derives from
+  // shared/canonical-categories.ts — single source of truth. The three
+  // legacy hardcoded arrays (activeTrusted, partnerSignupOnly,
+  // productsLocalOffers) are now collapsed into the canonical pairs and
+  // upserted with byte-identical SQL semantics.
+  const registry = getTrustedRegistry();
   try {
-    for (const cat of activeTrusted) {
-      await pgQuery(
-        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
-         VALUES ($1, $2, $3, $4, $5, true)
-         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = true`,
-        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
-      );
-    }
-    for (const cat of partnerSignupOnly) {
-      await pgQuery(
-        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
-         VALUES ($1, $2, $3, $4, $5, false)
-         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = false`,
-        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order]
-      );
-    }
-    for (const cat of productsLocalOffers) {
-      await pgQuery(
-        `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type)
-         VALUES ($1, $2, $3, $4, $5, true, $6, 'product')
-         ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = true, program_area = $6, group_type = 'product'`,
-        [cat.name, cat.slug, cat.description, cat.icon, cat.display_order, cat.program_area]
-      );
+    for (const { slug, meta } of registry) {
+      if (meta.programArea && meta.groupType) {
+        await pgQuery(
+          `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active, program_area, group_type)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = $6, program_area = $7, group_type = $8`,
+          [meta.name, slug, meta.description, meta.icon, meta.displayOrder, meta.isActive, meta.programArea, meta.groupType]
+        );
+      } else {
+        await pgQuery(
+          `INSERT INTO trusted_service_categories (name, slug, description, icon, display_order, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (slug) DO UPDATE SET name = $1, display_order = $5, is_active = $6`,
+          [meta.name, slug, meta.description, meta.icon, meta.displayOrder, meta.isActive]
+        );
+      }
     }
   } catch (err: any) {
     console.log("[seed] ensureAllTrustedServiceCategories error:", err.message);
@@ -2824,6 +2786,17 @@ export async function registerRoutes(
   await ensureEndOfLifeCategory();
   await ensureDisabledVeteransCategory();
   await ensureAllTrustedServiceCategories();
+  // Step 1 (canonical taxonomy lock): assert both catalogs match
+  // shared/canonical-categories.ts. Read-only check. STRICT mode default
+  // is on in dev/staging, off in production (override via env
+  // TAXONOMY_LOCK_STRICT=true|false). Status surfaced at
+  // /api/admin/taxonomy-status (admin-key gated).
+  try {
+    await assertTaxonomyLock();
+  } catch (err: any) {
+    // Only thrown in STRICT mode — re-throw to abort boot.
+    throw err;
+  }
   await ensureAllPartnerSubcategories();
   await seedDisabledVeteransResources();
   await enrichResourceCategories();
@@ -2885,6 +2858,21 @@ export async function registerRoutes(
       leadEligibleSlugs: eligibleSlugs,
       categories: summary,
     });
+  });
+
+  // Step 1 (canonical taxonomy lock): drift-status endpoint, admin-key gated.
+  app.get("/api/admin/taxonomy-status", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const refresh = String(req.query.refresh || "").toLowerCase() === "true";
+      const report = refresh ? await assertTaxonomyLock() : (getLastLockReport() || await assertTaxonomyLock());
+      return res.json(report);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
   });
 
   app.get("/api/admin/production-validation", async (req, res) => {
