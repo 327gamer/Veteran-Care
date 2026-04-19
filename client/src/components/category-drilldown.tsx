@@ -5,6 +5,7 @@ import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
 import AiGuideBanner from "@/components/ai-guide-banner";
 import TrustedPartnerStrip from "@/components/trusted-partner-strip";
+import { filterVisibleSubcategories } from "@/lib/launch-protection";
 
 export interface DrilldownSubcategory {
   name: string;
@@ -52,6 +53,7 @@ export default function CategoryDrilldown({
 }: CategoryDrilldownConfig) {
   const [, setLocation] = useLocation();
   const stripExposedRef = useRef(false);
+  const visibleSubcategories = filterVisibleSubcategories(viewAllSlug, subcategories);
 
   const goToSub = (sub: DrilldownSubcategory) => {
     trackEvent(`${trackPrefix}_subcategory_click`, { subcategory: sub.slug });
@@ -146,7 +148,7 @@ export default function CategoryDrilldown({
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {subcategories.map((sub) => {
+          {visibleSubcategories.map((sub) => {
             const Icon = sub.icon;
             return (
               <button

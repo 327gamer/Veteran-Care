@@ -37,6 +37,7 @@ import { useLocation, useSearch } from "wouter";
 import { trackEvent } from "@/lib/analytics";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
+import { isCategoryHidden } from "@/lib/launch-protection";
 import {
   Select,
   SelectContent,
@@ -1476,7 +1477,7 @@ export default function Resources() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {categories.map((cat) => {
+          {categories.filter(c => !isCategoryHidden(c.slug)).map((cat) => {
             const config = getCategoryConfig(cat.slug);
             const Icon = config.icon;
             return (
