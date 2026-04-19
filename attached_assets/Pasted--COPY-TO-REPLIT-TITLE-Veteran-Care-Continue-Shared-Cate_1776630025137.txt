@@ -1,0 +1,98 @@
+🚨 COPY TO REPLIT
+
+TITLE:
+Veteran Care – Continue Shared Category Parity Sequence Now
+
+PRIORITY:
+CRITICAL – DO NOT STOP
+
+Thank you. This is the clearest status update so far.
+
+Understood:
+
+COMPLETE:
+- Step 1c
+- Step 1a
+- Step 1b
+
+NOT COMPLETE:
+- Step 2
+- Step 3
+- Step 4
+- Insurance content gap
+
+Proceed NOW with Steps 2 → 3 → 4 without pausing again.
+
+-------------------------------------
+STEP 2 — PARTNER ROUTING RULES
+-------------------------------------
+
+Use best-fit real-world service mapping.
+
+Rule:
+Map each partner only to the subcategories they genuinely fit.
+
+Examples:
+- mortgage providers → va-home-loans / home-ownership
+- emergency housing providers → emergency-housing / homeless-veteran-services / rental-assistance where applicable
+- debt / credit providers → debt-relief / debt-counseling / credit-repair / budgeting
+- insurance providers → exact insurance subcategories only
+- education providers → GI Bill / certifications / trade schools / online learning based on actual service
+
+Do NOT use broad category dumping.
+Do NOT map partners into unrelated subcategories.
+
+Proceed with the insertions using best-fit mapping now.
+
+-------------------------------------
+STEP 3 — FULL BROWSE / CROSS-POP VERIFICATION
+-------------------------------------
+
+Run the full URL matrix for the 5 shared categories and confirm:
+
+- category pages correct
+- subcategory pages correct
+- correct resource visibility
+- correct trusted / seeded / paid partner visibility
+- no dead or empty states where content should exist
+
+-------------------------------------
+STEP 4 — AI GUIDE 25-PROMPT VERIFICATION
+-------------------------------------
+
+Run the full 25-prompt verification and confirm:
+
+- no false crisis
+- no misroutes
+- same ecosystem logic as browse flow
+- correct category / subcategory behavior
+- correct partner / resource surfacing where applicable
+
+-------------------------------------
+INSURANCE GAP
+-------------------------------------
+
+Do NOT let insurance remain hand-wavy.
+If content gap still exists, state exactly:
+- what is missing
+- whether it is launch-blocking
+- whether it can be solved by retagging existing records vs needing new resource seeding
+
+-------------------------------------
+FINAL RETURN FORMAT
+-------------------------------------
+
+Return only:
+
+1. Step 2 results
+2. Step 3 results
+3. Step 4 results
+4. Exact remaining blockers
+5. Which of the 5 shared categories are now truly complete
+6. Final confidence score out of 100
+
+No unrelated thread contamination.
+No extra work.
+Finish the parity sequence.
+
+END
