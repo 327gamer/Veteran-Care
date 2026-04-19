@@ -2183,7 +2183,15 @@ async function enrichResourceCategories() {
     const { data: existingSubs } = await supabaseAdmin.from("subcategories").select("id, slug, category_id");
     const existingByKey = new Set((existingSubs || []).map((s: any) => `${s.category_id}:${s.slug}`));
     const subIdBySlug: Record<string, string> = {};
-    (existingSubs || []).forEach((s: any) => { subIdBySlug[s.slug] = s.id; });
+    // Step 2 regression guard (Option A): subId -> parent category_id.
+    // Used downstream to refuse writing any resource_subcategories row when
+    // the parent category is not present in resource_categories for that
+    // resource. This prevents boot enrichment from re-creating R1 orphans.
+    const subParentById: Record<string, string> = {};
+    (existingSubs || []).forEach((s: any) => {
+      subIdBySlug[s.slug] = s.id;
+      subParentById[s.id] = s.category_id;
+    });
 
     for (const group of requiredSubs) {
       const catId = catMap[group.catSlug];
@@ -2197,6 +2205,8 @@ async function enrichResourceCategories() {
           ).select("id").single();
           if (inserted) {
             subIdBySlug[sub.slug] = inserted.id;
+            // Keep parent map in sync for any subs created this boot.
+            subParentById[inserted.id] = catId;
             subsCreated++;
           }
         }
@@ -2247,11 +2257,20 @@ async function enrichResourceCategories() {
       "healthcare-rehabilitation": ["rehabilitation-services"],
     };
 
-    const { data: resAll } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
+    // Step 2 regression guard (Option A): include resource_categories in the
+    // SELECT so we can verify each candidate subcategory's parent category is
+    // actually present in this resource's m2m set. If not, skip the write —
+    // never silently create a R1 orphan.
+    const { data: resAll } = await supabaseAdmin
+      .from("resources")
+      .select("id, title, resource_subcategories(subcategory_id), resource_categories(category_id)")
+      .eq("status", "approved");
     if (resAll) {
       let mapped = 0;
+      let skippedOrphans = 0;
       for (const r of resAll) {
         const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
+        const existingCatIds = new Set((r.resource_categories || []).map((rc: any) => rc.category_id));
         const toAdd: Array<{ resource_id: string; subcategory_id: string }> = [];
 
         for (const [oldSlug, newSlugs] of Object.entries(oldToNew)) {
@@ -2260,6 +2279,12 @@ async function enrichResourceCategories() {
             for (const ns of newSlugs) {
               const newId = subIdBySlug[ns];
               if (newId && !existingSubIds.has(newId)) {
+                // GUARD: parent category must be present in resource_categories.
+                const parentCatId = subParentById[newId];
+                if (!parentCatId || !existingCatIds.has(parentCatId)) {
+                  skippedOrphans++;
+                  continue;
+                }
                 toAdd.push({ resource_id: r.id, subcategory_id: newId });
                 existingSubIds.add(newId);
               }
@@ -2274,6 +2299,9 @@ async function enrichResourceCategories() {
       }
       if (mapped > 0) {
         console.log(`[enrichment] Mapped ${mapped} resources from old subcategories to new landing-page subcategories`);
+      }
+      if (skippedOrphans > 0) {
+        console.log(`[enrichment-guard] Refused ${skippedOrphans} oldToNew sub mappings whose parent category was missing from resource_categories (R1 orphan prevention)`);
       }
     }
 
@@ -2318,11 +2346,22 @@ async function enrichResourceCategories() {
       { titleMatch: /college|university|technical college|citadel|clemson/i, addSubs: ["education-benefits-gi-bill"] },
     ];
 
-    const { data: resForSub } = await supabaseAdmin.from("resources").select("id, title, resource_subcategories(subcategory_id)").eq("status", "approved");
+    // Step 2 regression guard (Option A): include resource_categories so we
+    // can verify each candidate sub's parent category is in the resource's
+    // m2m set before writing. The primary R1-orphan source was rule
+    // line ~2349 (`college|university|technical college|citadel|clemson`)
+    // which adds `education-benefits-gi-bill` (parent: va-benefits) without
+    // any companion addCats rule that adds `va-benefits` for those titles.
+    const { data: resForSub } = await supabaseAdmin
+      .from("resources")
+      .select("id, title, resource_subcategories(subcategory_id), resource_categories(category_id)")
+      .eq("status", "approved");
     if (resForSub) {
       let subAdded = 0;
+      let skippedOrphans = 0;
       for (const r of resForSub) {
         const existingSubIds = new Set((r.resource_subcategories || []).map((rs: any) => rs.subcategory_id));
+        const existingCatIds = new Set((r.resource_categories || []).map((rc: any) => rc.category_id));
 
         const toAddSub: string[] = [];
         for (const rule of subRules) {
@@ -2330,6 +2369,15 @@ async function enrichResourceCategories() {
             for (const subSlug of rule.addSubs) {
               const subId = subIdBySlug[subSlug];
               if (subId && !existingSubIds.has(subId) && !toAddSub.includes(subId)) {
+                // GUARD: refuse to write a sub whose parent category isn't
+                // present in resource_categories for this resource. This is
+                // the surgical fix that stops boot enrichment from creating
+                // R1 orphans on every restart.
+                const parentCatId = subParentById[subId];
+                if (!parentCatId || !existingCatIds.has(parentCatId)) {
+                  skippedOrphans++;
+                  continue;
+                }
                 toAddSub.push(subId);
               }
             }
@@ -2344,6 +2392,9 @@ async function enrichResourceCategories() {
       }
       if (subAdded > 0) {
         console.log(`[enrichment] Added ${subAdded} new subcategory assignments via title matching`);
+      }
+      if (skippedOrphans > 0) {
+        console.log(`[enrichment-guard] Refused ${skippedOrphans} title-rule sub assignments whose parent category was missing from resource_categories (R1 orphan prevention)`);
       }
     }
   } catch (err: any) {
