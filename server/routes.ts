@@ -2916,6 +2916,38 @@ export async function registerRoutes(
     }
   });
 
+  // Step 2 — APPLY structural actions (R1 orphan subcategory removals + R2
+  // safe primary-category corrections). HARD-LIMITED scope; suspect/cluster
+  // actions are NEVER applied here. Idempotent + tokenized + dry-run capable.
+  //
+  // Body: { actionToken: string, dryRun?: boolean }
+  // Query: ?state=SC (default SC)
+  app.post("/api/admin/tagging-audit/apply", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const { applyApprovedActions } = await import("./audit/tagging-audit");
+      const state = String(req.query.state || "SC").toUpperCase();
+      const body = (req.body || {}) as { actionToken?: string; dryRun?: boolean };
+      const providedToken = String(body.actionToken || "");
+      if (!providedToken) {
+        return res.status(400).json({
+          error: "Missing actionToken. Fetch /api/admin/tagging-audit/preview first and pass its actionToken.",
+        });
+      }
+      const dryRun = body.dryRun === true;
+      const result = await applyApprovedActions({ state, providedToken, dryRun });
+      if (result.status !== 200) {
+        return res.status(result.status).json({ error: result.error });
+      }
+      return res.json(result.report);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   app.get("/api/admin/production-validation", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });

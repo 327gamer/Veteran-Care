@@ -25,6 +25,7 @@
  * READ-ONLY. No DB writes. No side effects.
  */
 
+import { createHash } from "crypto";
 import { supabaseAdmin } from "../supabase";
 import { isIntentionalMirror } from "../../shared/canonical-categories";
 import {
@@ -457,6 +458,8 @@ export function buildPreview(report: TaggingAuditReport): {
     resourceId: string; title: string; city: string | null;
     categorySlug: string; rules: string[]; notes?: string;
   }>;
+  inScopeActionCount: number;
+  actionToken: string;
 } {
   const byKind: Record<string, number> = {};
   for (const a of report.previewActions) {
@@ -480,6 +483,12 @@ export function buildPreview(report: TaggingAuditReport): {
       }
     }
   }
+  // In-scope = the 47 structural actions ONLY (R1 orphans + R2 primary fixes).
+  // R3 suspects, R5 cluster removals, manual category removals are out of scope.
+  const inScope = report.previewActions.filter(
+    (a) => a.kind === "remove_subcategory" || a.kind === "set_primary_to",
+  );
+  const actionToken = computeActionToken(inScope, report.state);
   return {
     generatedAt: report.generatedAt,
     state: report.state,
@@ -487,5 +496,240 @@ export function buildPreview(report: TaggingAuditReport): {
     byKind,
     actions: report.previewActions,
     suspectEdges,
+    // Apply-step gating: re-supplied to /apply. Computed deterministically
+    // from the in-scope action set; if DB drifts, token changes and apply
+    // refuses to run with the stale token.
+    inScopeActionCount: inScope.length,
+    actionToken,
   };
+}
+
+/**
+ * Deterministic token over the in-scope actions for a given state.
+ * Sorted by (kind, resourceId, secondary key) so order can't change the hash.
+ */
+function canonicalActionKey(a: AuditAction): string {
+  if (a.kind === "remove_subcategory") {
+    return `remove_subcategory|${a.resourceId}|${a.subcategoryId}`;
+  }
+  if (a.kind === "remove_from_category") {
+    return `remove_from_category|${a.resourceId}|${a.categoryId}`;
+  }
+  return `set_primary_to|${a.resourceId}|${a.newCategoryId}`;
+}
+
+export function computeActionToken(actions: AuditAction[], state: string): string {
+  const keys = actions.map(canonicalActionKey).sort();
+  const payload = JSON.stringify({ state, count: keys.length, keys });
+  return createHash("sha256").update(payload).digest("hex").slice(0, 32);
+}
+
+// =====================================================================
+// APPLY STEP — STRUCTURAL ACTIONS ONLY
+// =====================================================================
+// Scope (HARD-LIMITED, per user signoff):
+//   * remove_subcategory  (R1 orphan subcategories)
+//   * set_primary_to      (R2 primary mismatches with safe fallback)
+// Anything else is silently dropped — never applied here.
+//
+// Idempotent: each action is RE-VERIFIED against current DB state before
+// mutation, so re-running after a partial apply (or after manual cleanup)
+// is safe and acts only on rows still in violation.
+//
+// Tokenized: caller must supply the actionToken returned by the most
+// recent preview. The apply step re-runs the audit, recomputes the token,
+// and refuses to act if the token does not match (drift guard).
+
+export type ApplyOutcome =
+  | { status: "applied"; action: AuditAction }
+  | { status: "skipped"; action: AuditAction; reason: string }
+  | { status: "failed"; action: AuditAction; error: string };
+
+export type ApplyReport = {
+  startedAt: string;
+  finishedAt: string;
+  state: string;
+  dryRun: boolean;
+  tokenMatched: boolean;
+  expectedToken: string;
+  providedToken: string;
+  before: {
+    structural: TaggingAuditReport["structural"];
+    rules: TaggingAuditReport["rules"];
+    buckets: TaggingAuditReport["buckets"];
+    subcategoryBuckets: TaggingAuditReport["subcategoryBuckets"];
+  };
+  after: {
+    structural: TaggingAuditReport["structural"];
+    rules: TaggingAuditReport["rules"];
+    buckets: TaggingAuditReport["buckets"];
+    subcategoryBuckets: TaggingAuditReport["subcategoryBuckets"];
+  } | null; // null if dryRun
+  scope: {
+    inScopeActionCount: number;
+    appliedCount: number;
+    skippedCount: number;
+    failedCount: number;
+  };
+  outcomes: ApplyOutcome[];
+};
+
+export async function applyApprovedActions(opts: {
+  state: string;
+  providedToken: string;
+  dryRun: boolean;
+}): Promise<{ status: number; report: ApplyReport | null; error?: string }> {
+  const startedAt = new Date().toISOString();
+  const state = opts.state.toUpperCase();
+
+  // 1. Re-run audit fresh — never trust cached state for an apply gate.
+  const before = await runTaggingAudit({ state });
+  const inScope = before.previewActions.filter(
+    (a) => a.kind === "remove_subcategory" || a.kind === "set_primary_to",
+  );
+  const expectedToken = computeActionToken(inScope, state);
+  const tokenMatched = expectedToken === opts.providedToken;
+
+  if (!tokenMatched) {
+    return {
+      status: 409,
+      report: null,
+      error: `Token mismatch — preview is stale. expected=${expectedToken} provided=${opts.providedToken}. Re-run /api/admin/tagging-audit/preview and resubmit.`,
+    };
+  }
+
+  // 2. Build live lookups for re-verification (idempotency).
+  const { data: rcRows, error: rcErr } = await supabaseAdmin
+    .from("resource_categories")
+    .select("resource_id, category_id");
+  if (rcErr) throw new Error(`apply: resource_categories fetch failed: ${rcErr.message}`);
+  const catsByResource = new Map<string, Set<string>>();
+  for (const e of (rcRows || []) as { resource_id: string; category_id: string }[]) {
+    if (!catsByResource.has(e.resource_id)) catsByResource.set(e.resource_id, new Set());
+    catsByResource.get(e.resource_id)!.add(e.category_id);
+  }
+
+  const { data: subRows, error: subErr } = await supabaseAdmin
+    .from("subcategories")
+    .select("id, category_id");
+  if (subErr) throw new Error(`apply: subcategories fetch failed: ${subErr.message}`);
+  const subParent = new Map<string, string>();
+  for (const s of (subRows || []) as { id: string; category_id: string }[]) {
+    subParent.set(s.id, s.category_id);
+  }
+
+  const { data: resRows, error: resErr } = await supabaseAdmin
+    .from("resources")
+    .select("id, category_id");
+  if (resErr) throw new Error(`apply: resources fetch failed: ${resErr.message}`);
+  const primaryByResource = new Map<string, string | null>();
+  for (const r of (resRows || []) as { id: string; category_id: string | null }[]) {
+    primaryByResource.set(r.id, r.category_id);
+  }
+
+  // 3. Walk approved actions, re-verify against live state, then mutate.
+  const outcomes: ApplyOutcome[] = [];
+  for (const action of inScope) {
+    if (action.kind === "remove_subcategory") {
+      const parentCat = subParent.get(action.subcategoryId);
+      const cats = catsByResource.get(action.resourceId) || new Set<string>();
+      // Idempotent: only remove if subcategory's parent is STILL not in resource_categories.
+      if (parentCat && cats.has(parentCat)) {
+        outcomes.push({
+          status: "skipped",
+          action,
+          reason: "Already healed — parent category now present in resource_categories.",
+        });
+        continue;
+      }
+      if (opts.dryRun) {
+        outcomes.push({ status: "applied", action });
+        continue;
+      }
+      const { error: delErr } = await supabaseAdmin
+        .from("resource_subcategories")
+        .delete()
+        .eq("resource_id", action.resourceId)
+        .eq("subcategory_id", action.subcategoryId);
+      if (delErr) {
+        outcomes.push({ status: "failed", action, error: delErr.message });
+      } else {
+        outcomes.push({ status: "applied", action });
+      }
+    } else if (action.kind === "set_primary_to") {
+      const currentPrimary = primaryByResource.get(action.resourceId);
+      const cats = catsByResource.get(action.resourceId) || new Set<string>();
+      // Idempotent: only flip primary if (a) current primary is still NOT in m2m
+      // AND (b) the proposed new primary IS in m2m.
+      if (currentPrimary && cats.has(currentPrimary)) {
+        outcomes.push({
+          status: "skipped",
+          action,
+          reason: "Already healed — current primary now present in resource_categories.",
+        });
+        continue;
+      }
+      if (!cats.has(action.newCategoryId)) {
+        outcomes.push({
+          status: "skipped",
+          action,
+          reason: "Proposed new primary not present in resource_categories — refusing to set.",
+        });
+        continue;
+      }
+      if (opts.dryRun) {
+        outcomes.push({ status: "applied", action });
+        continue;
+      }
+      const { error: updErr } = await supabaseAdmin
+        .from("resources")
+        .update({ category_id: action.newCategoryId })
+        .eq("id", action.resourceId);
+      if (updErr) {
+        outcomes.push({ status: "failed", action, error: updErr.message });
+      } else {
+        outcomes.push({ status: "applied", action });
+      }
+    }
+  }
+
+  // 4. Re-run audit for after-state (skip on dryRun to avoid masking nothing).
+  const after = opts.dryRun ? null : await runTaggingAudit({ state });
+
+  const appliedCount = outcomes.filter((o) => o.status === "applied").length;
+  const skippedCount = outcomes.filter((o) => o.status === "skipped").length;
+  const failedCount = outcomes.filter((o) => o.status === "failed").length;
+
+  const report: ApplyReport = {
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    state,
+    dryRun: opts.dryRun,
+    tokenMatched: true,
+    expectedToken,
+    providedToken: opts.providedToken,
+    before: {
+      structural: before.structural,
+      rules: before.rules,
+      buckets: before.buckets,
+      subcategoryBuckets: before.subcategoryBuckets,
+    },
+    after: after
+      ? {
+          structural: after.structural,
+          rules: after.rules,
+          buckets: after.buckets,
+          subcategoryBuckets: after.subcategoryBuckets,
+        }
+      : null,
+    scope: {
+      inScopeActionCount: inScope.length,
+      appliedCount,
+      skippedCount,
+      failedCount,
+    },
+    outcomes,
+  };
+
+  return { status: 200, report };
 }
