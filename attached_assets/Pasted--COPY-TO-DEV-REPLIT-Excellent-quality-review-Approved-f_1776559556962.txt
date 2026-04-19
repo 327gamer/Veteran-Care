@@ -1,0 +1,84 @@
+🚨 COPY TO DEV / REPLIT
+
+Excellent quality review.
+
+Approved findings.
+
+We are now PAUSING further Community / Recreation additions.
+
+NEXT PRIORITY:
+Pass 4 — AI Matcher Upgrade
+
+Reason:
+The data work is now strong, but the AI Guide is not surfacing the new records correctly in structured results.
+
+So the next highest-leverage step is to improve discoverability before adding more resources.
+
+-------------------------------------
+APPROVED PASS 4 OBJECTIVE
+-------------------------------------
+
+Upgrade the AI resource matching logic so the AI Guide can properly discover and surface the new Community / Disabled Veterans resources.
+
+Focus areas:
+
+1. many-to-many category awareness
+- resource_categories mirror links must count
+
+2. subcategory awareness
+- subcategory text should influence matching
+
+3. short_description awareness
+- include short_description text in matching logic where useful
+
+4. keyword expansion
+- add outdoor / recreation / arts / equine / adaptive / fishing / hunting / yoga / music / hobby / retreat / family-activity terms
+
+5. result blending
+- avoid broad category buckets blocking better exact / relevant matches
+- structured resource results should not stay trapped in generic mental-health or broad veteran buckets when more specific records exist
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- keep this as a focused AI matcher pass only
+- do not rebuild the AI system
+- do not touch routing
+- do not touch billing
+- do not touch attribution
+- do not touch protected engines beyond the resource matcher / category keyword layer
+- do not overbuild
+
+-------------------------------------
+VALIDATION REQUIRED
+-------------------------------------
+
+Re-run these exact queries after the upgrade:
+
+- kayaking veterans Charleston
+- adaptive sports SC
+- veteran fishing trips in South Carolina
+- music therapy for veterans in South Carolina
+- horseback therapy near Bluffton SC
+
+Return:
+
+1. files changed
+2. matching logic improved
+3. keyword additions made
+4. whether m2m mirror links are now respected
+5. whether subcategory / short_description now influence matching
+6. before / after result quality for the 5 test queries
+7. PASS / FAIL
+
+-------------------------------------
+AFTER PASS 4
+-------------------------------------
+
+Then recommend whether:
+- Tier 2 subcategory backfills should happen next
+or
+- a small final Community additions batch is still needed
+
+END

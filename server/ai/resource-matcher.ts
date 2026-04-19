@@ -17,6 +17,14 @@ interface MatchedResource {
 
 const MIN_RESULTS = 5;
 
+/**
+ * Pass 4 (2026-04-18): blended matcher.
+ * Always runs both category-bucket and text searches in parallel, then scores
+ * every candidate by query-term hits in title (weight 10), subcategory (7),
+ * short_description (3), eligibility (2). Adds a location proximity boost
+ * (0–5). Highest combined score wins. m2m mirror links are honored because
+ * searchByCategory uses an !inner join through resource_categories.
+ */
 export async function matchResources(
   userMessage: string,
   userState?: string,
@@ -24,59 +32,105 @@ export async function matchResources(
   limit: number = 8
 ): Promise<MatchedResource[]> {
   const detectedCategories = detectCategories(userMessage);
-  let allResults: MatchedResource[] = [];
+  // Strip the user's known city from search terms — it's already encoded in
+  // the location filter; leaving it in dilutes the text search by matching
+  // every record that mentions the city in its title.
+  const extraStop = new Set<string>();
+  if (userCity) {
+    for (const w of userCity.toLowerCase().split(/\s+/)) extraStop.add(w);
+  }
+  const searchTerms = extractSearchTerms(userMessage).filter(t => !extraStop.has(t));
+  const termSet = new Set(searchTerms);
 
+  const tasks: Promise<MatchedResource[]>[] = [];
+
+  // Category-bucket searches (m2m-aware via !inner join in searchByCategory).
+  // Note: searchByCategory only filters by state at the DB level; userCity
+  // is used for client-side sorting only — so we only need ONE state-scoped
+  // query (passing userCity for the local-first sort) plus a national fallback.
   if (detectedCategories.length > 0) {
     const primaryCategory = detectedCategories[0];
-
-    if (userCity) {
-      const localResults = await searchByCategory([primaryCategory], userState, userCity);
-      allResults.push(...localResults);
+    if (userState) {
+      tasks.push(searchByCategory([primaryCategory], userState, userCity));
     }
-
-    if (allResults.length < MIN_RESULTS && userState) {
-      const stateResults = await searchByCategory([primaryCategory], userState);
-      for (const r of stateResults) {
-        if (allResults.length >= limit) break;
-        if (!allResults.find(existing => existing.id === r.id)) {
-          allResults.push(r);
-        }
-      }
-    }
-
-    if (allResults.length < MIN_RESULTS) {
-      const nationalResults = await searchByCategory([primaryCategory]);
-      for (const r of nationalResults) {
-        if (allResults.length >= limit) break;
-        if (!allResults.find(existing => existing.id === r.id)) {
-          allResults.push(r);
-        }
-      }
+    tasks.push(searchByCategory([primaryCategory]));
+    // Also pull from secondary detected category (often the right specialty match)
+    if (detectedCategories.length > 1 && userState) {
+      tasks.push(searchByCategory([detectedCategories[1]], userState, userCity));
     }
   }
 
-  if (allResults.length < MIN_RESULTS) {
-    const searchTerms = extractSearchTerms(userMessage);
-    if (searchTerms.length > 0) {
-      const textResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState, userCity);
-      for (const r of textResults) {
-        if (allResults.length >= limit) break;
-        if (!allResults.find(existing => existing.id === r.id)) {
-          allResults.push(r);
-        }
+  // Always run text search in parallel (no longer gated by MIN_RESULTS).
+  // This guarantees title / subcategory / short_description matches surface
+  // even when a broad category bucket already returned plenty of generic rows.
+  if (searchTerms.length > 0) {
+    const textQuery = searchTerms.slice(0, 4).join(" ");
+    if (userState) tasks.push(searchByText(textQuery, userState, userCity));
+    tasks.push(searchByText(textQuery));
+  }
+
+  const allBatches = await Promise.all(tasks);
+
+  // Merge by id, keeping the best instance and computing a relevance score.
+  const seen = new Map<string, { r: MatchedResource; score: number }>();
+  for (const batch of allBatches) {
+    for (const r of batch) {
+      const score = scoreResource(r, termSet, userCity, userState);
+      const existing = seen.get(r.id);
+      if (!existing || score > existing.score) {
+        seen.set(r.id, { r, score });
       }
     }
   }
 
-  if (allResults.length === 0 && userState) {
-    const searchTerms = extractSearchTerms(userMessage);
-    if (searchTerms.length > 0) {
-      const broadResults = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
-      allResults.push(...broadResults.slice(0, MIN_RESULTS));
-    }
+  const merged = Array.from(seen.values())
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.r);
+
+  // Last-resort fallback: nothing matched at all → broad text search in user state
+  if (merged.length === 0 && userState && searchTerms.length > 0) {
+    const broad = await searchByText(searchTerms.slice(0, 3).join(" "), userState);
+    return broad.slice(0, limit);
   }
 
-  return allResults.slice(0, limit);
+  return merged.slice(0, limit);
+}
+
+function scoreResource(
+  r: MatchedResource,
+  terms: Set<string>,
+  userCity?: string,
+  userState?: string,
+): number {
+  let score = 0;
+  const title = (r.title || "").toLowerCase();
+  const sub = (r.subcategory || "").toLowerCase();
+  const desc = (r.short_description || "").toLowerCase();
+  const elig = (r.eligibility || "").toLowerCase();
+
+  for (const t of terms) {
+    if (!t) continue;
+    if (title.includes(t)) score += 10;
+    if (sub.includes(t)) score += 7;
+    if (desc.includes(t)) score += 3;
+    if (elig.includes(t)) score += 2;
+  }
+
+  // Location proximity boost (getLocationScore returns 0..5, lower = closer):
+  // same city +5, nearby city +4, same state +3, no city listed +2,
+  // out-of-state +1, no location signal at all +0.
+  const locScore = getLocationScore(r.city, r.state, userCity, userState);
+  score += Math.max(0, 5 - locScore);
+
+  // Small bonus for records with a populated subcategory — these are the
+  // taxonomy-rich, well-curated records (often specialized programs) and
+  // should win ties against generic untagged office records.
+  if (sub) score += 2;
+
+  // Small baseline so category-bucket records still rank if they had no term hits
+  if (score === 0) score = 1;
+
+  return score;
 }
 
 export function detectCategories(message: string): string[] {
@@ -87,7 +141,7 @@ export function detectCategories(message: string): string[] {
     let bestLen = 0;
     let matchCount = 0;
     for (const kw of keywords) {
-      if (lower.includes(kw)) {
+      if (matchesKeyword(lower, kw)) {
         matchCount++;
         if (kw.length > bestLen) bestLen = kw.length;
       }
@@ -106,6 +160,21 @@ export function detectCategories(message: string): string[] {
   return scored.map(s => s.slug);
 }
 
+/**
+ * Word-boundary-aware keyword match. Single short words (e.g., "art", "race",
+ * "farm") use \b boundaries to avoid matching "start", "embrace", "pharmacy".
+ * Multi-word phrases ("music therapy", "fly fishing") use plain substring
+ * because they're long enough to be self-disambiguating.
+ */
+function matchesKeyword(haystack: string, kw: string): boolean {
+  if (kw.includes(" ") || kw.includes("-")) {
+    return haystack.includes(kw);
+  }
+  // Escape regex metacharacters in keyword (defensive — current set has none)
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`).test(haystack);
+}
+
 function extractSearchTerms(message: string): string[] {
   const stopWords = new Set([
     "i", "me", "my", "we", "our", "you", "your", "the", "a", "an",
@@ -119,6 +188,11 @@ function extractSearchTerms(message: string): string[] {
     "it", "its", "any", "some", "need", "help", "want", "looking",
     "find", "get", "know", "please", "thanks", "thank", "hi", "hello",
     "hey", "im", "ive", "dont", "cant", "veteran", "veterans",
+    // Geo / locator terms — too broad for ilike search; location filter
+    // already handles these via state/city columns.
+    "near", "around", "close", "nearby", "local",
+    "south", "north", "east", "west", "carolina", "sc", "ga", "georgia",
+    "state", "city", "county", "area", "region",
   ]);
 
   return message
@@ -129,7 +203,7 @@ function extractSearchTerms(message: string): string[] {
 }
 
 const SC_NEARBY_CITIES: Record<string, string[]> = {
-  "charleston": ["north charleston", "mount pleasant", "summerville", "goose creek", "james island", "west ashley", "hanahan"],
+  "charleston": ["north charleston", "mount pleasant", "summerville", "goose creek", "james island", "west ashley", "hanahan", "johns island", "daniel island"],
   "columbia": ["west columbia", "lexington", "irmo", "cayce", "forest acres", "blythewood"],
   "greenville": ["greer", "mauldin", "simpsonville", "travelers rest", "easley", "taylors"],
   "myrtle beach": ["north myrtle beach", "conway", "surfside beach", "garden city", "pawleys island", "georgetown"],
@@ -215,7 +289,7 @@ async function searchByText(
     .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
     .eq("status", "approved")
     .or(ilikeClauses)
-    .limit(15);
+    .limit(30);
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);

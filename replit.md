@@ -167,7 +167,7 @@ A config-driven, mobile-first support platform engine. First implementation: Vet
 - `server/routes.ts` - API endpoints (prefixed with `/api`)
 - `server/ai/config.ts` - AI engine configuration (model, prompts, safety rules, category keywords, rate limits)
 - `server/ai/engine.ts` - AI orchestrator (safety → resource match → prompt build → stream → log)
-- `server/ai/resource-matcher.ts` - Hybrid keyword + text search across 5 resource fields
+- `server/ai/resource-matcher.ts` - **Pass 4 blended matcher (2026-04-19)**: always runs category-bucket and text searches in parallel, then scores every candidate by query-term hits in title (10), subcategory (7), short_description (3), eligibility (2), plus location proximity (0–5) and a populated-subcategory bonus (+2). m2m mirror links honored via `resource_categories!inner` join. Detects categories via word-boundary keyword matching to avoid short-word false positives. Strips user's known city + broad geo terms from search-term extraction.
 - `server/ai/prompt-builder.ts` - Builds system prompt with user context + matched resources
 - `server/ai/safety.ts` - Crisis keyword detection, blocked topic filter
 - `server/ai/rate-limiter.ts` - Per-user/guest rate limiting (30/hr auth, 10/hr guest)
