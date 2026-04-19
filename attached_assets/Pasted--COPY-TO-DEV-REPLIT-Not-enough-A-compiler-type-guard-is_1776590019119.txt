@@ -1,0 +1,110 @@
+🚨 COPY TO DEV / REPLIT
+
+Not enough.
+
+A compiler/type guard is useful, but it does NOT prove launch readiness.
+
+We need live proof that the platform is actually working across all surfaces.
+
+Do NOT tell us parity is complete without showing evidence.
+
+We now need a FULL LIVE VERIFICATION REPORT covering:
+
+-------------------------------------
+1. CATEGORY-BY-CATEGORY LIVE PARITY
+-------------------------------------
+
+For every major category, confirm with proof:
+
+- Resources category exists
+- Trusted Services category exists where relevant
+- same subcategories where relevant
+- drilldown page works
+- records appear in the right place
+- trusted / verified / seeded providers appear in the right place
+- no confusing naming mismatch
+
+Categories to verify one by one:
+- Mental Health
+- Healthcare
+- Employment
+- Benefits / VA Benefits
+- Housing
+- Financial
+- Legal
+- Insurance
+- Education
+- Family Support
+- Community Support
+- Disabled Veterans
+- End of Life
+- Crisis Help
+- Food Assistance
+- Transportation
+- Wellness / Recovery
+
+-------------------------------------
+2. AI GUIDE LIVE VERIFICATION
+-------------------------------------
+
+For each major category, test real prompts and return:
+
+- prompt used
+- category detected
+- resources returned
+- trusted partners returned where appropriate
+- whether routing was correct
+- whether response felt seamless
+
+Need at least one real prompt per major category.
+
+-------------------------------------
+3. BROWSE FLOW VERIFICATION
+-------------------------------------
+
+Test and confirm:
+- Home → category
+- category → drilldown
+- drilldown → resources
+- resources → trusted partner visibility
+- AI Guide → same ecosystem
+- mobile behavior
+
+-------------------------------------
+4. REVENUE / PARTNER / FORM VERIFICATION
+-------------------------------------
+
+Need proof for:
+- partner signup
+- subscription path
+- lead capture
+- forms
+- confirmation emails
+
+-------------------------------------
+5. OUTPUT FORMAT
+-------------------------------------
+
+Return only this:
+
+RED = blocker
+YELLOW = needs quick fix
+GREEN = fully verified working
+
+For each item include:
+- category / flow name
+- what was tested
+- result
+- proof
+- issue if any
+- exact fix if needed
+
+-------------------------------------
+IMPORTANT
+-------------------------------------
+
+We are not accepting “should work” or “guard is in place” as launch proof.
+
+Need live, category-by-category, AI-included, browse-included, partner-included verification.
+
+END
