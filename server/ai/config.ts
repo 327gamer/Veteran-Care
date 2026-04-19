@@ -48,8 +48,26 @@ ESCALATION RULES:
   5. If you can identify their category of need, mention it so the right person can assist them`,
 
   crisisKeywords: [
-    "suicide", "suicidal", "kill myself", "end my life", "want to die",
-    "self-harm", "hurt myself", "cutting myself", "overdose",
+    // Suicide / self-harm — explicit
+    "suicide", "suicidal", "kill myself", "killing myself", "kms",
+    "end my life", "ending my life", "end it all", "ending it all",
+    "take my own life", "taking my own life", "took my own life",
+    "take my life", "taking my life",
+    "want to die", "wanna die", "i want to die", "ready to die",
+    "rather be dead", "better off dead", "wish i was dead", "wish i were dead",
+    "don't want to live", "do not want to live", "dont want to live",
+    "don't want to be alive", "dont want to be alive",
+    "don't want to live anymore", "dont want to live anymore",
+    "can't go on", "cant go on", "can not go on",
+    "can't do this anymore", "cant do this anymore",
+    "want it all to stop", "want it to stop", "make it stop",
+    "no reason to live", "nothing to live for", "no point in living",
+    "thinking about ending", "thoughts of ending", "thoughts of suicide",
+    "self-harm", "self harm", "selfharm", "hurt myself", "harm myself",
+    "cut myself", "cutting myself", "overdose", "od myself",
+    // Means
+    "shoot myself", "hang myself", "jump off",
+    // Other crisis
     "domestic violence", "being abused", "abusing me",
     "homeless tonight", "sleeping outside", "no shelter",
     "emergency", "crisis", "911",
