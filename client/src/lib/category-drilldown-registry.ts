@@ -115,8 +115,8 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "Emergency shelter, rental help, VA home loans, accessibility modifications, and housing programs for veterans and their families.",
     subcategories: HOUSING_SUBCATEGORIES,
     introLinks: [
-      { slug: "emergency-housing-homeless-shelters", label: "Emergency Housing", testidKey: "emergency" },
-      { slug: "va-housing-benefits", label: "VA Housing Benefits", testidKey: "va" },
+      { slug: "emergency-housing", label: "Emergency Housing", testidKey: "emergency" },
+      { slug: "va-home-loans", label: "VA Home Loans", testidKey: "va" },
     ],
   },
   "financial-services": {
@@ -204,8 +204,8 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "Estate planning, VA appeals legal help, family law, consumer protection, expungement, landlord-tenant, and veteran-focused legal services.",
     subcategories: LEGAL_SUBCATEGORIES,
     introLinks: [
-      { slug: "estate-planning-wills", label: "Estate Planning & Wills", testidKey: "estate" },
-      { slug: "va-claims-appeals-legal", label: "VA Claims & Appeals", testidKey: "appeals" },
+      { slug: "disability-claims-assistance", label: "Disability Claims Assistance", testidKey: "claims" },
+      { slug: "va-benefits-appeals", label: "VA Benefits Appeals", testidKey: "appeals" },
     ],
   },
   // Slice 3c additions: Education & Training + Family Support — selective
@@ -224,8 +224,8 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "GI Bill, Vocational Rehabilitation, scholarships, certifications, apprenticeships, and education pathways for veterans and their families.",
     subcategories: EDU_SUBCATEGORIES,
     introLinks: [
-      { slug: "gi-bill-va-education", label: "GI Bill & VA Education Benefits", testidKey: "gibill" },
-      { slug: "vocational-rehab-vre", label: "Vocational Rehabilitation", testidKey: "vre" },
+      { slug: "gi-bill-assistance", label: "GI Bill Assistance", testidKey: "gibill" },
+      { slug: "tuition-assistance", label: "Tuition Assistance", testidKey: "tuition" },
     ],
   },
   "family-support": {

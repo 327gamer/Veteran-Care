@@ -8,6 +8,7 @@ import {
   Clock,
   PlusCircle,
   Building2,
+  Flower2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -73,35 +74,10 @@ export const INSURANCE_SUBCATEGORIES: InsuranceSubcategory[] = [
     icon: Building2,
     description: "Medicare enrollment, VA healthcare coordination, and dual-coverage planning",
   },
-
-  {
-    name: "VA / Military Insurance Programs",
-    slug: "va-military-insurance-programs",
-    icon: Shield,
-    description: "VGLI, SGLI, CHAMPVA, TRICARE, and other VA/military insurance programs.",
-  },
   {
     name: "Burial / Final Expense",
     slug: "burial-final-expense",
-    icon: Shield,
-    description: "Burial insurance and final-expense plans designed for veterans and families.",
-  },
-  {
-    name: "Long-Term Care",
-    slug: "long-term-care",
-    icon: Shield,
-    description: "Long-term care insurance and VA long-term care benefits.",
-  },
-  {
-    name: "Disability Income",
-    slug: "disability-income",
-    icon: Shield,
-    description: "Disability income protection for working veterans.",
-  },
-  {
-    name: "Auto / Home Insurance",
-    slug: "auto-home-insurance",
-    icon: Shield,
-    description: "Veteran-focused auto and home insurance programs (USAA, GEICO Military, etc.).",
+    icon: Flower2,
+    description: "Burial insurance and final-expense plans designed for veterans and families",
   },
 ];

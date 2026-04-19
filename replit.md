@@ -1099,3 +1099,29 @@ Safe Delete (clean rows only), Force Delete (cascade with audit trail).
   cleanup of test data — current per-row UX is enough for now
 - Audit-log viewer page — entries are written but not yet surfaced
   in admin UI
+
+## Master Parity Grid — COMPLETED 2026-04-19
+Aligned 5 cross-surface shared categories to canonical taxonomy across R-side (Resources/Browse) and TS-side (Trusted Strip):
+
+**Step 1a (TS-side heliumdb.partner_subcategories)**: collapsed dupes + inserted canonical missing.
+**Step 1a (R-side Supabase)**:
+- supabase.subcategories table aligned to canonical slug list (housing-9, financial-18, legal-12, insurance-10, education-11 = 60 canonical)
+- supabase.resources.subcategory text tags renamed/collapsed (Emergency Shelter→Emergency Housing, Rent Assistance→Rental Assistance, Home Ownership Programs→Home Ownership, Family Law Support→Family Law, Budgeting & Financial Planning→Budgeting & Financial Coaching)
+- Cross-cat moves: Building & Construction + Manufacturing resources moved from education-training → employment-support; Food Assistance resources moved from housing-home → food-assistance
+- FK cleanup: deleted obsolete subcategories required clearing resource_subcategories junction first (FK was blocking silent deletes)
+
+**Step 1b (client display files)**: rewrote 5 *-subcategories.ts files with canonical slug list:
+- client/src/lib/housing-subcategories.ts (9 tiles)
+- client/src/lib/fin-subcategories.ts (18 tiles)
+- client/src/lib/legal-subcategories.ts (12 tiles)
+- client/src/lib/insurance-subcategories.ts (10 tiles)
+- client/src/lib/edu-subcategories.ts (11 tiles)
+- client/src/lib/category-drilldown-registry.ts: updated introLinks for housing/legal/edu to canonical slugs
+
+**Verified**: /api/subcategories returns canonical slug counts matching design. Resource counts: housing-46, financial-28, legal-39, insurance-6 (content gap), education-40, employment-58, food-20.
+
+**Pending follow-ups (NOT in this batch)**:
+- Step 2: Insert ~33 partner_routing_rules rows (verify partner_organizations vs trusted_services partner_id mapping first)
+- Step 3: Browse cross-pop URL verification matrix
+- Step 4: AI Guide 25-prompt verification
+- Insurance content gap (6 resources, 0 tagged with sub) — needs content seeding

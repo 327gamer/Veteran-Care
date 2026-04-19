@@ -70,7 +70,12 @@ ESCALATION RULES:
     // Other crisis
     "domestic violence", "being abused", "abusing me",
     "homeless tonight", "sleeping outside", "no shelter",
-    "emergency", "crisis", "911",
+    // Crisis-context-only — phrase forms only. Standalone "emergency" was
+    // removed (false-triggered "emergency housing", "emergency funds", etc.).
+    // Standalone "crisis" was removed (false-triggered "crisis-help category").
+    "in crisis", "having a crisis", "mental health crisis",
+    "mental health emergency", "psychiatric emergency", "psych emergency",
+    "call 911", "dial 911",
   ],
 
   crisisResponse: `I hear you, and I want you to know that help is available right now.
@@ -94,7 +99,7 @@ You are not alone, and reaching out takes courage. Would you like me to help you
     "va-benefits": ["va benefits", "disability claim", "compensation", "pension", "dd214", "pact act", "appeals", "service connected", "rating", "va enrollment", "benefits", "c&p exam", "burn pit"],
     "employment": ["job", "employment", "career", "resume", "hire", "hiring", "work", "apprenticeship", "certification", "entrepreneurship", "business", "voc rehab"],
     "legal": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono"],
-    "financial": ["financial", "money", "bills", "utilities", "debt", "budget", "emergency funds", "relief fund", "financial counseling", "credit", "mortgage", "lending"],
+    "financial": ["financial", "money", "bills", "utilities", "debt", "debts", "debt counseling", "debt relief", "debt consolidation", "credit", "credit repair", "credit counseling", "credit score", "budget", "emergency funds", "relief fund", "financial counseling", "mortgage", "lending", "tax preparation", "tax help", "personal loan", "va loan"],
     "education": ["education", "school", "college", "gi bill", "tuition", "degree", "technical", "training", "student"],
     "family-support": ["family support", "family services", "spouse", "child", "childcare", "caregiver", "dependent", "gold star", "survivor benefits", "parenting", "military family"],
     "transportation": ["transportation", "ride", "bus", "transit", "medical transport", "dat", "volunteer driver"],
