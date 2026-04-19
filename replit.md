@@ -887,6 +887,47 @@ have honest gaps that compound at scale.
 
 ---
 
+## SHIPPED — Tier 2 Subcategory Backfills (2026-04-19)
+
+**Status:** LIVE. Pure data UPDATE pass. ZERO new rows. ZERO schema changes. ZERO engine touches.
+
+### Why
+After Pass 4 introduced a +2 score bonus for records with a populated subcategory, the 36 SC approved records that still had no subcategory were systematically under-ranked across every AI Guide query. Tier 2 closes that gap so every SC record is fully discoverable.
+
+### What changed
+- **36 of 36 SC approved records** missing `subcategory` were backfilled using the existing taxonomy. Zero true taxonomy gaps — all 36 mapped cleanly to existing subcategory names.
+- No new subcategories created (verified `Veteran-Friendly Employers` and `Veteran Student Services` already existed in the master taxonomy).
+- No new resource rows. No deletes. No category re-tagging.
+
+### Subcategories used
+| Count | Subcategory | Category |
+|---|---|---|
+| 6 | Veteran-Friendly Employers | employment |
+| 5 | Counseling & Therapy | mental-health |
+| 4 | Legal Aid Services | legal |
+| 3 | VA Clinics | healthcare |
+| 3 | Homeless Veteran Services | housing |
+| 2 | Food Assistance | food-assistance |
+| 2 | Women Veterans Healthcare | healthcare |
+| 2 | Peer Support | mental-health |
+| 2 | Home Ownership Programs | housing |
+| 2 | Recovery Support Services | substance-recovery |
+| 1 | Food Banks | food-assistance |
+| 1 | Veteran Student Services | education |
+| 1 | Transitional Housing | housing |
+| 1 | C&P Exams (What to Expect) | va-benefits |
+| 1 | Disability Increase (Reevaluation) | va-benefits |
+
+### Validation
+- 4/4 sanity AI Guide queries returned newly-tagged records as top results (e.g., "veteran friendly employers in South Carolina" now returns all 6 employer programs as positions 1-6; "C&P exam help" returns "VA C&P Exam Information — What to Expect" at #1).
+- 5/5 original Pass 4 validation queries continue to PASS.
+
+### Current SC catalog state
+- 389 approved + 2 pending = 391 total
+- 0 SC approved records remain unclassified (down from 77 pre-Quality-Review-Tier-1, then 36 post-Tier-1, now 0)
+
+---
+
 ## SHIPPED — Upgrade #6: Master Admin Safe-Delete Toolkit (2026-04-18)
 
 **Status:** LIVE. Additive endpoints + UI rebuild on one admin page. ZERO schema changes. ZERO engine touches.

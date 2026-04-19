@@ -1,0 +1,74 @@
+🚨 COPY TO DEV / REPLIT
+
+Approved.
+
+Proceed with:
+
+Veteran Care – Tier 2 Subcategory Backfills
+
+PRIORITY:
+HIGH – DISCOVERABILITY / TAXONOMY CLEANUP
+
+OBJECTIVE:
+Backfill the remaining South Carolina resources missing subcategories so they benefit fully from the upgraded AI matcher and improved category scoring.
+
+This is a cleanup / classification slice only.
+
+DO NOT:
+- add new resources yet
+- create duplicate rows
+- change routing
+- change billing
+- change attribution
+- change AI logic again
+- change schemas unless absolutely required and separately approved
+
+-------------------------------------
+SCOPE
+-------------------------------------
+
+Use existing resources only.
+
+Focus on the remaining records missing subcategory and backfill them using existing taxonomy where possible.
+
+Priority mappings mentioned:
+
+- employer programs → Veteran-Friendly Employers
+- SC Legal Aid offices → Legal Aid Services
+- VAMC mental-health departments / NAMI / related public mental-health resources → best-fit existing subcategory, or return a very small proposed addition only if truly necessary
+- housing / homeless coalitions → best-fit housing / homeless subcategory
+- women’s / primary-care VA clinics → VA Clinics
+- SC DVA guides / C&P resources → Disability Claims Assistance
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- quality and consistency over speed
+- use deterministic mapping rules where possible
+- no junk changes
+- no duplicate rows
+- preserve existing architecture
+- if a true taxonomy gap exists, stop and report it rather than forcing a bad fit
+
+-------------------------------------
+RETURN AFTER COMPLETION
+-------------------------------------
+
+1. number of records backfilled
+2. subcategories used
+3. any true taxonomy gaps still remaining
+4. whether AI discoverability should now improve further
+5. remaining records still unclassified, if any
+6. PASS / FAIL
+
+After completion:
+- update replit.md
+- update changelog
+- return rollout summary
+- recommend whether next step should be:
+  A. final small Community batch
+  B. broader AI validation pass
+  C. Georgia activation prep
+
+END
