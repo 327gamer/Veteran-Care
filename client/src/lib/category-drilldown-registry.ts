@@ -241,8 +241,8 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "Spouse support, children's programs, caregiver assistance, survivor benefits, and family-focused services for the whole veteran household.",
     subcategories: FAMILY_SUBCATEGORIES,
     introLinks: [
-      { slug: "spouse-support", label: "Spouse Support", testidKey: "spouse" },
       { slug: "caregiver-support", label: "Caregiver Support", testidKey: "caregiver" },
+      { slug: "childcare-assistance", label: "Childcare Assistance", testidKey: "childcare" },
     ],
   },
   // Slice 3d-B addition: Community Support drilldown — landed after Phase 1
