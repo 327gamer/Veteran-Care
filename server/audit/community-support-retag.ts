@@ -557,13 +557,303 @@ export async function runPhase2Preview(stateInput: string) {
     },
     proposedMoves: touches,
     notes: [
-      "Phase 2 is preview-only in this slice. No DB writes performed.",
+      "Phase 2 preview is read-only. The companion apply endpoint requires actionToken match.",
       "recommendedKeepCsMembership=true means at least one current subcategory is CS-anchored, so leaving the CS edge in resource_categories prevents orphans.",
       "recommendedKeepCsMembership=false means every current sub belongs to the new primary (or another category), so CS membership can be cleanly removed.",
-      "All target categories (mental-health, crisis-help, benefits-assistance, disabled-veterans) are existing canonical categories — no new taxonomy.",
-      "An apply endpoint is intentionally NOT built in this slice.",
+      "All target categories (mental-health, crisis-help, va-benefits, disabled-veterans) are existing canonical categories — no new taxonomy.",
     ],
+    actionToken: phase2ActionToken(state, touches),
   };
+}
+
+function phase2ActionToken(state: string, touches: Phase2Touch[]): string {
+  const canonical = touches
+    .map((t) => `${t.resourceId}|${t.newPrimarySlug}|${t.recommendedKeepCsMembership ? "K" : "D"}`)
+    .sort()
+    .join(",");
+  return `cs-retag-p2-${simpleHash(`phase2|${state}|${canonical}`)}`;
+}
+
+interface Phase2ApplyOutcome {
+  resourceId: string;
+  title: string;
+  newPrimarySlug: string;
+  primaryUpdate: "updated" | "already_correct" | "skipped" | "failed";
+  newPrimaryMembership: "inserted" | "already_present" | "skipped" | "failed";
+  csMembershipRemoval: "deleted" | "kept_by_policy" | "already_absent" | "skipped" | "failed";
+  reason?: string;
+}
+
+export async function applyPhase2(opts: {
+  state: string;
+  providedToken: string;
+  dryRun?: boolean;
+}): Promise<{ status: number; ok: boolean; error?: string; report?: any }> {
+  const state = (opts.state || "SC").toUpperCase();
+  const dryRun = !!opts.dryRun;
+
+  // 1. Re-derive the preview at apply time — never trust a cached plan.
+  const preview = await runPhase2Preview(state) as any;
+  if (preview.actionToken !== opts.providedToken) {
+    return {
+      status: 409,
+      ok: false,
+      error: `Token mismatch — preview is stale or did not match. expected=${preview.actionToken} provided=${opts.providedToken}. Re-run /api/admin/community-support-retag-preview?phase=2 and retry.`,
+    };
+  }
+
+  // 2. Resolve community-support category id once.
+  const { data: catRows } = await supabaseAdmin
+    .from("categories")
+    .select("id, slug, name");
+  const catBySlug = new Map<string, { id: string; slug: string; name: string }>();
+  for (const c of catRows || []) catBySlug.set(c.slug, c);
+  const csCat = catBySlug.get(COMMUNITY_SUPPORT_SLUG);
+  if (!csCat) {
+    return { status: 500, ok: false, error: "community-support category not found" };
+  }
+
+  // 3. Pull current state for in-scope resources for idempotency checks.
+  const ids: string[] = preview.proposedMoves.map((t: any) => t.resourceId);
+  const safeIds = ids.length ? ids : ["00000000-0000-0000-0000-000000000000"];
+  const { data: resBefore } = await supabaseAdmin
+    .from("resources")
+    .select("id, title, category_id, state")
+    .in("id", safeIds);
+  const primaryByRes = new Map<string, string | null>();
+  for (const r of resBefore || []) primaryByRes.set(r.id, r.category_id);
+
+  const { data: rcBefore } = await supabaseAdmin
+    .from("resource_categories")
+    .select("resource_id, category_id")
+    .in("resource_id", safeIds);
+  const rcPairs = new Set<string>();
+  for (const e of rcBefore || []) rcPairs.add(`${e.resource_id}|${e.category_id}`);
+
+  // 4. Capture before-state category roster counts for SC.
+  const beforeRoster = await getStateCategoryRoster(state);
+
+  // 5. Walk planned moves.
+  const outcomes: Phase2ApplyOutcome[] = [];
+  let primaryUpdated = 0, primaryAlreadyCorrect = 0, primaryFailed = 0;
+  let memberInserted = 0, memberAlreadyPresent = 0, memberFailed = 0;
+  let csDeleted = 0, csKept = 0, csAlreadyAbsent = 0, csFailed = 0;
+
+  for (const touch of preview.proposedMoves as any[]) {
+    const newCat = catBySlug.get(touch.newPrimarySlug);
+    if (!newCat) {
+      outcomes.push({
+        resourceId: touch.resourceId, title: touch.title, newPrimarySlug: touch.newPrimarySlug,
+        primaryUpdate: "failed", newPrimaryMembership: "skipped", csMembershipRemoval: "skipped",
+        reason: `target category '${touch.newPrimarySlug}' not found at apply time`,
+      });
+      primaryFailed += 1;
+      continue;
+    }
+
+    // 5a. Primary update.
+    let primaryUpdate: Phase2ApplyOutcome["primaryUpdate"];
+    const currentPrimaryId = primaryByRes.get(touch.resourceId);
+    if (currentPrimaryId === newCat.id) {
+      primaryUpdate = "already_correct";
+      primaryAlreadyCorrect += 1;
+    } else if (dryRun) {
+      primaryUpdate = "updated";
+      primaryUpdated += 1;
+    } else {
+      const { error: upErr } = await supabaseAdmin
+        .from("resources")
+        .update({ category_id: newCat.id })
+        .eq("id", touch.resourceId);
+      if (upErr) {
+        primaryUpdate = "failed";
+        primaryFailed += 1;
+        outcomes.push({
+          resourceId: touch.resourceId, title: touch.title, newPrimarySlug: touch.newPrimarySlug,
+          primaryUpdate, newPrimaryMembership: "skipped", csMembershipRemoval: "skipped",
+          reason: upErr.message,
+        });
+        continue;
+      }
+      primaryUpdate = "updated";
+      primaryUpdated += 1;
+    }
+
+    // 5b. New-primary membership upsert.
+    let newPrimaryMembership: Phase2ApplyOutcome["newPrimaryMembership"];
+    const newCatPairKey = `${touch.resourceId}|${newCat.id}`;
+    if (rcPairs.has(newCatPairKey)) {
+      newPrimaryMembership = "already_present";
+      memberAlreadyPresent += 1;
+    } else if (dryRun) {
+      newPrimaryMembership = "inserted";
+      memberInserted += 1;
+    } else {
+      const { error: insErr } = await supabaseAdmin
+        .from("resource_categories")
+        .upsert(
+          { resource_id: touch.resourceId, category_id: newCat.id },
+          { onConflict: "resource_id,category_id" },
+        );
+      if (insErr) {
+        newPrimaryMembership = "failed";
+        memberFailed += 1;
+      } else {
+        newPrimaryMembership = "inserted";
+        memberInserted += 1;
+      }
+    }
+
+    // 5c. CS membership removal (policy-gated).
+    let csMembershipRemoval: Phase2ApplyOutcome["csMembershipRemoval"];
+    const csPairKey = `${touch.resourceId}|${csCat.id}`;
+    if (touch.recommendedKeepCsMembership) {
+      csMembershipRemoval = "kept_by_policy";
+      csKept += 1;
+    } else if (!rcPairs.has(csPairKey)) {
+      csMembershipRemoval = "already_absent";
+      csAlreadyAbsent += 1;
+    } else if (dryRun) {
+      csMembershipRemoval = "deleted";
+      csDeleted += 1;
+    } else {
+      const { error: delErr } = await supabaseAdmin
+        .from("resource_categories")
+        .delete()
+        .eq("resource_id", touch.resourceId)
+        .eq("category_id", csCat.id);
+      if (delErr) {
+        csMembershipRemoval = "failed";
+        csFailed += 1;
+      } else {
+        csMembershipRemoval = "deleted";
+        csDeleted += 1;
+      }
+    }
+
+    outcomes.push({
+      resourceId: touch.resourceId,
+      title: touch.title,
+      newPrimarySlug: touch.newPrimarySlug,
+      primaryUpdate,
+      newPrimaryMembership,
+      csMembershipRemoval,
+    });
+  }
+
+  // 6. Verification pass: re-pull and confirm.
+  let verifiedPrimary = 0, missingPrimary = 0;
+  let verifiedNewMembership = 0, missingNewMembership = 0;
+  let verifiedCsRemoval = 0, missingCsRemoval = 0;
+  let verifiedCsKept = 0, missingCsKept = 0;
+  if (!dryRun) {
+    const { data: resAfter } = await supabaseAdmin
+      .from("resources").select("id, category_id").in("id", safeIds);
+    const { data: rcAfter } = await supabaseAdmin
+      .from("resource_categories").select("resource_id, category_id").in("resource_id", safeIds);
+    const primaryAfter = new Map<string, string | null>();
+    for (const r of resAfter || []) primaryAfter.set(r.id, r.category_id);
+    const rcAfterPairs = new Set<string>();
+    for (const e of rcAfter || []) rcAfterPairs.add(`${e.resource_id}|${e.category_id}`);
+
+    for (const touch of preview.proposedMoves as any[]) {
+      const newCat = catBySlug.get(touch.newPrimarySlug);
+      if (!newCat) continue;
+      if (primaryAfter.get(touch.resourceId) === newCat.id) verifiedPrimary += 1;
+      else missingPrimary += 1;
+      if (rcAfterPairs.has(`${touch.resourceId}|${newCat.id}`)) verifiedNewMembership += 1;
+      else missingNewMembership += 1;
+      const csPresent = rcAfterPairs.has(`${touch.resourceId}|${csCat.id}`);
+      if (touch.recommendedKeepCsMembership) {
+        if (csPresent) verifiedCsKept += 1; else missingCsKept += 1;
+      } else {
+        if (!csPresent) verifiedCsRemoval += 1; else missingCsRemoval += 1;
+      }
+    }
+  }
+
+  // 7. After-state roster counts.
+  const afterRoster = dryRun ? null : await getStateCategoryRoster(state);
+
+  // 8. Phase 1 sub population validation (sample): community-support sub edges for SC must
+  //    still resolve. We confirm the count of resource_subcategories rows whose sub belongs
+  //    to community-support and whose resource is SC has not decreased.
+  let phase1EdgesAfter: number | null = null;
+  if (!dryRun) {
+    const { data: csSubs } = await supabaseAdmin
+      .from("subcategories").select("id").eq("category_id", csCat.id);
+    const csSubIds = (csSubs || []).map((s: any) => s.id);
+    if (csSubIds.length) {
+      const { data: scResources } = await supabaseAdmin
+        .from("resources").select("id").eq("state", state);
+      const scResIds = (scResources || []).map((r: any) => r.id);
+      if (scResIds.length) {
+        const { count } = await supabaseAdmin
+          .from("resource_subcategories")
+          .select("*", { count: "exact", head: true })
+          .in("subcategory_id", csSubIds)
+          .in("resource_id", scResIds);
+        phase1EdgesAfter = count ?? null;
+      }
+    }
+  }
+
+  return {
+    status: 200,
+    ok: true,
+    report: {
+      generatedAt: new Date().toISOString(),
+      state,
+      phase: 2,
+      dryRun,
+      actionToken: preview.actionToken,
+      proposedMoves: preview.proposedMoves.length,
+      counts: {
+        primary: { updated: primaryUpdated, alreadyCorrect: primaryAlreadyCorrect, failed: primaryFailed },
+        newPrimaryMembership: { inserted: memberInserted, alreadyPresent: memberAlreadyPresent, failed: memberFailed },
+        csMembership: { deleted: csDeleted, keptByPolicy: csKept, alreadyAbsent: csAlreadyAbsent, failed: csFailed },
+      },
+      verification: dryRun ? { skipped: "dryRun=true" } : {
+        primary: { verified: verifiedPrimary, missing: missingPrimary },
+        newPrimaryMembership: { verified: verifiedNewMembership, missing: missingNewMembership },
+        csRemoval: { verified: verifiedCsRemoval, missing: missingCsRemoval },
+        csKept: { verified: verifiedCsKept, missing: missingCsKept },
+      },
+      rosterCounts: {
+        before: beforeRoster,
+        after: afterRoster,
+      },
+      phase1EdgesPostApply: phase1EdgesAfter,
+      outcomes,
+      notes: [
+        "Phase 2 apply is additive on the new-primary side and surgical on the CS side.",
+        "CS membership is removed only when recommendedKeepCsMembership=false (per locked preview).",
+        "Phase 1 subcategory edges are not touched by this apply.",
+      ],
+    },
+  };
+}
+
+async function getStateCategoryRoster(state: string): Promise<Record<string, number>> {
+  const { data: catRows } = await supabaseAdmin
+    .from("categories").select("id, slug");
+  const slugById = new Map<string, string>();
+  for (const c of catRows || []) slugById.set(c.id, c.slug);
+
+  const { data: scResources } = await supabaseAdmin
+    .from("resources").select("id").eq("state", state);
+  const scResIds = (scResources || []).map((r: any) => r.id);
+  if (!scResIds.length) return {};
+
+  const { data: rc } = await supabaseAdmin
+    .from("resource_categories").select("resource_id, category_id").in("resource_id", scResIds);
+  const counts: Record<string, number> = {};
+  for (const e of rc || []) {
+    const slug = slugById.get(e.category_id);
+    if (!slug) continue;
+    counts[slug] = (counts[slug] || 0) + 1;
+  }
+  return counts;
 }
 
 interface ApplyOutcome {

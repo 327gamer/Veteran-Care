@@ -2983,12 +2983,8 @@ export async function registerRoutes(
       return res.status(401).json({ error: "Unauthorized" });
     }
     try {
-      const { applyPhase1 } = await import("./audit/community-support-retag");
       const state = String(req.query.state || "SC").toUpperCase();
       const phase = String(req.query.phase || "1");
-      if (phase !== "1") {
-        return res.status(400).json({ error: "Only phase=1 is implemented. Phase 2 not approved yet." });
-      }
       const providedToken = String((req.body && req.body.actionToken) || "");
       if (!providedToken) {
         return res.status(400).json({
@@ -2996,6 +2992,15 @@ export async function registerRoutes(
         });
       }
       const dryRun = !!(req.body && req.body.dryRun);
+      if (phase === "2") {
+        const { applyPhase2 } = await import("./audit/community-support-retag");
+        const out2 = await applyPhase2({ state, providedToken, dryRun });
+        return res.status(out2.status).json(out2);
+      }
+      if (phase !== "1") {
+        return res.status(400).json({ error: "Only phase=1 and phase=2 applies are implemented." });
+      }
+      const { applyPhase1 } = await import("./audit/community-support-retag");
       const out = await applyPhase1({ state, providedToken, dryRun });
       return res.status(out.status).json(out);
     } catch (err: any) {
