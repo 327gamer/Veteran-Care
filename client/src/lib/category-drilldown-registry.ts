@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale } from "lucide-react";
+import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale, GraduationCap, Users } from "lucide-react";
 import type { CategoryDrilldownConfig } from "@/components/category-drilldown";
 import { MH_SUBCATEGORIES } from "@/lib/mh-subcategories";
 import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
@@ -10,6 +10,8 @@ import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { DV_SUBCATEGORIES } from "@/lib/dv-subcategories";
 import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
+import { EDU_SUBCATEGORIES } from "@/lib/edu-subcategories";
+import { FAMILY_SUBCATEGORIES } from "@/lib/family-subcategories";
 
 /**
  * Step 3 Slice 3a — single source of truth for category drilldown config.
@@ -199,6 +201,43 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
     introLinks: [
       { slug: "estate-planning-wills", label: "Estate Planning & Wills", testidKey: "estate" },
       { slug: "va-claims-appeals-legal", label: "VA Claims & Appeals", testidKey: "appeals" },
+    ],
+  },
+  // Slice 3c additions: Education & Training + Family Support — selective
+  // conversion of 2 high-value flat categories. viewAllSlugs match canonical
+  // taxonomy (`education-training`, `family-support`).
+  "education-training": {
+    testidPrefix: "edu",
+    trackPrefix: "edu",
+    viewAllSlug: "education-training",
+    aiContext: "education-training",
+    name: "Education & Training",
+    icon: GraduationCap,
+    iconBgClass: "bg-sky-50",
+    iconTextClass: "text-sky-700",
+    description:
+      "GI Bill, Vocational Rehabilitation, scholarships, certifications, apprenticeships, and education pathways for veterans and their families.",
+    subcategories: EDU_SUBCATEGORIES,
+    introLinks: [
+      { slug: "gi-bill-va-education", label: "GI Bill & VA Education Benefits", testidKey: "gibill" },
+      { slug: "vocational-rehab-vre", label: "Vocational Rehabilitation", testidKey: "vre" },
+    ],
+  },
+  "family-support": {
+    testidPrefix: "fam",
+    trackPrefix: "fam",
+    viewAllSlug: "family-support",
+    aiContext: "family-support",
+    name: "Family Support",
+    icon: Users,
+    iconBgClass: "bg-rose-50",
+    iconTextClass: "text-rose-700",
+    description:
+      "Spouse support, children's programs, caregiver assistance, survivor benefits, and family-focused services for the whole veteran household.",
+    subcategories: FAMILY_SUBCATEGORIES,
+    introLinks: [
+      { slug: "spouse-support", label: "Spouse Support", testidKey: "spouse" },
+      { slug: "caregiver-support", label: "Caregiver Support", testidKey: "caregiver" },
     ],
   },
 };
