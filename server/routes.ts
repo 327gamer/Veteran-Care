@@ -2947,6 +2947,28 @@ export async function registerRoutes(
     }
   });
 
+  // Step 3 Slice 3d-A — Community Support Phase 1 retag preview (read-only).
+  // Returns proposed additive subcategory tags for SC community-support
+  // resources. NO database writes. ADMIN_KEY gated.
+  app.get("/api/admin/community-support-retag-preview", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const { runPhase1Preview } = await import("./audit/community-support-retag");
+      const state = String(req.query.state || "SC").toUpperCase();
+      const phase = String(req.query.phase || "1");
+      if (phase !== "1") {
+        return res.status(400).json({ error: "Only phase=1 is implemented. Phase 2 not approved yet." });
+      }
+      const report = await runPhase1Preview(state);
+      return res.json(report);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   // Compact preview slice — actionable items only. Same admin gate.
   app.get("/api/admin/tagging-audit/preview", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
