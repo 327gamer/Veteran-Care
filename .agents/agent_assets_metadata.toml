@@ -6,3 +6,15 @@ id = "Kpq4jT20aGtLN9aQ9Vs_Q"
 uri = "file://sample-import-template.csv"
 type = "table"
 title = "Veteran Care CSV Import Template (5 sample resources)"
+
+[[outputs]]
+id = "AVvMXi2cdgUeLyN2v9jVe"
+uri = "file://screenshots/slice-b-housing-strip.jpg"
+type = "image"
+title = "Housing drilldown — Verified Partners strip rendering"
+
+[[outputs]]
+id = "GoQk6hzptckX2e0-5Ru4m"
+uri = "file://screenshots/slice-b-community-support-zero.jpg"
+type = "image"
+title = "Community Support drilldown — strip correctly hidden (0 verified in dev DB)"

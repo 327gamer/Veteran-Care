@@ -1,8 +1,10 @@
+import { useRef } from "react";
 import { useLocation } from "wouter";
 import { ChevronLeft, ChevronRight, HeartHandshake, AlertTriangle, type LucideIcon } from "lucide-react";
 import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
 import AiGuideBanner from "@/components/ai-guide-banner";
+import TrustedPartnerStrip from "@/components/trusted-partner-strip";
 
 export interface DrilldownSubcategory {
   name: string;
@@ -49,9 +51,16 @@ export default function CategoryDrilldown({
   disclaimer,
 }: CategoryDrilldownConfig) {
   const [, setLocation] = useLocation();
+  const stripExposedRef = useRef(false);
 
   const goToSub = (sub: DrilldownSubcategory) => {
     trackEvent(`${trackPrefix}_subcategory_click`, { subcategory: sub.slug });
+    if (stripExposedRef.current) {
+      trackEvent("trusted_partner_strip_sub_clickthrough", {
+        category: viewAllSlug,
+        subcategory: sub.slug,
+      });
+    }
     setLocation(`/resources?category=${viewAllSlug}&sub=${encodeURIComponent(sub.slug)}`);
   };
 
@@ -125,6 +134,12 @@ export default function CategoryDrilldown({
         )}
 
         <AiGuideBanner categoryContext={aiContext} />
+
+        <TrustedPartnerStrip
+          categorySlug={viewAllSlug}
+          trackPrefix={trackPrefix}
+          onExposed={() => { stripExposedRef.current = true; }}
+        />
 
         <p className="text-xs text-muted-foreground text-center mb-5">
           Select a topic to find trusted resources near you.

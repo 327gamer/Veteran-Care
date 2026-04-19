@@ -11046,12 +11046,13 @@ export async function registerRoutes(
     const cityParam = typeof req.query.city === "string" ? req.query.city.trim() : "";
     const limitParam = Math.max(1, Math.min(200, parseInt(String(req.query.limit || "100"), 10) || 100));
     const rankedParam = req.query.ranked === "1" || req.query.ranked === "true";
+    const verifiedOnlyParam = req.query.verified_only === "1" || req.query.verified_only === "true";
     const _adminKey = process.env.ADMIN_KEY;
     const debugParam = (req.query.debug === "1" || req.query.debug === "true")
       && !!_adminKey
       && req.headers["x-admin-key"] === _adminKey;
 
-    const anyNewParam = !!(subParam || stateParam || cityParam || rankedParam || req.query.limit);
+    const anyNewParam = !!(subParam || stateParam || cityParam || rankedParam || verifiedOnlyParam || req.query.limit);
 
     try {
       // Legacy path — preserve byte-for-byte response shape when no new params present.
@@ -11165,6 +11166,7 @@ export async function registerRoutes(
           WHERE ts.is_active IS NOT false
             AND ts.verification_status IS DISTINCT FROM 'rejected'
             AND tsc.slug = $1
+            ${verifiedOnlyParam ? `AND ts.verification_status = 'verified'` : ``}
         )
         SELECT *,
           (paid_boost + geo_boost + sub_boost + recency) AS score
