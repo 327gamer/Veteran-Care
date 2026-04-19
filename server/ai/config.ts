@@ -6,8 +6,12 @@ export const aiConfig = {
   temperature: 0.4,
 
   rateLimits: {
-    authenticated: { maxRequests: 30, windowMs: 60 * 60 * 1000 },
-    guest: { maxRequests: 10, windowMs: 60 * 60 * 1000 },
+    // Launch-window limits (raised 2026-04-19 for SC soft launch). Prior:
+    // 30 auth / 10 guest per hour. Bumped to give a confused veteran room
+    // to ask 8-10 follow-ups without hitting a wall. Crisis prompts always
+    // bypass — see engine.ts safety-first ordering.
+    authenticated: { maxRequests: 100, windowMs: 60 * 60 * 1000 },
+    guest: { maxRequests: 30, windowMs: 60 * 60 * 1000 },
   },
 
   systemPrompt: `You are the ${platform.ai.assistantName}, an AI assistant for ${platform.name}.

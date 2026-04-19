@@ -37,14 +37,6 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   }
 
   const ip = req.ip || req.socket.remoteAddress || "unknown";
-  const rateCheck = checkRateLimit(userId, ip);
-  if (!rateCheck.allowed) {
-    res.status(429).json({
-      error: "Rate limit exceeded. Please wait before sending more messages.",
-      resetMs: rateCheck.resetMs,
-    });
-    return;
-  }
 
   const body: ChatRequest = req.body;
   const { messages, userState, userCity, userZip, interests, branch } = body;
@@ -60,7 +52,24 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  // SAFETY-FIRST: Crisis detection runs BEFORE rate limit. A veteran in crisis
+  // who has exhausted their hourly quota must STILL receive the 988 / Crisis
+  // Line response. Never block a self-harm message behind a quota.
   const safetyCheck = checkSafety(lastUserMsg.content);
+  const bypassRateLimit = safetyCheck.isCrisis;
+
+  if (!bypassRateLimit) {
+    const rateCheck = checkRateLimit(userId, ip);
+    if (!rateCheck.allowed) {
+      res.status(429).json({
+        error: "You've reached the hourly message limit. Please wait a bit before sending more — or use Request Support to connect with a real person right now.",
+        resetMs: rateCheck.resetMs,
+        resetMinutes: Math.ceil(rateCheck.resetMs / 60000),
+      });
+      return;
+    }
+  }
+
   if (safetyCheck.isCrisis || safetyCheck.isBlocked) {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");

@@ -186,6 +186,15 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: "Something went wrong" }));
+        if (response.status === 429) {
+          const mins = err.resetMinutes ?? Math.ceil((err.resetMs ?? 0) / 60000);
+          const waitMsg = mins > 0
+            ? `You've sent a lot of messages in the last hour. Please wait about ${mins} minute${mins === 1 ? "" : "s"} before sending more — or tap **Request Support** to connect with a real person right now.`
+            : "You've reached the message limit for this hour. Please tap **Request Support** to connect with a real person right now.";
+          addChatMessage({ role: 'assistant', content: waitMsg });
+          setShowNavigatorHint(true);
+          return;
+        }
         throw new Error(err.error || "Something went wrong");
       }
 
