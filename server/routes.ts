@@ -2969,6 +2969,35 @@ export async function registerRoutes(
     }
   });
 
+  // Step 3 Slice 3d-A — Community Support Phase 1 APPLY (idempotent).
+  // Body: { actionToken: string, dryRun?: boolean }
+  // Mirrors the preview-then-apply pattern of /api/admin/tagging-audit/apply.
+  app.post("/api/admin/community-support-retag-apply", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const { applyPhase1 } = await import("./audit/community-support-retag");
+      const state = String(req.query.state || "SC").toUpperCase();
+      const phase = String(req.query.phase || "1");
+      if (phase !== "1") {
+        return res.status(400).json({ error: "Only phase=1 is implemented. Phase 2 not approved yet." });
+      }
+      const providedToken = String((req.body && req.body.actionToken) || "");
+      if (!providedToken) {
+        return res.status(400).json({
+          error: "Missing actionToken. Fetch /api/admin/community-support-retag-preview first and pass its actionToken.",
+        });
+      }
+      const dryRun = !!(req.body && req.body.dryRun);
+      const out = await applyPhase1({ state, providedToken, dryRun });
+      return res.status(out.status).json(out);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   // Compact preview slice — actionable items only. Same admin gate.
   app.get("/api/admin/tagging-audit/preview", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];

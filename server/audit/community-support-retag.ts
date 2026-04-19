@@ -302,6 +302,16 @@ export async function runPhase1Preview(stateInput: string) {
     for (const s of t.willActuallyAdd) byNewSub[s] = (byNewSub[s] || 0) + 1;
   }
 
+  // 7. Deterministic action token (stable hash over the planned writes).
+  const canonicalPairs: string[] = [];
+  for (const t of touches) {
+    if (t.wouldCreateOrphan) continue;
+    for (const s of t.willActuallyAdd) canonicalPairs.push(`${t.resourceId}|${s}`);
+  }
+  canonicalPairs.sort();
+  const tokenSrc = `phase1|${state}|${canonicalPairs.join(",")}`;
+  const actionToken = `cs-retag-p1-${simpleHash(tokenSrc)}`;
+
   return {
     generatedAt: new Date().toISOString(),
     state,
@@ -314,6 +324,7 @@ export async function runPhase1Preview(stateInput: string) {
     actualEdgeWrites: actualAddCount,
     alreadyFullySatisfied,
     orphansBlocked: orphanFlags.length,
+    actionToken,
     summary: {
       byNewSub,
       orphanFlags,
@@ -325,5 +336,179 @@ export async function runPhase1Preview(stateInput: string) {
       "Resources whose addSubs are all already present are reported as alreadyFullySatisfied (no-op on apply).",
       "Phase 2 (vet-center / county-VAO / SC 211 / PVA primary moves) is NOT included.",
     ],
+  };
+}
+
+function simpleHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+interface ApplyOutcome {
+  resourceId: string;
+  title: string;
+  subSlug: string;
+  status: "inserted" | "already_present" | "skipped_orphan" | "failed";
+  reason?: string;
+}
+
+export async function applyPhase1(opts: {
+  state: string;
+  providedToken: string;
+  dryRun?: boolean;
+}): Promise<{
+  status: number;
+  ok: boolean;
+  error?: string;
+  report?: any;
+}> {
+  const state = (opts.state || "SC").toUpperCase();
+  const dryRun = !!opts.dryRun;
+
+  // 1. Re-run preview fresh — never trust a cached plan.
+  const preview = await runPhase1Preview(state);
+  if (preview.actionToken !== opts.providedToken) {
+    return {
+      status: 409,
+      ok: false,
+      error: `Token mismatch — preview is stale or did not match. expected=${preview.actionToken} provided=${opts.providedToken}. Re-run /api/admin/community-support-retag-preview and retry.`,
+    };
+  }
+
+  // 2. Resolve sub slug -> id once.
+  const { data: csSubsRaw } = await supabaseAdmin
+    .from("subcategories")
+    .select("id, slug, category_id")
+    .eq("category_id", preview.categoryId);
+  const subBySlug = new Map<string, { id: string; categoryId: string }>();
+  for (const s of csSubsRaw || []) subBySlug.set(s.slug, { id: s.id, categoryId: s.category_id });
+
+  // 3. Pull current edges for the in-scope resources for idempotency check.
+  const ids = preview.proposedAdds.map((t: any) => t.resourceId);
+  const { data: existing } = await supabaseAdmin
+    .from("resource_subcategories")
+    .select("resource_id, subcategory_id")
+    .in("resource_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  const existingPairs = new Set<string>();
+  for (const e of existing || []) existingPairs.add(`${e.resource_id}|${e.subcategory_id}`);
+
+  // 4. Walk planned writes, insert each (idempotent, one row at a time for clarity).
+  const outcomes: ApplyOutcome[] = [];
+  let inserted = 0;
+  let alreadyPresent = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (const touch of preview.proposedAdds as any[]) {
+    if (touch.wouldCreateOrphan) {
+      for (const s of touch.addSubs) {
+        outcomes.push({
+          resourceId: touch.resourceId,
+          title: touch.title,
+          subSlug: s,
+          status: "skipped_orphan",
+          reason: touch.orphanReason || "orphan flagged",
+        });
+        skipped += 1;
+      }
+      continue;
+    }
+    for (const slug of touch.willActuallyAdd as string[]) {
+      const sub = subBySlug.get(slug);
+      if (!sub) {
+        outcomes.push({
+          resourceId: touch.resourceId, title: touch.title, subSlug: slug,
+          status: "skipped_orphan", reason: "sub not found at apply time",
+        });
+        skipped += 1;
+        continue;
+      }
+      const key = `${touch.resourceId}|${sub.id}`;
+      if (existingPairs.has(key)) {
+        outcomes.push({
+          resourceId: touch.resourceId, title: touch.title, subSlug: slug,
+          status: "already_present",
+        });
+        alreadyPresent += 1;
+        continue;
+      }
+      if (dryRun) {
+        outcomes.push({ resourceId: touch.resourceId, title: touch.title, subSlug: slug, status: "inserted" });
+        inserted += 1;
+        continue;
+      }
+      const { error: insErr } = await supabaseAdmin
+        .from("resource_subcategories")
+        .insert({ resource_id: touch.resourceId, subcategory_id: sub.id });
+      if (insErr) {
+        // Treat unique-violation as already_present (idempotent fallback).
+        const msg = insErr.message || "";
+        if (/duplicate|unique/i.test(msg)) {
+          outcomes.push({
+            resourceId: touch.resourceId, title: touch.title, subSlug: slug,
+            status: "already_present", reason: "race: detected on insert",
+          });
+          alreadyPresent += 1;
+        } else {
+          outcomes.push({
+            resourceId: touch.resourceId, title: touch.title, subSlug: slug,
+            status: "failed", reason: msg,
+          });
+          failed += 1;
+        }
+        continue;
+      }
+      outcomes.push({ resourceId: touch.resourceId, title: touch.title, subSlug: slug, status: "inserted" });
+      inserted += 1;
+    }
+  }
+
+  // 5. Verification: re-pull current edges and confirm each planned (resource, sub)
+  //    is now present. This catches silent failures.
+  let verified = 0;
+  let missing = 0;
+  if (!dryRun) {
+    const { data: postRows } = await supabaseAdmin
+      .from("resource_subcategories")
+      .select("resource_id, subcategory_id")
+      .in("resource_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+    const postPairs = new Set<string>();
+    for (const r of postRows || []) postPairs.add(`${r.resource_id}|${r.subcategory_id}`);
+    for (const touch of preview.proposedAdds as any[]) {
+      if (touch.wouldCreateOrphan) continue;
+      for (const slug of [...touch.willActuallyAdd, ...touch.alreadyHad] as string[]) {
+        const sub = subBySlug.get(slug);
+        if (!sub) continue;
+        if (postPairs.has(`${touch.resourceId}|${sub.id}`)) verified += 1;
+        else missing += 1;
+      }
+    }
+  }
+
+  return {
+    status: 200,
+    ok: failed === 0 && missing === 0,
+    report: {
+      appliedAt: new Date().toISOString(),
+      state,
+      phase: 1,
+      dryRun,
+      tokenMatched: true,
+      counts: {
+        beforeAlreadyPresent: alreadyPresent,
+        inserted,
+        skippedOrphan: skipped,
+        failed,
+        verifiedPostState: verified,
+        missingPostState: missing,
+      },
+      planSummary: preview.summary,
+      proposedTouches: preview.proposedTouches,
+      proposedEdgeWrites: preview.actualEdgeWrites,
+      outcomes,
+    },
   };
 }
