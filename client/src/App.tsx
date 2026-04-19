@@ -53,6 +53,7 @@ import Insurance from "@/pages/insurance";
 import LegalServices from "@/pages/legal-services";
 import EducationTraining from "@/pages/education-training";
 import FamilySupport from "@/pages/family-support";
+import CommunitySupport from "@/pages/community-support";
 import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
@@ -140,6 +141,11 @@ function Router() {
       <Route path="/family-support">
         <Layout>
           <FamilySupport />
+        </Layout>
+      </Route>
+      <Route path="/community-support">
+        <Layout>
+          <CommunitySupport />
         </Layout>
       </Route>
       <Route path="/onboarding" component={Onboarding} />

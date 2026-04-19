@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale, GraduationCap, Users } from "lucide-react";
+import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale, GraduationCap, Users, HandHeart } from "lucide-react";
 import type { CategoryDrilldownConfig } from "@/components/category-drilldown";
 import { MH_SUBCATEGORIES } from "@/lib/mh-subcategories";
 import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
@@ -12,6 +12,7 @@ import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
 import { EDU_SUBCATEGORIES } from "@/lib/edu-subcategories";
 import { FAMILY_SUBCATEGORIES } from "@/lib/family-subcategories";
+import { CS_SUBCATEGORIES } from "@/lib/cs-subcategories";
 
 /**
  * Step 3 Slice 3a — single source of truth for category drilldown config.
@@ -238,6 +239,26 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
     introLinks: [
       { slug: "spouse-support", label: "Spouse Support", testidKey: "spouse" },
       { slug: "caregiver-support", label: "Caregiver Support", testidKey: "caregiver" },
+    ],
+  },
+  // Slice 3d-B addition: Community Support drilldown — landed after Phase 1
+  // additive retag populated the recreation / social / connection subs.
+  // viewAllSlug matches canonical taxonomy (`community-support`).
+  "community-support": {
+    testidPrefix: "cs",
+    trackPrefix: "cs",
+    viewAllSlug: "community-support",
+    aiContext: "community-support",
+    name: "Community Support",
+    icon: HandHeart,
+    iconBgClass: "bg-violet-50",
+    iconTextClass: "text-violet-700",
+    description:
+      "Veteran social groups, adaptive recreation, volunteer missions, family activities, retreats, and creative outlets that build connection and camaraderie.",
+    subcategories: CS_SUBCATEGORIES,
+    introLinks: [
+      { slug: "veteran-social-groups", label: "Veteran Social Groups", testidKey: "social" },
+      { slug: "adaptive-recreation", label: "Adaptive Recreation", testidKey: "adaptive" },
     ],
   },
 };

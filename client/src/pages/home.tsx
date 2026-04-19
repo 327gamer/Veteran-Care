@@ -121,6 +121,7 @@ export default function Home() {
     "benefits-assistance": "/benefits-assistance",
     "healthcare-services": "/healthcare",
     "financial-credit": "/financial-services",
+    "community-support": "/community-support",
   };
 
   const handleCategoryClick = (category: string) => {
