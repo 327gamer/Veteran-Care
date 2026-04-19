@@ -1,0 +1,198 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Immediate Category / Subcategory Structure Fix Using Existing Proven Pattern
+
+PRIORITY:
+CRITICAL – TODAY
+
+-------------------------------------
+MESSAGE
+-------------------------------------
+
+We need to stop drifting and fix this in the correct order immediately.
+
+The issue is being misunderstood again.
+
+This is NOT primarily about partner count.
+This is NOT about temporary hiding.
+This is NOT about post-launch cleanup.
+This is NOT about waiting until more paid partners exist.
+
+This is about fixing the CATEGORY / SUBCATEGORY STRUCTURE first.
+
+-------------------------------------
+CORE RULE
+-------------------------------------
+
+There are 2 separate but equally important jobs:
+
+JOB 1
+For categories that exist in BOTH:
+- Resources
+- Trusted Services
+
+those categories must have the SAME subcategory structure immediately.
+
+JOB 2
+For categories that exist only in regular Resources
+(for example Community Support and any other regular resource categories not in Trusted Services),
+those categories must still have their correct subcategories populated and visible immediately.
+
+So both things matter:
+
+- shared categories must match across both systems
+- regular-resource-only categories must also be properly structured
+
+-------------------------------------
+IMPORTANT REMINDER
+-------------------------------------
+
+We already solved this pattern before.
+
+Housing is the proof.
+
+Housing has:
+- proper subcategories
+- mirrored structure
+- resources flowing correctly
+- trusted / seeded providers surfacing correctly at the top where appropriate
+
+That means this is NOT a brand new problem.
+There is already an existing solution pattern in the coding / database / display logic.
+
+I need you to DIG DEEP and use that same working pattern again.
+
+Do not reinvent this.
+Do not workaround this.
+Use the same logic / method / rule that made Housing work.
+
+-------------------------------------
+CORRECT ORDER OF OPERATIONS
+-------------------------------------
+
+STEP 1
+Fix the category / subcategory structure first
+
+A. Shared categories:
+For categories that exist in both Resources and Trusted Services, make the subcategory structure match exactly.
+
+B. Resource-only categories:
+For categories in regular Resources that are not part of Trusted Services, make sure their subcategories are populated, visible, and using the work we already completed.
+
+STEP 2
+Then confirm the existing resources are sitting in the correct subcategories
+
+STEP 3
+Then confirm seeded partners / trusted partners / paid partners populate correctly at the top where appropriate
+
+STEP 4
+Then confirm AI Guide uses the same structure
+
+That is the proper order.
+Do not skip to partner discussion before Step 1 is complete.
+
+-------------------------------------
+WHAT TO CHECK RIGHT NOW
+-------------------------------------
+
+I need you to compare and fix:
+
+1. Shared categories between Resources and Trusted Services
+Use the actual known list in the database and compare them side by side.
+
+2. Resource-only categories
+Especially categories we already worked on, where subcategories were created and resources were already found / tagged / populated, but are still not displaying correctly.
+
+Community Support is a major example.
+We already did the subcategory and resource work there.
+If it still is not showing correctly, then something is broken in the display / registry / drilldown / mapping layer.
+That needs to be fixed now.
+
+-------------------------------------
+DO NOT GET DISTRACTED BY
+-------------------------------------
+
+Do NOT answer with:
+- not enough trusted partners
+- some categories are thin
+- we can hide the strip
+- we can fix later
+- this is post-launch
+- this is future architecture
+
+That is not the current assignment.
+
+-------------------------------------
+WHAT I NEED FROM YOU NOW
+-------------------------------------
+
+Return ONLY this:
+
+SECTION A — SHARED CATEGORIES
+For every category that exists in BOTH Resources and Trusted Services:
+- Resources category name
+- Trusted Services category name
+- current subcategories in Resources
+- current subcategories in Trusted Services
+- whether they match
+- if not, exact mismatch
+- exact fix required today
+
+SECTION B — RESOURCE-ONLY CATEGORIES
+For every important category in regular Resources that is NOT in Trusted Services:
+- category name
+- whether subcategories exist in DB
+- whether they are visible on the live page
+- whether resources are already tagged to them
+- if not displaying, exact reason
+- exact fix required today
+
+SECTION C — EXISTING WORKING MODEL
+Show exactly how Housing is working:
+- what files / mapping / display logic / registry / database pattern make Housing match correctly
+- what same pattern should now be reused for the other categories
+
+SECTION D — ACTION PLAN
+Then give the execution order in small controlled steps:
+- Step 1
+- Step 2
+- Step 3
+No side quests.
+No architecture drift.
+
+-------------------------------------
+UNIVERSAL PLATFORM RULE
+-------------------------------------
+
+Reminder:
+We already established this rule before.
+
+Any category shared across the platform must remain synchronized across:
+- Resources
+- Trusted Services
+- AI Guide
+- Drilldown Pages
+- Search / Browse
+- Lead Routing Logic
+
+And any category that is regular-resources-only must still have its subcategories working and visible correctly.
+
+This is not optional.
+This is not new work.
+This is fixing a regression against an agreed platform rule.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+We fix the structure first.
+Then the placement.
+Then AI / partner confirmation.
+
+Use Housing as the proven model.
+Apply that same logic everywhere it belongs.
+Fix this today.
+
+END
+-------------------------------------
