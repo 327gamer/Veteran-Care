@@ -1,0 +1,110 @@
+🚨 COPY TO DEV / REPLIT
+
+Approved.
+
+Proceed with:
+
+Veteran Care – Broader AI Validation Pass
+
+PRIORITY:
+HIGH – QUALITY CONTROL / PRE-GEORGIA READINESS
+
+OBJECTIVE:
+Now that:
+
+- Pass 4 AI matcher is complete
+- Tier 2 backfills are complete
+- South Carolina has 0 unclassified records
+
+We need to run a full validation pass across the AI Guide to confirm discoverability quality across all major categories before Georgia activation.
+
+-------------------------------------
+VALIDATION SCOPE
+-------------------------------------
+
+Run a broad query suite covering the full platform.
+
+Minimum:
+
+1 query per major category including:
+
+- housing
+- healthcare
+- mental health
+- employment
+- legal
+- financial
+- transportation
+- food assistance
+- education
+- substance recovery
+- family support
+- disabled veterans
+- community support
+- VA benefits
+- crisis help
+- end of life services (if live)
+
+Then add:
+
+- city-specific queries
+- mixed-need queries
+- edge-case real-world queries
+
+Examples:
+
+- homeless veteran with PTSD Charleston
+- women veteran healthcare Columbia
+- legal help disabled veteran Greenville
+- transportation to VA appointment Florence
+- veteran friendly employers South Carolina
+- family help for deployed spouse
+- addiction help veteran Myrtle Beach
+
+-------------------------------------
+PASS CRITERIA
+-------------------------------------
+
+For each query:
+
+1. Are results relevant?
+2. Are top 5 structured resources useful?
+3. Are specialized resources surfacing?
+4. Are generic resources burying better matches?
+5. Any dead categories?
+6. Any wrong category routing?
+
+-------------------------------------
+RETURN REPORT
+-------------------------------------
+
+1. total queries tested
+2. pass / fail score
+3. strongest categories
+4. weakest categories
+5. matcher issues still found
+6. quick-win fixes recommended
+7. whether SC blueprint is ready for Georgia duplication
+
+-------------------------------------
+IMPORTANT RULE
+-------------------------------------
+
+No overbuilding.
+
+This is a validation / truth-finding pass.
+
+Use findings to tighten the system before expansion.
+
+-------------------------------------
+AFTER REPORT
+-------------------------------------
+
+Recommend whether next move should be:
+
+A. Georgia activation prep
+B. final matcher tuning
+C. selective SC data additions
+D. dashboard / operator improvements
+
+END
