@@ -54,6 +54,7 @@ import LegalServices from "@/pages/legal-services";
 import EducationTraining from "@/pages/education-training";
 import FamilySupport from "@/pages/family-support";
 import CommunitySupport from "@/pages/community-support";
+import SubstanceRecovery from "@/pages/substance-recovery";
 import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
@@ -146,6 +147,11 @@ function Router() {
       <Route path="/community-support">
         <Layout>
           <CommunitySupport />
+        </Layout>
+      </Route>
+      <Route path="/substance-recovery">
+        <Layout>
+          <SubstanceRecovery />
         </Layout>
       </Route>
       <Route path="/onboarding" component={Onboarding} />

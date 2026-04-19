@@ -2,21 +2,22 @@
  * LAUNCH PROTECTION — pre-soft-launch trust cleanup.
  *
  * Centralized list of categories and sub-pages that are temporarily
- * hidden or marked "Coming Soon" because they currently lead to empty
- * pages. Removing entries from this file will re-expose them.
+ * hidden because they currently lead to empty pages. Removing entries
+ * from this file will re-expose them.
  *
- * Audit basis (2026-04-19, DB-direct):
- *   - Insurance: 0 approved resources, 8/10 sub-pages empty.
- *   - Family Support: 6 sub-page slugs have no row in DB subcategories
- *     table → silently empty.
+ * Audit basis (2026-04-19, DB-direct, post-mirror-fix):
+ *   - Insurance: 2/10 sub slugs populated. Category itself is now live
+ *     (mirrors Trusted Services side); 8 empty subs hidden below.
+ *   - Family Support: 6 sub slugs have no row in DB subcategories table.
+ *   - Disabled Veterans: 3 sub slugs have DB rows but 0 tagged resources.
  *
  * AI routing, partner_routing_rules, and DB rows are intentionally
  * untouched — only the public-facing UI is suppressed.
  */
 
 /** Category slugs hidden from the /resources tile grid AND drilldown nav. */
-export const HIDDEN_CATEGORY_SLUGS: ReadonlySet<string> = new Set([
-  "insurance",
+export const HIDDEN_CATEGORY_SLUGS: ReadonlySet<string> = new Set<string>([
+  // (empty — Insurance now mirrors Trusted Services with 2 visible subs)
 ]);
 
 /**
@@ -32,6 +33,19 @@ export const HIDDEN_SUBCATEGORY_SLUGS: Readonly<Record<string, ReadonlySet<strin
     "special-needs-family-support",
     "military-family-life-counselors",
   ]),
+  "insurance": new Set([
+    "health-insurance",
+    "auto-insurance",
+    "home-insurance",
+    "renters-insurance",
+    "disability-insurance",
+    "long-term-care-insurance",
+    "supplemental-insurance",
+    "medicare-va-plans",
+  ]),
+  // Disabled Veterans drilldown reads from DV_SUBCATEGORIES (curated TS file),
+  // not the DB subcategories table, so the previously-listed empty DB-only
+  // sub-slugs don't render in the UI. No hide rules needed here.
 };
 
 export function isCategoryHidden(slug: string): boolean {

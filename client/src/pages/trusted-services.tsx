@@ -64,6 +64,9 @@ import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
+import { EDU_SUBCATEGORIES } from "@/lib/edu-subcategories";
+import { BENEFITS_SUBCATEGORIES } from "@/lib/benefits-subcategories";
+import { WELLNESS_SUBCATEGORIES } from "@/lib/wellness-subcategories";
 import type { LucideIcon } from "lucide-react";
 
 interface RichSubcategory {
@@ -73,8 +76,9 @@ interface RichSubcategory {
   description: string;
 }
 
-// Slice 3b: Legal added so Trusted Services renders the same rich
-// subcategory grid that Resources now does. Insurance was already present.
+// Root-architecture mirror (2026-04-19): EVERY paired Trusted Services
+// category renders the SAME rich subcategory grid that Resources renders.
+// One subcategory file = one source of truth used by both surfaces.
 const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "housing-home": HOUSING_SUBCATEGORIES,
   "financial-credit": FIN_SUBCATEGORIES,
@@ -82,6 +86,9 @@ const TS_RICH_SUBCATEGORIES: Record<string, RichSubcategory[]> = {
   "employment-support": EMP_SUBCATEGORIES,
   "end-of-life-services": EOL_SUBCATEGORIES,
   "legal-services": LEGAL_SUBCATEGORIES,
+  "education-training": EDU_SUBCATEGORIES,
+  "benefits-assistance": BENEFITS_SUBCATEGORIES,
+  "wellness-recovery": WELLNESS_SUBCATEGORIES,
 };
 
 interface TrustedCategory {

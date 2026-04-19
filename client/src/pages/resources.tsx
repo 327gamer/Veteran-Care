@@ -526,20 +526,44 @@ export default function Resources() {
     });
   };
 
+  // Root-architecture mirror (2026-04-19): every paired category routes to its
+  // dedicated drilldown page regardless of which slug-system the caller uses.
+  // Keys cover BOTH the Resources DB slug (`legal`, `housing`, `financial`,
+  // `education`, `employment`, `va-benefits`, `substance-recovery`) AND the
+  // Trusted-Services slug (`legal-services`, `housing-home`, `financial-credit`,
+  // `education-training`, `employment-support`, `benefits-assistance`,
+  // `wellness-recovery`). Same destination route either way, so click-through
+  // produces the same drilldown UX from both systems.
   const CATEGORY_DEDICATED_ROUTES: Record<string, string> = {
-    "end-of-life-services": "/end-of-life",
-    "disabled-veterans": "/disabled-veterans",
+    // Identical-slug pairs
     "mental-health": "/mental-health",
-    "housing-home": "/housing",
-    "employment-support": "/employment",
-    "benefits-assistance": "/benefits-assistance",
     "healthcare": "/healthcare",
-    "financial-credit": "/financial-services",
-    "insurance": "/insurance",
-    "legal-services": "/legal-services",
-    "education-training": "/education-training",
+    "disabled-veterans": "/disabled-veterans",
     "family-support": "/family-support",
     "community-support": "/community-support",
+    "insurance": "/insurance",
+    "end-of-life-services": "/end-of-life",
+    // Housing
+    "housing": "/housing",
+    "housing-home": "/housing",
+    // Legal
+    "legal": "/legal-services",
+    "legal-services": "/legal-services",
+    // Financial
+    "financial": "/financial-services",
+    "financial-credit": "/financial-services",
+    // Education
+    "education": "/education-training",
+    "education-training": "/education-training",
+    // Employment
+    "employment": "/employment",
+    "employment-support": "/employment",
+    // Benefits
+    "va-benefits": "/benefits-assistance",
+    "benefits-assistance": "/benefits-assistance",
+    // Wellness / Substance Recovery
+    "substance-recovery": "/substance-recovery",
+    "wellness-recovery": "/substance-recovery",
   };
 
   const selectCategory = (cat: SupabaseCategory) => {
