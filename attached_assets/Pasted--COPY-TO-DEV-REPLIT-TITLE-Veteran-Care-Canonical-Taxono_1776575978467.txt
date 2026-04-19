@@ -1,0 +1,71 @@
+🚨 COPY TO DEV / REPLIT
+
+TITLE:
+Veteran Care – Canonical Taxonomy Hardening – Step 3 Plan
+
+PRIORITY:
+CRITICAL – PRE-LAUNCH UX / MIRROR CONSISTENCY
+
+Step 2 is approved as complete.
+
+Current state:
+- Step 1 canonical taxonomy lock complete
+- Step 2 tagging cleanup complete
+- regression source fixed
+- structural issue count now 0
+
+We can now move to Step 3 planning.
+
+-------------------------------------
+APPROVED NOW: STEP 3 PLAN ONLY
+-------------------------------------
+
+OBJECTIVE:
+Plan the generic subcategory drilldown system so Resources categories stop behaving inconsistently.
+
+We want one reusable drilldown pattern instead of some categories using dedicated drilldown pages and others falling through to flat lists.
+
+This is the step that should address issues like:
+- Insurance flat on Resources while structured on Trusted Services
+- Legal flat on Resources while structured on Trusted Services
+- Community Support flat on Resources
+- Family Support flat on Resources
+- Transportation / Education / Crisis / Substance Recovery inconsistencies
+
+-------------------------------------
+RETURN REQUIRED
+-------------------------------------
+
+For Step 3 plan only, return:
+
+1. exact files that would change
+2. whether existing category-specific pages would be replaced, wrapped, or phased out
+3. how the generic drilldown would work
+4. how it would preserve live slugs / URLs
+5. how it would handle categories that already work correctly
+6. how it would handle categories that are currently flat
+7. how Resources and Trusted Services would become structurally consistent after this step
+8. validation method after Step 3
+9. PASS / FAIL readiness for Step 3 execution
+
+-------------------------------------
+IMPORTANT RULES
+-------------------------------------
+
+- Step 3 planning only
+- no execution yet
+- no Step 4 yet
+- no AI work yet
+- no schema changes
+- no giant sprint behavior
+- preserve live slugs and working categories
+- avoid breaking categories that already behave correctly
+
+-------------------------------------
+NOTE
+-------------------------------------
+
+The goal of Step 3 is not redesign for its own sake.
+The goal is to make category browsing structurally consistent across the platform under the now-locked taxonomy foundation.
+
+END
