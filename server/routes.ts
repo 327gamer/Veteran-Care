@@ -2875,6 +2875,47 @@ export async function registerRoutes(
     }
   });
 
+  // Step 2 — Provider/Resource Tagging Audit (read-only)
+  // Full audit report. Default state=SC. Pass ?refresh=true to bypass cache.
+  app.get("/api/admin/tagging-audit", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const { runTaggingAudit, getLastTaggingAudit } = await import("./audit/tagging-audit");
+      const state = String(req.query.state || "SC").toUpperCase();
+      const refresh = String(req.query.refresh || "").toLowerCase() === "true";
+      const cached = getLastTaggingAudit();
+      const report = (!refresh && cached && cached.state === state)
+        ? cached
+        : await runTaggingAudit({ state });
+      return res.json(report);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
+  // Compact preview slice — actionable items only. Same admin gate.
+  app.get("/api/admin/tagging-audit/preview", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const { runTaggingAudit, getLastTaggingAudit, buildPreview } = await import("./audit/tagging-audit");
+      const state = String(req.query.state || "SC").toUpperCase();
+      const refresh = String(req.query.refresh || "").toLowerCase() === "true";
+      const cached = getLastTaggingAudit();
+      const report = (!refresh && cached && cached.state === state)
+        ? cached
+        : await runTaggingAudit({ state });
+      return res.json(buildPreview(report));
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   app.get("/api/admin/production-validation", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });

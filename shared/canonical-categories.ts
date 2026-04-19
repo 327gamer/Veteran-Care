@@ -161,6 +161,55 @@ export const LEGACY_TRUSTED_SLUGS: ReadonlySet<string> = new Set([
   "discount-travel",
 ]);
 
+// Step 2 (provider-tagging audit): legitimate cross-category mirrors.
+// A resource whose title contains the key (case-insensitive substring match)
+// is allowed to appear in EACH category slug listed for it WITHOUT being
+// flagged as "wrong" by the audit's keyword-mismatch rule (R3).
+//
+// Bootstrapped VERBATIM from the RESOURCE_TAGGING.crossCategorySlugs map in
+// server/routes.ts (the existing source of truth for legitimate cross-tagging
+// of Disabled Veterans seed resources). Slugs here are RESOURCES-side slugs
+// (i.e. categories.slug), matching how resource_categories joins work.
+//
+// IMPORTANT: This is an allow-list ONLY. It never causes a tag to be added.
+// It only suppresses false-positive "suspect" flags during the audit.
+export const INTENTIONAL_MIRRORS: Record<string, ReadonlyArray<string>> = {
+  "SC Department of Veterans' Affairs": ["va-benefits"],
+  "Disabled American Veterans (DAV)":   ["va-benefits", "transportation"],
+  "Paralyzed Veterans of America":      ["healthcare"],
+  "VA Disability Compensation":         ["va-benefits"],
+  "SC Vocational Rehabilitation":       ["employment"],
+  "Adaptive Sports":                    ["healthcare"],
+  "Specially Adapted Housing":          ["housing"],
+  "Automobile Allowance":               ["transportation"],
+  "Property Tax Exemption":             ["financial"],
+  "Blinded Veterans Association":       ["healthcare"],
+  "SC Commission for the Blind":        ["employment"],
+  "Wounded Warrior Project":            ["mental-health", "employment"],
+  "Aid & Attendance":                   ["va-benefits"],
+  "Protection & Advocacy":              ["legal"],
+  "Disabled Veterans Outreach Program": ["employment"],
+  "Veterans Crisis Line":               ["mental-health", "crisis-help"],
+  "Homes for Our Troops":               ["housing"],
+  "VA Caregiver Support":               ["family-support"],
+};
+
+/**
+ * True if the (title, resource-slug) pair is a known intentional mirror.
+ * Title match is case-insensitive substring (matches the seed semantics in
+ * server/routes.ts: `res.title.includes(k)`).
+ */
+export function isIntentionalMirror(title: string, resourceSlug: string): boolean {
+  if (!title) return false;
+  const t = title.toLowerCase();
+  for (const [key, slugs] of Object.entries(INTENTIONAL_MIRRORS)) {
+    if (t.includes(key.toLowerCase()) && slugs.includes(resourceSlug)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Aliases: legacy / synonym slugs that should normalize to a canonical resource slug.
 // These exist for backwards compatibility and url-stability with old links.
 const RESOURCE_ALIASES: Record<string, string> = {
@@ -323,8 +372,8 @@ export function auditCoverage(
     trustedOnly: getTrustedOnlyPairs()
       .map((p) => p.trustedSlug!)
       .filter((s) => dbT.has(s)),
-    unknownInResources: [...dbR].filter((s) => !knownR.has(s) && !RESOURCE_ALIASES[s]),
-    unknownInTrusted: [...dbT].filter((s) => !knownT.has(s)),
+    unknownInResources: Array.from(dbR).filter((s) => !knownR.has(s) && !RESOURCE_ALIASES[s]),
+    unknownInTrusted: Array.from(dbT).filter((s) => !knownT.has(s)),
     brokenMappings: broken,
   };
 }
