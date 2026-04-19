@@ -93,14 +93,14 @@ You are not alone, and reaching out takes courage. Would you like me to help you
 
   categoryKeywords: {
     "crisis-help": ["crisis", "emergency", "urgent", "suicide", "suicidal", "danger", "911", "help now", "immediate"],
-    "housing": ["housing", "rent", "shelter", "homeless", "apartment", "eviction", "lease", "landlord", "transitional", "section 8", "hud-vash", "home loan", "va home", "va loan", "buy a house", "buy a home", "buying a house", "buying a home", "purchase a home", "purchase a house", "purchasing a home", "first time buyer", "first-time buyer", "mortgage", "refinance", "refinancing", "house hunting", "home buying", "homeownership"],
+    "housing": ["housing", "rent", "rental assistance", "shelter", "homeless", "apartment", "eviction", "lease", "landlord", "transitional", "section 8", "hud-vash", "home loan", "va home", "va loan", "buy a house", "buy a home", "buying a house", "buying a home", "purchase a home", "purchase a house", "purchasing a home", "first time buyer", "first-time buyer", "mortgage", "refinance", "refinancing", "house hunting", "home buying", "homeownership", "foreclosure", "lose my house", "lose my home", "losing my home", "save my home", "behind on mortgage", "behind on rent"],
     "healthcare": ["healthcare", "health care", "doctor", "medical", "clinic", "va hospital", "va medical", "prescription", "medication", "dental", "vision", "telehealth", "primary care"],
     "mental-health": ["mental health", "ptsd", "anxiety", "depression", "counseling", "therapy", "therapist", "vet center", "peer support", "trauma", "tbi", "moral injury", "music therapy", "art therapy", "equine therapy", "yoga", "mindfulness", "meditation"],
     "va-benefits": ["va benefits", "disability claim", "compensation", "pension", "dd214", "pact act", "appeals", "service connected", "rating", "va enrollment", "benefits", "c&p exam", "burn pit"],
     "employment": ["job", "employment", "career", "resume", "hire", "hiring", "work", "apprenticeship", "certification", "entrepreneurship", "business", "voc rehab"],
-    "legal": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono"],
-    "financial": ["financial", "money", "bills", "utilities", "debt", "debts", "debt counseling", "debt relief", "debt consolidation", "credit", "credit repair", "credit counseling", "credit score", "budget", "emergency funds", "relief fund", "financial counseling", "mortgage", "lending", "tax preparation", "tax help", "personal loan", "va loan"],
-    "education": ["education", "school", "college", "gi bill", "tuition", "degree", "technical", "training", "student"],
+    "legal": ["legal", "lawyer", "attorney", "court", "law", "discharge upgrade", "expungement", "tenant rights", "family law", "pro bono", "will", "need a will", "make a will", "wills", "estate planning", "estate plan", "probate", "power of attorney", "advance directive", "trust", "eviction notice", "evicted", "evicting", "criminal defense", "expunge", "userra", "employment law", "disability claim", "claim help", "claim appeal", "claims assistance", "va appeal"],
+    "financial": ["financial", "money", "bills", "utilities", "debt", "debts", "debt counseling", "debt relief", "debt consolidation", "credit", "credit repair", "credit counseling", "credit score", "budget", "budgeting", "help budgeting", "make a budget", "emergency funds", "relief fund", "financial counseling", "mortgage", "lending", "tax preparation", "tax help", "personal loan", "va loan"],
+    "education": ["education", "school", "college", "gi bill", "tuition", "degree", "technical", "training", "student", "online learning", "online class", "online classes", "online course", "online courses", "distance learning", "e-learning", "elearning", "trade school", "vocational", "certification for vets", "it certification", "certifications for veterans"],
     "family-support": ["family support", "family services", "spouse", "child", "childcare", "caregiver", "dependent", "gold star", "survivor benefits", "parenting", "military family"],
     "transportation": ["transportation", "ride", "bus", "transit", "medical transport", "dat", "volunteer driver"],
     "substance-recovery": ["substance", "alcohol", "drug", "recovery", "detox", "rehab", "sober", "aa", "na", "medication assisted", "wellness", "holistic"],
@@ -128,7 +128,7 @@ You are not alone, and reaching out takes courage. Would you like me to help you
       "disability wellness", "accessible community",
     ],
     "end-of-life-services": ["hospice", "funeral", "burial", "survivor benefits", "va death", "death benefit", "nursing home", "palliative", "wills", "estate planning", "probate", "power of attorney", "advance directive", "grief", "bereavement", "homebound", "meals on wheels", "veteran cemetery", "funeral honors", "cremation", "end of life"],
-    "insurance": ["insurance", "life insurance", "health insurance", "tricare", "coverage", "policy"],
+    "insurance": ["insurance", "life insurance", "health insurance", "tricare", "coverage", "policy", "medicare", "medicaid", "champva", "valife", "burial insurance", "auto insurance", "home insurance", "renters insurance", "disability insurance", "long term care", "long-term care"],
   },
 
   blockedTopics: [
