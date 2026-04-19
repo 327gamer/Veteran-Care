@@ -347,6 +347,225 @@ function simpleHash(s: string): string {
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 
+/**
+ * Phase 2 — bleed-over primary moves (PREVIEW ONLY in this module).
+ * Keyed by resource UUID for safety. Each entry encodes the new primary
+ * category slug + curator confidence + a one-line rationale.
+ */
+const PHASE_2_PRIMARY_MOVES: Record<string, {
+  title: string;
+  newCategorySlug: string;
+  confidence: "high" | "medium" | "low";
+  rationale: string;
+}> = {
+  // ---- Vet Centers (14) -> mental-health ----
+  "6a190563-0940-466e-ba0b-1e5ddd6128a8": { title: "Charleston SC Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "3cd1854a-16be-43e8-aa2f-e7958072ebee": { title: "Charleston Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "90813dbd-249b-48d5-a7c9-9427d5cb5697": { title: "Charleston Vet Center - Family Counseling", newCategorySlug: "mental-health", confidence: "high", rationale: "Vet Center family counseling line" },
+  "1898c9e3-d90a-4349-8ce9-47fe56e84fd0": { title: "Charleston Vet Center — Crisis Support", newCategorySlug: "mental-health", confidence: "high", rationale: "Vet Center mental-health crisis support" },
+  "7b5d5554-ca5c-4df1-828d-4a89b77b7a91": { title: "Columbia SC Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "e1c6eaf0-1489-4c0f-98c0-644b67b9e7eb": { title: "Columbia Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "c5bffd73-7b8d-485b-8691-03b7ec0598ac": { title: "Columbia Vet Center - Family Counseling", newCategorySlug: "mental-health", confidence: "high", rationale: "Vet Center family counseling line" },
+  "be11a311-cb93-4394-8f1d-7593bdaaa321": { title: "Columbia Vet Center — Crisis Support", newCategorySlug: "mental-health", confidence: "high", rationale: "Vet Center mental-health crisis support" },
+  "9d2a9e29-50bc-4e7e-8040-6056ce735587": { title: "Greenville SC Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "eb857a2d-a53c-47cd-9fdf-7ce71b7e4fa9": { title: "Greenville Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "b2f918ec-32ae-446b-8482-6e587d0c5d1e": { title: "Greenville Vet Center – Bereavement Counseling", newCategorySlug: "mental-health", confidence: "high", rationale: "Bereavement counseling — mental health" },
+  "ec3d9f95-1816-434e-9d9e-251f07892fcc": { title: "Greenville Vet Center — Crisis Support", newCategorySlug: "mental-health", confidence: "high", rationale: "Vet Center mental-health crisis support" },
+  "19e01c30-13d3-4fc3-aae6-f41bed6946c4": { title: "Myrtle Beach Vet Center", newCategorySlug: "mental-health", confidence: "high", rationale: "VA Readjustment Counseling Service (mental health)" },
+  "4c2439dc-73a7-48f1-b521-b60b92b01278": { title: "Vet Centers (Readjustment Counseling)", newCategorySlug: "mental-health", confidence: "high", rationale: "National Vet Centers / RCS — mental health service line" },
+  // ---- Vet Center After Hours (1) -> crisis-help ----
+  "d584a924-7353-4b0c-aa74-a0a8ecf7c2cf": { title: "Vet Center Call Center (After Hours)", newCategorySlug: "crisis-help", confidence: "high", rationale: "After-hours crisis line; primary is crisis intervention" },
+  // ---- County VAOs (7) -> benefits-assistance ----
+  "9633dd15-c35c-4536-9ce7-b15fe7f9ed2e": { title: "Aiken County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "fbe0b122-c217-4bd8-ac85-1a4d302936c2": { title: "Anderson County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "36bf7790-3994-4d6b-bb24-f4dd38f37992": { title: "Charleston County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "e388448e-0895-4587-a3cf-79f69f3e0bac": { title: "Florence County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "274a2000-0ec0-4092-a436-26d3b44d3560": { title: "Orangeburg County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "12581db6-a193-478c-9b3e-33537aa8b952": { title: "Sumter County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  "6d405e55-0476-4538-99b4-e6e7e2831799": { title: "York County Veterans Affairs Office", newCategorySlug: "va-benefits", confidence: "high", rationale: "County VSO — claims & benefits navigation" },
+  // ---- State DVA (1) -> benefits-assistance ----
+  "9ad798b7-079f-4f51-8ba7-98f697c63b31": { title: "SC Department of Veterans Affairs", newCategorySlug: "va-benefits", confidence: "high", rationale: "State VA office — claims, benefits, outreach" },
+  // ---- SC 211 (1) -> benefits-assistance ----
+  "a2653e57-d576-4dd3-a757-18d6a74fb6c5": { title: "SC 211 – Veteran Resources Line", newCategorySlug: "va-benefits", confidence: "medium", rationale: "Statewide info/referral line; could equally fit crisis-help — recommend benefits-assistance for navigation primacy" },
+  // ---- Auto Allowance (1) -> disabled-veterans ----
+  "1de309b0-19a6-49cb-abaf-7c23e42f922a": { title: "Automobile Allowance & Adaptive Equipment — VA", newCategorySlug: "disabled-veterans", confidence: "high", rationale: "Adaptive equipment / mobility benefit for disabled veterans" },
+  // ---- PVA (1) -> disabled-veterans ----
+  "f942d033-9231-4a17-a4e9-35146a9faada": { title: "Paralyzed Veterans of America — Southeast Chapter", newCategorySlug: "disabled-veterans", confidence: "high", rationale: "PVA serves catastrophically disabled veterans — accessibility, rehab, advocacy" },
+};
+
+interface Phase2Touch {
+  resourceId: string;
+  title: string;
+  currentPrimarySlug: string | null;
+  currentPrimaryName: string | null;
+  newPrimarySlug: string;
+  newPrimaryName: string | null;
+  confidence: "high" | "medium" | "low";
+  rationale: string;
+  currentSubs: Array<{
+    slug: string;
+    parentSlug: string | null;
+    validUnderNewPrimary: boolean;
+    validUnderCommunitySupport: boolean;
+  }>;
+  recommendedKeepCsMembership: boolean;
+  recommendedAddNewPrimaryMembership: boolean;
+}
+
+export async function runPhase2Preview(stateInput: string) {
+  const state = (stateInput || "SC").toUpperCase();
+
+  // 1. Resolve all categories.
+  const { data: catRows } = await supabaseAdmin
+    .from("categories")
+    .select("id, slug, name");
+  const catBySlug = new Map<string, { id: string; slug: string; name: string }>();
+  const catById = new Map<string, { id: string; slug: string; name: string }>();
+  for (const c of catRows || []) {
+    catBySlug.set(c.slug, c);
+    catById.set(c.id, c);
+  }
+  const csCat = catBySlug.get(COMMUNITY_SUPPORT_SLUG);
+  if (!csCat) throw new Error("community-support not found");
+
+  // 2. Resolve all subcategories with their parent category.
+  const { data: subRows } = await supabaseAdmin
+    .from("subcategories")
+    .select("id, slug, name, category_id");
+  const subBySlug = new Map<string, { id: string; slug: string; categoryId: string }>();
+  const subById = new Map<string, { id: string; slug: string; categoryId: string }>();
+  for (const s of subRows || []) {
+    const obj = { id: s.id, slug: s.slug, categoryId: s.category_id };
+    // First-write-wins to keep the canonical sub when slugs duplicate across imports.
+    if (!subBySlug.has(s.slug)) subBySlug.set(s.slug, obj);
+    subById.set(s.id, obj);
+  }
+
+  // 3. Resolve target resources (filter to ones that exist in this state).
+  const targetIds = Object.keys(PHASE_2_PRIMARY_MOVES);
+  const { data: resRows } = await supabaseAdmin
+    .from("resources")
+    .select("id, title, state, status, category_id")
+    .in("id", targetIds);
+  const resById = new Map<string, { id: string; title: string; state: string; status: string; category_id: string | null }>();
+  for (const r of resRows || []) resById.set(r.id, r);
+
+  // 4. Subcategory edges for these resources.
+  const { data: rsRows } = await supabaseAdmin
+    .from("resource_subcategories")
+    .select("resource_id, subcategory_id")
+    .in("resource_id", targetIds);
+  const subsByResource = new Map<string, Set<string>>();
+  for (const e of rsRows || []) {
+    if (!subsByResource.has(e.resource_id)) subsByResource.set(e.resource_id, new Set());
+    subsByResource.get(e.resource_id)!.add(e.subcategory_id);
+  }
+
+  // 5. Build per-resource preview touches.
+  const touches: Phase2Touch[] = [];
+  const skipped: Array<{ id: string; reason: string }> = [];
+
+  for (const [id, plan] of Object.entries(PHASE_2_PRIMARY_MOVES)) {
+    const r = resById.get(id);
+    if (!r) {
+      skipped.push({ id, reason: "Resource id not found in resources table" });
+      continue;
+    }
+    // Phase 2 includes national-scope (state=null) rows that surface in the
+    // requested state. Skip only when the row is bound to a different state.
+    const rState = (r.state || "").toUpperCase();
+    if (rState && rState !== state) {
+      skipped.push({ id, reason: `Resource state=${r.state} does not match preview state=${state}` });
+      continue;
+    }
+    const newCat = catBySlug.get(plan.newCategorySlug);
+    if (!newCat) {
+      skipped.push({ id, reason: `Target category '${plan.newCategorySlug}' not found in categories table` });
+      continue;
+    }
+    const currentPrimary = r.category_id ? catById.get(r.category_id) || null : null;
+
+    const subIds = Array.from(subsByResource.get(id) || []);
+    const currentSubs = subIds.map((sid) => {
+      const sub = subById.get(sid);
+      const parent = sub ? catById.get(sub.categoryId) || null : null;
+      return {
+        slug: sub?.slug || `(unknown subcategory_id ${sid})`,
+        parentSlug: parent?.slug || null,
+        validUnderNewPrimary: parent?.id === newCat.id,
+        validUnderCommunitySupport: parent?.id === csCat.id,
+      };
+    }).sort((a, b) => a.slug.localeCompare(b.slug));
+
+    const hasCsAnchorSub = currentSubs.some((s) => s.validUnderCommunitySupport);
+    const hasNewPrimaryAnchorSub = currentSubs.some((s) => s.validUnderNewPrimary);
+
+    touches.push({
+      resourceId: id,
+      title: r.title || plan.title,
+      currentPrimarySlug: currentPrimary?.slug || null,
+      currentPrimaryName: currentPrimary?.name || null,
+      newPrimarySlug: plan.newCategorySlug,
+      newPrimaryName: newCat.name,
+      confidence: plan.confidence,
+      rationale: plan.rationale,
+      currentSubs,
+      // Apply-policy hint for later Phase 2 apply slice (not executed here):
+      //   - keep CS membership only if any current sub anchors to community-support
+      //   - always add new primary membership so subs under new parent stay valid
+      recommendedKeepCsMembership: hasCsAnchorSub,
+      recommendedAddNewPrimaryMembership: true,
+    });
+  }
+
+  // 6. Roll-ups.
+  const byNewCategory: Record<string, number> = {};
+  const byConfidence: Record<string, number> = { high: 0, medium: 0, low: 0 };
+  let subsThatStayValid = 0;
+  let subsThatWouldOrphan = 0;
+  for (const t of touches) {
+    byNewCategory[t.newPrimarySlug] = (byNewCategory[t.newPrimarySlug] || 0) + 1;
+    byConfidence[t.confidence] = (byConfidence[t.confidence] || 0) + 1;
+    for (const s of t.currentSubs) {
+      // After move: a sub stays valid if its parent is the new primary
+      // OR (CS, when we're keeping CS membership).
+      const csKept = t.recommendedKeepCsMembership && s.validUnderCommunitySupport;
+      const newOk = s.validUnderNewPrimary;
+      if (csKept || newOk) subsThatStayValid += 1;
+      else subsThatWouldOrphan += 1;
+    }
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    state,
+    phase: 2,
+    writeIntent: "PREVIEW_ONLY",
+    proposedPrimaryMoves: touches.length,
+    skipped,
+    byNewCategory,
+    byConfidence,
+    subValiditySummary: {
+      stayValidPostMove: subsThatStayValid,
+      wouldOrphanPostMove: subsThatWouldOrphan,
+    },
+    recommendedApplyPolicy: {
+      step1: "UPDATE resources.category_id = newCategoryId",
+      step2: "INSERT resource_categories (resource_id, newCategoryId) if not exists",
+      step3: "DELETE resource_categories (resource_id, communitySupportId) ONLY when recommendedKeepCsMembership=false",
+      step4: "Re-run boot enrichment-guard + tagging-audit; expect R3 to drop materially",
+    },
+    proposedMoves: touches,
+    notes: [
+      "Phase 2 is preview-only in this slice. No DB writes performed.",
+      "recommendedKeepCsMembership=true means at least one current subcategory is CS-anchored, so leaving the CS edge in resource_categories prevents orphans.",
+      "recommendedKeepCsMembership=false means every current sub belongs to the new primary (or another category), so CS membership can be cleanly removed.",
+      "All target categories (mental-health, crisis-help, benefits-assistance, disabled-veterans) are existing canonical categories — no new taxonomy.",
+      "An apply endpoint is intentionally NOT built in this slice.",
+    ],
+  };
+}
+
 interface ApplyOutcome {
   resourceId: string;
   title: string;

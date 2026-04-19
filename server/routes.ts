@@ -2959,8 +2959,13 @@ export async function registerRoutes(
       const { runPhase1Preview } = await import("./audit/community-support-retag");
       const state = String(req.query.state || "SC").toUpperCase();
       const phase = String(req.query.phase || "1");
+      if (phase === "2") {
+        const { runPhase2Preview } = await import("./audit/community-support-retag");
+        const report2 = await runPhase2Preview(state);
+        return res.json(report2);
+      }
       if (phase !== "1") {
-        return res.status(400).json({ error: "Only phase=1 is implemented. Phase 2 not approved yet." });
+        return res.status(400).json({ error: "Only phase=1 and phase=2 previews are implemented." });
       }
       const report = await runPhase1Preview(state);
       return res.json(report);
