@@ -8,6 +8,7 @@ import {
   Globe,
   Briefcase,
   type LucideIcon,
+  Scale,
 } from "lucide-react";
 
 export interface LegalSubcategory {
@@ -65,5 +66,72 @@ export const LEGAL_SUBCATEGORIES: LegalSubcategory[] = [
     slug: "business-entrepreneurship-legal",
     icon: Briefcase,
     description: "Veteran-owned business formation, contracts, trademarks, and small-business legal services",
+  },
+
+  {
+    name: "Legal Aid Services",
+    slug: "legal-aid-services",
+    icon: Scale,
+    description: "Free or low-cost legal aid for income-eligible veterans.",
+  },
+  {
+    name: "Pro Bono Legal Services",
+    slug: "pro-bono-legal-services",
+    icon: Scale,
+    description: "Volunteer attorneys offering free legal help to veterans.",
+  },
+  {
+    name: "Veterans Legal Clinics",
+    slug: "veterans-legal-clinics",
+    icon: Scale,
+    description: "Walk-in or scheduled legal clinics dedicated to veteran issues.",
+  },
+  {
+    name: "VA Benefits Appeals",
+    slug: "va-benefits-appeals",
+    icon: Scale,
+    description: "Legal help appealing denied or under-rated VA benefit decisions.",
+  },
+  {
+    name: "Discharge Upgrade Assistance",
+    slug: "discharge-upgrade-assistance",
+    icon: Scale,
+    description: "Help upgrading a less-than-honorable discharge to restore benefits eligibility.",
+  },
+  {
+    name: "Military Records Assistance",
+    slug: "military-records-assistance",
+    icon: Scale,
+    description: "Legal help correcting or recovering DD214 and military records.",
+  },
+  {
+    name: "Disability Claims Assistance",
+    slug: "disability-claims-assistance",
+    icon: Scale,
+    description: "Attorney-led assistance with VA disability claims.",
+  },
+  {
+    name: "Family Law Support",
+    slug: "family-law-support",
+    icon: Scale,
+    description: "Divorce, custody, and family law help for veterans.",
+  },
+  {
+    name: "Landlord / Tenant Issues",
+    slug: "landlord-tenant-issues",
+    icon: Scale,
+    description: "Eviction defense and tenant rights for veterans.",
+  },
+  {
+    name: "Wills, Estate Planning & Probate",
+    slug: "wills-estate-planning-probate",
+    icon: Scale,
+    description: "Wills, estate planning, and probate services for veterans and families.",
+  },
+  {
+    name: "Legal Help for Family & Final Affairs",
+    slug: "legal-help-for-family-final-affairs",
+    icon: Scale,
+    description: "Final affairs legal support for surviving families.",
   },
 ];

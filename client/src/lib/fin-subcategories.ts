@@ -7,6 +7,7 @@ import {
   Building2,
   RefreshCw,
   type LucideIcon,
+  Users,
 } from "lucide-react";
 
 export interface FinSubcategory {
@@ -66,5 +67,62 @@ export const FIN_SUBCATEGORIES: FinSubcategory[] = [
     icon: RefreshCw,
     description: "VA refinance programs, IRRRL, rate reduction, and mortgage refinancing support",
     keywords: ["refinancing", "IRRRL", "streamline", "rate reduction", "cash-out", "VA refinance"],
+  },
+
+  {
+    name: "Emergency Financial Assistance",
+    slug: "emergency-financial-assistance",
+    icon: Users,
+    description: "Short-term emergency aid for veterans facing a financial crisis.",
+    keywords: [],
+  },
+  {
+    name: "Utility Bill Assistance",
+    slug: "utility-bill-assistance",
+    icon: Users,
+    description: "Help paying electric, water, and heating bills.",
+    keywords: [],
+  },
+  {
+    name: "Veteran Relief Funds",
+    slug: "veteran-relief-funds",
+    icon: Users,
+    description: "Veteran-specific relief funds and grants for unexpected hardships.",
+    keywords: [],
+  },
+  {
+    name: "Budgeting & Financial Planning",
+    slug: "budgeting-financial-planning",
+    icon: Users,
+    description: "Free budgeting and financial planning support tailored to veterans.",
+    keywords: [],
+  },
+  {
+    name: "Debt Counseling",
+    slug: "debt-counseling",
+    icon: Users,
+    description: "Nonprofit debt counseling and consolidation guidance.",
+    keywords: [],
+  },
+  {
+    name: "Benefits Counseling",
+    slug: "benefits-counseling",
+    icon: Users,
+    description: "Counseling on how earned benefits interact with your overall finances.",
+    keywords: [],
+  },
+  {
+    name: "Nonprofit Financial Support",
+    slug: "nonprofit-financial-support",
+    icon: Users,
+    description: "Veteran-serving nonprofits that provide direct financial help.",
+    keywords: [],
+  },
+  {
+    name: "Pension Assistance",
+    slug: "pension-assistance",
+    icon: Users,
+    description: "Help applying for VA pension and related income support.",
+    keywords: [],
   },
 ];

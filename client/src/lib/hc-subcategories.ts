@@ -75,4 +75,26 @@ export const HC_SUBCATEGORIES: HcSubcategory[] = [
     description: "Caregiver health support, family medical resources, and family wellness navigation",
     keywords: ["caregiver", "family health", "family support", "caregiver navigation", "family wellness"],
   },
+
+  {
+    name: "VA Clinics",
+    slug: "va-clinics",
+    icon: Users,
+    description: "VA Community-Based Outpatient Clinics (CBOCs) across South Carolina.",
+    keywords: [],
+  },
+  {
+    name: "VA Medical Centers",
+    slug: "va-medical-centers",
+    icon: Users,
+    description: "Full VA Medical Centers serving the SC region (Ralph H. Johnson, Columbia VA).",
+    keywords: [],
+  },
+  {
+    name: "Telehealth",
+    slug: "telehealth",
+    icon: Users,
+    description: "Virtual visits and remote care through VA Video Connect and partner programs.",
+    keywords: [],
+  },
 ];

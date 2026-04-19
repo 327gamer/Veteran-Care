@@ -66,4 +66,47 @@ export const FAMILY_SUBCATEGORIES: FamilySubcategory[] = [
     icon: School,
     description: "MFLC services, school liaisons, and confidential non-medical counseling for families",
   },
+
+  {
+    name: "Military Family Support",
+    slug: "military-family-support",
+    icon: Users,
+    description: "Comprehensive programs for active-duty, Guard, Reserve, and veteran families.",
+  },
+  {
+    name: "Family Counseling",
+    slug: "family-counseling",
+    icon: Users,
+    description: "Counseling for families navigating reintegration, grief, or relationship strain.",
+  },
+  {
+    name: "Gold Star Family Support",
+    slug: "gold-star-family-support",
+    icon: Users,
+    description: "Specific programs and benefits for surviving family of fallen service members.",
+  },
+  {
+    name: "Survivor Benefits Support",
+    slug: "survivor-benefits-support",
+    icon: Users,
+    description: "Help applying for survivor benefits like DIC and survivor pension.",
+  },
+  {
+    name: "Spouse Employment Assistance",
+    slug: "spouse-employment-assistance",
+    icon: Users,
+    description: "Job placement and career support for military and veteran spouses.",
+  },
+  {
+    name: "Parenting Programs",
+    slug: "parenting-programs",
+    icon: Users,
+    description: "Parenting classes and resources for veteran and military parents.",
+  },
+  {
+    name: "Youth Programs",
+    slug: "youth-programs",
+    icon: Users,
+    description: "Programs for children and teens of veteran families.",
+  },
 ];

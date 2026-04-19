@@ -7,6 +7,7 @@ import {
   Users,
   Heart,
   type LucideIcon,
+  Brain,
 } from "lucide-react";
 
 export interface MhSubcategory {
@@ -66,5 +67,40 @@ export const MH_SUBCATEGORIES: MhSubcategory[] = [
     icon: Heart,
     description: "Resources for families dealing with a veteran's mental health challenges",
     keywords: ["family", "spouse", "caregiver", "family counseling", "family support", "children"],
+  },
+  {
+    name: "Vet Centers",
+    slug: "vet-centers",
+    icon: Brain,
+    description: "Community-based VA Vet Centers offering free counseling and outreach for combat veterans and their families.",
+    keywords: [],
+  },
+  {
+    name: "PTSD Counseling",
+    slug: "ptsd-counseling",
+    icon: Brain,
+    description: "Specialized PTSD counseling and trauma-focused therapy for veterans.",
+    keywords: [],
+  },
+  {
+    name: "Peer Support",
+    slug: "peer-support",
+    icon: Brain,
+    description: "Peer-led support and recovery groups led by fellow veterans.",
+    keywords: [],
+  },
+  {
+    name: "Crisis Support",
+    slug: "crisis-support",
+    icon: Brain,
+    description: "Mental health crisis support and stabilization for veterans in acute distress.",
+    keywords: [],
+  },
+  {
+    name: "Substance Abuse Treatment",
+    slug: "substance-abuse-treatment",
+    icon: Brain,
+    description: "Substance abuse treatment programs run through the VA and community providers.",
+    keywords: [],
   },
 ];

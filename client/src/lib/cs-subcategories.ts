@@ -98,4 +98,35 @@ export const CS_SUBCATEGORIES: CsSubcategory[] = [
     description:
       "Honor Flight programs, senior centers, and social groups built for older and retired veterans.",
   },
+
+  {
+    name: "American Legion Posts",
+    slug: "american-legion-posts",
+    icon: Users,
+    description: "Local American Legion posts where veterans gather, organize, and serve.",
+  },
+  {
+    name: "VFW Posts",
+    slug: "vfw-posts",
+    icon: Users,
+    description: "Veterans of Foreign Wars posts across South Carolina open to combat veterans.",
+  },
+  {
+    name: "Veteran Service Organizations",
+    slug: "veteran-service-organizations",
+    icon: Users,
+    description: "Accredited VSOs that advocate, organize events, and help veterans access benefits.",
+  },
+  {
+    name: "Veteran Nonprofit Organizations",
+    slug: "veteran-nonprofit-organizations",
+    icon: Users,
+    description: "Veteran-focused nonprofits running programs across community, recreation, and outreach.",
+  },
+  {
+    name: "Veteran Outreach Programs",
+    slug: "veteran-outreach-programs",
+    icon: Users,
+    description: "Programs that proactively reach veterans in their communities to connect them with help.",
+  },
 ];

@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale, GraduationCap, Users, HandHeart } from "lucide-react";
+import { Brain, HeartPulse, Briefcase, FileText, Home as HomeIcon, DollarSign, Flower2, Medal, Shield, Scale, GraduationCap, Users, HandHeart, AlertTriangle, Utensils, Car, Sparkles } from "lucide-react";
 import type { CategoryDrilldownConfig } from "@/components/category-drilldown";
 import { MH_SUBCATEGORIES } from "@/lib/mh-subcategories";
 import { HC_SUBCATEGORIES } from "@/lib/hc-subcategories";
@@ -13,6 +13,10 @@ import { LEGAL_SUBCATEGORIES } from "@/lib/legal-subcategories";
 import { EDU_SUBCATEGORIES } from "@/lib/edu-subcategories";
 import { FAMILY_SUBCATEGORIES } from "@/lib/family-subcategories";
 import { CS_SUBCATEGORIES } from "@/lib/cs-subcategories";
+import { CRISIS_SUBCATEGORIES } from "@/lib/crisis-subcategories";
+import { FOOD_SUBCATEGORIES } from "@/lib/food-subcategories";
+import { TRANSPORT_SUBCATEGORIES } from "@/lib/transport-subcategories";
+import { WELLNESS_SUBCATEGORIES } from "@/lib/wellness-subcategories";
 
 /**
  * Step 3 Slice 3a — single source of truth for category drilldown config.
@@ -259,6 +263,77 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
     introLinks: [
       { slug: "veteran-social-groups", label: "Veteran Social Groups", testidKey: "social" },
       { slug: "adaptive-recreation", label: "Adaptive Recreation", testidKey: "adaptive" },
+    ],
+  },
+  // Step 1-2 (2026-04-19) — wire the 4 remaining canonical categories so every
+  // canonical resource category has a working drilldown. viewAllSlug values
+  // match RESOURCE_CATEGORY_SLUGS (compile-time guarded).
+  "crisis-help": {
+    testidPrefix: "crisis",
+    trackPrefix: "crisis",
+    viewAllSlug: "crisis-help",
+    aiContext: "crisis-help",
+    name: "Crisis Help",
+    icon: AlertTriangle,
+    iconBgClass: "bg-red-50",
+    iconTextClass: "text-red-700",
+    description:
+      "Veterans Crisis Line, suicide prevention, emergency mental health, mobile crisis teams, domestic violence safety, and substance abuse crisis support.",
+    subcategories: CRISIS_SUBCATEGORIES,
+    introLinks: [
+      { slug: "veterans-crisis-line", label: "Veterans Crisis Line", testidKey: "crisisline" },
+      { slug: "emergency-mental-health", label: "Emergency Mental Health", testidKey: "emh" },
+    ],
+  },
+  "food-assistance": {
+    testidPrefix: "food",
+    trackPrefix: "food",
+    viewAllSlug: "food-assistance",
+    aiContext: "food-assistance",
+    name: "Food Assistance",
+    icon: Utensils,
+    iconBgClass: "bg-amber-50",
+    iconTextClass: "text-amber-700",
+    description:
+      "Food banks, food pantries, SNAP application help, community kitchens, Meals on Wheels, and veteran-specific meal programs across South Carolina.",
+    subcategories: FOOD_SUBCATEGORIES,
+    introLinks: [
+      { slug: "food-banks", label: "Food Banks", testidKey: "banks" },
+      { slug: "snap-assistance", label: "SNAP Assistance", testidKey: "snap" },
+    ],
+  },
+  "transportation": {
+    testidPrefix: "transport",
+    trackPrefix: "transport",
+    viewAllSlug: "transportation",
+    aiContext: "transportation",
+    name: "Transportation",
+    icon: Car,
+    iconBgClass: "bg-blue-50",
+    iconTextClass: "text-blue-700",
+    description:
+      "DAV transportation, rides to VA medical appointments, volunteer driver programs, rideshare assistance, and public transit help for veterans.",
+    subcategories: TRANSPORT_SUBCATEGORIES,
+    introLinks: [
+      { slug: "va-medical-transport", label: "VA Medical Transport", testidKey: "vamed" },
+      { slug: "volunteer-driver-programs", label: "Volunteer Driver Programs", testidKey: "vol" },
+    ],
+  },
+  "wellness-recovery": {
+    testidPrefix: "wellness",
+    trackPrefix: "wellness",
+    viewAllSlug: "wellness-recovery",
+    aiContext: "wellness-recovery",
+    name: "Wellness & Recovery",
+    icon: Sparkles,
+    iconBgClass: "bg-teal-50",
+    iconTextClass: "text-teal-700",
+    description:
+      "Veteran recovery programs, outpatient treatment, detox, medication-assisted treatment, peer recovery groups, and long-term recovery support services.",
+    subcategories: WELLNESS_SUBCATEGORIES,
+    introLinks: [
+      { slug: "veteran-recovery-programs", label: "Veteran Recovery Programs", testidKey: "vrp" },
+      { slug: "peer-recovery-groups", label: "Peer Recovery Groups", testidKey: "peer" },
     ],
   },
 };

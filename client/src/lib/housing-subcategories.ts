@@ -75,4 +75,40 @@ export const HOUSING_SUBCATEGORIES: HousingSubcategory[] = [
     description: "Moving companies, PCS relocation help, and storage solutions for veterans",
     keywords: ["moving", "movers", "moving company", "storage", "relocation", "PCS", "pack out", "household goods"],
   },
+
+  {
+    name: "Homeless Veteran Services",
+    slug: "homeless-veteran-services",
+    icon: AlertTriangle,
+    description: "SSVF, HUD-VASH, and street outreach programs for veterans experiencing homelessness.",
+    keywords: [],
+  },
+  {
+    name: "Rent Assistance",
+    slug: "rent-assistance",
+    icon: AlertTriangle,
+    description: "Direct help paying rent and avoiding eviction.",
+    keywords: [],
+  },
+  {
+    name: "Emergency Housing",
+    slug: "emergency-housing",
+    icon: AlertTriangle,
+    description: "Immediate emergency housing options for veterans in crisis.",
+    keywords: [],
+  },
+  {
+    name: "Emergency Shelter",
+    slug: "emergency-shelter",
+    icon: AlertTriangle,
+    description: "Emergency shelter beds for veterans tonight.",
+    keywords: [],
+  },
+  {
+    name: "Food Assistance (Housing-Linked)",
+    slug: "food-assistance",
+    icon: AlertTriangle,
+    description: "Food and nutrition assistance bundled with housing programs.",
+    keywords: [],
+  },
 ];

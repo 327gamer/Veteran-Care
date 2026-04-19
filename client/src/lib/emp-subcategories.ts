@@ -7,6 +7,7 @@ import {
   Rocket,
   Briefcase,
   type LucideIcon,
+  Users,
 } from "lucide-react";
 
 export interface EmpSubcategory {
@@ -66,5 +67,90 @@ export const EMP_SUBCATEGORIES: EmpSubcategory[] = [
     icon: Briefcase,
     description: "Disabled veteran outreach, workforce centers, and government programs",
     keywords: ["DVOP", "workforce", "LVER", "Department of Labor", "employment services", "job center"],
+  },
+
+  {
+    name: "Job Placement",
+    slug: "job-placement",
+    icon: Users,
+    description: "Direct job placement services for veterans across South Carolina.",
+    keywords: [],
+  },
+  {
+    name: "Resume Assistance",
+    slug: "resume-assistance",
+    icon: Users,
+    description: "Help building and tailoring your resume for civilian roles.",
+    keywords: [],
+  },
+  {
+    name: "Career Counseling",
+    slug: "career-counseling",
+    icon: Users,
+    description: "Guidance choosing a career path that fits your skills, experience, and goals.",
+    keywords: [],
+  },
+  {
+    name: "Federal Employment",
+    slug: "federal-employment",
+    icon: Users,
+    description: "Federal hiring pathways including USAJOBS, VRA, and veteran preference.",
+    keywords: [],
+  },
+  {
+    name: "State Employment",
+    slug: "state-employment",
+    icon: Users,
+    description: "State of South Carolina jobs with veteran hiring preference.",
+    keywords: [],
+  },
+  {
+    name: "Entrepreneurship Support",
+    slug: "entrepreneurship-support",
+    icon: Users,
+    description: "Small business coaching, VBOC, and resources for veteran entrepreneurs.",
+    keywords: [],
+  },
+  {
+    name: "Apprenticeships",
+    slug: "apprenticeships",
+    icon: Users,
+    description: "Registered apprenticeships that combine paid work with training.",
+    keywords: [],
+  },
+  {
+    name: "Skilled Trades Training",
+    slug: "skilled-trades-training",
+    icon: Users,
+    description: "Training paths into skilled trades like welding, electrical, HVAC, and plumbing.",
+    keywords: [],
+  },
+  {
+    name: "Certification Programs",
+    slug: "certification-programs",
+    icon: Users,
+    description: "Industry certifications that translate military experience into civilian credentials.",
+    keywords: [],
+  },
+  {
+    name: "Career Pathways",
+    slug: "career-pathways",
+    icon: Users,
+    description: "Structured career pathway programs that ladder you from training to placement.",
+    keywords: [],
+  },
+  {
+    name: "Building & Construction",
+    slug: "building-construction",
+    icon: Users,
+    description: "Construction-industry employment and training pipelines.",
+    keywords: [],
+  },
+  {
+    name: "Manufacturing",
+    slug: "manufacturing",
+    icon: Users,
+    description: "Manufacturing employers and training pipelines.",
+    keywords: [],
   },
 ];

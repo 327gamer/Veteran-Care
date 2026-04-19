@@ -9,6 +9,7 @@ import {
   DollarSign,
   Building2,
   type LucideIcon,
+  Users,
 } from "lucide-react";
 
 export interface EduSubcategory {
@@ -72,5 +73,60 @@ export const EDU_SUBCATEGORIES: EduSubcategory[] = [
     slug: "veteran-friendly-schools",
     icon: Building2,
     description: "Colleges, universities, and trade schools with strong veteran services and support offices",
+  },
+
+  {
+    name: "Veteran Student Services",
+    slug: "veteran-student-services",
+    icon: Users,
+    description: "On-campus VA-certified student services offices that help veterans navigate enrollment, benefits, and academic life.",
+  },
+  {
+    name: "Technical Colleges",
+    slug: "technical-colleges",
+    icon: Users,
+    description: "South Carolina technical colleges with veteran programs and workforce-aligned training.",
+  },
+  {
+    name: "GI Bill Assistance",
+    slug: "gi-bill-assistance",
+    icon: Users,
+    description: "Help applying for and using Post-9/11 GI Bill, Montgomery GI Bill, and transfer benefits.",
+  },
+  {
+    name: "Tuition Assistance",
+    slug: "tuition-assistance",
+    icon: Users,
+    description: "State and federal tuition assistance programs for veterans and dependents.",
+  },
+  {
+    name: "Education Counseling",
+    slug: "education-counseling",
+    icon: Users,
+    description: "One-on-one education counseling for veterans choosing a school, program, or career path.",
+  },
+  {
+    name: "Continuing Education",
+    slug: "continuing-education",
+    icon: Users,
+    description: "Adult learner and continuing education programs designed for working veterans.",
+  },
+  {
+    name: "Training",
+    slug: "training",
+    icon: Users,
+    description: "Job-focused training programs across South Carolina.",
+  },
+  {
+    name: "Building & Construction",
+    slug: "building-construction",
+    icon: Users,
+    description: "Education and training paths into construction trades.",
+  },
+  {
+    name: "Manufacturing",
+    slug: "manufacturing",
+    icon: Users,
+    description: "Education and training paths into manufacturing careers.",
   },
 ];
