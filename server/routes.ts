@@ -11013,21 +11013,195 @@ export async function registerRoutes(
     }
   });
 
+  // Slice 4A — pgQuery-level probe (the boot-time hasPartnerTable flag is set
+  // via supabaseAdmin which may point to a different DB than pgQuery in some
+  // environments). We probe once via pgQuery and cache the result.
+  let _pgHasPartnerOrgs: boolean | null = null;
+  let _pgHasRoutingRules: boolean | null = null;
+  let _pgHasPartnerOrgIdCol: boolean | null = null;
+  async function pgProbeTable(name: string): Promise<boolean> {
+    try {
+      const r = await pgQuery(`SELECT to_regclass($1) AS exists`, [`public.${name}`]);
+      return !!(r && r[0] && r[0].exists);
+    } catch { return false; }
+  }
+  async function pgProbeColumn(table: string, col: string): Promise<boolean> {
+    try {
+      const r = await pgQuery(
+        `SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 AND column_name=$2 LIMIT 1`,
+        [table, col]
+      );
+      return !!(r && r.length > 0);
+    } catch { return false; }
+  }
+
   app.get("/api/trusted-partners-for-category/:resourceSlug", async (req, res) => {
     if (!hasTrustedServicesTable) return res.json([]);
     const trustedSlug = toCanonical(req.params.resourceSlug);
+
+    // Slice 4A — optional params. When NONE are provided, the endpoint behaves
+    // identically to its legacy form (zero regression for resources.tsx).
+    const subParam = typeof req.query.subcategory === "string" ? req.query.subcategory.trim() : "";
+    const stateParam = typeof req.query.state === "string" ? req.query.state.trim().toUpperCase() : "";
+    const cityParam = typeof req.query.city === "string" ? req.query.city.trim() : "";
+    const limitParam = Math.max(1, Math.min(200, parseInt(String(req.query.limit || "100"), 10) || 100));
+    const rankedParam = req.query.ranked === "1" || req.query.ranked === "true";
+    const _adminKey = process.env.ADMIN_KEY;
+    const debugParam = (req.query.debug === "1" || req.query.debug === "true")
+      && !!_adminKey
+      && req.headers["x-admin-key"] === _adminKey;
+
+    const anyNewParam = !!(subParam || stateParam || cityParam || rankedParam || req.query.limit);
+
     try {
-      const rows = await pgQuery(
-        `SELECT ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url, ts.city, ts.state,
-                ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
-                json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
-         FROM trusted_services ts
-         INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
-         WHERE ts.is_active IS NOT false AND tsc.slug = $1
-         ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST`,
-        [trustedSlug]
-      );
-      return res.json(rows);
+      // Legacy path — preserve byte-for-byte response shape when no new params present.
+      if (!anyNewParam) {
+        const rows = await pgQuery(
+          `SELECT ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url, ts.city, ts.state,
+                  ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
+                  json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
+           FROM trusted_services ts
+           INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+           WHERE ts.is_active IS NOT false AND tsc.slug = $1
+           ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST`,
+          [trustedSlug]
+        );
+        return res.json(rows);
+      }
+
+      // New path — ranked + filtered. The ORDER BY enforces the
+      // verified-tier-floor rule first, then the score, then stable tiebreaks.
+      //
+      // Hard rules:
+      //   - is_active = false               → excluded
+      //   - verification_status = 'rejected' → excluded
+      //   - subscription_status in (past_due, canceled) → paid_boost forced to 0
+      //
+      // Tier:
+      //   1 = verified  (verification_status = 'verified')
+      //   2 = unverified (everything else not excluded)
+      //
+      // Score signals (computed in SQL, all derivable from existing columns):
+      //   paid_boost   = (sponsored_top_active ? 1000 : 0)
+      //                + (is_featured           ?  500 : 0)
+      //                + (featured_rank IS NOT NULL ? GREATEST(0, 100 - featured_rank) : 0)
+      //                + (active_paid_partner  ?  100 : 0)
+      //   geo_boost    = (state matches ? 75 : (is_national ? 25 : 0))
+      //                + (city matches  ? 30 : 0)
+      //   sub_boost    = (sub matches via partner_routing_rules ? 60 : 0)
+      //   recency      = LEAST(30, EXTRACT(DAY FROM (now() - created_at))::int)
+      //   score        = paid_boost + geo_boost + sub_boost + recency
+      //
+      // Verified-tier-floor: ORDER BY tier ASC FIRST. An unverified partner
+      // with score=10000 cannot outrank a verified partner with score=0.
+      //
+      // Graceful degradation: probe pgQuery directly (boot flag may track a
+      // different DB connection in split-DB envs). Also probe for the bridge
+      // column ts.partner_organization_id (added by chunk-8.0 migration).
+      if (_pgHasPartnerOrgs === null) _pgHasPartnerOrgs = await pgProbeTable("partner_organizations");
+      if (_pgHasRoutingRules === null) _pgHasRoutingRules = await pgProbeTable("partner_routing_rules");
+      if (_pgHasPartnerOrgIdCol === null) _pgHasPartnerOrgIdCol = await pgProbeColumn("trusted_services", "partner_organization_id");
+
+      const canJoinPartner = _pgHasPartnerOrgs && _pgHasPartnerOrgIdCol;
+      const partnerOrgIdSelect = _pgHasPartnerOrgIdCol ? `ts.partner_organization_id` : `NULL::uuid AS partner_organization_id`;
+      const poJoin = canJoinPartner
+        ? `LEFT JOIN partner_organizations po ON ts.partner_organization_id = po.id`
+        : `LEFT JOIN (SELECT NULL::uuid AS id, NULL::text AS subscription_status, false AS active_paid_partner WHERE false) po ON false`;
+      const subBoostExpr = (canJoinPartner && _pgHasRoutingRules)
+        ? `CASE
+            WHEN $4 <> '' AND EXISTS (
+              SELECT 1 FROM partner_routing_rules prr
+               WHERE prr.partner_id = ts.partner_organization_id
+                 AND prr.is_active IS NOT false
+                 AND prr.subcategory = $4
+                 AND (prr.state IS NULL OR $2 = '' OR UPPER(prr.state) = $2)
+            ) THEN 60 ELSE 0
+          END`
+        : `(CASE WHEN $4 = '__never__' THEN 0 ELSE 0 END)`;
+
+      const sql = `
+        WITH partner_scoring AS (
+          SELECT
+            ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url,
+            ts.city, ts.state, ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
+            ts.verification_status, ts.is_national, ts.featured_rank, ts.display_order,
+            ts.created_at, ${partnerOrgIdSelect}, ts.sponsored_top_active,
+            json_build_object('slug', tsc.slug, 'name', tsc.name) AS category,
+
+            CASE WHEN ts.verification_status = 'verified' THEN 1 ELSE 2 END AS tier,
+
+            -- subscription_status governance: dunning/canceled partners lose paid boost
+            CASE
+              WHEN po.subscription_status IS NOT NULL
+                AND po.subscription_status IN ('past_due', 'canceled')
+              THEN 0
+              ELSE
+                (CASE WHEN ts.sponsored_top_active = true THEN 1000 ELSE 0 END)
+                + (CASE WHEN ts.is_featured       = true THEN  500 ELSE 0 END)
+                + (CASE WHEN ts.featured_rank IS NOT NULL
+                        THEN GREATEST(0, 100 - ts.featured_rank) ELSE 0 END)
+                + (CASE WHEN COALESCE(po.active_paid_partner, false) = true THEN 100 ELSE 0 END)
+            END AS paid_boost,
+
+            (CASE
+               WHEN $2 <> '' AND UPPER(COALESCE(ts.state, '')) = $2 THEN 75
+               WHEN COALESCE(ts.is_national, false) = true THEN 25
+               ELSE 0
+             END)
+            + (CASE
+                 WHEN $3 <> '' AND LOWER(COALESCE(ts.city, '')) = LOWER($3) THEN 30
+                 ELSE 0
+               END) AS geo_boost,
+
+            ${subBoostExpr} AS sub_boost,
+
+            LEAST(30, GREATEST(0, EXTRACT(DAY FROM (now() - ts.created_at))::int)) AS recency,
+
+            COALESCE(po.subscription_status, 'active') AS subscription_status,
+            COALESCE(po.active_paid_partner, false)    AS active_paid_partner
+          FROM trusted_services ts
+          INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
+          ${poJoin}
+          WHERE ts.is_active IS NOT false
+            AND ts.verification_status IS DISTINCT FROM 'rejected'
+            AND tsc.slug = $1
+        )
+        SELECT *,
+          (paid_boost + geo_boost + sub_boost + recency) AS score
+        FROM partner_scoring
+        ORDER BY tier ASC,
+                 score DESC,
+                 display_order ASC NULLS LAST,
+                 created_at ASC
+        LIMIT ${limitParam}
+      `;
+      const rows: any[] = await pgQuery(sql, [trustedSlug, stateParam, cityParam, subParam]);
+
+      // Slim the public payload back to the legacy shape unless debug is requested.
+      const publicShape = rows.map((r: any) => {
+        const base: any = {
+          id: r.id, name: r.name, short_description: r.short_description,
+          phone: r.phone, email: r.email, website_url: r.website_url,
+          city: r.city, state: r.state, is_featured: r.is_featured,
+          is_national: r.is_national, logo_url: r.logo_url,
+          cta_text: r.cta_text, cta_url: r.cta_url, category: r.category,
+        };
+        if (debugParam) {
+          base._scoring = {
+            tier: r.tier,
+            verification_status: r.verification_status,
+            subscription_status: r.subscription_status,
+            active_paid_partner: r.active_paid_partner,
+            paid_boost: Number(r.paid_boost),
+            geo_boost: Number(r.geo_boost),
+            sub_boost: Number(r.sub_boost),
+            recency: Number(r.recency),
+            score: Number(r.score),
+          };
+        }
+        return base;
+      });
+      return res.json(publicShape);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
