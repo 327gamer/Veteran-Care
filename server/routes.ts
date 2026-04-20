@@ -10655,11 +10655,19 @@ export async function registerRoutes(
       if (radiusMiles !== undefined && radiusMiles > 500) radiusMiles = 500;
       const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined;
 
-      const conditions = [`ts.is_active IS NOT false`, `tsc.program_area IN ('veteran_discount_services', 'trusted_services')`];
+      const conditions = [`ts.is_active IS NOT false`, `ts.verification_status IS DISTINCT FROM 'rejected'`, `tsc.program_area IN ('veteran_discount_services', 'trusted_services')`];
       const params: any[] = [];
       if (req.query.category) {
         params.push(req.query.category);
-        conditions.push(`tsc.slug = $${params.length}`);
+        conditions.push(`(tsc.slug = $${params.length} OR $${params.length} = ANY(ts.cross_list_category_slugs))`);
+      }
+      // PHASE 2 (refit) — strict per-sub filter for the /discounts surface.
+      // veteran-discounts.tsx now passes ?subcategory=X. Only partners that
+      // explicitly tag themselves with that sub via subcategory_slugs appear.
+      const subcategoryParam = typeof req.query.subcategory === 'string' ? req.query.subcategory.trim() : '';
+      if (subcategoryParam) {
+        params.push(subcategoryParam);
+        conditions.push(`$${params.length} = ANY(ts.subcategory_slugs)`);
       }
       if (req.query.group_type) {
         params.push(req.query.group_type);

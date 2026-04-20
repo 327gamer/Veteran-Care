@@ -210,6 +210,18 @@ export default function VeteranDiscounts() {
     }
   }, [geo.location, geoApplied]);
 
+  useEffect(() => {
+    const handler = () => {
+      setSelectedCategory(null);
+      setSelectedSubcategory(null);
+      setSearchQuery("");
+      setDetailService(null);
+      setConnectService(null);
+    };
+    window.addEventListener("reset-trusted-services", handler);
+    return () => window.removeEventListener("reset-trusted-services", handler);
+  }, []);
+
   const { data: categories = [], isLoading: catsLoading } = useQuery<DiscountCategory[]>({
     queryKey: ["/api/veteran-discounts/categories"],
     queryFn: () => fetch("/api/veteran-discounts/categories").then(r => {
@@ -241,10 +253,11 @@ export default function VeteranDiscounts() {
   const showSubcategoryPicker = !!selectedCategory && isServiceCategory && !selectedSubcategory && (!!richSubs || apiSubsLoading || apiSubcategories.length > 0);
 
   const { data: listingsData, isLoading: listingsLoading } = useQuery<{ partners: DiscountListing[]; fallback: DiscountListing[] }>({
-    queryKey: ["/api/veteran-discounts", selectedCategory, effectiveState, searchQuery, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
+    queryKey: ["/api/veteran-discounts", selectedCategory, selectedSubcategory, effectiveState, searchQuery, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : ""],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
+      if (selectedSubcategory && selectedSubcategory !== "__all__") params.set("subcategory", selectedSubcategory);
       if (isNearMeQuery) {
         params.set("user_lat", String(nearMeLat));
         params.set("user_lng", String(nearMeLng));

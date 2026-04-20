@@ -175,7 +175,7 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
               <BookOpen className="h-4 w-4" />
               Resources
             </Link>
-            <Link href="/discounts" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/discounts') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
+            <Link href="/discounts" onClick={() => window.dispatchEvent(new CustomEvent("reset-trusted-services"))} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/discounts') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>
               <ShieldCheck className="h-4 w-4" />
               Trusted Services
             </Link>
@@ -341,7 +341,7 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
             <span className="text-[10px] font-medium">Resources</span>
           </Link>
 
-          <Link href="/discounts" className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/discounts') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
+          <Link href="/discounts" onClick={() => window.dispatchEvent(new CustomEvent("reset-trusted-services"))} className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[60px] rounded-lg transition-colors ${isActive('/discounts') ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
             <ShieldCheck className={`h-5 w-5 ${isActive('/discounts') ? 'fill-current' : ''}`} />
             <span className="text-[9px] font-medium text-center leading-tight">Trusted<br/>Services</span>
           </Link>
