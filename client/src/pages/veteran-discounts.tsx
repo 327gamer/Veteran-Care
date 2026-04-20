@@ -74,6 +74,7 @@ import { FIN_SUBCATEGORIES } from "@/lib/fin-subcategories";
 import { EMP_SUBCATEGORIES } from "@/lib/emp-subcategories";
 import { EOL_SUBCATEGORIES } from "@/lib/eol-subcategories";
 import { INSURANCE_SUBCATEGORIES } from "@/lib/insurance-subcategories";
+import { filterVisibleSubcategories } from "@/lib/launch-protection";
 
 interface RichSubcategory {
   name: string;
@@ -674,7 +675,7 @@ export default function VeteranDiscounts() {
                     Select a topic to find trusted providers near you.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {richSubs.map((sub) => {
+                    {filterVisibleSubcategories(selectedCategory || "", richSubs).map((sub) => {
                       const Icon = sub.icon;
                       return (
                         <button

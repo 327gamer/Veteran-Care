@@ -94,7 +94,37 @@ app.use((req, res, next) => {
   next();
 });
 
+async function cleanupTestRecords() {
+  // Idempotent boot-time cleanup. Production has historical seed/test
+  // records (ABC - 2, ABC 4, ABC - 6, LIVE PAYMENT TEST, etc.) that the
+  // founder needs archived from public-facing surfaces. Runs every boot;
+  // cheap when nothing matches. Uses pg pool already wired in pg-client.
+  try {
+    const { query: pgQuery } = await import("./pg-client");
+    const archived = await pgQuery(
+      `UPDATE trusted_services
+         SET is_active = false,
+             verification_status = 'rejected',
+             name = '[ARCHIVED] ' || name
+       WHERE name NOT ILIKE '[ARCHIVED]%'
+         AND (
+           name ~* '^\\s*ABC[ -]*\\d+\\s*$'
+           OR name ILIKE '%LIVE PAYMENT TEST%'
+           OR name ILIKE '%test record%'
+         )
+       RETURNING id, name`,
+    );
+    if (archived.length > 0) {
+      console.log(`[boot-cleanup] archived ${archived.length} test records:`,
+        archived.map((r: any) => r.name).join(", "));
+    }
+  } catch (err: any) {
+    console.warn(`[boot-cleanup] skipped (${err?.message || err})`);
+  }
+}
+
 (async () => {
+  await cleanupTestRecords();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
