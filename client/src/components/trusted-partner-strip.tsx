@@ -39,13 +39,18 @@ export default function TrustedPartnerStrip({
   const enabled = PILOT_CATEGORIES.has(categorySlug);
   const { location: geo } = useGeolocation();
   const stateCode = geo?.stateCode || "";
+  // PHASE 4 — pass city from geolocation so Charleston-based viewers see
+  // Charleston-based partners ranked first, Greenville viewers see Greenville-
+  // based partners first. The API's geo_boost adds +30 on city match.
+  const cityName = geo?.city || "";
 
   const { data: partners = [], isLoading } = useQuery<TrustedPartner[]>({
     enabled,
-    queryKey: ["/api/trusted-partners-for-category", categorySlug, "ranked-verified", stateCode],
+    queryKey: ["/api/trusted-partners-for-category", categorySlug, "ranked-verified", stateCode, cityName],
     queryFn: async () => {
       const qs = new URLSearchParams({ ranked: "1", verified_only: "1", limit: "3" });
       if (stateCode) qs.set("state", stateCode);
+      if (cityName) qs.set("city", cityName);
       const r = await fetch(
         `/api/trusted-partners-for-category/${encodeURIComponent(categorySlug)}?${qs.toString()}`
       );

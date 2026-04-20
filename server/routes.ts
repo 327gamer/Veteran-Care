@@ -10900,11 +10900,38 @@ export async function registerRoutes(
       if (radiusMiles !== undefined && radiusMiles > 500) radiusMiles = 500;
       const nearMeMode = userLat !== undefined && userLng !== undefined && radiusMiles !== undefined;
 
-      const conditions = [`ts.is_active IS NOT false`];
+      const conditions = [`ts.is_active IS NOT false`, `ts.verification_status IS DISTINCT FROM 'rejected'`];
       const params: any[] = [];
       if (req.query.category) {
         params.push(req.query.category);
         conditions.push(`tsc.slug = $${params.length}`);
+      }
+      // PHASE 2 — strict subcategory filtering. When ?subcategory=X is passed,
+      // only return partners that explicitly tag themselves with that sub.
+      // Untagged partners (subcategory_slugs = '{}') are intentionally hidden
+      // from sub pages — they'll only appear at category-level landing pages.
+      // PHASE 5 — also surface partners cross-listed into this category via
+      // cross_list_category_slugs (e.g. nonprofits surfaced under Community
+      // Support). Cross-listed partners must STILL match the sub filter when
+      // one is present.
+      const subcategoryParam = typeof req.query.subcategory === 'string' ? req.query.subcategory.trim() : '';
+      if (subcategoryParam) {
+        params.push(subcategoryParam);
+        conditions.push(`$${params.length} = ANY(ts.subcategory_slugs)`);
+      }
+      // Cross-listing: if category param is set, OR-in any partner whose
+      // cross_list_category_slugs contains this category. Implemented as a
+      // separate condition group that replaces the strict tsc.slug match.
+      if (req.query.category && !subcategoryParam) {
+        // Pop the original tsc.slug condition (last pushed condition) and
+        // rebuild it as a slug-OR-cross-list match.
+        const catSlug = req.query.category as string;
+        // The tsc.slug condition was pushed at index conditions.length-2 (after the new sub condition).
+        // Find and replace it.
+        const slugIdx = conditions.findIndex(c => c.includes(`tsc.slug = $`));
+        if (slugIdx >= 0) {
+          conditions[slugIdx] = `(tsc.slug = $1 OR $1 = ANY(ts.cross_list_category_slugs))`;
+        }
       }
       if (!nearMeMode && req.query.state) {
         params.push((req.query.state as string).toUpperCase());
@@ -11063,7 +11090,9 @@ export async function registerRoutes(
                   json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
            FROM trusted_services ts
            INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
-           WHERE ts.is_active IS NOT false AND tsc.slug = $1
+           WHERE ts.is_active IS NOT false
+             AND ts.verification_status IS DISTINCT FROM 'rejected'
+             AND (tsc.slug = $1 OR $1 = ANY(ts.cross_list_category_slugs))
            ORDER BY ts.is_featured DESC, ts.featured_rank ASC NULLS LAST, ts.display_order ASC NULLS LAST`,
           [trustedSlug]
         );

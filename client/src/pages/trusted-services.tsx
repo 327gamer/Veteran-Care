@@ -253,10 +253,13 @@ export default function TrustedServices() {
   const searchParam = debouncedSearch.trim() || undefined;
 
   const { data: services = [], isLoading: servicesLoading } = useQuery<TrustedService[]>({
-    queryKey: ["/api/trusted-services", selectedCategory, filterState, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : "", searchParam],
+    queryKey: ["/api/trusted-services", selectedCategory, selectedSubcategory, filterState, isNearMeQuery ? `${nearMeLat},${nearMeLng},${nearMeRadius}` : "", searchParam],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.set("category", selectedCategory);
+      // PHASE 2 — pass subcategory to API for strict per-sub filtering.
+      // Untagged partners are intentionally hidden on sub pages.
+      if (selectedSubcategory) params.set("subcategory", selectedSubcategory);
       if (searchParam) params.set("q", searchParam);
       if (isNearMeQuery) {
         params.set("user_lat", String(nearMeLat));
