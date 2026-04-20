@@ -1,0 +1,90 @@
+--- COPY TO REPLIT ---
+
+HIGH PRIORITY STRUCTURE ALIGNMENT TASK
+
+Founder found an important intake inconsistency on homepage.
+
+Current homepage section:
+
+"Add Your Veteran Owned Business or Nonprofit to Our Free Directory"
+
+This section currently does NOT have the same proper category / subcategory structure that now exists in the main Resource submission flow.
+
+That needs to be corrected.
+
+MISSION:
+
+Make the "Add Your Veteran Owned Business or Nonprofit to Our Free Directory" intake flow match the upgraded Resource submission system exactly in structure, logic, and admin workflow.
+
+REQUIRED FIXES:
+
+PHASE 1 — CATEGORY / SUBCATEGORY ALIGNMENT
+
+Use the same dynamic taxonomy system as Resources:
+
+1. Main category dropdown/select
+2. Subcategory options appear based on selected category
+3. Multi-select subcategories if supported in Resources
+4. No stale / duplicate / missing categories
+5. Same canonical taxonomy source
+
+PHASE 2 — FORM QUALITY
+
+Ensure fields are professional and useful, including as appropriate:
+
+- business / nonprofit name
+- contact name
+- phone
+- email
+- website
+- city
+- state
+- zip
+- description
+- veteran owned yes/no
+- nonprofit yes/no
+- category
+- subcategories
+- social links (optional)
+
+PHASE 3 — ADMIN PANEL FLOW
+
+All submissions must route into admin panel first for approval.
+
+Need founder/admin to be able to:
+
+- review
+- edit category
+- edit subcategories
+- approve
+- reject
+- archive
+
+Nothing should auto-publish without approval.
+
+PHASE 4 — LIVE PUBLISH RESULT
+
+Once approved, listing should populate correctly in matching live categories / subcategories / geography.
+
+PHASE 5 — RETURN MATRIX
+
+Please reply with:
+
+SYSTEM | PASS / FIXED / NOTES
+
+1. Homepage Veteran Business intake form
+2. Category structure
+3. Subcategory logic
+4. Admin queue routing
+5. Approval publishing flow
+
+IMPORTANT:
+
+Do not create a separate taxonomy.
+Use same master taxonomy as Resources.
+
+This is a system-alignment task, not cosmetic work.
+
+Founder notes this can be back-burner after launch if needed, but wants it properly queued now.
+
+--- END ---
