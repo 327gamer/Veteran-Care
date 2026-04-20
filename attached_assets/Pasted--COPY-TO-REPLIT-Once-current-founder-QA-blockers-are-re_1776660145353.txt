@@ -1,0 +1,92 @@
+--- COPY TO REPLIT ---
+
+Once current founder QA blockers are resolved, we need one FINAL FULL-SYSTEM PRE-LAUNCH TEST + MULTI-STATE EXPANSION READINESS ANSWER.
+
+This is not a new build request yet.
+This is a verification + architecture-readiness request.
+
+PHASE 1 — FULL INTERNAL SYSTEM TEST
+Please repeat the deep internal end-to-end system test similar to the one run about a week ago where multiple surfaces were tested back-and-forth, including admin-side verification.
+
+Need a full route / flow / attribution / admin test covering at minimum:
+
+1. Homepage flows
+2. Resources flows
+3. Trusted Services flows
+4. AI Guide / Help Request flows
+5. Ambassador / UTM tracking flows
+6. Admin panel visibility / approval / routing visibility
+7. Lead capture / handoff / email trigger / attribution persistence
+8. Geo-based behavior where applicable
+
+Need founder-readable output:
+PASS / WARNING / FAIL
+with exact broken surfaces if any.
+
+PHASE 2 — LOCATION / LINK / FUNNEL INTEGRITY
+Because ambassador links are about to be pushed heavily across internet + social channels, verify:
+
+- all tracked links resolve correctly
+- UTM / ambassador attribution persists correctly
+- category routing still works after recent category / subcategory changes
+- no broken funnels from landing page to request / partner / resource surfaces
+- location-aware results still flow correctly after taxonomy changes
+
+PHASE 3 — MULTI-STATE DUPLICATION READINESS
+Need a clear answer:
+
+Can the current Veteran Care system now be duplicated / expanded as ONE unified engine for:
+- Georgia
+- North Carolina
+- Florida
+
+without interfering with South Carolina?
+
+Explain the recommended method.
+
+Founder’s expectation:
+- same master platform
+- same categories
+- same subcategories
+- same admin command center
+- same attribution engine
+- same ambassador engine
+- same routing engine
+- same billing engine
+
+Only the following should expand:
+- resources
+- trusted partners
+- ambassadors
+- state/city data
+- geo targeting
+- reporting by state/city
+
+PHASE 4 — BORDER / CROSS-STATE LOCATION LOGIC
+Please explain how you recommend handling border-city logic.
+
+Example:
+A veteran in Augusta, GA may need resources in Aiken, SC if closer.
+Likewise, border-area users should not be blocked from nearby help just because of state lines.
+
+Need your recommended rule set for:
+- same-state priority
+- nearby cross-state fallback
+- distance-based ranking
+- city/state filters
+- user location sharing behavior
+
+PHASE 5 — FOUNDER READINESS ANSWER
+Return:
+1. Is Veteran Care currently functioning as one scalable state-layered engine?
+2. What must be done before Georgia is turned on?
+3. What can be duplicated immediately?
+4. What still risks cross-state confusion?
+
+No side quests.
+Need launch-readiness + scale-readiness truth.
+
+IMPORTANT:
+Founder will manually Publish / Republish before any final live verification.
+
+--- END ---
