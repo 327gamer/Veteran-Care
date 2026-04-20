@@ -1,0 +1,69 @@
+--- COPY TO REPLIT ---
+
+This last change introduced a regression.
+
+Founder live QA confirms you mirrored Insurance the wrong way.
+
+What happened:
+- Trusted Services Insurance was collapsed down to only 2 visible subcategories
+- This removed monetizable insurance subcategories from the Trusted Services side
+- Resources did NOT become the properly expanded mirrored version we intended
+- Housing was over-corrected and now BootPrint / Tri-County do not even appear in Emergency Housing where they SHOULD appear
+
+This is not acceptable for launch.
+
+We need a surgical rollback-and-correct move with the right source-of-truth logic:
+
+PHASE 1 — INSURANCE RESTORE
+Restore the FULL intended Insurance subcategory taxonomy on both:
+1. Resources
+2. Trusted Services
+
+Expected insurance subcategories include:
+- Health Insurance
+- Life Insurance
+- Auto Insurance
+- Home Insurance
+- Renters Insurance
+- Disability Insurance
+- Long-Term Care Insurance
+- Supplemental Insurance
+- Medicare & VA Plans
+- Burial / Final Expense
+
+PHASE 2 — DO NOT MIRROR DOWNWARD
+Do NOT reduce Trusted Services to match a thinner Resources side.
+Instead, mirror upward so both sides share the full intended taxonomy.
+
+PHASE 3 — CONTENT / PARTNER DISPLAY RULE
+For each insurance subcategory, return a written matrix:
+- visible in Resources? yes/no
+- visible in Trusted Services? yes/no
+- has seeded resources? yes/no
+- has trusted partners? yes/no
+- has neither? yes/no
+
+If a subcategory has trusted partners or seeded content, it should remain visible.
+Do not hide monetizable Trusted Services categories.
+
+PHASE 4 — HOUSING CORRECTION
+Reinstate correct subcategory assignment for BootPrint and Tri-County:
+- they SHOULD appear in Emergency Housing if tagged there
+- they should also appear in any other housing subcategory they are truly assigned to
+- they should NOT appear in unrelated housing subcategories
+
+Current founder QA shows they disappeared too aggressively.
+
+PHASE 5 — FOUNDER RETEST PATH
+Return exact live retest path for:
+1. Trusted Services > Insurance
+2. Resources > Insurance
+3. Trusted Services > Housing > Emergency Housing
+
+No side quests.
+No more parity shortcuts.
+No more hiding revenue surfaces to force a visual match.
+
+We need correct taxonomy + correct visibility + correct business logic.
+
+--- END ---
