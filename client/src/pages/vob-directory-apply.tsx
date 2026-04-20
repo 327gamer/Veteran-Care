@@ -27,6 +27,13 @@ interface TrustedCategory {
   slug: string;
 }
 
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+  categories?: { slug?: string };
+}
+
 const US_STATES = [
   { label: "Alabama", value: "AL" }, { label: "Alaska", value: "AK" }, { label: "Arizona", value: "AZ" },
   { label: "Arkansas", value: "AR" }, { label: "California", value: "CA" }, { label: "Colorado", value: "CO" },
@@ -79,6 +86,24 @@ export default function VobDirectoryApply() {
     queryKey: ["/api/trusted-services/categories"],
     queryFn: () => fetch("/api/trusted-services/categories").then(r => r.json()),
   });
+
+  const selectedCategory = categories.find(c => c.id === form.category_id);
+  const selectedCategorySlug = selectedCategory?.slug || "";
+
+  const { data: allSubcategories = [], isLoading: subsLoading } = useQuery<Subcategory[]>({
+    queryKey: ["/api/subcategories", selectedCategorySlug],
+    queryFn: () =>
+      fetch(`/api/subcategories?category=${encodeURIComponent(selectedCategorySlug)}`).then(r => r.json()),
+    enabled: !!selectedCategorySlug,
+  });
+
+  // Server endpoint currently returns all subcategories regardless of ?category filter,
+  // so narrow client-side using the joined categories.slug each row carries.
+  const subcategories = selectedCategorySlug
+    ? allSubcategories
+        .filter(s => s.categories?.slug === selectedCategorySlug)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
   const mutation = useMutation({
     mutationFn: async (data: VobForm) => {
@@ -221,7 +246,12 @@ export default function VobDirectoryApply() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold">Category</Label>
-            <Select value={form.category_id} onValueChange={v => update("category_id", v)}>
+            <Select
+              value={form.category_id}
+              onValueChange={v => {
+                setForm(prev => ({ ...prev, category_id: v, subcategory: "" }));
+              }}
+            >
               <SelectTrigger data-testid="select-vob-category">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -233,8 +263,33 @@ export default function VobDirectoryApply() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="subcategory" className="text-xs font-semibold">Subcategory <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input id="subcategory" value={form.subcategory} onChange={e => update("subcategory", e.target.value)} placeholder="e.g. Plumbing, Legal Aid" data-testid="input-vob-subcategory" />
+            <Label className="text-xs font-semibold">
+              Subcategory <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Select
+              value={form.subcategory}
+              onValueChange={v => update("subcategory", v)}
+              disabled={!selectedCategorySlug || subsLoading}
+            >
+              <SelectTrigger data-testid="select-vob-subcategory">
+                <SelectValue
+                  placeholder={
+                    !selectedCategorySlug
+                      ? "Select a category first"
+                      : subsLoading
+                      ? "Loading..."
+                      : subcategories.length === 0
+                      ? "No subcategories available"
+                      : "Select subcategory"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {subcategories.map(s => (
+                  <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
