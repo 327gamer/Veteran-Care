@@ -55,10 +55,22 @@ export default function SubmitResource() {
     submitted_by_name: "",
     submitted_by_email: "",
   });
+  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
 
   const { data: categories = [] } = useQuery<SupabaseCategory[]>({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(r => r.json()),
+  });
+
+  const selectedCategory = categories.find(c => c.slug === form.category_slug);
+  const selectedCategoryId = selectedCategory?.id || "";
+
+  const { data: subcategories = [] } = useQuery<{ id: string; name: string; slug: string; category_id: string }[]>({
+    queryKey: ["/api/subcategories", selectedCategoryId],
+    queryFn: () => selectedCategoryId
+      ? fetch(`/api/subcategories?category_id=${selectedCategoryId}`).then(r => r.json())
+      : Promise.resolve([]),
+    enabled: !!selectedCategoryId,
   });
 
   const submitMutation = useMutation({
@@ -66,7 +78,7 @@ export default function SubmitResource() {
       const res = await fetch("/api/submit-resource", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, subcategory_ids: selectedSubcategoryIds }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -92,7 +104,7 @@ export default function SubmitResource() {
           Your resource has been submitted for review. Our team will verify it and make it available to other veterans once approved.
         </p>
         <div className="flex gap-3 pt-4">
-          <Button variant="outline" onClick={() => { setSubmitted(false); setForm({ category_slug: "", title: "", short_description: "", website_url: "", phone: "", city: "", state: "", zip: "", eligibility: "", source_name: "", submitted_by_name: "", submitted_by_email: "" }); }}>
+          <Button variant="outline" onClick={() => { setSubmitted(false); setSelectedSubcategoryIds([]); setForm({ category_slug: "", title: "", short_description: "", website_url: "", phone: "", city: "", state: "", zip: "", eligibility: "", source_name: "", submitted_by_name: "", submitted_by_email: "" }); }}>
             Submit Another
           </Button>
           <Button onClick={() => setLocation("/resources")}>
@@ -130,7 +142,7 @@ export default function SubmitResource() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
-            <Select value={form.category_slug || undefined} onValueChange={(v) => updateField("category_slug", v)}>
+            <Select value={form.category_slug || undefined} onValueChange={(v) => { updateField("category_slug", v); setSelectedSubcategoryIds([]); }}>
               <SelectTrigger data-testid="select-category" id="category">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -140,6 +152,45 @@ export default function SubmitResource() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Subcategories {selectedSubcategoryIds.length > 0 && (
+                <span className="text-muted-foreground text-xs">({selectedSubcategoryIds.length} selected)</span>
+              )}
+            </Label>
+            <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 min-h-[44px] max-h-48 overflow-y-auto">
+              {!form.category_slug && (
+                <span className="text-xs text-muted-foreground italic">Select a category to see available subcategories</span>
+              )}
+              {form.category_slug && subcategories.length === 0 && (
+                <span className="text-xs text-muted-foreground italic">No subcategories available for this category</span>
+              )}
+              {subcategories.sort((a, b) => a.name.localeCompare(b.name)).map((s) => {
+                const isSelected = selectedSubcategoryIds.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    data-testid={`chip-subcategory-${s.slug}`}
+                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground border-border hover:bg-accent"
+                    }`}
+                    onClick={() => {
+                      setSelectedSubcategoryIds(prev =>
+                        isSelected ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                      );
+                    }}
+                  >
+                    {s.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Tap one or more to help us route this resource correctly.</p>
           </div>
 
           <div className="space-y-2">

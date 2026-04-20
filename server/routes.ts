@@ -6102,7 +6102,11 @@ export async function registerRoutes(
       source_name,
       submitted_by_name,
       submitted_by_email,
+      subcategory_ids,
     } = req.body;
+    const subIds: string[] = Array.isArray(subcategory_ids)
+      ? subcategory_ids.filter((s: any) => typeof s === "string" && s.length > 0)
+      : [];
 
     if (!title || typeof title !== "string" || title.trim().length < 3) {
       return res.status(400).json({ error: "Title is required (minimum 3 characters)" });
@@ -6200,6 +6204,14 @@ export async function registerRoutes(
 
     if (error) {
       return res.status(500).json({ error: error.message });
+    }
+
+    if (data?.id && subIds.length > 0) {
+      const links = subIds.map((sid) => ({ resource_id: data.id, subcategory_id: sid }));
+      const { error: linkErr } = await supabaseAdmin.from("resource_subcategories").insert(links);
+      if (linkErr) {
+        console.error("[submit-resource] subcategory link error:", linkErr.message);
+      }
     }
 
     return res.status(201).json({ id: data.id, message: "Resource submitted for review" });
@@ -11295,11 +11307,14 @@ export async function registerRoutes(
         const geo = await geocodeAddress(b.address || null, b.city || null, b.state || null, b.zip || null);
         if (geo) { lat = geo.latitude; lng = geo.longitude; geoSrc = geo.geo_source; }
       }
+      const subSlugs: string[] = Array.isArray(b.subcategory_slugs)
+        ? b.subcategory_slugs.filter((s: any) => typeof s === "string" && s.length > 0)
+        : [];
       const rows = await pgQuery(
-        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, address, city, state, zip, is_active, is_featured, featured_rank, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description, latitude, longitude, geocoded_at, geo_source)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+        `INSERT INTO trusted_services (category_id, name, short_description, website_url, phone, email, address, city, state, zip, is_active, is_featured, featured_rank, is_national, verification_status, notes_internal, program_area, group_type, listing_type, discount_value, discount_description, latitude, longitude, geocoded_at, geo_source, subcategory_slugs)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
          RETURNING *`,
-        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.address || null, b.city || null, b.state || null, b.zip || null, b.is_active ?? true, b.is_featured ?? false, b.featured_rank != null ? parseInt(b.featured_rank) : null, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null, lat, lng, lat != null ? new Date().toISOString() : null, geoSrc]
+        [b.category_id, b.name, b.short_description || null, b.website_url || null, b.phone || null, b.email || null, b.address || null, b.city || null, b.state || null, b.zip || null, b.is_active ?? true, b.is_featured ?? false, b.featured_rank != null ? parseInt(b.featured_rank) : null, b.is_national ?? false, b.verification_status || 'pending', b.notes_internal || null, b.program_area || 'trusted_services', b.group_type || 'service', b.listing_type || 'lead', b.discount_value || null, b.discount_description || null, lat, lng, lat != null ? new Date().toISOString() : null, geoSrc, subSlugs]
       );
       return res.json(rows[0]);
     } catch (err: any) {
@@ -11336,10 +11351,17 @@ export async function registerRoutes(
       }
       const setClauses: string[] = [];
       const params: any[] = [];
-      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'address', 'city', 'state', 'zip', 'is_active', 'is_featured', 'featured_rank', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text', 'latitude', 'longitude', 'geocoded_at', 'geo_source'];
+      const allowedFields = ['category_id', 'name', 'short_description', 'website_url', 'phone', 'email', 'address', 'city', 'state', 'zip', 'is_active', 'is_featured', 'featured_rank', 'is_national', 'verification_status', 'notes_internal', 'display_order', 'program_area', 'group_type', 'listing_type', 'discount_value', 'discount_description', 'cta_text', 'latitude', 'longitude', 'geocoded_at', 'geo_source', 'subcategory_slugs'];
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
-          params.push(updates[field]);
+          if (field === 'subcategory_slugs') {
+            const slugs = Array.isArray(updates[field])
+              ? updates[field].filter((s: any) => typeof s === 'string' && s.length > 0)
+              : [];
+            params.push(slugs);
+          } else {
+            params.push(updates[field]);
+          }
           setClauses.push(`${field} = $${params.length}`);
         }
       }

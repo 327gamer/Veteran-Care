@@ -72,6 +72,7 @@ interface TrustedService {
   listing_type: string | null;
   discount_value: string | null;
   discount_description: string | null;
+  subcategory_slugs: string[] | null;
   created_at: string;
   trusted_service_categories: { id: string; slug: string; name: string } | null;
 }
@@ -101,7 +102,16 @@ type PartnerForm = {
   listing_type: string;
   discount_value: string;
   discount_description: string;
+  subcategory_slugs: string[];
 };
+
+interface PartnerSubcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+}
 
 const emptyForm: PartnerForm = {
   name: "",
@@ -128,6 +138,7 @@ const emptyForm: PartnerForm = {
   listing_type: "lead",
   discount_value: "",
   discount_description: "",
+  subcategory_slugs: [],
 };
 
 function AdminTrustedServicesInner() {
@@ -159,6 +170,17 @@ function AdminTrustedServicesInner() {
       if (!res.ok) throw new Error("Failed to load categories");
       return res.json();
     },
+  });
+
+  const { data: partnerSubs = [] } = useQuery<PartnerSubcategory[]>({
+    queryKey: ["/api/partner-subcategories", form.category_id],
+    queryFn: async () => {
+      if (!form.category_id) return [];
+      const res = await fetch(`/api/partner-subcategories?category_id=${form.category_id}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!form.category_id,
   });
 
   const { data: services = [], isLoading } = useQuery<TrustedService[]>({
@@ -260,6 +282,9 @@ function AdminTrustedServicesInner() {
       listing_type: service.listing_type || "lead",
       discount_value: service.discount_value || "",
       discount_description: service.discount_description || "",
+      subcategory_slugs: Array.isArray(service.subcategory_slugs)
+        ? service.subcategory_slugs
+        : [],
     });
   };
 
@@ -298,7 +323,7 @@ function AdminTrustedServicesInner() {
         </div>
         <div>
           <Label className="text-xs">Category *</Label>
-          <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
+          <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v, subcategory_slugs: [] }))}>
             <SelectTrigger className="h-9 text-sm" data-testid="select-partner-category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
@@ -308,6 +333,45 @@ function AdminTrustedServicesInner() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">
+          Subcategories {form.subcategory_slugs.length > 0 && (
+            <span className="text-muted-foreground">({form.subcategory_slugs.length})</span>
+          )}
+        </Label>
+        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 min-h-[40px] max-h-40 overflow-y-auto">
+          {!form.category_id && (
+            <span className="text-[11px] text-muted-foreground italic">Select a category first to see available subcategories</span>
+          )}
+          {form.category_id && partnerSubs.length === 0 && (
+            <span className="text-[11px] text-muted-foreground italic">No subcategories registered for this category</span>
+          )}
+          {partnerSubs.map(s => {
+            const isSelected = form.subcategory_slugs.includes(s.slug);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                data-testid={`chip-partner-sub-${s.slug}`}
+                className={`px-2 py-0.5 rounded-full text-[10px] border transition-colors ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-foreground border-border hover:bg-accent"
+                }`}
+                onClick={() => setForm(f => ({
+                  ...f,
+                  subcategory_slugs: isSelected
+                    ? f.subcategory_slugs.filter(x => x !== s.slug)
+                    : [...f.subcategory_slugs, s.slug],
+                }))}
+              >
+                {s.name}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div>
