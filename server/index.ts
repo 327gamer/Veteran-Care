@@ -123,8 +123,46 @@ async function cleanupTestRecords() {
   }
 }
 
+async function ensureSubcategoryTags() {
+  // Idempotent boot-time tag enforcement. Production DB drifts from dev DB
+  // because direct dev-side SQL doesn't propagate. This guarantees a known
+  // set of partners carries the subcategory_slugs they need to surface in
+  // sub pages on Trusted Services. UPDATE-only — never inserts. Cheap when
+  // already correct.
+  const tagPlan: Array<{ namePattern: string; subs: string[] }> = [
+    { namePattern: "BootPrint", subs: ["emergency-housing", "homeless-veteran-services", "transitional-housing"] },
+    { namePattern: "Tri-County Veterans Support Network", subs: ["emergency-housing", "homeless-veteran-services"] },
+    { namePattern: "Navy Mutual Aid Association", subs: ["life-insurance"] },
+    { namePattern: "AAFMAA", subs: ["life-insurance"] },
+    { namePattern: "VA Life Insurance (VALife)", subs: ["life-insurance"] },
+    { namePattern: "VALife", subs: ["life-insurance"] },
+  ];
+  try {
+    const { query: pgQuery } = await import("./pg-client");
+    for (const t of tagPlan) {
+      const updated = await pgQuery(
+        `UPDATE trusted_services
+            SET subcategory_slugs = (
+              SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(subcategory_slugs, '{}'::text[]) || $2::text[]))
+            )
+          WHERE name ILIKE $1
+            AND NOT (subcategory_slugs @> $2::text[])
+          RETURNING id, name, subcategory_slugs`,
+        [`%${t.namePattern}%`, t.subs],
+      );
+      if (updated.length > 0) {
+        console.log(`[boot-tags] tagged ${updated.length} for "${t.namePattern}":`,
+          updated.map((r: any) => `${r.name} -> ${JSON.stringify(r.subcategory_slugs)}`).join("; "));
+      }
+    }
+  } catch (err: any) {
+    console.warn(`[boot-tags] skipped (${err?.message || err})`);
+  }
+}
+
 (async () => {
   await cleanupTestRecords();
+  await ensureSubcategoryTags();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
