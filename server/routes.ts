@@ -10961,12 +10961,10 @@ export async function registerRoutes(
       // Cross-listing: if category param is set, OR-in any partner whose
       // cross_list_category_slugs contains this category. Implemented as a
       // separate condition group that replaces the strict tsc.slug match.
-      if (req.query.category && !subcategoryParam) {
-        // Pop the original tsc.slug condition (last pushed condition) and
-        // rebuild it as a slug-OR-cross-list match.
-        const catSlug = req.query.category as string;
-        // The tsc.slug condition was pushed at index conditions.length-2 (after the new sub condition).
-        // Find and replace it.
+      // Applied whether or not a subcategory filter is present — the strict
+      // sub filter ($N = ANY(subcategory_slugs)) still gates membership, so
+      // cross-listed partners only surface on a sub tile when explicitly tagged.
+      if (req.query.category) {
         const slugIdx = conditions.findIndex(c => c.includes(`tsc.slug = $`));
         if (slugIdx >= 0) {
           conditions[slugIdx] = `(tsc.slug = $1 OR $1 = ANY(ts.cross_list_category_slugs))`;

@@ -78,7 +78,7 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "Job placement, career coaching, vocational rehab, apprenticeships, and entrepreneurship resources for veterans.",
     subcategories: EMP_SUBCATEGORIES,
     introLinks: [
-      { slug: "job-placement-programs", label: "Job Placement Programs", testidKey: "jobs" },
+      { slug: "job-placement-programs", label: "Job Placement Programs & Partners", testidKey: "jobs" },
       { slug: "vocational-rehabilitation", label: "Vocational Rehabilitation", testidKey: "vocrehab" },
     ],
   },

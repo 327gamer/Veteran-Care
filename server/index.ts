@@ -204,6 +204,9 @@ async function ensureSeededNationalProviders() {
     { name: "Hire Heroes USA", categorySlug: "education-training", shortDescription: "Free career coaching, job-search assistance, and training for veterans, transitioning service members, and military spouses.", websiteUrl: "https://www.hireheroes.org", phone: "844-634-1520", subs: ["certifications-licensing"] },
     { name: "Onward to Opportunity (IVMF Syracuse)", categorySlug: "education-training", shortDescription: "No-cost career training and certifications for transitioning service members, veterans, and military spouses, by the Institute for Veterans and Military Families.", websiteUrl: "https://ivmf.syracuse.edu/programs/career-training/onward-to-opportunity/", phone: "315-443-0141", subs: ["certifications-licensing"] },
     { name: "VA Education Benefits (GI Bill)", categorySlug: "education-training", shortDescription: "Official authoritative source for GI Bill, VR&E, and VET TEC education benefits.", websiteUrl: "https://www.va.gov/education", phone: "888-442-4551", subs: ["gi-bill-assistance"] },
+    // Employment Support (2 net-new; Hire Heroes USA stays primary in Education and is cross-listed below)
+    { name: "RecruitMilitary (Bradley-Morris)", categorySlug: "employment-support", shortDescription: "National veteran job board with monthly virtual and in-person hiring fairs connecting veterans to employers nationwide.", websiteUrl: "https://recruitmilitary.com", phone: "513-683-5020", subs: ["job-placement-programs", "veteran-friendly-employers"] },
+    { name: "DOL VETS / American Job Centers (CareerOneStop)", categorySlug: "employment-support", shortDescription: "U.S. Department of Labor Veterans' Employment & Training Service. Locate American Job Centers and access DVOP/LVER priority-of-service nationwide.", websiteUrl: "https://www.careeronestop.org/Veterans/default.aspx", phone: "877-872-5627", subs: ["dvop-workforce-programs", "federal-employment"] },
   ];
 
   try {
@@ -259,6 +262,34 @@ async function ensureSeededNationalProviders() {
     if (insertedNames.length > 0) {
       console.log(`[seed-sync] new partners: ${insertedNames.join(", ")}`);
     }
+
+    // Cross-list pass — Hire Heroes USA stays primary in Education & Training and is
+    // additionally surfaced under Employment Support via cross_list_category_slugs.
+    // Idempotent: array-union both columns, no-op when already correct.
+    let crossListed = 0;
+    const crossListSpecs: Array<{ name: string; addCrossLists: string[]; addSubs: string[] }> = [
+      { name: "Hire Heroes USA", addCrossLists: ["employment-support"], addSubs: ["job-placement-programs", "resume-career-coaching"] },
+    ];
+    for (const c of crossListSpecs) {
+      const updated = await pgQuery(
+        `UPDATE trusted_services
+            SET cross_list_category_slugs = (
+                  SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(cross_list_category_slugs, '{}'::text[]) || $2::text[]))
+                ),
+                subcategory_slugs = (
+                  SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(subcategory_slugs, '{}'::text[]) || $3::text[]))
+                )
+          WHERE name ILIKE $1
+            AND (
+              NOT (COALESCE(cross_list_category_slugs, '{}'::text[]) @> $2::text[])
+              OR NOT (COALESCE(subcategory_slugs, '{}'::text[]) @> $3::text[])
+            )
+          RETURNING id`,
+        [c.name, c.addCrossLists, c.addSubs],
+      );
+      crossListed += updated.length;
+    }
+    console.log(`[seed-sync] cross_listed=${crossListed}`);
   } catch (err: any) {
     console.warn(`[seed-sync] skipped (${err?.message || err})`);
   }

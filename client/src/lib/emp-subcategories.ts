@@ -20,11 +20,11 @@ export interface EmpSubcategory {
 
 export const EMP_SUBCATEGORIES: EmpSubcategory[] = [
   {
-    name: "Job Placement Programs",
+    name: "Job Placement Programs & Partners",
     slug: "job-placement-programs",
     icon: MapPin,
-    description: "Direct job placement services and employment matching for veterans",
-    keywords: ["job placement", "employment", "hiring", "staffing", "job match", "career placement"],
+    description: "Direct job placement services, staffing, and employment partners for veterans",
+    keywords: ["job placement", "employment", "hiring", "staffing", "job match", "career placement", "partners"],
   },
   {
     name: "Resume & Career Coaching",
@@ -69,13 +69,6 @@ export const EMP_SUBCATEGORIES: EmpSubcategory[] = [
     keywords: ["DVOP", "workforce", "LVER", "Department of Labor", "employment services", "job center"],
   },
 
-  {
-    name: "Job Placement",
-    slug: "job-placement",
-    icon: Users,
-    description: "Direct job placement services for veterans across South Carolina.",
-    keywords: [],
-  },
   {
     name: "Resume Assistance",
     slug: "resume-assistance",
