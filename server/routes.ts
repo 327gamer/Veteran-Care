@@ -42,6 +42,14 @@ function normalizeSearchTerm(q: string): string {
     .trim();
 }
 
+// Strip all non-alphanumerics (spaces, hyphens, punctuation) for symmetric
+// joined↔split tolerance: "VA Life" ↔ "VALife", "Tri-County" ↔ "Tri County".
+// Used as an additional OR clause alongside normalizeSearchTerm so existing
+// behaviour is preserved and we only ADD matches that were previously missed.
+function compactSearchTerm(q: string): string {
+  return (q || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
 let hasGeoColumns = true;
 let hasSubcategoryColumn = false;
 let hasServicePriorityColumn = false;
@@ -5195,6 +5203,11 @@ export async function registerRoutes(
         `LOWER(ts.short_description) LIKE '%${p.replace(/'/g, "''")}%'`,
         `LOWER(ts.city) LIKE '%${p.replace(/'/g, "''")}%'`,
       ]);
+      // Joined↔split tolerance (VA Life ↔ VALife): compare alnum-stripped name to compact needle.
+      const compact = compactSearchTerm(q);
+      if (compact) {
+        orClauses.push(`LOWER(REGEXP_REPLACE(ts.name, '[^a-zA-Z0-9]+', '', 'g')) LIKE '%${compact.replace(/'/g, "''")}%'`);
+      }
       const rows = await pgQuery(
         `SELECT ts.id, ts.name AS title, ts.short_description, ts.website_url, ts.phone, ts.email,
                 ts.address, ts.city, ts.state, ts.zip, ts.is_featured AS sponsored, ts.is_featured,
@@ -10713,6 +10726,12 @@ export async function registerRoutes(
             `LOWER(tsc.name) LIKE $${idx}`,
           ];
         });
+        // Joined↔split tolerance (VA Life ↔ VALife): compact alnum match on name.
+        const compact = compactSearchTerm(searchTerm);
+        if (compact) {
+          params.push(`%${compact}%`);
+          searchOr.push(`LOWER(REGEXP_REPLACE(ts.name, '[^a-zA-Z0-9]+', '', 'g')) LIKE $${params.length}`);
+        }
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
       const sql = `SELECT ts.id, ts.category_id, ts.name, ts.short_description, ts.website_url, ts.phone, ts.email,
@@ -10980,6 +10999,12 @@ export async function registerRoutes(
             `LOWER(tsc.name) LIKE $${idx}`,
           ];
         });
+        // Joined↔split tolerance (VA Life ↔ VALife): compact alnum match on name.
+        const compact = compactSearchTerm(tsSearchTerm);
+        if (compact) {
+          params.push(`%${compact}%`);
+          searchOr.push(`LOWER(REGEXP_REPLACE(ts.name, '[^a-zA-Z0-9]+', '', 'g')) LIKE $${params.length}`);
+        }
         conditions.push(`(${searchOr.join(" OR ")})`);
       }
       const vobConditions = [`vob.status = 'approved'`, `vob.show_in_trusted_services = true`, `vob.category_id IS NOT NULL`,
@@ -11045,10 +11070,16 @@ export async function registerRoutes(
       if (tsSearchTerm && rows.length > 0) {
         const raw = tsSearchTerm.toLowerCase();
         const norm = normalizeSearchTerm(tsSearchTerm);
+        const compact = compactSearchTerm(tsSearchTerm);
         rows = rows.filter((r: any) => {
           if (r.source_type !== 'vob') return true;
           const fields = [r.name, r.short_description, r.city, r.state, r.trusted_service_categories?.name].filter(Boolean).map((f: string) => f.toLowerCase());
-          return fields.some((f: string) => f.includes(raw) || f.includes(norm));
+          // Joined↔split tolerance: also compare alnum-stripped field to compact needle.
+          return fields.some((f: string) => {
+            if (f.includes(raw) || f.includes(norm)) return true;
+            if (!compact) return false;
+            return f.replace(/[^a-z0-9]+/g, "").includes(compact);
+          });
         });
       }
 
@@ -12562,7 +12593,14 @@ export async function registerRoutes(
         const rawIdx = params.length;
         params.push(normSearch);
         const normIdx = params.length;
-        conditions.push(`(LOWER(vob.business_name) LIKE $${rawIdx} OR LOWER(vob.description) LIKE $${rawIdx} OR LOWER(vob.subcategory) LIKE $${rawIdx} OR LOWER(REGEXP_REPLACE(vob.business_name, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx} OR LOWER(REGEXP_REPLACE(vob.description, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx})`);
+        // Joined↔split tolerance (VA Life ↔ VALife): compact alnum match on business_name.
+        const compact = compactSearchTerm(req.query.search as string);
+        let compactClause = "";
+        if (compact) {
+          params.push(`%${compact}%`);
+          compactClause = ` OR LOWER(REGEXP_REPLACE(vob.business_name, '[^a-zA-Z0-9]+', '', 'g')) LIKE $${params.length}`;
+        }
+        conditions.push(`(LOWER(vob.business_name) LIKE $${rawIdx} OR LOWER(vob.description) LIKE $${rawIdx} OR LOWER(vob.subcategory) LIKE $${rawIdx} OR LOWER(REGEXP_REPLACE(vob.business_name, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx} OR LOWER(REGEXP_REPLACE(vob.description, '[^a-zA-Z0-9 ]', '', 'g')) LIKE $${normIdx}${compactClause})`);
       }
       const vobPag = parsePagination(req, 100, 500);
       const sql = `SELECT vob.*, json_build_object('name', tsc.name, 'slug', tsc.slug) AS category
