@@ -973,7 +973,7 @@ function ListingCard({
               Veteran Support Service
             </Badge>
           )}
-          {listing.program_area === "trusted_services" && (
+          {listing.program_area === "trusted_services" && listing.verification_status === "verified" && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700 bg-emerald-50">
               <ShieldCheck className="h-3 w-3 mr-0.5" />
               Trusted Partner
