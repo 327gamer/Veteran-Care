@@ -84,6 +84,8 @@ export interface TrustedServiceSuggestion {
   is_featured: boolean;
   category_name: string;
   category_slug: string;
+  listing_type: string | null;
+  detail_url: string;
 }
 
 export function detectServiceCategory(message: string): string | null {
@@ -117,7 +119,7 @@ export async function fetchTrustedServiceSuggestions(
 
     let query = supabaseAdmin
       .from("trusted_services")
-      .select("id, name, description, city, state, phone, email, website, is_featured")
+      .select("id, name, description, city, state, phone, email, website, is_featured, listing_type")
       .eq("category_id", category.id)
       .eq("is_active", true)
       .order("is_featured", { ascending: false })
@@ -127,10 +129,12 @@ export async function fetchTrustedServiceSuggestions(
     if (userState) {
       const { data: stateResults } = await query.eq("state", userState);
       if (stateResults && stateResults.length > 0) {
-        return stateResults.map((s) => ({
+        return stateResults.map((s: any) => ({
           ...s,
           category_name: category.name,
           category_slug: categorySlug,
+          listing_type: s.listing_type ?? null,
+          detail_url: `/discounts?highlight=${s.id}`,
         }));
       }
     }
@@ -138,10 +142,12 @@ export async function fetchTrustedServiceSuggestions(
     const { data: results } = await query;
     if (!results) return [];
 
-    return results.map((s) => ({
+    return results.map((s: any) => ({
       ...s,
       category_name: category.name,
       category_slug: categorySlug,
+      listing_type: s.listing_type ?? null,
+      detail_url: `/discounts?highlight=${s.id}`,
     }));
   } catch (err: any) {
     console.log(`[service-router] Error fetching suggestions for ${categorySlug}:`, err?.message);

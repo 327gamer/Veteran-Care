@@ -38,6 +38,8 @@ interface TrustedServiceCard {
   website: string | null;
   is_featured: boolean;
   category_name: string;
+  listing_type: string | null;
+  detail_url?: string;
 }
 
 interface AiGuideProps {
@@ -453,12 +455,23 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
                       )}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
-                      {s.website && (
-                        <a href={s.website} target="_blank" rel="noopener noreferrer" data-testid={`link-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
-                          <Globe className="h-3 w-3" />
-                          Website
-                        </a>
-                      )}
+                      {(() => {
+                        const isDiscount = s.listing_type === "discount";
+                        if (isDiscount && s.website) {
+                          return (
+                            <a href={s.website} target="_blank" rel="noopener noreferrer" data-testid={`link-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
+                              <Globe className="h-3 w-3" />
+                              Claim Offer
+                            </a>
+                          );
+                        }
+                        return (
+                          <a href={s.detail_url || `/discounts?highlight=${s.id}`} data-testid={`link-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
+                            <Globe className="h-3 w-3" />
+                            Connect
+                          </a>
+                        );
+                      })()}
                       {s.phone && (
                         <a href={`tel:${s.phone}`} data-testid={`phone-trusted-${s.id}`} className="inline-flex items-center gap-1 text-[11px] text-green-700 hover:text-green-600 font-medium">
                           <Phone className="h-3 w-3" />
