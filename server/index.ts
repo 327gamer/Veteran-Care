@@ -108,9 +108,13 @@ async function cleanupTestRecords() {
              name = '[ARCHIVED] ' || name
        WHERE name NOT ILIKE '[ARCHIVED]%'
          AND (
-           name ~* '^\\s*ABC[ -]*\\d+\\s*$'
+           name ~* '^\\s*A[BC]C[ -]*\\d+\\s*$'
+           OR name ~* '^\\s*ACB[ -]*\\d+\\s*$'
            OR name ILIKE '%LIVE PAYMENT TEST%'
            OR name ILIKE '%test record%'
+           OR name ILIKE '%test partner%'
+           OR name ILIKE '%placeholder%'
+           OR name ILIKE 'TEST %'
          )
        RETURNING id, name`,
     );

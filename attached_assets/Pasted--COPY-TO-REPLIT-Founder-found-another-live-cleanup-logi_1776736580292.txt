@@ -1,0 +1,73 @@
+--- COPY TO REPLIT ---
+
+Founder found another live cleanup / logic issue on the Veteran-Owned Business / Nonprofit startup roadmap section on the homepage.
+
+LOCATION:
+Homepage section:
+“Need Help Starting Your Veteran-Owned Business or Non-Profit?”
+
+This 7-step roadmap currently contains test companies that should NOT be showing live.
+
+Need a focused cleanup + system check only.
+
+PHASE 1 — REMOVE / ARCHIVE TEST COMPANIES
+Inside the 7-step Veteran-Owned Business / Nonprofit roadmap, remove or archive all test / fake companies currently appearing in:
+- Recommended Partners
+- Partner Resources Coming Soon
+- More Partners Coming Soon
+
+Founder screenshots show examples like:
+- ACB - 7
+- any other ABC / ACB / test / fake placeholder companies
+
+These should not appear live anywhere on this roadmap section.
+
+PHASE 2 — VERIFY PARTNER POPULATION LOGIC
+Please confirm how this roadmap section is currently populated.
+
+Need to know:
+
+1. What source is feeding the Recommended Partners area?
+2. What source is feeding the “Partner Resources Coming Soon” / “More Partners Coming Soon” tags?
+3. Are these tied to:
+   - trusted partners
+   - seeded providers
+   - roadmap step tags
+   - categories / subcategories
+   - admin panel approval logic
+
+PHASE 3 — FUTURE MONETIZATION / LEAD LOGIC CHECK
+This roadmap section is intended to become a monetizable lead-generation surface later when trusted partners subscribe.
+
+Please confirm whether the system is already capable of correctly populating trusted partners into these 7 sections based on:
+- the business-startup service needed
+- category
+- subcategory
+- paid / verified status
+- admin approval
+- geography if relevant
+
+If not, explain the smallest future setup required.
+
+PHASE 4 — ADMIN / SYSTEM READINESS
+Confirm whether founder/admin can control or approve what appears inside this roadmap section through the admin panel now, or if this section is currently hardcoded / seeded separately.
+
+PHASE 5 — RETURN CLEAR RESPONSE
+Please reply in this format:
+
+1. Test companies removed? yes/no
+2. Root source of roadmap partner cards
+3. Root source of “coming soon” tags
+4. Is this section already wired for future trusted-partner monetization? yes/no
+5. Smallest fix or setup needed later
+6. Founder retest path
+
+IMPORTANT:
+This is a narrow cleanup + verification task only.
+No redesign.
+No side quests.
+No major rebuild.
+
+Founder manually handles Publish / Republish before live verification.
+
+--- END ---
