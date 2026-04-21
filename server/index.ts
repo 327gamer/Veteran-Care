@@ -166,9 +166,108 @@ async function ensureSubcategoryTags() {
   }
 }
 
+async function ensureSeededNationalProviders() {
+  // Idempotent boot-time seed for national-provider directory inventory.
+  // Production drifts from dev because direct dev SQL doesn't propagate.
+  // INSERT-only via NOT EXISTS — never touches existing rows, never
+  // deactivates, never overwrites founder admin edits. Cheap when already
+  // present (single existence check per row).
+  type Seed = {
+    name: string;
+    categorySlug: string;
+    shortDescription: string;
+    websiteUrl: string;
+    phone: string | null;
+    subs: string[];
+  };
+  const seeds: Seed[] = [
+    // Housing & Home Services (5)
+    { name: "USAA Mortgage", categorySlug: "housing-home", shortDescription: "VA loans and mortgage products exclusively for military members, veterans, and their families.", websiteUrl: "https://www.usaa.com", phone: "800-531-0341", subs: [] },
+    { name: "Veterans United Home Loans", categorySlug: "housing-home", shortDescription: "#1 VA mortgage lender. VA loans, refinancing, and home buying education for veterans nationwide.", websiteUrl: "https://www.veteransunited.com", phone: "800-884-5560", subs: [] },
+    { name: "Navy Federal Credit Union — Mortgage", categorySlug: "housing-home", shortDescription: "VA loans, conventional mortgages, and HomeBuyers Choice loans for military and veterans.", websiteUrl: "https://www.navyfederal.org", phone: "888-842-6328", subs: [] },
+    { name: "PCSgrades", categorySlug: "housing-home", shortDescription: "Trusted veteran/military-run review platform for movers, real estate agents, and PCS-related services nationwide.", websiteUrl: "https://www.pcsgrades.com", phone: null, subs: [] },
+    { name: "Military OneSource — Moving / PCS", categorySlug: "housing-home", shortDescription: "DoD-backed PCS planning, moving entitlements, and housing resource hub for service members and families.", websiteUrl: "https://www.militaryonesource.mil/moving-housing/moving/", phone: "800-342-9647", subs: [] },
+    // Financial & Credit Services (4)
+    { name: "National Foundation for Credit Counseling (NFCC)", categorySlug: "financial-credit", shortDescription: "Largest nonprofit credit counseling network in the U.S. with veteran-focused programs.", websiteUrl: "https://www.nfcc.org", phone: "800-388-2227", subs: [] },
+    { name: "Operation Homefront — Financial Assistance", categorySlug: "financial-credit", shortDescription: "Long-standing emergency financial relief and assistance for military and veteran families.", websiteUrl: "https://www.operationhomefront.org", phone: "210-659-7756", subs: [] },
+    { name: "Veterans Benefits Banking Program (VBBP)", categorySlug: "financial-credit", shortDescription: "VA-endorsed program connecting veterans to participating banks and credit unions for safe direct deposit.", websiteUrl: "https://www.veteransbenefitsbanking.org", phone: null, subs: [] },
+    { name: "Freedom Debt Relief", categorySlug: "financial-credit", shortDescription: "National debt resolution provider offering structured debt relief programs.", websiteUrl: "https://www.freedomdebtrelief.com", phone: "800-655-6303", subs: [] },
+    // Insurance Services (3) — subcategory_slugs backfilled
+    { name: "AAFMAA (American Armed Forces Mutual Aid Association)", categorySlug: "insurance", shortDescription: "Oldest nonprofit financial-services and insurance org for the U.S. military community.", websiteUrl: "https://www.aafmaa.com", phone: "877-398-2263", subs: ["life-insurance"] },
+    { name: "Navy Mutual Aid Association", categorySlug: "insurance", shortDescription: "Trusted nonprofit life insurance provider for sea-service members, veterans, and families since 1879.", websiteUrl: "https://www.navymutual.org", phone: "800-628-6011", subs: ["life-insurance"] },
+    { name: "VA Life Insurance (VALife)", categorySlug: "insurance", shortDescription: "Official VA life insurance program for service-connected veterans.", websiteUrl: "https://www.va.gov/life-insurance", phone: "800-669-8477", subs: ["life-insurance"] },
+    // Legal Services (3)
+    { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: [] },
+    { name: "Stateside Legal", categorySlug: "legal-services", shortDescription: "Free legal information hub for veterans/military, run in partnership with Legal Services Corporation.", websiteUrl: "https://www.statesidelegal.org", phone: null, subs: [] },
+    { name: "Veterans Consortium Pro Bono Program", categorySlug: "legal-services", shortDescription: "Court-affiliated pro bono representation at the U.S. Court of Appeals for Veterans Claims.", websiteUrl: "https://www.vetsprobono.org", phone: "202-628-8164", subs: [] },
+    // Education & Training (3)
+    { name: "Hire Heroes USA", categorySlug: "education-training", shortDescription: "Free career coaching, job-search assistance, and training for veterans, transitioning service members, and military spouses.", websiteUrl: "https://www.hireheroes.org", phone: "844-634-1520", subs: [] },
+    { name: "Onward to Opportunity (IVMF Syracuse)", categorySlug: "education-training", shortDescription: "No-cost career training and certifications for transitioning service members, veterans, and military spouses, by the Institute for Veterans and Military Families.", websiteUrl: "https://ivmf.syracuse.edu/programs/career-training/onward-to-opportunity/", phone: "315-443-0141", subs: [] },
+    { name: "VA Education Benefits (GI Bill)", categorySlug: "education-training", shortDescription: "Official authoritative source for GI Bill, VR&E, and VET TEC education benefits.", websiteUrl: "https://www.va.gov/education", phone: "888-442-4551", subs: [] },
+  ];
+
+  try {
+    const { query: pgQuery } = await import("./pg-client");
+    let inserted = 0;
+    let alreadyPresent = 0;
+    const insertedNames: string[] = [];
+    for (const s of seeds) {
+      const result = await pgQuery(
+        `INSERT INTO trusted_services
+           (category_id, name, short_description, website_url, phone,
+            is_active, is_national, verification_status, verification_label,
+            listing_type, subcategory_slugs, notes_internal)
+         SELECT c.id, $2, $3, $4, $5,
+                true, true, 'national-provider', 'National Provider',
+                'directory', $6::text[], 'seed: bootstrap national-provider inventory'
+         FROM trusted_service_categories c
+         WHERE c.slug = $1
+           AND NOT EXISTS (
+             SELECT 1 FROM trusted_services ts WHERE ts.name ILIKE $2
+           )
+         RETURNING id, name`,
+        [s.categorySlug, s.name, s.shortDescription, s.websiteUrl, s.phone, s.subs],
+      );
+      if (result.length > 0) {
+        inserted++;
+        insertedNames.push(s.name);
+      } else {
+        alreadyPresent++;
+      }
+    }
+
+    // Subcategory backfill pass — guarantees subcategory_slugs are present
+    // even if the row was inserted previously without them. UPDATE-only,
+    // array-union, no-op when already correct (mirror of ensureSubcategoryTags).
+    let subBackfills = 0;
+    for (const s of seeds) {
+      if (s.subs.length === 0) continue;
+      const updated = await pgQuery(
+        `UPDATE trusted_services
+            SET subcategory_slugs = (
+              SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(subcategory_slugs, '{}'::text[]) || $2::text[]))
+            )
+          WHERE name ILIKE $1
+            AND NOT (subcategory_slugs @> $2::text[])
+          RETURNING id`,
+        [s.name, s.subs],
+      );
+      subBackfills += updated.length;
+    }
+
+    console.log(`[seed-sync] inserted=${inserted} already_present=${alreadyPresent} subcat_backfilled=${subBackfills}`);
+    if (insertedNames.length > 0) {
+      console.log(`[seed-sync] new partners: ${insertedNames.join(", ")}`);
+    }
+  } catch (err: any) {
+    console.warn(`[seed-sync] skipped (${err?.message || err})`);
+  }
+}
+
 (async () => {
   await cleanupTestRecords();
   await ensureSubcategoryTags();
+  await ensureSeededNationalProviders();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
