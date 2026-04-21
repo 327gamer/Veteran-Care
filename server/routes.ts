@@ -763,7 +763,7 @@ async function ensurePartnerSubcategories() {
       };
       if (legal) {
         add(legal, 'VA Claims', 'va-claims', 1);
-        add(legal, 'Disability Appeals', 'disability-appeals', 2);
+        add(legal, 'Disability Claims Assistance', 'disability-claims-assistance', 2);
         add(legal, 'Family Law', 'family-law', 3);
         add(legal, 'Criminal Defense', 'criminal-defense', 4);
         add(legal, 'Estate Planning', 'estate-planning', 5);
@@ -1449,7 +1449,7 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'employment-support', name: 'Entrepreneurship & Business', slug: 'entrepreneurship-business', order: 4 },
       { catSlug: 'employment-support', name: 'Federal Employment (USAJOBS)', slug: 'federal-employment', order: 5 },
 
-      { catSlug: 'education-training', name: 'GI Bill & Tuition Assistance', slug: 'gi-bill-tuition', order: 1 },
+      { catSlug: 'education-training', name: 'GI Bill Assistance', slug: 'gi-bill-assistance', order: 1 },
       { catSlug: 'education-training', name: 'Trade Schools & Vocational', slug: 'trade-schools', order: 2 },
       { catSlug: 'education-training', name: 'Certifications & Licensing', slug: 'certifications-licensing', order: 3 },
       { catSlug: 'education-training', name: 'College & University Programs', slug: 'college-university', order: 4 },
@@ -1475,7 +1475,7 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'wellness-recovery', name: 'Peer Support Groups', slug: 'peer-support', order: 5 },
 
       { catSlug: 'legal-services', name: 'Family Law', slug: 'family-law', order: 1 },
-      { catSlug: 'legal-services', name: 'Disability & VA Appeals', slug: 'disability-va-appeals', order: 2 },
+      { catSlug: 'legal-services', name: 'Disability Claims Assistance', slug: 'disability-claims-assistance', order: 2 },
       { catSlug: 'legal-services', name: 'Criminal Defense', slug: 'criminal-defense', order: 3 },
       { catSlug: 'legal-services', name: 'Estate Planning & Wills', slug: 'estate-planning-legal', order: 4 },
       { catSlug: 'legal-services', name: 'Employment Law', slug: 'employment-law', order: 5 },

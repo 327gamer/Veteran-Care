@@ -197,13 +197,13 @@ async function ensureSeededNationalProviders() {
     { name: "Navy Mutual Aid Association", categorySlug: "insurance", shortDescription: "Trusted nonprofit life insurance provider for sea-service members, veterans, and families since 1879.", websiteUrl: "https://www.navymutual.org", phone: "800-628-6011", subs: ["life-insurance"] },
     { name: "VA Life Insurance (VALife)", categorySlug: "insurance", shortDescription: "Official VA life insurance program for service-connected veterans.", websiteUrl: "https://www.va.gov/life-insurance", phone: "800-669-8477", subs: ["life-insurance"] },
     // Legal Services (3)
-    { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: ["va-claims", "disability-va-appeals"] },
+    { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: ["va-claims", "disability-claims-assistance"] },
     { name: "Stateside Legal", categorySlug: "legal-services", shortDescription: "Free legal information hub for veterans/military, run in partnership with Legal Services Corporation.", websiteUrl: "https://www.statesidelegal.org", phone: null, subs: ["va-claims"] },
-    { name: "Veterans Consortium Pro Bono Program", categorySlug: "legal-services", shortDescription: "Court-affiliated pro bono representation at the U.S. Court of Appeals for Veterans Claims.", websiteUrl: "https://www.vetsprobono.org", phone: "202-628-8164", subs: ["va-claims", "disability-va-appeals"] },
+    { name: "Veterans Consortium Pro Bono Program", categorySlug: "legal-services", shortDescription: "Court-affiliated pro bono representation at the U.S. Court of Appeals for Veterans Claims.", websiteUrl: "https://www.vetsprobono.org", phone: "202-628-8164", subs: ["va-claims", "disability-claims-assistance"] },
     // Education & Training (3)
     { name: "Hire Heroes USA", categorySlug: "education-training", shortDescription: "Free career coaching, job-search assistance, and training for veterans, transitioning service members, and military spouses.", websiteUrl: "https://www.hireheroes.org", phone: "844-634-1520", subs: ["certifications-licensing"] },
     { name: "Onward to Opportunity (IVMF Syracuse)", categorySlug: "education-training", shortDescription: "No-cost career training and certifications for transitioning service members, veterans, and military spouses, by the Institute for Veterans and Military Families.", websiteUrl: "https://ivmf.syracuse.edu/programs/career-training/onward-to-opportunity/", phone: "315-443-0141", subs: ["certifications-licensing"] },
-    { name: "VA Education Benefits (GI Bill)", categorySlug: "education-training", shortDescription: "Official authoritative source for GI Bill, VR&E, and VET TEC education benefits.", websiteUrl: "https://www.va.gov/education", phone: "888-442-4551", subs: ["gi-bill-tuition"] },
+    { name: "VA Education Benefits (GI Bill)", categorySlug: "education-training", shortDescription: "Official authoritative source for GI Bill, VR&E, and VET TEC education benefits.", websiteUrl: "https://www.va.gov/education", phone: "888-442-4551", subs: ["gi-bill-assistance"] },
   ];
 
   try {
@@ -264,9 +264,85 @@ async function ensureSeededNationalProviders() {
   }
 }
 
+async function ensureSubcategoryAliases() {
+  // Idempotent migration of legacy partner_subcategories rows + trusted_services.subcategory_slugs
+  // arrays to the canonical client-side slugs that LEGAL_SUBCATEGORIES / EDU_SUBCATEGORIES use.
+  // Founder taxonomy: "Disability Claims Assistance" (legal), "GI Bill Assistance" (education).
+  const aliases: Array<{ catSlug: string; oldSlug: string; newSlug: string; newName: string }> = [
+    { catSlug: "legal-services", oldSlug: "disability-va-appeals", newSlug: "disability-claims-assistance", newName: "Disability Claims Assistance" },
+    { catSlug: "legal-services", oldSlug: "disability-appeals", newSlug: "disability-claims-assistance", newName: "Disability Claims Assistance" },
+    { catSlug: "education-training", oldSlug: "gi-bill-tuition", newSlug: "gi-bill-assistance", newName: "GI Bill Assistance" },
+  ];
+  // Legacy duplicate Legal rows that should be deactivated entirely (no replacement).
+  const dedupSlugs: Array<{ catSlug: string; slug: string }> = [
+    { catSlug: "legal-services", slug: "estate-planning" }, // duplicate of estate-planning-legal
+  ];
+  let renamedRows = 0, dedupedRows = 0, arraysMigrated = 0;
+  try {
+    const { query: pgQuery } = await import("./pg-client");
+    for (const a of aliases) {
+      // Resolve category id from trusted_service_categories
+      const cat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug=$1`, [a.catSlug]);
+      const catId = cat[0]?.id;
+      if (!catId) continue;
+      // If new slug row already exists, just deactivate the old slug row (collision-safe).
+      const newExists = await pgQuery(
+        `SELECT id FROM partner_subcategories WHERE category_id=$1 AND slug=$2`,
+        [catId, a.newSlug]
+      );
+      if (newExists.length > 0) {
+        const r = await pgQuery(
+          `UPDATE partner_subcategories SET is_active=false WHERE category_id=$1 AND slug=$2 AND is_active=true RETURNING id`,
+          [catId, a.oldSlug]
+        );
+        dedupedRows += (r as any).length || 0;
+      } else {
+        // Rename the old row in place: update slug + name. Idempotent — no-op if slug already migrated.
+        const r = await pgQuery(
+          `UPDATE partner_subcategories SET slug=$1, name=$2, is_active=true WHERE category_id=$3 AND slug=$4 RETURNING id`,
+          [a.newSlug, a.newName, catId, a.oldSlug]
+        );
+        renamedRows += (r as any).length || 0;
+      }
+      // Migrate any trusted_services rows whose subcategory_slugs array contains the old slug.
+      const arr = await pgQuery(
+        `UPDATE trusted_services
+           SET subcategory_slugs = array_replace(subcategory_slugs, $1, $2)
+         WHERE $1 = ANY(subcategory_slugs)
+         RETURNING id`,
+        [a.oldSlug, a.newSlug]
+      );
+      arraysMigrated += (arr as any).length || 0;
+    }
+    for (const d of dedupSlugs) {
+      const cat = await pgQuery(`SELECT id FROM trusted_service_categories WHERE slug=$1`, [d.catSlug]);
+      const catId = cat[0]?.id;
+      if (!catId) continue;
+      const r = await pgQuery(
+        `UPDATE partner_subcategories SET is_active=false WHERE category_id=$1 AND slug=$2 AND is_active=true RETURNING id`,
+        [catId, d.slug]
+      );
+      dedupedRows += (r as any).length || 0;
+    }
+    // Final pass: dedupe trusted_services.subcategory_slugs arrays (the seed-sync union
+    // can leave duplicates after an alias rewrite). Idempotent — no-op when already unique.
+    const dedupArr = await pgQuery(
+      `UPDATE trusted_services
+         SET subcategory_slugs = ARRAY(SELECT DISTINCT unnest(subcategory_slugs))
+       WHERE cardinality(subcategory_slugs) <> cardinality(ARRAY(SELECT DISTINCT unnest(subcategory_slugs)))
+       RETURNING id`
+    );
+    const arrDeduped = (dedupArr as any).length || 0;
+    console.log(`[subcategory-aliases] renamed=${renamedRows} deduped=${dedupedRows} array_rows_migrated=${arraysMigrated} arrays_deduped=${arrDeduped}`);
+  } catch (err: any) {
+    console.warn(`[subcategory-aliases] skipped (${err?.message || err})`);
+  }
+}
+
 (async () => {
   await cleanupTestRecords();
   await ensureSubcategoryTags();
+  await ensureSubcategoryAliases();
   await ensureSeededNationalProviders();
   await registerRoutes(httpServer, app);
 

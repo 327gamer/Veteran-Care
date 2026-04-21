@@ -682,13 +682,22 @@ export default function Resources() {
               size="icon" 
               className="h-8 w-8 -ml-2 rounded-full" 
               onClick={() => {
-                if ((locationMode === "nearme" || locationMode === "city") && !selectedSlug) {
+                // Defensive: read slug straight from URL so deep-link Back works even if
+                // categories query hasn't populated selectedSlug state yet (race fix for
+                // Education back → Legal cross-jump and Legal back → flat-list fallthrough).
+                const urlSlug = (() => {
+                  try {
+                    const p = new URLSearchParams(window.location.search).get("category");
+                    return p ? decodeURIComponent(p) : selectedSlug;
+                  } catch { return selectedSlug; }
+                })();
+                if ((locationMode === "nearme" || locationMode === "city") && !urlSlug) {
                   setLocationMode("national");
                   setCityFilter("");
                   setLocation("/resources");
-                } else if (selectedSlug && CATEGORY_DEDICATED_ROUTES[selectedSlug]) {
+                } else if (urlSlug && CATEGORY_DEDICATED_ROUTES[urlSlug]) {
                   if (subFilter) setSubFilter(null);
-                  setLocation(CATEGORY_DEDICATED_ROUTES[selectedSlug]);
+                  setLocation(CATEGORY_DEDICATED_ROUTES[urlSlug]);
                 } else {
                   clearCategory();
                 }
