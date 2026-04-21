@@ -115,6 +115,8 @@ async function cleanupTestRecords() {
            OR name ILIKE '%test partner%'
            OR name ILIKE '%placeholder%'
            OR name ILIKE 'TEST %'
+           OR name ILIKE 'Veteran Care'
+           OR name ILIKE 'Veteran Care %'
          )
        RETURNING id, name`,
     );

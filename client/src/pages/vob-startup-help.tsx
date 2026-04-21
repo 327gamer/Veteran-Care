@@ -419,10 +419,16 @@ export default function VobStartupHelp() {
                                       variant="outline"
                                       size="sm"
                                       className="h-6 text-[10px] px-2 shrink-0"
-                                      onClick={() => setLocation(`/discounts?highlight=${partner.id}`)}
+                                      onClick={() => {
+                                        if (partner.website_url) {
+                                          window.open(partner.website_url, "_blank", "noopener,noreferrer");
+                                        } else {
+                                          setLocation(`/discounts?highlight=${partner.id}`);
+                                        }
+                                      }}
                                       data-testid={`button-view-partner-${partner.id}`}
                                     >
-                                      View <ExternalLink className="h-2.5 w-2.5 ml-1" />
+                                      {partner.website_url ? "Connect" : "View"} <ExternalLink className="h-2.5 w-2.5 ml-1" />
                                     </Button>
                                   </div>
                                 ))}
