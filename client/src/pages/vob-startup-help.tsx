@@ -46,6 +46,7 @@ interface TrustedServicePartner {
   category_slug: string;
   verification_label: string | null;
   source_type: string;
+  listing_type: string | null;
 }
 
 const ROADMAP_STEPS: RoadmapStep[] = [
@@ -245,6 +246,7 @@ export default function VobStartupHelp() {
         category_slug: p.trusted_service_categories?.slug || "",
         verification_label: p.verification_label,
         source_type: p.source_type,
+        listing_type: p.listing_type ?? null,
       }));
     },
   });
@@ -420,7 +422,8 @@ export default function VobStartupHelp() {
                                       size="sm"
                                       className="h-6 text-[10px] px-2 shrink-0"
                                       onClick={() => {
-                                        if (partner.website_url) {
+                                        const isDiscount = partner.listing_type === "discount";
+                                        if (isDiscount && partner.website_url) {
                                           window.open(partner.website_url, "_blank", "noopener,noreferrer");
                                         } else {
                                           setLocation(`/discounts?highlight=${partner.id}`);
@@ -428,7 +431,8 @@ export default function VobStartupHelp() {
                                       }}
                                       data-testid={`button-view-partner-${partner.id}`}
                                     >
-                                      {partner.website_url ? "Connect" : "View"} <ExternalLink className="h-2.5 w-2.5 ml-1" />
+                                      {partner.listing_type === "discount" && partner.website_url ? "Claim Offer" : "Connect"}
+                                      <ExternalLink className="h-2.5 w-2.5 ml-1" />
                                     </Button>
                                   </div>
                                 ))}

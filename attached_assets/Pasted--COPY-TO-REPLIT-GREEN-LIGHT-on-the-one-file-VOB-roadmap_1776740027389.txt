@@ -1,0 +1,80 @@
+--- COPY TO REPLIT ---
+
+GREEN LIGHT on the one-file VOB roadmap fix.
+
+Please proceed with the smallest safe correction exactly as proposed:
+
+VOB roadmap recommended partner cards:
+
+- listing_type = 'discount' + website_url
+→ direct website
+→ label "Claim Offer"
+
+- all others ('lead', 'partner-paid', 'directory', missing)
+→ route to canonical partner detail page:
+/discounts?highlight=ID
+→ existing CTA logic handles lead capture / partner handoff
+→ label "Connect"
+
+This preserves billing, attribution, commissions, and admin tracking.
+
+--------------------------------------------------
+PHASE 2 ADDITION — AI NAVIGATOR MONETIZED ROUTING CHECK
+--------------------------------------------------
+
+Need architecture verification on the Veteran Guide / AI Navigator.
+
+Current guide works well for:
+- resources
+- education
+- benefits
+- support info
+- trusted services recommendations
+
+But need to confirm monetized routing logic for billable lead partners.
+
+CRITICAL RULE:
+
+If AI Guide recommends categories such as:
+
+- mortgages
+- loans
+- legal help
+- insurance
+- financial services
+- paid trusted partner categories
+
+Then clicks / recommendations must NOT send users directly to partner websites if that partner is lead-billed.
+
+Instead route through the same internal handoff system used elsewhere so:
+
+- lead is captured
+- sent to trusted partner inbox
+- partner confirms receipt
+- billing triggers
+- ambassador attribution preserved
+- admin panel tracks lifecycle
+
+Need reply in this format:
+
+1. Does AI Guide currently distinguish direct partners vs lead-billed partners?
+2. If AI recommends a paid lead partner today, where does click go?
+3. Is billing / lead proof preserved today?
+4. Smallest Phase 2 fix needed so AI recommendations obey listing_type logic
+5. Can AI auto-prioritize paid lead partners when appropriate while still serving best user outcome?
+6. Estimated smallest-scope implementation path (not broad rebuild)
+
+IMPORTANT:
+Veterans must always receive the best legitimate help first.
+
+But when multiple valid options exist, system should intelligently prioritize monetizable trusted partners while preserving trust and usefulness.
+
+This is Phase 2 monetized routing intelligence.
+
+No redesign.
+No side quests.
+Need architecture truth + smallest safe upgrade path.
+
+Founder manually Publish / Republish before live verification.
+
+--- END ---
