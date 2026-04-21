@@ -1,0 +1,91 @@
+--- COPY TO REPLIT ---
+
+Founder found seeded-partner inconsistency. New screenshots provide clearer evidence.
+
+CURRENT LIVE BEHAVIOR
+
+1. Global search can find many seeded partners.
+2. Life Insurance seeded partners are visibly rendering.
+3. Example seeded life insurance rows currently show THREE badges:
+
+- Veteran Support Service
+- Trusted Partner
+- National Provider
+
+Examples:
+- VA Life (VALife)
+- Navy Mutual
+- AAFMAA
+
+4. Most other seeded categories (Housing / Financial / Legal / Education) are not visibly surfacing the same way.
+
+Need one clean truth audit + smallest safe fix.
+
+==================================================
+PHASE 1 — BADGE SOURCE TRUTH
+For seeded rows above, map exactly which field/value causes each badge:
+
+Badge shown | Source field/value
+
+Need to know why a seeded National Provider is also showing Trusted Partner.
+
+==================================================
+PHASE 2 — BUSINESS RULE TO ENFORCE
+
+Seeded bootstrap rows should display:
+
+- National Provider
+- Optional Veteran Support Service (if legitimate)
+
+They should NOT display Trusted Partner unless truly upgraded paid / verified partners.
+
+Trusted Partner tier must remain commercially valuable.
+
+==================================================
+PHASE 3 — WHY INSURANCE SHOWS / OTHERS DON’T
+
+Compare Insurance seeded rows vs Housing / Financial / Legal / Education seeded rows.
+
+Need exact reason Insurance renders while others do not:
+
+- subcategory_slugs?
+- old flags?
+- different category logic?
+- badge filters?
+- listing_type differences?
+
+==================================================
+PHASE 4 — SURFACE MATRIX
+
+Surface | Should seeded rows show? | Currently show? | Why
+
+1. Global Search
+2. Trusted Services category page
+3. Trusted Services subcategory page
+4. Verified / top partner strips
+5. AI recommendations (if relevant)
+
+==================================================
+PHASE 5 — FASTEST SAFE FIX
+
+Need smallest clean correction in NEW unified system only:
+
+- remove Trusted Partner badge from seed rows unless eligible
+- preserve National Provider badge
+- preserve routing logic
+- preserve visibility where intended
+- add missing tags if needed
+- no old code revival
+
+==================================================
+PHASE 6 — RETURN TABLE
+
+Partner | Current badges | Correct badges | Missing tags | Fix needed
+
+No redesign.
+No rebuild.
+Need truth + clean launch-ready tier integrity.
+
+Founder manually Publish / Republish before live verification.
+
+--- END ---
