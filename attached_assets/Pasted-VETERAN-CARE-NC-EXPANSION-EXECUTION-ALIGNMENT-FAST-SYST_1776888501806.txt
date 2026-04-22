@@ -1,0 +1,104 @@
+VETERAN CARE – NC EXPANSION EXECUTION ALIGNMENT (FAST SYSTEM MODE)
+
+Excellent analysis. Founder wants everyone aligned before execution begins.
+
+KEY STRATEGIC CLARIFICATION
+
+We are no longer thinking in “slow rollout phases.”
+
+We already have the platform built.
+
+We already have:
+
+• national resource architecture  
+• search  
+• near me  
+• city / state filters  
+• radius filters  
+• category / subcategory structure  
+• CSV importer  
+• geolocation logic  
+• live UI
+
+So this is now a DATA POPULATION ENGINE.
+
+The mission is to build the most efficient repeatable state-ingestion system possible.
+
+NORTH CAROLINA SHOULD BE THE TEMPLATE RUN.
+
+Then immediately reuse same model for:
+
+• Georgia  
+• Florida  
+• Alabama  
+• Tennessee  
+• Virginia  
+• then national scale
+
+FOUNDER PRIORITIES
+
+1. Speed with accuracy  
+2. No unnecessary over-planning  
+3. No artificial delays  
+4. Same exact system reused state after state  
+5. Every run becomes faster as process improves  
+6. Zero disruption to live platform  
+7. Trusted Services / seeded partners can be ignored for now in new states  
+8. Focus only on core Resources population first
+
+IMPORTANT OPERATING RULE
+
+Do NOT overcomplicate with too many staged rounds.
+
+Need practical high-output execution.
+
+QUESTION TO REPLIT
+
+Using the importer + existing database structure:
+
+What is the FASTEST, CLEANEST, MOST PRODUCTIVE way to fully populate North Carolina resources now?
+
+Meaning:
+
+If Fayetteville model works quickly, can system simply scale immediately across ALL NC cities using same command logic?
+
+Could we run:
+
+• all major NC metros first
+or
+• statewide by category
+or
+• full-state smart ingest in one coordinated run
+
+Need the highest-output method YOU would use based on actual tooling already built.
+
+CRITICAL REQUIREMENTS
+
+• rows land in correct categories  
+• correct subcategories  
+• city/state accurate  
+• geolocation accurate  
+• dedupe active  
+• no broken live system  
+• no taxonomy drift  
+• no UI disruption
+
+SEATED PARTNERS / TRUSTED SERVICES
+
+Ignore for now in new states.
+
+We can layer monetization later.
+
+Right now objective is national resources footprint fast.
+
+RETURN REQUIRED
+
+1. If NC can be substantially completed now using current importer  
+2. Best high-speed method for NC  
+3. How same exact workflow repeats for GA next  
+4. Any bottleneck preventing rapid state-by-state expansion  
+5. Your recommended GO command for NC today
+
+Think like an operations architect with a live machine already built.
+
+We need to feed the machine efficiently.
