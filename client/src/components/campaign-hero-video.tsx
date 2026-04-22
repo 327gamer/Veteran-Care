@@ -116,7 +116,8 @@ export default function CampaignHeroVideo({
         : "95vw",
     maxHeight: isDesktop ? "min(70vh, 600px)" : "min(50vh, 440px)",
     width: "auto",
-    margin: "0 auto",
+    marginLeft: "auto",
+    marginRight: "auto",
   };
 
   const handleLoadedMetadata = () => {
