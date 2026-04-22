@@ -1,0 +1,83 @@
+VETERAN CARE – RESET TO HIGH-EFFICIENCY INGESTION MODE
+
+Need to recalibrate execution mindset.
+
+Please stop framing this in human labor timelines.
+
+This is not manual development work.
+
+This is a data ingestion / validation / categorization engine using tooling already built.
+
+Founder reminder:
+
+South Carolina was populated rapidly at scale using the same platform. Hundreds of rows were processed quickly because the system already exists.
+
+So we need to return to the SAME high-efficiency model that worked previously.
+
+KEY DIRECTIVE
+
+Optimize for:
+
+• speed  
+• accuracy  
+• category correctness  
+• subcategory correctness  
+• dedupe  
+• geolocation integrity  
+• searchable structure  
+• repeatability across states
+
+Do NOT optimize around slow phased assumptions.
+
+This should become a repeatable machine where after NC the same workflow can immediately be reused for:
+
+• Georgia  
+• Florida  
+• Alabama  
+• Tennessee  
+• Virginia  
+• full national rollout
+
+IMPORTANT PLATFORM CLARIFICATION
+
+We have ONE platform.
+
+Resources + Trusted Services + future partner layers all rely on the same master taxonomy and location structure.
+
+So when rows are added, they must strengthen the same unified ecosystem.
+
+Need everything to marry correctly:
+
+• state  
+• city  
+• geo  
+• category  
+• subcategory  
+• search filters  
+• near me  
+• radius logic  
+• future monetization layers
+
+QUESTION TO REPLIT
+
+Based on how South Carolina was successfully populated previously:
+
+What is the FASTEST / CLEANEST / MOST PRODUCTIVE way to replicate that exact successful model for North Carolina now?
+
+Meaning:
+
+Use the same high-output process that already proved successful.
+
+Need your recommended execution command using current importer and database.
+
+RETURN REQUIRED
+
+1. Why current proposal became slower than SC method  
+2. Best way to replicate proven SC ingest model for NC  
+3. How to maximize rows inserted correctly in one coordinated run  
+4. How same method immediately rolls into GA next  
+5. Exact GO command you recommend now
+
+Think like systems automation, not manual project management.
+
+We already built the machine. Use the machine.
