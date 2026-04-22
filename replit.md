@@ -46,7 +46,7 @@
 
 ### Three Logical Layers
 1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
-2. **State Data Layer** — South Carolina (LIVE), Georgia (next), North Carolina, Florida, etc.
+2. **State Data Layer** — South Carolina (LIVE, 396), North Carolina (LIVE, 248 across all 17 categories — complete-shape template), Georgia (next), Florida, etc.
 3. **Local Coverage Layer** — cities, counties, metro areas, service zones, partner territories, ambassador territories
 
 ### Expansion Rule
