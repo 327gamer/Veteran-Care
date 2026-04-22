@@ -46,7 +46,27 @@
 
 ### Three Logical Layers
 1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
-2. **State Data Layer** — South Carolina (LIVE, 396), North Carolina (LIVE, 248 across all 17 categories — complete-shape template), Georgia (next), Florida, etc.
+2. **State Data Layer** — South Carolina (LIVE, 438 / 38 cities / 17 cats), North Carolina (LIVE, 295 / 83 cities / 17 cats — complete-shape template), Georgia (next), Florida, Tennessee, Virginia, etc.
+
+### Locked Rollout Template (Phase 0 → 8 — apply per state)
+Use this template for every new state. Each phase produces a committed script under `scripts/` for full auditability. Operator-Mode rules: additive-only, never delete protected engines, dry-run before `--commit`.
+
+- **Phase 0 — Inventory & Baseline:** run `scripts/qc-resources.ts` to capture row count, distinct cities, category coverage, dead URLs, dup groups, geo gaps, sub-name validity. Snapshot becomes the diff target.
+- **Phase 1 — Cleanup:** single `scripts/cleanup-states-phaseN.ts` that fixes (a) sub-name typos against `subcategories` table, (b) missing `resource_categories`/`resource_subcategories` junctions, (c) duplicate titles (keep oldest), (d) missing geo via city centroid, (e) dead/redirected URLs via verified parent-URL swaps (never delete the row).
+- **Phase 2 — Expansion (additive only):** `scripts/seed-{state}-resources-roundN.ts` with sectioned blocks A–E (county VSOs, VAMC/CBOC/Vet Centers, regional nonprofits, family/legal/transit, crisis/community posts). Always upsert resource + both junctions; pre-validate sub-names against live `subcategories` rows; dry-run prints `created/dup/bad_sub/err` per section.
+- **Phase 3 — Polish:** `scripts/seed-{state}-polish.ts` to top up secondary towns, beef up family-support, fill thin categories. Same A–E shape. Same dry-run-then-`--commit` discipline.
+- **Phase 4 — UI/Live-Data Wiring:** ensure pages use `/api/locations/cities?state=XX` (no hardcoded city arrays in `client/src/pages/home.tsx` or any picker). Verify dropdowns return live count.
+- **Phase 5 — QC Polish:** re-run `scripts/qc-resources.ts`. Hard-zero targets: `B_redirect`, `E_geo_missing`, `E_geo_outside`, `F_zip_mismatch`, `G_cat_mismatch`, `G_sub_invalid`, `H_parked`. Soft flags allowed: `A_dead` (gov sites blocking bots), `C_phone` (211/988/national HQ — extend whitelist as needed), `D_dup_url` (parent-URL rollups for VAMC/DAV/SCWorks/NCWorks).
+- **Phase 6 — Rollout-Template Lock:** confirm template still applies; bump state row in this section with new totals.
+- **Phase 7 — Founder Sign-off:** report deltas (rows added, cities added, dead-URL count, dup groups). Do not advance to the next state without green-light.
+- **Phase 8 — Next State Kickoff:** repeat Phase 0 against the next state (GA → FL → TN → VA …).
+
+### Engineering Patterns (locked)
+- DB connection: `SUPABASE_DB_URL` with `[YOUR-PASSWORD]` replaced by `encodeURIComponent(SUPABASE_DB_PASSWORD)` (pg client, ssl `rejectUnauthorized:false`).
+- Insert pattern: write `resources` row, then upsert `resource_categories` + `resource_subcategories` junctions with `ON CONFLICT DO NOTHING`.
+- Sub-name taxonomy gotchas (verified live): healthcare = `VA Clinics` / `VA Medical Centers` (not "Outpatient Care"); family-support = `Military Family Support` / `Childcare Assistance` / `Survivor Benefits Support` / `Spouse Employment Assistance` / `Youth Programs` (not "Military Family Programs"); housing = `Homeless Veteran Services` / `Home Ownership Programs`; transportation = `Public Transit Assistance`; legal = `Pro Bono Legal Services` / `Veterans Legal Clinics` / `Legal Aid Services`; crisis-help = `Veterans Crisis Line` / `Mobile Crisis Teams`; food-assistance = `Food Banks`. **Always pre-validate against the live `subcategories` table — sub names drift.**
+- VA.gov deep links rot frequently — swap to verified parent VAMC URL, never delete the row.
+- QC junction loader must chunk `.in()` queries by ≤150 IDs (PostgREST URL-length limit; symptom: false 100% cat-mismatch).
 3. **Local Coverage Layer** — cities, counties, metro areas, service zones, partner territories, ambassador territories
 
 ### Expansion Rule

@@ -123,16 +123,22 @@ async function main() {
     const cities = new Set<string>(); rows.forEach(r => r.city && cities.add(r.city));
     console.log(`Distinct cities: ${cities.size}`);
 
-    // junction map
-    const { data: jr } = await supabaseAdmin
-      .from("resource_categories")
-      .select("resource_id, category_id")
-      .in("resource_id", rows.map(r => r.id));
+    // junction map (chunked to avoid PostgREST URL-length limit at ~200+ UUIDs)
     const junctionByRes = new Map<string, Set<string>>();
-    (jr || []).forEach((j: any) => {
-      if (!junctionByRes.has(j.resource_id)) junctionByRes.set(j.resource_id, new Set());
-      junctionByRes.get(j.resource_id)!.add(j.category_id);
-    });
+    const ids = rows.map(r => r.id);
+    const CHUNK = 150;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const slice = ids.slice(i, i + CHUNK);
+      const { data: jr, error: jerr } = await supabaseAdmin
+        .from("resource_categories")
+        .select("resource_id, category_id")
+        .in("resource_id", slice);
+      if (jerr) throw jerr;
+      (jr || []).forEach((j: any) => {
+        if (!junctionByRes.has(j.resource_id)) junctionByRes.set(j.resource_id, new Set());
+        junctionByRes.get(j.resource_id)!.add(j.category_id);
+      });
+    }
 
     const flags = {
       A_dead: [] as any[],

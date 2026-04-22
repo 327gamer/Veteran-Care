@@ -69,13 +69,7 @@ const STATE_CODES: Record<string, string> = {
   "South Dakota":"SD",Tennessee:"TN",Texas:"TX",Utah:"UT",Vermont:"VT",Virginia:"VA",Washington:"WA","West Virginia":"WV",Wisconsin:"WI",Wyoming:"WY"
 };
 
-const CITIES_BY_STATE: Record<string, string[]> = {
-  "Texas": ["Austin", "Dallas", "Houston", "San Antonio", "Fort Worth"],
-  "South Carolina": ["Charleston", "Columbia", "Greenville", "Myrtle Beach", "Spartanburg"],
-  "California": ["Los Angeles", "San Diego", "San Francisco", "Sacramento", "San Jose"],
-  "Florida": ["Jacksonville", "Miami", "Tampa", "Orlando", "St. Petersburg"],
-  "default": ["City 1", "City 2", "City 3"] 
-};
+const CITY_FALLBACK = ["Select a city"];
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -135,8 +129,7 @@ export default function Home() {
 
   const handleStateChange = (state: string) => {
     setSelectedState(state);
-    const cities = CITIES_BY_STATE[state] || CITIES_BY_STATE["default"];
-    setSelectedCity(cities[0]);
+    setSelectedCity("");
   };
 
   const saveLocation = () => {
@@ -145,8 +138,18 @@ export default function Home() {
     setIsLocationOpen(false);
   };
 
-  const getCities = (state: string) => {
-    return CITIES_BY_STATE[state] || CITIES_BY_STATE["default"];
+  const stateCodeFor = (state: string) => STATE_CODES[state] || state;
+  const { data: liveCities = [] } = useQuery<string[]>({
+    queryKey: ["/api/locations/cities", stateCodeFor(selectedState)],
+    queryFn: () =>
+      fetch(`/api/locations/cities?state=${encodeURIComponent(stateCodeFor(selectedState))}`)
+        .then(r => (r.ok ? r.json() : []))
+        .then((d: any) => (Array.isArray(d) ? d : (d?.cities ?? []))),
+    enabled: !!selectedState,
+  });
+
+  const getCities = (_state: string) => {
+    return liveCities && liveCities.length ? liveCities : CITY_FALLBACK;
   };
 
   const openTutorial = () => {
