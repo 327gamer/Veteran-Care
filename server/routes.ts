@@ -422,7 +422,7 @@ async function ensureAttributionTables() {
           case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
           partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
           general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
-          homepage:      { path: "/",                campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
+          homepage:      { path: "/start",           campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
         };
         const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
         const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
@@ -456,7 +456,7 @@ async function ensureAttributionTables() {
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth" },
         general:       { path: "/get-help",        campaign: "sc_launch" },
-        homepage:      { path: "/",                campaign: "sc_homepage_traffic" },
+        homepage:      { path: "/start",           campaign: "sc_homepage_traffic" },
       };
       for (const [audienceKey, aud] of Object.entries(AUDIENCE_PATHS)) {
         await pgQuery(
@@ -502,6 +502,36 @@ async function ensureAttributionTables() {
       console.log(`[schema] Updated ${fixed[0].cnt} general links to /get-help`);
     }
 
+    // === FIX: Repoint homepage links from / → /start (Phase 1 video lives at /start) ===
+    const homeOnRoot = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'homepage' AND base_path = '/'");
+    if (parseInt(homeOnRoot[0].cnt, 10) > 0) {
+      console.log("[schema] Updating homepage links: / → /start (so Video Preview Card lands on the page that actually plays the video)...");
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET base_path = '/start',
+             full_url = REPLACE(full_url, 'veterancare.com/?', 'veterancare.com/start?')
+         WHERE audience_type = 'homepage' AND base_path = '/'`
+      );
+      const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'homepage' AND base_path = '/start'");
+      console.log(`[schema] Updated ${fixed[0].cnt} homepage links to /start`);
+    }
+
+    // === SAFETY: Ensure all general links go to /get-help ===
+    const genOffPath = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path != '/get-help'");
+    if (parseInt(genOffPath[0].cnt, 10) > 0) {
+      console.log(`[schema] Repointing ${genOffPath[0].cnt} general links to /get-help...`);
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET full_url = 'https://veterancare.com/get-help?utm_source=' || utm_source ||
+                        '&utm_medium=' || utm_medium ||
+                        '&utm_campaign=' || utm_campaign ||
+                        '&utm_content=' || utm_content ||
+                        '&utm_id=' || utm_id,
+             base_path = '/get-help'
+         WHERE audience_type = 'general' AND base_path != '/get-help'`
+      );
+    }
+
     // === FIX: Rename old link_name labels to new naming convention ===
     const oldVetNames = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE link_name LIKE '%– Veteran Outreach'");
     if (parseInt(oldVetNames[0].cnt, 10) > 0) {
@@ -526,12 +556,12 @@ async function ensureAttributionTables() {
         for (const channel of HP_CHANNELS) {
           const linkName = `${a.display_name} – ${HP_CHANNEL_LABELS[channel]} – General Share Link (Homepage)`;
           const utmId = `${a.code}_homepage_${channel}`;
-          const fullUrl = `https://veterancare.com/?utm_source=ambassador&utm_medium=${channel}&utm_campaign=sc_homepage_traffic&utm_content=${a.code}&utm_id=${utmId}`;
+          const fullUrl = `https://veterancare.com/start?utm_source=ambassador&utm_medium=${channel}&utm_campaign=sc_homepage_traffic&utm_content=${a.code}&utm_id=${utmId}`;
           await pgQuery(
             `INSERT INTO ambassador_links (ambassador_id, ambassador_code, ambassador_name, link_name, utm_id, base_path, utm_source, utm_medium, utm_campaign, utm_content, full_url, short_url, audience_type, channel_type, is_active, click_count, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 0, NOW())
              ON CONFLICT DO NOTHING`,
-            [a.id, a.code, a.display_name, linkName, utmId, '/', 'ambassador', channel, 'sc_homepage_traffic', a.code, fullUrl, `/a/${utmId}`, 'homepage', channel]
+            [a.id, a.code, a.display_name, linkName, utmId, '/start', 'ambassador', channel, 'sc_homepage_traffic', a.code, fullUrl, `/a/${utmId}`, 'homepage', channel]
           );
           hpCount++;
         }
