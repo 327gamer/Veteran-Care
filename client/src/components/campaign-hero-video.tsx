@@ -132,7 +132,7 @@ export default function CampaignHeroVideo({
   return (
     <div
       className={`overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black ${
-        className || "rounded-xl mb-8 md:mb-10"
+        className || "rounded-xl mb-12 md:mb-14"
       }`}
       style={containerStyle}
       data-testid={`hero-video-${audience}`}
