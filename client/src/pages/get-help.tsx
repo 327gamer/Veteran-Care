@@ -237,7 +237,6 @@ export default function GetHelp() {
       ) : (
         <Dialog open={true} onOpenChange={(v) => { if (!v) handleClose(); }}>
           <DialogContent className="sm:max-w-[440px] max-h-[85dvh] overflow-y-auto pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <CampaignHeroVideo audience="general" className="mb-3 -mx-6 -mt-6 rounded-t-lg rounded-b-none" />
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Compass className="h-5 w-5 text-primary" />

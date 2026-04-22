@@ -5,7 +5,13 @@ export type CampaignVideo = {
   caption: string;
 };
 
-const VETERANS_PHASE_1_VIDEO: CampaignVideo | null = null;
+const VETERANS_PHASE_1_VIDEO: CampaignVideo | null = {
+  src: "/videos/veterans-phase-1.mov",
+  thumbnail: "/videos/veterans-phase-1-poster.jpg",
+  title: "Veteran Care — Free Help for U.S. Military Veterans",
+  caption:
+    "Real local support for veterans, families, and those who care for them — housing, benefits, healthcare, jobs and more.",
+};
 
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
   veteran: VETERANS_PHASE_1_VIDEO,
