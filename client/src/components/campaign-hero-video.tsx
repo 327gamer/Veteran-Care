@@ -78,7 +78,7 @@ export default function CampaignHeroVideo({
           autoPlay={autoplayed}
           muted={autoplayed}
           preload="metadata"
-          className="block w-full h-full object-cover bg-black"
+          className="block w-full h-full object-contain bg-black"
         />
       ) : embed ? (
         <iframe
@@ -92,7 +92,7 @@ export default function CampaignHeroVideo({
         <img
           src={poster}
           alt={video.title}
-          className="block w-full h-full object-cover"
+          className="block w-full h-full object-contain bg-black"
         />
       )}
     </div>
