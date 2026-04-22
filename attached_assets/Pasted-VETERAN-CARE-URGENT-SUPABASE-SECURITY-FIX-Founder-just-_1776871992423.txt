@@ -1,0 +1,88 @@
+VETERAN CARE – URGENT SUPABASE SECURITY FIX
+
+Founder just received a Supabase security warning again for the Veteran Care project.
+
+The alert says:
+
+- critical issue
+- table publicly accessible
+- Row Level Security not enabled
+- project: veteran-care
+
+This must be handled immediately.
+
+## IMPORTANT CONTEXT
+
+We already established a standing universal security rule for this platform:
+
+Any time new tables are created or modified in Supabase / public schema, Replit must immediately:
+
+1. check Row Level Security
+2. enable RLS where required
+3. apply correct policies
+4. rerun regression tests
+5. confirm no public exposure remains
+
+So first, please determine why this warning appeared again.
+
+## REQUIRED ACTION
+
+Please do ALL of the following:
+
+### 1. Identify the exact affected table(s)
+Need the actual table name(s), not just the generic alert.
+
+### 2. Confirm root cause
+Was this caused by:
+
+- a newly created table
+- a modified table
+- RLS not enabled
+- missing policies
+- a migration that bypassed the standing security rule
+- a table intentionally left open by mistake
+
+### 3. Fix immediately
+For every affected table in public schema:
+
+- enable RLS
+- apply the correct policies
+- ensure public/anon users cannot read, edit, insert, or delete unless explicitly intended
+
+### 4. Regression check
+After fixing, verify:
+
+- app still functions
+- admin still functions
+- lead routing still functions
+- trusted partners still function
+- resources still function
+- ambassador tracking still function
+- onboarding still function
+
+### 5. Audit for recurrence
+Check whether any other public-schema tables currently have:
+
+- RLS disabled
+- missing policies
+- unsafe exposure
+
+Need a full quick audit, not just one-table patch.
+
+## RETURN
+
+Please reply with:
+
+1. exact affected table(s)
+2. root cause
+3. exact fix applied
+4. whether any other tables were also exposed
+5. confirmation the standing universal security rule has now been re-enforced
+6. founder retest steps
+7. whether founder must publish / republish after the fix
+
+## PRIORITY
+
+Urgent.
+This is a security correction, not a cosmetic change.
+Please fix immediately and report back clearly.
