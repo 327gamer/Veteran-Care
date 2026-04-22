@@ -1,0 +1,100 @@
+VETERAN CARE – NORTH CAROLINA EXPANSION EXECUTION PLAN REQUEST
+
+Founder is considering North Carolina as the next live expansion after South Carolina.
+
+Important clarification:
+
+Veteran Care is already being built as a NATIONAL platform.
+
+We are NOT building separate state platforms.
+
+We are simply expanding the existing national system by adding verified North Carolina resources into the same category / subcategory structure already proven in South Carolina.
+
+## CURRENT MODEL TO FOLLOW
+
+South Carolina build process worked by:
+
+1. Using the existing master categories
+2. Using the existing subcategories
+3. Prioritizing major cities first
+4. Then expanding outward into mid-size cities
+5. Then smaller towns / regional coverage
+6. Verifying listings before inclusion
+7. Using geolocation so users see nearby resources first
+
+That same successful model should now be applied to North Carolina.
+
+## WHAT WE NEED FROM YOU
+
+Please review the current platform structure and advise the BEST operational path to expand into North Carolina using the proven South Carolina model.
+
+## NEED YOUR RECOMMENDED BUILD PLAN
+
+Please advise:
+
+### 1. City Rollout Order
+Which North Carolina cities / metros should be loaded first?
+
+Examples:
+
+- Charlotte
+- Raleigh
+- Durham
+- Greensboro
+- Winston-Salem
+- Fayetteville
+- Wilmington
+- Asheville
+- Jacksonville
+- Smaller surrounding towns after that
+
+### 2. Category Rollout Order
+Which categories should be loaded first for strongest user impact?
+
+Examples:
+
+- Housing
+- Food Assistance
+- Employment
+- Benefits
+- Healthcare
+- Mental Health
+- Legal
+- Education
+- Transportation
+
+### 3. Verification Workflow
+Best workflow for confirming listings are real and active:
+
+- website active
+- phone valid
+- address valid
+- category correct
+- duplicate prevention
+- closed businesses removed
+
+### 4. Geolocation Readiness
+How should we ensure North Carolina resources plug directly into the current location-priority system so users in NC automatically see the nearest help first?
+
+### 5. Safe Deployment Method
+What is the cleanest way to add North Carolina resources into production without disrupting South Carolina data already working live?
+
+### 6. Recommended Founder Workflow
+Should founder proceed:
+
+- city by city
+- category by category
+- metro region first
+- mixed phased rollout
+
+Please advise your best structured path.
+
+## IMPORTANT
+
+No coding yet.
+
+Planning only.
+
+Need your founder-level execution recommendation based on the system already built.
+
+Founder manually approves rollout once plan is returned.
