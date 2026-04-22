@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { trackEvent } from "@/lib/analytics";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
+import CampaignHeroVideo from "@/components/campaign-hero-video";
 import {
   Search,
   MapPin,
@@ -81,15 +82,11 @@ export default function ResourceCenter() {
       <section className="relative bg-primary overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
         <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 max-w-lg mx-auto">
-          <img
-            src={logoImg}
-            alt={platform.name}
-            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
-          />
-          <h1 className="text-[1.6rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-3">
+          <CampaignHeroVideo audience="case_manager" fallbackLogo={logoImg} platformName={platform.name} />
+          <h1 className="text-[1.6rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-4 md:mb-5">
             The All-in-One Resource Center for Those Who Help Veterans
           </h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-8 px-1">
+          <p className="text-white/80 text-sm leading-relaxed mb-8 md:mb-10 px-1">
             {platform.name} is a free, trusted resource directory built for veterans, families — and the case managers, nonprofits, churches, VA reps, and social workers who support them.
           </p>
           <div className="w-full flex flex-col gap-3">
