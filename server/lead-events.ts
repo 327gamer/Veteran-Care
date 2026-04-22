@@ -92,6 +92,7 @@ export async function ensureLeadEventsTable(): Promise<void> {
         metadata JSONB
       )
     `);
+    await pgQuery(`ALTER TABLE lead_events ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN source_surface SET NOT NULL`).catch(() => {});
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN category_slug SET NOT NULL`).catch(() => {});
     await pgQuery(`ALTER TABLE lead_events ALTER COLUMN lead_class SET NOT NULL`).catch(() => {});

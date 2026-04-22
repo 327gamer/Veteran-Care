@@ -133,6 +133,7 @@ async function ensureAttributionTables() {
         created_by TEXT
       )
     `);
+    await pgQuery(`ALTER TABLE ambassadors ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(5,2)`);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS payout_method TEXT`);
     await pgQuery(`ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS payout_details TEXT`);
@@ -188,6 +189,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE user_attribution_sessions ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS utm_id TEXT`);
     await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_session ON user_attribution_sessions(session_id)`);
@@ -232,6 +234,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE partner_attribution ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE partner_attribution ADD COLUMN IF NOT EXISTS utm_id TEXT`);
     await pgQuery(`ALTER TABLE partner_attribution ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_attr_ambassador ON partner_attribution(ambassador)`);
@@ -256,6 +259,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE ambassador_links ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS link_name TEXT`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0`);
     await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS first_clicked_at TIMESTAMPTZ`);
@@ -285,6 +289,7 @@ async function ensureAttributionTables() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE commissions ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE commissions ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
     await pgQuery(`ALTER TABLE commissions ADD COLUMN IF NOT EXISTS payout_id UUID`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_commissions_ambassador ON commissions(ambassador_code)`);
@@ -308,6 +313,7 @@ async function ensureAttributionTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE ambassador_payouts ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE ambassador_payouts ADD COLUMN IF NOT EXISTS confirmation_note TEXT`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_amb_id ON ambassador_payouts(ambassador_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_payouts_status ON ambassador_payouts(payout_status)`);
@@ -678,6 +684,7 @@ async function ensureLeadBilling() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE lead_billing_records ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_partner ON lead_billing_records(partner_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_period ON lead_billing_records(billing_period)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_lead_billing_status ON lead_billing_records(status)`);
@@ -691,6 +698,7 @@ async function ensureLeadBilling() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE lead_category_pricing ENABLE ROW LEVEL SECURITY`);
     const defaultPrices = await pgQuery(`SELECT id FROM lead_category_pricing LIMIT 1`);
     if (defaultPrices.length === 0) {
       await pgQuery(`
@@ -726,6 +734,7 @@ async function ensurePartnerReferrals() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE partner_referrals ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_referrer ON partner_referrals(referrer_partner_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_referrals_email ON partner_referrals(referred_email)`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS referral_code TEXT`);
@@ -742,6 +751,7 @@ async function ensurePartnerReferrals() {
         expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days')
       )
     `);
+    await pgQuery(`ALTER TABLE partner_sessions ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_partner_sessions_token ON partner_sessions(token)`);
     console.log("[schema] partner_referrals table ready");
   } catch (err: any) {
@@ -790,6 +800,7 @@ async function ensurePartnerSubcategories() {
         UNIQUE(category_id, slug)
       )
     `);
+    await pgQuery(`ALTER TABLE partner_subcategories ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS subcategory_ids TEXT`);
     const existing = await pgQuery(`SELECT id FROM partner_subcategories LIMIT 1`);
     if (existing.length === 0) {
@@ -866,6 +877,7 @@ async function ensureReferralSweepstakesTables() {
         suspicion_flags JSONB NOT NULL DEFAULT '[]'::jsonb
       )
     `);
+    await pgQuery(`ALTER TABLE user_referrals ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_user_referrals_referrer ON user_referrals(referrer_user_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_user_referrals_referred ON user_referrals(referred_user_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_user_referrals_code ON user_referrals(referral_code)`);
@@ -882,6 +894,7 @@ async function ensureReferralSweepstakesTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE referral_entries ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_referral_entries_user ON referral_entries(user_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_referral_entries_month ON referral_entries(entry_month)`);
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_referral_entries_referral_unique ON referral_entries(referral_id)`);
@@ -900,6 +913,7 @@ async function ensureReferralSweepstakesTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE sweepstakes_months ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_months_status ON sweepstakes_months(status)`);
 
     await pgQuery(`
@@ -920,6 +934,7 @@ async function ensureReferralSweepstakesTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE sweepstakes_winners ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_month ON sweepstakes_winners(month)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_sweepstakes_winners_user ON sweepstakes_winners(user_id)`);
     await pgQuery(`ALTER TABLE sweepstakes_winners ADD COLUMN IF NOT EXISTS placement INTEGER NOT NULL DEFAULT 1`);
@@ -940,6 +955,7 @@ async function ensureReferralSweepstakesTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE user_referral_profiles ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_urp_user_id ON user_referral_profiles(user_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_urp_referral_code ON user_referral_profiles(referral_code)`);
 
@@ -1305,6 +1321,7 @@ async function ensureVobTable() {
         reviewed_at TIMESTAMPTZ
       )
     `);
+    await pgQuery(`ALTER TABLE veteran_owned_businesses ENABLE ROW LEVEL SECURITY`);
     console.log("[schema] Created veteran_owned_businesses table");
   }
 }

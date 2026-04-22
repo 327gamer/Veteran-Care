@@ -24,6 +24,7 @@ export async function ensureMonetizationAuditTable(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await pgQuery(`ALTER TABLE monetization_audit_log ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS mismatch_type TEXT`).catch(() => {});
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS severity TEXT`).catch(() => {});
     await pgQuery(`ALTER TABLE monetization_audit_log ADD COLUMN IF NOT EXISTS resolution_action TEXT`).catch(() => {});
