@@ -5,12 +5,14 @@ export type CampaignVideo = {
   caption: string;
 };
 
+const VETERANS_PHASE_1_VIDEO: CampaignVideo | null = null;
+
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
-  veteran: null,
+  veteran: VETERANS_PHASE_1_VIDEO,
+  general: VETERANS_PHASE_1_VIDEO,
+  homepage: VETERANS_PHASE_1_VIDEO,
   case_manager: null,
   partner: null,
-  general: null,
-  homepage: null,
 };
 
 export function getCampaignVideo(aud: string): CampaignVideo | null {

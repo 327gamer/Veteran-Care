@@ -3,13 +3,7 @@ import { useSavedResources } from "@/lib/store";
 import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
-import {
-  getCampaignVideo,
-  getEmbedUrl,
-  isDirectVideoFile,
-  getThumbnail,
-} from "@/lib/campaign-videos";
-import { useEffect, useRef, useState } from "react";
+import CampaignHeroVideo from "@/components/campaign-hero-video";
 import {
   Home,
   Briefcase,
@@ -29,84 +23,6 @@ import {
   Flower2,
   Medal,
 } from "lucide-react";
-
-function CampaignHeroVideo({
-  audience,
-  fallbackLogo,
-  platformName,
-}: {
-  audience: string;
-  fallbackLogo: string;
-  platformName: string;
-}) {
-  const video = getCampaignVideo(audience);
-  const sessionKey = `vc_video_played_${audience}`;
-  const [autoplayed, setAutoplayed] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    if (!video) return;
-    try {
-      const already = sessionStorage.getItem(sessionKey) === "1";
-      if (!already) {
-        setAutoplayed(true);
-        sessionStorage.setItem(sessionKey, "1");
-        trackEvent("campaign_video_autoplay", { audience });
-      }
-    } catch {
-      setAutoplayed(true);
-    }
-  }, [video, audience, sessionKey]);
-
-  if (!video) {
-    return (
-      <img
-        src={fallbackLogo}
-        alt={platformName}
-        className="h-48 w-auto object-contain drop-shadow-xl mb-6"
-      />
-    );
-  }
-
-  const direct = isDirectVideoFile(video.src);
-  const embed = !direct ? getEmbedUrl(video, { autoplay: autoplayed, muted: true }) : null;
-  const poster = getThumbnail(video);
-
-  return (
-    <div
-      className="w-full mb-6 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black aspect-video"
-      data-testid={`hero-video-${audience}`}
-    >
-      {direct ? (
-        <video
-          ref={videoRef}
-          src={video.src}
-          poster={poster || undefined}
-          controls
-          playsInline
-          autoPlay={autoplayed}
-          muted={autoplayed}
-          preload="metadata"
-          className="block w-full h-full object-cover bg-black"
-        />
-      ) : embed ? (
-        <iframe
-          src={embed}
-          title={video.title}
-          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          allowFullScreen
-          className="block w-full h-full border-0 bg-black"
-        />
-      ) : (
-        <img
-          src={poster}
-          alt={video.title}
-          className="block w-full h-full object-cover"
-        />
-      )}
-    </div>
-  );
-}
 
 const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
   { label: "Housing", icon: Home, slug: "housing-home" },
