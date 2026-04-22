@@ -11173,6 +11173,7 @@ export async function registerRoutes(
         const rows = await pgQuery(
           `SELECT ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url, ts.city, ts.state,
                   ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
+                  COALESCE(ts.subcategory_slugs, ARRAY[]::text[]) AS subcategory_slugs,
                   json_build_object('slug', tsc.slug, 'name', tsc.name) AS category
            FROM trusted_services ts
            INNER JOIN trusted_service_categories tsc ON ts.category_id = tsc.id
@@ -11240,6 +11241,7 @@ export async function registerRoutes(
           SELECT
             ts.id, ts.name, ts.short_description, ts.phone, ts.email, ts.website_url,
             ts.city, ts.state, ts.is_featured, ts.logo_url, ts.cta_text, ts.cta_url,
+            COALESCE(ts.subcategory_slugs, ARRAY[]::text[]) AS subcategory_slugs,
             ts.verification_status, ts.is_national, ts.featured_rank, ts.display_order,
             ts.created_at, ${partnerOrgIdSelect}, ts.sponsored_top_active,
             json_build_object('slug', tsc.slug, 'name', tsc.name) AS category,
@@ -11302,6 +11304,7 @@ export async function registerRoutes(
           city: r.city, state: r.state, is_featured: r.is_featured,
           is_national: r.is_national, logo_url: r.logo_url,
           cta_text: r.cta_text, cta_url: r.cta_url, category: r.category,
+          subcategory_slugs: Array.isArray(r.subcategory_slugs) ? r.subcategory_slugs : [],
         };
         if (debugParam) {
           base._scoring = {

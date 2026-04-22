@@ -1,0 +1,141 @@
+VETERAN CARE – CRITICAL PARITY AUDIT REQUEST (RESOURCES ↔ TRUSTED SERVICES)
+
+Founder just completed live QA and found a serious parity issue that must be corrected before state expansion.
+
+## CORE PROBLEM
+
+Trusted Services seeded partners are showing correctly.
+
+Examples:
+
+- Employment Support → Job Placement Programs & Partners  
+  - RecruitMilitary  
+  - Hire Heroes USA
+
+- Financial & Credit → Mortgages / VA Home Loans
+
+- Education & Training → GI Bill Assistance
+
+- Insurance → Life Insurance
+
+However, when using the regular Resources side under the SAME category + subcategory paths, many of those seeded / verified partner rows are missing.
+
+## EXPECTED SYSTEM RULE
+
+Resources and Trusted Services should mirror correctly where shared categories/subcategories exist.
+
+Meaning:
+
+If a vetted seeded partner exists in Trusted Services for:
+
+- category = Employment Support
+- subcategory = Job Placement Programs
+
+Then that same partner should surface in the Resources experience where partner merge logic is intended.
+
+This was part of the unified ecosystem logic.
+
+## LIVE EXAMPLES FOUND
+
+### Employment Support
+
+Resources → Employment Support → Job Placement Programs
+
+Shows normal employers/resources like:
+
+- Boeing
+- Bosch
+- Goodwill
+etc.
+
+But missing:
+
+- RecruitMilitary
+- Hire Heroes USA
+
+Yet those DO appear under Trusted Services.
+
+### Education
+
+Trusted Services → GI Bill Assistance shows seeded partner.
+
+Resources → Education → GI Bill Assistance does NOT mirror it.
+
+### Financial
+
+Trusted Services → Mortgages / VA Home Loans has seeded partners.
+
+Resources → Financial → Mortgage-related categories missing them.
+
+### Insurance
+
+Life Insurance appears closer to correct, so this may be selective parity failure rather than full-system failure.
+
+## MOST LIKELY ROOT CAUSE
+
+One of these:
+
+1. Resources-side partner merge only works at category level, not subcategory drilldown.
+
+2. Cross-listed seeded partners not included in Resources query path.
+
+3. Resources page uses old filtering logic excluding trusted_services rows.
+
+4. Slug mismatch between Resources subcategories and Trusted Services subcategory_slugs.
+
+5. Some categories were patched manually while others never received merge parity.
+
+## REQUIRED ACTION
+
+Please run a full audit of ALL seeded / national-provider / verified partner rows and confirm Resources parity.
+
+Check these categories first:
+
+- Employment Support
+- Financial & Credit Services
+- Education & Training
+- Insurance Services
+- Housing & Home Services
+- Legal Services
+
+## REQUIRED FIX
+
+Where shared categories/subcategories exist:
+
+Resources category drilldown should surface seeded / approved partner cards just like Trusted Services.
+
+Use same rules already intended earlier:
+
+- partner-first if relevant
+- then standard resources
+- preserve sponsored / verified logic
+- preserve existing UI
+- no duplicate spam rows
+
+## IMPORTANT
+
+Do NOT break:
+
+- Trusted Services current behavior
+- lead routing
+- tracking
+- AI matching
+- existing resources listings
+
+This is a Resources-side parity correction only.
+
+## RETURN
+
+Please reply with:
+
+1. exact root cause  
+2. which categories are broken vs working  
+3. exact files touched  
+4. whether category + subcategory parity is now universal  
+5. founder retest checklist
+
+## PRIORITY
+
+High priority before Georgia / North Carolina rollout.
+
+Founder manually Publish / Republish before live verification.

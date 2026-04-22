@@ -1164,23 +1164,30 @@ export default function Resources() {
               <p className="text-center text-muted-foreground py-8">Loading resources...</p>
             )}
             {/*
-              RED #1 fix (2026-04-19): Verified Partners are mapped at the
-              CATEGORY level, not the subcategory level. Showing the same
-              category-wide partner list on a subcategory page (e.g. Moving &
-              Storage, Foreclosure Prevention, Home Modifications) created a
-              relevance mismatch and trust loss. Until per-subcategory partner
-              routing data is populated (partner_routing_rules table), we hide
-              the strip on subcategory pages. The drilldown's top-of-category
-              strip is unaffected — those partners ARE accurate for the parent
-              category.
+              Parity fix (2026-04-22): Resources ↔ Trusted Services parity.
+              Previously the Verified Partners strip was hidden whenever a
+              subcategory filter was active, which suppressed seeded national
+              partners (RecruitMilitary, Hire Heroes USA, USAA Mortgage,
+              AAFMAA, etc.) on the very subcategory drilldown they belong to.
+              Each trusted_services row already carries a `subcategory_slugs`
+              array — when a subFilter is active we now keep partners whose
+              subcategory_slugs include the filter; with no subFilter we keep
+              the legacy category-wide behavior. Lead routing, AI matching,
+              tracking, and the Trusted Services tab itself are unchanged.
             */}
-            {!subFilter && trustedPartners.length > 0 && (
+            {(() => {
+              const visiblePartners = subFilter
+                ? trustedPartners.filter((p: any) =>
+                    Array.isArray(p?.subcategory_slugs) && p.subcategory_slugs.includes(subFilter)
+                  )
+                : trustedPartners;
+              return visiblePartners.length > 0 && (
               <div className="space-y-3 mb-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   <span className="text-sm font-semibold text-emerald-700">Verified Partners</span>
                 </div>
-                {trustedPartners.map((partner: any) => {
+                {visiblePartners.map((partner: any) => {
                   const detailPartner = {
                     ...partner,
                     website_url: partner.website_url || "",
@@ -1263,7 +1270,8 @@ export default function Resources() {
                   );
                 })}
               </div>
-            )}
+              );
+            })()}
             {!showLocalOnlyEmpty && activeResources?.map((resource) => (
               <Card 
                 key={resource.id} 
