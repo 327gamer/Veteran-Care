@@ -1,0 +1,74 @@
+VETERAN CARE – NC DEPTH EXPANSION + QUALITY CONTROL PASS
+
+Founder is checking North Carolina live now.
+
+Good news:
+- NC is visible
+- state filter is working
+- city selector is showing NC cities
+
+But founder concern is valid:
+
+North Carolina should ultimately have broader and deeper coverage than South Carolina because of:
+
+• larger population
+• larger metros
+• more military influence
+• more counties
+• more secondary / pocket cities
+• more regional service networks
+
+Right now the city list appears weighted toward major metros only.
+
+Need to deepen the state.
+
+## REQUIRED NEXT PASS
+
+This next NC pass should focus on two things at once:
+
+### 1. COVERAGE DEPTH
+Expand beyond the major metros and hit:
+
+- secondary cities
+- smaller county seats
+- pocket towns
+- regional hubs between the major metros
+- county-level organizations not tied only to Charlotte / Raleigh / Fayetteville / Wilmington / Asheville
+
+Need fuller statewide saturation, not just anchor-city coverage.
+
+### 2. QUALITY CONTROL
+Run a quality review on NC resources already added and any new rows added.
+
+Need checks for:
+
+- website still active
+- phone number valid
+- organization still operating
+- no obvious dead / broken / outdated entries
+- category correct
+- subcategory correct
+- city/state/zip correct
+- geo still valid where applicable
+
+Founder reminder:
+South Carolina also required quality filtering because some public resources were outdated or no longer active.
+
+Need same quality discipline here.
+
+## REQUIRED RETURN
+
+1. current NC city count represented in database
+2. whether city selector is only showing cities already populated with rows
+3. best way to expand into smaller NC pockets / regional towns statewide
+4. quality-control method you will use
+5. recommended NC Round 4 plan to deepen the entire state
+6. whether you believe NC can ultimately exceed SC resource count substantially, and why
+
+IMPORTANT
+
+Do not focus only on major cities now.
+
+Need broader statewide depth and quality.
+
+Goal is for NC to become the strongest clean statewide template before Georgia.
