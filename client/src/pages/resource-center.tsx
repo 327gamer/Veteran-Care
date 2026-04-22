@@ -103,7 +103,7 @@ export default function ResourceCenter() {
               onClick={() => { trackEvent("resource_center_learn_click"); setLocation("/onboarding?step=2"); }}
               className="w-full py-3 rounded-full border-2 border-white/60 text-white font-semibold text-sm transition-opacity hover:opacity-90 active:opacity-75"
             >
-              Learn How It Works
+              Create Free Account
             </button>
           </div>
           <div className="mt-5 flex items-center gap-2 text-white/60 text-xs">
