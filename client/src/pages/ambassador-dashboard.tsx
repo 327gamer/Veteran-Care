@@ -26,10 +26,10 @@ const CAMPAIGN_CONFIG: Record<string, { title: string; icon: any; color: string;
 const CAMPAIGN_ORDER = ["veteran", "case_manager", "partner", "general", "homepage"];
 
 const AUDIENCE_CTA: Record<string, string> = {
-  veteran: "Get Help Now",
+  veteran: "Learn More",
   case_manager: "Explore Resources",
   partner: "Become a Trusted Partner",
-  general: "Learn More",
+  general: "Get Help Now",
   homepage: "Visit Veteran Care",
 };
 
