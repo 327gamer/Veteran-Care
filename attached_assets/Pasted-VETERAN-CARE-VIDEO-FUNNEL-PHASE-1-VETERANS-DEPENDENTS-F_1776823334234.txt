@@ -1,0 +1,129 @@
+VETERAN CARE – VIDEO FUNNEL PHASE 1 (VETERANS / DEPENDENTS FIRST)
+
+Founder Direction:
+
+We already have a strong ambassador system live with:
+
+- Unique tracked links  
+- Campaign landing pages  
+- UTM attribution  
+- Ambassador IDs / commissions  
+- Ready-made emails  
+- SMS assets  
+- QR codes  
+- Analytics  
+- Marketing kits  
+
+We do NOT want to rebuild anything.
+
+We want to ADD a new premium asset option inside the existing ambassador kit:
+
+## VIDEO PREVIEW CARD
+
+We are starting with only one campaign first:
+
+### Veterans / Dependents Campaign
+
+We now have the campaign video ready.
+
+---
+
+## OBJECTIVE
+
+Give ambassadors a high-converting video asset they can share through:
+
+- Email  
+- Text messages  
+- Facebook  
+- LinkedIn  
+- Social media  
+- QR codes  
+
+---
+
+## REQUIRED MODEL
+
+### 1. Add Inside Ambassador Dashboard
+
+New asset section:
+
+Video Preview Card
+
+Include options such as:
+
+- Copy Email Version  
+- Copy SMS Link  
+- Download Thumbnail  
+- Copy Tracked Link  
+
+---
+
+### 2. Thumbnail Click Behavior
+
+Show video thumbnail with play button overlay.
+
+When clicked:
+
+Route through our existing ambassador tracked link system.
+
+Must preserve:
+
+- UTM codes  
+- Ambassador ID  
+- Campaign attribution  
+- Analytics  
+- Commission logic  
+
+---
+
+### 3. Landing Page Behavior
+
+Use the EXISTING Veterans / Dependents landing page.
+
+At top of page:
+
+- video opens immediately
+- autoplay preferred
+- muted first play acceptable
+- visible play / unmute controls
+- avoid replaying repeatedly during same visit/session
+
+---
+
+### 4. Keep Existing Infrastructure
+
+Reuse:
+
+- current funnels  
+- current redirects  
+- current landing pages  
+- current tracking  
+- current analytics  
+- current attribution system  
+
+No rebuilds.
+
+---
+
+### 5. Founder Rollout Plan
+
+Once Veterans / Dependents works properly, we duplicate same model into:
+
+- Get Help Now  
+- General Start  
+- Case Managers  
+- Trusted Partners / Businesses  
+
+---
+
+### 6. Please Advise
+
+What is the cleanest way for founder to provide:
+
+- video file  
+- thumbnail image (if needed)  
+- title / caption  
+
+Also confirm exact publish / founder testing steps once complete.
+
+Please proceed with the smartest clean implementation using our current system.

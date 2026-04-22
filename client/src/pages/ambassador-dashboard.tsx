@@ -9,8 +9,9 @@ import {
   Copy, Check, Download, QrCode, ChevronDown, ChevronUp,
   Users, Briefcase, Building2, Mail, MessageSquare,
   Smartphone, Linkedin, LogIn, MousePointerClick, Code2, Package,
-  Image, Link2, Type, Globe, MapPin, Percent, LogOut,
+  Image, Link2, Type, Globe, MapPin, Percent, LogOut, Video, Play,
 } from "lucide-react";
+import { getCampaignVideo, getThumbnail } from "@/lib/campaign-videos";
 
 const LOGO_URL = "https://veterancare.com/logo.png";
 
@@ -262,6 +263,68 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                     <CopyBtn text={imageBlockHtml} label={`image-html-${aud}`} size="xs">Copy HTML Code</CopyBtn>
                   </div>
                 </div>
+
+                {(() => {
+                  const video = getCampaignVideo(aud);
+                  if (!video) return null;
+                  const thumb = getThumbnail(video);
+                  const smsBody = `${video.caption} Watch & get connected: ${textUrl}`;
+                  const videoEmailHtml = `<a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;font-family:Arial,sans-serif;max-width:480px;"><div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#000;"><div style="position:relative;background:#000;"><img src="${thumb}" alt="${video.title}" style="display:block;width:100%;height:auto;border:0;opacity:0.92;" /><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(22,101,52,0.95);display:flex;align-items:center;justify-content:center;"><div style="width:0;height:0;border-left:18px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px;"></div></div></div><div style="padding:14px 18px;background:#ffffff;"><p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#111827;line-height:1.3;">${video.title}</p><p style="margin:0 0 12px;font-size:13px;color:#4b5563;line-height:1.45;">${video.caption}</p><div style="background:#166534;color:#ffffff;padding:11px 22px;border-radius:8px;text-align:center;font-weight:bold;font-size:14px;">▶ Watch the Video</div></div></div></a>`;
+                  return (
+                    <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-video-${aud}`}>
+                      <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
+                          <Video className="w-3.5 h-3.5 text-green-700" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-800">Video Preview Card</span>
+                        <span className="text-xs text-gray-400 ml-auto hidden sm:inline">Clickable thumbnail — opens video on landing page via your tracked link</span>
+                      </div>
+                      <div className="p-5 flex items-center justify-center">
+                        <a
+                          href={primaryUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative block w-full max-w-sm rounded-xl overflow-hidden border border-gray-200 bg-black group"
+                          data-testid={`video-thumb-${aud}`}
+                        >
+                          {thumb ? (
+                            <img src={thumb} alt={video.title} className="block w-full h-auto opacity-90 group-hover:opacity-100 transition-opacity" />
+                          ) : (
+                            <div className="w-full aspect-video bg-gray-900 flex items-center justify-center text-gray-500 text-xs">No thumbnail</div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-16 h-16 rounded-full bg-green-700/95 flex items-center justify-center shadow-lg">
+                              <Play className="w-7 h-7 text-white ml-1" fill="white" />
+                            </div>
+                          </div>
+                          <div className="px-4 py-3 bg-white">
+                            <p className="text-sm font-bold text-gray-900 leading-tight">{video.title}</p>
+                            <p className="text-xs text-gray-600 mt-1 leading-snug">{video.caption}</p>
+                          </div>
+                        </a>
+                      </div>
+                      <div className="px-4 pb-4 flex flex-wrap gap-2">
+                        <CopyRichBtn html={videoEmailHtml} plainText={`${video.title} — ${video.caption} ${primaryUrl}`} label={`video-email-${aud}`}>
+                          Copy Email Version
+                        </CopyRichBtn>
+                        <CopyBtn text={smsBody} label={`video-sms-${aud}`} size="xs">Copy SMS Link</CopyBtn>
+                        <CopyBtn text={primaryUrl} label={`video-link-${aud}`} size="xs">Copy Tracked Link</CopyBtn>
+                        {thumb && (
+                          <a
+                            href={thumb}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-testid={`download-video-thumb-${aud}`}
+                            className="inline-flex items-center gap-1 h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Download Thumbnail
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {emailBodyHtml && (
                   <div className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-email-${aud}`}>

@@ -4,6 +4,13 @@ import { platform } from "@shared/platform";
 import { trackEvent } from "@/lib/analytics";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import {
+  getCampaignVideo,
+  getEmbedUrl,
+  isDirectVideoFile,
+  getThumbnail,
+} from "@/lib/campaign-videos";
+import { useEffect, useRef, useState } from "react";
+import {
   Home,
   Briefcase,
   Heart,
@@ -22,6 +29,84 @@ import {
   Flower2,
   Medal,
 } from "lucide-react";
+
+function CampaignHeroVideo({
+  audience,
+  fallbackLogo,
+  platformName,
+}: {
+  audience: string;
+  fallbackLogo: string;
+  platformName: string;
+}) {
+  const video = getCampaignVideo(audience);
+  const sessionKey = `vc_video_played_${audience}`;
+  const [autoplayed, setAutoplayed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (!video) return;
+    try {
+      const already = sessionStorage.getItem(sessionKey) === "1";
+      if (!already) {
+        setAutoplayed(true);
+        sessionStorage.setItem(sessionKey, "1");
+        trackEvent("campaign_video_autoplay", { audience });
+      }
+    } catch {
+      setAutoplayed(true);
+    }
+  }, [video, audience, sessionKey]);
+
+  if (!video) {
+    return (
+      <img
+        src={fallbackLogo}
+        alt={platformName}
+        className="h-48 w-auto object-contain drop-shadow-xl mb-6"
+      />
+    );
+  }
+
+  const direct = isDirectVideoFile(video.src);
+  const embed = !direct ? getEmbedUrl(video, { autoplay: autoplayed, muted: true }) : null;
+  const poster = getThumbnail(video);
+
+  return (
+    <div
+      className="w-full mb-6 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black aspect-video"
+      data-testid={`hero-video-${audience}`}
+    >
+      {direct ? (
+        <video
+          ref={videoRef}
+          src={video.src}
+          poster={poster || undefined}
+          controls
+          playsInline
+          autoPlay={autoplayed}
+          muted={autoplayed}
+          preload="metadata"
+          className="block w-full h-full object-cover bg-black"
+        />
+      ) : embed ? (
+        <iframe
+          src={embed}
+          title={video.title}
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+          className="block w-full h-full border-0 bg-black"
+        />
+      ) : (
+        <img
+          src={poster}
+          alt={video.title}
+          className="block w-full h-full object-cover"
+        />
+      )}
+    </div>
+  );
+}
 
 const categories: { label: string; icon: React.ElementType; slug: string | null }[] = [
   { label: "Housing", icon: Home, slug: "housing-home" },
@@ -87,11 +172,7 @@ export default function LandingPage() {
       <section className="relative bg-primary overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
         <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 max-w-lg mx-auto">
-          <img
-            src={logoImg}
-            alt={platform.name}
-            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
-          />
+          <CampaignHeroVideo audience="veteran" fallbackLogo={logoImg} platformName={platform.name} />
           <h1 className="text-[1.65rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-3">
             Get the Help You Need —<br />Fast, Local, and Trusted
           </h1>
