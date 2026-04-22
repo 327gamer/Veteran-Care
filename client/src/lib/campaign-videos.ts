@@ -35,12 +35,22 @@ const CASE_MANAGER_PHASE_2_VIDEO: CampaignVideo | null = {
   aspectRatio: 9 / 16,
 };
 
+const PARTNER_PHASE_3_VIDEO: CampaignVideo | null = {
+  src: "/videos/partner-phase-3.mov",
+  thumbnail: "/videos/partner-phase-3-poster-portrait.jpg",
+  title: "Veteran Care — A Trusted Partner Network",
+  caption:
+    "Reach veterans, families, and caregivers actively looking for the products, services, and support your business offers.",
+  // Source is 1080x1920 (portrait 9:16). Same shape as Phase 1 / 2.
+  aspectRatio: 9 / 16,
+};
+
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
   veteran: VETERANS_PHASE_1_VIDEO,
   general: VETERANS_PHASE_1_VIDEO,
   homepage: VETERANS_PHASE_1_VIDEO,
   case_manager: CASE_MANAGER_PHASE_2_VIDEO,
-  partner: null,
+  partner: PARTNER_PHASE_3_VIDEO,
 };
 
 export function getCampaignVideo(aud: string): CampaignVideo | null {

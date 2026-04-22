@@ -1,0 +1,92 @@
+VETERAN CARE – PHASE 3 VIDEO ROLLOUT – PARTNER / BUSINESS CAMPAIGN
+
+Founder is ready to complete the final campaign video rollout for the Partner / Business section.
+
+This should follow the SAME proven model now used for:
+
+- Veterans / Dependents
+- Case Manager
+
+No redesign.
+No new experiments.
+No rebuilding the funnel.
+
+## CURRENT STATUS
+
+The Partner / Business landing flow already works correctly.
+
+When users click:
+
+Become a Trusted Partner
+
+it correctly routes them to the Trusted Partner signup page.
+
+That destination is correct and should remain unchanged.
+
+The landing page already has the CTA structure in place at the top and bottom.
+
+## WHAT WE NEED NOW
+
+We only need to add the Partner / Business campaign video at the top of that landing page and apply the SAME universal video rules established in the previous two campaign rollouts.
+
+Founder is attaching/uploading the Partner / Business video now.
+
+## APPLY THE SAME UNIVERSAL VIDEO RULES
+
+Use the exact same proven system already established:
+
+### 1. Video Container / Responsive Rule
+- portrait-friendly adaptive container if video is portrait
+- do NOT force into 16:9 landscape
+- do NOT crop by default
+- use the same responsive sizing logic already working for Veterans and Case Manager
+- premium desktop presentation
+- capped / balanced mobile presentation
+
+### 2. Hero Layout / Spacing Rule
+Maintain the same successful spacing rhythm:
+
+VIDEO  
+SPACE  
+HEADLINE  
+SPACE  
+BODY COPY  
+SPACE  
+CTA BUTTONS
+
+Do not reintroduce cramped spacing, broken margin overrides, or oversized desktop headings.
+
+### 3. Email / Preview Rule
+Use the same preview-card logic already working:
+- flat poster/preview image
+- play button baked in
+- no broken inline-player behavior in email
+- correct tracked link behavior
+
+### 4. Tracking / Funnel Rule
+Preserve:
+- ambassador tracking
+- UTM capture
+- campaign attribution
+- commissions
+- analytics
+- existing Partner / Business destination flow
+
+## GOAL
+
+Clone the now-working Phase 1 / Phase 2 system onto the Partner / Business campaign only.
+
+## RETURN
+
+Please reply with:
+
+1. exact files touched
+2. where the Partner / Business landing page video is mounted
+3. confirmation that the existing Trusted Partner signup destination is unchanged
+4. founder retest path
+
+No redesign.
+No rebuild.
+This is Phase 3 cloning of the now-working video campaign model.
+
+Founder will manually Publish / Republish before live verification.

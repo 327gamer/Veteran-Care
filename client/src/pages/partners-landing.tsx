@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { trackEvent } from "@/lib/analytics";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
+import CampaignHeroVideo from "@/components/campaign-hero-video";
 import {
   Users,
   MapPin,
@@ -81,19 +82,15 @@ export default function PartnersLanding() {
       <section className="relative bg-primary overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
         <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 max-w-lg mx-auto">
-          <img
-            src={logoImg}
-            alt={platform.name}
-            className="h-48 w-auto object-contain drop-shadow-xl mb-6"
-          />
+          <CampaignHeroVideo audience="partner" fallbackLogo={logoImg} platformName={platform.name} />
           <div className="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1 mb-4">
             <Building2 className="h-3.5 w-3.5 text-white/80" />
             <span className="text-white/90 text-xs font-semibold">For Businesses &amp; Organizations</span>
           </div>
-          <h1 className="text-[1.6rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-3">
+          <h1 className="text-[1.6rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-4 md:mb-5">
             Reach Veterans and Families Who Need What You Offer
           </h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-8 px-1">
+          <p className="text-white/80 text-sm leading-relaxed mb-8 md:mb-10 px-1">
             Join {platform.name} as a Trusted Partner and get connected with local veterans, families, and caregivers who are actively looking for the services and support you provide.
           </p>
           <div className="w-full flex flex-col gap-3">
