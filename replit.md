@@ -141,9 +141,17 @@ Any time a table is created or modified in Supabase public schema, ALL of the fo
 - If uncertain → STOP and report before applying changes
 
 ### Current Status (as of April 2026)
-- 24/24 public schema tables have RLS enabled
-- 3 tables have explicit policies (partner_applications: admin-only, trusted_service_categories: public read, trusted_services: public read)
-- 21 tables are server-only (service role bypasses RLS, no anon/authenticated policies needed)
+- **Helium Postgres**: 25/25 public schema tables have RLS enabled
+- **Supabase Postgres**: 22/22 public schema tables have RLS enabled
+- 3 Helium tables have explicit policies (partner_applications: admin-only, trusted_service_categories: public read, trusted_services: public read); rest are server-only
+- All 4 previously Advisor-flagged Supabase tables (billing_config, billing_runs, optimization_actions_log, partner_rotation_state) now RLS-on
+
+### Dual-DB RLS Enforcer (server/rls-validator.ts + server/supabase-pg-client.ts)
+- Boot-time enforcement runs on BOTH databases (Helium via DATABASE_URL, Supabase via SUPABASE_DB_URL session pooler)
+- 30s post-boot tick + 24h daily re-check timer covers both DBs
+- Loud `[RLS-AUTOFIX]` logging when any table is auto-enabled
+- Source-level fix: every `CREATE TABLE IF NOT EXISTS` in server/ now followed by `ALTER TABLE … ENABLE ROW LEVEL SECURITY`
+- Required secrets for Supabase enforcement: `SUPABASE_DB_URL` (session pooler conn string with `[YOUR-PASSWORD]` placeholder) + `SUPABASE_DB_PASSWORD` (substituted at runtime). Gracefully skips Supabase if either is missing — Helium enforcement continues.
 
 ## Platform Architecture
 - **Config-driven design**: All platform identity, terminology, and behavior controlled from `shared/platform.ts`
