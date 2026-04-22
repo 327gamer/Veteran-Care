@@ -18,6 +18,15 @@ let pool: pg.Pool | null = null;
 let configCheckedAndMissing = false;
 
 export function isSupabaseDbConfigured(): boolean {
+  // Two ways to configure:
+  //   1. SUPABASE_DB_URL  : full connection string (preferred — works with
+  //      dedicated poolers, IPv4 add-on, custom regions). May include the
+  //      literal placeholder [YOUR-PASSWORD] which we substitute from
+  //      SUPABASE_DB_PASSWORD.
+  //   2. SUPABASE_DB_PASSWORD only : we attempt the standard direct-connect
+  //      hostname db.<ref>.supabase.co. Will fail on IPv4-only environments
+  //      (like Replit) for projects without the IPv4 add-on.
+  if (process.env.SUPABASE_DB_URL) return true;
   return !!(process.env.SUPABASE_DB_PASSWORD && process.env.SUPABASE_URL);
 }
 
@@ -27,28 +36,45 @@ export function getSupabaseProjectRef(): string | null {
   return m || null;
 }
 
+function buildConnectionString(): string | null {
+  const explicit = process.env.SUPABASE_DB_URL;
+  if (explicit) {
+    // Substitute the password placeholder if Supabase's copy-paste left it.
+    const pwd = process.env.SUPABASE_DB_PASSWORD;
+    if (explicit.includes("[YOUR-PASSWORD]")) {
+      if (!pwd) {
+        console.error(
+          "[RLS-SUPABASE] SUPABASE_DB_URL contains [YOUR-PASSWORD] placeholder " +
+          "but SUPABASE_DB_PASSWORD secret is not set. Cannot construct connection."
+        );
+        return null;
+      }
+      return explicit.replace("[YOUR-PASSWORD]", encodeURIComponent(pwd));
+    }
+    return explicit;
+  }
+  // Fallback: build direct connection from ref + password
+  const ref = getSupabaseProjectRef();
+  const pwd = process.env.SUPABASE_DB_PASSWORD;
+  if (!ref || !pwd) return null;
+  return `postgresql://postgres:${encodeURIComponent(pwd)}@db.${ref}.supabase.co:5432/postgres`;
+}
+
 export function getSupabasePool(): pg.Pool | null {
   if (!isSupabaseDbConfigured()) {
     if (!configCheckedAndMissing) {
       console.error(
-        "[RLS-SUPABASE] SUPABASE_DB_PASSWORD secret not set — Supabase RLS " +
-        "enforcer is DISABLED. Helium DB enforcement continues normally. " +
-        "Add the secret in Replit Secrets to enable dual-DB protection."
+        "[RLS-SUPABASE] Neither SUPABASE_DB_URL nor SUPABASE_DB_PASSWORD is set — " +
+        "Supabase RLS enforcer is DISABLED. Helium DB enforcement continues normally. " +
+        "Add SUPABASE_DB_URL (preferred) in Replit Secrets to enable dual-DB protection."
       );
       configCheckedAndMissing = true;
     }
     return null;
   }
   if (!pool) {
-    const ref = getSupabaseProjectRef();
-    if (!ref) {
-      console.error("[RLS-SUPABASE] SUPABASE_URL malformed — cannot derive project ref");
-      return null;
-    }
-    const password = process.env.SUPABASE_DB_PASSWORD!;
-    // Direct connection (port 5432) — supports DDL. Pooler (6543) is
-    // transaction-mode and safer here than session, but DDL works on direct.
-    const conn = `postgresql://postgres:${encodeURIComponent(password)}@db.${ref}.supabase.co:5432/postgres`;
+    const conn = buildConnectionString();
+    if (!conn) return null;
     pool = new pg.Pool({
       connectionString: conn,
       ssl: { rejectUnauthorized: false },
