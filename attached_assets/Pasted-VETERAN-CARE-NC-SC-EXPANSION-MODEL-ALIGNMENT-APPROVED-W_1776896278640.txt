@@ -1,0 +1,135 @@
+VETERAN CARE – NC / SC EXPANSION MODEL ALIGNMENT (APPROVED WITH REFINEMENTS)
+
+Excellent clarification. Founder reviewed your latest findings.
+
+The note that NC already has 73 represented cities vs SC 28 is important and explains the dropdown screenshots. Good catch that only a visible slice was shown.
+
+That said, founder wants to tighten the strategy before execution.
+
+## CORE DIRECTION
+
+We agree North Carolina should ultimately become larger and deeper than South Carolina because of:
+
+- larger population
+- 100 counties
+- stronger military footprint
+- more metro areas
+- larger healthcare / nonprofit ecosystem
+- more universities / workforce systems
+
+However, growth must be QUALITY growth, not inflated row counts.
+
+We care about:
+
+- active organizations
+- accurate phones
+- live websites
+- real city anchors
+- correct categories
+- correct subcategories
+- useful Near Me results
+- balanced metro + smaller town coverage
+- no duplicate clutter
+
+## SOUTH CAROLINA ALSO NEEDS SAME STANDARD
+
+Do not treat SC as “finished forever.”
+
+Need same audit / enhancement model for SC too.
+
+SC should remain flagship launch state and continue improving.
+
+Examples of SC deeper pockets to review:
+
+- Sumter
+- Beaufort
+- Orangeburg
+- Greenwood
+- Anderson
+- Rock Hill
+- Lancaster
+- Goose Creek
+- Moncks Corner
+- Bluffton / Hilton Head
+- Walterboro
+- Florence
+- Conway
+- Gaffney
+- Newberry
+- Aiken
+- Spartanburg outer corridor towns
+
+## APPROVED NEXT PHASE (BEST ORDER)
+
+### PHASE 1 – QUALITY CONTROL FIRST
+
+Build and run QC scripts on BOTH states:
+
+NC + SC
+
+Need reports for:
+
+1. dead websites
+2. broken redirects
+3. bad phone numbers
+4. duplicate rows
+5. missing geo
+6. wrong city/state values
+7. wrong category/subcategory mapping
+8. inactive organizations needing downgrade / review
+
+### PHASE 2 – NC DEEPENING TO GOLD STANDARD
+
+Then expand NC using your R4 model:
+
+- county VSO sweep
+- CBOCs / clinics / vet centers
+- nonprofit branches
+- food / transportation / family support in secondary towns
+- selected Legion / VFW / DAV posts where truly useful local contact exists
+
+### PHASE 3 – SC POLISH PASS
+
+After NC, run same logic on SC:
+
+- additional secondary towns
+- underserved counties
+- healthcare branches
+- transportation / food / family gaps
+- veteran hubs near bases
+
+### PHASE 4 – LOCK MASTER TEMPLATE
+
+Once NC + SC are polished:
+
+Create permanent rollout template for:
+
+GA → FL → TN → VA → national
+
+## IMPORTANT UI FIX
+
+Please also complete the city selector issue you identified:
+
+Replace any hardcoded city map / placeholder systems with live database-driven state city lists everywhere in the platform.
+
+One source of truth only.
+
+## REQUIRED RETURN BEFORE EXECUTION
+
+Need exact live counts:
+
+1. SC distinct cities currently represented
+2. NC distinct cities currently represented
+3. SC rows failing QC
+4. NC rows failing QC
+5. estimated clean post-R4 NC total
+6. estimated polished SC total
+7. final reusable state rollout formula
+
+## FOUNDER PRIORITY
+
+We are building a NATIONAL MACHINE.
+
+That means each new state should launch stronger and faster than the last one.
+
+NC and SC must become the perfected blueprint first.
