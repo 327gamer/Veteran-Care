@@ -89,10 +89,10 @@ export default function LandingPage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
         <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 max-w-lg mx-auto">
           <CampaignHeroVideo audience="veteran" fallbackLogo={logoImg} platformName={platform.name} />
-          <h1 className="text-[1.65rem] md:text-[2rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-4 md:mb-5">
+          <h1 className="text-[1.65rem] leading-tight font-heading font-extrabold text-white tracking-tight mb-4 md:mb-5">
             Get the Help You Need —<br />Fast, Local, and Trusted
           </h1>
-          <p className="text-white/80 text-sm md:text-base leading-relaxed mb-8 md:mb-10 px-1">
+          <p className="text-white/80 text-sm leading-relaxed mb-8 md:mb-10 px-1">
             Veteran Care connects veterans, families, and loved ones to trusted local support — including benefits, healthcare, housing, employment, discounts on products & services and more.
           </p>
 

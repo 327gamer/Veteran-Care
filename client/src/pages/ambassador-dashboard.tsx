@@ -272,9 +272,15 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                   // Email clients can't break a single image, so the play button always
                   // appears centered on the thumbnail, identical across Gmail / Outlook /
                   // Apple Mail / iOS Mail / Android Gmail.
-                  const emailThumb = thumb && thumb.includes("veterans-phase-1-poster")
-                    ? thumb.replace("veterans-phase-1-poster.jpg", "veterans-phase-1-poster-play.jpg")
-                    : thumb;
+                  // Pick the play-badge-baked variant for whichever poster
+                  // the config currently points at (square or portrait).
+                  // Email clients can't overlay a play button, so the badge
+                  // must be flattened into the JPG itself.
+                  const emailThumb = thumb && thumb.includes("veterans-phase-1-poster-portrait.jpg")
+                    ? thumb.replace("veterans-phase-1-poster-portrait.jpg", "veterans-phase-1-poster-portrait-play.jpg")
+                    : thumb && thumb.includes("veterans-phase-1-poster.jpg")
+                      ? thumb.replace("veterans-phase-1-poster.jpg", "veterans-phase-1-poster-play.jpg")
+                      : thumb;
                   const absoluteEmailThumb = emailThumb && emailThumb.startsWith("/")
                     ? `${window.location.origin}${emailThumb}`
                     : emailThumb;
