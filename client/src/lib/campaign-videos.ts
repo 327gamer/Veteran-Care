@@ -3,14 +3,26 @@ export type CampaignVideo = {
   thumbnail?: string;
   title: string;
   caption: string;
+  /**
+   * Optional intrinsic aspect ratio (width / height). When set, the
+   * hero container uses this immediately instead of waiting for the
+   * <video> metadata event — avoids initial layout jank for known
+   * portrait / square sources. For unknown sources (e.g. embed-only
+   * YouTube videos), leave undefined and the player will measure on
+   * loadedmetadata for direct files, or fall back to 16/9 for embeds.
+   */
+  aspectRatio?: number;
 };
 
 const VETERANS_PHASE_1_VIDEO: CampaignVideo | null = {
   src: "/videos/veterans-phase-1.mov",
-  thumbnail: "/videos/veterans-phase-1-poster.jpg",
+  thumbnail: "/videos/veterans-phase-1-poster-portrait.jpg",
   title: "Veteran Care — Free Help for U.S. Military Veterans & Dependents",
   caption:
     "Real local support for veterans, families, and those who care for them — housing, benefits, healthcare, jobs and more.",
+  // Source is 1080x1920 (portrait 9:16). Declared so the hero container
+  // adopts the right aspect ratio on first paint instead of guessing.
+  aspectRatio: 9 / 16,
 };
 
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {

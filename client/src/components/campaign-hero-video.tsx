@@ -14,6 +14,29 @@ type Props = {
   className?: string;
 };
 
+/**
+ * Universal display rule for hero campaign videos:
+ *
+ *   Container adopts the video's intrinsic aspect ratio (just like
+ *   YouTube, Twitter/X, and Instagram web do for portrait or square
+ *   uploads). The video then fills its own frame edge-to-edge — no
+ *   crop, no letterbox, no skinny strip.
+ *
+ * Sizing strategy:
+ *   - Width is bounded by max-w (≈ 360px for portrait, full width for
+ *     landscape) and by viewport width.
+ *   - Height is capped by max-h (≈ 75vh on mobile, 70vh on desktop) so
+ *     the video never pushes the rest of the hero off-screen.
+ *   - Centered with mx-auto.
+ *
+ * Aspect ratio source (in priority order):
+ *   1. Optional `aspectRatio` field on the campaign-videos config
+ *      (lets us hard-code known ratios for non-direct embeds).
+ *   2. The <video> element's loadedmetadata event (videoWidth /
+ *      videoHeight) — set on the fly for direct files.
+ *   3. Sensible default of 16/9 while metadata is loading, so the box
+ *      doesn't jank.
+ */
 export default function CampaignHeroVideo({
   audience,
   fallbackLogo,
@@ -23,6 +46,9 @@ export default function CampaignHeroVideo({
   const video = getCampaignVideo(audience);
   const sessionKey = `vc_video_played_${audience}`;
   const [autoplayed, setAutoplayed] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(
+    (video as any)?.aspectRatio ?? null
+  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -61,11 +87,37 @@ export default function CampaignHeroVideo({
     : null;
   const poster = getThumbnail(video);
 
+  // Resolve aspect ratio: known > measured > default 16/9
+  const ar = aspectRatio ?? 16 / 9;
+  const isPortrait = ar < 1;
+
+  // Portrait videos: cap width tight (~360px), let height go up to 75vh.
+  // Landscape videos: full width up to 720px wide (premium hero feel).
+  // Both share the same vertical cap so the layout stays balanced.
+  const containerStyle: React.CSSProperties = {
+    aspectRatio: `${ar}`,
+    maxWidth: isPortrait ? "min(360px, 90vw)" : "min(720px, 95vw)",
+    maxHeight: "min(75vh, 640px)",
+    width: "auto",
+    margin: "0 auto",
+  };
+
+  const handleLoadedMetadata = () => {
+    const v = videoRef.current;
+    if (v && v.videoWidth && v.videoHeight) {
+      const measured = v.videoWidth / v.videoHeight;
+      if (Math.abs(measured - ar) > 0.01) {
+        setAspectRatio(measured);
+      }
+    }
+  };
+
   return (
     <div
-      className={`w-full overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black aspect-video ${
+      className={`overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black ${
         className || "rounded-xl mb-6"
       }`}
+      style={containerStyle}
       data-testid={`hero-video-${audience}`}
     >
       {direct ? (
@@ -78,6 +130,7 @@ export default function CampaignHeroVideo({
           autoPlay={autoplayed}
           muted={autoplayed}
           preload="metadata"
+          onLoadedMetadata={handleLoadedMetadata}
           className="block w-full h-full object-contain bg-black"
         />
       ) : embed ? (
