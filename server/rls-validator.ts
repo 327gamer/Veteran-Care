@@ -81,8 +81,27 @@ export async function enforceRls(): Promise<{ fixed: string[]; already_secure: s
 
   for (const t of before.tables) {
     if (!t.rls_enabled) {
-      await pgQuery(`ALTER TABLE public.${t.table_name} ENABLE ROW LEVEL SECURITY`);
-      fixed.push(t.table_name);
+      const ts = new Date().toISOString();
+      // Loud, structured log — every fix MUST be visible in production logs and
+      // searchable via grep. This is a security-critical event, not routine.
+      console.error(
+        `[RLS-AUTOFIX] CRITICAL: table public.${t.table_name} had RLS DISABLED — ` +
+        `enabling now. timestamp=${ts} action=ALTER_TABLE_ENABLE_ROW_LEVEL_SECURITY ` +
+        `classification=${t.classification} had_policies=${t.has_policies}`
+      );
+      try {
+        await pgQuery(`ALTER TABLE public.${t.table_name} ENABLE ROW LEVEL SECURITY`);
+        fixed.push(t.table_name);
+        console.error(
+          `[RLS-AUTOFIX] FIXED: public.${t.table_name} now has ROW LEVEL SECURITY ENABLED. ` +
+          `timestamp=${new Date().toISOString()} status=success`
+        );
+      } catch (err: any) {
+        console.error(
+          `[RLS-AUTOFIX] FAILED to enable RLS on public.${t.table_name}: ${err?.message || err}. ` +
+          `timestamp=${new Date().toISOString()} status=error MANUAL_INTERVENTION_REQUIRED`
+        );
+      }
     } else {
       already_secure.push(t.table_name);
     }
@@ -90,4 +109,45 @@ export async function enforceRls(): Promise<{ fixed: string[]; already_secure: s
 
   const after = await validateRlsIntegrity();
   return { fixed, already_secure, result: after };
+}
+
+// Daily RLS re-check timer. Reactive (boot) + proactive (every 24h) coverage.
+// Closes the window between any future runtime CREATE TABLE and the next
+// restart. Cheap: validateRlsIntegrity is two small system-table queries.
+let _rlsTimerHandle: ReturnType<typeof setInterval> | null = null;
+const RLS_RECHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export function startRlsRecheckTimer(intervalMs: number = RLS_RECHECK_INTERVAL_MS): void {
+  if (_rlsTimerHandle) return; // idempotent — only one timer ever
+  const tick = async () => {
+    try {
+      const check = await validateRlsIntegrity();
+      if (check.passed) {
+        console.log(
+          `[RLS-RECHECK] OK — ${check.total_tables} public tables, all RLS-enabled. ` +
+          `timestamp=${check.timestamp}`
+        );
+        return;
+      }
+      console.error(
+        `[RLS-RECHECK] EXPOSURE DETECTED between boots: ${check.rls_disabled_count} table(s) ` +
+        `lost RLS protection: ${check.exposed_tables.join(", ")}. Auto-enforcing now. ` +
+        `timestamp=${check.timestamp}`
+      );
+      const fix = await enforceRls();
+      console.error(
+        `[RLS-RECHECK] AUTOFIX RESULT: fixed=${fix.fixed.length} (${fix.fixed.join(", ") || "none"}) ` +
+        `final_passed=${fix.result.passed} ` +
+        `still_exposed=${fix.result.exposed_tables.join(", ") || "none"}`
+      );
+    } catch (err: any) {
+      console.error(`[RLS-RECHECK] Timer tick failed: ${err?.message || err}`);
+    }
+  };
+  _rlsTimerHandle = setInterval(tick, intervalMs);
+  console.log(`[RLS-RECHECK] Daily re-check timer started (every ${Math.round(intervalMs / 3600000)}h)`);
+  // Fire one tick ~30 seconds after boot too, so we have an early-warning
+  // pass that's independent of the boot-time enforce (catches anything that
+  // happened between boot-time enforce and now).
+  setTimeout(tick, 30_000);
 }

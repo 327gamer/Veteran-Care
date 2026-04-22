@@ -2901,15 +2901,20 @@ export async function registerRoutes(
 
   // === RLS ENFORCEMENT (MANDATORY — runs every startup) ===
   try {
-    const { validateRlsIntegrity, enforceRls } = await import("./rls-validator");
+    const { validateRlsIntegrity, enforceRls, startRlsRecheckTimer } = await import("./rls-validator");
     const check = await validateRlsIntegrity();
     if (!check.passed) {
-      console.log(`[RLS] WARNING: ${check.rls_disabled_count} tables without RLS detected — auto-enforcing...`);
+      console.error(`[RLS] WARNING: ${check.rls_disabled_count} tables without RLS detected — auto-enforcing...`);
       const fix = await enforceRls();
-      console.log(`[RLS] Fixed ${fix.fixed.length} tables: ${fix.fixed.join(", ")}`);
-      console.log(`[RLS] RESULT: ${fix.result.passed ? "ALL TABLES SECURED" : "STILL EXPOSED: " + fix.result.exposed_tables.join(", ")}`);
+      console.error(`[RLS] Fixed ${fix.fixed.length} tables: ${fix.fixed.join(", ")}`);
+      console.error(`[RLS] RESULT: ${fix.result.passed ? "ALL TABLES SECURED" : "STILL EXPOSED: " + fix.result.exposed_tables.join(", ")}`);
     } else {
       console.log(`[RLS] All ${check.total_tables} tables have RLS enabled — no exposure detected`);
+    }
+    // Daily re-check guard. Closes the runtime CREATE-TABLE → next-boot window
+    // that the original Supabase advisor caught. Kill via env: RLS_RECHECK_DISABLED=1.
+    if (process.env.RLS_RECHECK_DISABLED !== "1") {
+      startRlsRecheckTimer();
     }
   } catch (rlsErr: any) {
     console.error(`[RLS] Validation failed:`, rlsErr.message);
