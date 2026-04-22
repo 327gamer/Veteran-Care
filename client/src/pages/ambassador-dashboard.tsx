@@ -273,14 +273,17 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                   // appears centered on the thumbnail, identical across Gmail / Outlook /
                   // Apple Mail / iOS Mail / Android Gmail.
                   // Pick the play-badge-baked variant for whichever poster
-                  // the config currently points at (square or portrait).
-                  // Email clients can't overlay a play button, so the badge
-                  // must be flattened into the JPG itself.
-                  const emailThumb = thumb && thumb.includes("veterans-phase-1-poster-portrait.jpg")
-                    ? thumb.replace("veterans-phase-1-poster-portrait.jpg", "veterans-phase-1-poster-portrait-play.jpg")
-                    : thumb && thumb.includes("veterans-phase-1-poster.jpg")
-                      ? thumb.replace("veterans-phase-1-poster.jpg", "veterans-phase-1-poster-play.jpg")
-                      : thumb;
+                  // the config currently points at. Email clients can't
+                  // overlay a play button, so the badge must be flattened
+                  // into the JPG itself. Convention: any poster ending in
+                  // "-poster-portrait.jpg" or "-poster.jpg" has a sibling
+                  // file with "-play" inserted before the ".jpg" extension.
+                  // This works for Phase 1 (veterans), Phase 2 (case
+                  // managers), and any future campaign that follows the
+                  // same naming convention.
+                  const emailThumb = thumb
+                    ? thumb.replace(/(-poster(?:-portrait)?)\.jpg$/i, "$1-play.jpg")
+                    : thumb;
                   const absoluteEmailThumb = emailThumb && emailThumb.startsWith("/")
                     ? `${window.location.origin}${emailThumb}`
                     : emailThumb;

@@ -25,11 +25,21 @@ const VETERANS_PHASE_1_VIDEO: CampaignVideo | null = {
   aspectRatio: 9 / 16,
 };
 
+const CASE_MANAGER_PHASE_2_VIDEO: CampaignVideo | null = {
+  src: "/videos/case-manager-phase-2.mov",
+  thumbnail: "/videos/case-manager-phase-2-poster-portrait.jpg",
+  title: "Veteran Care — A Free Tool for Case Managers",
+  caption:
+    "Connect the veterans, families, and dependents you serve to trusted local resources — housing, benefits, healthcare, jobs and more.",
+  // Source is 1080x1920 (portrait 9:16). Same shape as Phase 1.
+  aspectRatio: 9 / 16,
+};
+
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
   veteran: VETERANS_PHASE_1_VIDEO,
   general: VETERANS_PHASE_1_VIDEO,
   homepage: VETERANS_PHASE_1_VIDEO,
-  case_manager: null,
+  case_manager: CASE_MANAGER_PHASE_2_VIDEO,
   partner: null,
 };
 

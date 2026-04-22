@@ -1,0 +1,87 @@
+VETERAN CARE – PHASE 2 VIDEO ROLLOUT – CASE MANAGER CAMPAIGN
+
+Founder is ready to move immediately to the next campaign video.
+
+Veterans / Dependents Phase 1 is now the working model.
+
+We do NOT want a redesign or a new experiment.
+
+We want you to apply the SAME universal video display and funnel rules that were just established for the Veterans / Dependents campaign.
+
+Founder is uploading the Case Manager campaign video now.
+
+## IMPORTANT
+
+Do NOT create a new thumbnail treatment.
+
+Use the SAME working logic as Veterans:
+
+- same branded logo overlay treatment
+- same play-button treatment
+- same video presentation logic
+- same responsive display behavior
+- same email preview-card behavior
+- same tracked-link / UTM / attribution logic
+
+The video already contains the correct branding direction, so just use the same poster/logo treatment approach that is now working on the Veterans campaign.
+
+## UNIVERSAL RULES TO FOLLOW FROM PHASE 1
+
+Apply the same rules we just established:
+
+### 1. Responsive Video Container Rule
+- portrait videos must use the adaptive portrait-friendly container
+- do NOT force into 16:9 landscape
+- do NOT crop by default
+- do NOT use object-cover unless founder explicitly wants crop
+- maintain premium desktop presentation
+- maintain capped mobile presentation
+- maintain proper spacing rhythm:
+  - VIDEO
+  - SPACE
+  - HEADLINE
+  - SPACE
+  - BODY COPY
+  - SPACE
+  - CTA BUTTONS
+
+### 2. Poster / Preview Rule
+- use the same successful preview-card / baked play-button approach for email
+- no inline broken player behavior in email
+- click from email should open the campaign landing page/funnel correctly
+
+### 3. CSS / Layout Rule
+- avoid inline shorthand overrides that break spacing classes
+- do not reintroduce margin shorthand conflicts
+- spacing must be applied to the correct wrapper so the visual breathing room actually renders
+
+### 4. Tracking / Funnel Rule
+Preserve:
+- ambassador tracking
+- UTM capture
+- campaign attribution
+- commissions
+- analytics
+- tracked links
+- correct case-manager destination
+
+## CASE MANAGER PHASE 2 OBJECTIVE
+
+Add the Case Manager campaign video using the SAME proven system as Veterans, just for the Case Manager audience/tab/funnel.
+
+## NEED FROM YOU
+
+Please:
+
+1. wire the uploaded Case Manager video into the Case Manager campaign
+2. reuse the same proven universal video rules from Phase 1
+3. confirm exact files touched
+4. confirm where the Case Manager video lands
+5. provide founder retest path
+
+No redesign.
+No rebuild.
+No new experiments.
+
+This is Phase 2 cloning of the now-working Phase 1 model.
+Founder will manually Publish / Republish before live verification.
