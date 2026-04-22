@@ -2916,25 +2916,46 @@ export async function registerRoutes(
   await seedStatewideResources();
   await cleanupTestRecords();
 
-  // === RLS ENFORCEMENT (MANDATORY — runs every startup) ===
+  // === UNIFIED DUAL-DB RLS ENFORCEMENT (MANDATORY — runs every startup) ===
+  // Scans BOTH the Helium DB and the Supabase DB. Auto-enables RLS on any
+  // public-schema table missing it. Loud [RLS-AUTOFIX] / [RLS-RECHECK] logs.
   try {
-    const { validateRlsIntegrity, enforceRls, startRlsRecheckTimer } = await import("./rls-validator");
-    const check = await validateRlsIntegrity();
-    if (!check.passed) {
-      console.error(`[RLS] WARNING: ${check.rls_disabled_count} tables without RLS detected — auto-enforcing...`);
-      const fix = await enforceRls();
-      console.error(`[RLS] Fixed ${fix.fixed.length} tables: ${fix.fixed.join(", ")}`);
-      console.error(`[RLS] RESULT: ${fix.result.passed ? "ALL TABLES SECURED" : "STILL EXPOSED: " + fix.result.exposed_tables.join(", ")}`);
+    const { validateAllDatabases, enforceAllDatabases, startRlsRecheckTimer } = await import("./rls-validator");
+    const check = await validateAllDatabases();
+
+    // Helium branch
+    if (!check.helium.passed) {
+      console.error(`[RLS] db=HELIUM WARNING: ${check.helium.rls_disabled_count} tables without RLS — auto-enforcing...`);
     } else {
-      console.log(`[RLS] All ${check.total_tables} tables have RLS enabled — no exposure detected`);
+      console.log(`[RLS] db=HELIUM All ${check.helium.total_tables} tables have RLS enabled`);
     }
-    // Daily re-check guard. Closes the runtime CREATE-TABLE → next-boot window
-    // that the original Supabase advisor caught. Kill via env: RLS_RECHECK_DISABLED=1.
+    // Supabase branch
+    if ("skipped" in check.supabase) {
+      console.warn(`[RLS] db=SUPABASE SKIPPED — ${check.supabase.reason}. Add secret to enable dual-DB protection.`);
+    } else if (!check.supabase.passed) {
+      console.error(`[RLS] db=SUPABASE WARNING: ${check.supabase.rls_disabled_count} tables without RLS — auto-enforcing...`);
+    } else {
+      console.log(`[RLS] db=SUPABASE All ${check.supabase.total_tables} tables have RLS enabled`);
+    }
+
+    // Run unified enforce only if anything needs fixing (saves a redundant scan)
+    const needsFix =
+      !check.helium.passed ||
+      ("passed" in check.supabase && !check.supabase.passed);
+    if (needsFix) {
+      const fix = await enforceAllDatabases();
+      console.error(`[RLS] db=HELIUM Fixed ${fix.helium.fixed.length}: ${fix.helium.fixed.join(", ") || "none"} | passed=${fix.helium.result.passed}`);
+      if ("fixed" in fix.supabase) {
+        console.error(`[RLS] db=SUPABASE Fixed ${fix.supabase.fixed.length}: ${fix.supabase.fixed.join(", ") || "none"} | passed=${fix.supabase.result.passed}`);
+      }
+    }
+
+    // Daily re-check guard (covers both DBs). Kill via RLS_RECHECK_DISABLED=1.
     if (process.env.RLS_RECHECK_DISABLED !== "1") {
       startRlsRecheckTimer();
     }
   } catch (rlsErr: any) {
-    console.error(`[RLS] Validation failed:`, rlsErr.message);
+    console.error(`[RLS] Unified validation failed:`, rlsErr.message);
   }
 
   if (hasPartnerTable && hasRoutingColumns) {
@@ -14218,8 +14239,8 @@ export async function registerRoutes(
 
   app.get("/api/admin/rls-validation", requireAdmin, async (_req, res) => {
     try {
-      const { validateRlsIntegrity } = await import("./rls-validator");
-      const result = await validateRlsIntegrity();
+      const { validateAllDatabases } = await import("./rls-validator");
+      const result = await validateAllDatabases();
       return res.json(result);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -14228,8 +14249,8 @@ export async function registerRoutes(
 
   app.post("/api/admin/rls-enforce", requireAdmin, async (_req, res) => {
     try {
-      const { enforceRls } = await import("./rls-validator");
-      const result = await enforceRls();
+      const { enforceAllDatabases } = await import("./rls-validator");
+      const result = await enforceAllDatabases();
       return res.json(result);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
