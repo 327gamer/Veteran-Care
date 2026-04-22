@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS optimization_actions_log (
   admin_user TEXT DEFAULT 'admin',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE optimization_actions_log ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_opt_actions_created ON optimization_actions_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_opt_actions_entity ON optimization_actions_log(entity_id);

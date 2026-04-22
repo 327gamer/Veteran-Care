@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS billing_config (
   value TEXT NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE billing_config ENABLE ROW LEVEL SECURITY;
 
 INSERT INTO billing_config (key, value) VALUES
   ('billing_mode', 'manual_only'),
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS billing_runs (
   mode TEXT DEFAULT 'manual',
   lead_ids TEXT[]
 );
+ALTER TABLE billing_runs ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_billing_runs_executed_at ON billing_runs(executed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_nr_is_disputed ON navigator_requests(is_disputed) WHERE is_disputed = true;

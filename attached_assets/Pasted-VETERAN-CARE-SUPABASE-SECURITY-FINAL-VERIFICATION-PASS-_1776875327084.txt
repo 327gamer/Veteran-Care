@@ -1,0 +1,87 @@
+VETERAN CARE – SUPABASE SECURITY FINAL VERIFICATION PASS
+
+Founder manually reviewed Supabase Advisor and additional RLS warnings are still showing.
+
+Tables listed:
+
+- public.billing_config
+- public.billing_runs
+- public.optimization_actions_log
+- public.partner_rotation_state
+
+All flagged as:
+
+RLS Disabled in Public
+
+Need a grounded live production audit now.
+
+## REQUIRED ACTIONS
+
+Please check production database directly and check production deployment / boot logs directly.
+
+### 1. Database Verification
+
+For each of the four tables above, confirm:
+
+- does the table currently exist
+- is RLS enabled right now
+- are any policies attached
+- intended access posture (server-only or public-read)
+- if server-only, confirm anon/authenticated roles are blocked
+
+### 2. Production Log Verification
+
+Check live deployment / boot logs for:
+
+- [RLS]
+- [RLS-RECHECK]
+- [RLS-AUTOFIX]
+
+Confirm the universal enforcer is actually running in production.
+
+Please confirm:
+
+- last successful boot enforcement
+- recheck timer started
+- whether any auto-fix events occurred
+
+### 3. Immediate Remediation
+
+If any listed table lacks RLS:
+
+- enable it immediately
+- confirm policies remain correct
+- confirm no regression to billing / routing / admin systems
+
+Also confirm future CREATE TABLE paths include creation-time RLS protection.
+
+### 4. Full Public Schema Audit
+
+Confirm whether ANY public-schema tables remain without RLS enabled.
+
+If yes, list them all.
+
+### 5. Supabase Advisor Interpretation
+
+State clearly whether these warnings are:
+
+- stale historical findings already fixed
+or
+- active live issues still present
+
+Also advise whether founder should:
+
+- refresh advisor now
+- wait for rescanner
+- manually resolve any items
+
+## RETURN
+
+1. exact live status of all four tables  
+2. exact production log findings  
+3. exact fixes applied (if any)  
+4. whether any other tables are exposed  
+5. whether republish required  
+6. founder next steps inside Supabase dashboard
+
+Need facts from live production environment, not assumptions.

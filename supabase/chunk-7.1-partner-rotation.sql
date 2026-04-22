@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS partner_rotation_state (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE partner_rotation_state ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_rotation_scope ON partner_rotation_state(routing_scope_key);
 
