@@ -1,0 +1,60 @@
+VETERAN CARE – VIDEO CARD PHASE 1 CORRECTION
+
+Founder tested live and 2 issues are still not correct.
+
+## ISSUE 1 — EMAIL VIDEO THUMBNAIL STILL WRONG
+
+The email version is still not matching the ambassador kit preview.
+
+Current live behavior:
+- logo image shows
+- green play button appears separately below
+- play button is NOT centered on the image
+- thumbnail does NOT behave like a true video preview card
+
+What founder wants:
+- one single video thumbnail image
+- play button visually centered ON the image
+- email clients should see one clean clickable image, not separate image + button layout
+
+Best correction:
+Please change the email version to use a single flattened thumbnail/poster image with the centered play button baked into the image itself, so email clients cannot break the layout.
+
+That should make the email appearance match the ambassador dashboard preview much more closely.
+
+## ISSUE 2 — GET HELP NOW ROUTING STILL WRONG
+
+Get Help Now still does not behave correctly.
+
+Current behavior:
+- clicking the Get Help Now video/logo routes to the “How can we help?” page
+- founder expected the campaign video to open first on the correct landing experience
+
+Need you to confirm and correct the exact tracked destination for Get Help Now so it lands on the intended page with the video experience, not just the plain intake page.
+
+## ISSUE 3 — GENERAL SHARE LINK NOW APPEARS REDUNDANT
+
+General Share Link currently behaves the same as Veterans / Dependents and goes to the same video/start experience.
+
+This is acceptable for now if it is intentional for tracking only, but please confirm whether:
+- General Share Link is intentionally duplicating the Veterans landing for Phase 1
+or
+- it should later be routed to a different general start experience
+
+No change needed right now unless required for Phase 1 correction.
+
+## RETURN
+
+Please reply with:
+1. root cause of why email still rendered as image + separate button
+2. exact files touched
+3. how you will flatten the thumbnail correctly for email clients
+4. exact destination fix for Get Help Now
+5. whether General Share Link is intentionally duplicated for now
+6. founder retest path
+
+No rebuild.
+No new system.
+Just correct Phase 1 behavior.
+
+Founder manually Publish / Republish before live verification.

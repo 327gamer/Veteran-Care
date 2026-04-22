@@ -421,7 +421,7 @@ async function ensureAttributionTables() {
           veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
           case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
           partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
-          general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
+          general:       { path: "/start",           campaign: "sc_launch",              label: "Get Help Now" },
           homepage:      { path: "/start",           campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
         };
         const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
@@ -455,7 +455,7 @@ async function ensureAttributionTables() {
         veteran:       { path: "/start",           campaign: "sc_veteran_help" },
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth" },
-        general:       { path: "/get-help",        campaign: "sc_launch" },
+        general:       { path: "/start",           campaign: "sc_launch" },
         homepage:      { path: "/start",           campaign: "sc_homepage_traffic" },
       };
       for (const [audienceKey, aud] of Object.entries(AUDIENCE_PATHS)) {
@@ -476,7 +476,7 @@ async function ensureAttributionTables() {
       console.log(`[schema] Fixed link destinations (${remaining[0].cnt} still on /home)`);
     }
 
-    // === FIX: Swap veteran links from /get-help → /start and general from /start → /get-help ===
+    // === FIX: Veteran links land on /start (campaign video page) ===
     const vetOnGetHelp = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'veteran' AND base_path = '/get-help'");
     if (parseInt(vetOnGetHelp[0].cnt, 10) > 0) {
       console.log("[schema] Updating veteran links: /get-help → /start (landing page flow)...");
@@ -489,18 +489,10 @@ async function ensureAttributionTables() {
       const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'veteran' AND base_path = '/start'");
       console.log(`[schema] Updated ${fixed[0].cnt} veteran links to /start`);
     }
-    const genOnStart = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/start'");
-    if (parseInt(genOnStart[0].cnt, 10) > 0) {
-      console.log("[schema] Updating general links: /start → /get-help (direct help flow)...");
-      await pgQuery(
-        `UPDATE ambassador_links
-         SET base_path = '/get-help',
-             full_url = REPLACE(full_url, '/start?', '/get-help?')
-         WHERE audience_type = 'general' AND base_path = '/start'`
-      );
-      const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/get-help'");
-      console.log(`[schema] Updated ${fixed[0].cnt} general links to /get-help`);
-    }
+    // NOTE: legacy general /start → /get-help migration was REMOVED.
+    // Phase 1 founder direction: all video-card audiences (veteran, general, homepage)
+    // land on /start, where the campaign video plays. The /get-help → /start
+    // forward migration runs lower in this same script (single source of truth).
 
     // === FIX: Repoint homepage links from / → /start (Phase 1 video lives at /start) ===
     const homeOnRoot = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'homepage' AND base_path = '/'");
@@ -516,19 +508,34 @@ async function ensureAttributionTables() {
       console.log(`[schema] Updated ${fixed[0].cnt} homepage links to /start`);
     }
 
-    // === SAFETY: Ensure all general links go to /get-help ===
-    const genOffPath = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path != '/get-help'");
-    if (parseInt(genOffPath[0].cnt, 10) > 0) {
-      console.log(`[schema] Repointing ${genOffPath[0].cnt} general links to /get-help...`);
+    // === FIX: Repoint general (Get Help Now) links from /get-help → /start ===
+    // Phase 1 founder direction: video-card audiences should land on /start where the
+    // hero video plays. /get-help dialog had no video on desktop and looked like home.
+    const genOnGetHelp = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/get-help'");
+    if (parseInt(genOnGetHelp[0].cnt, 10) > 0) {
+      console.log("[schema] Updating general links: /get-help → /start (Phase 1 video lives at /start)...");
       await pgQuery(
         `UPDATE ambassador_links
-         SET full_url = 'https://veterancare.com/get-help?utm_source=' || utm_source ||
+         SET base_path = '/start',
+             full_url = REPLACE(full_url, '/get-help?', '/start?')
+         WHERE audience_type = 'general' AND base_path = '/get-help'`
+      );
+      const fixed = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path = '/start'");
+      console.log(`[schema] Updated ${fixed[0].cnt} general links to /start`);
+    }
+    // Safety: any general link not on /start gets rebuilt
+    const genOffStart = await pgQuery("SELECT COUNT(*) as cnt FROM ambassador_links WHERE audience_type = 'general' AND base_path != '/start'");
+    if (parseInt(genOffStart[0].cnt, 10) > 0) {
+      console.log(`[schema] Rebuilding ${genOffStart[0].cnt} stray general links to /start...`);
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET full_url = 'https://veterancare.com/start?utm_source=' || utm_source ||
                         '&utm_medium=' || utm_medium ||
                         '&utm_campaign=' || utm_campaign ||
                         '&utm_content=' || utm_content ||
                         '&utm_id=' || utm_id,
-             base_path = '/get-help'
-         WHERE audience_type = 'general' AND base_path != '/get-help'`
+             base_path = '/start'
+         WHERE audience_type = 'general' AND base_path != '/start'`
       );
     }
 
@@ -604,8 +611,8 @@ async function ensureAttributionTables() {
         veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
         case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager Outreach" },
         partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business Outreach" },
-        general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
-        homepage:      { path: "/",                campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
+        general:       { path: "/start",           campaign: "sc_launch",              label: "Get Help Now" },
+        homepage:      { path: "/start",           campaign: "sc_homepage_traffic",    label: "General Share Link (Homepage)" },
       };
       const CHANNELS = ["email", "text", "facebook", "instagram", "linkedin", "qr", "flyer"];
       const CHANNEL_LABELS: Record<string, string> = { email: "Email", text: "Text", facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", qr: "QR Code", flyer: "Flyer" };
@@ -3223,7 +3230,7 @@ export async function registerRoutes(
     veteran:       { path: "/start",           campaign: "sc_veteran_help",        label: "Veterans & Dependents" },
     case_manager:  { path: "/resource-center", campaign: "sc_case_manager_drive",  label: "Case Manager" },
     partner:       { path: "/partners",        campaign: "sc_partner_growth",      label: "Partner / Business" },
-    general:       { path: "/get-help",        campaign: "sc_launch",              label: "Get Help Now" },
+    general:       { path: "/start",           campaign: "sc_launch",              label: "Get Help Now" },
   };
 
   const CHANNEL_LABELS: Record<string, string> = {
