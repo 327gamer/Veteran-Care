@@ -22,6 +22,13 @@ import {
   LogIn,
   LogOut,
   UserCircle,
+  Menu,
+  Info,
+  HelpCircle,
+  Mail,
+  Briefcase,
+  Handshake,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,6 +176,67 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
             </div>
             <span className="font-heading text-lg font-bold tracking-tight hidden sm:block">{platform.name}</span>
           </Link>
+
+          {/* Brand dropdown — sits immediately right of logo, before center nav */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                data-testid="button-brand-menu"
+                variant="ghost"
+                size="icon"
+                className="ml-1 md:ml-2 text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 md:w-auto md:px-3 md:rounded-md border border-white/5 gap-1.5 shrink-0"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5 md:h-4 md:w-4" />
+                <span className="hidden md:inline text-sm font-medium">Menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-60">
+              <Link href="/about">
+                <DropdownMenuItem data-testid="menu-about" className="cursor-pointer">
+                  <Info className="h-4 w-4 mr-2 text-primary" /> About Veteran Care
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/how-it-works">
+                <DropdownMenuItem data-testid="menu-how-it-works" className="cursor-pointer">
+                  <HelpCircle className="h-4 w-4 mr-2 text-primary" /> How It Works
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/contact">
+                <DropdownMenuItem data-testid="menu-contact" className="cursor-pointer">
+                  <Mail className="h-4 w-4 mr-2 text-primary" /> Contact Us
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/case-managers">
+                <DropdownMenuItem data-testid="menu-case-managers" className="cursor-pointer">
+                  <Briefcase className="h-4 w-4 mr-2 text-primary" /> For Case Managers
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/partners">
+                <DropdownMenuItem data-testid="menu-partners" className="cursor-pointer">
+                  <Handshake className="h-4 w-4 mr-2 text-primary" /> For Trusted Partners
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/privacy">
+                <DropdownMenuItem data-testid="menu-privacy" className="cursor-pointer">
+                  <FileText className="h-4 w-4 mr-2 text-muted-foreground" /> Privacy
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/terms">
+                <DropdownMenuItem data-testid="menu-terms" className="cursor-pointer">
+                  <FileText className="h-4 w-4 mr-2 text-muted-foreground" /> Terms
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/home">
+                <DropdownMenuItem data-testid="menu-home" className="cursor-pointer">
+                  <Home className="h-4 w-4 mr-2 text-primary" /> Back to Home
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <nav className="hidden lg:flex items-center gap-1 ml-6">
             <Link href="/resources" onClick={() => window.dispatchEvent(new CustomEvent("close-resource-detail"))} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isActive('/resources') ? 'bg-white/20 text-white' : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'}`}>

@@ -17,6 +17,7 @@ import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { ensureMonetizationAuditTable } from "./monetization-audit";
 import { query as pgQuery } from "./pg-client";
 import { registerSeededProviderRoutes } from "./seeded-providers-routes";
+import { registerContactRoute } from "./contact-route";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
@@ -2890,6 +2891,9 @@ export async function registerRoutes(
 
   // Stage C: seeded providers admin endpoints
   registerSeededProviderRoutes(app, requireAdmin);
+
+  // Phase 7: public contact form (Resend auto-reply + AI Navigator triage)
+  registerContactRoute(app);
   await ensurePartnerReferrals();
   await ensureLeadBilling();
   await ensureLeadEventsTable();

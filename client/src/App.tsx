@@ -59,6 +59,12 @@ import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
 import AmbassadorDashboard from "@/pages/ambassador-dashboard";
+import About from "@/pages/about";
+import HowItWorks from "@/pages/how-it-works";
+import Contact from "@/pages/contact";
+import CaseManagers from "@/pages/case-managers";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
 
 function PageViewTracker() {
   const [location] = useLocation();
@@ -275,6 +281,25 @@ function Router() {
       </Route>
 
       <Route path="/ambassador-dashboard" component={AmbassadorDashboard} />
+
+      <Route path="/about">
+        <Layout><About /></Layout>
+      </Route>
+      <Route path="/how-it-works">
+        <Layout><HowItWorks /></Layout>
+      </Route>
+      <Route path="/contact">
+        <Layout><Contact /></Layout>
+      </Route>
+      <Route path="/case-managers">
+        <Layout><CaseManagers /></Layout>
+      </Route>
+      <Route path="/privacy">
+        <Layout><Privacy /></Layout>
+      </Route>
+      <Route path="/terms">
+        <Layout><Terms /></Layout>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>
