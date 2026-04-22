@@ -1,0 +1,73 @@
+VETERAN CARE – NC STATUS / DUPLICATION / VISIBILITY CLARIFICATION
+
+Before moving further, founder needs absolute clarity on current NC status.
+
+## 1. NORTH CAROLINA COMPLETION STATUS
+
+Please clarify whether North Carolina was intended to be:
+
+A. a partial staged build (Round 1 / Round 2 only)
+or
+B. a full-state resource population across all categories and subcategories
+
+Founder’s understanding was that we were moving toward a much faster full-state ingestion model, not leaving the state half-built.
+
+Need exact truth:
+- what has been completed
+- what remains incomplete
+- which categories are still empty
+- whether NC is currently a partial template only
+
+## 2. NATIONAL RESOURCE DUPLICATION RULE
+
+Need to lock this rule clearly before further state expansion.
+
+Founder does NOT want truly national / federal resources unnecessarily duplicated across every state.
+
+Examples:
+- Veterans Crisis Line
+- 988
+- federal VA resources
+- national nonprofits
+- national portals
+- national lenders / insurers
+
+Please confirm the permanent rule going forward:
+
+- national/federal resources stored once where appropriate
+- state-specific rows only where there is a true state entity
+- local/chapter rows only where there is unique local contact/location
+
+## 3. NC VISIBILITY ISSUE
+
+Founder is currently not seeing North Carolina resources in the UI when using city/state filters inside Resources.
+
+Need exact explanation:
+
+- are NC rows only in dev right now?
+- are NC rows in production but hidden?
+- is NC still inactive in the states table?
+- is republish required?
+- should founder be able to see NC in the live interface right now or not?
+
+This needs a direct yes/no answer.
+
+## 4. NEXT DECISION
+
+Before Georgia or further expansion, founder wants to know:
+
+- should NC be completed fully first
+- should NC be cleaned first
+- should NC be made visible first
+- what exact step comes next
+
+## RETURN
+
+1. whether NC is partial or complete  
+2. exact categories still missing  
+3. exact NC visibility status  
+4. whether republish is required  
+5. whether national-duplication rule is now locked  
+6. best next step before Georgia
+
+Need clean production-truth answer before scaling further.
