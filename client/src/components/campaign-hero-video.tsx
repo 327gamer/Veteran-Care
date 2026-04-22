@@ -91,13 +91,30 @@ export default function CampaignHeroVideo({
   const ar = aspectRatio ?? 16 / 9;
   const isPortrait = ar < 1;
 
-  // Portrait videos: cap width tight (~360px), let height go up to 75vh.
-  // Landscape videos: full width up to 720px wide (premium hero feel).
-  // Both share the same vertical cap so the layout stays balanced.
+  // Responsive size caps — separate values for mobile vs. desktop so
+  // the hero never dominates a phone viewport but still feels premium
+  // on a laptop. Inline style works around Tailwind not being able to
+  // statically detect dynamic class names.
+  //   Portrait (e.g. 9:16):
+  //     mobile  width up to 280px,  height up to 50vh / 440px
+  //     desktop width up to 360px,  height up to 70vh / 600px
+  //   Landscape (e.g. 16:9):
+  //     mobile  width up to 95vw,   height up to 50vh
+  //     desktop width up to 720px,  height up to 70vh
+  const isDesktop =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(min-width: 768px)").matches;
   const containerStyle: React.CSSProperties = {
     aspectRatio: `${ar}`,
-    maxWidth: isPortrait ? "min(360px, 90vw)" : "min(720px, 95vw)",
-    maxHeight: "min(75vh, 640px)",
+    maxWidth: isPortrait
+      ? isDesktop
+        ? "min(360px, 90vw)"
+        : "min(280px, 78vw)"
+      : isDesktop
+        ? "min(720px, 95vw)"
+        : "95vw",
+    maxHeight: isDesktop ? "min(70vh, 600px)" : "min(50vh, 440px)",
     width: "auto",
     margin: "0 auto",
   };
@@ -115,7 +132,7 @@ export default function CampaignHeroVideo({
   return (
     <div
       className={`overflow-hidden shadow-2xl ring-1 ring-white/20 bg-black ${
-        className || "rounded-xl mb-6"
+        className || "rounded-xl mb-8 md:mb-10"
       }`}
       style={containerStyle}
       data-testid={`hero-video-${audience}`}
