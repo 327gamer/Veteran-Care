@@ -1,0 +1,129 @@
+VETERAN CARE – NATIONAL RESOURCE EXPANSION ENGINE (NC FIRST)
+
+Founder reviewed live platform UX and confirms the system is already structurally built for national scale.
+
+Current live resource interface already supports:
+
+• Search bar
+• Near Me
+• City
+• State
+• Radius filters (10 / 25 / 50 / 100 mi)
+• Category browsing
+• Subcategory drilldowns
+• Geo-ranked results
+• Verified Partner overlays
+
+This confirms the core platform is NOT a “state-by-state rebuild.”
+
+It is ONE national database architecture that simply needs high-quality resource rows inserted correctly.
+
+KEY PRINCIPLE
+
+We are not building North Carolina separately.
+
+We are feeding North Carolina rows into the same existing national system already working for South Carolina.
+
+If rows are structured correctly, users anywhere in America should be able to:
+
+• allow location → Near Me results
+• search by city
+• search by state
+• browse by category
+• drill into subcategory
+• adjust radius
+• see closest verified resources first
+
+That means the real mission now is DATA INGESTION + VALIDATION + TAXONOMY ACCURACY.
+
+NORTH CAROLINA EXECUTION REQUEST
+
+Need the most efficient production-grade expansion workflow using the system already built.
+
+Please evaluate best method for inserting NC resources into the live national database:
+
+OPTION A
+City-by-city:
+Fayetteville → Charlotte → Raleigh → Durham → Greensboro → Wilmington etc.
+Each city receives ALL categories + subcategories before next city.
+
+OPTION B
+Category-by-category statewide:
+Housing across NC first,
+then Employment,
+then Healthcare, etc.
+
+OPTION C
+Hybrid smart ingest:
+Major NC metros + military hubs first,
+all critical categories first,
+then secondary cities.
+
+OPTION D
+Best method based on your internal tooling / scraper / importer architecture.
+
+CRITICAL REQUIREMENTS
+
+Every imported row must land correctly with:
+
+• state
+• city
+• zip
+• latitude
+• longitude
+• category slug
+• subcategory slug
+• phone
+• website
+• description
+• verification status
+• active status
+• searchable keywords
+
+Must preserve current live filters:
+
+• Near Me
+• City
+• State
+• Radius
+• Search
+• Category/Subcategory
+
+Must preserve current live systems:
+
+• Trusted Services
+• Verified Partners
+• AI Guide
+• Analytics
+• Lead routing
+• Saved resources
+• Attribution systems
+
+NORTH CAROLINA PRIORITY
+
+Founder wants NC started immediately because it is the logical next state after SC.
+
+Military / veteran hubs include:
+
+• Fayetteville / Fort Liberty
+• Jacksonville / Camp Lejeune
+• Charlotte
+• Raleigh
+• Durham
+• Greensboro
+• Wilmington
+• Asheville
+• Goldsboro
+• Havelock
+
+RETURN REQUIRED
+
+1. Best expansion model (A/B/C/D)
+2. How you would execute NC using current database structure
+3. Whether current live schema is already ready
+4. Fastest safe path to fully populate NC
+5. Any blockers before starting
+6. Whether this same system then scales cleanly to GA / FL / rest of USA
+
+Important:
+Think like a production architect. We already have the skeleton built. We now need to feed the beast correctly.
