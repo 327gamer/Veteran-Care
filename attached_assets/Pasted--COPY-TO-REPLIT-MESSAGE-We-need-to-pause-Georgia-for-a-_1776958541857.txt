@@ -1,0 +1,171 @@
+--- COPY TO REPLIT ---
+
+MESSAGE:
+
+We need to pause Georgia for a moment and fix the South Carolina / North Carolina state-city routing and city expansion logic first. This needs to be cleaned up now so SC + NC become the correct rollout template before we duplicate the model into GA and other states.
+
+FOUNDER ISSUE SUMMARY
+
+There are 2 related problems:
+
+1. ROUTING / FILTER LOGIC ISSUE
+When a user clicks the location/navigation icon at the top of the site, it takes them to the “Near You” page.
+
+That page is supposed to allow users to:
+- enable location and search by Near Me
+- OR manually choose city and state if they do not want to enable location
+
+Right now, the behavior is inconsistent.
+
+Problem:
+- On the Near You flow, when the user clicks state, it is not behaving like a proper manual location path.
+- Users should be able to stay in that workflow and choose:
+  - state
+  - then city
+  - then browse matching resources
+without being forced into a broken or confusing detour.
+
+Required fix:
+- The top navigation location icon flow must support BOTH:
+  A. geolocation / near me
+  B. manual state + city selection
+- This should behave cleanly and logically for users who do not enable location.
+- Near You should not dead-end or feel different from the resource-location workflow.
+- Manual location selection must work the same way a user would expect in a polished production app:
+  top nav location icon → choose Near Me OR City OR State → choose state → choose city → see matching resources
+
+2. SC + NC EXPANDED CITY COVERAGE STILL LOOKS INCOMPLETE
+When browsing categories and subcategories, the available city lists for South Carolina and North Carolina still do not appear complete in production.
+
+Examples from founder screenshots:
+- SC dropdown still does not clearly reflect the broader city expansion we discussed
+- NC dropdown still looks thin in places depending on category / subcategory path
+- Near You flow and Resources flow are not exposing the same city-depth consistently
+
+This means one of the following is happening:
+- missing city-level resource rows
+- city selector only showing cities tied to certain filtered subsets
+- category/subcategory joins not exposing all valid cities for that state
+- or inconsistent city-query logic between pages/routes/components
+
+THIS MUST BE FIXED BEFORE GEORGIA.
+
+WHAT WE NEED DONE NOW
+
+PHASE 1 — AUDIT THE LIVE LOGIC
+Please audit all production/live logic involved in these screens:
+
+A. top location/navigation icon flow
+B. Near You page
+C. Resources main page
+D. category page
+E. subcategory page
+F. city selector query logic
+G. state selector query logic
+H. any API endpoints powering:
+   - /near-you
+   - /resources
+   - location filters
+   - city dropdowns
+   - state dropdowns
+   - category/subcategory filtered city lists
+
+Need exact root cause, not guesses.
+
+PHASE 2 — FIX MANUAL LOCATION ROUTING
+Required end-state:
+
+TOP NAV LOCATION ICON FLOW
+- User taps top location/navigation icon
+- User lands on Near You / location flow
+- User can:
+  - use Near Me
+  - OR choose City
+  - OR choose State
+- If they choose State:
+  - they choose a state
+  - then choose a city if desired
+  - then see the correct resource results
+- This must work even if location permission is denied or never enabled
+
+This should feel intuitive and not redirect users into a confusing category-only path.
+
+PHASE 3 — FIX CITY EXPANSION FOR SC + NC
+Please perform a real audit for BOTH South Carolina and North Carolina.
+
+Need exact return:
+1. full distinct city count currently represented in SC
+2. full distinct city count currently represented in NC
+3. full city list for each state
+4. identify which expected cities are still missing or underrepresented
+5. identify whether missing cities are due to:
+   - no resource rows
+   - bad city normalization
+   - filtered query logic
+   - missing category/subcategory junctions
+   - state/city endpoint inconsistencies
+
+Important:
+This cannot just be a UI dropdown patch.
+If cities are missing because rows do not exist, then add the needed city-level resources.
+If rows exist but are not surfacing, fix the selector/query logic.
+
+PHASE 4 — RESOURCE POPULATION INTEGRITY
+Very important founder requirement:
+
+When you add or expose the extra cities, confirm that actual resources populate correctly inside:
+- categories
+- subcategories
+- state filters
+- city filters
+- near me radius views where applicable
+
+In other words:
+DO NOT just make the dropdown longer.
+The resource data for those areas must be present and must display correctly.
+
+Need proof after fix:
+- example SC cities added/exposed and matching resource counts
+- example NC cities added/exposed and matching resource counts
+- sample category + subcategory + city combinations that now return live results correctly
+
+PHASE 5 — TEMPLATE LOCK BEFORE GA
+Before we move to Georgia, we need SC + NC to become the stable template.
+
+That means:
+- routing logic clean
+- Near You + Resources workflows aligned
+- state and city selectors complete
+- resource population correct
+- category/subcategory filtering working correctly
+- no fake dropdown expansion without data underneath
+
+RETURN REQUIRED
+Please return in this exact structure:
+
+1. ROOT CAUSE
+What was broken and why
+
+2. ROUTING FIX
+What changed in Near You / state-city manual flow
+
+3. CITY AUDIT
+SC city count before / after
+NC city count before / after
+
+4. DATA FIX
+What rows were added, exposed, normalized, or repaired
+
+5. VALIDATION
+Examples proving:
+- Near You manual state/city works
+- Resources category/subcategory state/city works
+- SC and NC expanded cities now populate properly
+
+6. READY FOR GA?
+Clear answer:
+YES or NO
+
+Do not start Georgia until this is corrected and validated.
+
+--- END ---
