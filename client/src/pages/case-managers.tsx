@@ -30,6 +30,11 @@ export default function CaseManagers() {
         detail="Search by geography, surface verified programs, and skip the directory-hunting."
       />
 
+      {/* ── WHITE SPACER ── creates breathing room between the green
+          hero above and the green video showcase below, matching the
+          About page rhythm. */}
+      <div className="bg-background h-12 sm:h-16" aria-hidden="true" />
+
       {/* ── VIDEO SHOWCASE ──
           Same green-band format used on the About page so menu pages
           share one unified video presentation system. */}
