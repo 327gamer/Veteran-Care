@@ -130,6 +130,57 @@ export default function PartnersLanding() {
         </div>
       </section>
 
+      {/* ── SOCIAL PROOF + ROI ── */}
+      <section className="px-5 py-10 max-w-lg mx-auto" data-testid="section-social-proof">
+        <div className="grid grid-cols-3 gap-3 mb-7">
+          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
+            <p className="text-xl font-heading font-extrabold text-primary leading-none">2</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">States live</p>
+            <p className="text-[10px] text-muted-foreground/80">SC · NC</p>
+          </div>
+          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
+            <p className="text-xl font-heading font-extrabold text-primary leading-none">700+</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">Resources</p>
+            <p className="text-[10px] text-muted-foreground/80">Verified listings</p>
+          </div>
+          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
+            <p className="text-xl font-heading font-extrabold text-primary leading-none">120+</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">Cities</p>
+            <p className="text-[10px] text-muted-foreground/80">Geo-targeted</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-7" data-testid="card-scarcity">
+          <p className="text-[11px] uppercase tracking-widest text-amber-700 font-semibold mb-1">Limited founding partner placements</p>
+          <p className="text-sm text-amber-900 leading-snug">
+            We're capping founding partner slots by market to protect lead quality. Get listed before your category fills.
+          </p>
+        </div>
+
+        <h3 className="text-base font-heading font-extrabold text-primary mb-3 text-center">Why partners join</h3>
+        <ul className="space-y-2.5">
+          {[
+            { t: "Qualified inbound leads", d: "Veterans and families who told us exactly what they need." },
+            { t: "Geo-targeted visibility", d: "Show up in your city, county, and state — not buried in a national directory." },
+            { t: "Trust badge authority", d: "Trusted Partner status signals you've been reviewed and vetted." },
+            { t: "Veteran audience credibility", d: "Reach a community that values service and verified providers." },
+            { t: "Recurring monthly exposure", d: "Stay in front of new families discovering the platform every month." },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-white border border-border" data-testid={`text-roi-${i}`}>
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground leading-snug">{item.t}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.d}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-center text-[11px] text-muted-foreground mt-5 italic">
+          Built for trusted organizations serving veterans across the United States.
+        </p>
+      </section>
+
       {/* ── HOW IT WORKS ── */}
       <section className="bg-muted/40 border-y border-border px-5 py-10">
         <div className="max-w-lg mx-auto">

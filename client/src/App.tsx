@@ -65,6 +65,7 @@ import Contact from "@/pages/contact";
 import CaseManagers from "@/pages/case-managers";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
+import Unsubscribe from "@/pages/unsubscribe";
 
 function PageViewTracker() {
   const [location] = useLocation();
@@ -299,6 +300,9 @@ function Router() {
       </Route>
       <Route path="/terms">
         <Layout><Terms /></Layout>
+      </Route>
+      <Route path="/unsubscribe">
+        <Layout><Unsubscribe /></Layout>
       </Route>
 
       <Route component={NotFound} />
