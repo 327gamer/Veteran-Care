@@ -143,6 +143,7 @@ function AutocompleteInput({
   placeholder,
   testId,
   className,
+  disabled,
 }: {
   value: string;
   onChange: (val: string) => void;
@@ -150,6 +151,7 @@ function AutocompleteInput({
   placeholder: string;
   testId: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -180,11 +182,13 @@ function AutocompleteInput({
           placeholder={placeholder}
           className="h-9 text-xs pr-7"
           value={value}
+          disabled={disabled}
           onChange={(e) => {
             onChange(e.target.value);
             setOpen(true);
           }}
           onFocus={() => {
+            if (disabled) return;
             setFocused(true);
             setOpen(true);
           }}
@@ -362,7 +366,7 @@ export default function Resources() {
       if (selectedSlug) params.set("category", selectedSlug);
       return fetch(`/api/locations/cities?${params}`).then(r => r.json());
     },
-    enabled: locationMode === "city" || (locationMode === "state" && !!stateParam),
+    enabled: !!stateParam && (locationMode === "city" || locationMode === "state"),
   });
 
   const { data: zipSuggestions = [] } = useQuery<string[]>({
@@ -758,7 +762,7 @@ export default function Resources() {
         )}
       </div>
 
-      {(selectedSlug || locationMode === "nearme" || locationMode === "city") ? (
+      {(selectedSlug || locationMode === "nearme" || locationMode === "city" || locationMode === "state") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
 
@@ -856,20 +860,46 @@ export default function Resources() {
 
               {locationMode === "city" && (
                 <div className="flex flex-col gap-2">
-                  <AutocompleteInput
-                    value={cityFilter}
-                    onChange={(v) => { setCityFilter(v); trackEvent("city_filter_use", { city: v }); }}
-                    suggestions={citySuggestions}
-                    placeholder="Type a city name..."
-                    testId="input-city-filter-standalone"
-                    className="flex-1"
-                  />
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Select
+                      key={selectedState || "city-empty"}
+                      value={selectedState || undefined}
+                      onValueChange={(v) => {
+                        trackEvent("state_filter_use", { state: v, mode: "city" });
+                        setSelectedState(v);
+                        setCityFilter("");
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-state-for-city" className="h-9 text-xs sm:w-40">
+                        <SelectValue placeholder="State" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px]">
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <AutocompleteInput
+                      value={cityFilter}
+                      onChange={(v) => { setCityFilter(v); trackEvent("city_filter_use", { city: v }); }}
+                      suggestions={citySuggestions}
+                      placeholder={selectedState ? "Type a city name..." : "Pick a state first"}
+                      testId="input-city-filter-standalone"
+                      className="flex-1"
+                      disabled={!selectedState}
+                    />
+                  </div>
+                  {!selectedState && (
+                    <p data-testid="text-city-needs-state" className="text-[10px] text-muted-foreground">
+                      Choose a state to see available cities for that state only.
+                    </p>
+                  )}
                   {cityFilter.trim() && (
                     <p data-testid="text-city-summary" className="text-[10px] text-muted-foreground">
                       {locationSummary()}
                     </p>
                   )}
-                  {selectedSlug && (
+                  {selectedSlug && selectedState && (
                     <p data-testid="text-city-scope-hint" className="text-[10px] text-muted-foreground leading-snug">
                       Showing cities with available resources in this category.
                     </p>

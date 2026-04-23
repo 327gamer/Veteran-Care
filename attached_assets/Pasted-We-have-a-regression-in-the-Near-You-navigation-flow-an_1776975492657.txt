@@ -1,0 +1,73 @@
+We have a regression in the Near You / navigation flow and I need this corrected before we move forward with Georgia.
+
+Please stop adding more layers to this and focus on the actual user logic.
+
+What is happening now:
+1. The new Near You flow is not working correctly.
+2. “Use My Location” takes users back to the old Near You page, which is fine, but on that page the State button still incorrectly routes users into generic Resources.
+3. The manual Pick State / City flow is also not working correctly:
+   - when a user selects a state and city, the geography is not being honored properly
+   - city lists are mixing states
+   - selected state/city is not overriding live location
+   - users are getting bounced back into generic Resources instead of seeing geographically correct results
+
+This is the core problem:
+If a user manually selects North Carolina + Charlotte, that must override device location completely. It should not show South Carolina resources just because the user is physically in South Carolina.
+
+I want this simplified and corrected.
+
+TARGET UX / LOGIC:
+A. Revert back to the original Near You concept as the main experience.
+B. Keep users on one unified Near You page instead of bouncing them through multiple separate flows.
+C. On that Near You page, users should have:
+   - search bar
+   - small category icons/chips across the top or just under the search
+   - optional subcategory selection when relevant
+   - location mode controls: Near Me / City / State
+D. Results should populate directly below the search and filters on the same page.
+
+FUNCTIONAL RULES:
+1. If user uses live location:
+   - search like “food” or “housing” should show matching resources near them
+   - category/subcategory should filter those same local results
+
+2. If user manually chooses a state and/or city:
+   - that manual selection must override device location
+   - results must only come from that chosen geography
+   - example: North Carolina + Charlotte + Housing should show Charlotte / NC housing-related resources only
+
+3. The State button on the original Near You page must NOT send users into generic Resources.
+   It must work inside the Near You flow itself.
+
+4. City dropdowns must be state-locked.
+   - If North Carolina is selected, only North Carolina cities should appear
+   - If South Carolina is selected, only South Carolina cities should appear
+
+5. Search + category + subcategory + geography all need to work together on one page:
+   - keyword
+   - category
+   - subcategory
+   - near me OR state/city
+   - then show the matching resource cards directly below
+
+6. Do not create a separate “Pick a City” path if “Pick a State / City” already exists. That was redundant and confusing.
+
+7. If needed, keep a broader Resources page for full browsing, but the top navigation icon should be a true find-help / near-you tool, not a redirect into generic browsing.
+
+WHAT I NEED YOU TO DO NOW:
+1. Diagnose why the State button on the original Near You page still routes to generic Resources instead of filtering in place.
+2. Diagnose why manual state/city selection is not overriding device location.
+3. Diagnose why city lists are mixing SC and NC.
+4. Refactor this into one clean Near You experience with in-place filtering and results.
+5. Verify with live examples:
+   - Mount Pleasant + food
+   - South Carolina + Charleston + housing
+   - North Carolina + Charlotte + housing
+   - North Carolina + Asheville + healthcare
+   - South Carolina + Columbia + disability benefits
+6. Confirm the resource cards shown in each case are geographically correct.
+
+Please do not keep redesigning around the bug.
+Fix the routing and filtering logic first.
+
+This needs to be smooth, simple, and trustworthy before we expand further.
