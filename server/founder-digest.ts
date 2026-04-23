@@ -662,59 +662,87 @@ let digestInterval: ReturnType<typeof setInterval> | null = null;
 // authoritative cross-restart guard.
 const memorySent: Record<string, boolean> = {};
 
+export interface DigestTickResult {
+  fired: boolean;
+  slot: DigestSlot | null;
+  reason: string;
+  recipients?: string[];
+  error?: string;
+}
+
+// Compute the slot currently due in ET (8:00–9:00 ET → "morning",
+// 16:00–17:00 ET → "afternoon"). Outside those windows returns null.
+export function currentDueSlot(): DigestSlot | null {
+  const hour = etHour();
+  if (hour >= SLOT_MORNING_HOUR && hour < SLOT_MORNING_HOUR + 1) return "morning";
+  if (hour >= SLOT_AFTERNOON_HOUR && hour < SLOT_AFTERNOON_HOUR + 1) return "afternoon";
+  return null;
+}
+
+// Single source of truth for "should I send right now?" — used by both the
+// in-process setInterval (long-lived dev / Reserved-VM deploys) and the
+// external cron driver hitting POST /api/internal/digest/tick (Autoscale).
+// The DB-level claim in `founder_digest_log (UNIQUE et_date, slot)` is the
+// authoritative dedup gate, so any number of overlapping callers across any
+// number of processes is safe — only the first INSERT wins, every other
+// caller short-circuits with `fired:false, reason:"already_sent"`.
+export async function runDueDigestTick(opts?: {
+  source?: string;
+  forceSlot?: DigestSlot;
+}): Promise<DigestTickResult> {
+  const source = opts?.source || "tick";
+  try {
+    if (isDisabled()) {
+      return { fired: false, slot: null, reason: "disabled" };
+    }
+    await ensureDigestLogTable();
+
+    const dueSlot = opts?.forceSlot || currentDueSlot();
+    if (!dueSlot) {
+      return { fired: false, slot: null, reason: "no_slot_due" };
+    }
+
+    const todayEt = etDateString();
+    const memKey = `${todayEt}:${dueSlot}`;
+    if (memorySent[memKey]) {
+      return { fired: false, slot: dueSlot, reason: "already_sent_in_memory" };
+    }
+
+    const claim = await claimSlot(todayEt, dueSlot);
+    if (claim === null) {
+      console.warn(`[founder-digest] Skipping ${dueSlot} send — claim DB unavailable (failing closed). source=${source}`);
+      return { fired: false, slot: dueSlot, reason: "claim_db_unavailable" };
+    }
+    if (!claim) {
+      memorySent[memKey] = true;
+      return { fired: false, slot: dueSlot, reason: "already_sent" };
+    }
+
+    memorySent[memKey] = true;
+    const result = await sendFounderDigest({ reason: source, slot: dueSlot });
+    if (!result.sent && result.error !== "disabled") {
+      await releaseClaim(todayEt, dueSlot);
+      memorySent[memKey] = false;
+      return { fired: false, slot: dueSlot, reason: "send_failed", error: result.error, recipients: result.recipients };
+    }
+    return { fired: true, slot: dueSlot, reason: "sent", recipients: result.recipients };
+  } catch (err: any) {
+    console.log("[founder-digest] runDueDigestTick error:", err?.message);
+    return { fired: false, slot: null, reason: "exception", error: err?.message };
+  }
+}
+
 export function startFounderDigestTimer(intervalMs: number = 5 * 60 * 1000): void {
   if (digestInterval) clearInterval(digestInterval);
 
   // Lazy table creation; no-op if it already exists.
   ensureDigestLogTable().catch(() => {});
 
-  const tick = async () => {
-    try {
-      if (isDisabled()) return;
-      const todayEt = etDateString();
-      const hour = etHour();
-      // Determine which slot (if any) is currently due. We give each slot a
-      // 1-hour window so a missed boot still sends within that window.
-      let dueSlot: DigestSlot | null = null;
-      if (hour >= SLOT_MORNING_HOUR && hour < SLOT_MORNING_HOUR + 1) dueSlot = "morning";
-      else if (hour >= SLOT_AFTERNOON_HOUR && hour < SLOT_AFTERNOON_HOUR + 1) dueSlot = "afternoon";
-      if (!dueSlot) return;
-
-      const memKey = `${todayEt}:${dueSlot}`;
-      if (memorySent[memKey]) return;
-
-      // Atomically claim the slot in the DB. This is the authoritative dedup
-      // gate. Concurrent processes / restarts during the 1h window will lose
-      // the unique-constraint race and never get past this point.
-      const claim = await claimSlot(todayEt, dueSlot);
-      if (claim === null) {
-        // DB unhealthy — fail CLOSED to prevent flooding. Skip this tick;
-        // the next tick within the 1h window will retry the claim.
-        console.warn(`[founder-digest] Skipping ${dueSlot} send — claim DB unavailable (failing closed).`);
-        return;
-      }
-      if (!claim) {
-        // Lost the race or already sent today by another process.
-        memorySent[memKey] = true;
-        return;
-      }
-
-      memorySent[memKey] = true;
-      const result = await sendFounderDigest({ reason: "scheduled", slot: dueSlot });
-      if (!result.sent && result.error !== "disabled") {
-        // Delivery itself failed — release the claim so the next tick within
-        // the slot window can retry. Memory flag also cleared.
-        await releaseClaim(todayEt, dueSlot);
-        memorySent[memKey] = false;
-      }
-    } catch (err: any) {
-      console.log("[founder-digest] Timer error:", err?.message);
-    }
-  };
+  const tick = () => { runDueDigestTick({ source: "in_process_timer" }).catch(() => {}); };
 
   digestInterval = setInterval(tick, intervalMs);
   // Run a tick immediately on boot in case we boot inside a slot window.
-  tick().catch(() => {});
+  tick();
 
   console.log(
     `[founder-digest] Timer started — slots: morning ${SLOT_MORNING_HOUR}:00 ET, afternoon ${SLOT_AFTERNOON_HOUR}:00 ET ` +

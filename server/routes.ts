@@ -5,7 +5,7 @@ import { supabase, supabaseAdmin, supabaseForUser } from "./supabase";
 import { geocodeAddress, haversineDistance } from "./geocode";
 import { autoRouteNewLead } from "./lead-router";
 import { startEscalationTimer } from "./lead-escalation";
-import { startFounderDigestTimer, sendFounderDigest } from "./founder-digest";
+import { startFounderDigestTimer, sendFounderDigest, runDueDigestTick, currentDueSlot } from "./founder-digest";
 import { ingestPageView, getPageViewMetrics } from "./page-view-logger";
 import { sendNavigatorNotification, sendTrustedServiceLeadNotification, sendPartnerPaymentEmail } from "./lead-email";
 import { handleAiChat } from "./ai/engine";
@@ -2972,6 +2972,109 @@ export async function registerRoutes(
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // ----------------------------------------------------------------------
+  // Internal cron driver for the founder digest.
+  //
+  // Why this exists: Autoscale deployments suspend the Node process between
+  // requests, so the in-process setInterval cannot be relied on to fire at
+  // 8 AM / 4 PM ET. A Replit Scheduled Deployment hits this endpoint on a
+  // cron, which wakes the autoscaled process and triggers the same
+  // dedup-protected send path used by the in-process timer.
+  //
+  // Auth: requires header `x-admin-key: $ADMIN_KEY` (or `Authorization:
+  // Bearer $ADMIN_KEY`). Returns 401 otherwise. Constant-time compare.
+  //
+  // Safety: dedup is enforced by the unique (et_date, slot) row in
+  // `founder_digest_log`. It is therefore safe to call this endpoint
+  // arbitrarily often — only the first call inside each slot window will
+  // actually send. A safe operating mode is "fire hourly, all day".
+  //
+  // Query params (both optional):
+  //   ?slot=morning|afternoon  — bypass time-window check; use only for
+  //                               manual catch-ups, not for the scheduler.
+  //   ?dryRun=1                — return the slot decision without sending.
+  // ----------------------------------------------------------------------
+  function authorizeInternal(req: Request): boolean {
+    const expected = process.env.ADMIN_KEY;
+    if (!expected) return false;
+    const fromHeader = (req.headers["x-admin-key"] as string) || "";
+    const auth = (req.headers["authorization"] as string) || "";
+    const fromBearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    const provided = fromHeader || fromBearer || "";
+    // Always run a fixed-size timingSafeEqual against a buffer of the same
+    // length as the expected key, so callers cannot distinguish "wrong key"
+    // from "wrong-length key" via response timing. We pad/truncate the
+    // provided value into a buffer the same size as `expected` and then
+    // remember the length-mismatch as a separate boolean to return at the
+    // end (still constant-time relative to the secret content).
+    const expBuf = Buffer.from(expected, "utf8");
+    const provBuf = Buffer.alloc(expBuf.length);
+    Buffer.from(provided, "utf8").copy(provBuf, 0, 0, expBuf.length);
+    const sameContent = crypto.timingSafeEqual(expBuf, provBuf);
+    const sameLength = provided.length === expected.length;
+    return sameContent && sameLength;
+  }
+
+  app.post("/api/internal/digest/tick", async (req, res) => {
+    if (!authorizeInternal(req)) {
+      console.log("[founder-digest] /tick unauthorized request from", req.ip);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const dryRun = req.query.dryRun === "1" || req.query.dryRun === "true";
+    const slotParam = (req.query.slot as string | undefined)?.toLowerCase();
+    const forceSlot = slotParam === "morning" || slotParam === "afternoon" ? slotParam : undefined;
+
+    if (dryRun) {
+      const detected = forceSlot || currentDueSlot();
+      return res.json({
+        ok: true,
+        dryRun: true,
+        detectedSlot: detected,
+        wouldFire: !!detected,
+        nowEt: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+      });
+    }
+
+    const result = await runDueDigestTick({ source: "scheduled_cron", forceSlot });
+    console.log(`[founder-digest] /tick source=scheduled_cron slot=${result.slot ?? "none"} fired=${result.fired} reason=${result.reason}${result.error ? " err=" + result.error : ""}`);
+    // Always 200 — scheduler should not retry on "already_sent" / "no_slot_due".
+    return res.json({
+      ok: true,
+      fired: result.fired,
+      slot: result.slot,
+      reason: result.reason,
+      recipients: result.recipients,
+      error: result.error,
+      nowEt: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+    });
+  });
+
+  // GET variant for quick manual checks from a browser/curl. Same auth.
+  app.get("/api/internal/digest/status", async (req, res) => {
+    if (!authorizeInternal(req)) return res.status(401).json({ error: "Unauthorized" });
+    const todayRows = await pgQuery<any>(
+      `SELECT et_date, slot, status, sent_at, recipients, resend_id
+         FROM founder_digest_log
+        WHERE et_date >= (now() AT TIME ZONE 'America/New_York')::date - INTERVAL '2 days'
+        ORDER BY sent_at DESC, et_date DESC, slot`,
+      []
+    );
+    const queueRows = await pgQuery<any>(
+      `SELECT COUNT(*) FILTER (WHERE consumed_at IS NULL) AS pending,
+              COUNT(*) FILTER (WHERE consumed_at IS NOT NULL) AS consumed
+         FROM founder_digest_queue`,
+      []
+    );
+    res.json({
+      ok: true,
+      nowEt: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+      currentDueSlot: currentDueSlot(),
+      recentLog: todayRows,
+      queue: queueRows[0],
+      timerInProcess: true,
+    });
   });
 
   app.get("/api/admin/lead-eligibility", async (req, res) => {
