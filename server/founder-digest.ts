@@ -6,10 +6,93 @@
 import { Resend } from "resend";
 import { supabaseAdmin } from "./supabase";
 import { platform } from "../shared/platform";
+import { query as pgQuery } from "./pg-client";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || `${platform.name} <onboarding@resend.dev>`;
-const SEND_HOUR_ET = 8; // 8 AM Eastern
+
+// Two daily digest slots — morning + afternoon. Hours in America/New_York.
+const SLOT_MORNING_HOUR = 8;   // 8 AM ET
+const SLOT_AFTERNOON_HOUR = 16; // 4 PM ET
+type DigestSlot = "morning" | "afternoon";
+
+// Best-effort DB persistence so server restarts don't re-fire a slot that was
+// already sent today. Table is created lazily on first use; failures are
+// logged but never block the timer (fail-soft).
+async function ensureDigestLogTable(): Promise<void> {
+  try {
+    await pgQuery(
+      `CREATE TABLE IF NOT EXISTS founder_digest_log (
+         id           bigserial PRIMARY KEY,
+         et_date      date        NOT NULL,
+         slot         text        NOT NULL,
+         status       text        NOT NULL DEFAULT 'sent',
+         sent_at      timestamptz NOT NULL DEFAULT now(),
+         recipients   text,
+         resend_id    text,
+         UNIQUE (et_date, slot)
+       )`,
+      []
+    );
+    // Forward-compat: add status column if the table predates this fix.
+    await pgQuery(
+      `ALTER TABLE founder_digest_log ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'sent'`,
+      []
+    );
+  } catch (err: any) {
+    console.log("[founder-digest] ensureDigestLogTable:", err?.message);
+  }
+}
+
+// Atomic single-statement claim. Returns true ONLY if this caller inserted the
+// row (i.e., won the race). Concurrent boots / overlapping instances will lose
+// the conflict and skip the send. Returns null if the DB is unhealthy — caller
+// MUST treat that as "do not send" (fail-closed) to prevent flooding.
+async function claimSlot(etDate: string, slot: DigestSlot): Promise<boolean | null> {
+  try {
+    const rows = await pgQuery<{ id: number }>(
+      `INSERT INTO founder_digest_log (et_date, slot, status)
+         VALUES ($1::date, $2, 'claimed')
+         ON CONFLICT (et_date, slot) DO NOTHING
+         RETURNING id`,
+      [etDate, slot]
+    );
+    return rows.length > 0;
+  } catch (err: any) {
+    console.log("[founder-digest] claimSlot DB error (failing closed):", err?.message);
+    return null;
+  }
+}
+
+async function markSlotSent(etDate: string, slot: DigestSlot, recipients: string[], resendId: string | null): Promise<void> {
+  try {
+    await pgQuery(
+      `UPDATE founder_digest_log
+          SET status = 'sent',
+              sent_at = now(),
+              recipients = $3,
+              resend_id = $4
+        WHERE et_date = $1::date AND slot = $2`,
+      [etDate, slot, recipients.join(","), resendId]
+    );
+  } catch (err: any) {
+    console.log("[founder-digest] markSlotSent:", err?.message);
+  }
+}
+
+// Release a claimed-but-failed slot so the next tick can retry within the
+// 1-hour window. We only release rows still in "claimed" state — never
+// "sent" rows.
+async function releaseClaim(etDate: string, slot: DigestSlot): Promise<void> {
+  try {
+    await pgQuery(
+      `DELETE FROM founder_digest_log WHERE et_date = $1::date AND slot = $2 AND status = 'claimed'`,
+      [etDate, slot]
+    );
+  } catch (err: any) {
+    console.log("[founder-digest] releaseClaim:", err?.message);
+  }
+}
 
 function getRecipients(): string[] {
   const fromEnv = (process.env.FOUNDER_DIGEST_TO || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -437,7 +520,7 @@ function buildDigestHtml(d: DigestData): string {
 </body></html>`;
 }
 
-export async function sendFounderDigest(opts?: { reason?: string }): Promise<{ sent: boolean; recipients: string[]; error?: string }> {
+export async function sendFounderDigest(opts?: { reason?: string; slot?: DigestSlot }): Promise<{ sent: boolean; recipients: string[]; error?: string }> {
   if (isDisabled()) {
     console.log("[founder-digest] Disabled via FOUNDER_DIGEST_DISABLED=1");
     return { sent: false, recipients: [], error: "disabled" };
@@ -449,7 +532,8 @@ export async function sendFounderDigest(opts?: { reason?: string }): Promise<{ s
   try {
     const data = await assembleDigestData();
     const html = buildDigestHtml(data);
-    const subject = `${platform.name} Daily — ${data.yesterday.leadsTotal} leads · ${fmtUsd(data.yesterday.paymentsBilledAmount)} billed · ${data.alerts.filter(a => a.level === "red").length} red alerts`;
+    const slotLabel = opts?.slot === "afternoon" ? "Afternoon" : opts?.slot === "morning" ? "Morning" : "Update";
+    const subject = `${platform.name} ${slotLabel} — ${data.yesterday.leadsTotal} leads · ${fmtUsd(data.yesterday.paymentsBilledAmount)} billed · ${data.alerts.filter(a => a.level === "red").length} red alerts`;
     const { data: sent, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: recipients,
@@ -460,7 +544,11 @@ export async function sendFounderDigest(opts?: { reason?: string }): Promise<{ s
       console.log("[founder-digest] Send failed:", error.message);
       return { sent: false, recipients, error: error.message };
     }
-    console.log(`[founder-digest] Sent (${opts?.reason || "scheduled"}) to ${recipients.join(", ")} — id=${sent?.id}`);
+    console.log(`[founder-digest] Sent (${opts?.reason || "scheduled"}/${opts?.slot || "n/a"}) to ${recipients.join(", ")} — id=${sent?.id}`);
+    if (opts?.slot) {
+      // Slot was already claimed by the timer prior to send; just upgrade to 'sent'.
+      await markSlotSent(etDateString(), opts.slot, recipients, sent?.id || null);
+    }
     return { sent: true, recipients };
   } catch (err: any) {
     console.log("[founder-digest] Error:", err?.message);
@@ -469,29 +557,68 @@ export async function sendFounderDigest(opts?: { reason?: string }): Promise<{ s
 }
 
 let digestInterval: ReturnType<typeof setInterval> | null = null;
-let lastSentEtDate: string | null = null;
+// In-memory dedup as a fast-path; DB row in `founder_digest_log` is the
+// authoritative cross-restart guard.
+const memorySent: Record<string, boolean> = {};
 
 export function startFounderDigestTimer(intervalMs: number = 5 * 60 * 1000): void {
   if (digestInterval) clearInterval(digestInterval);
-  digestInterval = setInterval(async () => {
+
+  // Lazy table creation; no-op if it already exists.
+  ensureDigestLogTable().catch(() => {});
+
+  const tick = async () => {
     try {
       if (isDisabled()) return;
       const todayEt = etDateString();
-      if (lastSentEtDate === todayEt) return;
       const hour = etHour();
-      if (hour < SEND_HOUR_ET) return;
-      // Fire once and mark date so we don't fire again today
-      lastSentEtDate = todayEt;
-      const result = await sendFounderDigest({ reason: "scheduled" });
+      // Determine which slot (if any) is currently due. We give each slot a
+      // 1-hour window so a missed boot still sends within that window.
+      let dueSlot: DigestSlot | null = null;
+      if (hour >= SLOT_MORNING_HOUR && hour < SLOT_MORNING_HOUR + 1) dueSlot = "morning";
+      else if (hour >= SLOT_AFTERNOON_HOUR && hour < SLOT_AFTERNOON_HOUR + 1) dueSlot = "afternoon";
+      if (!dueSlot) return;
+
+      const memKey = `${todayEt}:${dueSlot}`;
+      if (memorySent[memKey]) return;
+
+      // Atomically claim the slot in the DB. This is the authoritative dedup
+      // gate. Concurrent processes / restarts during the 1h window will lose
+      // the unique-constraint race and never get past this point.
+      const claim = await claimSlot(todayEt, dueSlot);
+      if (claim === null) {
+        // DB unhealthy — fail CLOSED to prevent flooding. Skip this tick;
+        // the next tick within the 1h window will retry the claim.
+        console.warn(`[founder-digest] Skipping ${dueSlot} send — claim DB unavailable (failing closed).`);
+        return;
+      }
+      if (!claim) {
+        // Lost the race or already sent today by another process.
+        memorySent[memKey] = true;
+        return;
+      }
+
+      memorySent[memKey] = true;
+      const result = await sendFounderDigest({ reason: "scheduled", slot: dueSlot });
       if (!result.sent && result.error !== "disabled") {
-        // If it failed, allow a retry on next tick
-        lastSentEtDate = null;
+        // Delivery itself failed — release the claim so the next tick within
+        // the slot window can retry. Memory flag also cleared.
+        await releaseClaim(todayEt, dueSlot);
+        memorySent[memKey] = false;
       }
     } catch (err: any) {
       console.log("[founder-digest] Timer error:", err?.message);
     }
-  }, intervalMs);
-  console.log(`[founder-digest] Timer started — fires daily at ${SEND_HOUR_ET}:00 ET (kill: FOUNDER_DIGEST_DISABLED=1)`);
+  };
+
+  digestInterval = setInterval(tick, intervalMs);
+  // Run a tick immediately on boot in case we boot inside a slot window.
+  tick().catch(() => {});
+
+  console.log(
+    `[founder-digest] Timer started — slots: morning ${SLOT_MORNING_HOUR}:00 ET, afternoon ${SLOT_AFTERNOON_HOUR}:00 ET ` +
+    `(persisted dedup; kill: FOUNDER_DIGEST_DISABLED=1)`
+  );
 }
 
 export function stopFounderDigestTimer(): void {

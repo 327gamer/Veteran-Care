@@ -180,6 +180,16 @@ function rateLimitOk(ip: string) {
 }
 
 export function registerContactRoute(app: Express) {
+  // Loud startup warning when sandbox sender is in use — this is the #1 reason
+  // admin notifications never arrive.
+  if (/onboarding@resend\.dev/i.test(FROM_EMAIL)) {
+    console.warn(
+      "[contact] WARNING: RESEND_FROM_EMAIL is unset/sandbox. " +
+      `Outbound mail to ${CONTACT_INBOX} (admin inbox) will silently fail. ` +
+      "Verify a domain in Resend and set RESEND_FROM_EMAIL to a verified address."
+    );
+  }
+
   app.get("/api/contact/subjects", (_req, res) => res.json({ subjects: ALLOWED_SUBJECTS }));
 
   app.post("/api/contact", async (req: Request, res: Response) => {
@@ -213,16 +223,25 @@ export function registerContactRoute(app: Express) {
 
       const userSuppressedReply = await isSuppressed(input.email, "request_reply");
 
-      const userResult = userSuppressedReply ? null : await resend.emails.send({
-        from: FROM_EMAIL,
-        to: input.email,
-        subject: triage.navigatorReply
-          ? `Re: ${input.subject} — ${platform.ai.assistantName} reply`
-          : `We received your message — ${platform.name}`,
-        html: userHtml,
-        replyTo: CONTACT_INBOX,
-        headers: brandedListUnsubscribeHeaders(input.email),
-      } as any).catch((e) => { console.warn("[contact] user reply failed:", e?.message); return null; });
+      const userSendRes = userSuppressedReply
+        ? { data: null, error: null as any }
+        : await resend.emails.send({
+            from: FROM_EMAIL,
+            to: input.email,
+            subject: triage.navigatorReply
+              ? `Re: ${input.subject} — ${platform.ai.assistantName} reply`
+              : `We received your message — ${platform.name}`,
+            html: userHtml,
+            replyTo: CONTACT_INBOX,
+            headers: brandedListUnsubscribeHeaders(input.email),
+          } as any).catch((e) => {
+            console.warn("[contact] user reply threw:", e?.message);
+            return { data: null, error: { message: e?.message || "send threw" } as any };
+          });
+
+      if ((userSendRes as any)?.error) {
+        console.warn("[contact] user reply rejected by Resend:", (userSendRes as any).error?.message || (userSendRes as any).error);
+      }
 
       // 2) Branded internal team notification (always sends; transactional)
       const teamRecipients = triage.shouldEscalate && FOUNDER_INBOX !== CONTACT_INBOX
@@ -241,8 +260,7 @@ export function registerContactRoute(app: Express) {
         ],
       });
 
-      let teamSendError: any = null;
-      const teamResult = await resend.emails.send({
+      const teamSendRes = await resend.emails.send({
         from: FROM_EMAIL,
         to: teamRecipients,
         subject: triage.shouldEscalate
@@ -250,11 +268,35 @@ export function registerContactRoute(app: Express) {
           : `[auto-handled] ${input.subject} — ${input.name}`,
         html: teamHtml,
         replyTo: input.email,
-      }).catch((e) => { teamSendError = e; console.error("[contact] team notify failed:", e?.message); return null; });
+      }).catch((e) => {
+        console.error("[contact] team notify threw:", e?.message);
+        return { data: null, error: { message: e?.message || "send threw" } as any };
+      });
 
-      console.log(`[contact] from=${input.email} subject="${input.subject}" escalated=${triage.shouldEscalate} reason="${triage.reason}" suppressed_user=${userSuppressedReply} user_id=${(userResult as any)?.data?.id || "n/a"} team_id=${(teamResult as any)?.data?.id || "n/a"}`);
+      // Resend's API returns { data, error } even on rejection — must inspect both.
+      const teamErr = (teamSendRes as any)?.error;
+      const teamId = (teamSendRes as any)?.data?.id;
+      const userId = (userSendRes as any)?.data?.id;
 
-      if (teamSendError || !teamResult) {
+      console.log(
+        `[contact] from=${input.email} subject="${input.subject}" escalated=${triage.shouldEscalate} ` +
+        `reason="${triage.reason}" suppressed_user=${userSuppressedReply} ` +
+        `user_id=${userId || "n/a"} team_id=${teamId || "n/a"} ` +
+        `team_recipients="${teamRecipients.join(",")}" ` +
+        `team_error="${teamErr ? (teamErr.message || JSON.stringify(teamErr)) : "none"}"`
+      );
+
+      if (teamErr || !teamId) {
+        // Loudly surface the most common cause so it's debuggable from logs.
+        const fromIsSandbox = /onboarding@resend\.dev/i.test(FROM_EMAIL);
+        if (fromIsSandbox) {
+          console.error(
+            "[contact] CRITICAL: RESEND_FROM_EMAIL is unset or set to the resend.dev sandbox. " +
+            "Sandbox sends are restricted to the Resend account owner only — admin notifications " +
+            `to ${CONTACT_INBOX} will silently fail. Verify a domain in Resend and set ` +
+            "RESEND_FROM_EMAIL to e.g. \"Veteran Care <noreply@veterancare.com>\"."
+          );
+        }
         return res.status(502).json({
           error: "Could not deliver your message right now. Please try again in a few minutes or email info@VeteranCare.com directly.",
         });
