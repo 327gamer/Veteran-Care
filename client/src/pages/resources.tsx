@@ -602,6 +602,31 @@ export default function Resources() {
     setLocation("/resources");
   };
 
+  // Quick-chip handler: toggles a category while preserving the current
+  // location context (Near Me / State / City). Reuses the same selectedSlug
+  // pipeline as the full category list so filtering, sponsored ranking, and
+  // city-first/state-fallback all behave identically.
+  const QUICK_CHIPS: Array<{ label: string; slug: string }> = [
+    { label: "Food", slug: "food-assistance" },
+    { label: "Housing", slug: "housing" },
+    { label: "Benefits", slug: "va-benefits" },
+    { label: "Healthcare", slug: "healthcare" },
+    { label: "Jobs", slug: "employment" },
+    { label: "Mental Health", slug: "mental-health" },
+  ];
+  const toggleChipCategory = (slug: string) => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedSlug === slug) {
+      params.delete("category");
+      trackEvent("chip_deselect", { category: slug });
+    } else {
+      params.set("category", slug);
+      trackEvent("chip_select", { category: slug, mode: locationMode });
+    }
+    const qs = params.toString();
+    setLocation(qs ? `/resources?${qs}` : "/resources");
+  };
+
   const clearAllFilters = () => {
     setLocationMode("national");
     setSelectedState("");
@@ -760,6 +785,33 @@ export default function Resources() {
             <X className="h-4 w-4" />
           </button>
         )}
+      </div>
+
+      {/* Quick category chips — Phase 1: six high-intent shortcuts. Behavior
+          mirrors selecting a category from the full list, so it inherits
+          Near Me / State / City + city-first/state-fallback logic. */}
+      <div
+        className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1"
+        data-testid="row-quick-chips"
+      >
+        {QUICK_CHIPS.map((chip) => {
+          const active = selectedSlug === chip.slug;
+          return (
+            <button
+              key={chip.slug}
+              type="button"
+              onClick={() => toggleChipCategory(chip.slug)}
+              data-testid={`chip-${chip.slug}`}
+              className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
+                active
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-foreground border-border hover:bg-muted"
+              }`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
       </div>
 
       {(selectedSlug || locationMode === "nearme" || locationMode === "city" || locationMode === "state") ? (
