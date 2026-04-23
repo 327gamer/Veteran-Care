@@ -42,7 +42,7 @@ export default function HowItWorks() {
       <MenuPageHero
         testIdPrefix="how"
         eyebrow="How It Works"
-        title={["Help In", "Four Steps"]}
+        title={["Help In", "4 Easy Steps"]}
         subtitle="Veteran Care removes the friction."
         detail="No more hunting through outdated directories or jumping between dozens of websites."
       />
