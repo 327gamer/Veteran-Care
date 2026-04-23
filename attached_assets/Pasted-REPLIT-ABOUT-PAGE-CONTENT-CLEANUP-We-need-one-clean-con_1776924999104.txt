@@ -1,0 +1,77 @@
+REPLIT — ABOUT PAGE CONTENT CLEANUP
+
+We need one clean content cleanup pass on the About Veteran Care page.
+
+==================================================
+REMOVE THESE TWO SECTIONS COMPLETELY
+==================================================
+
+Please remove these sections from the About page:
+
+1. "Why we're different"
+   - remove the full section
+   - remove both comparison cards:
+     - "The old way"
+     - "The Veteran Care way"
+
+2. "Why trust us"
+   - remove the full section
+   - remove all cards beneath it, including:
+     - "Built from real-world experience"
+     - "Quality, speed, accuracy"
+     - "The human side of getting help"
+
+==================================================
+WHY
+==================================================
+
+These sections now feel repetitive.
+The page is repeating the same ideas too many times.
+
+We already communicate:
+- who we are
+- what Veteran Care does
+- our mission
+- our AI-powered platform
+- our support categories
+- the emotional message
+- the video / proof section
+
+Because of that, these two extra sections are making the page feel longer and more repetitive instead of stronger.
+
+==================================================
+IMPORTANT
+==================================================
+
+Remove ONLY those sections.
+
+KEEP EVERYTHING ELSE exactly as it is:
+- logo/top structure
+- hero
+- video section
+- quote
+- mission section
+- any remaining content
+- buttons / CTA
+- styling / spacing rhythm
+
+After removing those sections, make sure spacing closes up naturally so the page still flows cleanly and feels intentional.
+
+No awkward blank gaps where those sections used to be.
+
+==================================================
+GOAL
+==================================================
+
+Make the About page:
+- cleaner
+- tighter
+- less repetitive
+- more premium
+- more confident
+
+==================================================
+AFTER COMPLETE
+==================================================
+
+Publish / Republish so live site updates.

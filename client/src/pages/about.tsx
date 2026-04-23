@@ -13,12 +13,9 @@ import {
   Users,
   ArrowRight,
   Layers,
-  Zap,
-  HandHeart,
   Calendar,
   Globe,
   CheckCircle2,
-  XCircle,
 } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
@@ -31,21 +28,6 @@ const TRUST_TILES = [
   { icon: ShieldCheck, label: "Trusted Partner Network", sub: "Vetted, veteran-friendly providers" },
   { icon: Calendar, label: "Supporting Veterans Since 2020", sub: "Real-world veteran experience" },
   { icon: Globe, label: "Expanding Nationwide", sub: "SC & NC live · more launching" },
-];
-
-const DIFFERENTIATORS_OUT = [
-  "Outdated PDFs",
-  "Endless searching",
-  "Broken links",
-  "One-size-fits-all directories",
-  "Disconnected categories",
-];
-const DIFFERENTIATORS_IN = [
-  "Smart location matching",
-  "AI-guided support",
-  "One platform across categories",
-  "Mobile-first modern experience",
-  "Verified, current resources",
 ];
 
 const PILLARS = [
@@ -197,50 +179,6 @@ export default function About() {
         </Card>
       </section>
 
-      {/* ── WHY WE'RE DIFFERENT ── */}
-      <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-5 py-12 max-w-5xl">
-          <div className="text-center mb-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">The difference</p>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-              Why we're different
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-destructive/20" data-testid="card-old-way">
-              <CardContent className="pt-6">
-                <h3 className="font-heading font-bold text-base text-destructive mb-3 flex items-center gap-2">
-                  <XCircle className="h-5 w-5" /> The old way
-                </h3>
-                <ul className="space-y-2.5">
-                  {DIFFERENTIATORS_OUT.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-foreground/75" data-testid={`text-old-${i}`}>
-                      <XCircle className="h-4 w-4 text-destructive/60 mt-0.5 shrink-0" />
-                      <span>{d}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-            <Card className="border-accent/40" data-testid="card-veteran-care-way">
-              <CardContent className="pt-6">
-                <h3 className="font-heading font-bold text-base text-primary mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-accent" /> The Veteran Care way
-                </h3>
-                <ul className="space-y-2.5">
-                  {DIFFERENTIATORS_IN.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-foreground/85 font-medium" data-testid={`text-new-${i}`}>
-                      <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-                      <span>{d}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* ── WHAT WE COVER ── */}
       <section className="container mx-auto px-5 py-12 max-w-5xl">
         <div className="text-center mb-8">
@@ -285,38 +223,6 @@ export default function About() {
             </div>
           </CardContent>
         </Card>
-      </section>
-
-      {/* ── WHY TRUST US ── */}
-      <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-5 py-12 max-w-5xl">
-          <div className="text-center mb-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Confidence</p>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-              Why trust us
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { icon: HandHeart, title: "Built from real-world experience", desc: "Created by people who have lived the veteran support journey from the inside." },
-              { icon: Zap, title: "Quality, speed, accuracy", desc: "Verified resources, refreshed regularly, served through a fast modern interface." },
-              { icon: Heart, title: "The human side of getting help", desc: "Designed with empathy — because veterans and families deserve dignity, not bureaucracy." },
-            ].map((t, i) => {
-              const Icon = t.icon;
-              return (
-                <Card key={i} data-testid={`card-trust-${i}`}>
-                  <CardContent className="pt-6">
-                    <div className="h-10 w-10 rounded-full bg-accent/15 text-accent flex items-center justify-center mb-3">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="font-heading font-semibold text-primary mb-1.5">{t.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
       </section>
 
       {/* ── PREMIUM CTA ── */}
