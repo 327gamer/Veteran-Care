@@ -1,0 +1,142 @@
+ABOUT PAGE – FINAL PRECISION PASS
+
+Strong progress overall, but the About page still needs one final premium cleanup pass. Please complete ALL items below in one update.
+
+GOAL:
+Make this page feel polished, premium, trustworthy, modern, and visually consistent with the homepage + approved landing pages.
+
+==================================================
+1. HERO SECTION REBUILD (TOP OF PAGE)
+==================================================
+
+Use this exact structure:
+
+WHITE SECTION TOP:
+- Large premium Veteran Care dog-tag logo on white background
+- Same presentation/look as homepage logo
+- Centered
+- Strong spacing above and below logo
+
+GREEN HERO SECTION BELOW:
+- ABOUT VETERAN CARE
+- ALL WHITE TEXT (remove gold/yellow text completely)
+- Bold premium headline
+- Strong centered hierarchy
+- Supporting subheadline beneath:
+America’s modern, AI-powered veteran support platform.
+
+Logo should NOT float inside green hero.
+White logo section first, then green hero below it.
+
+==================================================
+2. TRUST CARDS / FIVE BOXES
+==================================================
+
+Current cards still feel too tight / too close to hero.
+
+Please fix:
+
+- Move all five cards lower with breathing room
+- No collision or touching green hero
+- Clear separation from hero section
+- Equal spacing between all cards
+
+Use symmetrical layout:
+
+Row 1 = 2 cards
+Row 2 = 2 cards
+Row 3 = 1 centered card perfectly
+
+Bottom single card must be centered exactly.
+
+Change wording:
+
+Supporting Veterans Since 2020
+
+==================================================
+3. VIDEO SECTION – UNIVERSAL RULE (MANDATORY)
+==================================================
+
+The About page video is still not matching the approved landing-page system.
+
+DO NOT create a custom wrapper.
+
+Use the EXACT same video component / CSS / behavior used on:
+
+- Homepage approved videos
+- Ambassador landing pages
+- Existing portrait campaign pages
+
+Requirements:
+
+- Portrait-friendly phone-style presentation
+- Proper fit inside container
+- No side gaps
+- No dead black bars
+- Clean rounded container
+- Native fullscreen expand / minimize controls
+- Tap-to-play behavior
+- Same responsive mobile behavior
+- Same premium spacing top and bottom
+
+This was already solved elsewhere.
+Reuse exact system only.
+
+==================================================
+4. QUOTE SECTION SPACING
+==================================================
+
+Current quote sits too low after the video with too much dead white space.
+
+Please tighten layout rhythm.
+
+Fix:
+
+- Move quote upward significantly
+- Quote should feel emotionally connected to the video
+- Then balanced spacing below quote before mission card
+
+Desired flow:
+
+[Video]
+small clean gap
+“When life gets complicated, getting help shouldn’t be.”
+balanced gap
+[Mission Card]
+
+==================================================
+5. MISSION CARD POLISH
+==================================================
+
+Keep patriotic / service tone.
+
+Headline:
+Our Mission
+
+Keep wording around:
+
+Supporting veterans since 2020, we are committed to serving those who served our nation — with respect, urgency, gratitude, trusted guidance, quality, speed, and accuracy.
+
+Should feel honorable, warm, professional.
+
+==================================================
+6. FINAL DESIGN STANDARD
+==================================================
+
+This page should feel like:
+
+- Premium national brand
+- Trusted veteran platform
+- Emotionally strong
+- Clean military professionalism
+- Modern AI-powered company
+- Symmetrical and polished
+- Mobile-first excellence
+
+==================================================
+7. IMPORTANT
+==================================================
+
+Please do all fixes in ONE clean pass so we stop revisiting this page repeatedly.
+
+Once About page is locked, next focus is Homepage Final Conversion Pass.
