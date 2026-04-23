@@ -269,9 +269,9 @@ export default function Layout({ children, fullBleed }: LayoutProps) {
               className="text-primary-foreground bg-white/10 hover:bg-white/20 rounded-full h-10 w-10 border border-white/5"
               onClick={() => {
                 if (window.location.pathname === "/resources") {
-                  window.location.href = "/resources?mode=nearme";
+                  window.location.href = "/near-me";
                 } else {
-                  setLocation("/resources?mode=nearme");
+                  setLocation("/near-me");
                 }
               }}
               data-testid="button-location-top"
