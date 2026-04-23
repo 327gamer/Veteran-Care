@@ -55,11 +55,21 @@ const ABOUT_PHASE_7_2_VIDEO: CampaignVideo | null = {
   aspectRatio: 9 / 16,
 };
 
+const CASE_MANAGERS_MENU_VIDEO: CampaignVideo | null = {
+  src: "/videos/case-managers-menu.mov",
+  title: "Veteran Care for Case Managers",
+  caption:
+    "How professionals use Veteran Care to connect veterans, families, and dependents to trusted local resources.",
+  // Portrait 9:16 (1080x1920) — same shape as the other phase videos.
+  aspectRatio: 9 / 16,
+};
+
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
   veteran: VETERANS_PHASE_1_VIDEO,
   general: VETERANS_PHASE_1_VIDEO,
   homepage: VETERANS_PHASE_1_VIDEO,
   case_manager: CASE_MANAGER_PHASE_2_VIDEO,
+  case_managers_menu: CASE_MANAGERS_MENU_VIDEO,
   partner: PARTNER_PHASE_3_VIDEO,
   about: ABOUT_PHASE_7_2_VIDEO,
 };

@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Briefcase, MapPin, Search, Clock, ShieldCheck, ArrowRight, CheckCircle2 } from "lucide-react";
 import MenuPageHero from "@/components/menu-page-hero";
+import CampaignHeroVideo from "@/components/campaign-hero-video";
+import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
+import { platform } from "@shared/platform";
 
 const USE_CASES = [
   { icon: Search, title: "Resource lookup by geography", desc: "Find programs by city, county, or state without manually combing through PDFs and out-of-date directories." },
@@ -26,6 +29,29 @@ export default function CaseManagers() {
         subtitle="A professional tool for connecting veteran clients to the right resources — fast."
         detail="Search by geography, surface verified programs, and skip the directory-hunting."
       />
+
+      {/* ── VIDEO SHOWCASE ──
+          Same green-band format used on the About page so menu pages
+          share one unified video presentation system. */}
+      <section className="relative bg-primary overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
+        <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 sm:pt-14 sm:pb-16 max-w-lg mx-auto">
+          <CampaignHeroVideo
+            audience="case_managers_menu"
+            fallbackLogo={logoImg}
+            platformName={platform.name}
+          />
+          <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-2">
+            Watch
+          </p>
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+            Veteran Care for Case Managers
+          </h2>
+          <p className="text-sm sm:text-base text-white/85 mt-3 max-w-xl mx-auto leading-relaxed">
+            See how professionals use Veteran Care to connect the people they serve to trusted local resources.
+          </p>
+        </div>
+      </section>
 
       {/* Use cases */}
       <section className="container mx-auto px-4 py-12 max-w-5xl">
