@@ -28,7 +28,7 @@ const TRUST_TILES = [
   { icon: Layers, label: "17 Support Categories", sub: "Across veterans, families & caregivers" },
   { icon: Sparkles, label: "AI-Powered Navigator", sub: "Guided help, 24/7" },
   { icon: ShieldCheck, label: "Trusted Partner Network", sub: "Vetted, veteran-friendly providers" },
-  { icon: Calendar, label: "Built Since 2020", sub: "Real-world veteran experience" },
+  { icon: Calendar, label: "Supporting Veterans Since 2020", sub: "Real-world veteran experience" },
   { icon: Globe, label: "Expanding Nationwide", sub: "SC & NC live · more launching" },
 ];
 
@@ -99,31 +99,32 @@ export default function About() {
     <div className="bg-background min-h-full pb-20" data-testid="page-about">
       {/* ── HERO ── */}
       <section className="bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="container mx-auto px-5 py-14 sm:py-20 max-w-5xl">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-16 w-16 rounded-md bg-white p-1.5 shadow-sm flex items-center justify-center shrink-0">
-              <img src={logoImg} alt="Veteran Care" className="h-full w-full object-contain" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70">About</p>
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold leading-tight" data-testid="text-about-title">
-                Veteran Care
-              </h1>
-            </div>
-          </div>
-          <p className="text-lg sm:text-2xl text-primary-foreground/95 leading-snug max-w-3xl font-medium">
+        <div className="container mx-auto px-5 pt-14 pb-20 sm:pt-20 sm:pb-28 max-w-5xl text-center">
+          <img
+            src={logoImg}
+            alt="Veteran Care"
+            className="h-40 sm:h-52 w-auto object-contain mx-auto mb-7 drop-shadow-lg"
+            data-testid="img-about-hero-logo"
+          />
+          <h1
+            className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight uppercase"
+            data-testid="text-about-title"
+          >
+            About <span className="text-accent">Veteran Care</span>
+          </h1>
+          <p className="text-lg sm:text-2xl text-primary-foreground/95 leading-snug max-w-3xl mx-auto mt-6 font-medium">
             America's modern, AI-powered veteran support platform.
           </p>
-          <p className="text-base sm:text-lg text-primary-foreground/85 leading-relaxed max-w-3xl mt-3">
-            We're redefining how veterans, families, and caregivers find support —
+          <p className="text-base sm:text-lg text-primary-foreground/85 leading-relaxed max-w-3xl mx-auto mt-3">
+            Redefining how veterans, families, and caregivers find support —
             faster, smarter, and all in one place.
           </p>
         </div>
       </section>
 
       {/* ── TRUST / SCALE / PROOF TILES ── */}
-      <section className="container mx-auto px-5 -mt-8 max-w-5xl relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3" data-testid="grid-trust-tiles">
+      <section className="container mx-auto px-5 -mt-12 sm:-mt-14 max-w-5xl relative z-10 mb-2">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4" data-testid="grid-trust-tiles">
           {TRUST_TILES.map((t, i) => {
             const Icon = t.icon;
             return (
@@ -143,9 +144,9 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── VIDEO — Why People Are Talking About Veteran Care ── */}
-      <section className="container mx-auto px-5 pt-12 pb-2 max-w-5xl">
-        <div className="text-center mb-6">
+      {/* ── VIDEO — same universal portrait container as homepage / ambassador pages ── */}
+      <section className="container mx-auto px-5 pt-10 pb-6 max-w-5xl">
+        <div className="text-center mb-5">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Watch</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
             Why People Are Talking About Veteran Care
@@ -162,7 +163,7 @@ export default function About() {
       </section>
 
       {/* ── EMOTIONAL IMPACT LINE ── */}
-      <section className="container mx-auto px-5 py-12 max-w-3xl">
+      <section className="container mx-auto px-5 pt-2 pb-10 max-w-3xl">
         <div className="text-center" data-testid="text-emotional-impact">
           <p className="font-heading text-2xl sm:text-3xl text-primary leading-snug italic font-semibold">
             "When life gets complicated, getting help shouldn't be."
@@ -177,14 +178,19 @@ export default function About() {
           <CardContent className="pt-7 pb-7">
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mb-3">Our mission</h2>
             <p className="text-base sm:text-lg text-foreground/85 leading-relaxed mb-4">
-              Veteran Care is a one-stop resource platform that connects veterans, spouses,
-              dependents, caregivers, and the professionals who serve them to the right help —
-              quickly and without friction.
+              <span className="font-semibold text-primary">Supporting veterans since 2020</span>,
+              we are committed to serving those who served our nation — with respect, urgency,
+              gratitude, and trusted guidance.
+            </p>
+            <p className="text-base text-foreground/85 leading-relaxed mb-4">
+              Every veteran, spouse, dependent, and caregiver deserves clear answers and real
+              help — not paperwork mazes or dead-end phone trees. We honor service by delivering
+              speed, accuracy, and a steady hand at every step.
             </p>
             <p className="text-base text-foreground/80 leading-relaxed">
-              <span className="font-semibold text-primary">Built since 2020 with real-world
-              veteran support experience</span>, we focus on quality, speed, accuracy, and the
-              human side of getting help.
+              From the first search to the right resource, our mission is simple:
+              <span className="font-semibold text-primary"> connect those who served to the
+              support they've earned</span> — quickly, respectfully, and without friction.
             </p>
           </CardContent>
         </Card>
