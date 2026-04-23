@@ -602,26 +602,53 @@ export default function Resources() {
     setLocation("/resources");
   };
 
-  // Quick-chip handler: toggles a category while preserving the current
-  // location context (Near Me / State / City). Reuses the same selectedSlug
-  // pipeline as the full category list so filtering, sponsored ranking, and
-  // city-first/state-fallback all behave identically.
-  const QUICK_CHIPS: Array<{ label: string; slug: string }> = [
+  // Quick-chip handlers. Row 1 = six high-intent categories that toggle the
+  // selectedSlug pipeline IN PLACE (preserving Near Me / State / City context
+  // and inheriting city-first/state-fallback ranking). Row 2 mixes inline
+  // categories with two navigation chips (Discounts, Services) that route to
+  // the trusted-services hub. Slugs MUST match canonical category slugs from
+  // /api/categories — earlier mismatch (housing vs housing-home, va-benefits
+  // vs benefits-assistance, employment vs employment-support) caused chips to
+  // silently no-op because the URL effect could not resolve them in the
+  // categories list, even though the server side accepted them via legacy
+  // mapping.
+  type QuickChip = { label: string; slug: string; route?: string };
+  const QUICK_CHIPS_ROW1: QuickChip[] = [
     { label: "Food", slug: "food-assistance" },
-    { label: "Housing", slug: "housing" },
-    { label: "Benefits", slug: "va-benefits" },
+    { label: "Housing", slug: "housing-home" },
+    { label: "Benefits", slug: "benefits-assistance" },
     { label: "Healthcare", slug: "healthcare" },
-    { label: "Jobs", slug: "employment" },
+    { label: "Jobs", slug: "employment-support" },
     { label: "Mental Health", slug: "mental-health" },
   ];
-  const toggleChipCategory = (slug: string) => {
+  const QUICK_CHIPS_ROW2: QuickChip[] = [
+    { label: "Discounts", slug: "discounts", route: "/discounts" },
+    { label: "Services", slug: "services", route: "/discounts" },
+    { label: "Legal", slug: "legal-services" },
+    { label: "Education", slug: "education-training" },
+    { label: "Family Support", slug: "family-support" },
+    { label: "Transportation", slug: "transportation" },
+  ];
+  const handleChipTap = (chip: QuickChip) => {
+    const ctx = {
+      chip_name: chip.label,
+      slug: chip.slug,
+      location_mode: locationMode,
+      state: selectedState || "",
+      city: cityFilter || "",
+    };
+    if (chip.route) {
+      trackEvent("chip_click", { ...ctx, action: "navigate", route: chip.route });
+      setLocation(chip.route);
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
-    if (selectedSlug === slug) {
+    if (selectedSlug === chip.slug) {
       params.delete("category");
-      trackEvent("chip_deselect", { category: slug });
+      trackEvent("chip_click", { ...ctx, action: "deselect" });
     } else {
-      params.set("category", slug);
-      trackEvent("chip_select", { category: slug, mode: locationMode });
+      params.set("category", chip.slug);
+      trackEvent("chip_click", { ...ctx, action: "select" });
     }
     const qs = params.toString();
     setLocation(qs ? `/resources?${qs}` : "/resources");
@@ -787,31 +814,59 @@ export default function Resources() {
         )}
       </div>
 
-      {/* Quick category chips — Phase 1: six high-intent shortcuts. Behavior
-          mirrors selecting a category from the full list, so it inherits
-          Near Me / State / City + city-first/state-fallback logic. */}
-      <div
-        className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1"
-        data-testid="row-quick-chips"
-      >
-        {QUICK_CHIPS.map((chip) => {
-          const active = selectedSlug === chip.slug;
-          return (
-            <button
-              key={chip.slug}
-              type="button"
-              onClick={() => toggleChipCategory(chip.slug)}
-              data-testid={`chip-${chip.slug}`}
-              className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
-                active
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-foreground border-border hover:bg-muted"
-              }`}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
+      {/* Quick category chips — two compact rows of high-intent shortcuts.
+          Row 1 are the strongest aid categories; row 2 mixes monetizable hubs
+          (Discounts, Services) with high-volume support categories. Tapping
+          a category chip toggles it in place; tapping a route chip navigates
+          to the dedicated hub. All behavior reuses the existing selectedSlug
+          pipeline so location filtering is preserved. */}
+      <div className="space-y-2">
+        <div
+          className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-0.5"
+          data-testid="row-quick-chips"
+        >
+          {QUICK_CHIPS_ROW1.map((chip) => {
+            const active = !chip.route && selectedSlug === chip.slug;
+            return (
+              <button
+                key={chip.slug}
+                type="button"
+                onClick={() => handleChipTap(chip)}
+                data-testid={`chip-${chip.slug}`}
+                className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition-colors whitespace-nowrap touch-manipulation ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-foreground border-border hover:bg-muted active:bg-muted"
+                }`}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+        <div
+          className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-0.5"
+          data-testid="row-quick-chips-2"
+        >
+          {QUICK_CHIPS_ROW2.map((chip) => {
+            const active = !chip.route && selectedSlug === chip.slug;
+            return (
+              <button
+                key={chip.slug}
+                type="button"
+                onClick={() => handleChipTap(chip)}
+                data-testid={`chip-${chip.slug}`}
+                className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-medium border transition-colors whitespace-nowrap touch-manipulation ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border/70 hover:bg-muted active:bg-muted"
+                }`}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {(selectedSlug || locationMode === "nearme" || locationMode === "city" || locationMode === "state") ? (

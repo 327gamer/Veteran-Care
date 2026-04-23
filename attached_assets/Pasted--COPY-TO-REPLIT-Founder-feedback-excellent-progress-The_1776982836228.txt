@@ -1,0 +1,105 @@
+--- COPY TO REPLIT ---
+
+Founder feedback: excellent progress. The quick chips under the Near You search bar are a strong UX win and should now be expanded + fixed.
+
+PRIORITY TASKS (single clean pass):
+
+1. FIX CURRENT CHIP INTERACTIONS
+Right now only Food and Healthcare appear clickable/working.
+Housing, Benefits, Jobs, Mental Health are not responding correctly.
+
+Need full parity for ALL chips:
+- Food
+- Housing
+- Benefits
+- Healthcare
+- Jobs
+- Mental Health
+
+Each chip must:
+✓ be tappable on mobile Safari + Chrome
+✓ activate visual selected state
+✓ route through the SAME existing category pipeline
+✓ preserve current location mode (Near Me / City / State / All)
+✓ preserve chosen state/city if selected
+✓ return correct filtered results
+✓ toggle off when tapped again
+
+Audit likely causes:
+- z-index / overlay issue
+- horizontal scroll container clipping taps
+- stale slug mappings
+- pointer-events blocked
+- chip width overflow on mobile
+
+2. ADD SECOND ROW OF QUICK CHIPS (MONETIZATION + HIGH DEMAND)
+Directly under first row, add second smaller matching row.
+
+Suggested row 2 chips:
+- Discounts
+- Services
+- Legal
+- Education
+- Family Support
+- Transportation
+
+(If data model prefers different slugs, map labels cleanly)
+
+Purpose:
+- fast access to common needs
+- surface monetizable trusted services
+- increase engagement
+- encourage deeper clicks
+
+3. TRUSTED SERVICES / REVENUE CHIPS
+If “Discounts” or “Services” selected:
+They should route intelligently into:
+Trusted Services / Discounts / relevant offers
+
+Need smooth UX, not confusing split system.
+
+4. MOBILE UX RULES
+Keep elegant compact design.
+No large blocks.
+No pushing filters too far down.
+
+Requirements:
+- chips wrap neatly or horizontal scroll cleanly
+- spacing consistent
+- thumb friendly
+- no overlap with search bar or location filters
+- preserve current olive branding
+
+5. ANALYTICS EVENTS
+Track chip usage:
+chip_click
+chip_name
+location_mode
+state
+city
+
+Need future insight into what veterans tap most.
+
+6. VALIDATION CASES
+After deploy test:
+- Near Me + Food
+- Near Me + Housing
+- NC + Charlotte + Jobs
+- SC + Columbia + Benefits
+- All + Discounts
+- Toggle chip off returns normal results
+
+7. IMPORTANT
+Do NOT disturb existing working:
+- search bar
+- state/city logic
+- near me radius
+- city-first sorting
+- state fallback
+
+Enhance only.
+
+Founder note:
+This feature feels premium and highly useful. Let’s polish it properly and make it a signature VeteranCare UX advantage.
+
+--- END ---
