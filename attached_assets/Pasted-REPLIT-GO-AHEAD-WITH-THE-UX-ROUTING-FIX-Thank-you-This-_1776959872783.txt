@@ -1,0 +1,61 @@
+REPLIT — GO AHEAD WITH THE UX / ROUTING FIX
+
+Thank you. This is helpful and confirms the core issue is UX / routing, not missing database rows.
+
+Please proceed with the following:
+
+1. BUILD THE DEDICATED NEAR YOU LANDING FLOW
+When users click the top navigation location / map-pin icon, do NOT send them straight into the current near-me flow only.
+
+Create a clean landing choice screen with 3 clear options:
+
+• Use My Location  
+• Pick a State  
+• Pick a City
+
+Required behavior:
+• “Use My Location” = current geolocation flow  
+• If geolocation is denied, do NOT silently drop users into national results  
+• Instead, immediately guide them into the manual path beginning with Pick a State  
+• “Pick a State” should allow state selection and optional city selection before routing into resources  
+• “Pick a City” should allow direct manual city-based browsing for users who do not want location services
+
+This should feel simple, obvious, and mobile-friendly.
+
+2. KEEP CATEGORY-SCOPED CITY DROPDOWNS
+Do NOT switch to a full statewide city list for every category.
+
+Keep the current logic where city dropdowns only show cities that actually have approved resources in the active category / subcategory. That is the safer and cleaner experience because it prevents dead-end filtering.
+
+3. MAKE THE CATEGORY-SCOPED BEHAVIOR CLEAR TO USERS
+Add a small helper line / explanatory UI near the city selector so users understand why the list changes.
+
+Example wording:
+“Showing cities with available resources in this category.”
+
+Or similar wording that feels clean and professional.
+
+The goal is to prevent founder / user confusion where a shorter list looks like a broken dropdown when in reality it is category-scoped by design.
+
+4. VALIDATE BOTH FLOWS
+After the routing work is done, please validate all of the following:
+
+A. Top map-pin / navigation flow
+• Use My Location works
+• Geolocation denied → user is guided into manual state/city flow
+• No silent fallback to generic national results
+
+B. Resource category / subcategory flow
+• State and city filters still work correctly
+• Category-scoped city lists still populate correctly
+• SC and NC cities that are already in the DB continue surfacing properly inside the appropriate categories and subcategories
+
+5. DO NOT MOVE TO GEORGIA YET
+Do not begin GA until this UX / routing layer is corrected, tested, and confirmed stable in SC and NC.
+
+Once complete, please return:
+• what was changed
+• what routes / components were updated
+• how the new Near You flow works
+• what helper text was added
+• confirmation that SC and NC filtering still behaves correctly after the change

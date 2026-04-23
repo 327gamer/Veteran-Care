@@ -856,6 +856,11 @@ export default function Resources() {
                       {locationSummary()}
                     </p>
                   )}
+                  {selectedSlug && (
+                    <p data-testid="text-city-scope-hint" className="text-[10px] text-muted-foreground leading-snug">
+                      Showing cities with available resources in this category.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -889,6 +894,12 @@ export default function Resources() {
                       className="w-28 sm:w-32"
                     />
                   </div>
+
+                  {selectedSlug && selectedState && (
+                    <p data-testid="text-city-scope-hint-state" className="text-[10px] text-muted-foreground leading-snug">
+                      Showing cities with available resources in this category.
+                    </p>
+                  )}
 
                   {hasAnyLocationInput && (
                     <div className="flex items-center justify-between">
