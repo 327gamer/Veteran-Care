@@ -1,0 +1,154 @@
+REPLIT — UNIVERSAL MENU PAGE HERO POLISH (ALL MENU PAGES)
+
+We need one clean universal correction across ALL pages inside the menu system.
+
+Pages affected:
+- About
+- How It Works
+- Contact
+- For Case Managers
+- Privacy Policy
+- Terms of Use
+- any other page using the same menu-page hero structure
+
+--------------------------------------------------
+MAIN ISSUE
+--------------------------------------------------
+
+The white top section with the Veteran Care logo is too tall and the logo itself is too small, so the page starts feeling awkward and empty before the real content begins.
+
+Right now:
+- too much blank white space
+- logo looks undersized
+- green hero block starts too low
+- the page loses visual punch
+
+We need the logo area and hero transition to feel tighter, stronger, and more premium.
+
+--------------------------------------------------
+REQUIRED FIXES
+--------------------------------------------------
+
+1. MAKE THE LOGO BIGGER ON EVERY MENU PAGE
+
+Increase the Veteran Care logo size in the white top section across ALL menu pages.
+
+Goal:
+- logo should feel bold and premium
+- closer to homepage impact
+- not tiny compared to the green hero below
+
+Do NOT distort logo.
+Keep it centered and sharp.
+Just make it noticeably larger.
+
+--------------------------------------------------
+
+2. REDUCE EMPTY WHITE SPACE ABOVE / BELOW LOGO
+
+The white top band is too tall.
+
+Reduce vertical padding so:
+- less dead space above the logo
+- less dead space below the logo
+- transition into the green hero happens sooner
+
+This should feel tighter and more intentional.
+
+--------------------------------------------------
+
+3. GREEN HERO MUST START HIGHER
+
+After shrinking the white top section and enlarging the logo, move the green hero block upward naturally so the page begins with more energy.
+
+The logo + green hero should feel like one clean branded opener, not two disconnected sections.
+
+--------------------------------------------------
+
+4. APPLY UNIVERSALLY
+
+This is NOT just one page.
+
+Apply the same hero/logo sizing and spacing correction across:
+- About
+- Contact
+- Terms
+- Privacy
+- Case Managers
+- How It Works
+- every menu page using the same layout
+
+Need one universal component/system fix, not page-by-page hacks.
+
+--------------------------------------------------
+
+5. PRIVACY + TERMS TYPOGRAPHY FIXES
+(keep this from previous instruction)
+
+Inside the white content cards on Privacy + Terms:
+
+A. Headings need stronger separation
+Examples:
+- What we collect
+- How we use it
+- What we don't do
+- Email preferences
+- Future regional compliance
+- Crisis support
+- Contact
+- Resource information
+- Trusted partners
+- AI Navigator
+
+Apply:
+- margin-top: 28px minimum
+- margin-bottom: 12px
+- stronger heading hierarchy
+- no bunching with paragraph above
+
+B. Paragraph spacing
+- margin-bottom: 18px minimum
+- line-height: 1.65+
+- improve mobile readability
+
+C. Card padding
+- increase internal padding top/bottom/left/right
+- keep text from feeling jammed
+
+D. Footer links under card
+(Home / Privacy Policy / Contact / Email Preferences)
+- add more top spacing from card above
+
+Need these legal pages to feel premium, readable, and calm.
+
+--------------------------------------------------
+
+6. NO STRUCTURAL REGRESSIONS
+
+Do NOT change:
+- colors
+- bottom nav
+- top desktop nav
+- page copy
+- overall flow
+
+Only fix:
+- logo size
+- white section height
+- green hero start position
+- typography spacing in legal cards
+
+--------------------------------------------------
+
+7. DESIGN GOAL
+
+This should feel like:
+premium national platform / strong brand / polished government-grade trust
+
+Not:
+small logo floating in too much empty white space
+
+--------------------------------------------------
+
+After complete:
+Publish / Republish so live site updates.

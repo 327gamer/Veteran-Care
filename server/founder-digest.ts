@@ -169,7 +169,11 @@ function getRecipients(): string[] {
 }
 
 function isDisabled(): boolean {
-  return process.env.FOUNDER_DIGEST_DISABLED === "1";
+  // Founder explicitly paused the digest 2026-04-23. Digest stays paused
+  // unless FOUNDER_DIGEST_ENABLED=1 is set. The legacy FOUNDER_DIGEST_DISABLED=1
+  // kill switch still works as a belt-and-suspenders override.
+  if (process.env.FOUNDER_DIGEST_DISABLED === "1") return true;
+  return process.env.FOUNDER_DIGEST_ENABLED !== "1";
 }
 
 function etDateString(d: Date = new Date()): string {
@@ -735,8 +739,18 @@ export async function runDueDigestTick(opts?: {
 export function startFounderDigestTimer(intervalMs: number = 5 * 60 * 1000): void {
   if (digestInterval) clearInterval(digestInterval);
 
-  // Lazy table creation; no-op if it already exists.
+  // Lazy table creation; no-op if it already exists. The queue table is
+  // still useful while the digest is paused — events keep accumulating so
+  // they're available when the founder reactivates the digest.
   ensureDigestLogTable().catch(() => {});
+
+  if (isDisabled()) {
+    console.log(
+      `[founder-digest] Timer NOT started — digest is paused. ` +
+      `Events still queue silently. Set FOUNDER_DIGEST_ENABLED=1 to reactivate.`
+    );
+    return;
+  }
 
   const tick = () => { runDueDigestTick({ source: "in_process_timer" }).catch(() => {}); };
 
@@ -746,7 +760,7 @@ export function startFounderDigestTimer(intervalMs: number = 5 * 60 * 1000): voi
 
   console.log(
     `[founder-digest] Timer started — slots: morning ${SLOT_MORNING_HOUR}:00 ET, afternoon ${SLOT_AFTERNOON_HOUR}:00 ET ` +
-    `(persisted dedup; kill: FOUNDER_DIGEST_DISABLED=1)`
+    `(persisted dedup; pause: unset FOUNDER_DIGEST_ENABLED)`
   );
 }
 

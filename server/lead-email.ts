@@ -659,14 +659,18 @@ export async function sendTrustedServiceLeadNotification(
 
   // A4 — Founder noise suppression: the admin copy used to fire on every
   // public partner-connect submission, even when the partner email succeeded
-  // and there was nothing for the founder to do. New rule: only send instant
-  // when something needs human attention. Otherwise roll into the next digest.
+  // and there was nothing for the founder to do.
+  //
+  // 2026-04-23 update: founder paused the digest and trimmed instant alerts
+  // to four categories. Operational issues (partner delivery failed, partner
+  // missing email) no longer fire instant — they queue silently. Only paid
+  // leads and urgent/crisis leads still page the founder in real time.
   const partnerHadEmail = !!providerData.email;
-  const partnerDeliveryFailed = partnerHadEmail && !partnerSent; // had email, send rejected
-  const partnerMissingEmail = !partnerHadEmail;                  // no email on file
+  const partnerDeliveryFailed = partnerHadEmail && !partnerSent;
+  const partnerMissingEmail = !partnerHadEmail;
   const isPaidLead = signals?.isBillable === true;
   const isUrgent = signals?.isUrgent === true;
-  const adminInstantNeeded = partnerDeliveryFailed || partnerMissingEmail || isPaidLead || isUrgent;
+  const adminInstantNeeded = isPaidLead || isUrgent;
 
   if (!adminInstantNeeded) {
     const where = [leadData.city, leadData.state].filter(Boolean).join(", ") || "unknown location";

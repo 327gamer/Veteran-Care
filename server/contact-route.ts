@@ -40,6 +40,17 @@ const ContactSchema = z.object({
   urgent: z.boolean().optional().default(false),
 });
 
+// 2026-04-23 — Founder requested aggressive inbox suppression. Founder
+// only wants instant alerts for: paid trusted partner signups, billing
+// failures, high-priority crisis/escalation, and legal/media inquiries.
+// All other contact-form subjects route to the suppressed-events queue
+// instead of the founder inbox.
+const INSTANT_FOUNDER_SUBJECTS = new Set<string>([
+  "Legal Inquiry",
+  "Media Request",
+  "Billing / Subscription Issue",
+]);
+
 const ESCALATION_SUBJECTS = new Set<string>([
   "Media Request",
   "Legal Inquiry",
@@ -79,6 +90,18 @@ function heuristicTriage(input: z.infer<typeof ContactSchema>): Triage {
   // With consumer subjects removed, anything that reaches this point should still
   // be reviewed (e.g. Report Incorrect Listing).
   return { shouldEscalate: true, category: "founder", reason: "Routine high-value inquiry — flagged for internal review." };
+}
+
+// 2026-04-23 — Decide whether the contact-form team copy should fire
+// instantly to the founder inbox, or be suppressed to the digest queue.
+function shouldInstantFounderAlert(input: z.infer<typeof ContactSchema>): boolean {
+  if (input.urgent) return true;
+  if (INSTANT_FOUNDER_SUBJECTS.has(input.subject)) return true;
+  const text = `${input.subject}\n${input.message}`.toLowerCase();
+  for (const kw of URGENT_KEYWORDS) {
+    if (text.includes(kw)) return true;
+  }
+  return false;
 }
 
 function maskPii(s: string): string {
@@ -243,35 +266,61 @@ export function registerContactRoute(app: Express) {
         console.warn("[contact] user reply rejected by Resend:", (userSendRes as any).error?.message || (userSendRes as any).error);
       }
 
-      // 2) Branded internal team notification (always sends; transactional)
-      const teamRecipients = triage.shouldEscalate && FOUNDER_INBOX !== CONTACT_INBOX
-        ? [CONTACT_INBOX, FOUNDER_INBOX]
-        : [CONTACT_INBOX];
+      // 2) Branded internal team notification — gated by founder noise rules.
+      //
+      // 2026-04-23: Founder paused the digest and trimmed instant alerts to
+      // four categories. Contact-form team copy now only fires when the
+      // submission qualifies as: legal/media inquiry, billing issue, or
+      // user-flagged-urgent / crisis-keyword detected. Everything else is
+      // queued to the suppressed-events store and never emails the founder
+      // until the digest is reactivated.
+      const instantFounderAlert = shouldInstantFounderAlert(input);
 
-      const teamHtml = brandedEmailHtml({
-        recipientEmail: teamRecipients[0],
-        category: "transactional",
-        heading: triage.shouldEscalate
-          ? `[ESCALATED] ${input.subject}`
-          : `[auto-handled] ${input.subject}`,
-        bodyHtml: teamBodyHtml(input, triage),
-        ctas: [
-          { label: "Reply to sender", href: `mailto:${input.email}?subject=Re:%20${encodeURIComponent(input.subject)}` },
-        ],
-      });
+      let teamSendRes: any = { data: null, error: null };
+      let teamSuppressed = false;
 
-      const teamSendRes = await resend.emails.send({
-        from: FROM_EMAIL,
-        to: teamRecipients,
-        subject: triage.shouldEscalate
-          ? `[ESCALATED] ${input.subject} — ${input.name}`
-          : `[auto-handled] ${input.subject} — ${input.name}`,
-        html: teamHtml,
-        replyTo: input.email,
-      }).catch((e) => {
-        console.error("[contact] team notify threw:", e?.message);
-        return { data: null, error: { message: e?.message || "send threw" } as any };
-      });
+      if (!instantFounderAlert) {
+        teamSuppressed = true;
+        try {
+          const { queueDigestEvent } = await import("./founder-digest");
+          await queueDigestEvent(
+            "contact_form_low_priority",
+            `${input.subject} · from ${input.name} <${input.email}>`,
+            "info"
+          );
+        } catch (qErr: any) {
+          console.warn("[contact] queueDigestEvent failed:", qErr?.message);
+        }
+      } else {
+        const teamRecipients = triage.shouldEscalate && FOUNDER_INBOX !== CONTACT_INBOX
+          ? [CONTACT_INBOX, FOUNDER_INBOX]
+          : [CONTACT_INBOX];
+
+        const teamHtml = brandedEmailHtml({
+          recipientEmail: teamRecipients[0],
+          category: "transactional",
+          heading: triage.shouldEscalate
+            ? `[ESCALATED] ${input.subject}`
+            : `[auto-handled] ${input.subject}`,
+          bodyHtml: teamBodyHtml(input, triage),
+          ctas: [
+            { label: "Reply to sender", href: `mailto:${input.email}?subject=Re:%20${encodeURIComponent(input.subject)}` },
+          ],
+        });
+
+        teamSendRes = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: teamRecipients,
+          subject: triage.shouldEscalate
+            ? `[ESCALATED] ${input.subject} — ${input.name}`
+            : `[auto-handled] ${input.subject} — ${input.name}`,
+          html: teamHtml,
+          replyTo: input.email,
+        }).catch((e) => {
+          console.error("[contact] team notify threw:", e?.message);
+          return { data: null, error: { message: e?.message || "send threw" } as any };
+        });
+      }
 
       // Resend's API returns { data, error } even on rejection — must inspect both.
       const teamErr = (teamSendRes as any)?.error;
@@ -280,13 +329,14 @@ export function registerContactRoute(app: Express) {
 
       console.log(
         `[contact] from=${input.email} subject="${input.subject}" escalated=${triage.shouldEscalate} ` +
+        `instant_founder=${instantFounderAlert} team_suppressed=${teamSuppressed} ` +
         `reason="${triage.reason}" suppressed_user=${userSuppressedReply} ` +
         `user_id=${userId || "n/a"} team_id=${teamId || "n/a"} ` +
-        `team_recipients="${teamRecipients.join(",")}" ` +
         `team_error="${teamErr ? (teamErr.message || JSON.stringify(teamErr)) : "none"}"`
       );
 
-      if (teamErr || !teamId) {
+      // Only treat a missing team email as a failure when we actually tried to send one.
+      if (!teamSuppressed && (teamErr || !teamId)) {
         // Loudly surface the most common cause so it's debuggable from logs.
         const fromIsSandbox = /onboarding@resend\.dev/i.test(FROM_EMAIL);
         if (fromIsSandbox) {

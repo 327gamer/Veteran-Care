@@ -1,8 +1,15 @@
 import Stripe from "stripe";
+import { Resend } from "resend";
 import { query as pgQuery } from "./pg-client";
 import { platform } from "../shared/platform";
 import { sendPaymentFailedEmail, sendGraceExpiringEmail, sendPartnerWelcomeEmail } from "./lead-email";
 import { supabaseAdmin } from "./supabase";
+
+// 2026-04-23 — Founder instant-alert sender. Used only for the four
+// categories on the founder's allowlist (paid partner activation, billing
+// failure). Lazily resilient: if RESEND_API_KEY is missing we log and
+// no-op rather than throwing inside webhook handlers.
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -633,6 +640,43 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   } catch (err: any) {
     console.log(`[stripe] Attribution recording failed:`, err.message);
   }
+
+  // 2026-04-23 — Instant founder alert on paid trusted-partner activation.
+  // This is one of the four categories the founder explicitly opted in to
+  // receive in real time after the digest was paused.
+  if (!resend) {
+    console.warn(`[stripe] Founder paid-partner alert SKIPPED: RESEND_API_KEY is not set (application ${applicationId})`);
+  } else {
+    try {
+      const revenueLine = (typeof session.amount_total === "number" && session.amount_total > 0)
+        ? `$${(session.amount_total / 100).toFixed(2)}`
+        : "amount unavailable";
+      const planLine = app.plan_type ? ` · plan ${app.plan_type}` : "";
+      const subjectLine = `[Veteran Care] Paid Partner Activated — ${app.company_name || app.email}`;
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;padding:18px;color:#1f2937;">
+          <h2 style="margin:0 0 12px;font-size:18px;color:#166534;">New paid partner is live</h2>
+          <p style="margin:0 0 8px;"><strong>${(app.company_name || "").toString().slice(0, 200)}</strong></p>
+          <p style="margin:0 0 4px;">Contact: ${(app.contact_name || "").toString().slice(0, 120)} &lt;${(app.email || "").toString().slice(0, 200)}&gt;</p>
+          <p style="margin:0 0 4px;">Revenue: ${revenueLine}${planLine}</p>
+          <p style="margin:0 0 4px;">Application: ${applicationId}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#6b7280;">You're receiving this because paid partner signups are on your instant-alert list. The founder digest is currently paused.</p>
+        </div>`;
+      const sendRes: any = await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || `Veteran Care <noreply@veterancare.com>`,
+        to: [DEFAULT_NOTIFY_EMAIL],
+        subject: subjectLine,
+        html,
+      });
+      if (sendRes?.error) {
+        console.error(`[stripe] Founder paid-partner alert REJECTED by Resend (application ${applicationId}):`, sendRes.error?.message || sendRes.error);
+      } else {
+        console.log(`[stripe] Founder alert sent: paid partner activation for application ${applicationId} (id=${sendRes?.data?.id || "n/a"})`);
+      }
+    } catch (err: any) {
+      console.error(`[stripe] Founder paid-partner alert THREW (application ${applicationId}):`, err?.message);
+    }
+  }
 }
 
 export async function verifyAndActivateCheckoutSession(sessionId: string): Promise<{ status: string; applicationId?: string; email?: string; error?: string }> {
@@ -869,6 +913,40 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
       await sendPaymentFailedEmail(app.email, app.company_name, app.contact_name, portalUrl, graceDays);
     } catch (err: any) {
       console.log(`[stripe] Failed to send payment-failed email:`, err.message);
+    }
+  }
+
+  // 2026-04-23 — Instant founder alert on billing failure. One of the four
+  // categories on the founder's instant-alert allowlist after the digest
+  // was paused.
+  if (!resend) {
+    console.warn(`[stripe] Founder billing-failure alert SKIPPED: RESEND_API_KEY is not set (application ${app.id})`);
+  } else {
+    try {
+      const subjectLine = `[Veteran Care] Billing Failure — ${app.company_name || app.email}`;
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;padding:18px;color:#1f2937;">
+          <h2 style="margin:0 0 12px;font-size:18px;color:#b91c1c;">Partner billing failure</h2>
+          <p style="margin:0 0 8px;"><strong>${(app.company_name || "").toString().slice(0, 200)}</strong></p>
+          <p style="margin:0 0 4px;">Contact: ${(app.contact_name || "").toString().slice(0, 120)} &lt;${(app.email || "").toString().slice(0, 200)}&gt;</p>
+          <p style="margin:0 0 4px;">Status: past_due · ${graceDays}-day grace period (until ${graceEnd})</p>
+          <p style="margin:0 0 4px;">Premium boosts removed. Base listing remains active during grace.</p>
+          <p style="margin:0 0 4px;">Application: ${app.id}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#6b7280;">You're receiving this because billing failures are on your instant-alert list. The founder digest is currently paused.</p>
+        </div>`;
+      const sendRes: any = await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || `Veteran Care <noreply@veterancare.com>`,
+        to: [DEFAULT_NOTIFY_EMAIL],
+        subject: subjectLine,
+        html,
+      });
+      if (sendRes?.error) {
+        console.error(`[stripe] Founder billing-failure alert REJECTED by Resend (application ${app.id}):`, sendRes.error?.message || sendRes.error);
+      } else {
+        console.log(`[stripe] Founder alert sent: billing failure for application ${app.id} (id=${sendRes?.data?.id || "n/a"})`);
+      }
+    } catch (err: any) {
+      console.error(`[stripe] Founder billing-failure alert THREW (application ${app.id}):`, err?.message);
     }
   }
 }
