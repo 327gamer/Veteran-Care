@@ -127,14 +127,16 @@ export default function Contact() {
                 Ask anything — benefits, housing, jobs, healthcare, family support. Our Navigator
                 answers instantly, points you to verified resources, and walks you through next steps.
               </p>
-              <Button
-                size="lg"
-                onClick={openNavigator}
-                className="text-base px-9 py-6 rounded-full shadow-md"
-                data-testid="button-open-navigator"
-              >
-                <Sparkles className="mr-2 h-5 w-5" /> Ask Our Veteran Navigator Now
-              </Button>
+              <div className="flex justify-center">
+                <Button
+                  onClick={openNavigator}
+                  className="max-w-full text-sm sm:text-base h-auto px-5 sm:px-7 py-3 sm:py-3.5 rounded-full shadow-md whitespace-normal sm:whitespace-nowrap leading-tight"
+                  data-testid="button-open-navigator"
+                >
+                  <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  <span>Ask Our Veteran Navigator Now</span>
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground mt-6">
                 Available 24/7 · Instant · No login required
               </p>

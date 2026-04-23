@@ -1,0 +1,97 @@
+REPLIT — CONTACT PAGE BUTTON ALIGNMENT FIX
+
+One more visual issue found on the Contact Veteran Care page under the Menu section.
+
+==================================================
+ISSUE
+==================================================
+
+The button:
+
+"Ask Our Veteran Navigator Now"
+
+is currently:
+
+- too large
+- overflowing / hovering over the card area
+- visually dominating the section
+- not centered correctly inside the white container
+- breaking the clean polished layout
+
+The button should feel premium, intentional, and balanced inside the card.
+
+==================================================
+WHAT TO FIX
+==================================================
+
+1. REDUCE BUTTON SIZE
+
+Scale the CTA button down slightly so it feels proportional to the card.
+
+Adjust:
+
+- width (too wide now)
+- height (too tall/heavy now)
+- font size if needed
+- left/right padding
+
+It should still feel strong and clickable, but not oversized.
+
+==================================================
+2. CENTER BUTTON INSIDE CARD
+
+The button must sit properly centered inside the white box/card.
+
+Needs:
+
+- centered horizontally
+- proper spacing above and below
+- no overlap outside container
+- no floating over card edges
+- equal breathing room around it
+
+==================================================
+3. MOBILE FIRST CHECK
+
+This screenshot is mobile, so mobile must be priority.
+
+Make sure on iPhone/mobile:
+
+- button fits naturally
+- no overflow
+- no clipping
+- no touching card edges
+- text remains readable on one line if possible
+
+If needed:
+Use responsive sizing for mobile only.
+
+==================================================
+4. KEEP BRAND STYLE
+
+Do NOT redesign it.
+
+Keep:
+
+- green brand color
+- rounded premium style
+- icon
+- strong CTA appearance
+
+Just refine size + alignment.
+
+==================================================
+5. FINAL LOOK TARGET
+
+Should feel like:
+
+clean
+balanced
+professional
+premium
+same quality as homepage buttons
+
+==================================================
+6. AFTER FIX
+
+Publish / Republish so live site updates.
