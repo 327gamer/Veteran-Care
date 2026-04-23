@@ -1,0 +1,49 @@
+We are closer, but this is still only a partial fix.
+
+You fixed the State button visibility issue and the mixed SC/NC city dropdown issue, which is good. But the actual result logic is still wrong in both flows.
+
+Here is the exact problem:
+
+1. On the unified Near You page:
+If a user types a keyword like Food or Housing and then chooses North Carolina or South Carolina, the system should not require an exact city match only. Right now if a smaller city has no direct rows yet, the page looks empty or too thin.
+
+That is not acceptable UX.
+
+Required behavior:
+- exact matches in the selected city first
+- then closest matching resources within the selected state
+- then broader statewide matches if needed
+- never make the app look empty just because a small city does not yet have its own direct row
+
+2. Inside Resources > Category > Subcategory:
+If a user selects a category and subcategory, then chooses North Carolina or South Carolina, the results should show ALL approved resources in that state for that category/subcategory.
+
+City should be an optional refinement only.
+
+Expected behavior:
+- choosing North Carolina should show all NC resources in that category/subcategory
+- choosing South Carolina should show all SC resources in that category/subcategory
+- choosing a city should then narrow inside that state
+- if city has no exact match, show closest resources in that state instead of appearing empty
+- never show SC results when NC is selected, and never show NC results when SC is selected
+
+Right now there is still a disconnect in the filtering/query logic.
+
+Please fix the actual query behavior, not just the dropdown UI.
+
+In plain English, the rule should be:
+
+NEAR YOU SEARCH RULE
+- keyword + Near Me = closest matches by distance
+- keyword + State = all matching resources in that state, ranked sensibly
+- keyword + State + City = city matches first, then closest/statewide fallback within that same state
+
+CATEGORY / SUBCATEGORY RULE
+- category/subcategory + State = all resources in that state for that category/subcategory
+- category/subcategory + State + City = city-first results, then closest/statewide fallback within that state
+- city must never be required in order to see state-level results
+
+Also, I do want to discuss one UX addition after this is fixed:
+On the Near You page, keep the main search bar, but we may want a small row of quick category chips/icons under it such as Food, Housing, Benefits, Healthcare, Jobs, Mental Health. Not a full category tree there — just a quick tap option. Do not build that yet unless the filtering logic above is working correctly.
+
+Before Georgia, I need this locked and tested in South Carolina and North Carolina first.

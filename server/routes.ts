@@ -5454,6 +5454,9 @@ export async function registerRoutes(
       query = query.eq("resource_subcategories.subcategories.slug", sub as string);
     }
 
+    const cityFilterParam = req.query.city as string | undefined;
+    const zipFilterParam = req.query.zip as string | undefined;
+
     if (nearMeMode && hasGeoColumns) {
       const latDelta = radiusMiles! / 69.0;
       const lngDelta = radiusMiles! / (69.0 * Math.cos((userLat! * Math.PI) / 180));
@@ -5461,21 +5464,19 @@ export async function registerRoutes(
         `and(latitude.gte.${userLat! - latDelta},latitude.lte.${userLat! + latDelta},longitude.gte.${userLng! - lngDelta},longitude.lte.${userLng! + lngDelta}),latitude.is.null,longitude.is.null`
       );
     } else {
-      const city = req.query.city as string | undefined;
-      const zip = req.query.zip as string | undefined;
-
-      if (city || zip) {
-        if (state) {
-          query = query.or(`state.eq.${state},state.is.null`);
-        }
-        if (city) {
-          query = query.ilike("city", `%${city}%`);
-        }
-        if (zip) {
-          query = query.eq("zip", zip);
-        }
-      } else if (state) {
+      // Founder rule: state must always show ALL in-state rows + national fallback.
+      // City is a SORT preference (city matches first), NOT a hard filter, so a
+      // small city with no direct rows still shows the rest of the state instead
+      // of an empty page. Zip stays a hard filter because it is precise.
+      if (state) {
         query = query.or(`state.eq.${state},state.is.null`);
+      } else if (cityFilterParam) {
+        // City typed without a state — keep the legacy ilike behavior so the
+        // city box on its own still does something useful.
+        query = query.ilike("city", `%${cityFilterParam}%`);
+      }
+      if (zipFilterParam) {
+        query = query.eq("zip", zipFilterParam);
       }
     }
 
@@ -5546,7 +5547,36 @@ export async function registerRoutes(
     if (q && hasTrustedServicesTable) {
       trustedMatches = await searchTrustedServicesForResources(q as string);
     }
-    const baseResults = normalizeAllFieldsList(data || []);
+    let baseResults = normalizeAllFieldsList(data || []);
+
+    // Founder rule: when a state is selected, in-state rows must lead and
+    // national fallback rows trail. When a city is also typed, exact city
+    // matches lead inside the in-state group, then partial matches, then the
+    // rest of the state. Sponsored stays the tiebreaker so paid placement is
+    // preserved within each tier.
+    if (!nearMeMode && state) {
+      const stateUpper = String(state).toUpperCase();
+      const cityLower = cityFilterParam ? String(cityFilterParam).trim().toLowerCase() : "";
+      const tierOf = (r: any): number => {
+        const rowState = (r.state || "").toUpperCase();
+        const rowCity = (r.city || "").toLowerCase();
+        const inState = rowState === stateUpper;
+        if (!inState) return 4; // national / non-matching trails everything
+        if (!cityLower) return 1; // any in-state row
+        if (rowCity === cityLower) return 0; // exact city match
+        if (rowCity.includes(cityLower)) return 1; // partial city match
+        return 2; // in-state but different city — statewide fallback
+      };
+      baseResults = [...baseResults].sort((a: any, b: any) => {
+        const ta = tierOf(a);
+        const tb = tierOf(b);
+        if (ta !== tb) return ta - tb;
+        const sa = a.sponsored ? 1 : 0;
+        const sb = b.sponsored ? 1 : 0;
+        if (sa !== sb) return sb - sa;
+        return String(a.title || "").localeCompare(String(b.title || ""));
+      });
+    }
 
     // F2.6: Insurance cross-population — surface seeded insurance providers
     // (pg-side trusted_services) inside the Resources insurance category.
