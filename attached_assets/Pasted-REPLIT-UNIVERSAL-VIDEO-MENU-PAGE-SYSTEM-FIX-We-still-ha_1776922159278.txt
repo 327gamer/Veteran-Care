@@ -1,0 +1,163 @@
+REPLIT — UNIVERSAL VIDEO / MENU PAGE SYSTEM FIX
+
+We still have a consistency problem on the About Veteran Care page, and this now needs to be treated as a UNIVERSAL DESIGN SYSTEM issue, not a one-off page fix.
+
+==================================================
+CORE ISSUE
+==================================================
+
+The video on the About Veteran Care page still does NOT match the strong pages on the platform.
+
+Current problem:
+- On mobile it behaves much better
+- On desktop it looks too small, too isolated, and not integrated into the page
+- It still does not feel like the same system used on our stronger landing pages
+- It feels like a separate custom implementation instead of the established universal format
+
+We already have pages that look much better and smoother.
+
+REFERENCE PAGES TO FOLLOW EXACTLY:
+1. vet.com partner landing page / trusted partner landing page
+2. homepage / front page
+
+Use those as the source of truth.
+
+==================================================
+WHAT NEEDS TO HAPPEN
+==================================================
+
+1. ABOUT PAGE VIDEO MUST USE THE SAME VIDEO PRESENTATION SYSTEM
+Use the exact same concept as the partner landing page and homepage.
+
+Meaning:
+- same container logic
+- same visual rhythm
+- same spacing above and below
+- same way the frame sits in the page
+- same responsive behavior
+- same clean premium presentation
+- same polished feel when viewed without fullscreen
+- same maximize / expand behavior
+
+Do NOT invent a new wrapper.
+Do NOT use a one-off custom treatment.
+Do NOT leave the video looking stranded in white space on desktop.
+
+The About page video should feel like it belongs to the same family as the front page and landing pages.
+
+==================================================
+2. DESKTOP IS THE MAIN PROBLEM
+==================================================
+
+Mobile is acceptable.
+Desktop is not.
+
+On desktop:
+- the video is too small
+- there is too much empty white space around it
+- it feels disconnected from the section
+- it does not have the same visual authority as the good landing pages
+
+Need desktop to feel:
+- cleaner
+- more premium
+- more intentional
+- more integrated with the heading and surrounding section
+
+==================================================
+3. USE THE FRONT PAGE / PARTNER PAGE AS DESIGN REFERENCE
+==================================================
+
+Please actively compare these:
+
+A. About page
+B. Homepage
+C. Trusted Partner / vet.com partner landing page
+
+The homepage and partner page feel:
+- smooth
+- unified
+- premium
+- well layered
+- clean in how sections break
+- visually stronger
+
+All menu pages should move toward that same format and same experience.
+
+==================================================
+4. THIS IS NOW A MENU-WIDE DESIGN RULE
+==================================================
+
+Do not stop at the About page only.
+
+The menu pages should all follow the same overall visual system as the homepage / landing pages:
+
+- same clean section spacing
+- same stronger visual rhythm
+- same premium container behavior
+- same unified page structure
+- same polished transitions between white and green sections
+- same smooth branded feel
+
+Pages under the menu should NOT feel like a second-class design language.
+They should feel like they belong to the same polished core platform.
+
+Affected pages:
+- About
+- Contact
+- How It Works
+- For Case Managers
+- Privacy
+- Terms
+- any other page in this menu family
+
+==================================================
+5. SPECIFIC ABOUT PAGE VIDEO REQUIREMENT
+==================================================
+
+Fix the About page video by matching the landing-page concept exactly.
+
+Goal:
+When viewing the About page on desktop, it should look just as natural, clean, and professional as the video sections on the stronger landing pages.
+
+If needed:
+- inspect the exact component and layout rules used on the partner landing page
+- reuse that same structure
+- do not approximate it loosely
+
+==================================================
+6. IMPORTANT DESIGN DIRECTION
+==================================================
+
+The front page is now the cleanest visual reference.
+The partner page also has the correct polished feeling.
+
+Bring the menu pages into that same family.
+
+Think:
+- same format
+- same smoothness
+- same premium feel
+- same visual confidence
+
+==================================================
+7. DO NOT BREAK WORKING MOBILE BEHAVIOR
+==================================================
+
+Keep:
+- fullscreen / expand control
+- responsive behavior
+- proper video play behavior
+
+Fix desktop presentation without hurting mobile.
+
+==================================================
+8. DELIVERABLE
+==================================================
+
+Please make the menu page video/section system visually consistent with the homepage and trusted partner landing page, starting with the About page video.
+
+Then apply the same design language to the other menu pages so the entire menu section feels unified and premium.
+
+After complete:
+Publish / Republish so live site updates.

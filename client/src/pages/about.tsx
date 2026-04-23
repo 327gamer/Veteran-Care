@@ -130,26 +130,33 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── VIDEO — same universal portrait container as homepage / ambassador pages ── */}
-      <section className="container mx-auto px-5 pt-10 pb-4 max-w-lg">
-        <div className="text-center mb-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Watch</p>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
+      {/* ── VIDEO SHOWCASE ──
+          Mirrors the landing-page / partners-landing video presentation:
+          green band with a soft radial overlay, video centered on top,
+          eyebrow + headline + supporting copy stacked below. Eliminates
+          the "stranded in white space" feel on desktop. */}
+      <section className="relative bg-primary overflow-hidden mt-12 sm:mt-16">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
+        <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 sm:pt-14 sm:pb-16 max-w-lg mx-auto">
+          <CampaignHeroVideo
+            audience="about"
+            fallbackLogo={logoImg}
+            platformName={platform.name}
+          />
+          <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-2">
+            Watch
+          </p>
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-white leading-tight">
             Why People Are Talking About Veteran Care
           </h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-white/85 mt-3 max-w-xl mx-auto leading-relaxed">
             Real people. Real stories. Real movement.
           </p>
         </div>
-        <CampaignHeroVideo
-          audience="about"
-          fallbackLogo={logoImg}
-          platformName={platform.name}
-        />
       </section>
 
-      {/* ── EMOTIONAL IMPACT LINE — tight to video ── */}
-      <section className="container mx-auto px-5 pt-2 pb-10 max-w-3xl">
+      {/* ── EMOTIONAL IMPACT LINE — sits on white below the green showcase ── */}
+      <section className="container mx-auto px-5 pt-10 pb-10 max-w-3xl">
         <div className="text-center" data-testid="text-emotional-impact">
           <p className="font-heading text-2xl sm:text-3xl text-primary leading-snug italic font-semibold">
             "When life gets complicated, getting help shouldn't be."
