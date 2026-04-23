@@ -7,9 +7,12 @@ const PUBLIC_BASE_URL =
   process.env.PUBLIC_URL ||
   "https://veterancare.com";
 
+// Email logo must be served from a publicly reachable URL — `attached_assets/`
+// is not served by the web server, so we use the optimized 256px PNG that
+// lives in `client/public/brand/` and is shipped at `/brand/...` on the CDN.
 const LOGO_URL =
   process.env.PUBLIC_LOGO_URL ||
-  `${PUBLIC_BASE_URL}/attached_assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png`;
+  `${PUBLIC_BASE_URL}/brand/veteran-care-logo-256.png`;
 
 const BRAND_GREEN = "#3b4f1f";
 const BRAND_GREEN_DARK = "#2d3d17";
@@ -108,11 +111,11 @@ ${preheader}
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
       <!-- Header -->
-      <tr><td align="center" style="background:${BRAND_GREEN};padding:22px 24px;">
-        <a href="${homeUrl}" style="text-decoration:none;display:inline-block;">
-          <img src="${LOGO_URL}" alt="${escapeHtml(platform.name)}" width="64" height="64" style="display:block;background:#ffffff;border-radius:10px;padding:6px;" />
+      <tr><td align="center" style="background:${BRAND_GREEN};padding:26px 24px 22px;">
+        <a href="${homeUrl}" style="text-decoration:none;display:inline-block;background:#ffffff;border-radius:14px;padding:10px;">
+          <img src="${LOGO_URL}" alt="${escapeHtml(platform.name)}" width="96" height="96" style="display:block;width:96px;height:auto;border:0;outline:none;text-decoration:none;" />
         </a>
-        <div style="font-family:Montserrat,Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:700;margin-top:10px;letter-spacing:0.3px;">
+        <div style="font-family:Montserrat,Arial,sans-serif;color:#ffffff;font-size:18px;font-weight:700;margin-top:12px;letter-spacing:0.3px;">
           <a href="${homeUrl}" style="color:#ffffff;text-decoration:none;">${escapeHtml(platform.name)}</a>
         </div>
       </td></tr>
