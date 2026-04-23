@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, ShieldCheck, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import MenuPageHero from "@/components/menu-page-hero";
 
 const STEPS = [
   {
@@ -38,18 +39,13 @@ export default function HowItWorks() {
 
   return (
     <div className="bg-background min-h-full pb-20" data-testid="page-how-it-works">
-      {/* Hero */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-12 sm:py-16 max-w-5xl">
-          <p className="text-xs uppercase tracking-widest text-primary-foreground/70 mb-2">How it works</p>
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-4" data-testid="text-how-title">
-            Help in four steps
-          </h1>
-          <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-3xl leading-relaxed">
-            Veteran Care removes the friction. No more hunting through outdated directories or jumping between dozens of websites.
-          </p>
-        </div>
-      </section>
+      <MenuPageHero
+        testIdPrefix="how"
+        eyebrow="How It Works"
+        title={["Help In", "Four Steps"]}
+        subtitle="Veteran Care removes the friction."
+        detail="No more hunting through outdated directories or jumping between dozens of websites."
+      />
 
       {/* Steps */}
       <section className="container mx-auto px-4 py-12 max-w-5xl">

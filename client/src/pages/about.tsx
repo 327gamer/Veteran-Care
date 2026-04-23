@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
+import MenuPageHero from "@/components/menu-page-hero";
 import { platform } from "@shared/platform";
 
 const TRUST_TILES = [
@@ -97,36 +98,12 @@ export default function About() {
 
   return (
     <div className="bg-background min-h-full pb-20" data-testid="page-about">
-      {/* ── LOGO MARK (white) — universal page header rule ── */}
-      <section className="bg-white">
-        <div className="container mx-auto px-5 pt-12 pb-10 sm:pt-16 sm:pb-12 max-w-5xl text-center">
-          <img
-            src={logoImg}
-            alt="Veteran Care"
-            className="h-40 sm:h-52 w-auto object-contain mx-auto drop-shadow-lg"
-            data-testid="img-about-hero-logo"
-          />
-        </div>
-      </section>
-
-      {/* ── HERO (green) — all white text, no accent on title ── */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-5 py-16 sm:py-20 max-w-4xl text-center">
-          <h1
-            className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight uppercase text-white"
-            data-testid="text-about-title"
-          >
-            About Veteran Care
-          </h1>
-          <p className="text-lg sm:text-2xl text-white/95 leading-snug max-w-3xl mx-auto mt-6 font-medium">
-            America's modern, AI-powered veteran support platform.
-          </p>
-          <p className="text-base sm:text-lg text-white/85 leading-relaxed max-w-3xl mx-auto mt-3">
-            Redefining how veterans, families, and caregivers find support —
-            faster, smarter, and all in one place.
-          </p>
-        </div>
-      </section>
+      <MenuPageHero
+        testIdPrefix="about"
+        title={["About", "Veteran Care"]}
+        subtitle="America's modern, AI-powered veteran support platform."
+        detail="Redefining how veterans, families, and caregivers find support — faster, smarter, and all in one place."
+      />
 
       {/* ── TRUST / SCALE / PROOF TILES — symmetrical 2 + 2 + 1 (last centered) ── */}
       <section className="container mx-auto px-5 pt-12 sm:pt-16 max-w-3xl">
@@ -154,7 +131,7 @@ export default function About() {
       </section>
 
       {/* ── VIDEO — same universal portrait container as homepage / ambassador pages ── */}
-      <section className="container mx-auto px-5 pt-10 pb-6 max-w-5xl">
+      <section className="container mx-auto px-5 pt-10 pb-4 max-w-lg">
         <div className="text-center mb-5">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Watch</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
@@ -172,7 +149,7 @@ export default function About() {
       </section>
 
       {/* ── EMOTIONAL IMPACT LINE — tight to video ── */}
-      <section className="container mx-auto px-5 pt-1 pb-8 max-w-3xl">
+      <section className="container mx-auto px-5 pt-2 pb-10 max-w-3xl">
         <div className="text-center" data-testid="text-emotional-impact">
           <p className="font-heading text-2xl sm:text-3xl text-primary leading-snug italic font-semibold">
             "When life gets complicated, getting help shouldn't be."

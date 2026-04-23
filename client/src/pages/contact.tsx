@@ -10,7 +10,7 @@ import {
   Sparkles, Send, CheckCircle2, Shield, MessageSquare,
   ChevronDown, ChevronUp, Zap,
 } from "lucide-react";
-import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
+import MenuPageHero from "@/components/menu-page-hero";
 
 // 10 high-value subjects — matches server allow-list.
 const SUBJECT_OPTIONS = [
@@ -105,34 +105,16 @@ export default function Contact() {
 
   return (
     <div className="bg-background min-h-full pb-24" data-testid="page-contact">
-      {/* ── HERO (green) — universal page header rule: large logo + page title ── */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-5 pt-14 pb-20 sm:pt-20 sm:pb-28 max-w-4xl text-center">
-          <img
-            src={logoImg}
-            alt="Veteran Care"
-            className="h-40 sm:h-52 w-auto object-contain mx-auto mb-7 drop-shadow-lg"
-            data-testid="img-contact-hero-logo"
-          />
-          <h1
-            className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight uppercase"
-            data-testid="text-contact-title"
-          >
-            Contact <span className="text-accent">Veteran Care</span>
-          </h1>
-          <p className="text-lg sm:text-2xl text-primary-foreground/95 leading-snug max-w-2xl mx-auto mt-6 font-medium">
-            Get answers in seconds with our Veteran Navigator.
-          </p>
-          <p className="text-base sm:text-lg text-primary-foreground/85 leading-relaxed max-w-2xl mx-auto mt-3">
-            AI-first support, available 24/7. Human team standing by for partnership, media,
-            legal, and other escalations.
-          </p>
-        </div>
-      </section>
+      <MenuPageHero
+        testIdPrefix="contact"
+        title={["Contact", "Veteran Care"]}
+        subtitle="Get answers in seconds with our Veteran Navigator."
+        detail="AI-first support, available 24/7. Human team standing by for partnership, media, legal, and other escalations."
+      />
 
       {/* ── PRIMARY CTA (white) ── */}
       <section className="bg-white">
-        <div className="container mx-auto px-5 -mt-12 sm:-mt-14 max-w-3xl relative z-10 pb-14 pt-0">
+        <div className="container mx-auto px-5 pt-14 pb-14 max-w-3xl">
           <Card className="shadow-xl border-t-4 border-t-accent">
             <CardContent className="pt-9 pb-9 text-center">
               <div className="inline-flex h-16 w-16 rounded-full bg-primary/10 text-primary items-center justify-center mb-5">

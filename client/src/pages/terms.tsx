@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
+import MenuPageHero from "@/components/menu-page-hero";
 
 const EFFECTIVE_DATE = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
@@ -11,13 +12,13 @@ export default function Terms() {
 
   return (
     <div className="bg-background min-h-full pb-20" data-testid="page-terms">
-      <section className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-5 py-12 sm:py-16 max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70 mb-2">Legal</p>
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold">Terms of Use</h1>
-          <p className="text-primary-foreground/80 text-sm mt-3">Effective date: {EFFECTIVE_DATE}</p>
-        </div>
-      </section>
+      <MenuPageHero
+        testIdPrefix="terms"
+        eyebrow="Legal"
+        title={["Terms", "Of Use"]}
+        subtitle="The agreement that governs your use of Veteran Care."
+        detail={`Effective date: ${EFFECTIVE_DATE}`}
+      />
       <section className="container mx-auto px-5 py-10 max-w-3xl">
         <Card>
           <CardContent className="pt-7 pb-7 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-primary prose-h3:mt-7 prose-h3:mb-2 prose-p:leading-relaxed">

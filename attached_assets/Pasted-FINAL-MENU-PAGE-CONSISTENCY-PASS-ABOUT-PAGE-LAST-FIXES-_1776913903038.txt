@@ -1,0 +1,141 @@
+FINAL MENU PAGE CONSISTENCY PASS + ABOUT PAGE LAST FIXES
+
+We are close, but not fully locked yet. Please handle this as one clean system-wide refinement pass.
+
+==================================================
+PART 1 — ABOUT PAGE FINAL FIXES
+==================================================
+
+1. HERO TITLE LINE BREAKS
+Current:
+ABOUT VETERAN CARE
+
+This does not read/layout correctly.
+
+Please change headline structure to:
+
+ABOUT
+VETERAN CARE
+
+“ABOUT” on its own line
+“VETERAN CARE” on the next line
+
+Strong centered hierarchy, premium spacing, same typography style already in use.
+
+--------------------------------------------------
+
+2. VIDEO FRAME / CONTAINER
+The About page video is STILL not visually fitting the frame the same way the approved landing pages do.
+
+Important:
+When the video is maximized, it looks correct.
+But inside the page container, it does NOT look correct yet.
+
+Please stop improvising here and reuse the exact approved portrait campaign video system already solved on the landing pages.
+
+Requirements:
+- same portrait-friendly phone-style container
+- same exact component / CSS / fit behavior
+- same visual presentation used on approved landing pages
+- should look correct while playing INSIDE the page without needing fullscreen
+- no weird crop feeling
+- no side dead space feeling
+- no mismatched wrapper behavior
+- native fullscreen still available, but in-page presentation must already look premium
+
+This needs to visually match the landing page video treatment exactly.
+
+--------------------------------------------------
+
+3. VIDEO SPACING RHYTHM
+Spacing above and below the video + quote still feels off.
+
+Fix layout flow to:
+
+[video section heading]
+small balanced gap
+[video]
+small balanced gap
+[quote]
+balanced gap
+[mission card]
+
+Right now the spacing below the video / quote area still feels too loose and disconnected.
+
+Please make top and bottom spacing around this section feel symmetrical and premium.
+
+==================================================
+PART 2 — UNIVERSAL MENU PAGE LAYOUT RULE
+==================================================
+
+Every page inside this menu system that we created must now follow the SAME universal structure.
+
+Apply this consistently to:
+- About
+- How It Works
+- Contact
+- Case Managers
+- Privacy
+- Terms
+- any other new menu pages already created
+
+UNIVERSAL STRUCTURE:
+
+1. WHITE HEADER SECTION AT TOP
+- premium Veteran Care dog-tag logo
+- white background
+- same beautiful logo treatment every time
+- centered
+- consistent top/bottom spacing
+
+2. GREEN HERO SECTION BELOW
+- page title
+- supporting intro copy
+- white text on green background
+- no awkward collisions
+
+This should become the default menu-page design system.
+
+--------------------------------------------------
+
+3. NO MORE OVERLAP / COLLISION ISSUES
+Some boxes, cards, and button sections are still overlapping or sitting too tight.
+
+Please do a full pass across all menu pages and fix:
+- box overlap
+- button overlap
+- hero collisions
+- uneven section spacing
+- mobile layout crowding
+
+Everything must breathe and feel aligned like the main site.
+
+==================================================
+PART 3 — DESIGN CONSISTENCY RULE
+==================================================
+
+The darker outer-shell / menu-screen look is okay, but it must stay controlled ONLY within the menu experience.
+
+Inside the actual page content, everything should still feel:
+- clean
+- premium
+- consistent with main site
+- mobile-first
+- properly spaced
+- not cramped
+- not improvised
+
+==================================================
+FINAL OBJECTIVE
+==================================================
+
+Lock a single reusable design system for all menu pages:
+
+WHITE logo header
+GREEN hero section
+clean section spacing
+no overlaps
+same premium mobile rhythm
+same approved portrait video system
+
+Once this pass is complete, these menu pages should feel fully unified and no longer need piecemeal fixes.
