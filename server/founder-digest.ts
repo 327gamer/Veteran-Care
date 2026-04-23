@@ -39,8 +39,76 @@ async function ensureDigestLogTable(): Promise<void> {
       `ALTER TABLE founder_digest_log ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'sent'`,
       []
     );
+    // Suppressed-event queue — events that would have been instant alerts but
+    // were intentionally rolled into the next scheduled digest.
+    await pgQuery(
+      `CREATE TABLE IF NOT EXISTS founder_digest_queue (
+         id           bigserial   PRIMARY KEY,
+         event_type   text        NOT NULL,
+         summary      text        NOT NULL,
+         severity     text        NOT NULL DEFAULT 'info',
+         occurred_at  timestamptz NOT NULL DEFAULT now(),
+         consumed_at  timestamptz
+       )`,
+      []
+    );
+    await pgQuery(
+      `CREATE INDEX IF NOT EXISTS idx_founder_digest_queue_unconsumed
+         ON founder_digest_queue (occurred_at)
+         WHERE consumed_at IS NULL`,
+      []
+    );
   } catch (err: any) {
     console.log("[founder-digest] ensureDigestLogTable:", err?.message);
+  }
+}
+
+// PUBLIC: append a noise-suppressed event to be rolled into the next digest.
+// Callers fire-and-forget; failures are swallowed so they never break the
+// originating request flow.
+export async function queueDigestEvent(
+  eventType: string,
+  summary: string,
+  severity: "info" | "warn" | "alert" = "info",
+): Promise<void> {
+  try {
+    await ensureDigestLogTable();
+    await pgQuery(
+      `INSERT INTO founder_digest_queue (event_type, summary, severity)
+         VALUES ($1, $2, $3)`,
+      [eventType, summary.slice(0, 500), severity]
+    );
+  } catch (err: any) {
+    console.log("[founder-digest] queueDigestEvent failed:", err?.message);
+  }
+}
+
+interface QueuedEvent { id: number; event_type: string; summary: string; severity: string; occurred_at: string; }
+
+async function fetchPendingEvents(): Promise<QueuedEvent[]> {
+  try {
+    return await pgQuery<QueuedEvent>(
+      `SELECT id, event_type, summary, severity, occurred_at
+         FROM founder_digest_queue
+        WHERE consumed_at IS NULL
+        ORDER BY occurred_at ASC
+        LIMIT 500`,
+      []
+    );
+  } catch {
+    return [];
+  }
+}
+
+async function markEventsConsumed(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  try {
+    await pgQuery(
+      `UPDATE founder_digest_queue SET consumed_at = now() WHERE id = ANY($1::bigint[])`,
+      [ids]
+    );
+  } catch (err: any) {
+    console.log("[founder-digest] markEventsConsumed:", err?.message);
   }
 }
 
@@ -331,7 +399,7 @@ function fmtUsd(n: number): string {
   return `$${n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
-function buildDigestHtml(d: DigestData): string {
+function buildDigestHtml(d: DigestData, suppressed: QueuedEvent[] = []): string {
   const baseUrl = platform.domain ? `https://${platform.domain}` : "";
   const adminLink = baseUrl ? `<p style="margin:20px 0 0 0;text-align:center;"><a href="${baseUrl}/admin" style="color:#166534;font-weight:600;text-decoration:none;font-size:14px;">Open Admin Panel →</a></p>` : "";
 
@@ -510,6 +578,35 @@ function buildDigestHtml(d: DigestData): string {
     </div>
   </div>
 
+  ${(() => {
+    if (suppressed.length === 0) return "";
+    // Group by event_type, count, take 5 most recent summaries per group.
+    const groups = new Map<string, QueuedEvent[]>();
+    suppressed.forEach(e => {
+      const arr = groups.get(e.event_type) || [];
+      arr.push(e);
+      groups.set(e.event_type, arr);
+    });
+    const blocks = Array.from(groups.entries()).map(([type, evts]) => {
+      const sample = evts.slice(-5).reverse();
+      const sampleHtml = sample.map(e => {
+        const t = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(e.occurred_at));
+        const sev = e.severity === "alert" ? "#B91C1C" : e.severity === "warn" ? "#92400E" : "#374151";
+        return `<div style="font-size:12px;color:${sev};padding:4px 0;border-bottom:1px solid #F3F4F6;"><span style="color:#9CA3AF;font-family:monospace;">${t} ET</span> &nbsp; ${e.summary.replace(/[<&>]/g, c => ({"<":"&lt;","&":"&amp;",">":"&gt;"} as any)[c])}</div>`;
+      }).join("");
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;padding:4px 0 2px 0;">${type.replace(/_/g," ")} <span style="color:#9CA3AF;font-weight:400;">· ${evts.length}</span></div>
+        ${sampleHtml}
+      </div>`;
+    }).join("");
+    return `
+      <div style="margin-bottom:18px;">
+        <h2 style="margin:0 0 8px 0;font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;">Suppressed Activity (rolled into this digest) <span style="color:#9CA3AF;font-weight:400;text-transform:none;letter-spacing:0;">· ${suppressed.length} total</span></h2>
+        <div style="padding:8px 12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;">${blocks}</div>
+      </div>
+    `;
+  })()}
+
   ${adminLink}
 
   <div style="border-top:1px solid #E5E7EB;margin-top:24px;padding-top:12px;color:#9CA3AF;font-size:11px;text-align:center;">
@@ -531,7 +628,9 @@ export async function sendFounderDigest(opts?: { reason?: string; slot?: DigestS
   }
   try {
     const data = await assembleDigestData();
-    const html = buildDigestHtml(data);
+    const pendingEvents = await fetchPendingEvents();
+    const pendingEventIds = pendingEvents.map(e => e.id);
+    const html = buildDigestHtml(data, pendingEvents);
     const slotLabel = opts?.slot === "afternoon" ? "Afternoon" : opts?.slot === "morning" ? "Morning" : "Update";
     const subject = `${platform.name} ${slotLabel} — ${data.yesterday.leadsTotal} leads · ${fmtUsd(data.yesterday.paymentsBilledAmount)} billed · ${data.alerts.filter(a => a.level === "red").length} red alerts`;
     const { data: sent, error } = await resend.emails.send({
@@ -544,11 +643,13 @@ export async function sendFounderDigest(opts?: { reason?: string; slot?: DigestS
       console.log("[founder-digest] Send failed:", error.message);
       return { sent: false, recipients, error: error.message };
     }
-    console.log(`[founder-digest] Sent (${opts?.reason || "scheduled"}/${opts?.slot || "n/a"}) to ${recipients.join(", ")} — id=${sent?.id}`);
+    console.log(`[founder-digest] Sent (${opts?.reason || "scheduled"}/${opts?.slot || "n/a"}) to ${recipients.join(", ")} — id=${sent?.id} suppressed_events=${pendingEventIds.length}`);
     if (opts?.slot) {
       // Slot was already claimed by the timer prior to send; just upgrade to 'sent'.
       await markSlotSent(etDateString(), opts.slot, recipients, sent?.id || null);
     }
+    // Mark suppressed events as consumed so they don't appear in the next digest.
+    if (pendingEventIds.length > 0) await markEventsConsumed(pendingEventIds);
     return { sent: true, recipients };
   } catch (err: any) {
     console.log("[founder-digest] Error:", err?.message);

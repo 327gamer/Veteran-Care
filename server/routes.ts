@@ -11594,6 +11594,14 @@ export async function registerRoutes(
         );
         const provider = providerRows[0];
 
+        // Note: trusted-services public partner-connect submissions have no
+        // per-lead billable/urgent signal today (those concepts live on
+        // navigator_requests, not trusted_services). Intentionally passing
+        // `signals` undefined → A4 will suppress the founder admin-copy into
+        // the next digest whenever the partner email succeeded. Partner-fail
+        // and partner-no-email cases still escalate instantly. When/if a
+        // billable flag or urgency field is added to this submission flow,
+        // pass `{ isBillable, isUrgent }` here.
         const result = await sendTrustedServiceLeadNotification(
           data.id,
           { name: provider?.name || provider_name, email: provider?.email || null, category_name: provider?.category_name || null },

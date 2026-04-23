@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import crypto from "crypto";
 import { supabase, supabaseAdmin } from "./supabase";
 import { platform, t } from "../shared/platform";
+import { queueDigestEvent } from "./founder-digest";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -446,6 +447,23 @@ export async function sendNavigatorNotification(
 
     const html = buildResourceNotificationHtml(leadData, resourceTitle, notifyEmail);
 
+    // A3 — Founder noise suppression: when the resource has no source-name
+    // mapping, the email defaults to the founder/admin inbox. For non-urgent
+    // unmapped leads, roll into the next scheduled digest instead of firing
+    // an instant email. Urgent leads (urgency === "immediate") still send
+    // instantly so true crisis cases are never delayed.
+    const isUnmappedFallback = notifyEmail === DEFAULT_NOTIFY_EMAIL;
+    if (isUnmappedFallback && !isImmediate) {
+      const cityState = [lead.user_city, lead.user_state].filter(Boolean).join(", ") || "unknown location";
+      await queueDigestEvent(
+        "navigator_unmapped_lead",
+        `${lead.veteran_name || "Lead"} · ${catPart}${subPart} · ${cityState} · lead ${leadId}`,
+        "info"
+      );
+      console.log(`[email] [A3-suppressed→digest] Unmapped non-urgent lead ${leadId} queued for digest (no instant email)`);
+      return { sent: false, error: "queued_for_digest" };
+    }
+
     console.log(`[email] Sending notification to ${notifyEmail} from ${FROM_EMAIL}`);
 
     const { data: emailResult, error: emailErr } = await resend.emails.send({
@@ -594,7 +612,8 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
 export async function sendTrustedServiceLeadNotification(
   leadId: string,
   providerData: { name: string; email: string | null; category_name: string | null },
-  leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; role: string | null; created_at: string }
+  leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; role: string | null; created_at: string },
+  signals?: { isBillable?: boolean; isUrgent?: boolean }
 ): Promise<{ partnerSent: boolean; adminSent: boolean; errors: string[] }> {
   const errors: string[] = [];
   let partnerSent = false;
@@ -638,12 +657,38 @@ export async function sendTrustedServiceLeadNotification(
     errors.push("Partner has no email on file");
   }
 
+  // A4 — Founder noise suppression: the admin copy used to fire on every
+  // public partner-connect submission, even when the partner email succeeded
+  // and there was nothing for the founder to do. New rule: only send instant
+  // when something needs human attention. Otherwise roll into the next digest.
+  const partnerHadEmail = !!providerData.email;
+  const partnerDeliveryFailed = partnerHadEmail && !partnerSent; // had email, send rejected
+  const partnerMissingEmail = !partnerHadEmail;                  // no email on file
+  const isPaidLead = signals?.isBillable === true;
+  const isUrgent = signals?.isUrgent === true;
+  const adminInstantNeeded = partnerDeliveryFailed || partnerMissingEmail || isPaidLead || isUrgent;
+
+  if (!adminInstantNeeded) {
+    const where = [leadData.city, leadData.state].filter(Boolean).join(", ") || "unknown location";
+    await queueDigestEvent(
+      "trusted_services_lead",
+      `${providerData.name} · ${leadData.name} · ${where} · lead ${leadId}`,
+      "info"
+    );
+    console.log(`[email] [A4-suppressed→digest] Trusted Services lead ${leadId} queued for digest (partner notified ok, no admin instant)`);
+    return { partnerSent, adminSent: false, errors };
+  }
+
   try {
     const adminHtml = buildTrustedServiceLeadHtml(data, true);
+    const adminReason = partnerDeliveryFailed ? "partner_send_failed"
+      : partnerMissingEmail ? "partner_no_email"
+      : isPaidLead ? "billable_lead"
+      : isUrgent ? "urgent_lead" : "unknown";
     const { error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [DEFAULT_NOTIFY_EMAIL],
-      subject: `[Trusted Services Lead] ${providerData.name} — ${leadData.name}`,
+      subject: `[Trusted Services Lead — ${adminReason}] ${providerData.name} — ${leadData.name}`,
       html: adminHtml,
     });
     if (emailErr) {
@@ -651,7 +696,7 @@ export async function sendTrustedServiceLeadNotification(
       errors.push(`Admin: ${emailErr.message}`);
     } else {
       adminSent = true;
-      console.log(`[email] Admin trusted service notification sent to ${DEFAULT_NOTIFY_EMAIL}`);
+      console.log(`[email] Admin trusted service notification sent to ${DEFAULT_NOTIFY_EMAIL} (reason=${adminReason})`);
     }
   } catch (err: any) {
     errors.push(`Admin: ${err?.message}`);
