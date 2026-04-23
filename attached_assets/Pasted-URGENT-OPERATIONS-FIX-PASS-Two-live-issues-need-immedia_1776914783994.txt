@@ -1,0 +1,105 @@
+URGENT OPERATIONS FIX PASS
+
+Two live issues need immediate cleanup.
+
+==================================================
+1. CONTACT FORM EMAIL ROUTING ISSUE
+==================================================
+
+I completed the Contact page request form using my personal email.
+
+What happened:
+- confirmation / auto reply came back to me
+- NOTHING arrived in the admin inbox (info@VeteranCare.com)
+
+That means admin notifications are not routing correctly.
+
+Please audit and fix immediately:
+
+Required flow:
+
+User submits form
+→ confirmation email goes to user
+→ full copy also goes to admin inbox:
+info@VeteranCare.com
+
+Need to verify:
+
+- destination inbox address
+- resend/sendgrid config
+- webhook / backend route
+- silent send failures
+- spam/rejection issues
+- duplicate filters
+
+Then test live submission and confirm both emails fire correctly.
+
+==================================================
+2. COMMAND CENTER EMAIL FLOODING
+==================================================
+
+I am receiving too many internal alert emails.
+
+Currently getting repeated “Veteran Care Daily / Command Center” emails every few minutes.
+
+This is not usable.
+
+Please redesign notifications:
+
+A. DIGEST EMAILS ONLY
+
+1 Morning Summary
+(around 8am)
+
+1 Afternoon Summary
+(around 4pm)
+
+Include:
+- new leads
+- trusted partner signups
+- billing issues
+- unresolved escalations
+- key stats
+
+B. IMMEDIATE ALERTS ONLY FOR HIGH PRIORITY EVENTS
+
+Only send instant emails for:
+
+- new paid Trusted Partner signup
+- Stripe billing failure
+- critical legal/government inquiry
+- crisis/escalated lead
+- system outage
+- major security/admin issue
+- high-value monetized lead
+
+C. REMOVE NOISE
+
+Do NOT email for:
+- routine clicks
+- normal browsing
+- repeated unchanged alerts
+- every small database action
+- every page interaction
+
+Use dashboard logs instead.
+
+==================================================
+3. GOAL
+==================================================
+
+I need signal, not noise.
+
+Smart executive reporting:
+2 digest emails daily + only real urgent alerts.
+
+==================================================
+4. PLEASE CONFIRM
+==================================================
+
+Tell me:
+
+- why admin inbox didn’t receive contact form
+- where current flood emails are triggered from
+- what schedule you changed to
+- what urgent alerts remain instant
