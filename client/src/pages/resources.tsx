@@ -507,10 +507,23 @@ export default function Resources() {
       setUrgencyFilter(urg);
     }
     const modeParam = params.get("mode");
+    const stateParamUrl = params.get("state");
+    const cityParamUrl = params.get("city");
     if (modeParam === "nearme") {
       setLocationMode("nearme");
       setGeoApplied(true);
       geo.requestLocation();
+    } else if (stateParamUrl) {
+      // Manual State (+ optional City) flow from /near-me picker.
+      setLocationMode("state");
+      setSelectedState(stateParamUrl.toUpperCase());
+      setCityFilter(cityParamUrl ? decodeURIComponent(cityParamUrl) : "");
+      setZipFilter("");
+      setLocalOnly(false);
+    } else if (cityParamUrl) {
+      // City-only manual entry (rare, but supported).
+      setLocationMode("city");
+      setCityFilter(decodeURIComponent(cityParamUrl));
     } else if (locationMode === "nearme") {
       setLocationMode("national");
     }

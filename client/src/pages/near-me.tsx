@@ -15,7 +15,6 @@ import { useGeolocation } from "@/lib/use-geolocation";
 import {
   MapPin,
   Map as MapIcon,
-  Building2,
   Loader2,
   ArrowLeft,
   ChevronRight,
@@ -50,7 +49,7 @@ const US_STATES: { code: string; name: string }[] = [
   { code: "WY", name: "Wyoming" },
 ];
 
-type Step = "choose" | "geo" | "state" | "city";
+type Step = "choose" | "geo" | "manual";
 
 export default function NearMe() {
   const [, setLocation] = useLocation();
@@ -66,11 +65,11 @@ export default function NearMe() {
     }
   }, [step, geo.location, setLocation]);
 
-  // If geolocation is denied or errors, drop the user into the manual state path
+  // If geolocation is denied or errors, drop the user into the manual path
   // (per founder requirement: no silent fallback to national results).
   useEffect(() => {
     if (step === "geo" && (geo.permDenied || (geo.error && !geo.loading))) {
-      setStep("state");
+      setStep("manual");
     }
   }, [step, geo.permDenied, geo.error, geo.loading]);
 
@@ -82,7 +81,7 @@ export default function NearMe() {
       if (!r.ok) return [];
       return r.json();
     },
-    enabled: !!selectedState && (step === "state" || step === "city"),
+    enabled: !!selectedState && step === "manual",
   });
 
   const handleUseLocation = () => {
@@ -112,7 +111,7 @@ export default function NearMe() {
         eyebrow="Find Help"
         title={["Near", "You"]}
         subtitle="How would you like to find resources?"
-        detail="Use your location, pick a state, or browse by city. No account needed."
+        detail="Use your location or pick a state and city. No account needed."
       />
 
       <section className="container mx-auto px-5 py-10 max-w-2xl">
@@ -128,16 +127,9 @@ export default function NearMe() {
             <ChoiceTile
               testId="tile-pick-state"
               icon={<MapIcon className="h-7 w-7" />}
-              title="Pick a State"
+              title="Pick a State / City"
               detail="Choose any U.S. state, then narrow by city if you want."
-              onClick={() => setStep("state")}
-            />
-            <ChoiceTile
-              testId="tile-pick-city"
-              icon={<Building2 className="h-7 w-7" />}
-              title="Pick a City"
-              detail="Browse a specific city directly — no location needed."
-              onClick={() => setStep("city")}
+              onClick={() => setStep("manual")}
             />
           </div>
         )}
@@ -163,7 +155,7 @@ export default function NearMe() {
           </Card>
         )}
 
-        {(step === "state" || step === "city") && (
+        {step === "manual" && (
           <Card>
             <CardContent className="px-6 sm:px-10 py-8 space-y-6">
               <div className="flex items-center justify-between">
@@ -171,7 +163,7 @@ export default function NearMe() {
                   className="text-xl font-heading font-bold text-primary"
                   data-testid="text-manual-heading"
                 >
-                  {step === "state" ? "Pick a State" : "Pick a City"}
+                  Pick a State / City
                 </h2>
                 <Button
                   variant="ghost"

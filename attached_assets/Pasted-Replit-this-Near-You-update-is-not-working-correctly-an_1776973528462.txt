@@ -1,0 +1,72 @@
+Replit — this Near You update is not working correctly and appears to be a regression. Please fix the logic before we move forward.
+
+WHAT IS HAPPENING NOW:
+1. The new Near You landing page looks fine visually, but the routing logic is confusing.
+2. “Use My Location” just sends users back into the old Near Me flow, which still has the same state/manual-path issue.
+3. “Pick a State” and “Pick a City” are redundant. They are basically the same path and this is confusing for users.
+4. Most importantly, when a user selects a state and/or city, the next page is not reliably carrying that geographic selection into the results. That is unacceptable. If a user chooses North Carolina and a city, they should only be seeing filtered results for that state/city flow — not South Carolina resources, not generic resources, and not a reset experience.
+
+DECISION:
+Please DO NOT keep the current 3-path logic as it is.
+
+NEW REQUIRED UX:
+Keep the Near You landing page, but simplify it to ONLY TWO CHOICES:
+
+A. Use My Location
+B. Pick a State / City
+
+REMOVE:
+- the separate “Pick a City” tile completely
+
+WHY:
+- “Pick a State” already includes optional city selection
+- having both is redundant and confusing
+- users should not have to guess which path to use
+
+REQUIRED FUNCTIONAL LOGIC:
+1. Use My Location
+- should route into Near Me results using geolocation exactly as intended
+- if geolocation is denied, then clearly fall back to the manual “Pick a State / City” path
+- do not silently dump users into a generic results page
+
+2. Pick a State / City
+- user selects a state
+- user may optionally select a city
+- when they click View Resources, the system MUST preserve and apply that geographic input
+- results page must load already filtered to that state and optional city
+- this filter must remain active and visible on the results page
+- the query string / route state / page state must all reflect the chosen geography consistently
+
+3. Results behavior
+- if user picked only a state, show state-filtered results for that state
+- if user picked state + city, show results for that city within that state
+- do not route users into generic category browsing without their geography applied
+- do not reset their state/city after they click through
+- do not cross-load the wrong state
+
+4. Validation
+Please specifically test:
+- North Carolina state-only selection
+- North Carolina + city selection
+- South Carolina state-only selection
+- South Carolina + city selection
+- geolocation denied -> manual fallback
+- geolocation allowed -> near me results
+- ensure chosen geography carries correctly into results in all cases
+
+5. If needed
+If the current new landing-page implementation is too tangled, then strip it back and rebuild the routing cleanly. Functionality matters more than preserving this version.
+
+IMPORTANT:
+This should feel simple for the user:
+- Use My Location
+or
+- Pick a State / City
+
+Nothing else.
+
+Please fix the routing and filtering logic first, then report back clearly with:
+- what route(s) changed
+- how state/city selections are preserved
+- what exact cases were tested
+- whether any rollback or rebuild was needed
