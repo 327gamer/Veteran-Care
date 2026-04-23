@@ -21,7 +21,7 @@ export default function Terms() {
       />
       <section className="container mx-auto px-5 py-10 max-w-3xl">
         <Card>
-          <CardContent className="px-6 sm:px-10 pt-10 pb-10 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-primary prose-h3:mt-9 prose-h3:mb-3 prose-h3:text-lg prose-h3:font-bold prose-p:leading-[1.7] prose-p:mb-5">
+          <CardContent className="px-6 sm:px-10 pt-10 pb-10 max-w-none text-[15px] text-foreground/90 [&_h3]:font-heading [&_h3]:text-primary [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-10 [&_h3]:mb-4 [&_h3:first-child]:mt-0 [&_p]:leading-[1.75] [&_p]:mb-6 [&_p:last-child]:mb-0 [&_a]:text-primary [&_a]:underline">
             <p>By using Veteran Care, you agree to use the platform for lawful purposes and in good faith.</p>
 
             <h3>Resource information</h3>
