@@ -45,12 +45,23 @@ const PARTNER_PHASE_3_VIDEO: CampaignVideo | null = {
   aspectRatio: 9 / 16,
 };
 
+const ABOUT_PHASE_7_2_VIDEO: CampaignVideo | null = {
+  src: "/videos/about-phase-7-2.mov",
+  thumbnail: "/videos/about-phase-7-2-poster-portrait.jpg",
+  title: "Why People Are Talking About Veteran Care",
+  caption:
+    "America's modern, AI-powered support platform for veterans, families, and the people who care for them.",
+  // Source is 1080x1920 (portrait 9:16). Same shape as Phases 1–3.
+  aspectRatio: 9 / 16,
+};
+
 export const CAMPAIGN_VIDEOS: Record<string, CampaignVideo | null> = {
   veteran: VETERANS_PHASE_1_VIDEO,
   general: VETERANS_PHASE_1_VIDEO,
   homepage: VETERANS_PHASE_1_VIDEO,
   case_manager: CASE_MANAGER_PHASE_2_VIDEO,
   partner: PARTNER_PHASE_3_VIDEO,
+  about: ABOUT_PHASE_7_2_VIDEO,
 };
 
 export function getCampaignVideo(aud: string): CampaignVideo | null {
