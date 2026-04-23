@@ -21,7 +21,7 @@ export default function Privacy() {
       />
       <section className="container mx-auto px-5 py-10 max-w-3xl">
         <Card>
-          <CardContent className="pt-7 pb-7 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-primary prose-h3:mt-7 prose-h3:mb-2 prose-p:leading-relaxed">
+          <CardContent className="px-6 sm:px-10 pt-10 pb-10 prose prose-sm max-w-none prose-headings:font-heading prose-headings:text-primary prose-h3:mt-9 prose-h3:mb-3 prose-h3:text-lg prose-h3:font-bold prose-p:leading-[1.7] prose-p:mb-5">
             <p>Veteran Care ("we", "us") respects your privacy. This page summarizes how we handle information when you use our platform.</p>
 
             <h3>What we collect</h3>

@@ -32,13 +32,14 @@ export default function MenuPageHero({
 
   return (
     <>
-      {/* WHITE logo header */}
+      {/* WHITE logo header — tightened spacing 2026-04-23 to feel premium
+          and let the green hero start higher. Logo enlarged for brand impact. */}
       <section className="bg-white">
-        <div className="container mx-auto px-5 pt-12 pb-10 sm:pt-16 sm:pb-12 max-w-5xl text-center">
+        <div className="container mx-auto px-5 pt-5 pb-3 sm:pt-7 sm:pb-4 max-w-5xl text-center">
           <img
             src={logoImg}
             alt="Veteran Care"
-            className="h-40 sm:h-52 w-auto object-contain mx-auto drop-shadow-lg"
+            className="h-56 sm:h-72 w-auto object-contain mx-auto drop-shadow-lg"
             data-testid={`img-${testIdPrefix}-hero-logo`}
           />
         </div>
