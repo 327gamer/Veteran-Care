@@ -1,0 +1,110 @@
+REPLIT — ABOUT PAGE COVERAGE SECTION REFINEMENT
+
+We need to improve the coverage section on the About Veteran Care page.
+
+==================================================
+RENAME THE SECTION
+==================================================
+
+Current section needs updated.
+
+Change the eyebrow/title area to:
+
+Eyebrow:
+THE DIFFERENCE
+
+Main Heading:
+What Veteran Care offers
+
+Replace the current wording.
+
+==================================================
+WHY
+==================================================
+
+"The Difference" is stronger branding language.
+
+"What Veteran Care offers" is clearer, more direct, and easier for users to understand than "covers."
+
+==================================================
+REORDER THE BOXES
+==================================================
+
+Please reorder the cards in this exact sequence:
+
+1. Search by city, state, or near me
+
+2. AI Navigator assistance
+
+3. Trusted services & discounts
+
+4. Then all remaining support/resource categories after that
+
+==================================================
+IMPORTANT
+==================================================
+
+Right now some key categories/resources appear missing or buried too low.
+
+We need the section to first show:
+
+A. Search power
+B. AI assistance
+C. Trusted partner value
+
+Then follow with all real-life veteran/family support categories.
+
+==================================================
+INCLUDE ALL REMAINING RESOURCE CATEGORIES
+==================================================
+
+After first 3 boxes, continue with all applicable support categories such as examples below (use current live categories already in system where applicable):
+
+- Housing / homelessness support
+- Jobs / training / careers
+- Benefits / claims / VA navigation
+- Healthcare / mental health
+- Disabled veteran & family support
+- Caregiver / spouse / dependent support
+- Education
+- Legal / financial guidance
+- Food / emergency help
+- Transportation
+- End-of-life planning support
+- Community / peer support
+- Crisis support
+- Senior veteran support
+- Reentry / justice-involved veteran support (if applicable)
+
+Use existing system categories if already built.
+
+==================================================
+DESIGN RULES
+==================================================
+
+Keep:
+
+- same clean card style
+- same icons
+- same spacing
+- same typography
+- same mobile responsiveness
+- same premium look
+
+Only improve wording + order + completeness.
+
+==================================================
+GOAL
+==================================================
+
+This section should quickly show visitors:
+
+1. How the platform works
+2. Why it is valuable
+3. How broad the support network is
+
+==================================================
+AFTER COMPLETE
+==================================================
+
+Publish / Republish so live site updates.

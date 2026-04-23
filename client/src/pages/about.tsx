@@ -16,6 +16,14 @@ import {
   Calendar,
   Globe,
   CheckCircle2,
+  Scale,
+  GraduationCap,
+  Utensils,
+  Car,
+  LifeBuoy,
+  MessageCircle,
+  Phone,
+  UserCheck,
 } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
@@ -31,6 +39,7 @@ const TRUST_TILES = [
 ];
 
 const PILLARS = [
+  // 1–3: how the platform works + why it's valuable
   {
     icon: MapPin,
     title: "Search by city, state, or near me",
@@ -42,34 +51,80 @@ const PILLARS = [
     desc: "An AI assistant that listens to your situation, asks the right questions, and routes you to the exact resource or program you need.",
   },
   {
-    icon: Stethoscope,
-    title: "Healthcare & mental health",
-    desc: "VA medical centers, community clinics, behavioral health programs, recovery support, and the Veterans Crisis Line (988, then 1).",
-  },
-  {
-    icon: HomeIcon,
-    title: "Housing & benefits",
-    desc: "Homeless veteran outreach, transitional housing, HUD-VASH, claims assistance, and benefits navigation step by step.",
-  },
-  {
-    icon: Briefcase,
-    title: "Jobs, training & education",
-    desc: "Hiring pathways, apprenticeships, skilled trades, GI Bill resources, resume support, and career guidance.",
-  },
-  {
-    icon: Heart,
-    title: "Disabled veteran & family support",
-    desc: "Caregiver programs, spouse and dependent benefits, survivor support, and disability-specific resources.",
-  },
-  {
     icon: ShieldCheck,
     title: "Trusted services & discounts",
     desc: "Vetted local partners offering veteran-friendly products, services, and exclusive pricing.",
   },
+  // 4+: real-life support categories
+  {
+    icon: HomeIcon,
+    title: "Housing & homelessness support",
+    desc: "Homeless veteran outreach, transitional housing, HUD-VASH, and emergency shelter navigation.",
+  },
+  {
+    icon: Briefcase,
+    title: "Jobs, training & careers",
+    desc: "Hiring pathways, apprenticeships, skilled trades, resume help, and career coaching.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Benefits, claims & VA navigation",
+    desc: "Claims assistance, appeals support, eligibility checks, and step-by-step VA benefits guidance.",
+  },
+  {
+    icon: Stethoscope,
+    title: "Healthcare & mental health",
+    desc: "VA medical centers, community clinics, behavioral health programs, and recovery support.",
+  },
+  {
+    icon: Heart,
+    title: "Disabled veteran & family support",
+    desc: "Disability-specific resources, adaptive programs, and family advocacy.",
+  },
   {
     icon: Users,
+    title: "Caregiver, spouse & dependent support",
+    desc: "Caregiver stipends, spouse benefits, dependent education, and survivor programs.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Education",
+    desc: "GI Bill, vocational rehab, scholarships, and transition-to-school resources.",
+  },
+  {
+    icon: Scale,
+    title: "Legal & financial guidance",
+    desc: "Free legal clinics, financial counseling, debt help, and tax assistance for veterans.",
+  },
+  {
+    icon: Utensils,
+    title: "Food & emergency help",
+    desc: "Food pantries, emergency funds, utility assistance, and short-term hardship relief.",
+  },
+  {
+    icon: Car,
+    title: "Transportation",
+    desc: "Rides to appointments, vehicle programs, and mobility support across counties.",
+  },
+  {
+    icon: LifeBuoy,
     title: "End-of-life planning support",
     desc: "Hospice navigation, burial benefits, military honors coordination, and survivor guidance.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Community & peer support",
+    desc: "Veteran-led groups, mentorship, and local meetups so no veteran walks it alone.",
+  },
+  {
+    icon: Phone,
+    title: "Crisis support",
+    desc: "Direct access to the Veterans Crisis Line — 988, then press 1 — and rapid escalation paths.",
+  },
+  {
+    icon: UserCheck,
+    title: "Senior veteran support",
+    desc: "Aging-in-place programs, senior care navigation, and benefits tailored to older veterans.",
   },
 ];
 
@@ -182,9 +237,9 @@ export default function About() {
       {/* ── WHAT WE COVER ── */}
       <section className="container mx-auto px-5 py-12 max-w-5xl">
         <div className="text-center mb-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Coverage</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">The Difference</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-            What Veteran Care covers
+            What Veteran Care offers
           </h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
             Real-world support across every part of veteran and family life.
