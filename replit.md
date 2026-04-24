@@ -46,7 +46,7 @@
 
 ### Three Logical Layers
 1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
-2. **State Data Layer** — Southeast Flagship Block complete: Georgia (LIVE Gold Standard, 440 / 54 cities / 17 cats), South Carolina (LIVE Gold Standard, 538 / 49 cities / 17 cats), North Carolina (LIVE Gold Standard, 431 / 96 cities / 17 cats). Florida (Wave 3 next), Tennessee, Virginia, Texas, etc.
+2. **State Data Layer** — Southeast Flagship Block complete: Georgia (LIVE Gold Standard + Phase 5 Saturation, 657 / 83 cities / 13 cats), South Carolina (LIVE Gold Standard, 538 / 49 cities / 17 cats), North Carolina (LIVE Gold Standard, 431 / 96 cities / 17 cats). Florida (Wave 3 next), Tennessee, Virginia, Texas, etc.
 
 ### Operational Steps 0 → 8 (HISTORICAL — superseded 2026-04-24 by State Rollout Engine v2 below)
 
@@ -166,7 +166,7 @@ Canonical live tracker. Update the row for the affected state at the end of ever
 
 | State | Rows | Cities | Cats Active | Weak / Thin Cats | Gold Standard | Phase | Last Update | Dups | Orphans | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| GA Georgia | 440 | 54 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / accepted siblings | 0 | Flagship template; engine v2 codified. |
+| GA Georgia | 657 | 83 | 13/17 active | crisis-help (21) | YES ✅ | 5 Saturation | 2026-04-24 | 0 exact / accepted siblings | 0 | Flagship + Saturation; +217 rows Phase 5 (FUL/COB/GWN/DEK/CLA/ATL deepening + 65-row EXP outer-county block). |
 | SC South Carolina | 538 | 49 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / 56 accepted siblings | 0 | Was 438/38/0-Insurance/FAIL → Gold Standard. 6 "Veteran Care —" placeholder rows flagged for founder review. |
 | NC North Carolina | 431 | 96 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / accepted siblings | 0 | Wave 2 Pre-Florida Southeast Upgrade SHIPPED 2026-04-24. Was 295/83/Insurance-orphan/FAIL → Gold Standard. Cleanup: 5 missing sub-junctions backfilled + 1 Fayetteville VAMC duplicate soft-archived (status=archived, additive-safe — no row deleted, founder-reviewable). Seed: +137 rows across geo depth (Triad/Wilmington/ENC/WNC/Sandhills/Onslow), weak-cat fill (INS/CRI/FIN/HOU/TRA/LGL/BEN/REC), broader community (HOSP/CLN/SHL/FOOD/CAA/CHU/EOL/CAR). Net 295 → 431 = +136 visible rows. |
 | FL Florida | 0 | 0 | 0/17 | all | NO | (Wave 3 pending) | — | n/a | n/a | Wave 3 begins after NC ships. Greenfield. |
