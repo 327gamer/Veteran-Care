@@ -46,7 +46,7 @@
 
 ### Three Logical Layers
 1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
-2. **State Data Layer** — South Carolina (LIVE, 438 / 38 cities / 17 cats), North Carolina (LIVE, 295 / 83 cities / 17 cats — complete-shape template), Georgia (next), Florida, Tennessee, Virginia, etc.
+2. **State Data Layer** — Southeast Flagship Block complete: Georgia (LIVE Gold Standard, 440 / 54 cities / 17 cats), South Carolina (LIVE Gold Standard, 538 / 49 cities / 17 cats), North Carolina (LIVE Gold Standard, 431 / 96 cities / 17 cats). Florida (Wave 3 next), Tennessee, Virginia, Texas, etc.
 
 ### Operational Steps 0 → 8 (HISTORICAL — superseded 2026-04-24 by State Rollout Engine v2 below)
 
@@ -161,12 +161,23 @@ Geo reporting and admin segmentation must be tightened **before Georgia opens** 
 - **Gap — hard-coded SC filter:** exec-summary "Top Cities" panel (`server/routes.ts:10082-10093`); founder digest mixes states in flat city list
 - **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation **SHIPPED 2026-04-18** ✅ (additive `state`/`city` cols on ambassadors + `user_state`/`user_city` on page_views & ai_usage_log + `?state=` filter on exec-summary + admin state selector + founder-digest by-state grouping). No engine touches. See CHANGELOG for E2E validation.
 
-### State-by-State Phase 4 Status (Pre-Florida Southeast Upgrade)
-- **GA — Phase 4 Gold Standard SHIPPED 2026-04-24 ✅** — 440 rows; flagship template; engine v2 codified.
-- **SC — Phase 4 Gold Standard SHIPPED 2026-04-24 ✅** — 538 rows (was 438), 49 cities (was 38), 0 orphan junctions (was 8), Insurance category 8 rows (was 0 — DORMANT before), Crisis Help 4 (was 1), Hilton Head 4 (was 0). QA verdict: PASS WITH REVIEW. Cleanup script: backfilled 8 missing `resource_subcategories` junctions only (additive — no renames, no archives). Expansion script: 100 new rows across 18 sections covering Hilton Head/Bluffton/Beaufort coast, Upstate small cities, Pee Dee, Lowcountry inland, Midlands suburbs, plus broader-than-veterans-only resources (food banks, FQHC clinics, non-VA hospitals, shelters, hospice, recovery, interfaith, legal aid, insurance navigators) per founder broader-ingestion ask. Open items for founder review: 6 "Veteran Care —" placeholder rows (created 2026-03-10 with our brand URL/phone, no city/desc — flagged, NOT auto-archived) and 56 near-dup clusters (mostly accepted parent-org siblings under SC Works / SC DMH / SC DVA — QA noise, not user-facing).
-- **NC — Wave 2 PENDING** — apply same SC playbook. Audit deep-dive first.
-- **FL — Wave 3 PENDING** — apply combined SC+NC lessons via engine v2.
-- **Engine improvement noted (not blocking):** `runSeed()` writes resource then junctions in parallel without rollback. A transient junction failure can leave a partially linked row. Future hardening: add post-commit auto-repair pass (similar to the SC cleanup we wrote).
+### National State Expansion Scoreboard (UPDATE AFTER EVERY WAVE)
+Canonical live tracker. Update the row for the affected state at the end of every state wave (after QA passes and code review approves). Date format YYYY-MM-DD.
+
+| State | Rows | Cities | Cats Active | Weak / Thin Cats | Gold Standard | Phase | Last Update | Dups | Orphans | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| GA Georgia | 440 | 54 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / accepted siblings | 0 | Flagship template; engine v2 codified. |
+| SC South Carolina | 538 | 49 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / 56 accepted siblings | 0 | Was 438/38/0-Insurance/FAIL → Gold Standard. 6 "Veteran Care —" placeholder rows flagged for founder review. |
+| NC North Carolina | 431 | 96 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / accepted siblings | 0 | Wave 2 Pre-Florida Southeast Upgrade SHIPPED 2026-04-24. Was 295/83/Insurance-orphan/FAIL → Gold Standard. Cleanup: 5 missing sub-junctions backfilled + 1 Fayetteville VAMC duplicate soft-archived (status=archived, additive-safe — no row deleted, founder-reviewable). Seed: +137 rows across geo depth (Triad/Wilmington/ENC/WNC/Sandhills/Onslow), weak-cat fill (INS/CRI/FIN/HOU/TRA/LGL/BEN/REC), broader community (HOSP/CLN/SHL/FOOD/CAA/CHU/EOL/CAR). Net 295 → 431 = +136 visible rows. |
+| FL Florida | 0 | 0 | 0/17 | all | NO | (Wave 3 pending) | — | n/a | n/a | Wave 3 begins after NC ships. Greenfield. |
+| TN Tennessee | (not audited) | — | — | — | NO | — | — | — | — | Future. |
+| VA Virginia | (not audited) | — | — | — | NO | — | — | — | — | Future. |
+| TX Texas | (not audited) | — | — | — | NO | — | — | — | — | Future. |
+
+Goal: after NC ships, GA + SC + NC = **Southeast Flagship Block**. Then Florida begins.
+
+### Engine improvement noted (not blocking, future hardening)
+`runSeed()` (in `scripts/lib/rollout-engine.ts`) writes the resource row first, then writes category and subcategory junctions in parallel without transactional rollback. A transient junction failure can leave a partially linked row. Future hardening: add a post-commit auto-repair pass (similar pattern to the SC + NC cleanup scripts) or wrap in a transaction.
 
 ## Platform Blueprint
 - **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
