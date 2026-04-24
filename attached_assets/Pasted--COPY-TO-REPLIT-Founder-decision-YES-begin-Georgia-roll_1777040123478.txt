@@ -1,0 +1,144 @@
+--- COPY TO REPLIT ---
+
+Founder decision: YES — begin Georgia rollout today using the now-locked South Carolina / North Carolina template.
+
+IMPORTANT:
+Georgia must be added as a controlled expansion using the existing working system. Do NOT redesign anything. Do NOT alter Near You logic, chips, routing, filters, or currently stable SC/NC behavior.
+
+-----------------------------------
+GEORGIA ROLLOUT – PHASE 1
+-----------------------------------
+
+Add Georgia as the next active state in the platform.
+
+Use the proven SC/NC framework:
+
+- Same category structure
+- Same subcategory structure
+- Same city/state logic
+- Same Near Me behavior
+- Same chip behavior
+- Same state fallback rules
+- Same city-first ranking when exact city chosen
+
+-----------------------------------
+SEED GEORGIA CORE CITIES FIRST
+-----------------------------------
+
+Priority cities:
+
+Atlanta
+Augusta
+Savannah
+Columbus
+Macon
+Athens
+Marietta
+Warner Robins
+Albany
+Gainesville
+Valdosta
+Roswell
+Sandy Springs
+Johns Creek
+
+Then continue statewide after.
+
+-----------------------------------
+CORE RESOURCE CATEGORIES FIRST
+-----------------------------------
+
+Populate Georgia first with highest-demand categories:
+
+Food Assistance
+Housing
+Benefits Assistance
+Healthcare
+Mental Health
+Employment Support
+Disability
+Crisis Help
+Legal
+Education
+Transportation
+Family Support
+
+Then secondary categories after.
+
+-----------------------------------
+FILTER / UX VALIDATION
+-----------------------------------
+
+Must test:
+
+GA only
+GA + Atlanta
+GA + Savannah
+GA + Augusta
+GA + small town with no exact rows
+
+Rules:
+
+If city has no exact resources:
+Show statewide Georgia resources first
+Then national fallback
+
+Never show SC or NC bleed-through.
+
+-----------------------------------
+NEAR YOU CHIP VALIDATION
+-----------------------------------
+
+Test Georgia chips:
+
+Food
+Housing
+Benefits
+Healthcare
+Jobs
+Mental Health
+Disability
+Crisis Help
+Veteran Business
+Shop
+
+All must behave correctly.
+
+-----------------------------------
+PROTECT CURRENT STATES
+-----------------------------------
+
+Do NOT disturb:
+
+South Carolina
+North Carolina
+Current chip system
+Current routing
+Current search
+Current sorting
+Current mobile layout
+
+Georgia should plug into existing engine only.
+
+-----------------------------------
+REPORT BACK BEFORE PUBLISH
+-----------------------------------
+
+Need founder report:
+
+1. Georgia total approved rows
+2. Georgia total cities
+3. Rows by major city
+4. Rows by category
+5. Any data gaps
+6. Live test results
+
+-----------------------------------
+FOUNDER NOTE
+-----------------------------------
+
+SC + NC + GA creates strong Southeast launch footprint.
+
+Build carefully.
+
+--- END ---
