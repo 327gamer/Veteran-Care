@@ -12,6 +12,11 @@ import { routeToTrustedServices, type TrustedServiceSuggestion } from "../servic
 import { logLeadEvent } from "../lead-events";
 import { computeIntentSignal, pickHook, detectUserDecline, getTier } from "./intent-tiers";
 import { isFeatureEnabled } from "../automation-feature-flags";
+import {
+  resolveLocation,
+  isLocationSensitive,
+  locationClarificationResponse,
+} from "./location-resolver";
 
 interface ChatRequest {
   messages: Array<{ role: string; content: string }>;
@@ -113,8 +118,51 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   const lastMsgLower = lastUserMsg.content.toLowerCase();
   const isEscalation = escalationKeywords.some(kw => lastMsgLower.includes(kw));
 
-  const matchedResources = await matchResources(lastUserMsg.content, userState, userCity);
+  // Resolve location from (a) frontend-provided context first, then (b) the
+  // user's own message ("housing in Charlotte NC"). Never falls back to a
+  // hardcoded state — national-expansion safe.
+  const resolvedLoc = resolveLocation(userState, userCity, lastUserMsg.content);
+  const effectiveState = resolvedLoc.state;
+  const effectiveCity = resolvedLoc.city;
+
   const detectedCats = detectCategories(lastUserMsg.content);
+  const primaryDetectedCat = detectedCats[0] || null;
+
+  // Location-clarification short-circuit: when the user asks for a local
+  // resource but we have NO state (neither from the frontend nor from this
+  // turn's message), ask for city/state instead of silently defaulting to a
+  // pilot state. Crisis is handled earlier and never reaches this branch.
+  if (!effectiveState && isLocationSensitive(primaryDetectedCat)) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    res.write(`data: ${JSON.stringify({ type: "chunk", text: locationClarificationResponse })}\n\n`);
+    res.write(`data: ${JSON.stringify({
+      type: "done",
+      categories: detectedCats,
+      navigatorSuggested: false,
+      isCrisis: false,
+      resourceCount: 0,
+      needsLocation: true,
+    })}\n\n`);
+    res.end();
+
+    logUsage({
+      userId,
+      isGuest,
+      detectedCategory: primaryDetectedCat || "unknown",
+      model: "location-clarification",
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      navigatorSuggested: false,
+    });
+    return;
+  }
+
+  const matchedResources = await matchResources(lastUserMsg.content, effectiveState, effectiveCity);
 
   const v2Enabled = await isFeatureEnabled("ai_guide_v2_enabled").catch(() => false);
   const tier1Cat = detectedCats.find(c => getTier(c) === 1) || null;
@@ -125,7 +173,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   const tier = getTier(primaryCat);
   const tierBasedHookEligible = tier === 1 && intentSignal.isStrong && !sessionDeclined;
   const hookPhrase = tierBasedHookEligible
-    ? pickHook(`${primaryCat}|${userState || ""}|${lastUserMsg.content.slice(0, 24)}`)
+    ? pickHook(`${primaryCat}|${effectiveState || ""}|${lastUserMsg.content.slice(0, 24)}`)
     : null;
 
   if (detectedCats.length > 0) {
@@ -138,8 +186,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       ai_origin: true,
       ai_intent_category: detectedCats[0],
       ai_intent_subcategory: detectedCats[1] || null,
-      state: userState || null,
-      city: userCity || null,
+      state: effectiveState || null,
+      city: effectiveCity || null,
       category_slug: detectedCats[0],
     });
   } else if (isEscalation) {
@@ -150,15 +198,15 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
       user_id: userId,
       source_surface: "ai_guide",
       ai_origin: true,
-      state: userState || null,
-      city: userCity || null,
+      state: effectiveState || null,
+      city: effectiveCity || null,
       category_slug: "unknown",
     });
   }
 
   let trustedServiceResult: { categorySlug: string; categoryName: string; providers: TrustedServiceSuggestion[] } | null = null;
   try {
-    trustedServiceResult = await routeToTrustedServices(lastUserMsg.content, userState);
+    trustedServiceResult = await routeToTrustedServices(lastUserMsg.content, effectiveState);
   } catch (err: any) {
     console.log("[service-router] Error:", err?.message);
   }
@@ -216,8 +264,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   }
 
   const userContext = {
-    state: userState,
-    city: userCity,
+    state: effectiveState,
+    city: effectiveCity,
     zip: userZip,
     interests,
     branch,

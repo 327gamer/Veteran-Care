@@ -1,0 +1,126 @@
+--- COPY TO REPLIT ---
+
+Important AI Navigator fix before national expansion.
+
+The AI Navigator / chatbot currently appears to default to South Carolina resources when the user does not provide location. That was acceptable early in the build, but it is no longer acceptable now that we are expanding nationally.
+
+The AI Navigator must become location-aware and must not assume South Carolina.
+
+REQUIRED LOGIC:
+
+1. LOCATION PRIORITY ORDER
+
+When a user asks for resources such as:
+- food
+- housing
+- benefits
+- healthcare
+- mental health
+- jobs
+- legal help
+- transportation
+- family support
+- end-of-life help
+- any other category
+
+The AI Navigator should determine location in this order:
+
+A. If browser/device location is enabled:
+Use detected location / city / state automatically.
+
+B. If the user mentions a city or state in the message:
+Use the city/state from the message.
+
+Examples:
+“food help in Atlanta”
+“housing in Charlotte”
+“benefits help in Charleston SC”
+
+C. If no location is available and no city/state is mentioned:
+Do NOT default to South Carolina.
+Ask a clarifying question first.
+
+Example:
+“I can help find food resources. What city and state should I search in?”
+
+or:
+
+“Are you looking near your current location, or in a specific city and state?”
+
+2. DO NOT RETURN LOCAL RESOURCES WITHOUT LOCATION
+
+If the user asks for local help but no location is known:
+- ask for city/state
+- do not show South Carolina by default
+- do not show random resources
+- do not show national-only unless it is emergency/crisis or clearly national
+
+3. EMERGENCY / CRISIS EXCEPTION
+
+If user asks about suicide, crisis, domestic violence, emergency shelter, or immediate danger:
+Show national crisis resources immediately first, then ask for city/state to find local help.
+
+Example:
+“If this is an emergency, call 911. You can also call or text 988. What city and state are you in so I can find local crisis resources?”
+
+4. LOCATION HANDOFF FROM FRONTEND TO AI
+
+Please verify the AI Navigator receives available location context from:
+- browser geolocation
+- selected Near You state/city
+- selected Resources state/city
+- user profile location if available
+- URL query state/city if available
+
+If location is already known in the app, the AI should use it.
+
+5. EMAIL RESULTS
+
+When users ask the AI Navigator to email resources:
+The emailed resources must reflect the correct location context.
+
+If location is unknown:
+AI must ask for city/state before emailing local results.
+
+6. NATIONAL EXPANSION RULE
+
+AI Navigator must be state-aware for:
+- SC
+- NC
+- GA
+- future Florida
+- all future states
+
+No hardcoded South Carolina fallback.
+
+7. VALIDATION TESTS
+
+Please test:
+
+A. “I need food help”
+No location on → AI asks for city/state.
+
+B. “I need food help in Atlanta”
+AI returns Georgia / Atlanta food resources.
+
+C. “Housing help in Charlotte”
+AI returns North Carolina / Charlotte housing resources.
+
+D. User has location enabled in Charleston
+AI returns Charleston / SC resources.
+
+E. User manually selected Georgia + Atlanta in Near You, then opens AI Navigator
+AI uses Georgia / Atlanta context.
+
+F. “I feel suicidal”
+AI gives 988 / emergency guidance immediately, then asks location for local crisis resources.
+
+RETURN:
+
+1. Root cause of South Carolina default
+2. Files/routes changed
+3. New location priority logic
+4. How frontend passes location context to AI
+5. Test results for all cases above
+
+--- END ---

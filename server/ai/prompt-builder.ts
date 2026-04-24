@@ -61,7 +61,7 @@ export function buildSystemPrompt(
   if (userContext.state) {
     parts.push(`- Location: ${userContext.city ? userContext.city + ", " : ""}${userContext.state}${userContext.zip ? " " + userContext.zip : ""}`);
   } else {
-    parts.push("- Location: Unknown (suggest they enable location for better results)");
+    parts.push("- Location: UNKNOWN. Do NOT assume a state. If the user is asking about a local resource (housing, food, healthcare, jobs, legal, transportation, family support, end-of-life, etc.), your response MUST ask them for their city and state before listing local programs. National resources (e.g., 988 Veterans Crisis Line, VA national hotlines, GI Bill, federal benefits) are fine to mention without a location.");
   }
 
   if (userContext.branch) {

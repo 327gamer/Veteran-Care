@@ -176,6 +176,22 @@ Canonical live tracker. Update the row for the affected state at the end of ever
 
 Goal: after NC ships, GA + SC + NC = **Southeast Flagship Block**. Then Florida begins.
 
+### SHIPPED — AI Navigator Location-Awareness (national-expansion safe) — 2026-04-24
+Removed every silent SC default from the AI Navigator before national expansion.
+- **New:** `server/ai/location-resolver.ts` — `extractLocationFromMessage()` parses all 50 states + DC by full name, two-letter code, and "in/near <City>, <ST>" patterns; well-known metros (Atlanta, Charlotte, Tampa, Phoenix, Houston, etc.) auto-resolve when mentioned alone. Conservative — never invents a state.
+- **Engine guard** (`server/ai/engine.ts`): location priority is now (1) frontend-provided → (2) parsed from this turn's message → (3) ASK. When a location-sensitive question arrives with no resolvable location, the engine streams a single clarifying question ("what city and state are you in?") and returns — no LLM call, no DB query, no SC fallback. Crisis path is unchanged (988 first, always).
+- **Resource matcher** (`server/ai/resource-matcher.ts`): when `userState` is undefined, queries are now constrained to `state IS NULL` (national rows only) instead of returning every state — eliminating the implicit SC bias caused by SC having the largest dataset.
+- **Prompts** (`server/ai/config.ts` v1+v2, `server/ai/prompt-builder.ts`): stripped "in the state of SC primarily" language; replaced with "across the United States" + an explicit instruction to ask for city/state when USER CONTEXT location is unknown.
+- **Backward compat:** `shared/platform.ts` `pilotState:"SC"` retained for legacy non-AI surfaces; the AI no longer reads it.
+- **Validation (6/6 PASS, all via live `/api/ai/chat`):**
+  - A "I need food help" (no loc) → asks for city/state ✅
+  - B "food help in Atlanta, GA" → all 8 GA food banks ✅
+  - C "Housing help in Charlotte, NC" → NC housing (U.S.VETS Charlotte, Roof Above, NC HFA…) ✅
+  - D "Housing help in Charleston, SC" → SC housing (One80 Place, ECHO, SC Housing Authority…) ✅
+  - E `userState=GA, userCity=Atlanta` + "I need food help" → GA food banks ✅
+  - F "I feel suicidal" → 988 + Crisis Line first, no location asked ✅
+  - Bonus: "I need a job" (no loc) → asks for city/state ✅; "doctor near Tampa" → extracts FL ✅
+
 ### Engine improvement noted (not blocking, future hardening)
 `runSeed()` (in `scripts/lib/rollout-engine.ts`) writes the resource row first, then writes category and subcategory junctions in parallel without transactional rollback. A transient junction failure can leave a partially linked row. Future hardening: add a post-commit auto-repair pass (similar pattern to the SC + NC cleanup scripts) or wrap in a transaction.
 

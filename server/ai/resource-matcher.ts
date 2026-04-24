@@ -323,6 +323,11 @@ async function searchByCategory(
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);
+  } else {
+    // National-expansion safety: when no state is known, never silently
+    // surface state-tagged rows (which would bias toward whichever state
+    // happens to have the most data, e.g. SC during early launch).
+    query = query.is("state", null);
   }
 
   const { data, error } = await query;
@@ -374,6 +379,9 @@ async function searchByText(
 
   if (userState) {
     query = query.or(`state.eq.${userState},state.is.null`);
+  } else {
+    // National-only fallback when state is unknown — see searchByCategory.
+    query = query.is("state", null);
   }
 
   const { data, error } = await query;
