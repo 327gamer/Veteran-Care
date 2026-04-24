@@ -634,8 +634,10 @@ export default function Resources() {
   // Row 3 = expandable "More Veteran Resources". Slugs verified against
   // /api/categories. Where no exact category exists, the closest current
   // equivalent is used (Caregiver Support → family-support, Homeless Help
-  // → housing-home, Claims Help → benefits-assistance). Small Business and
-  // Community route to dedicated hubs.
+  // → housing-home, Claims Help → benefits-assistance). Veteran Business
+  // routes to /vob/start (the live "Need Help Starting Your Veteran-Owned
+  // Business or Nonprofit?" page), Community routes to /community, Shop
+  // routes to /shop.
   const QUICK_CHIPS_ROW3: QuickChip[] = [
     { label: "Disability", slug: "disabled-veterans" },
     { label: "Crisis Help", slug: "crisis-help" },
@@ -643,10 +645,11 @@ export default function Resources() {
     { label: "End of Life", slug: "end-of-life-services" },
     { label: "Caregiver Support", slug: "family-support" },
     { label: "Homeless Help", slug: "housing-home" },
-    { label: "Small Business", slug: "small-business", route: "/vob-startup-help" },
+    { label: "Veteran Business", slug: "veteran_business", route: "/vob/start" },
     { label: "Financial Help", slug: "financial-credit" },
     { label: "Claims Help", slug: "benefits-assistance" },
     { label: "Community", slug: "community", route: "/community" },
+    { label: "Shop", slug: "shop", route: "/shop" },
   ];
   const handleChipTap = (chip: QuickChip, tier: 1 | 2 | 3) => {
     const ctx = {
