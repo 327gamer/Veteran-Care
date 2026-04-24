@@ -5618,20 +5618,16 @@ export async function registerRoutes(
   });
 
   app.get("/api/locations/cities", async (req, res) => {
-    const { state, category } = req.query;
+    const { state } = req.query;
 
     let query = supabase
       .from("resources")
-      .select(category ? "city, resource_categories!inner(categories!inner(slug))" : "city, resource_categories(categories(slug))")
+      .select("city")
       .eq("status", "approved")
       .not("city", "is", null);
 
     if (state) {
       query = query.eq("state", state as string);
-    }
-
-    if (category) {
-      query = query.eq("resource_categories.categories.slug", toLegacy(category as string));
     }
 
     const { data, error } = await query;

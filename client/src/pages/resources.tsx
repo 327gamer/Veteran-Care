@@ -370,11 +370,10 @@ export default function Resources() {
   });
 
   const { data: citySuggestions = [] } = useQuery<string[]>({
-    queryKey: ["/api/locations/cities", stateParam, selectedSlug, locationMode],
+    queryKey: ["/api/locations/cities", stateParam, locationMode],
     queryFn: () => {
       const params = new URLSearchParams();
       if (stateParam) params.set("state", stateParam);
-      if (selectedSlug) params.set("category", selectedSlug);
       return fetch(`/api/locations/cities?${params}`).then(r => r.json());
     },
     enabled: !!stateParam && (locationMode === "city" || locationMode === "state"),
@@ -1097,9 +1096,9 @@ export default function Resources() {
                       {locationSummary()}
                     </p>
                   )}
-                  {selectedSlug && selectedState && (
+                  {selectedState && (
                     <p data-testid="text-city-scope-hint" className="text-[10px] text-muted-foreground leading-snug">
-                      Showing cities with available resources in this category.
+                      Showing all cities in {selectedState}. If a city has no listings in this category, you'll see statewide and national fallbacks.
                     </p>
                   )}
                 </div>
@@ -1136,9 +1135,9 @@ export default function Resources() {
                     />
                   </div>
 
-                  {selectedSlug && selectedState && (
+                  {selectedState && (
                     <p data-testid="text-city-scope-hint-state" className="text-[10px] text-muted-foreground leading-snug">
-                      Showing cities with available resources in this category.
+                      Showing all cities in {selectedState}. If a city has no listings in this category, you'll see statewide and national fallbacks.
                     </p>
                   )}
 

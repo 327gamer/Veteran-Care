@@ -1,0 +1,394 @@
+--- COPY TO REPLIT ---
+
+We need to fix Georgia AND create the reusable national state-rollout system before moving further.
+
+Current issue:
+Georgia is not behaving like SC/NC, and Georgia has far too few resources for a state of its size. Atlanta, Savannah, Augusta, Macon, Columbus, Athens, and the surrounding metros should have hundreds to thousands of usable resources across categories.
+
+This needs to be treated as both:
+
+1. Georgia repair
+2. National rollout engine design
+
+Do not treat this as a one-off patch.
+
+--------------------------------------------------
+PART 1 — GEORGIA CITY DROPDOWN MUST MATCH SC/NC
+--------------------------------------------------
+
+Georgia city dropdown behavior must match the locked SC/NC behavior.
+
+Required rule:
+
+ALL Georgia cities/towns/metros loaded for the state must appear in the city dropdown regardless of whether that exact city has rows in the selected category/subcategory.
+
+Do NOT category-limit the city dropdown.
+
+Example:
+If user selects:
+
+State = Georgia
+Category = Housing
+City dropdown should still show the full Georgia city list, not only Atlanta, Sandy Springs, and Savannah.
+
+If user selects:
+
+State = Georgia
+Category = Food
+City dropdown should still show the full Georgia city list, not only the cities with food rows.
+
+Same rule must apply across:
+
+- Near You page
+- Resources page
+- Category pages
+- Subcategory pages
+- Chip-filtered pages
+- State mode
+- City mode
+
+The dropdown should be a location selector, not a “cities with exact category rows only” selector.
+
+--------------------------------------------------
+PART 2 — GEORGIA FILTERING / FALLBACK RULES
+--------------------------------------------------
+
+When user selects Georgia:
+
+Only Georgia resources plus national fallback should show.
+
+Never show SC or NC resources under Georgia filters.
+
+When user selects:
+
+Georgia + Atlanta
+
+Results should be:
+
+1. Atlanta exact resources first
+2. Nearby Georgia metro resources second
+3. Statewide Georgia resources third
+4. National fallback last
+
+When user selects:
+
+Georgia + small city with no direct rows
+
+Results should NOT be empty.
+
+Results should show:
+
+1. Nearest Georgia city/metro resources if coordinates exist
+2. Statewide Georgia resources
+3. National fallback
+
+Same fallback logic should apply for every future state.
+
+Manual state/city choice must override the user’s phone location.
+
+If user is physically in South Carolina but manually selects Georgia + Atlanta, the system must show Georgia/Atlanta results, not “near me” South Carolina results.
+
+--------------------------------------------------
+PART 3 — VERIFIED PARTNER RULES
+--------------------------------------------------
+
+Verified Partners must respect state logic.
+
+If State = Georgia:
+Show only:
+- Georgia verified partners
+- National verified partners
+
+Do NOT show:
+- SC-only partners
+- NC-only partners
+
+If State = South Carolina:
+Show:
+- SC verified partners
+- National verified partners
+
+If State = North Carolina:
+Show:
+- NC verified partners
+- National verified partners
+
+If no state filter / All mode:
+Current broader behavior can remain.
+
+If Near Me mode:
+Show partners based on location/distance logic only.
+
+Partner rules must be handled separately from public resource rows.
+
+No state bleed.
+
+--------------------------------------------------
+PART 4 — RESOURCE INGESTION MODEL IS TOO NARROW
+--------------------------------------------------
+
+Georgia currently has too few resources.
+
+This likely means the ingestion model is over-filtering to veteran-only organizations.
+
+Veteran Care must operate as:
+
+VETERAN-FIRST, COMMUNITY-WIDE RESOURCE ENGINE
+
+Resources do NOT need to be veteran-exclusive if they legitimately help veterans, spouses, dependents, caregivers, or military families.
+
+This is critical.
+
+For example:
+
+Housing should include:
+- VA housing programs
+- SSVF providers
+- HUD programs
+- shelters
+- housing authorities
+- rent assistance programs
+- homeless prevention
+- transitional housing
+- Salvation Army
+- YMCA
+- county aid
+- local nonprofits
+- faith-based housing support
+
+Food should include:
+- food banks
+- food pantries
+- SNAP offices
+- Meals on Wheels
+- churches
+- soup kitchens
+- community nonprofits
+- veteran food programs
+- county food assistance
+
+Healthcare should include:
+- VA clinics
+- VA hospitals
+- community hospitals
+- FQHC clinics
+- urgent care
+- county health departments
+- mental health centers
+- addiction recovery
+- dental clinics
+- Medicaid resources
+
+Jobs should include:
+- veteran job programs
+- state workforce centers
+- staffing agencies
+- trade schools
+- apprenticeships
+- CDL schools
+- job fairs
+- major veteran-friendly employers
+- nonprofit employment programs
+
+Benefits should include:
+- VA offices
+- county veteran offices
+- VSO organizations
+- claims help
+- legal aid
+- disability claims support
+
+Education should include:
+- technical colleges
+- community colleges
+- GED programs
+- workforce training
+- grants
+- certifications
+- trade schools
+
+Legal should include:
+- legal aid
+- probate help
+- family law resources
+- eviction prevention
+- benefits appeals
+- nonprofit legal clinics
+
+Transportation should include:
+- DAV transportation
+- county transit
+- medical transportation
+- paratransit
+- senior/veteran rides
+- nonprofit ride programs
+
+Family Support should include:
+- caregiver support
+- spouse support
+- dependent support
+- survivor support
+- family counseling
+- child/family assistance
+
+End of Life should include:
+- hospice
+- funeral assistance
+- burial benefits
+- survivor benefits
+- estate/probate resources
+- military honors coordination
+
+This broader model must be used for Georgia and all future states.
+
+--------------------------------------------------
+PART 5 — GEORGIA RESOURCE TARGET
+--------------------------------------------------
+
+Georgia Phase 1 is not enough.
+
+Re-ingest / expand Georgia using the broader model.
+
+Target:
+
+Minimum 500 quality Georgia resource rows immediately.
+
+Preferred long-term:
+1,000+ Georgia rows across major metros and statewide programs.
+
+Atlanta metro should be heavily populated.
+
+Priority Georgia areas:
+
+Atlanta
+Augusta
+Savannah
+Columbus
+Macon
+Athens
+Marietta
+Warner Robins
+Albany
+Gainesville
+Valdosta
+Roswell
+Sandy Springs
+Johns Creek
+Alpharetta
+Decatur
+Lawrenceville
+Stockbridge
+Dublin
+East Point
+Smyrna
+Newnan
+Carrollton
+Kennesaw
+Hinesville
+Milledgeville
+
+Also include regional and statewide resources.
+
+--------------------------------------------------
+PART 6 — AUDIT SC + NC TOO
+--------------------------------------------------
+
+After Georgia model is corrected, audit South Carolina and North Carolina.
+
+Do not assume SC/NC are complete.
+
+They may also be missing:
+
+- local food banks
+- local food pantries
+- shelters
+- housing assistance
+- county programs
+- churches
+- healthcare clinics
+- workforce centers
+- legal aid offices
+- education/training providers
+- transportation programs
+
+We need SC/NC to follow the same broader veteran-first/community-wide model.
+
+--------------------------------------------------
+PART 7 — BUILD THE NATIONAL STATE ROLLOUT ENGINE
+--------------------------------------------------
+
+Do not keep doing state expansion manually.
+
+Create a reusable State Deployment SOP / script / audit process for every future state.
+
+Every future state must include:
+
+1. Full city/town/metro import
+2. Master city dropdown list for the state
+3. Broad resource ingestion by category/subcategory
+4. Veteran-specific resources
+5. Community-wide resources useful to veterans
+6. National fallback resources
+7. Verified partner state-scope rules
+8. No duplicate resources
+9. No wrong-state bleed
+10. City-first/statewide/national fallback logic
+11. Resource category/subcategory junction integrity
+12. Broken-link checks where possible
+13. Auto QA report before publish
+
+This must become repeatable.
+
+Goal:
+After Florida, future states like Alabama, Tennessee, Virginia, Texas, etc. should be launched in one controlled pass, not multiple manual repair cycles.
+
+--------------------------------------------------
+PART 8 — REQUIRED QA REPORT
+--------------------------------------------------
+
+Before this is considered locked, report:
+
+For Georgia:
+
+1. Total Georgia rows
+2. Total Georgia cities in master dropdown
+3. Total Georgia rows by category
+4. Total Georgia rows by major city
+5. Confirmation full city dropdown works regardless of category
+6. GA + Atlanta + Housing first 10 results
+7. GA + Food city dropdown behavior
+8. GA + small city with no direct rows behavior
+9. Verified partner state-scope test
+10. Confirmation zero SC/NC bleed
+11. True data gaps still remaining
+12. Duplicate count
+13. Orphan junction count
+14. Broken or missing URLs if detected
+
+For SC/NC audit:
+
+1. What obvious resource categories are under-populated
+2. Whether city dropdown behavior is consistent
+3. Whether broader community resource ingestion is needed
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do not redesign UI.
+
+Do not break existing chip system.
+
+Do not break Near You page.
+
+Do not break SC/NC.
+
+Do not create another separate picker page.
+
+Fix Georgia and create the repeatable state rollout system.
+
+The goal is not only to fix Georgia.
+
+The goal is to build the national expansion machine.
+
+--- END ---
