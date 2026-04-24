@@ -73,7 +73,8 @@ console.log(`\n--- Orphan junction (SC scope): res-missing=${orphanRes.length}  
 console.log(`    (db total: resources=${allResFull.length}  junctions=${allJunc.length}  global-orphan-res=${globalOrphanRes.length})`);
 
 // 6) WRONG-STATE BLEED — now fixed: title + ADDRESS scanned
-const otherStates = ["GA","NC","FL","TN","VA","AL","KY","WV","DC","MD","OH"];
+//    NC excluded from list — this is the NC QA, NC matches are not bleeds.
+const otherStates = ["GA","FL","TN","VA","AL","SC","KY","WV","DC","MD","OH"];
 const bleed = approved.filter(r => {
   const a = (r.title+" "+(r.address||"")).toUpperCase();
   return otherStates.some(s => a.match(new RegExp(`,\\s*${s}\\b`)) || a.match(new RegExp(`\\b${s}\\s+\\d{5}\\b`)));
