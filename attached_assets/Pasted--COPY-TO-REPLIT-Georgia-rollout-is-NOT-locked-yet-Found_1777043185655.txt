@@ -1,0 +1,92 @@
+--- COPY TO REPLIT ---
+
+Georgia rollout is NOT locked yet. Founder live testing shows mismatched city dropdowns and wrong state results.
+
+ISSUES SEEN:
+
+1. Georgia city dropdown is inconsistent.
+On Near You / State = Georgia, the dropdown only shows a few cities:
+Athens, Columbus, East Point, Macon, Savannah, Valdosta.
+
+But Georgia Phase 1 report said 24 cities exist.
+
+2. On Resources → Housing & Home Services → State = Georgia → City = Atlanta:
+Results showed South Carolina resources:
+- Alston Wilkes Society – Columbia, SC
+- Alston Wilkes Society – Greenville, SC
+
+That is a serious state-bleed bug.
+
+3. Atlanta appears in one dropdown but not another.
+Near You and Resources category/subcategory flows are not using the same city source/filter logic.
+
+REQUIRED FIX:
+
+Audit and repair Georgia location filtering end-to-end.
+
+Do NOT move to next state until this is fixed.
+
+CHECK THESE AREAS:
+
+A. City dropdown endpoints
+Confirm all Georgia dropdowns use the same rule:
+- state = GA
+- return all approved GA cities for that context
+- if category/subcategory scoped, make it clearly consistent
+- no SC/NC cities
+- Atlanta must appear wherever Georgia has relevant resources
+
+B. Resource query filtering
+When state = GA:
+- Results must only show GA resources plus national fallback if needed
+- Never show SC or NC resources
+- If city = Atlanta:
+   Atlanta resources first
+   then rest of GA
+   then national fallback
+- No South Carolina resources should appear under Georgia state/city filters.
+
+C. Category/subcategory flow
+Test:
+Resources → Housing & Home Services → State = Georgia → City = Atlanta
+
+Expected:
+Georgia housing resources first.
+No SC resources.
+
+D. Near You flow
+Test:
+Near You → State = Georgia
+
+Expected:
+Full Georgia city list from the 24 seeded cities or a clearly explained category-scoped list.
+No missing Atlanta if Georgia resources exist for Atlanta.
+
+E. Normalize state values
+Check for state mismatch:
+- Georgia
+- GA
+- georgia
+- state field vs state_code field
+- query param handling
+
+Likely cause:
+Some components/endpoints may be filtering by state name while others use state code, or category-scoped dropdowns are not aligned with the resource query.
+
+F. Report back with proof
+Need exact report:
+
+1. All Georgia cities returned by Near You dropdown
+2. All Georgia cities returned by Resources dropdown
+3. GA + Atlanta + Housing result count
+4. First 10 GA + Atlanta + Housing result cities/states
+5. Confirmation: zero SC/NC bleed
+6. Confirmation: Atlanta appears correctly
+7. Any true data gaps
+
+IMPORTANT:
+SC/NC logic must remain untouched.
+
+Fix Georgia to follow the same locked routing/filtering behavior as SC/NC.
+
+--- END ---

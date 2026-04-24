@@ -351,10 +351,12 @@ export default function Resources() {
     ((hasLocationFilters && (locationMode === "state" || locationMode === "city") && !localOnly));
 
   const { data: fallbackResources = [], isLoading: fallbackLoading } = useQuery<SupabaseResource[]>({
-    queryKey: ["/api/resources", selectedSlug, "national-fallback"],
+    queryKey: ["/api/resources", selectedSlug, stateParam, cityParam, "state-aware-fallback"],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedSlug) params.set("category", selectedSlug);
+      if (stateParam) params.set("state", stateParam);
+      if (cityParam) params.set("city", cityParam);
       return fetch(`/api/resources?${params}`).then(r => r.json());
     },
     enabled: needsFallback,
