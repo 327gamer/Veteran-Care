@@ -48,7 +48,16 @@
 1. **National Operating System** — platform logic, AI Guide, routing engine, billing engine, attribution engine, seeded provider logic, partner systems, dashboards, admin tools
 2. **State Data Layer** — South Carolina (LIVE, 438 / 38 cities / 17 cats), North Carolina (LIVE, 295 / 83 cities / 17 cats — complete-shape template), Georgia (next), Florida, Tennessee, Virginia, etc.
 
-### Locked Rollout Template (Phase 0 → 8 — apply per state)
+### Operational Steps 0 → 8 (HISTORICAL — superseded 2026-04-24 by State Rollout Engine v2 below)
+
+> The numbered "Phase" labels in this section refer to **operational steps** in
+> the original ad-hoc per-state workflow (inventory → cleanup → expansion →
+> polish → wiring → QC → lock → sign-off → kickoff). They predate, and are
+> NOT the same as, the **content-rollout phases** (Phase 1 / 2 / 3 / 4 = Major
+> Metro / Secondary / Rural / Gold Standard) defined in the Engine v2 section.
+> The bullets below are kept for historical reference and post-mortem audits;
+> all new state rollouts must follow the 4-Phase content model in the Engine
+> v2 section.
 Use this template for every new state. Each phase produces a committed script under `scripts/` for full auditability. Operator-Mode rules: additive-only, never delete protected engines, dry-run before `--commit`.
 
 - **Phase 0 — Inventory & Baseline:** run `scripts/qc-resources.ts` to capture row count, distinct cities, category coverage, dead URLs, dup groups, geo gaps, sub-name validity. Snapshot becomes the diff target.
@@ -81,10 +90,16 @@ After SC, NC, and Georgia (3 phases each), the rollout engine is now codified.
 - `founder-report.ts` — `--state=XX [--baseline=N] [--priority="City,City"]` produces the markdown founder report.
 - `florida-execution-plan.md` — ready-to-execute Phase 1/2/3 plan for FL with section codes, target row counts, sub-name watchlist, and near-dup watchlist.
 
-**3-Phase Rollout Model (per state):**
-1. **Phase 1 — Major metros** (~100 rows): top 4 population centers + statewide anchors.
-2. **Phase 2 — Secondary cities + statewide programs** (~120-150 rows): the next 8-12 cities, statewide programs.
-3. **Phase 3 — Small towns / rural / outlying** (~100-150 rows) + optional **Phase 3b top-up** for chapter posts and CBOCs.
+**4-Phase Rollout Model (per state) — UPDATED 2026-04-24:**
+1. **Phase 1 — Major Metro Foundation** (~100 rows): top 4 population centers + statewide anchors. Build largest cities first with strong category depth.
+2. **Phase 2 — Secondary Cities + Statewide** (~120-150 rows): suburbs, medium cities, counties, statewide programs, regional nonprofits, virtual services.
+3. **Phase 3 — Small Town + Rural Coverage** (~100-150 rows) + optional **Phase 3b top-up** for chapter posts and CBOCs. Smaller towns, underserved counties, remote areas.
+4. **Phase 4 — Gold Standard Completion / Optimization** (~80-150 rows): the flagship-quality finishing pass before moving on. **A state is NOT considered complete until Phase 4 is finished or intentionally deferred.** Phase 4 covers:
+   - Fill weak categories still under-populated (Mental Health, Insurance, Benefits, Financial Help, Transportation, Family Support, End of Life, any thin cats from QA).
+   - Fill geographic weak spots still thin or missed (suburbs, mountain regions, coastal regions, military base corridors, county seats, growth corridors).
+   - Deep quality audit (duplicates, broken URLs, missing phones, orphan junctions, wrong cat mapping, state bleed, ranking).
+   - UX / search perfection (full city dropdown, city-first → statewide → national fallback chain, verified partner geography).
+   - Monetization readiness (identify strong states for Trusted Partners, high-demand categories, underserved lead opportunities).
 
 **Per-Phase Runbook (locked):**
 1. `tsx scripts/lib/probe-taxonomy.ts [--cat=slug]` — verify subcategory names.
@@ -103,17 +118,18 @@ After SC, NC, and Georgia (3 phases each), the rollout engine is now codified.
 - `status: "approved"`, `sponsored: false`, both junctions written.
 - Additive only — engine never deletes or updates existing rows. Cleanup is a separate manual operation.
 - Dry-run before every commit. No exceptions.
-- After commit, QA must PASS before founder report.
+- After commit, QA must PASS (or PASS WITH REVIEW with documented exceptions) before founder report.
 - Founder report must be delivered BEFORE moving to next phase / next state.
+- **Parent-org naming rule (Phase 4 lesson — codified 2026-04-24):** when adding multiple distinct programs/sites under the same parent organization (e.g. 6 GeorgiaCares regional sites, 2 services from one Regional Commission, 5 DAV Chapters), the words BEFORE the first em-dash must be unique per row. `normalizeTitle()` strips everything after the first dash and ignores parens, so identical pre-dash text causes near-dup skips. Pattern: put the distinguishing geography or program-name FIRST (e.g. `"Coastal GeorgiaCares SHIP Counseling Site (Brunswick)"` instead of `"Coastal Regional Commission — GeorgiaCares SHIP Counseling"`).
 
-**Worked Example — Georgia:**
+**Worked Example — Georgia (FLAGSHIP TEMPLATE STATE):**
 - Phase 1: `seed-ga-resources.ts` (79 rows, statewide foundation)
 - Phase 2: `seed-ga-atlanta-phase2.ts` (111 rows, Atlanta metro deepening)
 - Phase 3: `seed-ga-phase3-statewide.ts` (154 rows, 11 sections AUG/SAV/COL/MAC/ATH/WAR/ALB/VAL/GAI/NFU/STW) + `seed-ga-phase3b-topup.ts` (12 rows VA CBOCs + Legion posts)
-- Final: 351 approved rows, 36 cities, 17/17 categories, 0 orphans, 0 invalid subs, city dropdown in sync.
+- Phase 4: `seed-ga-phase4.ts` — Gold Standard Completion. Geographic gaps (North GA mountains, Coast/Brunswick, Fort Stewart corridor, Statesboro, Dublin/central) + weak categories (Mental Health, Insurance, Benefits, Financial, Disabled Veterans, Transportation).
 - Code review caught 5 near-duplicates that pure exact-title dedupe missed (e.g. "Macon VA Clinic — Carl Vinson VA" vs existing "Macon VA Clinic"). The new engine's normalized-title dedupe now catches these automatically.
 
-**Next state queue:** Florida → Tennessee → Virginia → Texas. Florida has a ready-to-execute plan at `scripts/florida-execution-plan.md`.
+**Next state queue:** Florida → Tennessee → Virginia → Texas. Florida has a ready-to-execute plan at `scripts/florida-execution-plan.md` (will follow the same 4-phase model).
 
 3. **Local Coverage Layer** — cities, counties, metro areas, service zones, partner territories, ambassador territories
 

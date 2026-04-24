@@ -1,8 +1,12 @@
-# Florida — Execution Plan (3-Phase Rollout)
+# Florida — Execution Plan (4-Phase Rollout)
 
-This is the ready-to-execute Phase 1 / 2 / 3 plan for Florida. It mirrors the
-locked SC, NC, and Georgia rollouts. **Do not start until founder gives the
-go-light** — at that point follow `replit.md → State Rollout SOP` step-by-step.
+This is the ready-to-execute Phase 1 / 2 / 3 / 4 plan for Florida. It mirrors
+the locked SC, NC, and Georgia (flagship) rollouts. **Do not start until
+founder gives the go-light** — at that point follow `replit.md → State
+Rollout SOP` step-by-step.
+
+**Florida is not complete until Phase 4 (Gold Standard Completion) is finished
+or intentionally deferred — same rule as Georgia.**
 
 ---
 
@@ -127,6 +131,33 @@ Florida veterans.
 
 ---
 
+## Phase 4 — Gold Standard Completion  (~80-150 rows, target script: `seed-fl-phase4.ts`)
+
+After Phases 1-3 land Florida around 350+ rows, Phase 4 polishes to flagship
+quality. Mirror the Georgia Phase 4 sectioning:
+
+| Section | Focus | Rows |
+|---|---|---|
+| GAP-NW | Northwest panhandle gaps (Crestview, Niceville, DeFuniak Springs, Marianna) | 8 |
+| GAP-NE | NE Florida gaps (Lake City, Live Oak, Macclenny, Palatka) | 8 |
+| GAP-SW | Treasure Coast / SW gaps (Stuart, Vero Beach, Punta Gorda, Arcadia) | 8 |
+| GAP-CFL | Central FL inland gaps (Lakeland West, Bartow, Sebring, Lake Wales) | 8 |
+| MHE | Mental Health deepening (NAMI FL chapters, regional behavioral health, Centerstone, David Lawrence Center) | 8 |
+| INS | Insurance deepening (SHINE Florida regional sites, USAA Florida, AAFMAA) | 8 |
+| BEN | Benefits orgs (VFW Dept of FL, AMVETS Dept of FL, MOPH Dept of FL, MOAA chapters, VVA chapters) | 10 |
+| FIN | Financial (Operation Homefront FL, USA Cares FL, Habitat ReStores, regional CAAs) | 6 |
+| DIS | Disabled veterans (PVA FL chapters, BVA FL, FL Adaptive Sports, CILs) | 8 |
+| TRA | Transportation (regional 5311 rural transit councils, Volunteer Driver Programs, county senior transit) | 8 |
+
+Section codes: `GAP-NW GAP-NE GAP-SW GAP-CFL MHE INS BEN FIN DIS TRA`.
+
+After Phase 4 commits and `qa-state.ts` passes, run a **monetization
+readiness scan**: identify which categories have ≥ 20 rows in ≥ 5 cities
+(Trusted Partner candidates) and which weak categories have < 10 rows
+(underserved demand zones). Document in the founder report.
+
+---
+
 ## Execution order
 
 1. Founder gives FL go-ahead.
@@ -134,9 +165,10 @@ Florida veterans.
 3. Snapshot baseline: `tsx scripts/qa-state.ts --state=FL` (likely 0 rows).
 4. Build `scripts/seed-fl-phase1.ts` from `seed-state.template.ts`.
 5. Dry-run → review near-dup output → fix → `--commit`.
-6. `qa-state.ts --state=FL`. Must show PASS before continuing.
+6. `qa-state.ts --state=FL`. Must show PASS or PASS WITH REVIEW before continuing.
 7. `founder-report.ts --state=FL --baseline=0 --priority="Jacksonville,Miami,Tampa,Orlando"`.
 8. Founder sign-off.
 9. Repeat steps 4-8 for Phase 2.
 10. Repeat steps 4-8 for Phase 3 + optional 3b top-up.
-11. Final FL report. Move to next state (Tennessee).
+11. Repeat steps 4-8 for Phase 4 (Gold Standard Completion).
+12. Final FL report (post Phase 4). Move to next state (Tennessee).

@@ -1,0 +1,74 @@
+--- ADD TO CURRENT REPLIT MESSAGE ---
+
+Also update the National State Rollout SOP immediately.
+
+The rollout system is now 4 phases, not 3.
+
+--------------------------------------------------
+UPDATED NATIONAL STATE ROLLOUT MODEL
+--------------------------------------------------
+
+PHASE 1 — Major Metro Foundation
+Build largest cities first with strong category depth.
+
+PHASE 2 — Secondary Cities + Statewide
+Add suburbs, medium cities, counties, statewide programs, regional nonprofits, virtual services.
+
+PHASE 3 — Small Town + Rural Coverage
+Add smaller towns, underserved counties, remote areas, and fallback support.
+
+PHASE 4 — Gold Standard Completion / Optimization
+Finish the state to flagship quality before moving on.
+
+This phase includes:
+
+1. Fill weak categories still under-populated
+   - Mental Health
+   - Insurance
+   - Benefits
+   - Financial Help
+   - Transportation
+   - Family Support
+   - End of Life
+   - Any thin categories discovered in QA
+
+2. Fill geographic weak spots still thin or missed
+   - suburbs
+   - mountain regions
+   - coastal regions
+   - military base corridors
+   - county seats
+   - growth corridors
+
+3. Deep quality audit
+   - duplicates
+   - broken URLs
+   - missing phone numbers
+   - orphan junction rows
+   - wrong category mapping
+   - wrong-state bleed
+   - ranking issues
+
+4. UX / Search perfection
+   - full city dropdown behavior
+   - city-first fallback logic
+   - statewide fallback logic
+   - national fallback logic
+   - verified partner geography logic
+
+5. Monetization readiness
+   - identify strong states for Trusted Partners
+   - identify high-demand categories
+   - identify underserved lead opportunities
+
+--------------------------------------------------
+NEW RULE GOING FORWARD
+--------------------------------------------------
+
+A state is not considered complete until Phase 4 is finished or intentionally deferred.
+
+Georgia is now the first state entering the 4-phase flagship model.
+
+All future states (Florida, Alabama, Tennessee, Virginia, Texas, etc.) should follow this updated SOP.
+
+--- END ADDITION ---
