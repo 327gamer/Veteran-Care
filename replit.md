@@ -161,6 +161,13 @@ Geo reporting and admin segmentation must be tightened **before Georgia opens** 
 - **Gap — hard-coded SC filter:** exec-summary "Top Cities" panel (`server/routes.ts:10082-10093`); founder digest mixes states in flat city list
 - **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation **SHIPPED 2026-04-18** ✅ (additive `state`/`city` cols on ambassadors + `user_state`/`user_city` on page_views & ai_usage_log + `?state=` filter on exec-summary + admin state selector + founder-digest by-state grouping). No engine touches. See CHANGELOG for E2E validation.
 
+### State-by-State Phase 4 Status (Pre-Florida Southeast Upgrade)
+- **GA — Phase 4 Gold Standard SHIPPED 2026-04-24 ✅** — 440 rows; flagship template; engine v2 codified.
+- **SC — Phase 4 Gold Standard SHIPPED 2026-04-24 ✅** — 538 rows (was 438), 49 cities (was 38), 0 orphan junctions (was 8), Insurance category 8 rows (was 0 — DORMANT before), Crisis Help 4 (was 1), Hilton Head 4 (was 0). QA verdict: PASS WITH REVIEW. Cleanup script: backfilled 8 missing `resource_subcategories` junctions only (additive — no renames, no archives). Expansion script: 100 new rows across 18 sections covering Hilton Head/Bluffton/Beaufort coast, Upstate small cities, Pee Dee, Lowcountry inland, Midlands suburbs, plus broader-than-veterans-only resources (food banks, FQHC clinics, non-VA hospitals, shelters, hospice, recovery, interfaith, legal aid, insurance navigators) per founder broader-ingestion ask. Open items for founder review: 6 "Veteran Care —" placeholder rows (created 2026-03-10 with our brand URL/phone, no city/desc — flagged, NOT auto-archived) and 56 near-dup clusters (mostly accepted parent-org siblings under SC Works / SC DMH / SC DVA — QA noise, not user-facing).
+- **NC — Wave 2 PENDING** — apply same SC playbook. Audit deep-dive first.
+- **FL — Wave 3 PENDING** — apply combined SC+NC lessons via engine v2.
+- **Engine improvement noted (not blocking):** `runSeed()` writes resource then junctions in parallel without rollback. A transient junction failure can leave a partially linked row. Future hardening: add post-commit auto-repair pass (similar to the SC cleanup we wrote).
+
 ## Platform Blueprint
 - **Full reuse blueprint:** `PLATFORM_TEMPLATE.md` in project root — covers every module, table, API, secret, and fork process for spinning up Inmate Care, Second Chance Jobs, or any future platform from this codebase. Read this before starting any new platform build.
 
