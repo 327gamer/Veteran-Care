@@ -26,6 +26,7 @@ import {
   Settings,
   ShieldAlert,
   Building2,
+  ChevronDown,
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import AiGuideBanner from "@/components/ai-guide-banner";
@@ -242,6 +243,7 @@ export default function Resources() {
   const [zipFilter, setZipFilter] = useState<string>("");
   const [localOnly, setLocalOnly] = useState(false);
   const [geoApplied, setGeoApplied] = useState(false);
+  const [moreChipsOpen, setMoreChipsOpen] = useState(false);
   const [debouncedCity, setDebouncedCity] = useState("");
   const [debouncedZip, setDebouncedZip] = useState("");
   const [nearMeRadius, setNearMeRadius] = useState(25);
@@ -629,10 +631,28 @@ export default function Resources() {
     { label: "Family Support", slug: "family-support" },
     { label: "Transportation", slug: "transportation" },
   ];
-  const handleChipTap = (chip: QuickChip) => {
+  // Row 3 = expandable "More Veteran Resources". Slugs verified against
+  // /api/categories. Where no exact category exists, the closest current
+  // equivalent is used (Caregiver Support → family-support, Homeless Help
+  // → housing-home, Claims Help → benefits-assistance). Small Business and
+  // Community route to dedicated hubs.
+  const QUICK_CHIPS_ROW3: QuickChip[] = [
+    { label: "Disability", slug: "disabled-veterans" },
+    { label: "Crisis Help", slug: "crisis-help" },
+    { label: "Addiction Recovery", slug: "wellness-recovery" },
+    { label: "End of Life", slug: "end-of-life-services" },
+    { label: "Caregiver Support", slug: "family-support" },
+    { label: "Homeless Help", slug: "housing-home" },
+    { label: "Small Business", slug: "small-business", route: "/vob-startup-help" },
+    { label: "Financial Help", slug: "financial-credit" },
+    { label: "Claims Help", slug: "benefits-assistance" },
+    { label: "Community", slug: "community", route: "/community" },
+  ];
+  const handleChipTap = (chip: QuickChip, tier: 1 | 2 | 3) => {
     const ctx = {
       chip_name: chip.label,
       slug: chip.slug,
+      tier,
       location_mode: locationMode,
       state: selectedState || "",
       city: cityFilter || "",
@@ -814,12 +834,11 @@ export default function Resources() {
         )}
       </div>
 
-      {/* Quick category chips — two compact rows of high-intent shortcuts.
-          Row 1 are the strongest aid categories; row 2 mixes monetizable hubs
-          (Discounts, Services) with high-volume support categories. Tapping
-          a category chip toggles it in place; tapping a route chip navigates
-          to the dedicated hub. All behavior reuses the existing selectedSlug
-          pipeline so location filtering is preserved. */}
+      {/* Veteran Quick Access Command Center — three tiers of chips under
+          the search bar. Row 1 = primary needs, Row 2 = daily life + revenue,
+          Row 3 = expandable "More Veteran Resources". All chips reuse the
+          existing selectedSlug pipeline so location filtering, sponsored
+          ranking, and city-first/state-fallback are preserved. */}
       <div className="space-y-2">
         <div
           className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-0.5"
@@ -831,7 +850,7 @@ export default function Resources() {
               <button
                 key={chip.slug}
                 type="button"
-                onClick={() => handleChipTap(chip)}
+                onClick={() => handleChipTap(chip, 1)}
                 data-testid={`chip-${chip.slug}`}
                 className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition-colors whitespace-nowrap touch-manipulation ${
                   active
@@ -854,7 +873,7 @@ export default function Resources() {
               <button
                 key={chip.slug}
                 type="button"
-                onClick={() => handleChipTap(chip)}
+                onClick={() => handleChipTap(chip, 2)}
                 data-testid={`chip-${chip.slug}`}
                 className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-medium border transition-colors whitespace-nowrap touch-manipulation ${
                   active
@@ -866,6 +885,66 @@ export default function Resources() {
               </button>
             );
           })}
+        </div>
+
+        {/* "More Veteran Resources" toggle — collapsed by default. */}
+        <button
+          type="button"
+          data-testid="button-more-chips"
+          onClick={() => {
+            setMoreChipsOpen((v) => {
+              const next = !v;
+              trackEvent(next ? "more_resources_open" : "more_resources_close", {
+                location_mode: locationMode,
+                state: selectedState || "",
+                city: cityFilter || "",
+              });
+              return next;
+            });
+          }}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline ml-1 touch-manipulation"
+          aria-expanded={moreChipsOpen}
+          aria-controls="row-quick-chips-3"
+        >
+          <Plus className={`h-3 w-3 transition-transform duration-200 ${moreChipsOpen ? "rotate-45" : ""}`} />
+          {moreChipsOpen ? "Hide extra resources" : "More Veteran Resources"}
+        </button>
+
+        {/* Row 3 — expandable. Uses grid-rows trick + opacity for smooth
+            slide+fade with no layout jump. */}
+        <div
+          id="row-quick-chips-3"
+          className={`grid transition-all duration-300 ease-out ${
+            moreChipsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div
+              className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pt-1 pb-0.5"
+              data-testid="row-quick-chips-3-inner"
+            >
+              {QUICK_CHIPS_ROW3.map((chip) => {
+                const active = !chip.route && selectedSlug === chip.slug;
+                return (
+                  <button
+                    key={chip.slug}
+                    type="button"
+                    onClick={() => handleChipTap(chip, 3)}
+                    data-testid={`chip-${chip.slug}`}
+                    tabIndex={moreChipsOpen ? 0 : -1}
+                    aria-hidden={!moreChipsOpen}
+                    className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-medium border transition-colors whitespace-nowrap touch-manipulation ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-background text-muted-foreground border-border/70 hover:bg-muted active:bg-muted"
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -1,0 +1,153 @@
+--- COPY TO REPLIT ---
+
+Founder approval: EXPAND the Near You quick-chip system.
+
+Current chip feature is a major UX success. We now want to evolve it into a premium “Veteran Quick Access Command Center” while keeping it clean and mobile-first.
+
+GOAL:
+Keep the existing two chip rows exactly as working now, then add a clean expandable third tier.
+
+-----------------------------------
+PHASE 1 — KEEP EXISTING ROWS
+-----------------------------------
+
+Row 1 (Primary Needs):
+Food
+Housing
+Benefits
+Healthcare
+Jobs
+Mental Health
+
+Row 2 (Daily Life + Revenue):
+Discounts
+Services
+Legal
+Education
+Family Support
+Transportation
+
+Do not break current behavior.
+
+All chips must continue to:
+- preserve Near Me / City / State / All
+- preserve selected state/city
+- toggle on/off
+- use same filtering logic
+- mobile tap friendly
+- analytics tracked
+
+-----------------------------------
+PHASE 2 — ADD EXPANDABLE ROW 3
+-----------------------------------
+
+Below row 2 add:
+
++ More Veteran Resources
+
+When tapped, smoothly reveal Row 3 chips:
+
+Disability
+Crisis Help
+Addiction Recovery
+End of Life
+Caregiver Support
+Homeless Help
+Small Business
+Financial Help
+Claims Help
+Community
+
+Use clean animation:
+- slide/fade open
+- mobile smooth
+- no lag
+
+When tapped again:
+Hide row 3
+
+-----------------------------------
+PHASE 3 — CHIP MAPPING
+-----------------------------------
+
+Map to best matching categories/slugs already in system.
+
+Examples:
+Disability → disabled-veterans
+Crisis Help → crisis-help
+End of Life → end-of-life-services
+Community → /community
+Services → /discounts or trusted services hub
+Discounts → /discounts
+
+If no direct category exists:
+Use best current equivalent and report back.
+
+-----------------------------------
+PHASE 4 — UX RULES
+-----------------------------------
+
+Critical:
+
+Keep page clean.
+No clutter.
+No giant blocks.
+
+Need:
+- compact spacing
+- elegant hierarchy
+- same olive branding
+- rounded chips
+- responsive wrap or horizontal scroll
+- no overlap with filters
+- no jumpy layout
+
+This should feel like Apple / Uber / premium app polish.
+
+-----------------------------------
+PHASE 5 — ANALYTICS
+-----------------------------------
+
+Track:
+
+chip_click
+chip_name
+tier
+location_mode
+state
+city
+
+Track:
+more_resources_open
+more_resources_close
+
+-----------------------------------
+PHASE 6 — VALIDATION
+-----------------------------------
+
+Test:
+
+Near Me + Crisis Help
+SC + Columbia + Disability
+NC + Charlotte + Housing
+All + Discounts
+Expand row 3
+Collapse row 3
+Tap active chip clears filter
+
+-----------------------------------
+IMPORTANT
+-----------------------------------
+
+Do NOT disturb:
+- current search bar
+- current working location logic
+- current state/city sorting
+- current chip rows functionality
+
+Enhance only.
+
+Founder note:
+This section is becoming one of the strongest features on the platform. Build with premium polish.
+
+--- END ---
