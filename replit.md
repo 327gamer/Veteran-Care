@@ -90,16 +90,41 @@ After SC, NC, and Georgia (3 phases each), the rollout engine is now codified.
 - `founder-report.ts` — `--state=XX [--baseline=N] [--priority="City,City"]` produces the markdown founder report.
 - `florida-execution-plan.md` — ready-to-execute Phase 1/2/3 plan for FL with section codes, target row counts, sub-name watchlist, and near-dup watchlist.
 
-**4-Phase Rollout Model (per state) — UPDATED 2026-04-24:**
-1. **Phase 1 — Major Metro Foundation** (~100 rows): top 4 population centers + statewide anchors. Build largest cities first with strong category depth.
-2. **Phase 2 — Secondary Cities + Statewide** (~120-150 rows): suburbs, medium cities, counties, statewide programs, regional nonprofits, virtual services.
-3. **Phase 3 — Small Town + Rural Coverage** (~100-150 rows) + optional **Phase 3b top-up** for chapter posts and CBOCs. Smaller towns, underserved counties, remote areas.
-4. **Phase 4 — Gold Standard Completion / Optimization** (~80-150 rows): the flagship-quality finishing pass before moving on. **A state is NOT considered complete until Phase 4 is finished or intentionally deferred.** Phase 4 covers:
-   - Fill weak categories still under-populated (Mental Health, Insurance, Benefits, Financial Help, Transportation, Family Support, End of Life, any thin cats from QA).
-   - Fill geographic weak spots still thin or missed (suburbs, mountain regions, coastal regions, military base corridors, county seats, growth corridors).
-   - Deep quality audit (duplicates, broken URLs, missing phones, orphan junctions, wrong cat mapping, state bleed, ranking).
-   - UX / search perfection (full city dropdown, city-first → statewide → national fallback chain, verified partner geography).
-   - Monetization readiness (identify strong states for Trusted Partners, high-demand categories, underserved lead opportunities).
+**National Rollout Model (per state) — UPDATED 2026-04-24 by founder directive: MAXIMUM QUALITY COVERAGE, no arbitrary row ceilings.**
+
+> Each state is sized differently. GA may support 700-1,000 rows; FL/TX several thousand; CA many thousands; WY/VT far fewer. **The goal is NOT to hit a number — it is to keep adding legitimate, useful, verified resources through structured phases until the state is operationally strong with minimal meaningful gaps.**
+
+Base phase model (every state walks 1 → 6 minimum):
+1. **Phase 1 — Major Metro Foundation**: top 3-5 population centers + statewide anchors. Build largest cities first with strong category depth.
+2. **Phase 2 — Secondary Cities + Statewide Programs**: suburbs, medium cities, counties, statewide programs, regional nonprofits, virtual services.
+3. **Phase 3 — Small Town + Rural Coverage** (+ optional 3b chapter/CBOC top-up): smaller towns, underserved counties, remote areas.
+4. **Phase 4 — Gold Standard Completion / Optimization**: weak-category fill (Mental Health, Insurance, Benefits, Financial Help, Transportation, Family Support, End of Life) + geographic weak spots + deep quality audit + UX/search perfection + monetization readiness flags.
+5. **Phase 5 — Saturation / Metro + Category Depth**: deep metro pass (county-by-county under the largest metro), deepening of secondary cities, fill of weak categories below operational threshold (≥25 rows).
+6. **Phase 6 — Final QA / Micro-Fill / Ceiling Check**: address remaining weak cats, fix data quality issues (no-city rows, broken URLs, source/title mismatches), confirm operational maturity with founder-facing review.
+
+**Phase 7+ — Specialized Completion Waves** (run as needed; some states will not need any, large states may need several):
+- Large county backfills (e.g. all 159 GA county VSOs)
+- Deep metro passes (specific neighborhoods, sub-programs)
+- Niche category passes (insurance navigators, end-of-life, tribal services)
+- University & community-college veteran services systemwide
+- Tribal / military-base / coastal / agricultural region waves
+- Additional nonprofit layers (regional commissions, CAAs)
+- Chapter/post networks (every VFW/Legion/AmVets/DAV post)
+- Faith-based verified layer (church pantries, parish nurse programs)
+- Transit network coverage (every county/regional transit auth)
+- Hospital-system sub-programs (oncology, cardiology, behavioral health service lines)
+
+**A state is COMPLETE when:**
+- Coverage is strong and meaningful gaps are minimal
+- Top 5 cities each ≥ ~25 rows
+- All 13 priority categories ≥ 25 rows OR justified as N/A for that state
+- Zero rows missing city/state/lat-lng (data quality floor)
+- Founder reviews and signs off
+
+A state is NOT complete merely because a phase number ended. Founder sign-off is the gate.
+
+**Veteran-First / Community-Wide Ingestion Rule (founder mandate, locked 2026-04-24):**
+Resources do not have to be veteran-exclusive. Include all legitimate resources veterans, spouses, caregivers, dependents, and military families can use — food banks, pantries, shelters, housing authorities, county aid, hospitals, clinics, FQHCs, legal aid, probate help, workforce centers, trade schools, colleges, transit, rides, hospice, funeral help, churches, nonprofits, family support, recovery programs, insurance navigators, benefits help, disability help, etc.
 
 **Per-Phase Runbook (locked):**
 1. `tsx scripts/lib/probe-taxonomy.ts [--cat=slug]` — verify subcategory names.
@@ -166,9 +191,9 @@ Canonical live tracker. Update the row for the affected state at the end of ever
 
 | State | Rows | Cities | Cats Active | Weak / Thin Cats | Gold Standard | Phase | Last Update | Dups | Orphans | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| GA Georgia | 657 | 83 | 13/17 active | crisis-help (21) | YES ✅ | 5 Saturation | 2026-04-24 | 0 exact / accepted siblings | 0 | Flagship + Saturation; +217 rows Phase 5 (FUL/COB/GWN/DEK/CLA/ATL deepening + 65-row EXP outer-county block). |
-| SC South Carolina | 538 | 49 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / 56 accepted siblings | 0 | Was 438/38/0-Insurance/FAIL → Gold Standard. 6 "Veteran Care —" placeholder rows flagged for founder review. |
-| NC North Carolina | 431 | 96 | 17/17 | — | YES ✅ | 4 | 2026-04-24 | 0 exact / accepted siblings | 0 | Wave 2 Pre-Florida Southeast Upgrade SHIPPED 2026-04-24. Was 295/83/Insurance-orphan/FAIL → Gold Standard. Cleanup: 5 missing sub-junctions backfilled + 1 Fayetteville VAMC duplicate soft-archived (status=archived, additive-safe — no row deleted, founder-reviewable). Seed: +137 rows across geo depth (Triad/Wilmington/ENC/WNC/Sandhills/Onslow), weak-cat fill (INS/CRI/FIN/HOU/TRA/LGL/BEN/REC), broader community (HOSP/CLN/SHL/FOOD/CAA/CHU/EOL/CAR). Net 295 → 431 = +136 visible rows. |
+| GA Georgia | 657 | 83 | 13/17 active | crisis-help (21) borderline | YES ✅ | 5 Saturation | 2026-04-24 | 0 exact / accepted siblings | 0 | Flagship + Saturation; +217 rows Phase 5 (FUL/COB/GWN/DEK/CLA/ATL deepening + 65-row EXP outer-county block). Operationally mature; optional Phase 6 micro-fill (~25-40 rows) for crisis-help to clear 30-row floor. |
+| SC South Carolina | 536 | 50 | 17/17 | needs re-audit per new SOP | NEEDS UPGRADE ⚠️ | 4 (pre-new-SOP) | 2026-04-24 | 0 exact / 56 accepted siblings | 0 | Pre-new-SOP build. **63 rows missing city** (data-quality issue must be fixed before Phase 5). Only 50 distinct cities vs GA's 83 — significant geographic depth gap. Needs Phase 5 Saturation: Charleston metro deepening (Berkeley/Dorchester/Colleton), Greenville/Spartanburg upstate fill, Pee Dee/Lowcountry rural backfill. Estimated 200-300 high-quality rows still available before clutter. |
+| NC North Carolina | 431 | 97 | 17/17 | needs re-audit per new SOP | NEEDS UPGRADE ⚠️ | 4 (pre-new-SOP) | 2026-04-24 | 0 exact / accepted siblings | 0 | Pre-new-SOP build. **32 rows missing city** + **75 cities with only 1-2 rows** = breadth without depth. Mature on city count (97) but very thin per city. Needs Phase 5 Depth pass: deepen the 75 thin towns (or consolidate), strengthen Charlotte metro (Mecklenburg+Cabarrus+Union+Gaston), Triangle (Wake+Durham+Orange), Triad (Guilford+Forsyth), Cape Fear, ENC (Pitt+Onslow+Craven). Estimated 200-350 high-quality rows still available. |
 | FL Florida | 0 | 0 | 0/17 | all | NO | (Wave 3 pending) | — | n/a | n/a | Wave 3 begins after NC ships. Greenfield. |
 | TN Tennessee | (not audited) | — | — | — | NO | — | — | — | — | Future. |
 | VA Virginia | (not audited) | — | — | — | NO | — | — | — | — | Future. |

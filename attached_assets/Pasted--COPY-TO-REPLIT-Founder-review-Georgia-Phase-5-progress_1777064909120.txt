@@ -1,0 +1,241 @@
+--- COPY TO REPLIT ---
+
+Founder review:
+
+Georgia Phase 5 progress is strong and appreciated.
+
+However, we need to refine the expansion philosophy now before Florida and future national rollout.
+
+This is important:
+
+We should NOT be setting arbitrary row ceilings like 650, 750, or 1,000 as if every state is the same.
+
+Each state is different.
+
+Examples:
+
+- Georgia may support hundreds or 1,000+ quality rows.
+- Florida may support several thousand.
+- Texas may support several thousand.
+- California may support many thousands.
+- Wyoming or Vermont may support far fewer.
+
+So the goal moving forward is NOT to hit a random number.
+
+The goal is:
+
+MAXIMUM QUALITY COVERAGE BY STATE
+
+Meaning:
+
+Add as many legitimate, useful, verified resources as reasonably possible through structured phases until the state is operationally strong with minimal meaningful gaps.
+
+--------------------------------------------------
+NEW NATIONAL EXPANSION PHILOSOPHY
+--------------------------------------------------
+
+Every state should be expanded in phases until coverage is mature.
+
+Some states may be complete in 4 phases.
+
+Some states may need 6 phases.
+
+Some very large states may need 7+ phases.
+
+That is acceptable.
+
+We are building a national system, not forcing every state into the same row count.
+
+--------------------------------------------------
+UPDATE NATIONAL SOP NOW
+--------------------------------------------------
+
+Please update the rollout model immediately.
+
+Base model:
+
+Phase 1 — Major Metro Foundation
+Phase 2 — Secondary Cities + Statewide Programs
+Phase 3 — Small Town + Rural Coverage
+Phase 4 — Gold Standard Completion / Optimization
+Phase 5 — Saturation / Metro + Category Depth
+Phase 6 — Final QA / Micro-Fill / Ceiling Check
+
+Additional rule:
+
+If a state still has meaningful gaps after Phase 6, continue with:
+
+Phase 7+
+Specialized Completion Waves
+
+Examples:
+
+- large county backfills
+- deep metro passes
+- niche category passes
+- university systems
+- tribal / military / coastal / agricultural regions
+- additional nonprofit layers
+- chapter/post networks
+- faith-based verified layers
+- transit networks
+- hospital system sub-programs
+
+A state is complete when coverage is strong and meaningful gaps are minimal — not when a phase number ends.
+
+--------------------------------------------------
+GEORGIA REVIEW REQUIRED NOW
+--------------------------------------------------
+
+Georgia should remain the flagship template.
+
+Please run Georgia Final Review using this new philosophy.
+
+Do NOT chase a random number.
+
+Instead answer:
+
+1. What meaningful gaps still remain in Georgia?
+2. Which categories are still thin?
+3. Which counties / metros / rural zones are still under-covered?
+4. What additional high-quality rows are still realistically available?
+5. At what point would new rows become clutter / low-value instead of helpful?
+6. Is Georgia operationally mature now, or does it need another targeted phase?
+
+If another phase is needed:
+
+Run it.
+
+If not:
+
+Declare Georgia complete under the new standard.
+
+--------------------------------------------------
+VERY IMPORTANT:
+SC + NC MUST BE REVIEWED TOO
+--------------------------------------------------
+
+Before Florida begins, I need to know if South Carolina and North Carolina were upgraded to the SAME mature standard as Georgia.
+
+Do not assume older phases equal current flagship quality.
+
+Please audit both states under the NEW SOP.
+
+For SOUTH CAROLINA answer:
+
+1. Current row count
+2. Current city count
+3. Weak categories still remaining
+4. Missing community-wide opportunities
+5. Thin counties / towns
+6. Realistic additional high-quality rows still available
+7. Does SC need Phase 5 / Phase 6 / more?
+
+For NORTH CAROLINA answer:
+
+1. Current row count
+2. Current city count
+3. Weak categories still remaining
+4. Missing community-wide opportunities
+5. Thin counties / towns
+6. Realistic additional high-quality rows still available
+7. Does NC need Phase 5 / Phase 6 / more?
+
+Founder concern:
+
+I do NOT want to start Florida and later discover SC / NC are older-generation builds while Georgia got the upgraded model.
+
+All three Southeast flagship states should be brought to the same mature standard first.
+
+--------------------------------------------------
+RESOURCE INGESTION RULE REMINDER
+--------------------------------------------------
+
+Continue using:
+
+VETERAN-FIRST / COMMUNITY-WIDE MODEL
+
+Meaning not only veteran-exclusive resources.
+
+Include all legitimate resources veterans, spouses, caregivers, dependents and military families can use:
+
+- food banks
+- pantries
+- shelters
+- housing authorities
+- county aid
+- hospitals
+- clinics
+- FQHCs
+- legal aid
+- probate help
+- workforce centers
+- trade schools
+- colleges
+- transit
+- rides
+- hospice
+- funeral help
+- churches
+- nonprofits
+- family support
+- recovery programs
+- insurance navigators
+- benefits help
+- disability help
+etc.
+
+--------------------------------------------------
+FLORIDA READINESS STANDARD
+--------------------------------------------------
+
+Before Florida starts, I want the rollout engine cleaner and smarter than before.
+
+Meaning:
+
+- phase system finalized
+- audit logic finalized
+- city dropdown logic proven
+- no wrong-state bleed
+- no duplicates
+- partner geography rules proven
+- category mapping proven
+- fallback logic proven
+- scoreboard tracking active
+- SC / NC / GA benchmark states aligned
+
+Then Florida should go smoother and faster.
+
+--------------------------------------------------
+RETURN REPORT REQUIRED
+--------------------------------------------------
+
+Please return:
+
+1. Georgia final maturity assessment
+2. Whether Georgia needs another targeted phase
+3. South Carolina maturity assessment
+4. Whether SC needs more phases
+5. North Carolina maturity assessment
+6. Whether NC needs more phases
+7. Updated national SOP confirmation
+8. Florida readiness score
+9. Recommendation:
+
+A. Start Florida now
+B. Upgrade SC first
+C. Upgrade NC first
+D. Upgrade both SC + NC first
+E. Another Georgia targeted phase first
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+Do not chase vanity row counts.
+
+Do not pad low-value data.
+
+Goal is strongest useful coverage possible by state.
+
+--- END ---
