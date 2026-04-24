@@ -298,15 +298,22 @@ export default function Resources() {
     queryFn: () => fetch("/api/categories").then(r => r.json()),
   });
 
-  const { data: trustedPartners = [] } = useQuery<any[]>({
-    queryKey: ["/api/trusted-partners-for-category", selectedSlug],
-    queryFn: () => selectedSlug ? fetch(`/api/trusted-partners-for-category/${selectedSlug}`).then(r => r.json()) : Promise.resolve([]),
-    enabled: !!selectedSlug,
-  });
-
   const stateParam = locationMode === "state" && selectedState ? selectedState : undefined;
   const cityParam = (locationMode === "state" || locationMode === "city") && debouncedCity.trim() ? debouncedCity.trim() : undefined;
   const zipParam = locationMode === "state" && debouncedZip.trim() ? debouncedZip.trim() : undefined;
+
+  const { data: trustedPartners = [] } = useQuery<any[]>({
+    queryKey: ["/api/trusted-partners-for-category", selectedSlug, stateParam, cityParam],
+    queryFn: () => {
+      if (!selectedSlug) return Promise.resolve([]);
+      const params = new URLSearchParams();
+      if (stateParam) params.set("state", stateParam);
+      if (cityParam) params.set("city", cityParam);
+      const qs = params.toString();
+      return fetch(`/api/trusted-partners-for-category/${selectedSlug}${qs ? `?${qs}` : ""}`).then(r => r.json());
+    },
+    enabled: !!selectedSlug,
+  });
   const hasLocationFilters = !!(stateParam || cityParam || zipParam);
   const hasAnyLocationInput = (locationMode === "state" && !!(selectedState || cityFilter.trim() || zipFilter.trim())) || (locationMode === "city" && !!cityFilter.trim());
 
@@ -955,7 +962,7 @@ export default function Resources() {
 
       {(selectedSlug || locationMode === "nearme" || locationMode === "city" || locationMode === "state") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/95 backdrop-blur-sm border-b border-border/40 shadow-sm space-y-3">
+          <div className="-mx-4 px-4 pt-2 pb-3 border-b border-border/40 space-y-3">
 
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
               <div className="flex items-center gap-2 flex-wrap">

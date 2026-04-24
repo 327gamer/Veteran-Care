@@ -1,0 +1,74 @@
+--- COPY TO REPLIT ---
+
+Urgent regression fix needed.
+
+Founder live testing shows two issues after latest Georgia/state-filter work.
+
+ISSUE 1 — FILTER PANEL BLOCKING SCREEN
+
+On mobile, the location/filter panel is staying fixed/sticky while scrolling, covering nearly half the screen. Resource cards scroll behind it and only a small part of the list is visible.
+
+Required fix:
+- The search/location/filter panel must NOT remain stuck over the resource results.
+- When user scrolls down, the filters should scroll away naturally or collapse.
+- Resource cards must be fully visible.
+- Keep bottom nav intact.
+- Do not make the page feel trapped behind the filter area.
+
+Expected behavior:
+User scrolls down → filter/search section moves away → resources take over the screen.
+
+ISSUE 2 — VERIFIED PARTNER STATE BLEED
+
+South Carolina verified partners are appearing under other state searches.
+
+Examples:
+- BootPrint showing under Georgia / Atlanta / Housing
+- Tri-County Veterans Support Network showing under Georgia / Atlanta / Housing
+
+Unless a verified partner is marked national, it should NOT show in other states.
+
+Required fix:
+- Verified Partners strip/cards must respect selected state/city filters.
+- If State = GA, only show:
+  - GA verified partners
+  - national verified partners
+- Do NOT show SC-only partners under GA.
+- If State = NC, do not show SC-only partners.
+- If Near Me mode is active, show partners based on actual distance/location logic only.
+- If partner has no national flag and belongs to SC, it must stay in SC context.
+
+Please audit:
+- VerifiedPartnerStrip
+- trusted service partner query
+- any fallback that ignores selectedState/locationMode
+
+VALIDATION:
+Test mobile:
+
+1. Georgia + Atlanta + Housing
+Expected:
+- No BootPrint unless national
+- No Tri-County Veterans Support Network unless national
+- GA/national only
+
+2. North Carolina + Housing
+Expected:
+- No SC-only partners
+
+3. South Carolina + Housing
+Expected:
+- SC partners can show
+
+4. Scroll down resource list on mobile
+Expected:
+- Filter panel does not cover resource cards
+- User can see full list normally
+
+Do not change chips, category logic, or Georgia resource data.
+
+Fix only:
+1. sticky/overlay filter regression
+2. verified partner state bleed
+
+--- END ---

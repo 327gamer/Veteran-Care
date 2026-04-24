@@ -11466,6 +11466,7 @@ export async function registerRoutes(
             AND ts.verification_status IS DISTINCT FROM 'rejected'
             AND tsc.slug = $1
             ${verifiedOnlyParam ? `AND ts.verification_status = 'verified'` : ``}
+            ${stateParam ? `AND (UPPER(COALESCE(ts.state, '')) = $2 OR COALESCE(ts.is_national, false) = true)` : ``}
         )
         SELECT *,
           (paid_boost + geo_boost + sub_boost + recency) AS score
