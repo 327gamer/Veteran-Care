@@ -66,7 +66,55 @@ Use this template for every new state. Each phase produces a committed script un
 - Insert pattern: write `resources` row, then upsert `resource_categories` + `resource_subcategories` junctions with `ON CONFLICT DO NOTHING`.
 - Sub-name taxonomy gotchas (verified live): healthcare = `VA Clinics` / `VA Medical Centers` (not "Outpatient Care"); family-support = `Military Family Support` / `Childcare Assistance` / `Survivor Benefits Support` / `Spouse Employment Assistance` / `Youth Programs` (not "Military Family Programs"); housing = `Homeless Veteran Services` / `Home Ownership Programs`; transportation = `Public Transit Assistance`; legal = `Pro Bono Legal Services` / `Veterans Legal Clinics` / `Legal Aid Services`; crisis-help = `Veterans Crisis Line` / `Mobile Crisis Teams`; food-assistance = `Food Banks`. **Always pre-validate against the live `subcategories` table — sub names drift.**
 - VA.gov deep links rot frequently — swap to verified parent VAMC URL, never delete the row.
-- QC junction loader must chunk `.in()` queries by ≤150 IDs (PostgREST URL-length limit; symptom: false 100% cat-mismatch).
+- PostgREST `.in()` queries must be chunked by ≤150 IDs (URL-length limit). Legacy `qc-resources.ts` uses 150; the newer `qa-state.ts` uses 100 (more conservative, identical behavior). Pick a value ≤150 for any new tool. Symptom of overrunning the limit: false 100% cat-mismatch reports.
+
+### State Rollout Engine v2 — CODIFIED 2026-04-24 (SUPERSEDES ad-hoc seed scripts)
+
+After SC, NC, and Georgia (3 phases each), the rollout engine is now codified.
+**All future state seeds MUST use this engine — do not hand-roll dedupe / taxonomy / junction logic.**
+
+**Files (all under `scripts/`):**
+- `lib/rollout-engine.ts` — single source of truth. Exports `SeedRow` type, `runSeed()`, `loadTaxonomy()`, `loadDedupeIndex()`, `normalizeTitle()`. Handles: exact-title dedupe (national + in-state), normalized near-duplicate dedupe, taxonomy validation, resource insert, both junction upserts, per-section stats, error reporting.
+- `lib/probe-taxonomy.ts` — prints every category + valid subcategory NAMES from the live `subcategories` table. **Run before every seed** to catch sub-name drift.
+- `seed-state.template.ts` — drop-in template; copy, rename, fill `STATE`, `SECTION_LABELS`, `ROWS`. Engine handles the rest.
+- `qa-state.ts` — `--state=XX` runs all 11 QA checks: row count, cities, categories, exact dups, near dups, orphan junctions, state bleed, sub validity, URL/phone/address completeness, city-dropdown sync, national fallback. Prints PASS/FAIL.
+- `founder-report.ts` — `--state=XX [--baseline=N] [--priority="City,City"]` produces the markdown founder report.
+- `florida-execution-plan.md` — ready-to-execute Phase 1/2/3 plan for FL with section codes, target row counts, sub-name watchlist, and near-dup watchlist.
+
+**3-Phase Rollout Model (per state):**
+1. **Phase 1 — Major metros** (~100 rows): top 4 population centers + statewide anchors.
+2. **Phase 2 — Secondary cities + statewide programs** (~120-150 rows): the next 8-12 cities, statewide programs.
+3. **Phase 3 — Small towns / rural / outlying** (~100-150 rows) + optional **Phase 3b top-up** for chapter posts and CBOCs.
+
+**Per-Phase Runbook (locked):**
+1. `tsx scripts/lib/probe-taxonomy.ts [--cat=slug]` — verify subcategory names.
+2. `tsx scripts/qa-state.ts --state=XX` — capture baseline (row count for `--baseline` flag).
+3. Copy `seed-state.template.ts` → `seed-{xx}-phase{N}.ts`. Fill STATE, SECTION_LABELS, ROWS.
+4. `tsx scripts/seed-{xx}-phase{N}.ts` — **dry-run**. Read `created/dup/near_dup/bad_sub/err` per section. Read the near-dup list — rename or drop those rows.
+5. `tsx scripts/seed-{xx}-phase{N}.ts --commit` — write to DB.
+6. `tsx scripts/qa-state.ts --state=XX` — must show PASS (0 exact dups, 0 orphan junctions, 0 wrong-state, 0 invalid subs). Near-dup clusters from parent-org rollups (e.g. multi-office DOL career centers, multi-office GLSP) are expected and acceptable — humans review.
+7. Restart workflow: `restart_workflow Start application` so live API matches DB.
+8. `tsx scripts/founder-report.ts --state=XX --baseline=<prior> --priority="..."` — paste output to founder.
+9. Wait for founder sign-off before next phase.
+
+**Discipline Rules (NON-NEGOTIABLE):**
+- Every row: verified institutional URL + phone + (for city-anchored rows) address + lat/lng.
+- `state` hardcoded in script; engine enforces it on every insert. Zero state bleed.
+- `status: "approved"`, `sponsored: false`, both junctions written.
+- Additive only — engine never deletes or updates existing rows. Cleanup is a separate manual operation.
+- Dry-run before every commit. No exceptions.
+- After commit, QA must PASS before founder report.
+- Founder report must be delivered BEFORE moving to next phase / next state.
+
+**Worked Example — Georgia:**
+- Phase 1: `seed-ga-resources.ts` (79 rows, statewide foundation)
+- Phase 2: `seed-ga-atlanta-phase2.ts` (111 rows, Atlanta metro deepening)
+- Phase 3: `seed-ga-phase3-statewide.ts` (154 rows, 11 sections AUG/SAV/COL/MAC/ATH/WAR/ALB/VAL/GAI/NFU/STW) + `seed-ga-phase3b-topup.ts` (12 rows VA CBOCs + Legion posts)
+- Final: 351 approved rows, 36 cities, 17/17 categories, 0 orphans, 0 invalid subs, city dropdown in sync.
+- Code review caught 5 near-duplicates that pure exact-title dedupe missed (e.g. "Macon VA Clinic — Carl Vinson VA" vs existing "Macon VA Clinic"). The new engine's normalized-title dedupe now catches these automatically.
+
+**Next state queue:** Florida → Tennessee → Virginia → Texas. Florida has a ready-to-execute plan at `scripts/florida-execution-plan.md`.
+
 3. **Local Coverage Layer** — cities, counties, metro areas, service zones, partner territories, ambassador territories
 
 ### Expansion Rule
