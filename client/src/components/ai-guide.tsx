@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, User, Trash2, History, AlertTriangle, Handshake, Phone, ExternalLink, Mail, Globe, Star, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSavedResources } from "@/lib/store";
+import { EnableLocationPrompt } from "@/components/enable-location-prompt";
 import { platform, t } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import { trackEvent } from "@/lib/analytics";
@@ -370,6 +371,10 @@ export default function AiGuide({ open, onOpenChange, categoryContext }: AiGuide
             )}
           </div>
         </DialogHeader>
+
+        <div className="px-3 pt-3">
+          <EnableLocationPrompt variant="inline" />
+        </div>
 
         <ScrollArea className="flex-1 p-4 bg-muted/30" ref={scrollRef}>
           <div className="flex flex-col gap-4">

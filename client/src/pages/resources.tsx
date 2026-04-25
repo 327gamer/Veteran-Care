@@ -960,11 +960,11 @@ export default function Resources() {
         </div>
       </div>
 
+      <EnableLocationPrompt variant="inline" className="mb-3" />
+
       {(selectedSlug || locationMode === "nearme" || locationMode === "city" || locationMode === "state") ? (
         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="-mx-4 px-4 pt-2 pb-3 border-b border-border/40 space-y-3">
-
-            <EnableLocationPrompt variant="inline" />
 
             <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border">
               <div className="flex items-center gap-2 flex-wrap">

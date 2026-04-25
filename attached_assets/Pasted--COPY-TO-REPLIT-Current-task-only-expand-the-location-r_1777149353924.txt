@@ -1,0 +1,123 @@
+--- COPY TO REPLIT ---
+
+Current task only: expand the location re-enable prompt so it appears more consistently.
+
+We already added the gentle location prompt on resources/profile/AI, but the Resources page banner only appears after a category is opened or location mode is active.
+
+We need it available earlier.
+
+GOAL:
+If the user has not enabled location, they should always have a clear option to enable location OR manually choose State / City before searching/browsing resources.
+
+--------------------------------------------------
+PART 1 — RESOURCES LANDING PAGE
+--------------------------------------------------
+
+Add the location prompt on the main Resources page even before a category is opened.
+
+Place it near the top:
+
+- under the search bar, OR
+- above the location controls, OR
+- wherever it fits best visually
+
+Suggested wording:
+
+Enable location for better results and a more personalized experience.
+
+Button:
+Enable Location
+
+Secondary:
+Not Now
+
+Also make sure manual State / City selection remains clearly available.
+
+If location is not enabled, user should understand:
+
+- they can enable location, OR
+- they can choose State / City manually
+
+Do not block browsing.
+
+--------------------------------------------------
+PART 2 — AI NAVIGATOR LOCATION PROMPT
+--------------------------------------------------
+
+When the AI Navigator has no location and the user asks for resources, it should not just ask:
+
+“What city and state should I search in?”
+
+It should also say:
+
+“For better results and a more personalized experience, you can enable location.”
+
+If technically possible, show an Enable Location action/button/prompt inside or near the AI chat interface.
+
+If a button is not currently practical in the chat UI, at minimum update the AI wording.
+
+Required AI behavior:
+
+1. If user asks:
+“I need food help”
+and no location is available:
+
+AI should respond:
+“What city and state should I search in? You can also enable location for better results and a more personalized experience.”
+
+2. If user asks:
+“I need food help in Georgia”
+
+AI should use Georgia immediately.
+Do NOT ask for location.
+Do NOT override explicit location with GPS.
+
+3. If user has location enabled:
+
+AI should use location automatically.
+
+--------------------------------------------------
+PART 3 — PROFILE / ACCOUNT
+--------------------------------------------------
+
+Keep the prompt in the profile/account area.
+
+If the user has no location saved/enabled, show:
+
+Enable location for better results and a more personalized experience.
+
+--------------------------------------------------
+PART 4 — IMPORTANT UX RULES
+--------------------------------------------------
+
+- Do not force location.
+- Do not block manual State / City use.
+- Do not show annoying repeated modals.
+- Inline prompt only.
+- Dismiss for session if user clicks Not Now.
+- Hide immediately once location is enabled.
+- Explicit typed location in AI Navigator still overrides GPS.
+
+--------------------------------------------------
+PART 5 — QA
+--------------------------------------------------
+
+Test:
+
+1. Resources landing page with no location → prompt visible under/near search bar.
+2. User clicks Enable Location → browser permission flow starts.
+3. User clicks Not Now → prompt hides for session.
+4. User can still choose State / City manually.
+5. AI Navigator no location + “I need food help” → asks for city/state and mentions enabling location.
+6. AI Navigator no location + “I need food help in Georgia” → uses Georgia and does not ask location.
+7. AI Navigator with location enabled → uses detected location and does not show unnecessary prompt.
+8. Profile prompt still works.
+
+Return:
+- files changed
+- exact placement on Resources page
+- AI wording confirmed
+- whether AI chat button was possible
+- QA results
+
+--- END ---
