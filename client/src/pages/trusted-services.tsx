@@ -881,7 +881,10 @@ export default function TrustedServices() {
       <div className="pt-2 pb-4">
         <Card
           className="cursor-pointer group shadow-sm hover:shadow-md hover:border-green-600/50 transition-all"
-          onClick={() => window.location.href = "/partner-apply"}
+          onClick={() => {
+            trackEvent("cta_click", { cta: "become_trusted_partner_card", page: "trusted-services" });
+            window.location.href = "/partner-apply";
+          }}
         >
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-3">
@@ -901,7 +904,11 @@ export default function TrustedServices() {
             <Button
               data-testid="button-become-partner"
               className="w-full rounded-full bg-green-600 hover:bg-green-700"
-              onClick={(e) => { e.stopPropagation(); window.location.href = "/partner-apply"; }}
+              onClick={(e) => {
+                e.stopPropagation();
+                trackEvent("cta_click", { cta: "become_trusted_partner_apply", page: "trusted-services" });
+                window.location.href = "/partner-apply";
+              }}
             >
               <Handshake className="h-4 w-4 mr-1.5" />
               Apply Now

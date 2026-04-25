@@ -7,6 +7,7 @@ import MenuPageHero from "@/components/menu-page-hero";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import { platform } from "@shared/platform";
+import { trackEvent } from "@/lib/analytics";
 
 const USE_CASES = [
   { icon: Search, title: "Resource lookup by geography", desc: "Find programs by city, county, or state without manually combing through PDFs and out-of-date directories." },
@@ -118,8 +119,13 @@ export default function CaseManagers() {
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" data-testid="button-cta-contact">
-                Talk to Our Team
+              <Button
+                size="lg"
+                variant="outline"
+                data-testid="button-cta-create-account"
+                onClick={() => trackEvent("cta_click", { cta: "case_manager_create_account", page: "case-managers" })}
+              >
+                Create Free Account
               </Button>
             </Link>
           </div>
