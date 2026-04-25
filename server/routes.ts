@@ -279,6 +279,61 @@ async function ensureAttributionTables() {
     await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_amb_links_utm_id ON ambassador_links(utm_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_ambassador_id ON ambassador_links(ambassador_id)`);
 
+    // === PRIVACY-SAFE PUBLIC SLUG MIGRATION ===
+    // Adds initials-prefixed public_slug column so kits/QR/share tools can
+    // display /a/c_s_partner_email instead of /a/colin_slaven_partner_email
+    // while utm_id (canonical FK across attribution/commission/GA4) stays
+    // untouched. is_legacy=true marks rows that should never surface in
+    // ambassador-facing UI (orphaned codes, unmigrated names) but still
+    // resolve in /a/:slug for continuity of already-shared URLs.
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS public_slug TEXT`);
+    await pgQuery(`ALTER TABLE ambassador_links ADD COLUMN IF NOT EXISTS is_legacy BOOLEAN NOT NULL DEFAULT false`);
+    await pgQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_amb_links_public_slug ON ambassador_links(public_slug) WHERE public_slug IS NOT NULL`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_amb_links_is_legacy ON ambassador_links(is_legacy)`);
+    {
+      const initialsMap: Record<string, string> = {
+        colin_slaven: "c_s",
+        debbie_slaven: "d_s",
+        tracy_robertson: "t_r",
+        michelle_keef: "m_k",
+        kelsey_flanagan: "k_f",
+      };
+      for (const [code, initials] of Object.entries(initialsMap)) {
+        // Backfill public_slug for known ambassador codes by replacing the
+        // full-name prefix with the initials prefix. Idempotent — only writes
+        // rows where public_slug is still NULL.
+        await pgQuery(
+          `UPDATE ambassador_links
+           SET public_slug = $2 || '_' || SUBSTRING(utm_id FROM ${code.length + 2}),
+               is_legacy = false
+           WHERE ambassador_code = $1
+             AND utm_id LIKE $1 || '_%'
+             AND public_slug IS NULL`,
+          [code, initials]
+        );
+        // Keep short_url in sync for migrated rows.
+        await pgQuery(
+          `UPDATE ambassador_links
+           SET short_url = '/a/' || public_slug
+           WHERE ambassador_code = $1
+             AND public_slug IS NOT NULL
+             AND (short_url IS NULL OR short_url = '/a/' || utm_id)`,
+          [code]
+        );
+      }
+      // Mark every remaining row (orphan codes like kelsey_reese_*, or any
+      // future unrecognized prefix) as legacy. Per founder rule: do not
+      // delete or rename — preserve as backend-only aliases until reviewed.
+      await pgQuery(
+        `UPDATE ambassador_links
+         SET is_legacy = true
+         WHERE public_slug IS NULL
+           AND ambassador_code IS NOT NULL
+           AND ambassador_code NOT IN (${Object.keys(initialsMap).map((_, i) => `$${i + 1}`).join(", ")})`,
+        Object.keys(initialsMap)
+      );
+    }
+
     // === COMMISSIONS (earnings ledger) ===
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS commissions (
@@ -5114,12 +5169,16 @@ export async function registerRoutes(
 
   app.get("/a/:utmId", async (req, res) => {
     try {
+      // Privacy-safe slug resolver:
+      //   1. Match the new initials-prefixed public_slug first (e.g. /a/c_s_partner_email)
+      //   2. Fall back to legacy utm_id (e.g. /a/colin_slaven_partner_email)
+      // Both paths increment the same row's click_count so attribution stays unified.
       const rows = await pgQuery(
         `UPDATE ambassador_links
          SET click_count = click_count + 1,
              first_clicked_at = COALESCE(first_clicked_at, NOW()),
              last_clicked_at = NOW()
-         WHERE utm_id = $1 AND is_active = true
+         WHERE (public_slug = $1 OR utm_id = $1) AND is_active = true
          RETURNING full_url`,
         [req.params.utmId]
       );
@@ -5159,7 +5218,8 @@ export async function registerRoutes(
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
     try {
-      const rows = await pgQuery(`SELECT full_url, utm_id, link_name FROM ambassador_links WHERE utm_id = $1`, [req.params.utmId]);
+      // Accept either privacy-safe public_slug or legacy utm_id.
+      const rows = await pgQuery(`SELECT full_url, utm_id, public_slug, link_name FROM ambassador_links WHERE public_slug = $1 OR utm_id = $1`, [req.params.utmId]);
       if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
 
       const kebabName = (rows[0].link_name || rows[0].utm_id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -5277,9 +5337,16 @@ export async function registerRoutes(
 
       const ambassador = ambRows[0];
 
+      // Privacy filter: ambassador-facing dashboard renders ONLY initials-prefixed
+      // public_slug rows. Legacy full-name rows (is_legacy=true OR public_slug=NULL)
+      // stay in the database for /a/:slug backward-compat but never surface here.
       const links = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, audience_type, channel_type, utm_campaign, click_count, is_active
-         FROM ambassador_links WHERE ambassador_code = $1 AND is_active = true
+        `SELECT id, link_name, utm_id, public_slug, full_url, audience_type, channel_type, utm_campaign, click_count, is_active
+         FROM ambassador_links
+         WHERE ambassador_code = $1
+           AND is_active = true
+           AND is_legacy = false
+           AND public_slug IS NOT NULL
          ORDER BY audience_type, channel_type`,
         [code]
       );
@@ -5415,15 +5482,19 @@ export async function registerRoutes(
 
   app.get("/api/ambassador/qr/:utmId", async (req, res) => {
     try {
+      // Privacy-safe: accept either public_slug (preferred, e.g. c_s_...) or
+      // legacy utm_id. Always render the QR with the underlying full_url so
+      // attribution stays unchanged regardless of which slug a viewer scans.
       const rows = await pgQuery(
-        `SELECT full_url, utm_id FROM ambassador_links WHERE utm_id = $1 AND is_active = true`,
+        `SELECT full_url, utm_id, public_slug FROM ambassador_links WHERE (public_slug = $1 OR utm_id = $1) AND is_active = true`,
         [req.params.utmId]
       );
       if (rows.length === 0) return res.status(404).json({ error: "Link not found" });
 
+      const filename = rows[0].public_slug || rows[0].utm_id;
       const png = await QRCode.toBuffer(rows[0].full_url, { width: 400, margin: 2, type: "png" });
       res.setHeader("Content-Type", "image/png");
-      res.setHeader("Content-Disposition", `inline; filename="${rows[0].utm_id}.png"`);
+      res.setHeader("Content-Disposition", `inline; filename="${filename}.png"`);
       return res.send(png);
     } catch (err: any) {
       return res.status(500).json({ error: "Failed to generate QR code" });
