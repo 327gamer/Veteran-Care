@@ -66,6 +66,31 @@ Larger states (CA, TX, FL) may need Phase 7+ specialized completion waves.
 
 **Current state of the rule's application:** Alabama is the first state to live under this rule starting at Phase 2. California rollout (queued next) does not begin until AL hits Phase 6 Elite Closeout with founder sign-off.
 
+### FOUNDER RULE — TIME / COST CONTROL: FAST COMPLETION MODE (LOCKED 2026-04-25)
+
+**Trigger:** any phase exceeding 15-20 minutes OR getting trapped in reconciliation loops, parity audits, repeated source re-checking, or low-impact row disputes.
+
+**On trigger, immediately switch to FAST COMPLETION MODE:**
+1. Skip questionable rows (don't argue with sources — drop & move on)
+2. Skip low-value edge-case conflicts (one mismatched VSO is not worth 5 architect rounds)
+3. Mark unresolved rows for a future maintenance queue (one bullet line in the founder report — no deep forensics)
+4. Continue expanding verified rows
+5. Complete the phase efficiently
+
+**Do NOT spend excessive time on:** one county office mismatch, repeated architect loops, parity scripts, report perfection, reconciling tiny edge cases.
+
+**Priority order (strict):**
+1. Speed
+2. Coverage
+3. Good quality
+4. Perfect quality (later, in maintenance pass)
+
+**Goal:** 90-95% quality fast beats 100% quality at 4x cost.
+
+**Deep forensic mode** (parity scripts, multi-round architect audits, exhaustive web verification per row) is permitted **ONLY when the founder explicitly requests it.**
+
+**Applies to:** Alabama Phase 6, California, and all future state rollouts. Phase budget per state: target ≤20 min per phase / ≤2 hours total per state for the standard 5-6 phase ladder. If a phase blows past 20 min, snap to fast mode and ship.
+
 ### Architecture Model
 - **ONE ENGINE** — single codebase, single backend, single admin, single AI/Routing/Billing/Attribution
 - **MULTI-STATE DATA LAYERS** — state-tagged resources, state/city partners, state/city ambassadors
