@@ -397,7 +397,7 @@ function AmbassadorKitSection({ campaigns, onDownloadKit }: { campaigns: Record<
                 </div>
 
                 {campaign.links?.filter((l: any) => l.channel === "qr").map((link: any) => (
-                  <div key={link.utm_id} className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-qr-${aud}`}>
+                  <div key={link.public_slug || link.utm_id} className="border rounded-lg bg-white overflow-hidden" data-testid={`kit-qr-${aud}`}>
                     <div className="px-4 py-3 border-b bg-gray-50/60 flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center shrink-0">
                         <QrCode className="w-3.5 h-3.5 text-green-700" />
@@ -518,28 +518,33 @@ function QRCodeSection({ links }: { links: any[] }) {
         QR Codes
       </h4>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {qrLinks.map((link: any) => (
-          <div key={link.utm_id} className="text-center space-y-2 bg-white border rounded-lg p-3">
-            <img
-              src={link.qr_url}
-              alt={`QR Code - ${link.utm_id}`}
-              className="w-28 h-28 mx-auto border rounded"
-              data-testid={`qr-${link.utm_id}`}
-            />
-            <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
-              <MousePointerClick className="w-3 h-3" />
-              {link.click_count} clicks
+        {qrLinks.map((link: any) => {
+          // Privacy: prefer initials-prefixed public_slug for any
+          // user-visible filename / accessibility text.
+          const slug = link.public_slug || link.utm_id;
+          return (
+            <div key={slug} className="text-center space-y-2 bg-white border rounded-lg p-3">
+              <img
+                src={link.qr_url}
+                alt={`QR Code - ${slug}`}
+                className="w-28 h-28 mx-auto border rounded"
+                data-testid={`qr-${slug}`}
+              />
+              <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+                <MousePointerClick className="w-3 h-3" />
+                {link.click_count} clicks
+              </div>
+              <a
+                href={link.qr_url}
+                download={`${slug}.png`}
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                data-testid={`download-qr-${slug}`}
+              >
+                <Download className="w-3 h-3" /> Download PNG
+              </a>
             </div>
-            <a
-              href={link.qr_url}
-              download={`${link.utm_id}.png`}
-              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-              data-testid={`download-qr-${link.utm_id}`}
-            >
-              <Download className="w-3 h-3" /> Download PNG
-            </a>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -553,14 +558,17 @@ function TrackingLinksSection({ links }: { links: any[] }) {
     <div className="space-y-2">
       <h4 className="text-sm font-medium">Your Tracking Links</h4>
       <div className="space-y-2">
-        {nonQrLinks.map((link: any) => (
-          <div key={link.utm_id} className="flex items-center gap-2 text-sm bg-gray-50 rounded p-2.5">
-            <Badge variant="outline" className="text-xs shrink-0">{CHANNEL_LABELS[link.channel] || link.channel}</Badge>
-            <span className="truncate flex-1 text-gray-600 text-xs">{link.short_url}</span>
-            <span className="text-xs text-gray-400 shrink-0">{link.click_count} clicks</span>
-            <CopyBtn text={link.short_url} label={`link-${link.utm_id}`} />
-          </div>
-        ))}
+        {nonQrLinks.map((link: any) => {
+          const slug = link.public_slug || link.utm_id;
+          return (
+            <div key={slug} className="flex items-center gap-2 text-sm bg-gray-50 rounded p-2.5">
+              <Badge variant="outline" className="text-xs shrink-0">{CHANNEL_LABELS[link.channel] || link.channel}</Badge>
+              <span className="truncate flex-1 text-gray-600 text-xs">{link.short_url}</span>
+              <span className="text-xs text-gray-400 shrink-0">{link.click_count} clicks</span>
+              <CopyBtn text={link.short_url} label={`link-${slug}`} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

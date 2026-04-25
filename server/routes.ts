@@ -16,6 +16,7 @@ import { assertTaxonomyLock, getLastLockReport } from "./taxonomy-lock";
 import { ensureLeadEventsTable, logLeadEvent } from "./lead-events";
 import { ensureMonetizationAuditTable } from "./monetization-audit";
 import { query as pgQuery } from "./pg-client";
+import { derivePublicSlug } from "./ambassador-slugs";
 import { registerSeededProviderRoutes } from "./seeded-providers-routes";
 import { registerContactRoute } from "./contact-route";
 import { registerUnsubscribeRoutes } from "./unsubscribe-route";
@@ -3691,12 +3692,19 @@ export async function registerRoutes(
           const utmId = await nextUtmId(code, campaign, channel);
           const fullUrl = buildAmbassadorUrl(audience.path, channel, campaign, code, utmId);
           const linkName = `${titleCase(code)} – ${CHANNEL_LABELS[channel] || titleCase(channel)} – ${audience.label}`;
+          // Privacy-safe slug: derive c_s/d_s/etc. for known ambassadors;
+          // falls back to is_legacy=true for unknown codes (kept for backend
+          // continuity but hidden from ambassador-facing UI until a name is
+          // approved into the AMBASSADOR_INITIALS map).
+          const publicSlug = derivePublicSlug(code, utmId);
+          const isLegacy = publicSlug === null;
+          const shortUrl = `/a/${publicSlug || utmId}`;
 
           await pgQuery(
             `INSERT INTO ambassador_links
-             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, full_url, short_url, audience_type, channel_type, link_name, email, region, ambassador_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, fullUrl, `/a/${utmId}`, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion, ambassadorId]
+             (ambassador_name, ambassador_code, base_path, utm_source, utm_medium, utm_campaign, utm_content, utm_id, public_slug, is_legacy, full_url, short_url, audience_type, channel_type, link_name, email, region, ambassador_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+            [ambassador_name, code, audience.path, "ambassador", channel, campaign, code, utmId, publicSlug, isLegacy, fullUrl, shortUrl, audienceKey, channel, linkName, ambassadorEmail, ambassadorRegion, ambassadorId]
           );
 
           generated.push({
@@ -3705,6 +3713,7 @@ export async function registerRoutes(
             campaign,
             url: fullUrl,
             utm_id: utmId,
+            public_slug: publicSlug,
             link_name: linkName,
           });
         }
@@ -3727,12 +3736,18 @@ export async function registerRoutes(
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
 
-    const { ambassador, audience, channel, campaign, active, date_from, date_to } = req.query;
+    const { ambassador, audience, channel, campaign, active, date_from, date_to, include_legacy } = req.query;
     try {
+      // Privacy default: hide legacy full-name rows from admin lists too.
+      // Pass ?include_legacy=true to surface them for debugging / audit.
+      const showLegacy = include_legacy === "true";
       let sql = `SELECT al.*, a.display_name as ambassador_display_name
         FROM ambassador_links al
         LEFT JOIN ambassadors a ON a.id = al.ambassador_id
         WHERE 1=1`;
+      if (!showLegacy) {
+        sql += ` AND al.is_legacy = false`;
+      }
       const params: any[] = [];
       let idx = 1;
 
@@ -3841,11 +3856,15 @@ export async function registerRoutes(
       if (rows.length === 0) return res.status(404).json({ error: "Ambassador not found" });
       const amb = rows[0];
 
+      // Privacy filter — admin ambassador detail page is also a copy/share
+      // surface, so legacy full-name rows stay hidden here too.
       const links = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, short_url, audience_type, channel_type,
+        `SELECT id, link_name, utm_id, public_slug, full_url, short_url, audience_type, channel_type,
                 click_count, first_clicked_at, last_clicked_at, is_active, created_at
          FROM ambassador_links
          WHERE ambassador_id = $1
+           AND is_legacy = false
+           AND public_slug IS NOT NULL
          ORDER BY audience_type, channel_type`,
         [amb.id]
       );
@@ -5240,28 +5259,38 @@ export async function registerRoutes(
     const format = (req.query.format as string) || "json";
 
     try {
+      // Privacy filter — admin pack is what gets handed to ambassadors,
+      // so only initials-prefixed (public_slug, non-legacy) rows surface.
       const rows = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
-         FROM ambassador_links WHERE ambassador_code = $1 ORDER BY audience_type, channel_type`,
+        `SELECT id, link_name, utm_id, public_slug, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
+         FROM ambassador_links
+         WHERE ambassador_code = $1
+           AND is_legacy = false
+           AND public_slug IS NOT NULL
+         ORDER BY audience_type, channel_type`,
         [code]
       );
       if (rows.length === 0) return res.status(404).json({ error: "No links found for this ambassador" });
 
       const baseUrl = `https://veterancare.com`;
-      const pack = rows.map((r: any) => ({
-        link_name: r.link_name,
-        utm_id: r.utm_id,
-        full_url: r.full_url,
-        short_url: `${baseUrl}/a/${r.utm_id}`,
-        qr_url: `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${r.utm_id}`,
-        audience: r.audience_type,
-        channel: r.channel_type,
-        campaign: r.utm_campaign,
-        active: r.is_active,
-        click_count: r.click_count || 0,
-        first_clicked_at: r.first_clicked_at || null,
-        last_clicked_at: r.last_clicked_at || null,
-      }));
+      const pack = rows.map((r: any) => {
+        const slug = r.public_slug || r.utm_id;
+        return {
+          link_name: r.link_name,
+          utm_id: r.utm_id,
+          public_slug: r.public_slug,
+          full_url: r.full_url,
+          short_url: `${baseUrl}/a/${slug}`,
+          qr_url: `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${slug}`,
+          audience: r.audience_type,
+          channel: r.channel_type,
+          campaign: r.utm_campaign,
+          active: r.is_active,
+          click_count: r.click_count || 0,
+          first_clicked_at: r.first_clicked_at || null,
+          last_clicked_at: r.last_clicked_at || null,
+        };
+      });
 
       if (format === "csv") {
         const header = "link_name,utm_id,full_url,short_url,qr_url,audience,channel,campaign,click_count,first_clicked_at,last_clicked_at";
@@ -5419,15 +5448,23 @@ export async function registerRoutes(
         const audience = meta.audience;
         const campaignLinks = links
           .filter((l: any) => l.audience_type === audience)
-          .map((l: any) => ({
-            id: l.id,
-            channel: l.channel_type,
-            utm_id: l.utm_id,
-            full_url: l.full_url,
-            short_url: `${baseUrl}/a/${l.utm_id}`,
-            qr_url: `${baseUrl}/api/ambassador/qr/${l.utm_id}`,
-            click_count: l.click_count || 0,
-          }));
+          .map((l: any) => {
+            // Privacy: build short_url / qr_url from public_slug so the
+            // ambassador never sees their own full name in their kit.
+            // Fallback to utm_id only as a defensive guard — the SELECT
+            // already filters out rows without public_slug.
+            const slug = l.public_slug || l.utm_id;
+            return {
+              id: l.id,
+              channel: l.channel_type,
+              utm_id: l.utm_id,
+              public_slug: l.public_slug,
+              full_url: l.full_url,
+              short_url: `${baseUrl}/a/${slug}`,
+              qr_url: `${baseUrl}/api/ambassador/qr/${slug}`,
+              click_count: l.click_count || 0,
+            };
+          });
 
         const HTML_BUTTON_LABELS: Record<string, string> = {
           veteran: "Get Help Now",
@@ -5639,9 +5676,16 @@ export async function registerRoutes(
     const format = (req.query.format as string) || "json";
 
     try {
+      // Privacy filter — distribution pack feeds ambassador-facing kits,
+      // so only initials-prefixed (public_slug, non-legacy) rows surface.
       const rows = await pgQuery(
-        `SELECT id, link_name, utm_id, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
-         FROM ambassador_links WHERE ambassador_code = $1 AND is_active = true ORDER BY audience_type, channel_type`,
+        `SELECT id, link_name, utm_id, public_slug, full_url, ambassador_name, audience_type, channel_type, utm_campaign, is_active, click_count, first_clicked_at, last_clicked_at, created_at
+         FROM ambassador_links
+         WHERE ambassador_code = $1
+           AND is_active = true
+           AND is_legacy = false
+           AND public_slug IS NOT NULL
+         ORDER BY audience_type, channel_type`,
         [code]
       );
       if (rows.length === 0) return res.status(404).json({ error: "No links found for this ambassador" });
@@ -5659,8 +5703,9 @@ export async function registerRoutes(
       };
 
       for (const r of rows) {
-        const shortUrl = `${baseUrl}/a/${r.utm_id}`;
-        const qrUrl = `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${r.utm_id}`;
+        const slug = r.public_slug || r.utm_id;
+        const shortUrl = `${baseUrl}/a/${slug}`;
+        const qrUrl = `${baseUrl}/api/admin/ambassador-links/qr-by-utm/${slug}`;
         const template = MESSAGE_TEMPLATES[r.audience_type]?.[r.channel_type];
         const suggestedCopy = template
           ? template.suggested_copy.replace(/\{\{short_url\}\}/g, shortUrl).replace(/\{\{ambassador_name\}\}/g, ambassadorName)
@@ -5672,6 +5717,7 @@ export async function registerRoutes(
         const entry = {
           link_name: r.link_name,
           utm_id: r.utm_id,
+          public_slug: r.public_slug,
           full_url: r.full_url,
           short_url: shortUrl,
           qr_url: qrUrl,

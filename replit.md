@@ -35,6 +35,52 @@
 4. Validation results (PASS/FAIL with evidence)
 5. Manual steps remaining
 
+## Ambassador Slug Privacy (PERMANENT — LANDED 2026-04-25)
+
+Ambassador-facing surfaces (ambassador dashboard, admin link kits, copy
+tools, QR codes, share/email templates, founder pack export) **MUST never
+expose an ambassador's full name in a short URL or filename**. The system
+uses initials-prefixed `public_slug` instead.
+
+### Slug schema (`ambassador_links`)
+- `utm_id` — canonical full-name slug. Stays untouched. Used by every
+  attribution / commission / Stripe / GA4 join. **Do NOT rename.**
+- `public_slug` — initials-prefixed privacy-safe slug. What ambassadors
+  and admins see and share.
+- `is_legacy` — boolean. `true` = hidden from every ambassador-facing
+  endpoint. `/a/:slug` resolver still honors the row so already-shared
+  legacy URLs keep working silently.
+
+### Approved initials map (`server/ambassador-slugs.ts`)
+| Ambassador        | Code               | Initials |
+|-------------------|--------------------|----------|
+| Colin Slaven      | `colin_slaven`     | `c_s`    |
+| Debbie Slaven     | `debbie_slaven`    | `d_s`    |
+| Tracy Robertson   | `tracy_robertson`  | `t_r`    |
+| Michelle Keef     | `michelle_keef`    | `m_k`    |
+| Kelsey Flanagan   | `kelsey_flanagan`  | `k_f`    |
+
+To add a new ambassador, edit `AMBASSADOR_INITIALS` in
+`server/ambassador-slugs.ts` (one place). Boot migration + generate
+endpoint pick it up automatically.
+
+### Resolver contract (`/a/:slug`)
+- Matches `public_slug = $1 OR utm_id = $1` so both new (`/a/c_s_*`) and
+  legacy (`/a/colin_slaven_*`) URLs resolve to the same row.
+- Click counters increment on the same row regardless of slug used —
+  attribution stays unified.
+
+### Filter rule for ambassador-facing endpoints
+Every endpoint that returns links into a kit / dashboard / copy tool
+filters with `is_legacy = false AND public_slug IS NOT NULL`. Admin
+list endpoint accepts `?include_legacy=true` for audit.
+
+### Orphan rule (PERMANENT)
+Orphan rows whose `ambassador_code` is not in the initials map (today
+that's 28 `kelsey_reese_*` rows from before the merge) are **never**
+deleted, renamed, or reactivated. They stay `is_legacy=true` so old
+shared URLs continue to resolve, but they are invisible to every UI.
+
 ## National Expansion Model (FOUNDATIONAL — READ BEFORE ANY GEO/STATE WORK)
 
 **Veteran Care is ONE national platform with geography layers. We are NOT duplicating separate state systems.**

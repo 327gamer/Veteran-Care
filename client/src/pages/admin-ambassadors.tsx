@@ -255,6 +255,7 @@ interface AmbassadorLink {
   id: string;
   link_name: string;
   utm_id: string;
+  public_slug: string | null;
   full_url: string;
   short_url: string | null;
   audience_type: string;
@@ -899,7 +900,8 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
       `--------------`,
       ...amb.links.filter(l => l.is_active).map((l, i) => {
         const shortLink = l.short_url ? `https://veterancare.com${l.short_url}` : l.full_url;
-        return `${i + 1}. ${l.link_name}\n   Short Link: ${shortLink}\n   UTM ID: ${l.utm_id}\n   Full URL: ${l.full_url}`;
+        const slug = l.public_slug || l.utm_id;
+        return `${i + 1}. ${l.link_name}\n   Short Link: ${shortLink}\n   Slug: ${slug}\n   Full URL: ${l.full_url}`;
       }),
     ].filter(Boolean);
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -1519,8 +1521,8 @@ function AmbassadorDetailView({ ambassadorId, onBack, isNewlyCreated }: { ambass
                       </a>
                     </div>
                     <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
-                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded" data-testid={`utm-id-${link.id}`}>
-                        utm_id: {link.utm_id}
+                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded" data-testid={`slug-${link.id}`}>
+                        slug: {link.public_slug || link.utm_id}
                       </span>
                       {link.first_clicked_at && (
                         <span>First click: {formatDate(link.first_clicked_at)}</span>

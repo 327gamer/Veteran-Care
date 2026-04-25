@@ -45,6 +45,8 @@ interface LinkRow {
   utm_campaign: string;
   utm_content: string;
   utm_id: string;
+  public_slug: string | null;
+  is_legacy: boolean;
   full_url: string;
   short_url: string | null;
   audience_type: string;
@@ -153,7 +155,7 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${link.utm_id}.png`;
+      a.download = `${link.public_slug || link.utm_id}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -207,10 +209,22 @@ function LinkDetailPanel({ link, onBack }: { link: LinkRow; onBack: () => void }
               </div>
             )}
 
+            {link.public_slug && (
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Public Slug (privacy-safe)</span>
+                <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border">
+                  <code className="text-xs font-mono flex-1" data-testid="text-public-slug">{link.public_slug}</code>
+                  <CopyButton value={link.public_slug} label="public-slug" />
+                </div>
+              </div>
+            )}
+
             <div>
-              <span className="text-xs text-muted-foreground block mb-1">UTM ID</span>
+              <span className="text-xs text-muted-foreground block mb-1">
+                UTM ID <span className="text-[10px] opacity-60">(internal — used for attribution joins)</span>
+              </span>
               <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border">
-                <code className="text-xs font-mono flex-1" data-testid="text-utm-id">{link.utm_id}</code>
+                <code className="text-xs font-mono flex-1 opacity-70" data-testid="text-utm-id">{link.utm_id}</code>
                 <CopyButton value={link.utm_id} label="utm-id" />
               </div>
             </div>
@@ -685,7 +699,7 @@ function AdminLinksInner() {
                         </>
                       )}
                       <span>&middot;</span>
-                      <span className="font-mono text-[10px]">{link.utm_id}</span>
+                      <span className="font-mono text-[10px]">{link.public_slug || link.utm_id}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
