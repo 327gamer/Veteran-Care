@@ -1,0 +1,282 @@
+--- COPY TO REPLIT ---
+
+Founder Privacy Upgrade — Ambassador Link Slug Anonymization (Correct Ambassador Names)
+
+We need to remove full personal names from all public ambassador links for privacy.
+
+Current issue:
+Ambassador links expose full names publicly.
+
+Example current link:
+https://veterancare.com/a/colin_slaven_partner_email
+
+This is not privacy-friendly because anyone can see the ambassador’s full name in the URL.
+
+GOAL:
+Change public ambassador link slugs from full names to initials / privacy-safe codes while preserving all existing attribution, UTM, Stripe, analytics, commission, dashboard, and reporting functionality.
+
+IMPORTANT:
+Do NOT rebuild the ambassador system.
+Do NOT break existing attribution.
+Do NOT change ambassador ownership IDs.
+Do NOT change Stripe logic.
+Do NOT change commission logic.
+Do NOT change reporting logic.
+Do NOT change campaign structure.
+Do NOT change dashboard ownership.
+Only update public-facing ambassador link slugs.
+
+--------------------------------------------------
+CONFIRMED AMBASSADORS + INITIALS
+--------------------------------------------------
+
+Use these exact ambassadors:
+
+1. Colin Slaven = C_S
+2. Debbie Slaven = D_S
+3. Tracey Robertson = T_R
+4. Michelle Reef = M_R
+5. Kelsey Flanagan = K_F
+
+Use one consistent slug format across the system.
+
+Recommended lowercase style:
+
+c_s
+d_s
+t_r
+m_r
+k_f
+
+--------------------------------------------------
+PUBLIC LINK EXAMPLES
+--------------------------------------------------
+
+OLD:
+https://veterancare.com/a/colin_slaven_partner_email
+
+NEW:
+https://veterancare.com/a/c_s_partner_email
+
+OLD:
+https://veterancare.com/a/debbie_slaven_veteran_signup
+
+NEW:
+https://veterancare.com/a/d_s_veteran_signup
+
+OLD:
+https://veterancare.com/a/tracey_robertson_partner_text
+
+NEW:
+https://veterancare.com/a/t_r_partner_text
+
+OLD:
+https://veterancare.com/a/michelle_reef_business_email
+
+NEW:
+https://veterancare.com/a/m_r_business_email
+
+OLD:
+https://veterancare.com/a/kelsey_flanagan_case_manager
+
+NEW:
+https://veterancare.com/a/k_f_case_manager
+
+Preserve campaign suffixes exactly.
+
+--------------------------------------------------
+CRITICAL SYSTEM RULE
+--------------------------------------------------
+
+The public slug changes only.
+
+Internal identity must remain stable.
+
+Correct model:
+
+public slug = privacy-safe token
+internal ambassador_id = unchanged
+utm_id = unchanged or safely remapped
+commission owner = unchanged
+Stripe attribution = unchanged
+GA4 attribution = unchanged
+dashboard ownership = unchanged
+
+--------------------------------------------------
+CURRENT STRUCTURE
+--------------------------------------------------
+
+Each ambassador has:
+
+- multiple campaigns
+- multiple links per campaign
+- approx 5 campaigns
+- approx 8 links each
+
+Do NOT manually patch one link.
+
+This must be systematic for all ambassadors and all links.
+
+--------------------------------------------------
+REQUIRED IMPLEMENTATION PLAN
+--------------------------------------------------
+
+1. Audit all ambassador systems
+
+Check:
+
+- ambassadors table
+- ambassador_links table
+- campaigns
+- slugs
+- public URLs
+- redirect routes
+- analytics mappings
+- Stripe metadata
+- commission logic
+- dashboard reporting
+
+2. Identify exact slug source field
+
+Find the true field producing:
+
+/a/colin_slaven_partner_email
+
+Possible fields:
+
+- slug
+- tracking_slug
+- public_code
+- referral_slug
+- link_code
+
+Do not guess.
+
+3. Perform privacy slug migration
+
+Convert all public slugs:
+
+colin_slaven_* → c_s_*
+debbie_slaven_* → d_s_*
+tracey_robertson_* → t_r_*
+michelle_reef_* → m_r_*
+kelsey_flanagan_* → k_f_*
+
+Preserve suffixes.
+
+4. Keep old links alive
+
+Existing links may already be shared.
+
+Old links must still work.
+
+Example:
+
+/a/colin_slaven_partner_email
+
+must redirect or internally resolve to:
+
+/a/c_s_partner_email
+
+Same ambassador.
+Same attribution.
+
+No broken links.
+
+Use alias table or legacy slug support if needed.
+
+5. Update all kits + UI
+
+All newly displayed links must use initials only.
+
+Update:
+
+- ambassador kits
+- copy link buttons
+- admin panel
+- share pages
+- QR codes
+- email templates
+- public URLs
+
+6. Preserve attribution everywhere
+
+Whether old or new slug is clicked:
+
+- same ambassador_id
+- same campaign
+- same link source
+- same utm values
+- same Stripe metadata
+- same reporting
+- same commission owner
+
+--------------------------------------------------
+HOUSE / DIRECT TRAFFIC RULE
+--------------------------------------------------
+
+Keep separate direct-site attribution intact.
+
+Users who land organically without ambassador links should still follow the house/default attribution logic already discussed.
+
+Do not mix this privacy project with direct traffic routing.
+
+--------------------------------------------------
+MANDATORY QA TESTS
+--------------------------------------------------
+
+1. /a/c_s_partner_email resolves to Colin Slaven record
+
+2. /a/colin_slaven_partner_email still works
+
+3. Debbie initials links map correctly
+
+4. Tracey initials links map correctly
+
+5. Michelle initials links map correctly
+
+6. Kelsey initials links map correctly
+
+7. All campaigns remain unique
+
+8. Stripe still receives correct ambassador ownership
+
+9. GA4 still tracks correctly
+
+10. Admin reports unchanged
+
+11. New kits expose no full names
+
+12. Old links do not 404
+
+--------------------------------------------------
+RETURN REPORT REQUIRED
+--------------------------------------------------
+
+Please return:
+
+1. Tables audited
+2. Exact fields changed
+3. Sample old slug → new slug conversions
+4. Whether aliases created
+5. Confirmation old links still work
+6. Confirmation new links work
+7. Confirmation Stripe still works
+8. Confirmation analytics still works
+9. Confirmation dashboard unchanged
+10. Confirmation privacy issue solved
+11. Risks / follow-up notes
+
+--------------------------------------------------
+IMPORTANT
+--------------------------------------------------
+
+This is a privacy upgrade only.
+
+Do not alter monetization logic.
+Do not alter ownership logic.
+Do not alter commissions.
+Do not alter campaigns.
+Do not break links.
+
+--- END ---
