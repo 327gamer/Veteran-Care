@@ -2975,6 +2975,106 @@ export async function registerRoutes(
   });
 
   // ----------------------------------------------------------------------
+  // Public platform stats — used by the About page live metrics block.
+  // Cached in memory for 5 minutes to keep the homepage / About page fast
+  // and to avoid hammering Supabase on every visit.
+  // ----------------------------------------------------------------------
+  let publicStatsCache: { data: any; expiresAt: number } | null = null;
+  app.get("/api/public-stats", async (_req, res) => {
+    try {
+      const now = Date.now();
+      if (publicStatsCache && publicStatsCache.expiresAt > now) {
+        return res.json(publicStatsCache.data);
+      }
+
+      const [
+        resourcesRes,
+        categoriesRes,
+        statesRes,
+        citiesRes,
+      ] = await Promise.all([
+        supabaseAdmin
+          .from("resources")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved"),
+        supabaseAdmin
+          .from("categories")
+          .select("id", { count: "exact", head: true }),
+        supabaseAdmin
+          .from("resources")
+          .select("state")
+          .eq("status", "approved")
+          .not("state", "is", null),
+        supabaseAdmin
+          .from("resources")
+          .select("city, state")
+          .eq("status", "approved")
+          .not("city", "is", null),
+      ]);
+
+      // Supabase resolves rather than throws on errors; surface them
+      // explicitly so we don't silently degrade to zero stats.
+      const supaErr = resourcesRes.error || categoriesRes.error || statesRes.error || citiesRes.error;
+      if (supaErr) {
+        console.error("[public-stats] supabase error:", supaErr.message);
+        return res.status(503).json({ error: "stats temporarily unavailable" });
+      }
+      const totalResources = resourcesRes.count;
+      const totalCategories = categoriesRes.count;
+
+      const stateSet = new Set<string>();
+      for (const row of (statesRes.data || []) as { state: string | null }[]) {
+        const s = (row.state || "").toString().trim().toUpperCase();
+        if (s) stateSet.add(s);
+      }
+      const liveStates = Array.from(stateSet).sort();
+
+      const citySet = new Set<string>();
+      for (const row of (citiesRes.data || []) as { city: string | null; state: string | null }[]) {
+        const c = (row.city || "").toString().trim();
+        const s = (row.state || "").toString().trim().toUpperCase();
+        if (c && s) citySet.add(`${c.toLowerCase()}|${s}`);
+      }
+
+      const STATE_NAMES: Record<string, string> = {
+        AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",
+        CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware",
+        FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho",
+        IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas",
+        KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+        MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+        MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+        NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+        NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma",
+        OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+        SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah",
+        VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia",
+        WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+      };
+
+      const payload = {
+        totalResources: totalResources || 0,
+        totalCities: citySet.size,
+        totalStates: liveStates.length,
+        totalCategories: totalCategories || 0,
+        liveStates,
+        liveStateNames: liveStates.map((c) => ({ code: c, name: STATE_NAMES[c] || c })),
+        nextStateLaunching: process.env.NEXT_STATE_LAUNCHING || "Florida",
+        coverageRegion: "Southeast United States",
+        growthStatus: "Expanding Nationally",
+        isEstimated: false,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      publicStatsCache = { data: payload, expiresAt: now + 5 * 60 * 1000 };
+      return res.json(payload);
+    } catch (err: any) {
+      console.error("[public-stats] unexpected error:", err?.message || err);
+      return res.status(500).json({ error: "stats temporarily unavailable" });
+    }
+  });
+
+  // ----------------------------------------------------------------------
   // Internal cron driver for the founder digest.
   //
   // Why this exists: Autoscale deployments suspend the Node process between

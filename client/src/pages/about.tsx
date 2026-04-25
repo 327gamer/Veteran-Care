@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,18 +25,65 @@ import {
   MessageCircle,
   Phone,
   UserCheck,
+  Database,
+  Building2,
+  Rocket,
+  TrendingUp,
+  Flag,
+  PlusCircle,
 } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
 import MenuPageHero from "@/components/menu-page-hero";
 import { platform } from "@shared/platform";
 
+type PublicStats = {
+  totalResources: number;
+  totalCities: number;
+  totalStates: number;
+  totalCategories: number;
+  liveStates: string[];
+  liveStateNames: { code: string; name: string }[];
+  nextStateLaunching: string;
+  coverageRegion: string;
+  growthStatus: string;
+  isEstimated?: boolean;
+  lastUpdated: string;
+};
+
+// Conservative fallbacks — used only while live stats load or if the
+// endpoint is unavailable. Numbers are intentionally rounded DOWN so
+// the page never overstates coverage. isEstimated=true tells the UI
+// to render an "estimated" indicator when these values are showing.
+const FALLBACK_STATS: PublicStats = {
+  totalResources: 2000,
+  totalCities: 150,
+  totalStates: 3,
+  totalCategories: 17,
+  liveStates: ["GA", "NC", "SC"],
+  liveStateNames: [
+    { code: "SC", name: "South Carolina" },
+    { code: "NC", name: "North Carolina" },
+    { code: "GA", name: "Georgia" },
+  ],
+  nextStateLaunching: "Florida",
+  coverageRegion: "Southeast United States",
+  growthStatus: "Expanding Nationally",
+  isEstimated: true,
+  lastUpdated: new Date().toISOString(),
+};
+
+function formatNumber(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0";
+  return n.toLocaleString("en-US");
+}
+
 const TRUST_TILES = [
   { icon: Layers, label: "17 Support Categories", sub: "Across veterans, families & caregivers" },
   { icon: Sparkles, label: "AI-Powered Navigator", sub: "Guided help, 24/7" },
   { icon: ShieldCheck, label: "Trusted Partner Network", sub: "Vetted, veteran-friendly providers" },
   { icon: Calendar, label: "Supporting Veterans Since 2020", sub: "Real-world veteran experience" },
-  { icon: Globe, label: "Expanding Nationwide", sub: "SC & NC live · more launching" },
+  { icon: Globe, label: "Expanding Across the Southeast", sub: "SC · NC · GA live · FL launching" },
 ];
 
 const PILLARS = [
@@ -133,13 +181,54 @@ export default function About() {
     document.title = "About Veteran Care | America's Modern Veteran Support Platform";
   }, []);
 
+  // Live metrics — falls back to static numbers if the endpoint is slow
+  // or unavailable so the page is never empty/awkward.
+  const { data: liveStats } = useQuery<PublicStats>({
+    queryKey: ["/api/public-stats"],
+    staleTime: 5 * 60 * 1000,
+  });
+  const stats = liveStats || FALLBACK_STATS;
+
+  const metricCards = [
+    {
+      icon: Flag,
+      value: formatNumber(stats.totalStates),
+      label: "States Live",
+    },
+    {
+      icon: Rocket,
+      value: stats.nextStateLaunching,
+      label: "Launching Next",
+    },
+    {
+      icon: Database,
+      value: `${formatNumber(stats.totalResources)}+`,
+      label: "Verified Resources",
+    },
+    {
+      icon: Building2,
+      value: `${formatNumber(stats.totalCities)}+`,
+      label: "Cities Covered",
+    },
+    {
+      icon: Layers,
+      value: formatNumber(stats.totalCategories),
+      label: "Support Categories",
+    },
+    {
+      icon: TrendingUp,
+      value: stats.growthStatus,
+      label: "Growth Status",
+    },
+  ];
+
   return (
     <div className="bg-background min-h-full pb-20" data-testid="page-about">
       <MenuPageHero
         testIdPrefix="about"
-        title={["About", "Veteran Care"]}
-        subtitle="America's modern, AI-powered veteran support platform."
-        detail="Redefining how veterans, families, and caregivers find support — faster, smarter, and all in one place."
+        title={["Veteran Care is Expanding", "Across the Southeast"]}
+        subtitle="Helping veterans, spouses, dependents, caregivers, and military families connect with trusted resources, verified services, and real support."
+        detail={`Now live in South Carolina, North Carolina, and Georgia. ${stats.nextStateLaunching} launching next. All 50 states ahead.`}
       />
 
       {/* ── TRUST / SCALE / PROOF TILES — symmetrical 2 + 2 + 1 (last centered) ── */}
@@ -167,11 +256,98 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── VIDEO SHOWCASE ──
-          Mirrors the landing-page / partners-landing video presentation:
-          green band with a soft radial overlay, video centered on top,
-          eyebrow + headline + supporting copy stacked below. Eliminates
-          the "stranded in white space" feel on desktop. */}
+      {/* ── LIVE METRICS — auto-counted from the live database ── */}
+      <section className="container mx-auto px-5 pt-12 sm:pt-16 max-w-5xl" data-testid="section-live-metrics">
+        <div className="text-center mb-6 sm:mb-8">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Live platform metrics</p>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
+            Real momentum. Real coverage.
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
+            Every number below reflects what's actually live on the platform right now.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4" data-testid="grid-live-metrics">
+          {metricCards.map((m, i) => {
+            const Icon = m.icon;
+            return (
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-border shadow-sm p-4 sm:p-5 text-center"
+                data-testid={`tile-metric-${i}`}
+              >
+                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent mx-auto mb-2 flex items-center justify-center">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <p
+                  className="font-heading text-xl sm:text-2xl font-extrabold text-primary leading-tight break-words"
+                  data-testid={`text-metric-value-${i}`}
+                >
+                  {m.value}
+                </p>
+                <p
+                  className="text-[11px] sm:text-xs uppercase tracking-wide text-muted-foreground mt-1 leading-snug"
+                  data-testid={`text-metric-label-${i}`}
+                >
+                  {m.label}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-center text-[11px] text-muted-foreground mt-4 italic" data-testid="text-metrics-footnote">
+          {stats.isEstimated
+            ? "Estimated coverage — refreshing live counts. Soon serving all 50 states."
+            : "Soon serving all 50 states."}
+        </p>
+      </section>
+
+      {/* ── SOUTHEAST COVERAGE BLOCK ── */}
+      <section className="container mx-auto px-5 pt-12 sm:pt-16 max-w-3xl" data-testid="section-coverage">
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="pt-6 pb-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Current coverage region</p>
+            <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mb-4" data-testid="text-coverage-region">
+              {stats.coverageRegion}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div data-testid="block-live-states">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                  Live states
+                </p>
+                <ul className="space-y-1.5">
+                  {stats.liveStateNames.map((s) => (
+                    <li
+                      key={s.code}
+                      className="flex items-center gap-2 text-sm text-foreground/85"
+                      data-testid={`text-live-state-${s.code.toLowerCase()}`}
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <span className="font-medium">{s.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div data-testid="block-next-state">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                  Launching next
+                </p>
+                <div className="flex items-center gap-2 text-sm text-foreground/85">
+                  <Rocket className="h-4 w-4 text-accent shrink-0" />
+                  <span className="font-medium" data-testid="text-next-state">{stats.nextStateLaunching}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                  National expansion roadmap underway — additional states queued behind {stats.nextStateLaunching}.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* ── VIDEO SHOWCASE ── */}
       <section className="relative bg-primary overflow-hidden mt-12 sm:mt-16">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_white_0%,_transparent_70%)]" />
         <div className="relative flex flex-col items-center text-center px-5 pt-10 pb-12 sm:pt-14 sm:pb-16 max-w-lg mx-auto">
@@ -189,10 +365,13 @@ export default function About() {
           <p className="text-sm sm:text-base text-white/85 mt-3 max-w-xl mx-auto leading-relaxed">
             Real people. Real stories. Real movement.
           </p>
+          <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-white/80 mt-5 font-semibold" data-testid="text-built-line">
+            Built in the South. Expanding Across America.
+          </p>
         </div>
       </section>
 
-      {/* ── EMOTIONAL IMPACT LINE — sits on white below the green showcase ── */}
+      {/* ── EMOTIONAL IMPACT LINE ── */}
       <section className="container mx-auto px-5 pt-10 pb-10 max-w-3xl">
         <div className="text-center" data-testid="text-emotional-impact">
           <p className="font-heading text-2xl sm:text-3xl text-primary leading-snug italic font-semibold">
@@ -202,26 +381,22 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── MISSION ── */}
-      <section className="container mx-auto px-5 pb-12 max-w-5xl">
+      {/* ── WHY VETERAN CARE EXISTS ── */}
+      <section className="container mx-auto px-5 pb-12 max-w-5xl" data-testid="section-why">
         <Card className="border-l-4 border-l-accent">
           <CardContent className="pt-7 pb-7">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Our Mission</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Why we exist</p>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mb-5">
-              Our Mission
+              Why Veteran Care exists
             </h2>
             <p className="text-base sm:text-lg text-foreground/85 leading-relaxed mb-4">
-              <span className="font-semibold text-primary">Supporting veterans since 2020</span>,
-              we are committed to serving those who served our nation with respect, urgency,
-              gratitude, and trusted guidance.
+              Too many veterans and families struggle to find help because resources are scattered,
+              outdated, or hard to trust.
             </p>
             <p className="text-base text-foreground/85 leading-relaxed mb-4">
-              Every veteran, spouse, dependent, and caregiver deserves clear answers, dependable
-              support, and access to the right resources when they need them most.
-            </p>
-            <p className="text-base text-foreground/85 leading-relaxed mb-5">
-              We honor military service by delivering quality, speed, accuracy, and a steady
-              commitment to helping people move forward.
+              Veteran Care is building one powerful platform where users can quickly find help for
+              housing, food, healthcare, jobs, benefits, legal support, family assistance, financial
+              guidance, transportation, end-of-life planning, and more.
             </p>
             <p className="text-sm uppercase tracking-wide text-muted-foreground mb-2">
               From first search to final solution, our mission is simple:
@@ -280,37 +455,67 @@ export default function About() {
         </Card>
       </section>
 
-      {/* ── PREMIUM CTA ── */}
-      <section className="container mx-auto px-5 py-14 max-w-5xl">
+      {/* ── COMMUNITY ACTION / PRIMARY CTA ── */}
+      <section className="container mx-auto px-5 py-14 max-w-5xl" data-testid="section-cta">
         <div className="bg-primary text-primary-foreground rounded-2xl p-8 sm:p-12 text-center shadow-lg">
-          <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70 mb-3">Get started</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70 mb-3">Get involved</p>
           <h3 className="font-heading text-2xl sm:text-4xl font-bold mb-4 leading-tight">
-            Ready to get help — or to help others?
+            Help Add Resources In Your Area
           </h3>
           <p className="text-primary-foreground/85 mb-8 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
-            Browse verified resources, ask the AI Navigator anything, or join our growing Trusted Partner Network.
+            Know a trusted veteran resource we should add? Submit it in seconds. Browse what's already
+            live, or join our growing Trusted Partner Network.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/resources">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto text-base px-7 py-6 rounded-full" data-testid="button-cta-resources">
-                Browse Resources <ArrowRight className="ml-2 h-4 w-4" />
+            <Link href="/submit-resource">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="w-full sm:w-auto text-base px-7 py-6 rounded-full"
+                data-testid="button-cta-add-resource"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Help Add Resources
               </Button>
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-ai-guide"))}
-              className="w-full sm:w-auto text-base px-7 py-6 rounded-full bg-transparent border-white/30 text-white hover:bg-white/10"
-              data-testid="button-cta-navigator"
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> Use AI Navigator
-            </Button>
+            <Link href="/resources">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto text-base px-7 py-6 rounded-full bg-transparent border-white/30 text-white hover:bg-white/10"
+                data-testid="button-cta-resources"
+              >
+                View Resources <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
             <Link href="/partners">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-7 py-6 rounded-full bg-transparent border-white/30 text-white hover:bg-white/10" data-testid="button-cta-partner">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto text-base px-7 py-6 rounded-full bg-transparent border-white/30 text-white hover:bg-white/10"
+                data-testid="button-cta-partner"
+              >
                 Become a Trusted Partner
               </Button>
             </Link>
           </div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-ai-guide"))}
+            className="mt-6 inline-flex items-center gap-1.5 text-sm text-primary-foreground/80 hover:text-primary-foreground underline underline-offset-4"
+            data-testid="button-cta-navigator"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Or ask the AI Navigator instead
+          </button>
+        </div>
+      </section>
+
+      {/* ── TRUST / MOMENTUM BAR ── */}
+      <section className="container mx-auto px-5 pb-6 max-w-5xl" data-testid="section-momentum">
+        <div className="bg-accent/10 border border-accent/30 rounded-xl py-3 px-4 text-center">
+          <p className="text-xs sm:text-sm font-semibold text-primary leading-snug" data-testid="text-momentum">
+            Growing Every Week · New Resources Added Regularly · More States Launching Soon
+          </p>
         </div>
       </section>
     </div>

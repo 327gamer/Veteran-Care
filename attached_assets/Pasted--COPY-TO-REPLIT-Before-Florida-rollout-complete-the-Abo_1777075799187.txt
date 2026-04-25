@@ -1,0 +1,195 @@
+--- COPY TO REPLIT ---
+
+Before Florida rollout, complete the About Veteran Care page upgrade.
+
+We now have 3 flagship live states (SC / NC / GA) and Florida is next. The About page should reflect real momentum, trust, and national expansion.
+
+DO NOT redesign the whole page.
+
+Keep current branding / style / mobile-first layout.
+
+This is a content + metrics + conversion upgrade.
+
+==================================================
+ABOUT VETERAN CARE PAGE UPGRADE
+==================================================
+
+GOAL:
+
+Turn the About Veteran Care page into a trust-building growth page that shows:
+
+1. We are expanding rapidly
+2. We already have significant real resources live
+3. We are growing across the Southeast
+4. National rollout is underway
+5. Veterans / families / providers can participate
+
+==================================================
+SECTION 1 — HERO COPY UPDATE
+==================================================
+
+Replace outdated wording mentioning only SC / NC.
+
+Use stronger live expansion messaging.
+
+Suggested headline:
+
+Veteran Care is Expanding Across the Southeast — Growing Nationwide
+
+Suggested subheadline:
+
+Helping veterans, spouses, dependents, caregivers, and military families connect with trusted resources, verified services, and real support.
+
+Now live in South Carolina, North Carolina, and Georgia.
+Florida launching next.
+All 50 states ahead.
+
+Alternative footer line:
+
+Built in the South. Expanding Across America.
+
+==================================================
+SECTION 2 — LIVE METRICS BLOCK
+==================================================
+
+Add a clean metrics section with cards/counters.
+
+Use live database counts where possible.
+
+Display:
+
+States Live
+3
+
+Next State Launching
+Florida
+
+Verified Resources
+2,164+
+
+Cities Covered
+259+
+
+Categories Available
+17
+
+Growth Status
+Expanding Nationally
+
+Future-ready note:
+
+Soon serving all 50 states.
+
+If easy technically:
+Auto-count from database.
+
+If not:
+Use editable admin values for now.
+
+==================================================
+SECTION 3 — SOUTHEAST COVERAGE BLOCK
+==================================================
+
+Small visual section:
+
+Current Coverage Region:
+Southeast United States
+
+Live States:
+South Carolina
+North Carolina
+Georgia
+
+Launching Next:
+Florida
+
+Then:
+
+National Expansion Roadmap Underway
+
+==================================================
+SECTION 4 — WHY VETERAN CARE EXISTS
+==================================================
+
+Add stronger mission copy:
+
+Too many veterans and families struggle to find help because resources are scattered, outdated, or hard to trust.
+
+Veteran Care is building one powerful platform where users can quickly find help for housing, food, healthcare, jobs, benefits, legal support, family assistance, financial guidance, transportation, end-of-life planning, and more.
+
+==================================================
+SECTION 5 — COMMUNITY ACTION / CTA
+==================================================
+
+Add button block:
+
+Help Add Resources In Your Area
+
+Button routes to existing Add Resource flow.
+
+Secondary buttons:
+
+View Resources
+Become a Trusted Partner
+
+==================================================
+SECTION 6 — TRUST / MOMENTUM BAR
+==================================================
+
+Small line near bottom:
+
+Growing Every Week • New Resources Added Regularly • More States Launching Soon
+
+==================================================
+SECTION 7 — ADMIN / FUTURE READY
+==================================================
+
+Build this block so later we can update easily:
+
+- States live count
+- Resource totals
+- Cities totals
+- Next state launching
+- National totals later
+
+Do not hardcode permanently if avoidable.
+
+==================================================
+SECTION 8 — MOBILE UX
+==================================================
+
+Must look premium on iPhone.
+
+No oversized text walls.
+
+Metric cards stack cleanly.
+
+CTA buttons thumb-friendly.
+
+Fast loading.
+
+==================================================
+SECTION 9 — DO NOT BREAK
+==================================================
+
+Do not break menu.
+Do not break page routes.
+Do not break analytics.
+Do not break current branding.
+Do not remove existing good content unless outdated.
+
+==================================================
+SECTION 10 — FOUNDER REPORT BACK
+==================================================
+
+Return:
+
+1. What was updated
+2. Live metrics source (static or dynamic)
+3. Mobile status
+4. Any recommended future additions
+5. Ready for Florida homepage update next: YES / NO
+
+After this page is complete, Florida rollout begins immediately.
+
+--- END ---
