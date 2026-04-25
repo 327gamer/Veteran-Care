@@ -199,25 +199,54 @@ export function extractLocationFromMessage(text: string): ExtractedLocation {
 /**
  * Resolve the effective location for an AI Navigator turn.
  *
- * Priority:
- *   1. Frontend-provided userState (from geolocation / saved profile / URL)
- *   2. State extracted from this turn's user message
- *   3. Undefined (caller must ask the user for location)
+ * Priority (FOUNDER DIRECTIVE 2026-04-25):
+ *   1. EXPLICIT location inside THIS turn's user message wins over EVERYTHING
+ *      else — browser GPS, saved profile, URL params, prior conversation.
+ *      Reason: a veteran physically in NC may be asking for a friend in SC
+ *      ("housing in South Carolina"). Their message intent must override the
+ *      hard metadata about where their device is sitting.
+ *   2. Frontend-provided userState (browser geolocation / saved profile / URL)
+ *      — used only when the message itself contains no location.
+ *   3. Undefined — caller must ask the user for city/state.
  *
  * Never returns a hardcoded fallback state — national expansion safe.
+ *
+ * Note on city carry-forward: when the message names a NEW state but no city,
+ * we DO NOT carry the previously-provided city forward. A providedCity tied to
+ * a different state is stale context and would mis-route the search (e.g.
+ * browser sends Charlotte / NC, user types "in Georgia", we must search
+ * statewide GA, never Charlotte/GA).
  */
 export function resolveLocation(
   providedState: string | undefined,
   providedCity: string | undefined,
   userMessage: string,
-): { state?: string; city?: string; source: "provided" | "message" | "none" } {
+): { state?: string; city?: string; source: "message" | "provided" | "none" } {
+  const extracted = extractLocationFromMessage(userMessage);
+
+  // PRIORITY 1: explicit location in the user's message.
+  if (extracted.state) {
+    const messageState = extracted.state.toUpperCase();
+    let city = extracted.city;
+    // Only inherit providedCity when it actually belongs to the same state the
+    // user just named — otherwise drop it to avoid stale cross-state leakage.
+    if (
+      !city &&
+      providedCity &&
+      providedState &&
+      providedState.toUpperCase() === messageState
+    ) {
+      city = providedCity;
+    }
+    return { state: messageState, city, source: "message" };
+  }
+
+  // PRIORITY 2: frontend-provided context (browser GPS, profile, URL).
   if (providedState) {
     return { state: providedState.toUpperCase(), city: providedCity, source: "provided" };
   }
-  const extracted = extractLocationFromMessage(userMessage);
-  if (extracted.state) {
-    return { state: extracted.state, city: extracted.city ?? providedCity, source: "message" };
-  }
+
+  // PRIORITY 3: nothing reliable — caller will ask for city/state.
   return { state: undefined, city: providedCity, source: "none" };
 }
 

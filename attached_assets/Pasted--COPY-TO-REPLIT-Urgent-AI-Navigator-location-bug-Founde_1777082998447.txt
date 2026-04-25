@@ -1,0 +1,132 @@
+--- COPY TO REPLIT ---
+
+Urgent AI Navigator location bug.
+
+Founder live test shows the AI Navigator is still not following the correct location priority logic.
+
+Observed issues:
+
+1. Founder has location enabled, asked:
+“Can you please give me resources for food and housing?”
+The AI returned North Carolina resources instead of using current enabled location.
+
+2. Founder then explicitly asked:
+“Please give me resources for housing and food in South Carolina.”
+The AI still returned North Carolina information.
+
+This is incorrect and must be fixed before further national rollout.
+
+==================================================
+REQUIRED AI NAVIGATOR LOCATION PRIORITY
+==================================================
+
+The AI Navigator must use this order every time:
+
+1. Explicit user-requested location FIRST
+If the user says:
+- in South Carolina
+- in Georgia
+- in Florida
+- in Charlotte
+- in Atlanta
+- for a friend in another state
+- near Tampa
+- housing in SC
+- food in Charleston
+
+That explicit location must override everything else, including browser location.
+
+Reason:
+A user may be physically in South Carolina but asking for help for a friend in North Carolina, Georgia, Florida, etc.
+
+2. Browser/app location SECOND
+If the user does not mention a location, but location is enabled, use the user’s detected location.
+
+Example:
+User says:
+“I need food and housing help.”
+
+If current location is Charleston / SC, return Charleston / South Carolina resources.
+
+3. Ask location THIRD
+If no explicit location is mentioned and no browser/app location is available, ask:
+
+“What city and state should I search in?”
+
+Do not return random state resources.
+
+4. Crisis exception
+If user is suicidal or in immediate danger:
+Show 988 / emergency resources first, then ask for location for local crisis resources.
+
+==================================================
+BUGS TO INVESTIGATE
+==================================================
+
+Please investigate why:
+
+- enabled browser location did not drive results
+- explicit “South Carolina” was ignored
+- North Carolina was returned despite no NC request
+- AI may be using stale previous conversation state
+- AI may be using cached resource context
+- AI may be using selected app state incorrectly
+- city/state resolver may be prioritizing old effectiveState over explicit message location
+- resource matcher may be defaulting to NC or last-used state
+
+==================================================
+EXPECTED TEST CASES
+==================================================
+
+Test all:
+
+1. Location enabled in South Carolina:
+User: “I need food and housing help”
+Expected: South Carolina / local resources
+
+2. Explicit override:
+User: “I need food and housing help in Georgia”
+Expected: Georgia resources, even if browser location is SC
+
+3. Explicit state only:
+User: “Give me housing and food resources in South Carolina”
+Expected: South Carolina statewide resources
+
+4. Explicit city/state:
+User: “Housing help in Charlotte NC”
+Expected: Charlotte / North Carolina resources
+
+5. No location enabled:
+User: “I need food help”
+Expected: AI asks for city/state
+
+6. Follow-up context:
+If previous answer used NC, and user next says “No, I mean South Carolina,” AI must switch to South Carolina immediately.
+
+7. Crisis:
+User: “I feel suicidal”
+Expected: 988 first, then ask location for local crisis support
+
+==================================================
+IMPORTANT RULE
+==================================================
+
+Explicit location inside the user’s message always beats:
+- GPS
+- browser location
+- stored profile location
+- previous conversation location
+- old selected state
+- old cached context
+
+Do not let stale NC or SC defaults leak into answers.
+
+Return:
+
+1. root cause
+2. files changed
+3. final priority logic
+4. whether stale conversation state was involved
+5. test results
+
+--- END ---

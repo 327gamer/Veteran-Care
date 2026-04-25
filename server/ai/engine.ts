@@ -118,9 +118,12 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   const lastMsgLower = lastUserMsg.content.toLowerCase();
   const isEscalation = escalationKeywords.some(kw => lastMsgLower.includes(kw));
 
-  // Resolve location from (a) frontend-provided context first, then (b) the
-  // user's own message ("housing in Charlotte NC"). Never falls back to a
-  // hardcoded state — national-expansion safe.
+  // Resolve location with EXPLICIT-MESSAGE-FIRST priority (founder directive
+  // 2026-04-25): an explicit location in the user's message ("housing in South
+  // Carolina", "housing in Charlotte NC") always beats browser GPS / saved
+  // profile / URL params. Falls back to provided context only when the message
+  // has no location, then to undefined (which triggers the clarification
+  // prompt). Never returns a hardcoded state — national-expansion safe.
   const resolvedLoc = resolveLocation(userState, userCity, lastUserMsg.content);
   const effectiveState = resolvedLoc.state;
   const effectiveCity = resolvedLoc.city;
