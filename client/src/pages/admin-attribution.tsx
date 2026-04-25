@@ -24,6 +24,11 @@ import {
   Radio,
   Clock,
   AlertTriangle,
+  Home,
+  Sparkles,
+  DollarSign,
+  CreditCard,
+  PieChart,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -96,6 +101,57 @@ interface AttributionData {
   };
 }
 
+interface SourceMixData {
+  sessions: {
+    house_sessions: number;
+    ambassador_sessions: number;
+    unattributed_sessions: number;
+    total_sessions: number;
+  };
+  partnerApps: {
+    house_apps: number;
+    ambassador_apps: number;
+    unattributed_apps: number;
+    total_apps: number;
+  };
+  stripe: {
+    house_conversions: number;
+    ambassador_conversions: number;
+    unattributed_conversions: number;
+    house_revenue: number;
+    ambassador_revenue: number;
+    unattributed_revenue: number;
+    total_revenue: number;
+  };
+  byAmbassador: {
+    ambassador_code: string;
+    ambassador_name: string;
+    house_sessions: number;
+    share_sessions: number;
+    house_apps: number;
+    share_apps: number;
+    house_conversions: number;
+    share_conversions: number;
+    house_revenue: number;
+    share_revenue: number;
+  }[];
+  filterOptions: {
+    ambassadors: { code: string; name: string }[];
+  };
+  appliedFilters: {
+    date_from: string | null;
+    date_to: string | null;
+    source: string;
+    ambassador: string | null;
+  };
+}
+
+function formatMoney(n: number): string {
+  if (!n || isNaN(n)) return "$0";
+  if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
+  return `$${n.toFixed(2)}`;
+}
+
 function formatDuration(seconds: number | null): string {
   if (seconds === null || seconds === undefined) return "—";
   if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -149,6 +205,7 @@ function AdminAttributionInner() {
   const [activeTab, setActiveTab] = useState<"ambassador" | "link">("ambassador");
   const [sortBy, setSortBy] = useState<string>("clicks");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "house" | "ambassador">("all");
 
   const queryString = useMemo(() => {
     const p = new URLSearchParams();
@@ -159,10 +216,30 @@ function AdminAttributionInner() {
     return p.toString();
   }, [filterAmbassador, filterCampaign, filterDateFrom, filterDateTo]);
 
+  const sourceMixQueryString = useMemo(() => {
+    const p = new URLSearchParams();
+    if (filterAmbassador) p.set("ambassador", filterAmbassador);
+    if (filterDateFrom) p.set("date_from", filterDateFrom);
+    if (filterDateTo) p.set("date_to", filterDateTo);
+    if (sourceFilter !== "all") p.set("source", sourceFilter);
+    return p.toString();
+  }, [filterAmbassador, filterDateFrom, filterDateTo, sourceFilter]);
+
   const { data, isLoading } = useQuery<AttributionData>({
     queryKey: ["admin-attribution", queryString],
     queryFn: async () => {
       const url = `/api/admin/attribution${queryString ? `?${queryString}` : ""}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: !!adminKey,
+  });
+
+  const { data: mix, isLoading: mixLoading } = useQuery<SourceMixData>({
+    queryKey: ["admin-source-mix", sourceMixQueryString],
+    queryFn: async () => {
+      const url = `/api/admin/source-mix${sourceMixQueryString ? `?${sourceMixQueryString}` : ""}`;
       const res = await fetch(url, { headers });
       if (!res.ok) throw new Error("Failed");
       return res.json();
@@ -328,6 +405,210 @@ function AdminAttributionInner() {
             </CardContent>
           </Card>
         )}
+
+        {/* === HOUSE-DEFAULT vs AMBASSADOR SOURCE MIX === */}
+        <Card className="mb-6 border-emerald-300" data-testid="card-source-mix">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-emerald-600" /> Source Mix — House (Organic) vs Ambassador
+              <Badge variant="outline" className="text-[9px] font-normal text-slate-500 border-slate-300 ml-1">
+                Reporting only · attribution unchanged
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Source filter pills */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={sourceFilter === "all" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSourceFilter("all")}
+                data-testid="filter-source-all"
+              >
+                All Traffic
+              </Button>
+              <Button
+                variant={sourceFilter === "house" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSourceFilter("house")}
+                data-testid="filter-source-house"
+              >
+                <Home className="h-3 w-3 mr-1" /> House / Organic
+              </Button>
+              <Button
+                variant={sourceFilter === "ambassador" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSourceFilter("ambassador")}
+                data-testid="filter-source-ambassador"
+              >
+                <Sparkles className="h-3 w-3 mr-1" /> Ambassador Referrals
+              </Button>
+              <div className="flex-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="button-source-filters-toggle"
+              >
+                <Filter className="h-3 w-3 mr-1" />
+                {filterAmbassador ? `Ambassador: ${filterAmbassador}` : "Filter ambassador / dates"}
+              </Button>
+            </div>
+
+            {mixLoading && <p className="text-xs text-center text-muted-foreground py-4">Loading source mix…</p>}
+
+            {mix && (
+              <>
+                {/* Comparison rows: House vs Ambassador across 4 metrics */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="table-source-mix-summary">
+                    <thead>
+                      <tr className="border-b text-left text-[11px] uppercase text-slate-500">
+                        <th className="py-2 pr-2 font-medium">Metric</th>
+                        <th className="py-2 px-2 font-medium text-amber-700">
+                          <span className="inline-flex items-center gap-1"><Home className="h-3 w-3" /> House / Organic</span>
+                        </th>
+                        <th className="py-2 px-2 font-medium text-emerald-700">
+                          <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> Ambassador Referrals</span>
+                        </th>
+                        <th className="py-2 px-2 font-medium text-slate-500">Unattributed</th>
+                        <th className="py-2 pl-2 font-medium text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                      <tr className="border-b hover:bg-slate-50">
+                        <td className="py-2 pr-2 font-medium flex items-center gap-1">
+                          <Eye className="h-3.5 w-3.5 text-indigo-500" /> Sessions
+                        </td>
+                        <td className="py-2 px-2 text-amber-700 font-bold" data-testid="mix-sessions-house">
+                          {mix.sessions.house_sessions.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-emerald-700 font-bold" data-testid="mix-sessions-ambassador">
+                          {mix.sessions.ambassador_sessions.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-slate-500" data-testid="mix-sessions-unattributed">
+                          {mix.sessions.unattributed_sessions.toLocaleString()}
+                        </td>
+                        <td className="py-2 pl-2 text-right font-semibold" data-testid="mix-sessions-total">
+                          {mix.sessions.total_sessions.toLocaleString()}
+                        </td>
+                      </tr>
+                      <tr className="border-b hover:bg-slate-50">
+                        <td className="py-2 pr-2 font-medium flex items-center gap-1">
+                          <UserCheck className="h-3.5 w-3.5 text-blue-500" /> Partner Applications
+                        </td>
+                        <td className="py-2 px-2 text-amber-700 font-bold" data-testid="mix-apps-house">
+                          {mix.partnerApps.house_apps.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-emerald-700 font-bold" data-testid="mix-apps-ambassador">
+                          {mix.partnerApps.ambassador_apps.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-slate-500" data-testid="mix-apps-unattributed">
+                          {mix.partnerApps.unattributed_apps.toLocaleString()}
+                        </td>
+                        <td className="py-2 pl-2 text-right font-semibold" data-testid="mix-apps-total">
+                          {mix.partnerApps.total_apps.toLocaleString()}
+                        </td>
+                      </tr>
+                      <tr className="border-b hover:bg-slate-50">
+                        <td className="py-2 pr-2 font-medium flex items-center gap-1">
+                          <CreditCard className="h-3.5 w-3.5 text-violet-500" /> Stripe Conversions
+                        </td>
+                        <td className="py-2 px-2 text-amber-700 font-bold" data-testid="mix-conv-house">
+                          {mix.stripe.house_conversions.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-emerald-700 font-bold" data-testid="mix-conv-ambassador">
+                          {mix.stripe.ambassador_conversions.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-slate-500" data-testid="mix-conv-unattributed">
+                          {mix.stripe.unattributed_conversions.toLocaleString()}
+                        </td>
+                        <td className="py-2 pl-2 text-right font-semibold" data-testid="mix-conv-total">
+                          {(mix.stripe.house_conversions + mix.stripe.ambassador_conversions + mix.stripe.unattributed_conversions).toLocaleString()}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-50 bg-green-50/40">
+                        <td className="py-2 pr-2 font-medium flex items-center gap-1">
+                          <DollarSign className="h-3.5 w-3.5 text-green-600" /> Stripe Revenue
+                        </td>
+                        <td className="py-2 px-2 text-amber-700 font-bold" data-testid="mix-rev-house">
+                          {formatMoney(mix.stripe.house_revenue)}
+                        </td>
+                        <td className="py-2 px-2 text-emerald-700 font-bold" data-testid="mix-rev-ambassador">
+                          {formatMoney(mix.stripe.ambassador_revenue)}
+                        </td>
+                        <td className="py-2 px-2 text-slate-500" data-testid="mix-rev-unattributed">
+                          {formatMoney(mix.stripe.unattributed_revenue)}
+                        </td>
+                        <td className="py-2 pl-2 text-right font-semibold" data-testid="mix-rev-total">
+                          {formatMoney(mix.stripe.total_revenue)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Per-ambassador split: house traffic (Colin only) vs real shares */}
+                {mix.byAmbassador.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-slate-600 mb-2 mt-3 flex items-center gap-1">
+                      <Users className="h-3 w-3" /> Per-Ambassador Split (House traffic vs Real Shares)
+                    </p>
+                    <div className="overflow-x-auto rounded-md border">
+                      <table className="w-full text-xs" data-testid="table-source-mix-by-ambassador">
+                        <thead className="bg-slate-50">
+                          <tr className="text-left text-[10px] uppercase text-slate-500">
+                            <th className="py-2 px-2 font-medium">Ambassador</th>
+                            <th className="py-2 px-2 font-medium text-amber-700">House Sessions</th>
+                            <th className="py-2 px-2 font-medium text-emerald-700">Share Sessions</th>
+                            <th className="py-2 px-2 font-medium text-amber-700">House Apps</th>
+                            <th className="py-2 px-2 font-medium text-emerald-700">Share Apps</th>
+                            <th className="py-2 px-2 font-medium text-amber-700">House Rev</th>
+                            <th className="py-2 px-2 font-medium text-emerald-700">Share Rev</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {mix.byAmbassador.map((a) => {
+                            const isColin = a.ambassador_code === "colin_slaven";
+                            return (
+                              <tr key={a.ambassador_code} className="border-t hover:bg-slate-50" data-testid={`row-mix-amb-${a.ambassador_code}`}>
+                                <td className="py-2 px-2 font-medium">
+                                  {a.ambassador_name || a.ambassador_code}
+                                  {isColin && (
+                                    <Badge variant="outline" className="ml-1 text-[9px] border-amber-300 text-amber-700">
+                                      house default
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="py-2 px-2 text-amber-700">{a.house_sessions.toLocaleString()}</td>
+                                <td className="py-2 px-2 text-emerald-700 font-semibold">{a.share_sessions.toLocaleString()}</td>
+                                <td className="py-2 px-2 text-amber-700">{a.house_apps.toLocaleString()}</td>
+                                <td className="py-2 px-2 text-emerald-700 font-semibold">{a.share_apps.toLocaleString()}</td>
+                                <td className="py-2 px-2 text-amber-700">{formatMoney(a.house_revenue)}</td>
+                                <td className="py-2 px-2 text-emerald-700 font-semibold">{formatMoney(a.share_revenue)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2">
+                      "House" = direct/organic visitors with no UTM/first-touch (assigned to Colin via the house-default rule).
+                      "Share" = real ambassador-attributed clicks/sessions. Stripe revenue is sourced from
+                      <code className="px-1">partner_attribution.revenue_amount</code>, joined via
+                      <code className="px-1">partner_applications.session_id</code> →
+                      <code className="px-1">user_attribution_sessions.is_house_default</code>, with a UTM-signature fallback for older rows lacking a session join.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {isLoading && <p className="text-center text-muted-foreground py-8">Loading attribution data...</p>}
 

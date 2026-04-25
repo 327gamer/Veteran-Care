@@ -4562,10 +4562,15 @@ export async function registerRoutes(
 
     // SQL fragment that returns true when a partner_applications row is
     // house-default (either via joined session flag, or via the canonical
-    // UTM signature on the application row itself).
-    const houseExpr = `(COALESCE(s.is_house_default, false) = true
+    // UTM signature on the application row itself). Wrapped in COALESCE
+    // so the FILTER clauses never see NULL (NULL would silently drop rows
+    // from BOTH the house bucket AND the NOT-house bucket).
+    const houseExpr = `COALESCE(
+      s.is_house_default = true
       OR (pa.utm_source = 'house' AND pa.utm_medium = 'direct'
-          AND pa.utm_campaign = 'organic_default' AND pa.utm_content = 'colin_slaven'))`;
+          AND pa.utm_campaign = 'organic_default' AND pa.utm_content = 'colin_slaven'),
+      false
+    )`;
 
     const dateParams: any[] = [];
     let dateSqlSess = "";
