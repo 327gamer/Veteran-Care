@@ -194,10 +194,12 @@ async function ensureAttributionTables() {
     await pgQuery(`ALTER TABLE user_attribution_sessions ENABLE ROW LEVEL SECURITY`);
     await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS utm_id TEXT`);
     await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS ambassador_id UUID REFERENCES ambassadors(id)`);
+    await pgQuery(`ALTER TABLE user_attribution_sessions ADD COLUMN IF NOT EXISTS is_house_default BOOLEAN DEFAULT false`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_session ON user_attribution_sessions(session_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_ambassador ON user_attribution_sessions(utm_content)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_utm_id ON user_attribution_sessions(utm_id)`);
     await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_amb_id ON user_attribution_sessions(ambassador_id)`);
+    await pgQuery(`CREATE INDEX IF NOT EXISTS idx_attr_sess_house_default ON user_attribution_sessions(is_house_default)`);
 
     // === TRUSTED SERVICE LEADS ===
     await pgQuery(`ALTER TABLE trusted_service_leads ADD COLUMN IF NOT EXISTS utm_source TEXT`);
@@ -3458,7 +3460,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/attribution-session", async (req, res) => {
-    const { session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer } = req.body;
+    const { session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer, is_house_default } = req.body;
     if (!session_id) {
       return res.status(400).json({ error: "session_id is required" });
     }
@@ -3467,10 +3469,18 @@ export async function registerRoutes(
       if (utm_content || utm_id) {
         ambassadorId = await resolveAmbassadorId(utm_content || null, utm_id || null);
       }
+      // Defense in depth: even if the client omits the flag, infer house-default
+      // from the canonical organic-default UTM signature so reporting stays clean.
+      const inferredHouseDefault =
+        utm_source === "house" &&
+        utm_medium === "direct" &&
+        utm_campaign === "organic_default" &&
+        utm_content === "colin_slaven";
+      const houseDefaultFlag = is_house_default === true || inferredHouseDefault;
       await pgQuery(
-        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer, ambassador_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, utm_id || null, landing_page || null, referrer || null, ambassadorId]
+        `INSERT INTO user_attribution_sessions (session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_id, landing_page, referrer, ambassador_id, is_house_default)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [session_id, utm_source || null, utm_medium || null, utm_campaign || null, utm_content || null, utm_term || null, utm_id || null, landing_page || null, referrer || null, ambassadorId, houseDefaultFlag]
       );
       return res.json({ ok: true });
     } catch (err: any) {

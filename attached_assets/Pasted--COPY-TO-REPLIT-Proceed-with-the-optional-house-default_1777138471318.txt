@@ -1,0 +1,130 @@
+--- COPY TO REPLIT ---
+
+Proceed with the optional house/default attribution reporting improvement now.
+
+GOAL:
+Allow admin reporting to distinguish between:
+
+1. Real ambassador referral traffic
+2. House/default direct organic traffic assigned to Colin Slaven
+
+Current state:
+House/default attribution now uses:
+
+utm_source = house
+utm_medium = direct
+utm_campaign = organic_default
+utm_content = colin_slaven
+
+This correctly maps to Colin’s ambassador record and flows into Stripe/reporting.
+
+However, we also want to know whether the session was truly from Colin’s shared ambassador link or whether it was direct/organic traffic assigned to the house default.
+
+--------------------------------------------------
+TASK
+--------------------------------------------------
+
+Add support for:
+
+is_house_default = true / false
+
+on attribution sessions where appropriate.
+
+--------------------------------------------------
+REQUIREMENTS
+--------------------------------------------------
+
+1. Database
+Add a boolean field to user_attribution_sessions:
+
+is_house_default BOOLEAN DEFAULT false
+
+Or equivalent if there is a better existing attribution table.
+
+2. Capture Logic
+When captureUTM() assigns the fallback house/default values because there was no UTM / ambassador source:
+
+Set:
+
+is_house_default = true
+
+When user came through a real ambassador link or real UTM:
+
+Set:
+
+is_house_default = false
+
+3. Do Not Break Existing Attribution
+Colin should still receive default house attribution for direct traffic.
+
+Existing ambassador links must remain untouched.
+
+Do not change:
+
+- ambassador_id logic
+- commission logic
+- Stripe metadata
+- GA4 tracking
+- existing UTM behavior
+
+This is reporting clarification only.
+
+4. Admin Reporting
+Where practical, expose or preserve this field so future dashboards can separate:
+
+- Colin direct house traffic
+- Colin actual ambassador-shared traffic
+- Other ambassadors
+
+5. Backfill
+No retroactive backfill needed unless simple and safe.
+
+Do not spend time trying to reconstruct old sessions.
+
+Only new sessions moving forward need this flag.
+
+6. QA
+
+Test:
+
+A. Direct visitor, no UTM:
+Expected:
+ambassador_id = Colin
+is_house_default = true
+
+B. Colin real ambassador link:
+Expected:
+ambassador_id = Colin
+is_house_default = false
+
+C. Debbie / Tracey / Michelle / Kelsey ambassador links:
+Expected:
+their ambassador_id
+is_house_default = false
+
+D. Existing UTM traffic:
+Expected:
+no overwrite
+is_house_default = false
+
+E. Stripe partner signup from direct traffic:
+Expected:
+Colin attribution preserved
+is_house_default true where attribution session is stored
+
+--------------------------------------------------
+RETURN REPORT
+--------------------------------------------------
+
+Return:
+
+1. Table/column added
+2. Files changed
+3. Direct traffic test result
+4. Ambassador link test result
+5. Stripe flow confirmation
+6. Any reporting limitations
+
+Keep this focused. Do not rebuild the attribution system.
+
+--- END ---

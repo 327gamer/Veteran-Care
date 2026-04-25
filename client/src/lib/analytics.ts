@@ -98,7 +98,7 @@ export function captureUTM(): void {
         utm_id: toPersist.utm_id || null,
         landing_page: window.location.pathname,
         referrer: document.referrer || null,
-        is_house_default: isHouseDefault || undefined,
+        is_house_default: isHouseDefault,
       }),
     }).catch(() => {});
   } catch {}
