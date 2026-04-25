@@ -24,3 +24,9 @@ id = "v_rKMY46YrH4HXlIv4oqQ"
 uri = "file://.local/api-monetization-feasibility-plan.md"
 type = "text"
 title = "Veteran Care Resource API — Monetization Feasibility Plan"
+
+[[outputs]]
+id = "LYGGlPjFiZ7fxwXepdnP0"
+uri = "file://.local/ca-phase0-founder-report.md"
+type = "text"
+title = "California — Phase 0 Founder Report (Planning + Foundation Audit)"
