@@ -54,6 +54,7 @@ mockupState = "FULLSTACK"
 [userenv.shared]
 RESEND_FROM_EMAIL = "Veteran Care <noreply@veterancare.com>"
 VITE_GA4_MEASUREMENT_ID = "G-CPZXC6Y900"
+NEXT_STATE_LAUNCHING = "Alabama"
 
 [postMerge]
 path = "scripts/post-merge.sh"
