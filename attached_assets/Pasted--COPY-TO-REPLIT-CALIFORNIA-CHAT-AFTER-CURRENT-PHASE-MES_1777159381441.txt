@@ -1,0 +1,144 @@
+--- COPY TO REPLIT / CALIFORNIA CHAT AFTER CURRENT PHASE ---
+MESSAGE:
+
+Current roadmap remains California rollout. Do NOT pivot off California build. This is a queued QA fix package for immediately after current California phase checkpoint is complete.
+
+FOUNDER QA REVIEW FROM LIVE MOBILE TESTING:
+
+Overall:
+- Resources location prompt = working well
+- Resource search fallback asking city/state = working well
+- Veteran Guide location prompt = working well
+- Veteran Guide asks for city/state when needed = working well
+
+Two issues found that must be next priority immediately after current California phase checkpoint:
+
+====================================================
+FIX #1 — LOCATION PROMPT MISSING IN TRUSTED SERVICES
+====================================================
+
+Problem:
+If user skipped location permission, the new “Enable location for better results and a more personalized experience” prompt appears in:
+- Resources
+- Veteran Guide
+
+But it does NOT appear in Trusted Services.
+
+Required Fix:
+Use the exact same reusable location prompt component in Trusted Services pages.
+
+Required Placement (mobile first):
+Place directly below:
+- search bar
+or
+- near me / location controls
+
+Same behavior as Resources:
+- Show only when no GPS/manual location
+- Enable button triggers browser permission request
+- Dismiss works same as existing implementation
+- Auto-hide once location granted
+
+Goal:
+Consistent platform-wide UX across:
+1. Resources
+2. Trusted Services
+3. Veteran Guide
+4. Future modules
+
+====================================================
+FIX #2 — VETERAN GUIDE RANKING / ENTITY RECALL ISSUE
+====================================================
+
+Problem:
+When asking for housing help in Charleston SC, Veteran Guide returned other resources but FAILED to prioritize or mention one of our own verified trusted partners:
+
+Tri-County Veterans Support Network
+
+This is unacceptable because:
+- local Charleston provider
+- housing-related support
+- verified partner
+- trusted partner
+- should outrank generic listings
+
+Then when explicitly asked:
+“What about Tri-County Veterans Support Network?”
+
+Guide misunderstood intent and asked for city/state again instead of recognizing named entity.
+
+Required Logic Fixes:
+
+A) PRIORITY BOOSTING
+When resource/provider is:
+- verified
+- trusted partner
+- exact city/region match
+- category match
+
+Then rank near top of answers.
+
+B) NAMED ENTITY DETECTION
+If user types provider name or partial provider name:
+- detect it
+- search directly
+- return provider details
+- do NOT ask city/state again unless truly ambiguous
+
+C) CHARLESTON LOCAL BOOST
+If query contains:
+Charleston
+North Charleston
+Mount Pleasant
+Summerville
+Goose Creek
+Tri-County
+
+Then Charleston-region partners/resources receive geo boost.
+
+D) MIXED RESULTS FORMAT
+When user asks housing help:
+Return:
+1. Featured verified local partner(s)
+2. Additional nonprofit/government resources
+3. Optional ask if they want emergency / long-term / family housing
+
+====================================================
+NO OVERENGINEERING RULE
+====================================================
+
+Do not rebuild AI system.
+Do not change unrelated prompts.
+Do targeted retrieval / ranking / matching fix only.
+
+====================================================
+TEST CASES REQUIRED AFTER FIX
+====================================================
+
+1. “Housing help Charleston SC”
+→ Tri-County Veterans Support Network shown near top
+
+2. “Tri County veterans support network”
+→ detects provider and returns profile
+
+3. “Food and housing near me”
+→ if no location asks enable location or city/state
+
+4. “Trusted services near me”
+→ location prompt visible in Trusted Services
+
+====================================================
+DELIVERABLE
+====================================================
+
+After California checkpoint complete:
+
+Chunk these QA fixes carefully:
+Phase QA-1 = Trusted Services location prompt
+Phase QA-2 = Veteran Guide ranking/entity fixes
+
+Then report exact files changed, logic changed, and screenshots.
+
+Stay on roadmap discipline.
+
+--- END ---
