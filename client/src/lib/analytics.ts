@@ -13,6 +13,19 @@ const FIRST_TOUCH_KEY = "vc_utm_first";
 const SESSION_UTM_KEY = "vc_utm";
 const DEDUP_KEY = "vc_event_dedup";
 const DEDUP_TTL = 30 * 60 * 1000;
+const AMBASSADOR_CODE_KEY = "vc_ambassador_code";
+
+// House-default attribution for direct/organic traffic with no existing
+// ambassador or UTM source. Founder rule (locked 2026-04-25): organic
+// conversions default to Colin Slaven; never overwrite an existing
+// ambassador / UTM attribution.
+const DEFAULT_AMBASSADOR_CODE = "colin_slaven";
+const HOUSE_DEFAULT_UTM: Record<string, string> = {
+  utm_source: "house",
+  utm_medium: "direct",
+  utm_campaign: "organic_default",
+  utm_content: DEFAULT_AMBASSADOR_CODE,
+};
 
 function getOrCreateSessionId(): string {
   let sid = sessionStorage.getItem("vc_session_id");
@@ -32,12 +45,43 @@ export function captureUTM(): void {
     const val = params.get(key);
     if (val) captured[key] = val;
   });
-  if (Object.keys(captured).length === 0) return;
 
-  sessionStorage.setItem(SESSION_UTM_KEY, JSON.stringify(captured));
+  const hasUrlUtm = Object.keys(captured).length > 0;
+  const hasFirstTouch = !!localStorage.getItem(FIRST_TOUCH_KEY);
+  const hasAmbassadorCode = (() => {
+    try {
+      return !!(localStorage.getItem(AMBASSADOR_CODE_KEY)
+        || sessionStorage.getItem(AMBASSADOR_CODE_KEY));
+    } catch { return false; }
+  })();
 
-  if (!localStorage.getItem(FIRST_TOUCH_KEY)) {
-    localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(captured));
+  let toPersist: Record<string, string> | null = null;
+  let isHouseDefault = false;
+
+  if (hasUrlUtm) {
+    // Real ambassador / campaign URL — persist as session + first-touch.
+    toPersist = captured;
+    sessionStorage.setItem(SESSION_UTM_KEY, JSON.stringify(captured));
+    if (!hasFirstTouch) {
+      localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(captured));
+    }
+    // If the URL carries an ambassador code in utm_content and no other
+    // ambassador is set, sync it to the ambassador-code store.
+    if (captured.utm_content && !hasAmbassadorCode) {
+      try { localStorage.setItem(AMBASSADOR_CODE_KEY, captured.utm_content); } catch {}
+    }
+  } else if (!hasFirstTouch && !hasAmbassadorCode) {
+    // True direct/organic visitor — apply house default attribution
+    // (Colin Slaven). Never overwrites prior attribution because
+    // both first-touch and ambassador-code are checked above.
+    toPersist = { ...HOUSE_DEFAULT_UTM };
+    isHouseDefault = true;
+    sessionStorage.setItem(SESSION_UTM_KEY, JSON.stringify(toPersist));
+    localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(toPersist));
+    try { localStorage.setItem(AMBASSADOR_CODE_KEY, DEFAULT_AMBASSADOR_CODE); } catch {}
+  } else {
+    // Returning visitor with prior attribution — preserve it untouched.
+    return;
   }
 
   try {
@@ -46,14 +90,15 @@ export function captureUTM(): void {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         session_id: getOrCreateSessionId(),
-        utm_source: captured.utm_source || null,
-        utm_medium: captured.utm_medium || null,
-        utm_campaign: captured.utm_campaign || null,
-        utm_content: captured.utm_content || null,
-        utm_term: captured.utm_term || null,
-        utm_id: captured.utm_id || null,
+        utm_source: toPersist.utm_source || null,
+        utm_medium: toPersist.utm_medium || null,
+        utm_campaign: toPersist.utm_campaign || null,
+        utm_content: toPersist.utm_content || null,
+        utm_term: toPersist.utm_term || null,
+        utm_id: toPersist.utm_id || null,
         landing_page: window.location.pathname,
         referrer: document.referrer || null,
+        is_house_default: isHouseDefault || undefined,
       }),
     }).catch(() => {});
   } catch {}
@@ -118,8 +163,6 @@ let lastTrackedPath = "";
 function debugFlag(): Record<string, boolean> {
   return isDebug() ? { debug_mode: true } : {};
 }
-
-const AMBASSADOR_CODE_KEY = "vc_ambassador_code";
 
 function getAmbassadorCode(): string | null {
   try {
