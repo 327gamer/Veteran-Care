@@ -1,0 +1,63 @@
+--- COPY TO REPLIT ---
+
+Current task only: remove the generic “Before you start” checklist from resource detail pages.
+
+Issue:
+Every resource detail page is showing a generic section titled:
+
+“Before you start”
+
+With items like:
+- Gather your DD214 (Member 4 Copy)
+- Have medical records ready
+- Verify your current mailing address
+- Prepare bank routing information
+
+This was originally useful for grant/program documentation, but it is now confusing for the resource directory.
+
+Veteran Care resources include housing, food, healthcare, legal, transportation, family support, trusted partners, nonprofits, and community-wide resources. Not every resource requires DD214, medical records, bank info, or VA paperwork.
+
+Goal:
+Remove this generic checklist from all public resource detail pages.
+
+Important:
+Do NOT delete any resource records.
+Do NOT change resource data.
+Do NOT affect admin data.
+Do NOT affect AI Navigator.
+Do NOT affect Trusted Services.
+Do NOT affect Local Assistance.
+Do NOT affect contact information.
+Do NOT affect saved resources.
+Do NOT affect category or state filtering.
+
+This is a UI display removal only.
+
+Please find the component/section rendering:
+
+“Before you start”
+
+and remove/hide it globally from resource detail pages.
+
+If this checklist is stored as hardcoded UI:
+Remove the component from public resource detail rendering.
+
+If this checklist is stored in resource data:
+Stop rendering it publicly, but do not delete the underlying data unless founder approves later.
+
+QA:
+1. Open multiple resource detail pages across different states/categories.
+2. Confirm “Before you start” no longer appears.
+3. Confirm contact information still appears.
+4. Confirm Local Assistance still appears.
+5. Confirm page layout still looks clean on mobile.
+6. Confirm no resource data was deleted.
+
+Return report:
+- file/component changed
+- whether checklist was hardcoded or data-driven
+- confirmation removed globally
+- screenshots or test paths checked
+- any risks
+
+--- END ---

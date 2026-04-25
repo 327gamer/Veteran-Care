@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   MapPin, 
-  CheckCircle2, 
   FileText, 
   Phone,
   Bot,
@@ -291,28 +290,6 @@ export default function ResourceDetail({ resource, open, onOpenChange }: Resourc
               </div>
             </section>
           )}
-
-          <section data-testid="section-preparation" className="bg-muted/30 rounded-lg p-3 border border-border">
-            <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              Before you start
-            </h3>
-            <ul className="space-y-2">
-              {[
-                "Gather your DD214 (Member 4 Copy)",
-                "Have medical records ready",
-                "Verify your current mailing address",
-                "Prepare bank routing information"
-              ].map((item, i) => (
-                <li key={i} className="flex gap-2 text-xs">
-                  <div className="h-4 w-4 rounded-full border border-muted-foreground/30 flex items-center justify-center shrink-0">
-                    <span className="text-[9px] text-muted-foreground">{i + 1}</span>
-                  </div>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
 
           <section data-testid="section-local-assistance" className="space-y-2">
             <h3 className="font-bold text-base flex items-center gap-2 text-primary">
