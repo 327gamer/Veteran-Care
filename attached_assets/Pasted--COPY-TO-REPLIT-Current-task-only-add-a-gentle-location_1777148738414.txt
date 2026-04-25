@@ -1,0 +1,111 @@
+--- COPY TO REPLIT ---
+
+Current task only: add a gentle location re-enable prompt across the app.
+
+Issue:
+If a user chooses “Maybe later” or does not enable location during onboarding/account setup, they can continue using the app, but there is no clear reminder or option later to enable location for better results.
+
+This affects:
+
+- Resource browsing
+- Near You / navigation
+- AI Navigator resource recommendations
+- account/profile experience
+- personalized local search
+
+GOAL:
+Add a consistent, non-intrusive prompt/message wherever location would improve results.
+
+Suggested wording:
+
+“Enable location for better results and a more personalized experience.”
+
+Alternative longer wording:
+
+“You haven’t enabled location yet. Enable location to see resources closer to you and get a more personalized experience.”
+
+--------------------------------------------------
+WHERE TO ADD
+--------------------------------------------------
+
+1. Resource pages / Near You page
+
+If location is not enabled and user is browsing/searching resources, show a small prompt near the location/search controls:
+
+Enable location for better results and a more personalized experience.
+
+Button:
+Enable Location
+
+Secondary:
+Maybe Later / Not Now
+
+2. AI Navigator
+
+If user asks for resources and no location is available, the AI should ask:
+
+“What city and state should I search in? You can also enable location for better results and a more personalized experience.”
+
+If browser location is unavailable/disabled, do not default to any state.
+
+3. Account/Profile page
+
+If user has an account but location is not enabled, show a gentle card:
+
+Enable location for better results and a more personalized experience.
+
+Button:
+Enable Location
+
+4. Onboarding flow
+
+If user skipped location, preserve the ability to enable it later from profile/resources/navigation.
+
+--------------------------------------------------
+IMPORTANT UX RULES
+--------------------------------------------------
+
+- Do not block the user.
+- Do not force location.
+- Do not show annoying popups repeatedly.
+- Use an inline card/banner, not a disruptive modal.
+- If the user dismisses it, do not show it again immediately in the same session.
+- If location is enabled successfully, hide the prompt immediately.
+- Manual state/city search must still work without location.
+
+--------------------------------------------------
+TECHNICAL RULES
+--------------------------------------------------
+
+- Use existing geolocation hook / permission flow if available.
+- Do not create duplicate competing location systems.
+- Do not break Near Me.
+- Do not break city/state manual search.
+- Do not break AI Navigator explicit-location override.
+- Do not break onboarding.
+- Do not change resource data.
+
+--------------------------------------------------
+QA
+--------------------------------------------------
+
+Test:
+
+1. New visitor skips location → Resource page shows gentle enable-location prompt.
+2. User taps Enable Location → browser prompt appears.
+3. User grants permission → prompt disappears and Near Me/local results improve.
+4. User denies permission → manual city/state still works.
+5. Logged-in user without location → Profile/account shows prompt.
+6. AI Navigator with no location → asks for city/state and mentions enabling location.
+7. User explicitly types “in Georgia” → AI uses Georgia even if location disabled.
+8. User has location enabled → no prompt shown.
+
+Return report:
+- files changed
+- where prompt appears
+- exact wording used
+- geolocation flow confirmed
+- QA results
+- risks / follow-ups
+
+--- END ---

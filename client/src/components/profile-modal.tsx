@@ -31,6 +31,7 @@ import { useAuth } from "@/lib/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useSavedResources } from "@/lib/store";
 import { useLocation } from "wouter";
+import { EnableLocationPrompt } from "@/components/enable-location-prompt";
 
 const STATE_NAMES: Record<string, string> = {
   AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
@@ -534,6 +535,8 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                   </SelectContent>
                 </Select>
               </div>
+
+              <EnableLocationPrompt variant="card" />
 
               <div className="space-y-1">
                 <Label className="text-xs">State</Label>

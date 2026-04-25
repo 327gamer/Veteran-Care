@@ -269,6 +269,6 @@ export function isLocationSensitive(detectedCategory: string | null): boolean {
 
 export const locationClarificationResponse =
   `I can definitely help with that. So I can pull the right local resources, ` +
-  `**what city and state are you in?** ` +
+  `**what city and state should I search in?** ` +
   `(For example: "Atlanta, GA" or "Charlotte, NC".) ` +
-  `If you'd rather, you can also turn on location in your browser and I'll detect it automatically.`;
+  `You can also enable location in your browser for better results and a more personalized experience.`;
