@@ -18,3 +18,9 @@ id = "GoQk6hzptckX2e0-5Ru4m"
 uri = "file://screenshots/slice-b-community-support-zero.jpg"
 type = "image"
 title = "Community Support drilldown — strip correctly hidden (0 verified in dev DB)"
+
+[[outputs]]
+id = "v_rKMY46YrH4HXlIv4oqQ"
+uri = "file://.local/api-monetization-feasibility-plan.md"
+type = "text"
+title = "Veteran Care Resource API — Monetization Feasibility Plan"
