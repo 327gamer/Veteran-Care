@@ -2957,6 +2957,10 @@ export async function registerRoutes(
   await ensurePartnerReferrals();
   await ensureLeadBilling();
   await ensureLeadEventsTable();
+  // SLEEP MODE: future-ready API monetization schema. No live API endpoints
+  // exist yet. See replit.md "Veteran Care API Monetization Initiative".
+  const { ensureApiMonetizationSchema } = await import("./api-monetization-schema");
+  await ensureApiMonetizationSchema();
   await ensureMonetizationAuditTable();
   await backfillNavAmbassadorId();
   await alignCategoryNames();

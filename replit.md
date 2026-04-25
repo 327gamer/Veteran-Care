@@ -35,6 +35,62 @@
 4. Validation results (PASS/FAIL with evidence)
 5. Manual steps remaining
 
+## Veteran Care API Monetization Initiative — SLEEP MODE (LANDED 2026-04-25)
+
+**Status: SLEEP MODE.** Future-ready database scaffolding only. **Do NOT
+build the API yet.** Primary focus stays on:
+1. California rollout
+2. Traffic growth
+3. Trusted partner revenue
+4. National expansion
+
+### What's in place (database scaffolding only)
+- Full feasibility plan: `.local/api-monetization-feasibility-plan.md`
+- Schema module: `server/api-monetization-schema.ts` (boot-time
+  `ensureApiMonetizationSchema()` wired into `server/routes.ts`)
+- 5 new tables in HELIUM (all empty, all RLS-locked):
+  - `api_customers` — Stripe-linked org records
+  - `api_keys` — hashed key store (sha256 + key_prefix)
+  - `api_call_log` — usage / billing source of truth
+  - `api_resources` — column-whitelisted mirror; safe to expose
+  - `api_mirror_sync_log` — observability for the future sync job
+- 1 new column (kill switch) on `resources` — **manual Supabase step
+  required**:
+  - File: `supabase/add_resources_public_api_eligible.sql`
+  - Adds `public_api_eligible BOOLEAN NOT NULL DEFAULT false`
+  - Default FALSE means **no row is API-eligible** until the founder
+    explicitly opts each one in. Run when ready.
+
+### What is intentionally NOT built
+- No `/v1/*` endpoints
+- No auth middleware / API key validation
+- No rate limiter
+- No Stripe webhook handlers for API products
+- No mirror sync job (the table exists, the populator does not)
+- No customer dashboard
+- No public docs site
+
+### Activation later requires only (no destructive migrations)
+1. Run `supabase/add_resources_public_api_eligible.sql` in the Supabase
+   SQL editor (one-time, idempotent).
+2. Build the mirror sync job (`server/api-mirror-sync.ts`) reading
+   approved + eligible rows from `resources` (Supabase) and writing to
+   `api_resources` (HELIUM) with explicit column lists.
+3. Build auth middleware that hashes the bearer token and joins
+   `api_keys` → `api_customers`.
+4. Add rate limiter (Postgres bucket via `api_call_log`).
+5. Mount `/v1/resources`, `/v1/resources/:id`, `/v1/categories`,
+   `/v1/states`, `/v1/cities`, `/v1/health` (Phase 1 endpoints).
+6. Wire Stripe webhooks to provision rows in `api_customers` + `api_keys`
+   and email the plaintext key once via Resend.
+7. Publish docs site (Mintlify recommended).
+
+### Activation gate
+Founder approval required, AND:
+- California rollout has reached at least Phase 4 minimum
+- Trusted partner revenue motion is producing predictable MRR
+- At least one design-partner customer has pre-committed to paid usage
+
 ## Homepage Live Metrics + Hidden Traction System (LANDED 2026-04-25)
 
 ### Shared Live Metrics block
