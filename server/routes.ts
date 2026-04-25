@@ -2987,12 +2987,29 @@ export async function registerRoutes(
         return res.json(publicStatsCache.data);
       }
 
-      const [
-        resourcesRes,
-        categoriesRes,
-        statesRes,
-        citiesRes,
-      ] = await Promise.all([
+      // Pull every approved row's (state, city) so we can compute distinct
+      // states + cities accurately. Supabase's default page cap is 1000 rows,
+      // which silently truncated newer states (e.g. FL) once the table grew
+      // past that threshold. Page through with .range() until exhausted.
+      const PAGE = 1000;
+      const stateCityRows: { state: string | null; city: string | null }[] = [];
+      let pageStart = 0;
+      let pageErr: any = null;
+      // Hard ceiling so a runaway row count can never wedge the request.
+      while (pageStart < 100000) {
+        const { data, error } = await supabaseAdmin
+          .from("resources")
+          .select("state, city")
+          .eq("status", "approved")
+          .range(pageStart, pageStart + PAGE - 1);
+        if (error) { pageErr = error; break; }
+        if (!data || data.length === 0) break;
+        stateCityRows.push(...data);
+        if (data.length < PAGE) break;
+        pageStart += PAGE;
+      }
+
+      const [resourcesRes, categoriesRes] = await Promise.all([
         supabaseAdmin
           .from("resources")
           .select("id", { count: "exact", head: true })
@@ -3000,21 +3017,11 @@ export async function registerRoutes(
         supabaseAdmin
           .from("categories")
           .select("id", { count: "exact", head: true }),
-        supabaseAdmin
-          .from("resources")
-          .select("state")
-          .eq("status", "approved")
-          .not("state", "is", null),
-        supabaseAdmin
-          .from("resources")
-          .select("city, state")
-          .eq("status", "approved")
-          .not("city", "is", null),
       ]);
 
       // Supabase resolves rather than throws on errors; surface them
       // explicitly so we don't silently degrade to zero stats.
-      const supaErr = resourcesRes.error || categoriesRes.error || statesRes.error || citiesRes.error;
+      const supaErr = pageErr || resourcesRes.error || categoriesRes.error;
       if (supaErr) {
         console.error("[public-stats] supabase error:", supaErr.message);
         return res.status(503).json({ error: "stats temporarily unavailable" });
@@ -3023,18 +3030,14 @@ export async function registerRoutes(
       const totalCategories = categoriesRes.count;
 
       const stateSet = new Set<string>();
-      for (const row of (statesRes.data || []) as { state: string | null }[]) {
+      const citySet = new Set<string>();
+      for (const row of stateCityRows) {
         const s = (row.state || "").toString().trim().toUpperCase();
+        const c = (row.city || "").toString().trim();
         if (s) stateSet.add(s);
+        if (s && c) citySet.add(`${c.toLowerCase()}|${s}`);
       }
       const liveStates = Array.from(stateSet).sort();
-
-      const citySet = new Set<string>();
-      for (const row of (citiesRes.data || []) as { city: string | null; state: string | null }[]) {
-        const c = (row.city || "").toString().trim();
-        const s = (row.state || "").toString().trim().toUpperCase();
-        if (c && s) citySet.add(`${c.toLowerCase()}|${s}`);
-      }
 
       const STATE_NAMES: Record<string, string> = {
         AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",

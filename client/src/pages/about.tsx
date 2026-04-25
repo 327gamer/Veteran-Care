@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,47 +35,7 @@ import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png"
 import CampaignHeroVideo from "@/components/campaign-hero-video";
 import MenuPageHero from "@/components/menu-page-hero";
 import { platform } from "@shared/platform";
-
-type PublicStats = {
-  totalResources: number;
-  totalCities: number;
-  totalStates: number;
-  totalCategories: number;
-  liveStates: string[];
-  liveStateNames: { code: string; name: string }[];
-  nextStateLaunching: string;
-  coverageRegion: string;
-  growthStatus: string;
-  isEstimated?: boolean;
-  lastUpdated: string;
-};
-
-// Conservative fallbacks — used only while live stats load or if the
-// endpoint is unavailable. Numbers are intentionally rounded DOWN so
-// the page never overstates coverage. isEstimated=true tells the UI
-// to render an "estimated" indicator when these values are showing.
-const FALLBACK_STATS: PublicStats = {
-  totalResources: 2000,
-  totalCities: 150,
-  totalStates: 3,
-  totalCategories: 17,
-  liveStates: ["GA", "NC", "SC"],
-  liveStateNames: [
-    { code: "SC", name: "South Carolina" },
-    { code: "NC", name: "North Carolina" },
-    { code: "GA", name: "Georgia" },
-  ],
-  nextStateLaunching: "Florida",
-  coverageRegion: "Southeast United States",
-  growthStatus: "Expanding Nationally",
-  isEstimated: true,
-  lastUpdated: new Date().toISOString(),
-};
-
-function formatNumber(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return "0";
-  return n.toLocaleString("en-US");
-}
+import { usePublicStats, formatStatNumber } from "@/hooks/use-public-stats";
 
 const TRUST_TILES = [
   { icon: Layers, label: "17 Support Categories", sub: "Across veterans, families & caregivers" },
@@ -181,18 +140,14 @@ export default function About() {
     document.title = "About Veteran Care | America's Modern Veteran Support Platform";
   }, []);
 
-  // Live metrics — falls back to static numbers if the endpoint is slow
-  // or unavailable so the page is never empty/awkward.
-  const { data: liveStats } = useQuery<PublicStats>({
-    queryKey: ["/api/public-stats"],
-    staleTime: 5 * 60 * 1000,
-  });
-  const stats = liveStats || FALLBACK_STATS;
+  // Live metrics — sourced from the shared usePublicStats hook so
+  // homepage / About / any other surface always read the same numbers.
+  const { stats } = usePublicStats();
 
   const metricCards = [
     {
       icon: Flag,
-      value: formatNumber(stats.totalStates),
+      value: formatStatNumber(stats.totalStates),
       label: "States Live",
     },
     {
@@ -202,17 +157,17 @@ export default function About() {
     },
     {
       icon: Database,
-      value: `${formatNumber(stats.totalResources)}+`,
+      value: `${formatStatNumber(stats.totalResources)}+`,
       label: "Verified Resources",
     },
     {
       icon: Building2,
-      value: `${formatNumber(stats.totalCities)}+`,
+      value: `${formatStatNumber(stats.totalCities)}+`,
       label: "Cities Covered",
     },
     {
       icon: Layers,
-      value: formatNumber(stats.totalCategories),
+      value: formatStatNumber(stats.totalCategories),
       label: "Support Categories",
     },
     {
