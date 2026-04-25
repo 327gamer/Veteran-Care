@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MapPin, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/lib/use-geolocation";
@@ -17,17 +17,32 @@ export function EnableLocationPrompt({
 }: EnableLocationPromptProps) {
   const geo = useGeolocation();
   const userLocation = useSavedResources((s) => s.userLocation);
-  const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
+  // Synchronous lazy init prevents a one-frame flash of the prompt on first
+  // paint after the user has already dismissed it earlier in this session.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     try {
-      setDismissed(sessionStorage.getItem(SESSION_DISMISS_KEY) === "1");
-    } catch {}
-  }, []);
+      return sessionStorage.getItem(SESSION_DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
-  const hasGeoFix = !!(geo.location && (geo.location.state || geo.location.city));
+  // A successful browser permission grant gives us coordinates immediately,
+  // even when reverse-geocoding hasn't filled in city/state yet. Treat any
+  // of {state, city, lat+lng, hasPermission===true, loading} as "user has
+  // already engaged with location" so we never re-prompt or flash.
+  const hasGeoFix = !!(
+    geo.location &&
+    (geo.location.state ||
+      geo.location.city ||
+      (Number.isFinite(geo.location.lat) && Number.isFinite(geo.location.lng)))
+  );
   const hasManualLocation = !!(userLocation?.state || userLocation?.city);
-  const hasAnyLocation = hasGeoFix || hasManualLocation;
+  const permissionGranted = geo.hasPermission === true;
+  const isResolving = geo.loading;
+  const hasAnyLocation =
+    hasGeoFix || hasManualLocation || permissionGranted || isResolving;
 
   if (hasAnyLocation || dismissed) return null;
 

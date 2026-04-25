@@ -173,6 +173,27 @@ export function extractLocationFromMessage(text: string): ExtractedLocation {
     }
   }
 
+  if (!foundState) {
+    // Pattern B.5: trailing UPPERCASE state code at end of message, e.g.
+    //   "Need help SC", "Looking for housing GA.", "food assistance, NC"
+    // We rely on the ORIGINAL text (case-sensitive) so we only catch the
+    // user's deliberate uppercase state shorthand — not lowercase English
+    // homographs like "ok", "in", "or", "hi", "me", "id". We also exclude
+    // a denylist of codes whose dominant meaning in this app is something
+    // other than a state ("VA" = Veterans Affairs, "PA" = Personal
+    // Assistant / Pennsylvania ambiguous, "DC" left in because rare end-
+    // of-message use unambiguously means District of Columbia).
+    const AMBIGUOUS_TRAILING_CODES = new Set(["VA", "PA", "OK", "OR", "IN", "HI", "ID", "ME"]);
+    const endMatch = text.trim().match(/(?:^|\s|,\s*)([A-Z]{2})[.!?]?\s*$/);
+    if (endMatch) {
+      const code = endMatch[1];
+      if (STATE_CODES.has(code) && !AMBIGUOUS_TRAILING_CODES.has(code)) {
+        foundState = code;
+        explicit = true;
+      }
+    }
+  }
+
   // Pattern C: well-known single-city mention ("food in atlanta", "atlanta").
   // Iterate longest keys first so disambiguating suffixes like "charleston wv"
   // match before the shorter, default-state "charleston" entry. Without this,
