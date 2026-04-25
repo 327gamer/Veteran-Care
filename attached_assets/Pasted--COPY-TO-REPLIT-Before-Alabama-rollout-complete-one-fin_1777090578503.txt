@@ -1,0 +1,126 @@
+--- COPY TO REPLIT ---
+
+Before Alabama rollout, complete one final About Veteran Care page refinement.
+
+Goal:
+Remove manually outdated growth wording so the page scales nationally without needing edits every time a new state launches.
+
+CURRENT ISSUE:
+Metrics update automatically, but several text sections still mention specific states or "Florida launching next."
+
+We need evergreen language.
+
+--------------------------------------------------
+PART 1 — HERO SECTION COPY
+--------------------------------------------------
+
+Replace current state-specific wording with:
+
+Headline:
+Veteran Care Is Expanding Nationwide
+
+Subheadline:
+Helping veterans, spouses, dependents, caregivers, and military families connect with trusted resources, verified services, and real support.
+
+Status line:
+Now growing across the United States with new states, cities, and resources added regularly.
+
+Alternative acceptable line:
+Serving veterans across multiple states today — with all 50 states ahead.
+
+--------------------------------------------------
+PART 2 — TRUST TILE / SMALL BOX
+--------------------------------------------------
+
+Current:
+SC · NC · GA live · FL launching
+
+Replace with:
+
+Growing Nationwide
+
+or
+
+Expanding Across America
+
+or
+
+Now Serving Multiple States
+
+--------------------------------------------------
+PART 3 — LIVE METRICS SECTION
+--------------------------------------------------
+
+Keep dynamic metrics exactly as-is.
+
+Those numbers are now the source of truth.
+
+Examples:
+
+States Live
+Verified Resources
+Cities Covered
+Categories
+Growth Status
+
+No hardcoded state names needed.
+
+--------------------------------------------------
+PART 4 — COVERAGE REGION BOX
+--------------------------------------------------
+
+Current issue:
+Shows Southeast only and Florida launching next.
+
+Replace with scalable wording:
+
+Header:
+Current Coverage Growth
+
+Body:
+Veteran Care is actively expanding state by state across America.
+
+Live States:
+(keep dynamic live states list)
+
+Launching Next:
+(nextStateLaunching dynamic field if desired)
+
+Bottom line:
+National expansion roadmap underway with additional states launching regularly.
+
+--------------------------------------------------
+PART 5 — FOOTER / MISSION MICROCOPY
+--------------------------------------------------
+
+Replace:
+
+Built in the South. Expanding Across America.
+
+With:
+
+Built to Serve Veterans Nationwide.
+
+or
+
+Built for Veterans. Growing Nationwide.
+
+--------------------------------------------------
+PART 6 — IMPORTANT RULE
+--------------------------------------------------
+
+No more hardcoded specific state lists in static copy unless pulled dynamically from live API.
+
+Metrics remain the truth source.
+
+--------------------------------------------------
+PART 7 — QA
+--------------------------------------------------
+
+Confirm mobile layout remains excellent.
+Confirm no duplicate wording.
+Confirm dynamic metrics still function.
+
+Return founder report after completion.
+
+--- END ---

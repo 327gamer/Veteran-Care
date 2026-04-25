@@ -42,7 +42,7 @@ const TRUST_TILES = [
   { icon: Sparkles, label: "AI-Powered Navigator", sub: "Guided help, 24/7" },
   { icon: ShieldCheck, label: "Trusted Partner Network", sub: "Vetted, veteran-friendly providers" },
   { icon: Calendar, label: "Supporting Veterans Since 2020", sub: "Real-world veteran experience" },
-  { icon: Globe, label: "Expanding Across the Southeast", sub: "SC · NC · GA live · FL launching" },
+  { icon: Globe, label: "Growing Nationwide", sub: "New states added regularly" },
 ];
 
 const PILLARS = [
@@ -181,9 +181,9 @@ export default function About() {
     <div className="bg-background min-h-full pb-20" data-testid="page-about">
       <MenuPageHero
         testIdPrefix="about"
-        title={["Veteran Care is Expanding", "Across the Southeast"]}
+        title={["Veteran Care Is", "Expanding Nationwide"]}
         subtitle="Helping veterans, spouses, dependents, caregivers, and military families connect with trusted resources, verified services, and real support."
-        detail={`Now live in South Carolina, North Carolina, and Georgia. ${stats.nextStateLaunching} launching next. All 50 states ahead.`}
+        detail="Now growing across the United States with new states, cities, and resources added regularly."
       />
 
       {/* ── TRUST / SCALE / PROOF TILES — symmetrical 2 + 2 + 1 (last centered) ── */}
@@ -261,10 +261,13 @@ export default function About() {
       <section className="container mx-auto px-5 pt-12 sm:pt-16 max-w-3xl" data-testid="section-coverage">
         <Card className="border-l-4 border-l-primary">
           <CardContent className="pt-6 pb-6">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Current coverage region</p>
-            <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mb-4" data-testid="text-coverage-region">
-              {stats.coverageRegion}
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Current coverage growth</p>
+            <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mb-2" data-testid="text-coverage-region">
+              Current Coverage Growth
             </h2>
+            <p className="text-sm text-foreground/80 mb-5 leading-relaxed">
+              Veteran Care is actively expanding state by state across America.
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div data-testid="block-live-states">
@@ -294,7 +297,7 @@ export default function About() {
                   <span className="font-medium" data-testid="text-next-state">{stats.nextStateLaunching}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                  National expansion roadmap underway — additional states queued behind {stats.nextStateLaunching}.
+                  National expansion roadmap underway with additional states launching regularly.
                 </p>
               </div>
             </div>
@@ -321,7 +324,7 @@ export default function About() {
             Real people. Real stories. Real movement.
           </p>
           <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-white/80 mt-5 font-semibold" data-testid="text-built-line">
-            Built in the South. Expanding Across America.
+            Built to Serve Veterans Nationwide.
           </p>
         </div>
       </section>
