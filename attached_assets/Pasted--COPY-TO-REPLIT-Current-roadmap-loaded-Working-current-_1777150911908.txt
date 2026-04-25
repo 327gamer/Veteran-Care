@@ -1,0 +1,114 @@
+--- COPY TO REPLIT ---
+
+Current roadmap loaded.
+Working current task only.
+
+TASK:
+Add the existing Live Metrics section from About Veteran Care page to the Homepage.
+
+--------------------------------------------------
+PART 1 — HOMEPAGE METRICS BLOCK
+--------------------------------------------------
+
+Take the current metric section used on About page:
+
+- States Live
+- Launching Next
+- Verified Resources
+- Cities Covered
+- Support Categories
+- Growth Status
+
+Use the SAME live source of truth endpoint already powering About page.
+
+Place this block on Homepage at the bottom of current homepage content:
+
+Position:
+Directly BELOW the “Veteran Owned Businesses” section.
+
+Goal:
+End the homepage with trust + scale + momentum.
+
+Use same styling/cards/mobile responsiveness already used on About page.
+
+Headline can be:
+
+Real momentum. Real coverage.
+
+Subheadline:
+
+Every number below reflects what’s live on the platform right now.
+
+--------------------------------------------------
+PART 2 — FUTURE TRACTION MODE (BACK BURNER / HIDDEN)
+--------------------------------------------------
+
+Create a hidden internal-ready traction metrics system.
+
+DO NOT show publicly yet.
+
+But prepare backend/frontend placeholders or data model so later we can activate a second metrics block.
+
+Future possible metrics:
+
+- Visits today
+- Visits this week
+- Visits since launch
+- Resource clicks
+- Trusted partner clicks
+- Leads submitted
+- AI Navigator sessions
+- Businesses listed
+- Trusted partners active
+- States live
+- Cities covered
+- Accounts created
+
+If GA4 already tracks these, use existing analytics sources.
+
+If not, note what events already exist.
+
+Do NOT overbuild now.
+Just prep smartly.
+
+--------------------------------------------------
+PART 3 — IMPORTANT RULES
+--------------------------------------------------
+
+Do not slow homepage load speed.
+
+Do not duplicate code if About page block can be reused as shared component.
+
+Do not break homepage mobile spacing.
+
+Do not change existing homepage sections.
+
+Do not publicly show traction metrics yet.
+
+Keep current public metrics live and dynamic.
+
+--------------------------------------------------
+PART 4 — QA
+--------------------------------------------------
+
+1. Homepage loads normally
+2. Metrics block appears below Veteran Owned Businesses
+3. Metrics numbers match About page
+4. Mobile layout clean
+5. No console errors
+6. No performance hit
+7. Hidden traction mode not visible publicly
+
+--------------------------------------------------
+RETURN REPORT
+--------------------------------------------------
+
+- files changed
+- whether shared component used
+- placement confirmation
+- metrics source confirmed
+- traction metrics feasibility notes
+- future recommended activation thresholds
+  (ex: 100 businesses / 10k visits / 1k clicks etc.)
+
+--- END ---

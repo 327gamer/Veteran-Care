@@ -10822,6 +10822,22 @@ export async function registerRoutes(
     });
   });
 
+  // ── HIDDEN traction stats — internal-only for now (Phase: prep). When the
+  // founder flips the switch, the same shape can be served unauthenticated as
+  // /api/public-traction-stats and rendered by the hidden TractionMetrics
+  // component on the homepage. See replit.md "Traction metrics" section for
+  // activation thresholds.
+  app.get("/api/admin/traction-stats", requireAdmin, async (_req, res) => {
+    try {
+      const { getTractionStats } = await import("./traction-stats");
+      const stats = await getTractionStats();
+      res.json(stats);
+    } catch (err) {
+      console.error("[traction-stats] failed:", err);
+      res.status(500).json({ error: "traction-stats failed", detail: (err as Error).message });
+    }
+  });
+
   app.get("/api/admin/exec-summary", requireAdmin, async (req, res) => {
     try {
       const now = new Date();

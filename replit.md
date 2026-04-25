@@ -35,6 +35,49 @@
 4. Validation results (PASS/FAIL with evidence)
 5. Manual steps remaining
 
+## Homepage Live Metrics + Hidden Traction System (LANDED 2026-04-25)
+
+### Shared Live Metrics block
+- Component: `client/src/components/live-metrics.tsx`
+- Single source for the public-facing inventory tiles (resources, cities,
+  states, categories, AI Navigator). Pulls from `/api/public-stats` via
+  `usePublicStats`.
+- Mounted on:
+  - `client/src/pages/about.tsx` (original location)
+  - `client/src/pages/home.tsx` directly under the
+    "Veteran-Owned Businesses" section.
+- Props (`eyebrow`, `headline`, `subheadline`, `footnote`, `className`)
+  default to the founder-approved wording so both pages stay in lock-step.
+
+### Hidden traction-metrics system (Phase: PREP — DO NOT SHOW PUBLICLY)
+The second metrics block planned for the homepage *after* internal
+activation thresholds is wired end-to-end but NOT mounted anywhere.
+
+- Backend aggregator: `server/traction-stats.ts`
+  - Reuses existing tables only (no new schema):
+    `page_views`, `lead_events`, `ai_usage_log`, `resource_clicks`,
+    `partner_organizations`, `resources`.
+  - Each source reports `enabled:false` if its table is absent so the
+    future UI can render "—" instead of a misleading zero.
+- Admin endpoint (gated by `requireAdmin` / `x-admin-key`):
+  `GET /api/admin/traction-stats` (server/routes.ts ~line 10833)
+- Frontend placeholder (NOT IMPORTED ANYWHERE):
+  `client/src/components/traction-metrics.tsx`
+
+**Activation thresholds (founder must approve before flipping):**
+1. 100+ trusted partners listed
+2. 10,000+ visits / 30d
+3. 1,000+ resource_clicks / 30d
+4. 50+ leads submitted total
+
+**To activate later:**
+1. Add a public passthrough route `/api/public-traction-stats` that calls
+   `getTractionStats()` without `requireAdmin`.
+2. Switch the fetch URL in `traction-metrics.tsx` from the admin path to
+   the public one.
+3. Mount `<TractionMetrics />` on `home.tsx` directly under
+   `<LiveMetrics />`.
+
 ## Ambassador Slug Privacy (PERMANENT — LANDED 2026-04-25)
 
 Ambassador-facing surfaces (ambassador dashboard, admin link kits, copy
