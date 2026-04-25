@@ -4548,6 +4548,193 @@ export async function registerRoutes(
     }
   });
 
+  // === HOUSE-DEFAULT vs AMBASSADOR SOURCE-MIX REPORT ===
+  // Reporting only — no attribution / commission / Stripe behaviour change.
+  // Slices sessions, partner applications, Stripe-paid conversions, and
+  // revenue by whether the conversion came from the house/organic default
+  // (Colin) vs a real ambassador share. Joins partner_applications.session_id
+  // → user_attribution_sessions.session_id when available, else falls back
+  // to the canonical UTM signature (utm_source=house & utm_medium=direct &
+  // utm_campaign=organic_default & utm_content=colin_slaven).
+  app.get("/api/admin/source-mix", requireAdmin, async (req, res) => {
+    const { date_from, date_to, source, ambassador } = req.query as Record<string, string | undefined>;
+    const ambCode = ambassador ? sanitizeCode(ambassador) : null;
+
+    // SQL fragment that returns true when a partner_applications row is
+    // house-default (either via joined session flag, or via the canonical
+    // UTM signature on the application row itself).
+    const houseExpr = `(COALESCE(s.is_house_default, false) = true
+      OR (pa.utm_source = 'house' AND pa.utm_medium = 'direct'
+          AND pa.utm_campaign = 'organic_default' AND pa.utm_content = 'colin_slaven'))`;
+
+    const dateParams: any[] = [];
+    let dateSqlSess = "";
+    let dateSqlApp = "";
+    let dateSqlAttr = "";
+    let pIdx = 1;
+    if (date_from) {
+      dateSqlSess += ` AND s.created_at >= $${pIdx}`;
+      dateSqlApp += ` AND pa.created_at >= $${pIdx}`;
+      dateSqlAttr += ` AND patr.created_at >= $${pIdx}`;
+      dateParams.push(date_from);
+      pIdx++;
+    }
+    if (date_to) {
+      dateSqlSess += ` AND s.created_at < ($${pIdx}::date + interval '1 day')`;
+      dateSqlApp += ` AND pa.created_at < ($${pIdx}::date + interval '1 day')`;
+      dateSqlAttr += ` AND patr.created_at < ($${pIdx}::date + interval '1 day')`;
+      dateParams.push(date_to);
+      pIdx++;
+    }
+
+    try {
+      // 1) SESSIONS — direct from user_attribution_sessions
+      const sessionRows = await pgQuery(`
+        SELECT
+          COUNT(*) FILTER (WHERE s.is_house_default = true)::int AS house_sessions,
+          COUNT(*) FILTER (WHERE s.is_house_default = false AND s.ambassador_id IS NOT NULL)::int AS ambassador_sessions,
+          COUNT(*) FILTER (WHERE s.is_house_default = false AND s.ambassador_id IS NULL)::int AS unattributed_sessions,
+          COUNT(*)::int AS total_sessions
+        FROM user_attribution_sessions s
+        WHERE 1=1 ${dateSqlSess}
+      `, dateParams);
+      const sessions = sessionRows[0] || { house_sessions: 0, ambassador_sessions: 0, unattributed_sessions: 0, total_sessions: 0 };
+
+      // 2) PARTNER APPLICATIONS — joined to sessions for is_house_default
+      const appRows = await pgQuery(`
+        SELECT
+          COUNT(*) FILTER (WHERE ${houseExpr})::int AS house_apps,
+          COUNT(*) FILTER (WHERE NOT ${houseExpr} AND pa.ambassador_id IS NOT NULL)::int AS ambassador_apps,
+          COUNT(*) FILTER (WHERE NOT ${houseExpr} AND pa.ambassador_id IS NULL)::int AS unattributed_apps,
+          COUNT(*)::int AS total_apps
+        FROM partner_applications pa
+        LEFT JOIN user_attribution_sessions s ON s.session_id = pa.session_id
+        WHERE 1=1 ${dateSqlApp}
+      `, dateParams);
+      const partnerApps = appRows[0] || { house_apps: 0, ambassador_apps: 0, unattributed_apps: 0, total_apps: 0 };
+
+      // 3) STRIPE — partner_attribution rows are written ONLY on paid
+      //    checkout_completed, so each row counts as one conversion.
+      const stripeRows = await pgQuery(`
+        SELECT
+          COUNT(*) FILTER (WHERE ${houseExpr})::int AS house_conversions,
+          COUNT(*) FILTER (WHERE NOT ${houseExpr} AND patr.ambassador_id IS NOT NULL)::int AS ambassador_conversions,
+          COUNT(*) FILTER (WHERE NOT ${houseExpr} AND patr.ambassador_id IS NULL)::int AS unattributed_conversions,
+          COALESCE(SUM(CASE WHEN ${houseExpr} THEN patr.revenue_amount ELSE 0 END), 0)::numeric AS house_revenue,
+          COALESCE(SUM(CASE WHEN NOT ${houseExpr} AND patr.ambassador_id IS NOT NULL THEN patr.revenue_amount ELSE 0 END), 0)::numeric AS ambassador_revenue,
+          COALESCE(SUM(CASE WHEN NOT ${houseExpr} AND patr.ambassador_id IS NULL THEN patr.revenue_amount ELSE 0 END), 0)::numeric AS unattributed_revenue,
+          COALESCE(SUM(patr.revenue_amount), 0)::numeric AS total_revenue
+        FROM partner_attribution patr
+        LEFT JOIN partner_applications pa ON pa.id = patr.application_id
+        LEFT JOIN user_attribution_sessions s ON s.session_id = pa.session_id
+        WHERE 1=1 ${dateSqlAttr}
+      `, dateParams);
+      const stripe = stripeRows[0] || { house_conversions: 0, ambassador_conversions: 0, unattributed_conversions: 0, house_revenue: "0", ambassador_revenue: "0", unattributed_revenue: "0", total_revenue: "0" };
+
+      // 4) PER-AMBASSADOR breakdown.
+      // Colin's row has both house_sessions and share_sessions; everyone
+      // else has share_sessions only (their is_house_default is always false).
+      const perAmbParams = [...dateParams];
+      let perAmbDateSess = dateSqlSess.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n)}`);
+      let perAmbDateApp = dateSqlApp.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + dateParams.length}`);
+      let perAmbDateAttr = dateSqlAttr.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n) + dateParams.length * 2}`);
+      perAmbParams.push(...dateParams, ...dateParams);
+      let ambFilterSql = "";
+      if (ambCode) {
+        const ambIdx = perAmbParams.length + 1;
+        ambFilterSql = ` WHERE a.code = $${ambIdx}`;
+        perAmbParams.push(ambCode);
+      }
+
+      const byAmbassador = await pgQuery(`
+        SELECT
+          a.code AS ambassador_code,
+          a.display_name AS ambassador_name,
+          COALESCE(ses.house_sessions, 0)::int AS house_sessions,
+          COALESCE(ses.share_sessions, 0)::int AS share_sessions,
+          COALESCE(app.house_apps, 0)::int AS house_apps,
+          COALESCE(app.share_apps, 0)::int AS share_apps,
+          COALESCE(rev.house_conversions, 0)::int AS house_conversions,
+          COALESCE(rev.share_conversions, 0)::int AS share_conversions,
+          COALESCE(rev.house_revenue, 0)::numeric AS house_revenue,
+          COALESCE(rev.share_revenue, 0)::numeric AS share_revenue
+        FROM ambassadors a
+        LEFT JOIN (
+          SELECT s.ambassador_id,
+            COUNT(*) FILTER (WHERE s.is_house_default = true)::int AS house_sessions,
+            COUNT(*) FILTER (WHERE s.is_house_default = false)::int AS share_sessions
+          FROM user_attribution_sessions s
+          WHERE s.ambassador_id IS NOT NULL ${perAmbDateSess}
+          GROUP BY s.ambassador_id
+        ) ses ON ses.ambassador_id = a.id
+        LEFT JOIN (
+          SELECT pa.ambassador_id,
+            COUNT(*) FILTER (WHERE ${houseExpr})::int AS house_apps,
+            COUNT(*) FILTER (WHERE NOT ${houseExpr})::int AS share_apps
+          FROM partner_applications pa
+          LEFT JOIN user_attribution_sessions s ON s.session_id = pa.session_id
+          WHERE pa.ambassador_id IS NOT NULL ${perAmbDateApp}
+          GROUP BY pa.ambassador_id
+        ) app ON app.ambassador_id = a.id
+        LEFT JOIN (
+          SELECT patr.ambassador_id,
+            COUNT(*) FILTER (WHERE ${houseExpr})::int AS house_conversions,
+            COUNT(*) FILTER (WHERE NOT ${houseExpr})::int AS share_conversions,
+            COALESCE(SUM(CASE WHEN ${houseExpr} THEN patr.revenue_amount ELSE 0 END), 0)::numeric AS house_revenue,
+            COALESCE(SUM(CASE WHEN NOT ${houseExpr} THEN patr.revenue_amount ELSE 0 END), 0)::numeric AS share_revenue
+          FROM partner_attribution patr
+          LEFT JOIN partner_applications pa ON pa.id = patr.application_id
+          LEFT JOIN user_attribution_sessions s ON s.session_id = pa.session_id
+          WHERE patr.ambassador_id IS NOT NULL ${perAmbDateAttr}
+          GROUP BY patr.ambassador_id
+        ) rev ON rev.ambassador_id = a.id
+        ${ambFilterSql}
+        ORDER BY (COALESCE(ses.house_sessions, 0) + COALESCE(ses.share_sessions, 0)) DESC,
+                 a.display_name ASC
+      `, perAmbParams);
+
+      const ambassadorList = await pgQuery(`SELECT code, display_name FROM ambassadors ORDER BY display_name ASC`);
+
+      return res.json({
+        sessions,
+        partnerApps,
+        stripe: {
+          house_conversions: stripe.house_conversions,
+          ambassador_conversions: stripe.ambassador_conversions,
+          unattributed_conversions: stripe.unattributed_conversions,
+          house_revenue: parseFloat(stripe.house_revenue || "0"),
+          ambassador_revenue: parseFloat(stripe.ambassador_revenue || "0"),
+          unattributed_revenue: parseFloat(stripe.unattributed_revenue || "0"),
+          total_revenue: parseFloat(stripe.total_revenue || "0"),
+        },
+        byAmbassador: byAmbassador.map((r: any) => ({
+          ambassador_code: r.ambassador_code,
+          ambassador_name: r.ambassador_name,
+          house_sessions: r.house_sessions,
+          share_sessions: r.share_sessions,
+          house_apps: r.house_apps,
+          share_apps: r.share_apps,
+          house_conversions: r.house_conversions,
+          share_conversions: r.share_conversions,
+          house_revenue: parseFloat(r.house_revenue || "0"),
+          share_revenue: parseFloat(r.share_revenue || "0"),
+        })),
+        filterOptions: {
+          ambassadors: ambassadorList.map((a: any) => ({ code: a.code, name: a.display_name })),
+        },
+        appliedFilters: {
+          date_from: date_from || null,
+          date_to: date_to || null,
+          source: source || "all",
+          ambassador: ambCode,
+        },
+      });
+    } catch (err: any) {
+      console.log("[source-mix] error:", err.message);
+      return res.status(500).json({ error: "Failed to load source mix data", detail: err.message });
+    }
+  });
+
   app.get("/api/admin/commissions", async (req, res) => {
     const adminKey = req.headers["x-admin-key"];
     if (adminKey !== process.env.ADMIN_KEY) return res.status(401).json({ error: "Unauthorized" });
