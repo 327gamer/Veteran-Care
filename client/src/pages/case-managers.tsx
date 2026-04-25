@@ -118,7 +118,7 @@ export default function CaseManagers() {
                 <MapPin className="mr-2 h-4 w-4" /> Open Resource Browser <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/contact">
+            <Link href="/onboarding?step=2">
               <Button
                 size="lg"
                 variant="outline"
