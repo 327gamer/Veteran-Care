@@ -199,17 +199,27 @@ A state is only COMPLETE — and only then may the next state start — when ALL
 
 **Florida is the benchmark model** (867 / 168 cities / 67 of 67 counties / 17 of 17 cats ≥30 floor / Phase 6 Elite Closeout).
 
-Phase ladder per state (minimum 5, more for larger states):
-1. Phase 0 + Wave 1 — institutional foundation + initial metro spine
-2. **Phase 2 — Major Metro Depth Pass** (top 6-8 metros each lifted to ≥25-30 rows)
-3. Phase 3 — Secondary cities + statewide programs + rural coverage
-4. Phase 4 — Gold Standard / weak-cat lifts + geographic gap fill
-5. Phase 5 — Saturation (county-by-county, deep depth, all weak cats ≥30)
-6. Phase 6 — Elite Closeout (final QA, founder sign-off, fabrication audit) — BENCHMARK STATUS
+### FOUNDER RULE — STRICT 6-PHASE FLORIDA SOP (LOCKED 2026-04-26, NATIONAL)
 
-Larger states (CA, TX, FL) may need Phase 7+ specialized completion waves.
+After TX Phase 3 consumed disproportionate time chasing the long-tail of difficult county CMSes, the founder consolidated the rollout ladder to a **strict national 6-phase model** with hard time + skip discipline. Replaces every prior per-state ladder going forward (AL/CA/TX historical labels stand as-is).
 
-**Current state of the rule's application:** Alabama is the first state to live under this rule starting at Phase 2. California rollout (queued next) does not begin until AL hits Phase 6 Elite Closeout with founder sign-off.
+**Universal 6 phases (every state, no exceptions, no Phase 7+):**
+1. Phase 1 — State backbone (ADVA-equivalent + state vet homes + statewide programs)
+2. Phase 2 — Healthcare (VAMCs + CBOCs + Vet Centers + state hospital systems)
+3. Phase 3 — County backbone (county VSOs, top-50 priority counties; skip blocked CMSes — do not chase)
+4. Phase 4 — Major metros (top 5-8 metros, deep depth fill)
+5. Phase 5 — Secondary metros + weak categories (lift remaining cats to ≥30 floor; round out smaller cities)
+6. Phase 6 — Audit / patch / closeout (final QA, founder sign-off, fabrication audit, skip-queue retry only if cheap)
+
+**Non-negotiable rules:**
+- **Max 20 minutes per phase.** If exceeded: skip blockers, queue unresolved rows, MOVE ON.
+- **90-95% practical coverage beats 99.9% perfection.** Don't rabbit-hole on 1-2 rows.
+- **Difficult / blocked / weird-CMS county pages: skip and continue.** No multi-script discovery campaigns.
+- **No Phase 7+.** If a state genuinely needs more, queue it for a later founder-approved maintenance pass — do not extend the active rollout.
+
+**Priority order (strict):** speed > coverage > good quality > perfect quality (later, in maintenance).
+
+**Applies to:** TX Phase 4 onward, and every future state rollout. Historical AL/CA Phase labels (different ladder) remain as written.
 
 ### FOUNDER RULE — TIME / COST CONTROL: FAST COMPLETION MODE (LOCKED 2026-04-25)
 
@@ -234,7 +244,7 @@ Larger states (CA, TX, FL) may need Phase 7+ specialized completion waves.
 
 **Deep forensic mode** (parity scripts, multi-round architect audits, exhaustive web verification per row) is permitted **ONLY when the founder explicitly requests it.**
 
-**Applies to:** Alabama Phase 6, California, and all future state rollouts. Phase budget per state: target ≤20 min per phase / ≤2 hours total per state for the standard 5-6 phase ladder. If a phase blows past 20 min, snap to fast mode and ship.
+**Applies to:** Alabama Phase 6, California, and all future state rollouts. Phase budget per state: target ≤20 min per phase / ≤2 hours total per state for the standard 6-phase ladder (see "STRICT 6-PHASE FLORIDA SOP" above). If a phase blows past 20 min, snap to fast mode and ship.
 
 ### Architecture Model
 - **ONE ENGINE** — single codebase, single backend, single admin, single AI/Routing/Billing/Attribution
@@ -275,6 +285,8 @@ Use this template for every new state. Each phase produces a committed script un
 - PostgREST `.in()` queries must be chunked by ≤150 IDs (URL-length limit). Legacy `qc-resources.ts` uses 150; the newer `qa-state.ts` uses 100 (more conservative, identical behavior). Pick a value ≤150 for any new tool. Symptom of overrunning the limit: false 100% cat-mismatch reports.
 
 ### State Rollout Engine v2 — CODIFIED 2026-04-24 (SUPERSEDES ad-hoc seed scripts)
+
+> **2026-04-26 amendment:** the **Phase ladder labels** in this section (including Phase 7+ "Specialized Completion Waves") are SUPERSEDED by the **STRICT 6-PHASE FLORIDA SOP** above. The **engine code** (`scripts/lib/rollout-engine.ts`, `scripts/qa-state.ts`, etc.) is still canonical and required — only the phase labels were repealed. Future state rollouts use the universal 6-phase ladder; no Phase 7+.
 
 After SC, NC, and Georgia (3 phases each), the rollout engine is now codified.
 **All future state seeds MUST use this engine — do not hand-roll dedupe / taxonomy / junction logic.**
