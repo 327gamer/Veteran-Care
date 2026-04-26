@@ -1,0 +1,303 @@
+REPLIT EXECUTION DIRECTIVE — VETERANCARE STATE RESOURCE BUILD
+
+GOAL:
+Build a clean, useful, veteran-first resource database for [STATE].
+
+Use the proven Florida rollout model, the existing database, and the existing production structure.
+
+DO NOT create new systems, dashboards, scripts, agents, sessions, schemas, architecture, workflows, side projects, or experimental processes unless explicitly instructed.
+
+DO NOT expand scope.
+
+Use the current platform exactly as built and execute within the established rollout system.
+
+==================================================
+PRIMARY OBJECTIVE
+==================================================
+
+Find and add high-quality resource leads veterans can realistically use in [STATE].
+
+This platform is veteran-first, but not veteran-only.
+
+That means include:
+
+1. Veteran-specific resources
+2. Mainstream community resources veterans commonly use
+
+If a veteran can realistically benefit from the service, it belongs in consideration.
+
+==================================================
+RESOURCE TYPES TO INCLUDE
+==================================================
+
+- VA hospitals
+- VA clinics
+- Vet Centers
+- VBA / benefits offices
+- state veteran departments
+- county veteran offices
+- city veteran offices
+- food banks
+- food pantries
+- shelters
+- rapid rehousing
+- housing authorities
+- rental assistance
+- homeless prevention
+- workforce centers
+- American Job Centers
+- staffing agencies
+- legal aid
+- veterans legal clinics
+- transportation assistance
+- transit discount programs
+- hospitals
+- urgent care
+- FQHC clinics
+- county health systems
+- mental health providers
+- crisis lines
+- suicide prevention
+- addiction recovery
+- rehab centers
+- disability services
+- caregiver support
+- family support centers
+- youth/family counseling
+- financial counseling
+- debt help
+- tax help
+- VITA sites
+- insurance counseling
+- HICAP / SHIP programs
+- colleges
+- universities
+- trade schools
+- apprenticeship programs
+- senior services
+- aging agencies
+- hospice
+- palliative care
+- end-of-life planning
+- churches
+- faith outreach
+- Salvation Army
+- Catholic Charities
+- community nonprofits
+- United Way
+- Goodwill
+- Red Cross
+- county DSS / DHHS
+- city agencies
+- county agencies
+- state agencies
+- trusted service leads when relevant
+
+==================================================
+QUALITY RULES
+==================================================
+
+Only add resources with enough reliable information to be useful.
+
+Each row should include whenever available:
+
+- organization name
+- category
+- city
+- county
+- state
+- phone
+- website
+- address
+- short description
+- veteran relevance
+- source URL
+
+Prefer official or highly credible sources.
+
+==================================================
+SKIP IMMEDIATELY IF:
+==================================================
+
+- no clear service purpose
+- no reliable source
+- outdated or suspicious information
+- duplicate data already in system
+- unclear location
+- broken source
+- verification friction
+- progress stalls
+- low-value one-off source consuming time
+
+Skip and continue.
+
+==================================================
+EXECUTION RULES
+==================================================
+
+- If progress stalls on any source, skip immediately and continue.
+- If a county page is difficult, skip and continue.
+- If a website is blocked, skip and continue.
+- If one row causes friction, skip and continue.
+- Prefer high-yield sources that can generate multiple useful rows quickly.
+- Prefer statewide directories, county directories, hospital systems, food-bank networks, workforce systems, university systems, and major nonprofit networks.
+- Do not chase perfection.
+- Do not repeatedly debug the same issue.
+- Do not reopen previously completed phases unless specifically instructed.
+- Do not ask permission between phases while the state is active.
+- Do not generate long explanations.
+- Do not create reports except the short phase report below.
+- Do not drift into unrelated tasks.
+- Do not invent problems to solve.
+- Follow the Florida benchmark for speed, simplicity, momentum, and practical coverage.
+- Prioritize clean data, broad coverage, and efficient execution.
+
+==================================================
+STATE BUILD ORDER — MANDATORY 6 PHASE MODEL
+==================================================
+
+PHASE 1 — STATE FOUNDATION
+
+Build statewide backbone:
+
+- state veteran agencies
+- state departments
+- commissions
+- benefits programs
+- statewide hotlines
+- statewide nonprofits
+- statewide support programs
+- statewide mainstream support resources
+- anchor agencies
+
+PHASE 2 — HEALTHCARE FOUNDATION
+
+Build healthcare depth fast:
+
+- VA hospitals
+- VA clinics
+- Vet Centers
+- hospitals
+- FQHC clinics
+- urgent care
+- county health systems
+- mental health systems
+- crisis providers
+- recovery providers
+- healthcare nonprofits
+
+PHASE 3 — COUNTY / BENEFITS BACKBONE
+
+Build practical county coverage:
+
+- county veteran offices
+- county benefits offices
+- county DSS / assistance
+- county workforce offices
+- county health offices
+- county support agencies
+
+Only easy / useful rows.
+
+If county pages are messy, blocked, outdated, or hard to verify:
+skip and continue.
+
+PHASE 4 — MAJOR CITY SATURATION
+
+Hit largest metros first:
+
+[INSERT MAJOR CITIES]
+
+Examples:
+Dallas / Houston / San Antonio / Austin / El Paso
+
+Load cities heavily with:
+
+- housing
+- food
+- employment
+- legal
+- healthcare
+- transportation
+- education
+- family support
+- financial help
+- disability support
+- crisis help
+- recovery
+- senior services
+- community support
+- benefits help
+- trusted services
+
+Both veteran-specific and mainstream resources.
+
+PHASE 5 — SECONDARY CITIES + CATEGORY LIFT
+
+Hit secondary cities:
+
+[INSERT SECONDARY CITIES]
+
+Examples:
+Corpus Christi / Lubbock / Waco / Beaumont / Amarillo / Tyler / Midland / Brownsville / College Station etc.
+
+Strengthen weak categories statewide.
+
+PHASE 6 — AUDIT / PATCH / CLOSEOUT
+
+Quick cleanup only:
+
+- obvious duplicates
+- obvious broken rows
+- easy missing metros
+- clear category imbalances
+- easy missing statewide anchors
+- quick data polish
+
+Then STOP.
+
+State complete.
+
+==================================================
+COMPLETION STANDARD
+==================================================
+
+The state is complete when we have practical statewide coverage, not perfection.
+
+Meaning:
+
+- strong statewide coverage
+- strong major metro coverage
+- useful county coverage where available
+- balanced categories
+- clean usable rows
+- minimal duplicates
+- real resources veterans can use now
+
+==================================================
+FINAL RULE
+==================================================
+
+Execute the task.
+
+Do not redesign the mission.
+
+Do not overthink the mission.
+
+Do not slow the mission.
+
+Duplicate what worked in Florida.
+
+Use this same exact SOP for every future state.
+
+==================================================
+REPORT ONLY THIS AFTER EACH PHASE
+==================================================
+
+- Phase completed:
+- Rows added:
+- Total rows:
+- Cities covered:
+- Counties covered:
+- Blockers skipped:
+- Next phase started:
