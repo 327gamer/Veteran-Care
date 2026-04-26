@@ -1,5 +1,12 @@
 import { supabase } from "../supabase";
 import { aiConfig } from "./config";
+import {
+  detectNamedPartner,
+  detectRegionalAlias,
+  isTrustedPartnerTitle,
+  NAMED_PARTNERS,
+  type NamedPartner,
+} from "./named-partners";
 
 interface MatchedResource {
   id: string;
@@ -35,6 +42,34 @@ export async function matchResources(
   userCity?: string,
   limit: number = 8
 ): Promise<MatchedResource[]> {
+  // QA-2 (2026-04-26): Regional-alias upgrade. If the user references a metro
+  // by nickname (e.g. "tri-county", "lowcountry") and we have no city, treat
+  // the canonical metro hub as the effective city so getLocationScore tilts
+  // the ranking toward partners in that region.
+  const aliasCity = detectRegionalAlias(userMessage);
+  if (aliasCity && !userCity) userCity = aliasCity;
+
+  // QA-2: Named-partner pre-fetch. When the user names a verified partner
+  // directly (e.g. "Tri-County Veterans Support Network"), pull the partner's
+  // rows by title substring and prepend them to the merged result list with a
+  // very high score so they always surface first regardless of category
+  // routing or text-search recall.
+  const namedPartner = detectNamedPartner(userMessage);
+  let partnerRows: MatchedResource[] = [];
+  if (namedPartner) {
+    partnerRows = await searchByTitleSubstring(namedPartner.titleSubstring);
+  }
+
+  // QA-2: Trusted-partner state-scoped pre-fetch. The category-bucket query
+  // is capped at 25 rows with no ORDER BY, so a trusted partner can be
+  // randomly excluded from scoring entirely on a busy category in a
+  // well-populated state. This pre-fetch guarantees every trusted partner in
+  // the user's state enters the scoring pool, where the +20 trusted boost +
+  // proximity boost will float them to the top of relevant queries.
+  const trustedStateRows = userState
+    ? await searchTrustedPartnersInState(userState)
+    : [];
+
   const detectedCategories = detectCategories(userMessage);
   // Strip the user's known city from search terms — it's already encoded in
   // the location filter; leaving it in dilutes the text search by matching
@@ -87,6 +122,7 @@ export async function matchResources(
   }
 
   const allBatches = await Promise.all(tasks);
+  if (trustedStateRows.length > 0) allBatches.push(trustedStateRows);
 
   // Merge by id, keeping the best instance and computing a relevance score.
   // Pass 5: primary-category boost. Records whose joined category_slug
@@ -116,6 +152,16 @@ export async function matchResources(
   const merged = Array.from(seen.values())
     .sort((a, b) => b.score - a.score)
     .map(x => x.r);
+
+  // QA-2: Prepend named-partner rows to the head of the result list,
+  // de-duplicating by id against the merged matches. This is the deterministic
+  // recall guarantee — "Tri-County Veterans Support Network" must surface even
+  // when the category/text passes wouldn't have ranked it #1.
+  if (partnerRows.length > 0) {
+    const seenIds = new Set(partnerRows.map(p => p.id));
+    const tail = merged.filter(m => !seenIds.has(m.id));
+    return [...partnerRows, ...tail].slice(0, limit);
+  }
 
   // Last-resort fallback: nothing matched at all → broad text search in user state
   if (merged.length === 0 && userState && rawTerms.length > 0) {
@@ -156,6 +202,13 @@ function scoreResource(
   // taxonomy-rich, well-curated records (often specialized programs) and
   // should win ties against generic untagged office records.
   if (sub) score += 2;
+
+  // QA-2 (2026-04-26): Verified-trusted-partner boost. Resources on the
+  // founder-curated partner allowlist (server/ai/named-partners.ts) get a
+  // +20 boost — large enough to outrank a perfect title hit on a generic
+  // record (10) plus same-city (5) plus subcategory bonus (2) so trusted
+  // local partners win category queries in their region.
+  if (isTrustedPartnerTitle(r.title)) score += 20;
 
   // Small baseline so category-bucket records still rank if they had no term hits
   if (score === 0) score = 1;
@@ -355,6 +408,81 @@ async function searchByCategory(
     const aScore = getLocationScore(a.city, a.state, userCity, userState);
     const bScore = getLocationScore(b.city, b.state, userCity, userState);
     return aScore - bScore;
+  });
+}
+
+/**
+ * QA-2 (2026-04-26): Title-substring lookup used by the named-partner
+ * pre-fetch path. Always runs nationally (no state filter) because the user
+ * has named the entity directly — geography is irrelevant to recall when
+ * the entity is uniquely named.
+ */
+/**
+ * QA-2 (2026-04-26): State-scoped trusted-partner pre-fetch. Pulls every
+ * resource row in the user's state whose title matches any verified partner
+ * substring on the founder allowlist. Used as a recall guarantee so trusted
+ * partners are never silently dropped by the 25-row category-bucket cap.
+ */
+async function searchTrustedPartnersInState(userState: string): Promise<MatchedResource[]> {
+  if (NAMED_PARTNERS.length === 0) return [];
+  const orClauses = NAMED_PARTNERS
+    .map(p => `title.ilike.%${p.titleSubstring}%`)
+    .join(",");
+  const { data, error } = await supabase
+    .from("resources")
+    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
+    .eq("status", "approved")
+    .eq("state", userState)
+    .or(orClauses)
+    .limit(20);
+  if (error || !data) return [];
+  return (data as any[]).map(r => {
+    const slugs = Array.isArray(r.resource_categories)
+      ? r.resource_categories.map((rc: any) => rc?.categories?.slug).filter(Boolean)
+      : [];
+    return {
+      id: r.id,
+      title: r.title,
+      short_description: r.short_description,
+      phone: r.phone,
+      website_url: r.website_url,
+      city: r.city,
+      state: r.state,
+      eligibility: r.eligibility,
+      subcategory: r.subcategory,
+      category_slug: slugs[0] || null,
+      category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
+      category_slugs: slugs,
+    };
+  });
+}
+
+async function searchByTitleSubstring(titleSubstring: string): Promise<MatchedResource[]> {
+  const { data, error } = await supabase
+    .from("resources")
+    .select("id, title, short_description, phone, website_url, city, state, eligibility, subcategory, resource_categories(categories(slug, name))")
+    .eq("status", "approved")
+    .ilike("title", `%${titleSubstring}%`)
+    .limit(10);
+  if (error || !data) return [];
+  return (data as any[]).map(r => {
+    const slugs = Array.isArray(r.resource_categories)
+      ? r.resource_categories.map((rc: any) => rc?.categories?.slug).filter(Boolean)
+      : [];
+    return {
+      id: r.id,
+      title: r.title,
+      short_description: r.short_description,
+      phone: r.phone,
+      website_url: r.website_url,
+      city: r.city,
+      state: r.state,
+      eligibility: r.eligibility,
+      subcategory: r.subcategory,
+      category_slug: slugs[0] || null,
+      category_name: Array.isArray(r.resource_categories) && r.resource_categories[0]?.categories?.name || null,
+      category_slugs: slugs,
+    };
   });
 }
 

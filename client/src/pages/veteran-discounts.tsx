@@ -58,6 +58,7 @@ import {
 import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
 import { useGeolocation } from "@/lib/use-geolocation";
+import { EnableLocationPrompt } from "@/components/enable-location-prompt";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
 import {
   AdSlot,
@@ -586,6 +587,12 @@ export default function VeteranDiscounts() {
           </button>
         </div>
       )}
+
+      {/* QA-1 (2026-04-26): Enable-Location prompt mirrors Resources / Veteran
+          Guide pattern. Mounted directly under the search / Near Me / locations
+          control cluster. Component owns auto-hide-on-permission-grant,
+          manual-location detection, and dismiss behavior. */}
+      <EnableLocationPrompt variant="inline" />
 
       {!searchQuery.trim() && (
         <>

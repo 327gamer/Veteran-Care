@@ -17,6 +17,7 @@ import {
   isLocationSensitive,
   locationClarificationResponse,
 } from "./location-resolver";
+import { detectNamedPartner } from "./named-partners";
 
 interface ChatRequest {
   messages: Array<{ role: string; content: string }>;
@@ -125,8 +126,20 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   // has no location, then to undefined (which triggers the clarification
   // prompt). Never returns a hardcoded state — national-expansion safe.
   const resolvedLoc = resolveLocation(userState, userCity, lastUserMsg.content);
-  const effectiveState = resolvedLoc.state;
-  const effectiveCity = resolvedLoc.city;
+  let effectiveState = resolvedLoc.state;
+  let effectiveCity = resolvedLoc.city;
+
+  // QA-2 (2026-04-26): Named-partner backfill. When the user names a verified
+  // partner directly (e.g. "Tri-County Veterans Support Network"), use the
+  // partner's canonical city/state as the effective location. This prevents
+  // the location-clarification branch below from re-asking for city/state when
+  // the entity itself uniquely identifies the location, and lets
+  // matchResources surface the partner's rows on the first turn.
+  const namedPartner = detectNamedPartner(lastUserMsg.content);
+  if (namedPartner) {
+    if (!effectiveState) effectiveState = namedPartner.canonicalState;
+    if (!effectiveCity) effectiveCity = namedPartner.canonicalCity;
+  }
 
   const detectedCats = detectCategories(lastUserMsg.content);
   const primaryDetectedCat = detectedCats[0] || null;
@@ -135,6 +148,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<void> {
   // resource but we have NO state (neither from the frontend nor from this
   // turn's message), ask for city/state instead of silently defaulting to a
   // pilot state. Crisis is handled earlier and never reaches this branch.
+  // QA-2 carve-out: a named-partner backfill above already supplied a state,
+  // so this branch is naturally skipped for partner-name queries.
   if (!effectiveState && isLocationSensitive(primaryDetectedCat)) {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
