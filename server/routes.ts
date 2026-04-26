@@ -3117,6 +3117,49 @@ export async function registerRoutes(
         WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
       };
 
+      // Detect "next state launching" dynamically — the state with the
+      // most recent resource activity is, by definition, the state currently
+      // being actively rolled out. Env override (NEXT_STATE_LAUNCHING) is
+      // honored ONLY when it pre-announces a not-yet-live state (no rows
+      // exist for it yet); otherwise we ignore the stale override and read
+      // the latest created_at row's state, which always reflects current work.
+      let nextStateLaunching = "";
+      const envOverride = (process.env.NEXT_STATE_LAUNCHING || "").trim();
+      if (envOverride) {
+        // Map override (name or code) to a state code
+        const overrideUpper = envOverride.toUpperCase();
+        let overrideCode = "";
+        if (overrideUpper.length === 2 && STATE_NAMES[overrideUpper]) {
+          overrideCode = overrideUpper;
+        } else {
+          for (const [code, name] of Object.entries(STATE_NAMES)) {
+            if (name.toUpperCase() === overrideUpper) {
+              overrideCode = code;
+              break;
+            }
+          }
+        }
+        // Honor override only if that state is NOT already live (pre-announce mode)
+        if (overrideCode && !liveStates.includes(overrideCode)) {
+          nextStateLaunching = STATE_NAMES[overrideCode] || envOverride;
+        }
+      }
+      if (!nextStateLaunching) {
+        try {
+          const { data: latestRow } = await supabaseAdmin
+            .from("resources")
+            .select("state")
+            .eq("status", "approved")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const latestCode = (latestRow?.state || "").toString().trim().toUpperCase();
+          nextStateLaunching = STATE_NAMES[latestCode] || "Texas";
+        } catch {
+          nextStateLaunching = "Texas";
+        }
+      }
+
       const payload = {
         totalResources: totalResources || 0,
         totalCities: citySet.size,
@@ -3124,7 +3167,7 @@ export async function registerRoutes(
         totalCategories: totalCategories || 0,
         liveStates,
         liveStateNames: liveStates.map((c) => ({ code: c, name: STATE_NAMES[c] || c })),
-        nextStateLaunching: process.env.NEXT_STATE_LAUNCHING || "Florida",
+        nextStateLaunching,
         coverageRegion: "Southeast United States",
         growthStatus: "Expanding Nationally",
         isEstimated: false,
