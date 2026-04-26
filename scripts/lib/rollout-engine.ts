@@ -163,14 +163,17 @@ export async function checkOneUrl(
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
-    // Try HEAD first — many sites reject HEAD; fall through to GET if 405/501.
+    // Try HEAD first — many sites reject HEAD or return spurious 404/403/410
+    // to HEAD while serving the actual page on GET (common pattern on
+    // Granicus/CivicPlus county-government sites). Fall through to GET on any
+    // 4xx/5xx so URL-liveness reflects what a real browser would see.
     let res = await fetch(url, {
       method: "HEAD",
       redirect: "follow",
       signal: ctl.signal,
       headers: { "User-Agent": "VeteranCare-RolloutEngine/1.0 (+url-liveness-gate)" },
     });
-    if (res.status === 405 || res.status === 501) {
+    if (res.status >= 400) {
       res = await fetch(url, {
         method: "GET",
         redirect: "follow",
