@@ -87,7 +87,7 @@ build the API yet.** Primary focus stays on:
 
 ### Activation gate
 Founder approval required, AND:
-- California rollout has reached at least Phase 5 minimum (310 rows / 111 cities / 17/17 cats / 11/11 QA PASS as of 2026-04-26)
+- California rollout has reached at least Phase 6 minimum (329 rows / 124 cities / 48 of 58 counties with CVSO coverage / 17/17 cats / 11/11 QA PASS as of 2026-04-26)
 - Trusted partner revenue motion is producing predictable MRR
 - At least one design-partner customer has pre-committed to paid usage
 
