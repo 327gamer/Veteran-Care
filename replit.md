@@ -87,7 +87,7 @@ build the API yet.** Primary focus stays on:
 
 ### Activation gate
 Founder approval required, AND:
-- California rollout has reached at least Phase 7 minimum (335 rows / 130 cities / 54 of 58 counties with CVSO coverage / 17/17 cats / 11/11 QA PASS as of 2026-04-26)
+- California rollout: founder REOPENED post-Phase 7 due to underbuild (335 vs FL 867). Statewide Saturation Rerun under "Veteran-First, Not Veteran-Only" community-wide model targeting 1,000 minimum / 1,500 preferred / 2,000 stretch. As of 2026-04-26: B1+B1B+B2+B3+B4+B5+B6+B7+B8+B9+B10+B11 all SHIPPED. **CA now 1,009 rows / 229 cities / 17/17 cats / QA PASS — 1,000-row floor CLEARED (+674 from 335 baseline this session).** Top cats: housing 177, healthcare 141, community-support 110, mental-health 77, employment 70, education 67, food-assistance 65, va-benefits 65, crisis-help 62. Weak cats remaining (below 30): transportation 4, insurance 10, substance-recovery 10, end-of-life-services 20, financial 25, legal 26 — candidates for an optional 1,500-row stretch push. See .local/ca-sat-b1-founder-report.md.
 - Trusted partner revenue motion is producing predictable MRR
 - At least one design-partner customer has pre-committed to paid usage
 

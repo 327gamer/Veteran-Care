@@ -1,0 +1,358 @@
+--- COPY TO REPLIT ---
+
+Founder correction:
+
+Do NOT close California.
+
+Current California count is far too low for a state of this size.
+
+California should not end near 350–400 resources when Florida has 867 and smaller states have 600–700+.
+
+This means the California rollout is too narrow.
+
+We need a full California statewide saturation rerun using the broader Veteran Care model.
+
+==================================================
+IMPORTANT MODEL REMINDER
+==================================================
+
+Veteran Care is:
+
+VETERAN-FIRST, NOT VETERAN-ONLY.
+
+Resources do NOT need to be veteran-exclusive.
+
+They must be useful to veterans, spouses, dependents, caregivers, military families, case managers, or people helping veterans.
+
+California must include community-wide resources across:
+
+- food banks
+- food pantries
+- shelters
+- housing authorities
+- rent assistance
+- homeless outreach
+- hospitals
+- clinics
+- FQHCs
+- mental health centers
+- addiction recovery centers
+- legal aid
+- probate / eviction / family law help
+- workforce centers
+- job training
+- community colleges
+- trade schools
+- transportation programs
+- county transit
+- paratransit
+- senior rides
+- financial counseling
+- tax help
+- insurance / HICAP / Medicare support
+- family support
+- caregiver support
+- end-of-life / hospice
+- funeral / burial / survivor support
+- crisis help
+- DV shelters
+- faith-based nonprofits
+- county programs
+- 211 networks
+- community action agencies
+- Salvation Army
+- YMCA
+- Goodwill
+- Catholic Charities
+- United Way
+- local nonprofits
+
+==================================================
+PROBLEM
+==================================================
+
+California appears to have been built mostly from:
+
+- CalVet
+- VA
+- County VSOs
+- Vet Centers
+- a few nonprofits
+
+That is not enough.
+
+California should realistically support:
+
+Minimum target:
+1,000+ verified rows
+
+Preferred benchmark:
+1,500+ verified rows
+
+Stretch:
+2,000+ if quality allows
+
+==================================================
+NEW TASK
+==================================================
+
+Proceed with:
+
+CALIFORNIA STATEWIDE SATURATION RERUN
+
+This is not Phase 8 closeout.
+
+This is a broad statewide resource expansion pass.
+
+Do not limit the pass to veteran-only resources.
+
+==================================================
+GEOGRAPHIC SCOPE
+==================================================
+
+Cover all major California regions:
+
+1. Los Angeles County
+2. San Diego County
+3. Orange County
+4. Inland Empire
+5. Bay Area
+6. Sacramento region
+7. Central Valley
+8. Central Coast
+9. North Coast
+10. Sierra / mountain counties
+11. Desert regions
+12. Military communities
+
+Major cities / metros must include:
+
+Los Angeles
+San Diego
+San Jose
+San Francisco
+Oakland
+Sacramento
+Fresno
+Long Beach
+Anaheim
+Santa Ana
+Riverside
+San Bernardino
+Bakersfield
+Stockton
+Modesto
+Oxnard
+Ventura
+Santa Barbara
+Santa Rosa
+Salinas
+Monterey
+Vallejo
+Fairfield
+Concord
+Hayward
+Berkeley
+Pasadena
+Glendale
+Burbank
+Torrance
+Compton
+Pomona
+Lancaster
+Palmdale
+Victorville
+Palm Springs
+Chico
+Redding
+Eureka
+Visalia
+Merced
+Madera
+Hanford
+Lemoore
+Yuba City
+Marysville
+El Centro
+Imperial
+Santa Maria
+San Luis Obispo
+Santa Cruz
+
+==================================================
+CATEGORY TARGETS
+==================================================
+
+For each major region, add strong coverage for:
+
+HOUSING:
+- shelters
+- housing authorities
+- homeless prevention
+- rent assistance
+- transitional housing
+- SSVF
+- Salvation Army
+- Catholic Charities
+- community housing nonprofits
+- county housing programs
+
+FOOD:
+- food banks
+- food pantries
+- CalFresh support
+- Meals on Wheels
+- soup kitchens
+- church food programs
+- county food assistance
+- community action agencies
+
+HEALTHCARE:
+- VA
+- hospitals
+- FQHCs
+- county health departments
+- clinics
+- urgent care
+- dental clinics
+- Medi-Cal assistance
+
+MENTAL HEALTH:
+- county mental health
+- crisis centers
+- counseling nonprofits
+- suicide prevention
+- Vet Centers
+- PTSD support
+
+SUBSTANCE RECOVERY:
+- rehab centers
+- county SUD programs
+- sober living support
+- detox / outpatient programs
+- veteran recovery when available
+
+LEGAL:
+- legal aid
+- eviction defense
+- family law
+- probate help
+- benefits appeals
+- public counsel
+- veterans legal clinics
+
+EMPLOYMENT:
+- workforce centers
+- America’s Job Centers of California
+- Goodwill
+- job training
+- apprenticeships
+- community colleges
+- trade schools
+
+TRANSPORTATION:
+- DAV rides
+- VA beneficiary travel
+- county transit
+- paratransit
+- reduced fare programs
+- senior/veteran ride programs
+
+FAMILY SUPPORT:
+- caregiver programs
+- spouse / dependent support
+- Blue Star Families
+- family counseling
+- child/family nonprofits
+
+FINANCIAL:
+- VITA tax help
+- credit counseling
+- emergency aid
+- community action
+- foreclosure prevention
+- debt counseling
+
+INSURANCE:
+- HICAP
+- Medicare counseling
+- CHAMPVA/TRICARE guidance
+- state insurance assistance
+
+END OF LIFE:
+- hospice
+- burial assistance
+- national cemeteries
+- survivor benefits
+- funeral aid
+- estate/probate support
+
+==================================================
+EXECUTION RULES
+==================================================
+
+Fast Mode still applies to bad rows and loops, but do NOT use Fast Mode as an excuse to underbuild California.
+
+Meaning:
+
+- If one row is messy, skip it.
+- But keep finding other good rows.
+- Do not stop at 20–40 rows.
+- Do not call California complete early.
+- Do not limit to official veteran-only anchors.
+
+==================================================
+TIME / COST DISCIPLINE
+==================================================
+
+Run this in controlled batches if needed:
+
+California Saturation Batch 1:
+Los Angeles + Orange + San Diego
+
+California Saturation Batch 2:
+Bay Area + Sacramento
+
+California Saturation Batch 3:
+Central Valley + Inland Empire
+
+California Saturation Batch 4:
+Central Coast + North Coast + rural counties
+
+Each batch should add meaningful volume.
+
+Expected:
+100–250 rows per batch if sources support it.
+
+==================================================
+QUALITY RULE
+==================================================
+
+Quality remains required:
+
+- verified real organizations
+- working URLs where possible
+- no fabrication
+- no wrong-state rows
+- no duplicates
+- skip uncertain sources
+- community-wide resources allowed
+
+==================================================
+REPORT BACK
+==================================================
+
+Before starting the first saturation batch, report:
+
+1. Why California count is currently low
+2. Which resource categories were under-ingested
+3. Revised row target
+4. Recommended saturation batch plan
+5. Estimated rows per batch
+
+Then begin Batch 1 unless there is a blocker.
+
+Goal:
+California must become one of the deepest states in the system, not one of the weakest.
+
+--- END ---
