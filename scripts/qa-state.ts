@@ -41,20 +41,48 @@ async function chunkedJunctionExists(
   return have;
 }
 
+// Paginated state-row loader — Supabase caps .select() at 1000 rows by
+// default regardless of any client .limit(). Iterates via .range() until
+// exhausted. Fixes the CA QA defect where total displayed as "1000" when
+// the actual count was 1140.
+async function loadAllStateRows(state: string) {
+  const PAGE = 1000;
+  const all: any[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabaseAdmin
+      .from("resources")
+      .select("id,title,city,state,zip,category_id,subcategory,website_url,phone,address,status")
+      .eq("state", state)
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 async function main() {
   console.log(`\n=========== STATE QA — ${STATE} ===========\n`);
 
-  const [{ data: rows }, { data: cats }, { data: subs }] = await Promise.all([
-    supabaseAdmin
-      .from("resources")
-      .select("id,title,city,state,zip,category_id,subcategory,website_url,phone,address,status")
-      .eq("state", STATE)
-      .limit(5000),
+  const [stateRows, { data: cats }, { data: subs }] = await Promise.all([
+    loadAllStateRows(STATE),
     supabaseAdmin.from("categories").select("id,slug,name"),
     supabaseAdmin.from("subcategories").select("id,name,category_id"),
   ]);
 
-  const all = (rows || []) as any[];
+  // Cross-check loaded count against count(*) to surface any pagination drift.
+  const { count: trueTotal } = await supabaseAdmin
+    .from("resources")
+    .select("*", { count: "exact", head: true })
+    .eq("state", STATE);
+  if (trueTotal != null && trueTotal !== stateRows.length) {
+    console.log(`WARN: pagination cross-check mismatch — loaded=${stateRows.length} count(*)=${trueTotal}`);
+  }
+
+  const all = stateRows as any[];
   const approved = all.filter((r) => r.status === "approved");
   const nameById = new Map((cats || []).map((c: any) => [c.id, c.name]));
   const subKey = new Map<string, string>();
