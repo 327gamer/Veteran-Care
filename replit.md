@@ -113,6 +113,42 @@ Founder approval required, AND:
   "North Carolina", "Massachusetts", "West Virginia") fit on one line in
   the mobile 2-col tile without mid-word breaks.
 
+### Admin Live Metrics dashboard (LANDED 2026-04-27)
+- Route: **`/admin/live-metrics`** (gated by `AdminAuthGuard` — admin
+  key required; not linked from any public page).
+- File: `client/src/pages/admin-live-metrics.tsx` (new)
+- Registered in: `client/src/App.tsx`
+- Purpose: founder-only dashboard to monitor real platform activity
+  before deciding when to flip private traction numbers public on
+  Homepage / About / investor reports.
+- Layout: matches existing admin styling (Card/Badge/Button shadcn).
+- **Part 1 — Public coverage** (read-only mirror of what Homepage/About
+  already show). Source: `/api/public-stats`. Tiles: States Live,
+  Verified Resources, Cities Covered, Support Categories, Launching
+  Next, Growth Status. Plus a chip array of all active states.
+- **Part 2 — Private traction** (admin-only). Source:
+  `/api/admin/traction-stats` (already existed; calls
+  `getTractionStats()` in `server/traction-stats.ts`). Tiles: Visits
+  30d, Pages Viewed 30d, Resource Clicks 30d, Trusted Partner Clicks
+  30d, AI Navigator Sessions 30d, Leads Submitted, Businesses Listed,
+  Partner Activity, Accounts Created.
+- **No-fake-numbers rules**:
+  - Source disabled (table missing / error) → `"Tracking not active yet"`
+    + `Tracking off` badge.
+  - Source enabled but value is 0 → `"0 / Pending"` + `Pending` badge.
+  - Source enabled and value > 0 → numeric value + `Live` badge.
+  - "Accounts created" is shown as `"Tracking not active yet"` because
+    it is not yet exposed by `getTractionStats()`. To activate, add
+    `accounts_created` to `TractionStats` (read from `users` table) —
+    no schema change needed; the table exists.
+- Both panels auto-refresh every 60s and have a manual Refresh button.
+- The page also shows a "Tracking source status" panel that lists each
+  underlying table and whether it's live, plus a "When you're ready to
+  expose these publicly" checklist for the future flip.
+- Zero backend changes (the endpoint was already wired). Zero changes
+  to public-facing UI. Zero changes to resource data, state rollout,
+  or metric calculations.
+
 ### Live Metrics fallback regression fix (LANDED 2026-04-27)
 - File: `client/src/hooks/use-public-stats.ts`
   - `PUBLIC_STATS_FALLBACK` previously held early-rollout stale values

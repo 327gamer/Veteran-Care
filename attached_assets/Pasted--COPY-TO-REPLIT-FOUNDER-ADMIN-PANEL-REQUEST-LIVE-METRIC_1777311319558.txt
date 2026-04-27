@@ -1,0 +1,111 @@
+--- COPY TO REPLIT ---
+
+FOUNDER ADMIN PANEL REQUEST — LIVE METRICS DASHBOARD
+
+Please add a new admin panel section called:
+
+Live Metrics
+
+Purpose:
+Founder/admin needs to privately monitor real platform activity before deciding when to publish traction metrics publicly on the Homepage and About page.
+
+This should be ADMIN ONLY.
+
+Do NOT expose this publicly yet.
+
+==================================================
+SECTION LOCATION
+==================================================
+
+Add a new admin page / tab / card called:
+
+Live Metrics
+
+Use existing admin layout and styling.
+
+Do NOT redesign the admin panel.
+
+==================================================
+METRICS TO SHOW
+==================================================
+
+PART 1 — PUBLIC COVERAGE METRICS
+
+Show the same live platform coverage data already powering Homepage/About:
+
+- States live
+- Verified resources
+- Cities covered
+- Support categories
+- Growth status
+- Launching next
+- Active state list
+
+Use existing /api/public-stats data if appropriate.
+
+==================================================
+PART 2 — PRIVATE TRACTION METRICS
+
+Show the hidden/backend traction metrics we previously prepared but did not expose publicly yet.
+
+Include:
+
+- Visits
+- Resource clicks
+- Trusted Partner clicks
+- AI Navigator sessions
+- Leads submitted
+- Businesses listed
+- Accounts created
+- Partner activity
+
+If exact data is not available yet for any field, show:
+
+“Tracking not active yet”
+
+or
+
+“0 / Pending”
+
+Do NOT fake numbers.
+
+==================================================
+GOAL
+==================================================
+
+This dashboard should help founder decide when public traction numbers are strong enough to activate on:
+
+- Homepage
+- About page
+- Future investor / sponsor reports
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+- Admin only
+- No public UI changes
+- No homepage changes
+- No About page changes
+- No fake data
+- No hardcoded vanity metrics
+- Use real existing tracking sources only
+- If tracking source does not exist, display pending status clearly
+- Do not touch resource data
+- Do not touch state rollout data
+- Do not change public metrics calculations
+
+==================================================
+DELIVERABLE
+==================================================
+
+After completion, report:
+
+- Admin route / location added
+- Files changed
+- Metrics included
+- Which metrics are live vs pending
+- Data sources used
+- Confirmation nothing public-facing changed
+
+--- END ---
