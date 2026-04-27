@@ -24,16 +24,31 @@ import {
   Lock,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   DollarSign,
   ShoppingCart,
   Percent,
-  Map,
+  Map as MapIcon,
   ListOrdered,
   MailCheck,
-  Sparkles,
+  CreditCard,
+  Wallet,
+  Receipt,
+  Ban,
+  Clock,
+  UserMinus,
+  Target,
+  ShieldCheck,
 } from "lucide-react";
+import {
+  METRIC_REGISTRY,
+  SECTION_META,
+  getMetricsBySection,
+  type MetricDef,
+  type MetricSection,
+} from "@/lib/metric-registry";
 
-// ─── Public coverage stats (same data as Homepage/About) ───────────────
+// ─── Wire data ─────────────────────────────────────────────────────────
 interface PublicStatsResponse {
   totalResources: number;
   totalCities: number;
@@ -48,7 +63,6 @@ interface PublicStatsResponse {
   lastUpdated: string;
 }
 
-// ─── Private traction stats (admin-only) ───────────────────────────────
 interface TractionStatsResponse {
   visits_today: number;
   visits_7d: number;
@@ -72,21 +86,132 @@ function fmt(n: number | undefined | null): string {
   return n.toLocaleString("en-US");
 }
 
-// Render rules per founder spec:
-// - source disabled (table missing / error) → "Tracking not active yet"
-// - source enabled, value 0                  → "0 / Pending"
-// - source enabled, value > 0                → fmt(value)
-// - never fabricate
-function renderTraction(value: number, sourceEnabled: boolean): {
+// Map registry icon name → lucide component
+const ICONS: Record<MetricDef["icon"], any> = {
+  users: Users,
+  eye: Eye,
+  mouseClick: MousePointerClick,
+  handshake: Handshake,
+  bot: Bot,
+  clipboard: ClipboardList,
+  building: Building2,
+  userPlus: UserPlus,
+  flag: Flag,
+  database: Database,
+  layers: Layers,
+  rocket: Rocket,
+  trendingUp: TrendingUp,
+  dollar: DollarSign,
+  shoppingCart: ShoppingCart,
+  percent: Percent,
+  map: MapIcon,
+  listOrdered: ListOrdered,
+  mailCheck: MailCheck,
+  activity: Activity,
+  wallet: Wallet,
+  creditCard: CreditCard,
+  receipt: Receipt,
+  ban: Ban,
+  alertTriangle: AlertTriangle,
+  clock: Clock,
+  userMinus: UserMinus,
+  target: Target,
+};
+
+// ─── Tile rendering rules per founder spec ─────────────────────────────
+//   Source state "live"        + value > 0 → fmt(value), green Live pill
+//   Source state "live"        + value 0   → "0 / Pending", amber pill
+//   Source state "wired_zero"               → "0 / Pending", amber pill
+//   Source state "not_wired"                → "Tracking not active yet", off pill
+//   Reference values (coverage strings)     → display as-is, blue Reference pill
+
+type TileRenderStatus = "live" | "pending" | "off" | "fixed";
+
+interface TileRender {
   display: string;
-  status: "live" | "pending" | "off";
-} {
-  if (!sourceEnabled) return { display: "Tracking not active yet", status: "off" };
-  if (!value || value <= 0) return { display: "0 / Pending", status: "pending" };
-  return { display: fmt(value), status: "live" };
+  status: TileRenderStatus;
 }
 
-function StatusPill({ status }: { status: "live" | "pending" | "off" | "fixed" }) {
+function renderForMetric(
+  m: MetricDef,
+  pub: PublicStatsResponse | undefined,
+  tr: TractionStatsResponse | undefined,
+): TileRender & { hint?: string } {
+  // Public Coverage tiles read from /api/public-stats — these are
+  // "Reference" values (always present, not engagement-counts).
+  if (m.section === "coverage") {
+    if (!pub) return { display: "—", status: "off" };
+    switch (m.key) {
+      case "states_live":
+        return { display: fmt(pub.totalStates), status: "fixed" };
+      case "verified_resources":
+        return { display: `${fmt(pub.totalResources)}+`, status: "fixed" };
+      case "cities_covered":
+        return { display: `${fmt(pub.totalCities)}+`, status: "fixed" };
+      case "support_categories":
+        return { display: fmt(pub.totalCategories), status: "fixed" };
+      case "launching_next":
+        return { display: pub.nextStateLaunching || "—", status: "fixed" };
+      case "growth_status":
+        return { display: pub.growthStatus || "—", status: "fixed" };
+    }
+  }
+
+  // Public Growth tiles read from /api/admin/traction-stats.
+  if (m.section === "growth") {
+    if (!tr) return { display: "—", status: "off" };
+    if (m.source.state === "not_wired") {
+      return { display: "Tracking not active yet", status: "off" };
+    }
+    let value = 0;
+    let hint: string | undefined;
+    switch (m.key) {
+      case "visits_30d":
+        value = tr.visits_30d;
+        hint = `Today: ${fmt(tr.visits_today)} • 7d: ${fmt(tr.visits_7d)}`;
+        break;
+      case "page_views_30d":
+        value = tr.page_views_30d;
+        break;
+      case "resource_clicks_30d":
+        value = tr.resource_clicks_30d;
+        break;
+      case "trusted_partner_clicks_30d":
+        value = tr.trusted_partner_clicks_30d;
+        break;
+      case "ai_sessions_30d":
+        value = tr.ai_sessions_30d;
+        break;
+      case "leads_total":
+        value = tr.leads_total;
+        hint = `Last 30d: ${fmt(tr.leads_30d)}`;
+        break;
+      case "businesses_listed":
+        value = tr.businesses_listed;
+        hint = `Active paid: ${fmt(tr.trusted_partners_active)}`;
+        break;
+    }
+    if (m.source.state === "wired_zero" || !value || value <= 0) {
+      return { display: "0 / Pending", status: "pending", hint };
+    }
+    return { display: fmt(value), status: "live", hint };
+  }
+
+  // Private Partner — only Active Paid Partners has a real value today.
+  if (m.section === "partner") {
+    if (m.key === "trusted_partners_active" && tr) {
+      const v = tr.trusted_partners_active;
+      if (v > 0) return { display: fmt(v), status: "live" };
+      return { display: "0 / Pending", status: "pending" };
+    }
+  }
+
+  // Default for not-wired Layer 2 placeholders.
+  return { display: "Tracking not active yet", status: "off" };
+}
+
+// ─── Visual atoms ──────────────────────────────────────────────────────
+function StatusPill({ status }: { status: TileRenderStatus }) {
   if (status === "live")
     return (
       <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200" data-testid="pill-status-live">
@@ -112,43 +237,131 @@ function StatusPill({ status }: { status: "live" | "pending" | "off" | "fixed" }
   );
 }
 
-function MetricTile({
-  icon: Icon,
-  label,
-  value,
-  status,
-  testId,
-  hint,
-}: {
-  icon: any;
-  label: string;
-  value: string;
-  status: "live" | "pending" | "off" | "fixed";
-  testId: string;
-  hint?: string;
-}) {
+function MetricTile({ m, pub, tr }: { m: MetricDef; pub?: PublicStatsResponse; tr?: TractionStatsResponse }) {
+  const Icon = ICONS[m.icon];
+  const r = renderForMetric(m, pub, tr);
+  const isPublic = m.tier === "public";
   return (
     <div
-      className="bg-white rounded-xl border border-border shadow-sm p-4 sm:p-5 flex flex-col gap-2"
-      data-testid={testId}
+      className={[
+        "rounded-xl border shadow-sm p-4 sm:p-5 flex flex-col gap-2 border-l-4",
+        isPublic
+          ? "bg-white border-border border-l-emerald-500"
+          : "bg-slate-50 border-slate-200 border-l-slate-500",
+      ].join(" ")}
+      data-testid={`tile-${m.key}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+        <div
+          className={[
+            "h-9 w-9 rounded-md flex items-center justify-center",
+            isPublic ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700",
+          ].join(" ")}
+        >
           <Icon className="h-4 w-4" />
         </div>
-        <StatusPill status={status} />
+        <StatusPill status={r.status} />
       </div>
-      <p className="font-heading text-xl sm:text-2xl font-extrabold text-primary leading-tight tracking-tight">
-        {value}
+      <p
+        className={[
+          "font-heading text-xl sm:text-2xl font-extrabold leading-tight tracking-tight",
+          isPublic ? "text-primary" : "text-slate-700",
+        ].join(" ")}
+      >
+        {r.display}
       </p>
       <p className="text-xs uppercase tracking-wide text-muted-foreground leading-snug">
-        {label}
+        {m.label}
       </p>
-      {hint ? <p className="text-[11px] text-muted-foreground/80 italic">{hint}</p> : null}
+      {r.hint ? (
+        <p className="text-[11px] text-muted-foreground/80 italic">{r.hint}</p>
+      ) : m.source.note ? (
+        <p className="text-[11px] text-muted-foreground/80 italic">{m.source.note}</p>
+      ) : null}
     </div>
   );
 }
 
+function SectionCard({
+  section,
+  pub,
+  tr,
+  children,
+}: {
+  section: MetricSection;
+  pub?: PublicStatsResponse;
+  tr?: TractionStatsResponse;
+  children?: React.ReactNode;
+}) {
+  const meta = SECTION_META[section];
+  const isPublic = meta.tier === "public";
+  const metrics = getMetricsBySection(section);
+  return (
+    <Card
+      className={[
+        "mb-6 border-l-4",
+        isPublic ? "border-l-emerald-500" : "border-l-slate-500 bg-slate-50/40",
+      ].join(" ")}
+      data-testid={`card-section-${section}`}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div
+              className={[
+                "h-10 w-10 rounded-lg flex items-center justify-center font-bold text-sm",
+                isPublic
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-slate-200 text-slate-700",
+              ].join(" ")}
+            >
+              {meta.index}
+            </div>
+            <div>
+              <CardTitle
+                className={[
+                  "text-lg sm:text-xl flex items-center gap-2",
+                  isPublic ? "text-primary" : "text-slate-700",
+                ].join(" ")}
+              >
+                {isPublic ? (
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <Lock className="h-5 w-5 text-slate-500" />
+                )}
+                {meta.title}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isPublic
+                  ? "Layer 1 — safe to publish (Homepage / About / partner / investor)"
+                  : "Layer 2 — admin-only. Never publish without founder approval."}
+              </p>
+            </div>
+          </div>
+          {isPublic ? (
+            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[11px]" data-testid={`pill-tier-public-${section}`}>
+              <ShieldCheck className="h-3 w-3 mr-1" /> Public-safe
+            </Badge>
+          ) : (
+            <Badge className="bg-slate-200 text-slate-800 border-slate-300 text-[11px]" data-testid={`pill-tier-private-${section}`}>
+              <Lock className="h-3 w-3 mr-1" /> Private-internal
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
+          {metrics.map((m) => (
+            <MetricTile key={m.key} m={m} pub={pub} tr={tr} />
+          ))}
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────
 function AdminLiveMetricsInner() {
   const [, setLocation] = useLocation();
   const { adminKey } = useAdminKey();
@@ -180,88 +393,16 @@ function AdminLiveMetricsInner() {
   const pub = publicQ.data;
   const tr = tractionQ.data;
 
-  type TractionTile = {
-    icon: any;
-    label: string;
-    display: string;
-    status: "live" | "pending" | "off" | "fixed";
-    testId: string;
-    hint?: string;
-  };
-  const tractionTiles: TractionTile[] = (() => {
-    if (!tr) return [];
-    return [
-      {
-        icon: Users,
-        label: "Visits (30d)",
-        ...renderTraction(tr.visits_30d, tr.sources.page_views?.enabled ?? false),
-        testId: "tile-traction-visits",
-        hint: tr.sources.page_views?.enabled
-          ? `Today: ${fmt(tr.visits_today)} • 7d: ${fmt(tr.visits_7d)}`
-          : tr.sources.page_views?.note,
-      },
-      {
-        icon: Eye,
-        label: "Pages viewed (30d)",
-        ...renderTraction(tr.page_views_30d, tr.sources.page_views?.enabled ?? false),
-        testId: "tile-traction-pageviews",
-      },
-      {
-        icon: MousePointerClick,
-        label: "Resource clicks (30d)",
-        ...renderTraction(tr.resource_clicks_30d, tr.sources.resource_clicks?.enabled ?? false),
-        testId: "tile-traction-resource-clicks",
-      },
-      {
-        icon: Handshake,
-        label: "Trusted partner clicks (30d)",
-        ...renderTraction(tr.trusted_partner_clicks_30d, tr.sources.resource_clicks?.enabled ?? false),
-        testId: "tile-traction-partner-clicks",
-      },
-      {
-        icon: Bot,
-        label: "AI Navigator sessions (30d)",
-        ...renderTraction(tr.ai_sessions_30d, tr.sources.ai_usage_log?.enabled ?? false),
-        testId: "tile-traction-ai-sessions",
-      },
-      {
-        icon: ClipboardList,
-        label: "Leads submitted (total)",
-        ...renderTraction(tr.leads_total, tr.sources.lead_events?.enabled ?? false),
-        testId: "tile-traction-leads",
-        hint: tr.sources.lead_events?.enabled ? `Last 30d: ${fmt(tr.leads_30d)}` : undefined,
-      },
-      {
-        icon: Building2,
-        label: "Businesses listed",
-        ...renderTraction(tr.businesses_listed, tr.sources.partner_organizations?.enabled ?? false),
-        testId: "tile-traction-businesses",
-        hint: tr.sources.partner_organizations?.enabled
-          ? `Active paid partners: ${fmt(tr.trusted_partners_active)}`
-          : undefined,
-      },
-      {
-        icon: Activity,
-        label: "Partner activity (active paid partners)",
-        ...renderTraction(tr.trusted_partners_active, tr.sources.partner_organizations?.enabled ?? false),
-        testId: "tile-traction-partner-activity",
-      },
-      // Founder requested but not yet wired into traction-stats endpoint:
-      {
-        icon: UserPlus,
-        label: "Accounts created",
-        display: "Tracking not active yet",
-        status: "off" as const,
-        testId: "tile-traction-accounts",
-        hint: "users table exists; counter not yet exposed by /api/admin/traction-stats",
-      },
-    ];
-  })();
-
   const refreshAll = () => {
     publicQ.refetch();
     tractionQ.refetch();
   };
+
+  const publicCount = METRIC_REGISTRY.filter((m) => m.tier === "public").length;
+  const privateCount = METRIC_REGISTRY.filter((m) => m.tier === "private").length;
+  const liveCount = METRIC_REGISTRY.filter((m) => m.source.state === "live").length;
+  const wiredZeroCount = METRIC_REGISTRY.filter((m) => m.source.state === "wired_zero").length;
+  const notWiredCount = METRIC_REGISTRY.filter((m) => m.source.state === "not_wired").length;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -298,302 +439,162 @@ function AdminLiveMetricsInner() {
             </p>
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-primary" data-testid="heading-live-metrics">
-            Live Metrics
+            Live Metrics — Command Center
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Real platform activity in one place. Use this to decide when to
-            activate public traction numbers on the Homepage and About page,
-            and to feed future investor / sponsor reports.
+          <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+            Public-safe metrics in green, private internal metrics locked
+            in slate. The classification per metric lives in
+            <code className="text-[11px] bg-muted px-1 rounded mx-1">client/src/lib/metric-registry.ts</code>
+            so a future <code className="text-[11px] bg-muted px-1 rounded">/api/public-metrics</code>
+            endpoint can filter by tier with no risk of leaking Layer 2.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <Badge variant="outline" className="bg-white">
+              {publicCount} public-safe metrics
+            </Badge>
+            <Badge variant="outline" className="bg-white">
+              {privateCount} private-internal metrics
+            </Badge>
+            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+              {liveCount} live
+            </Badge>
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+              {wiredZeroCount} wired (zero)
+            </Badge>
+            <Badge className="bg-slate-100 text-slate-700 border-slate-200">
+              {notWiredCount} not wired
+            </Badge>
+          </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Public coverage refreshes every 60s • Traction refreshes every 60s
+            Auto-refreshes every 60 seconds.
           </p>
         </div>
 
-        {/* ─── PART 1 — Public Coverage Metrics ─── */}
-        <Card className="mb-6" data-testid="card-public-coverage">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                  <Flag className="h-5 w-5 text-primary" />
-                  Public coverage
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Same numbers Homepage and About already show. Source:{" "}
-                  <code className="text-[11px] bg-muted px-1 rounded">/api/public-stats</code>
-                </p>
+        {/* Loading shell */}
+        {(publicQ.isLoading && !pub) || (tractionQ.isLoading && !tr) ? (
+          <p className="text-sm text-muted-foreground" data-testid="text-page-loading">
+            Loading metrics…
+          </p>
+        ) : null}
+
+        {/* ─── 1. Public Coverage ─── */}
+        <SectionCard section="coverage" pub={pub} tr={tr}>
+          {pub ? (
+            <div className="mt-5" data-testid="block-active-states">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                Active state list ({pub.liveStateNames.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {pub.liveStateNames.map((s) => (
+                  <Badge
+                    key={s.code}
+                    variant="secondary"
+                    className="text-xs"
+                    data-testid={`chip-state-${s.code.toLowerCase()}`}
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600" />
+                    {s.name} ({s.code})
+                  </Badge>
+                ))}
               </div>
-              <Badge variant="outline" className="text-[11px]">
-                Live publicly
-              </Badge>
+              <p className="text-[11px] text-muted-foreground mt-3">
+                Coverage region: {pub.coverageRegion} • Last updated:{" "}
+                {new Date(pub.lastUpdated).toLocaleString()}
+              </p>
             </div>
+          ) : null}
+        </SectionCard>
+
+        {/* ─── 2. Public Growth ─── */}
+        <SectionCard section="growth" pub={pub} tr={tr}>
+          {tr ? (
+            <div
+              className="mt-5 bg-white/70 rounded-md p-3 border border-border"
+              data-testid="block-source-status"
+            >
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                Tracking source status
+              </p>
+              <ul className="text-xs space-y-1">
+                {Object.entries(tr.sources).map(([name, info]) => (
+                  <li
+                    key={name}
+                    className="flex items-center gap-2"
+                    data-testid={`row-source-${name}`}
+                  >
+                    {info.enabled ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                    )}
+                    <code className="text-[11px] bg-muted px-1 rounded">{name}</code>
+                    <span className="text-muted-foreground">
+                      {info.enabled
+                        ? "live"
+                        : info.note
+                          ? `not active — ${info.note}`
+                          : "tracking not active yet"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground mt-3">
+                Last refreshed: {new Date(tr.generated_at).toLocaleString()}
+              </p>
+            </div>
+          ) : null}
+        </SectionCard>
+
+        {/* ─── 3. Private Revenue ─── */}
+        <SectionCard section="revenue" pub={pub} tr={tr} />
+
+        {/* ─── 4. Private Partner ─── */}
+        <SectionCard section="partner" pub={pub} tr={tr} />
+
+        {/* ─── 5. Private Operations ─── */}
+        <SectionCard section="operations" pub={pub} tr={tr} />
+
+        {/* Future-public push instructions */}
+        <Card className="border-dashed" data-testid="card-future-push">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-muted-foreground">
+              <Activity className="h-4 w-4" />
+              When you're ready to push public metrics live
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {publicQ.isLoading || !pub ? (
-              <p className="text-sm text-muted-foreground" data-testid="text-public-loading">
-                Loading public stats…
-              </p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-5">
-                  <MetricTile
-                    icon={Flag}
-                    label="States Live"
-                    value={fmt(pub.totalStates)}
-                    status="fixed"
-                    testId="tile-public-states"
-                  />
-                  <MetricTile
-                    icon={Database}
-                    label="Verified Resources"
-                    value={`${fmt(pub.totalResources)}+`}
-                    status="fixed"
-                    testId="tile-public-resources"
-                  />
-                  <MetricTile
-                    icon={Building2}
-                    label="Cities Covered"
-                    value={`${fmt(pub.totalCities)}+`}
-                    status="fixed"
-                    testId="tile-public-cities"
-                  />
-                  <MetricTile
-                    icon={Layers}
-                    label="Support Categories"
-                    value={fmt(pub.totalCategories)}
-                    status="fixed"
-                    testId="tile-public-categories"
-                  />
-                  <MetricTile
-                    icon={Rocket}
-                    label="Launching Next"
-                    value={pub.nextStateLaunching || "—"}
-                    status="fixed"
-                    testId="tile-public-next"
-                  />
-                  <MetricTile
-                    icon={TrendingUp}
-                    label="Growth Status"
-                    value={pub.growthStatus || "—"}
-                    status="fixed"
-                    testId="tile-public-growth"
-                  />
-                </div>
-
-                <div data-testid="block-active-states">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                    Active state list ({pub.liveStateNames.length})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {pub.liveStateNames.map((s) => (
-                      <Badge
-                        key={s.code}
-                        variant="secondary"
-                        className="text-xs"
-                        data-testid={`chip-state-${s.code.toLowerCase()}`}
-                      >
-                        <CheckCircle2 className="h-3 w-3 mr-1 text-primary" />
-                        {s.name} ({s.code})
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-3">
-                    Coverage region: {pub.coverageRegion} • Last updated:{" "}
-                    {new Date(pub.lastUpdated).toLocaleString()}
-                  </p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ─── PART 2 — Private Traction Metrics ─── */}
-        <Card data-testid="card-private-traction">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-primary" />
-                  Private traction (hidden from public)
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Real engagement signals. Decide here when to flip them
-                  public. Source:{" "}
-                  <code className="text-[11px] bg-muted px-1 rounded">
-                    /api/admin/traction-stats
-                  </code>
-                </p>
-              </div>
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[11px]">
-                Hidden — admin only
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {tractionQ.isLoading || !tr ? (
-              <p className="text-sm text-muted-foreground" data-testid="text-traction-loading">
-                Loading traction stats…
-              </p>
-            ) : tractionQ.isError ? (
-              <p className="text-sm text-destructive" data-testid="text-traction-error">
-                Failed to load traction stats. Check admin key and try Refresh.
-              </p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 mb-5">
-                  {tractionTiles.map((t, i) => (
-                    <MetricTile
-                      key={i}
-                      icon={t.icon}
-                      label={t.label}
-                      value={t.display}
-                      status={t.status}
-                      testId={t.testId}
-                      hint={t.hint}
-                    />
-                  ))}
-                </div>
-
-                <div className="bg-muted/30 rounded-md p-3" data-testid="block-source-status">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                    Tracking source status
-                  </p>
-                  <ul className="text-xs space-y-1">
-                    {Object.entries(tr.sources).map(([name, info]) => (
-                      <li
-                        key={name}
-                        className="flex items-center gap-2"
-                        data-testid={`row-source-${name}`}
-                      >
-                        {info.enabled ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                        ) : (
-                          <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                        )}
-                        <code className="text-[11px] bg-background border border-border rounded px-1">
-                          {name}
-                        </code>
-                        <span className="text-muted-foreground">
-                          {info.enabled
-                            ? "live"
-                            : info.note
-                              ? `not active — ${info.note}`
-                              : "tracking not active yet"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-[11px] text-muted-foreground mt-3">
-                    Last refreshed: {new Date(tr.generated_at).toLocaleString()}
-                  </p>
-                </div>
-
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ─── PART 3 — Future Business Metrics (placeholders) ─── */}
-        <Card className="mt-6" data-testid="card-future-business">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div>
-                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  Future business metrics
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Reserved tiles. Each lights up automatically once the
-                  underlying tracking source is wired in. No fake numbers
-                  shown until then.
-                </p>
-              </div>
-              <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[11px]">
-                Reserved
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              <MetricTile
-                icon={DollarSign}
-                label="Revenue MTD"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-revenue-mtd"
-                hint="Wire from Stripe / billing once monetization is live"
-              />
-              <MetricTile
-                icon={ShoppingCart}
-                label="Leads sold"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-leads-sold"
-                hint="From lead_billing table once paid leads start"
-              />
-              <MetricTile
-                icon={Percent}
-                label="Conversion rate"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-conversion-rate"
-                hint="Visits → Leads → Paid leads, computed downstream"
-              />
-              <MetricTile
-                icon={Map}
-                label="Top traffic states"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-top-states"
-                hint="page_views.user_state column exists; aggregate not wired"
-              />
-              <MetricTile
-                icon={ListOrdered}
-                label="Top categories clicked"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-top-categories"
-                hint="resource_clicks → resource → category aggregate"
-              />
-              <MetricTile
-                icon={MailCheck}
-                label="Partner response activity"
-                value="Tracking not active yet"
-                status="off"
-                testId="tile-future-partner-response"
-                hint="lead_events email_sent / response_status aggregates"
-              />
-            </div>
-
-            <div className="mt-5 p-3 border border-dashed border-border rounded-md bg-background">
-                  <p className="text-xs font-semibold text-foreground mb-1">
-                    When you're ready to expose these publicly:
-                  </p>
-                  <ol className="text-[11px] text-muted-foreground list-decimal pl-4 space-y-1">
-                    <li>
-                      Add a public passthrough endpoint{" "}
-                      <code className="bg-muted px-1 rounded">/api/public-traction-stats</code>{" "}
-                      that calls{" "}
-                      <code className="bg-muted px-1 rounded">getTractionStats()</code>{" "}
-                      with no admin gate.
-                    </li>
-                    <li>
-                      In{" "}
-                      <code className="bg-muted px-1 rounded">
-                        client/src/components/traction-metrics.tsx
-                      </code>
-                      , switch the fetch URL to the public one.
-                    </li>
-                    <li>
-                      Mount{" "}
-                      <code className="bg-muted px-1 rounded">{"<TractionMetrics />"}</code>{" "}
-                      under{" "}
-                      <code className="bg-muted px-1 rounded">{"<LiveMetrics />"}</code>{" "}
-                      on Homepage and About.
-                    </li>
-                  </ol>
-                </div>
+            <ol className="text-xs text-muted-foreground list-decimal pl-5 space-y-1.5">
+              <li>
+                Add a public passthrough endpoint{" "}
+                <code className="bg-muted px-1 rounded">
+                  GET /api/public-metrics
+                </code>{" "}
+                that calls{" "}
+                <code className="bg-muted px-1 rounded">getTractionStats()</code>{" "}
+                and filters its response to only the keys whose registry entry
+                has <code className="bg-muted px-1 rounded">tier === "public"</code>.
+                No admin gate.
+              </li>
+              <li>
+                In{" "}
+                <code className="bg-muted px-1 rounded">
+                  client/src/components/traction-metrics.tsx
+                </code>
+                , switch the fetch URL to the new public endpoint.
+              </li>
+              <li>
+                Mount{" "}
+                <code className="bg-muted px-1 rounded">{"<TractionMetrics />"}</code>{" "}
+                under{" "}
+                <code className="bg-muted px-1 rounded">{"<LiveMetrics />"}</code>{" "}
+                on Homepage and About.
+              </li>
+              <li>
+                Layer 2 (revenue / partner / operations) is structurally
+                impossible to leak through this path because the public
+                endpoint reads only Layer 1 entries from the registry.
+              </li>
+            </ol>
           </CardContent>
         </Card>
       </div>

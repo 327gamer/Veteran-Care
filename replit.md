@@ -113,6 +113,47 @@ Founder approval required, AND:
   "North Carolina", "Massachusetts", "West Virginia") fit on one line in
   the mobile 2-col tile without mid-word breaks.
 
+### Live Metrics — public/private tier split + 5-section restructure (LANDED 2026-04-27)
+- Files:
+  - `client/src/lib/metric-registry.ts` (new) — single source of truth.
+    Each metric carries `tier: "public" | "private"` and
+    `section: "coverage" | "growth" | "revenue" | "partner" | "operations"`.
+  - `client/src/pages/admin-live-metrics.tsx` (rewritten) — page now
+    renders 5 sections strictly from the registry.
+- 5-section layout (per founder spec):
+  1. **Public Coverage** (Layer 1, GREEN) — States Live, Verified
+     Resources, Cities Covered, Support Categories, Launching Next,
+     Growth Status. Source: `/api/public-stats`.
+  2. **Public Growth** (Layer 1, GREEN) — Monthly Visits, Page Views,
+     Resource Clicks, Trusted Partner Clicks, AI Navigator Sessions,
+     Leads Submitted, Businesses Listed, Accounts Created. Source:
+     `/api/admin/traction-stats` today; will be served by
+     `/api/public-metrics` once founder says "push public".
+  3. **Private Revenue** (Layer 2, LOCKED/SLATE) — Revenue MTD, Stripe
+     Revenue, Subscription Revenue, Lead Revenue, Revenue by State,
+     Revenue by Category. All "Tracking not active yet" until
+     monetization wires.
+  4. **Private Partner** (Layer 2, LOCKED/SLATE) — Active Paid
+     Partners (live), Partner Churn, Partner Response Time, Close
+     Ratio, Leads Sold.
+  5. **Private Operations** (Layer 2, LOCKED/SLATE) — Unanswered
+     Leads, Refunds, Failed Payments, Cancelled Subscriptions.
+- **Visual treatment**: Layer 1 cards have an `emerald` left border +
+  `Public-safe` shield pill; Layer 2 cards have a `slate` left border
+  + `Private-internal` lock pill. Tiles inherit the same accent.
+- **No Move C**: the public-passthrough endpoint
+  `/api/public-metrics` is **not** built yet (founder explicitly
+  deferred). The page closes with a 4-step "When you're ready to push
+  public metrics live" checklist that will be a ~20-line addition
+  using `tier === "public"` as the filter — Layer 2 cannot leak by
+  construction.
+- Zero backend changes. Zero schema changes. Zero changes to
+  Homepage, About, public navigation, or any public surface.
+- Tile counts today: 8 public-safe + 13 private-internal = 21 total.
+  Live: 12 (incl 6 coverage references). Wired-zero: 2 (trusted
+  partner clicks, leads). Not-wired: 12 (all Layer 2 placeholders +
+  accounts_created).
+
 ### Admin Live Metrics dashboard (LANDED 2026-04-27)
 - Route: **`/admin/live-metrics`** (gated by `AdminAuthGuard` — admin
   key required).
