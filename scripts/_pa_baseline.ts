@@ -1,15 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 (async () => {
-  const { count } = await sb.from("resources").select("*", { count: "exact", head: true }).eq("state","PA");
-  console.log("PA total:", count);
-  const { data: rows } = await sb.from("resources").select("category_id, city, title").eq("state","PA");
-  const { data: cats } = await sb.from("categories").select("id, slug");
-  const m = new Map((cats||[]).map((c:any)=>[c.id, c.slug]));
-  const cc:Record<string,number>={}, ct:Record<string,number>={};
-  (rows||[]).forEach((r:any)=>{ cc[m.get(r.category_id) as string]=(cc[m.get(r.category_id) as string]||0)+1; ct[r.city]=(ct[r.city]||0)+1; });
-  console.log("cats:", Object.keys(cc).length, "cities:", Object.keys(ct).length);
-  Object.entries(cc).sort((a,b)=>a[1]-b[1]).forEach(([s,n])=>console.log(`  ${n.toString().padStart(3)}  ${s}`));
-  console.log("---existing PA titles (first 30):");
-  (rows||[]).slice(0,30).forEach((r:any)=>console.log(`  ${r.title}`));
+  const all: any[] = []; let from = 0; const sz = 1000;
+  while (true) {
+    const r = await sb.from("resources").select("city, category_id").eq("state","PA").range(from, from+sz-1);
+    if (!r.data?.length) break;
+    all.push(...r.data);
+    if (r.data.length < sz) break;
+    from += sz;
+  }
+  const cats = await sb.from("categories").select("id, slug");
+  const cm: Record<number,string> = {}; cats.data?.forEach((c:any)=>cm[c.id]=c.slug);
+  const cities = new Set(all.map(r=>r.city).filter(c=>c && c!=='-'));
+  const cd: Record<string,number> = {};
+  all.forEach(r=>{ const k = cm[r.category_id]||"unknown"; cd[k]=(cd[k]||0)+1; });
+  console.log(`PA TOTAL: ${all.length}`);
+  console.log(`PA CITIES: ${cities.size}`);
+  console.log(`PA CATEGORIES: ${Object.keys(cd).length}/17`);
+  console.log("CAT DIST (sorted):");
+  Object.entries(cd).sort(([,a],[,b])=>a-b).forEach(([k,v])=>console.log(`  ${k}: ${v}`));
 })();
