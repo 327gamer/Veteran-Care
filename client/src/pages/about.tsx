@@ -6,7 +6,7 @@ import {
   Sparkles,
   MapPin,
   ShieldCheck,
-  Heart,
+  Brain,
   Briefcase,
   Stethoscope,
   HomeIcon,
@@ -29,6 +29,10 @@ import {
   TrendingUp,
   Flag,
   PlusCircle,
+  DollarSign,
+  Medal,
+  Shield,
+  Tag,
 } from "lucide-react";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
@@ -45,8 +49,7 @@ const TRUST_TILES = [
   { icon: Globe, label: "Growing Nationwide", sub: "New states added regularly" },
 ];
 
-const PILLARS = [
-  // 1–3: how the platform works + why it's valuable
+const PLATFORM_TOOLS = [
   {
     icon: MapPin,
     title: "Search by city, state, or near me",
@@ -62,77 +65,28 @@ const PILLARS = [
     title: "Trusted services & discounts",
     desc: "Vetted local partners offering veteran-friendly products, services, and exclusive pricing.",
   },
-  // 4+: real-life support categories
-  {
-    icon: HomeIcon,
-    title: "Housing & homelessness support",
-    desc: "Homeless veteran outreach, transitional housing, HUD-VASH, and emergency shelter navigation.",
-  },
-  {
-    icon: Briefcase,
-    title: "Jobs, training & careers",
-    desc: "Hiring pathways, apprenticeships, skilled trades, resume help, and career coaching.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Benefits, claims & VA navigation",
-    desc: "Claims assistance, appeals support, eligibility checks, and step-by-step VA benefits guidance.",
-  },
-  {
-    icon: Stethoscope,
-    title: "Healthcare & mental health",
-    desc: "VA medical centers, community clinics, behavioral health programs, and recovery support.",
-  },
-  {
-    icon: Heart,
-    title: "Disabled veteran & family support",
-    desc: "Disability-specific resources, adaptive programs, and family advocacy.",
-  },
-  {
-    icon: Users,
-    title: "Caregiver, spouse & dependent support",
-    desc: "Caregiver stipends, spouse benefits, dependent education, and survivor programs.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Education",
-    desc: "GI Bill, vocational rehab, scholarships, and transition-to-school resources.",
-  },
-  {
-    icon: Scale,
-    title: "Legal & financial guidance",
-    desc: "Free legal clinics, financial counseling, debt help, and tax assistance for veterans.",
-  },
-  {
-    icon: Utensils,
-    title: "Food & emergency help",
-    desc: "Food pantries, emergency funds, utility assistance, and short-term hardship relief.",
-  },
-  {
-    icon: Car,
-    title: "Transportation",
-    desc: "Rides to appointments, vehicle programs, and mobility support across counties.",
-  },
-  {
-    icon: LifeBuoy,
-    title: "End-of-life planning support",
-    desc: "Hospice navigation, burial benefits, military honors coordination, and survivor guidance.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Community & peer support",
-    desc: "Veteran-led groups, mentorship, and local meetups so no veteran walks it alone.",
-  },
-  {
-    icon: Phone,
-    title: "Crisis support",
-    desc: "Direct access to the Veterans Crisis Line — 988, then press 1 — and rapid escalation paths.",
-  },
-  {
-    icon: UserCheck,
-    title: "Senior veteran support",
-    desc: "Aging-in-place programs, senior care navigation, and benefits tailored to older veterans.",
-  },
+];
+
+// 17 canonical Veteran Care support categories. Names follow platform
+// canonical naming (shared/canonical-categories.ts) where they exist.
+const SUPPORT_CATEGORIES = [
+  { icon: Phone, title: "Crisis Help", desc: "Veterans Crisis Line (988, then 1) and rapid escalation paths." },
+  { icon: Brain, title: "Mental Health", desc: "PTSD, TBI, counseling, and behavioral health programs." },
+  { icon: HomeIcon, title: "Housing & Home Services", desc: "Emergency shelter, rental help, HUD-VASH, and VA home loans." },
+  { icon: Stethoscope, title: "Healthcare", desc: "VA medical centers, community clinics, and primary care." },
+  { icon: Briefcase, title: "Employment Support", desc: "Job search, training, resumes, and career coaching." },
+  { icon: Utensils, title: "Food Assistance", desc: "Food banks, pantries, SNAP outreach, and meal programs." },
+  { icon: CheckCircle2, title: "Benefits Assistance", desc: "Claims, appeals, eligibility, and step-by-step VA navigation." },
+  { icon: Scale, title: "Legal Services", desc: "Free legal clinics, claims appeals, and estate planning." },
+  { icon: Users, title: "Family Support", desc: "Spouses, children, dependents, and caregiver programs." },
+  { icon: Car, title: "Transportation", desc: "Rides to appointments, vehicle programs, and mobility support." },
+  { icon: DollarSign, title: "Financial & Credit Services", desc: "Counseling, debt help, lending, and tax assistance." },
+  { icon: GraduationCap, title: "Education & Training", desc: "GI Bill, trade schools, scholarships, and training." },
+  { icon: Medal, title: "Disabled Veterans", desc: "Disability benefits, adaptive programs, and advocacy." },
+  { icon: Shield, title: "Insurance Services", desc: "Coverage navigation, TRICARE, and life insurance." },
+  { icon: LifeBuoy, title: "End of Life Services", desc: "Hospice, burial benefits, and survivor support." },
+  { icon: MessageCircle, title: "Community Support", desc: "Veteran groups, peers, mentors, and local meetups." },
+  { icon: Tag, title: "Veteran Discounts", desc: "Vetted local partners offering veteran pricing and trusted services." },
 ];
 
 export default function About() {
@@ -243,7 +197,7 @@ export default function About() {
       </section>
 
       {/* ── WHAT WE COVER ── */}
-      <section className="container mx-auto px-5 py-12 max-w-5xl">
+      <section className="container mx-auto px-5 py-12 max-w-5xl" data-testid="section-what-veteran-care-offers">
         <div className="text-center mb-8">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">The Difference</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
@@ -253,21 +207,69 @@ export default function About() {
             Real-world support across every part of veteran and family life.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PILLARS.map((p, i) => {
-            const Icon = p.icon;
-            return (
-              <Card key={i} className="hover:shadow-md transition-shadow" data-testid={`card-pillar-${i}`}>
-                <CardContent className="pt-6">
-                  <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-primary mb-1.5 leading-tight">{p.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
+
+        {/* Platform tools — emphasized full-width on mobile, 3-col on desktop */}
+        <div className="mb-10 sm:mb-12" data-testid="block-platform-tools">
+          <h3 className="font-heading text-lg sm:text-xl font-bold text-primary text-center mb-1">
+            Platform tools that help you find support faster
+          </h3>
+          <p className="text-sm text-muted-foreground text-center mb-5 max-w-xl mx-auto">
+            The features built into Veteran Care so you can move from "I need help" to "I found it" in minutes.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {PLATFORM_TOOLS.map((p, i) => {
+              const Icon = p.icon;
+              return (
+                <Card
+                  key={i}
+                  className="border-l-4 border-l-accent hover:shadow-md transition-shadow"
+                  data-testid={`card-platform-tool-${i}`}
+                >
+                  <CardContent className="pt-6 pb-6">
+                    <div className="h-10 w-10 rounded-md bg-accent/10 text-accent flex items-center justify-center mb-3">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h4 className="font-heading font-semibold text-primary mb-1.5 leading-tight">{p.title}</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Support categories — compact 2-col mobile, 3-col tablet, 4-col desktop */}
+        <div data-testid="block-support-categories">
+          <h3 className="font-heading text-lg sm:text-xl font-bold text-primary text-center mb-1">
+            Support categories available on Veteran Care
+          </h3>
+          <p className="text-sm text-muted-foreground text-center mb-5 max-w-xl mx-auto">
+            All 17 categories veterans, families, and caregivers can search across.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {SUPPORT_CATEGORIES.map((c, i) => {
+              const Icon = c.icon;
+              return (
+                <Card
+                  key={i}
+                  className="hover:shadow-md transition-shadow"
+                  data-testid={`card-category-${i}`}
+                >
+                  <CardContent className="p-4 sm:pt-5 sm:pb-5">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-2 sm:mb-3">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
+                    <h4 className="font-heading font-semibold text-primary mb-1 leading-tight text-sm sm:text-base">
+                      {c.title}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-snug">
+                      {c.desc}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </section>
 

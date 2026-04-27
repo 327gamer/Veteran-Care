@@ -113,6 +113,35 @@ Founder approval required, AND:
   "North Carolina", "Massachusetts", "West Virginia") fit on one line in
   the mobile 2-col tile without mid-word breaks.
 
+### About page "What Veteran Care offers" restructure (LANDED 2026-04-27)
+- File: `client/src/pages/about.tsx`
+- Old layout was a single 16-card grid mixing 3 platform features with 13
+  resource categories — too tall on mobile, conceptually muddled.
+- New layout splits into two clearly-labeled subsections inside the same
+  "What Veteran Care offers" section:
+  1. **Platform tools that help you find support faster** — 3 cards
+     (Search, AI Navigator, Trusted services & discounts) rendered with
+     `border-l-4 border-l-accent` accent; 1-col mobile, 3-col `md:` and up.
+  2. **Support categories available on Veteran Care** — all 17 canonical
+     categories (Crisis Help, Mental Health, Housing & Home Services,
+     Healthcare, Employment Support, Food Assistance, Benefits Assistance,
+     Legal Services, Family Support, Transportation, Financial & Credit
+     Services, Education & Training, Disabled Veterans, Insurance Services,
+     End of Life Services, Community Support, Veteran Discounts) in a
+     compact `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` grid. Mobile cells
+     use smaller icon (h-9), smaller heading (text-sm), smaller body
+     (text-xs) so the whole block feels scannable instead of cramped.
+- Names match canonical platform naming where it exists
+  (`shared/canonical-categories.ts`): "Employment Support" not "Jobs &
+  Employment", "Benefits Assistance" not "VA Benefits", "Financial &
+  Credit Services" not "Financial Assistance", "Education & Training" not
+  just "Education". Founder's display labels were honored where canonical
+  doesn't override (e.g., "Veteran Discounts" for the trusted-services
+  surface, since there is no resource-side category for it).
+- Test IDs: `card-platform-tool-{0..2}`, `card-category-{0..16}`,
+  `block-platform-tools`, `block-support-categories`,
+  `section-what-veteran-care-offers`.
+
 ### Shared Coverage Growth block (LANDED 2026-04-27)
 - Component: `client/src/components/coverage-growth.tsx`
 - Single source for the "Current Coverage Growth" card showing live states

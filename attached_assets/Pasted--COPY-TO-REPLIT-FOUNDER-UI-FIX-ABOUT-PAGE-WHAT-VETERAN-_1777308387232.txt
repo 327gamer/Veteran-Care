@@ -1,0 +1,125 @@
+--- COPY TO REPLIT ---
+
+FOUNDER UI FIX — ABOUT PAGE “WHAT VETERAN CARE OFFERS” SECTION
+
+Before starting the next state, please fix the About page section titled:
+
+“What Veteran Care offers”
+
+Current issue:
+This section is taking up too much vertical space on mobile because every card is stacked in one long column.
+
+There is also a content-structure issue:
+The first three cards are not resource categories. They are platform features.
+
+They should be separated and highlighted first.
+
+==================================================
+FIX 1 — SEPARATE PLATFORM FEATURES FROM RESOURCE CATEGORIES
+==================================================
+
+The first three cards should be grouped separately as platform features:
+
+1. Search by city, state, or near me
+2. AI Navigator assistance
+3. Trusted services & discounts
+
+Create a new highlighted subsection above the resource category list.
+
+Suggested heading:
+
+“Platform tools that help you find support faster”
+
+Keep these three feature cards full-width or visually highlighted so users understand these are core platform functions, not resource categories.
+
+==================================================
+FIX 2 — RESOURCE CATEGORY CARDS SHOULD BE 2-COLUMN GRID ON MOBILE
+==================================================
+
+Under the platform features section, add a separate resource category section.
+
+Suggested heading:
+
+“Support categories available on Veteran Care”
+
+The resource category cards should display in a compact 2-column grid on mobile instead of one long single-column list.
+
+Each card should still keep:
+- icon
+- category name
+- short description
+
+Do not remove descriptions.
+
+Just make cards more compact and easier to scan.
+
+==================================================
+FIX 3 — SHOW ALL 17 SUPPORT CATEGORIES
+==================================================
+
+Current About page only appears to show 14 resource categories.
+
+We need all 17 Veteran Care support categories represented.
+
+Include all 17:
+
+1. Crisis Help
+2. Mental Health
+3. Housing & Home Services
+4. Healthcare
+5. Jobs & Employment
+6. Food Assistance
+7. VA Benefits
+8. Legal Services
+9. Family Support
+10. Transportation
+11. Financial Assistance
+12. Education
+13. Disabled Veterans
+14. Insurance Services
+15. End of Life Services
+16. Community Support
+17. Veteran Discounts / Trusted Services
+
+If any category name differs from the platform’s canonical naming, use the existing platform naming.
+
+==================================================
+FIX 4 — MOBILE-FIRST LAYOUT
+==================================================
+
+On mobile:
+- Platform feature cards should appear first.
+- Resource category cards should be 2 side-by-side.
+- Cards should not feel cramped.
+- Descriptions should be shorter if necessary but still included.
+- Avoid excessive vertical scrolling.
+
+On desktop:
+- Use a clean responsive grid, likely 3 columns or more if appropriate.
+
+==================================================
+SCOPE CONTROL
+==================================================
+
+Do NOT change resource data.
+Do NOT change category taxonomy.
+Do NOT change routing.
+Do NOT change homepage resource cards unless needed for visual consistency.
+Do NOT touch backend.
+Do NOT start next state.
+
+This is an About page UI / content organization fix only.
+
+==================================================
+DELIVERABLE
+==================================================
+
+After completion, report:
+
+- Files changed
+- How platform feature cards were separated
+- Confirmation resource cards use responsive 2-column mobile grid
+- Confirmation all 17 support categories are included
+- Mobile visual confirmation if available
+
+--- END ---
