@@ -598,6 +598,9 @@ Geo reporting and admin segmentation must be tightened **before Georgia opens** 
 **Mandatory mainstream ecosystem coverage per state (intentional depth in each):**
 HOUSING (shelters / rapid rehousing / rent help / housing authorities / utility help) · FOOD (food banks / pantries / meal programs) · JOBS (workforce centers / staffing / career centers / trade schools) · HEALTH (FQHCs / hospitals / county health / urgent care) · FAMILY (counseling / DV help / caregiver / youth/family) · MONEY (tax help / VITA / debt counseling / insurance counseling) · COMMUNITY (Salvation Army / Catholic Charities / United Way / Goodwill / Red Cross) · TRANSPORT (transit / paratransit / county ride systems) · EDUCATION (colleges / trade schools / GED / adult ed) · DISABILITY/SENIOR (disability advocacy / aging agencies / hospice) · GOVERNMENT (DSS / county / city/state agencies)
 
+**FOUNDER PERMANENT RULE — STALE-STATE SUPPRESSION (effective 2026-04-27):**
+Alabama stale task references are permanently suppressed. Alabama may only be discussed if founder explicitly reopens Alabama. Any stale Alabama Phase 5 / Phase 6 / saturation / session_plan context that surfaces internally must be silently discarded — do not report it, do not summarize it, do not explain that it was ignored, do not include it in founder reports, logs, or task comments. The same suppression rule applies prospectively to any state the founder declares "completed / closed / locked": only reopen if the founder explicitly says "Reopen <State>". Active state and active phase are whichever the founder explicitly names / approves; nothing else may override or appear beside current founder instructions.
+
 **Mandatory phase-report format (return after every phase, no menu, no recommendations):**
 - Veteran-specific rows added:
 - Mainstream rows added:
