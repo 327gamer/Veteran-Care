@@ -115,9 +115,17 @@ Founder approval required, AND:
 
 ### Admin Live Metrics dashboard (LANDED 2026-04-27)
 - Route: **`/admin/live-metrics`** (gated by `AdminAuthGuard` — admin
-  key required; not linked from any public page).
+  key required).
+- **Navigation**: "Live Metrics" appears as the 4th item in the
+  Analytics dropdown in the admin top nav (after Dashboard, Attribution,
+  AI Insights). Uses `Activity` icon for consistency with the page
+  header. data-testid: `nav-live-metrics`. Visible on both desktop and
+  mobile (mobile collapses the "Analytics" label to just the chart
+  icon, but the dropdown items render full text + icon).
 - File: `client/src/pages/admin-live-metrics.tsx` (new)
 - Registered in: `client/src/App.tsx`
+- Nav item added in: `client/src/pages/admin-resources.tsx` (Analytics
+  dropdown around line 1049).
 - Purpose: founder-only dashboard to monitor real platform activity
   before deciding when to flip private traction numbers public on
   Homepage / About / investor reports.
@@ -143,8 +151,12 @@ Founder approval required, AND:
     no schema change needed; the table exists.
 - Both panels auto-refresh every 60s and have a manual Refresh button.
 - The page also shows a "Tracking source status" panel that lists each
-  underlying table and whether it's live, plus a "When you're ready to
-  expose these publicly" checklist for the future flip.
+  underlying table and whether it's live.
+- **Part 3 — Future business metrics** (placeholders, all marked
+  "Tracking not active yet" today): Revenue MTD, Leads sold, Conversion
+  rate, Top traffic states, Top categories clicked, Partner response
+  activity. Each tile carries an inline hint pointing at the source
+  table to wire when ready.
 - Zero backend changes (the endpoint was already wired). Zero changes
   to public-facing UI. Zero changes to resource data, state rollout,
   or metric calculations.

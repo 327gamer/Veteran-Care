@@ -24,6 +24,13 @@ import {
   Lock,
   CheckCircle2,
   AlertCircle,
+  DollarSign,
+  ShoppingCart,
+  Percent,
+  Map,
+  ListOrdered,
+  MailCheck,
+  Sparkles,
 } from "lucide-react";
 
 // ─── Public coverage stats (same data as Homepage/About) ───────────────
@@ -482,7 +489,84 @@ function AdminLiveMetricsInner() {
                   </p>
                 </div>
 
-                <div className="mt-5 p-3 border border-dashed border-border rounded-md bg-background">
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── PART 3 — Future Business Metrics (placeholders) ─── */}
+        <Card className="mt-6" data-testid="card-future-business">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Future business metrics
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Reserved tiles. Each lights up automatically once the
+                  underlying tracking source is wired in. No fake numbers
+                  shown until then.
+                </p>
+              </div>
+              <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[11px]">
+                Reserved
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              <MetricTile
+                icon={DollarSign}
+                label="Revenue MTD"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-revenue-mtd"
+                hint="Wire from Stripe / billing once monetization is live"
+              />
+              <MetricTile
+                icon={ShoppingCart}
+                label="Leads sold"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-leads-sold"
+                hint="From lead_billing table once paid leads start"
+              />
+              <MetricTile
+                icon={Percent}
+                label="Conversion rate"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-conversion-rate"
+                hint="Visits → Leads → Paid leads, computed downstream"
+              />
+              <MetricTile
+                icon={Map}
+                label="Top traffic states"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-top-states"
+                hint="page_views.user_state column exists; aggregate not wired"
+              />
+              <MetricTile
+                icon={ListOrdered}
+                label="Top categories clicked"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-top-categories"
+                hint="resource_clicks → resource → category aggregate"
+              />
+              <MetricTile
+                icon={MailCheck}
+                label="Partner response activity"
+                value="Tracking not active yet"
+                status="off"
+                testId="tile-future-partner-response"
+                hint="lead_events email_sent / response_status aggregates"
+              />
+            </div>
+
+            <div className="mt-5 p-3 border border-dashed border-border rounded-md bg-background">
                   <p className="text-xs font-semibold text-foreground mb-1">
                     When you're ready to expose these publicly:
                   </p>
@@ -510,8 +594,6 @@ function AdminLiveMetricsInner() {
                     </li>
                   </ol>
                 </div>
-              </>
-            )}
           </CardContent>
         </Card>
       </div>

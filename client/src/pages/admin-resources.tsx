@@ -68,6 +68,7 @@ import {
   ArrowRightLeft,
   Trash2,
   Brain,
+  Activity,
   DollarSign,
   Handshake,
   TrendingUp,
@@ -1041,6 +1042,9 @@ function AdminResourcesInner() {
                 </DropdownMenuItem>
                 <DropdownMenuItem data-testid="nav-ai-insights" onClick={() => setLocation("/admin/ai-insights")}>
                   <Brain className="h-4 w-4 mr-2" /> AI Insights
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-live-metrics" onClick={() => setLocation("/admin/live-metrics")}>
+                  <Activity className="h-4 w-4 mr-2" /> Live Metrics
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
