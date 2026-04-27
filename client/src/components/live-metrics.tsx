@@ -23,7 +23,8 @@ export function LiveMetrics({
   footnote,
   className = "",
 }: LiveMetricsProps) {
-  const { stats } = usePublicStats();
+  const { stats, isLoading, hasLiveData } = usePublicStats();
+  const showSkeleton = isLoading && !hasLiveData;
 
   const metricCards = [
     {
@@ -99,7 +100,14 @@ export function LiveMetrics({
                 className="font-heading text-base sm:text-xl md:text-2xl font-extrabold text-primary leading-tight tracking-tight [overflow-wrap:break-word] hyphens-none"
                 data-testid={`text-metric-value-${i}`}
               >
-                {m.value}
+                {showSkeleton ? (
+                  <span
+                    className="inline-block h-5 sm:h-6 md:h-7 w-16 sm:w-20 bg-muted/60 rounded animate-pulse align-middle"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  m.value
+                )}
               </p>
               <p
                 className="text-[11px] sm:text-xs uppercase tracking-wide text-muted-foreground mt-1 leading-snug"

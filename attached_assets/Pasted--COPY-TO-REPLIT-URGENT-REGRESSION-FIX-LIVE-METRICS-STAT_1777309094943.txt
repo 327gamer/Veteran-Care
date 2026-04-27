@@ -1,0 +1,106 @@
+--- COPY TO REPLIT ---
+
+URGENT REGRESSION FIX — LIVE METRICS STATE COUNT BROKEN
+
+Critical issue found after the latest About/Home metrics UI fix.
+
+The live metrics section has regressed.
+
+It is now showing:
+
+- 3 States Live
+- 2,000+ Verified Resources
+- 150+ Cities Covered
+- Launching Next: Florida
+
+This is WRONG.
+
+Before this regression, the platform correctly showed:
+
+- 9 States Live
+- 6,363+ Verified Resources
+- 1,019+ Cities Covered
+- Launching Next was Pennsylvania / dynamic current rollout state
+
+==================================================
+EXPECTED CURRENT LIVE STATES
+==================================================
+
+The live states should include:
+
+- Alabama
+- California
+- Florida
+- Georgia
+- North Carolina
+- Ohio
+- Pennsylvania
+- South Carolina
+- Texas
+
+So the metric should show:
+
+9 STATES LIVE
+
+==================================================
+PROBLEM
+==================================================
+
+The recent metrics / CoverageGrowth UI change appears to have caused a regression where the metrics are now falling back to old static/default values instead of using the live /api/public-stats data.
+
+This must be fixed immediately.
+
+==================================================
+REQUIRED FIX
+==================================================
+
+1. Restore live metrics to use the real dynamic data source.
+
+2. Confirm /api/public-stats returns the correct values:
+   - liveStateCount = 9
+   - verifiedResources approx 6,363+
+   - citiesCovered approx 1,019+
+   - liveStateNames includes all 9 states listed above
+
+3. Confirm LiveMetrics component is NOT using fallback/static values such as:
+   - 3 states
+   - 2,000 resources
+   - 150 cities
+   - Florida launching next
+
+4. Confirm CoverageGrowth component is NOT overriding or corrupting the metrics data.
+
+5. If fallback defaults exist, they must ONLY display when API fails completely — not when live data is available.
+
+6. Homepage and About page must both display the same correct dynamic numbers.
+
+==================================================
+SCOPE CONTROL
+==================================================
+
+Do NOT touch resource data.
+Do NOT alter state rollout data.
+Do NOT start the next state.
+Do NOT change metric calculations unless they are broken.
+Do NOT hardcode fake numbers.
+
+This is a regression repair only.
+
+==================================================
+DELIVERABLE
+==================================================
+
+After fix, report:
+
+- Root cause
+- Files changed
+- What fallback/static value caused the issue
+- Confirm /api/public-stats output
+- Confirm Homepage shows 9 states live
+- Confirm About page shows 9 states live
+- Confirm live state list still includes all 9 states
+- Confirm Launching Next logic is dynamic again
+
+This is urgent.
+
+--- END ---

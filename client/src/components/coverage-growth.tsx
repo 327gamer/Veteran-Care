@@ -7,7 +7,8 @@ interface CoverageGrowthProps {
 }
 
 export function CoverageGrowth({ className = "" }: CoverageGrowthProps) {
-  const { stats } = usePublicStats();
+  const { stats, isLoading, hasLiveData } = usePublicStats();
+  const showSkeleton = isLoading && !hasLiveData;
 
   return (
     <section
@@ -34,18 +35,29 @@ export function CoverageGrowth({ className = "" }: CoverageGrowthProps) {
               <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
                 Live states
               </p>
-              <ul className="space-y-1.5">
-                {stats.liveStateNames.map((s) => (
-                  <li
-                    key={s.code}
-                    className="flex items-center gap-2 text-sm text-foreground/85"
-                    data-testid={`text-live-state-${s.code.toLowerCase()}`}
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-medium">{s.name}</span>
-                  </li>
-                ))}
-              </ul>
+              {showSkeleton ? (
+                <ul className="space-y-1.5" aria-hidden="true">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="h-4 w-4 rounded bg-muted/60 animate-pulse shrink-0" />
+                      <span className="h-4 w-28 rounded bg-muted/60 animate-pulse" />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="space-y-1.5">
+                  {stats.liveStateNames.map((s) => (
+                    <li
+                      key={s.code}
+                      className="flex items-center gap-2 text-sm text-foreground/85"
+                      data-testid={`text-live-state-${s.code.toLowerCase()}`}
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <span className="font-medium">{s.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div data-testid="block-next-state">
@@ -54,9 +66,16 @@ export function CoverageGrowth({ className = "" }: CoverageGrowthProps) {
               </p>
               <div className="flex items-center gap-2 text-sm text-foreground/85">
                 <Rocket className="h-4 w-4 text-accent shrink-0" />
-                <span className="font-medium" data-testid="text-next-state">
-                  {stats.nextStateLaunching}
-                </span>
+                {showSkeleton ? (
+                  <span
+                    className="h-4 w-24 rounded bg-muted/60 animate-pulse"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span className="font-medium" data-testid="text-next-state">
+                    {stats.nextStateLaunching}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
                 National expansion roadmap underway with additional states launching regularly.

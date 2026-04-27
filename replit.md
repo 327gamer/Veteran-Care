@@ -113,6 +113,30 @@ Founder approval required, AND:
   "North Carolina", "Massachusetts", "West Virginia") fit on one line in
   the mobile 2-col tile without mid-word breaks.
 
+### Live Metrics fallback regression fix (LANDED 2026-04-27)
+- File: `client/src/hooks/use-public-stats.ts`
+  - `PUBLIC_STATS_FALLBACK` previously held early-rollout stale values
+    (3 states / 2000 resources / 150 cities / "Florida" launching next).
+    Because React Query's first render has `data === undefined`, those
+    stale numbers flashed in on every initial page load before the API
+    resolved.
+  - Updated the snapshot to the current actuals: 9 states (AL, CA, FL,
+    GA, NC, OH, PA, SC, TX), 6363 resources, 1019 cities,
+    `nextStateLaunching: "Coming Soon"` (generic on purpose — never
+    name a specific state in the fallback so we don't lie about the
+    roadmap if the API is ever down).
+  - Hook now also returns `hasLiveData: !!data`.
+  - **Maintenance rule**: bump this snapshot whenever a new state goes
+    live. Add to state-launch checklist.
+- Files: `client/src/components/live-metrics.tsx`,
+  `client/src/components/coverage-growth.tsx`
+  - Both now show animated skeleton placeholders during
+    `isLoading && !hasLiveData`. This means the fallback values are
+    never visible during normal first-load — they only display if the
+    API actually fails.
+- Server-side `/api/public-stats` was already returning correct
+  dynamic data; no backend changes were needed.
+
 ### About page "What Veteran Care offers" restructure (LANDED 2026-04-27)
 - File: `client/src/pages/about.tsx`
 - Old layout was a single 16-card grid mixing 3 platform features with 13

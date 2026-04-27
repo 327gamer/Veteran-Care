@@ -14,19 +14,31 @@ export type PublicStats = {
   lastUpdated: string;
 };
 
+// Last-known-good snapshot. Updated whenever a new state goes live so
+// that, even if /api/public-stats is briefly slow or fails, the user
+// never sees blatantly stale numbers (e.g. "3 States Live") flash in.
+// This is NOT the source of truth — /api/public-stats is. This is only
+// a graceful-degradation safety net.
+// Last updated: 2026-04-27 (AL, CA, FL, GA, NC, OH, PA, SC, TX live).
 export const PUBLIC_STATS_FALLBACK: PublicStats = {
-  totalResources: 2000,
-  totalCities: 150,
-  totalStates: 3,
+  totalResources: 6363,
+  totalCities: 1019,
+  totalStates: 9,
   totalCategories: 17,
-  liveStates: ["GA", "NC", "SC"],
+  liveStates: ["AL", "CA", "FL", "GA", "NC", "OH", "PA", "SC", "TX"],
   liveStateNames: [
-    { code: "SC", name: "South Carolina" },
-    { code: "NC", name: "North Carolina" },
+    { code: "AL", name: "Alabama" },
+    { code: "CA", name: "California" },
+    { code: "FL", name: "Florida" },
     { code: "GA", name: "Georgia" },
+    { code: "NC", name: "North Carolina" },
+    { code: "OH", name: "Ohio" },
+    { code: "PA", name: "Pennsylvania" },
+    { code: "SC", name: "South Carolina" },
+    { code: "TX", name: "Texas" },
   ],
-  nextStateLaunching: "Florida",
-  coverageRegion: "Southeast United States",
+  nextStateLaunching: "Coming Soon",
+  coverageRegion: "Nationwide expansion",
   growthStatus: "Expanding Nationally",
   isEstimated: true,
   lastUpdated: new Date().toISOString(),
@@ -37,11 +49,21 @@ export function formatStatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-export function usePublicStats(): { stats: PublicStats; isLive: boolean; isLoading: boolean } {
+export function usePublicStats(): {
+  stats: PublicStats;
+  isLive: boolean;
+  isLoading: boolean;
+  hasLiveData: boolean;
+} {
   const { data, isLoading } = useQuery<PublicStats>({
     queryKey: ["/api/public-stats"],
     staleTime: 5 * 60 * 1000,
   });
   const stats = data || PUBLIC_STATS_FALLBACK;
-  return { stats, isLive: !!data && !data.isEstimated, isLoading };
+  return {
+    stats,
+    isLive: !!data && !data.isEstimated,
+    isLoading,
+    hasLiveData: !!data,
+  };
 }
