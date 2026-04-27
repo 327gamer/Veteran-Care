@@ -568,6 +568,48 @@ Geo reporting and admin segmentation must be tightened **before Georgia opens** 
 - **Gap — hard-coded SC filter:** exec-summary "Top Cities" panel (`server/routes.ts:10082-10093`); founder digest mixes states in flat city list
 - **Recommended pre-Georgia slice:** Upgrade #5 — National Geo-Reporting Foundation **SHIPPED 2026-04-18** ✅ (additive `state`/`city` cols on ambassadors + `user_state`/`user_city` on page_views & ai_usage_log + `?state=` filter on exec-summary + admin state selector + founder-digest by-state grouping). No engine touches. See CHANGELOG for E2E validation.
 
+### FOUNDER MASTER STATE ROLLOUT LAW (effective 2026-04-27 — applies to ALL future state phases)
+**Posted by founder. NON-NEGOTIABLE. Supersedes any prior phase guidance in this file.**
+
+**Execution rules:**
+1. Founder controls phase order.
+2. Agent does NOT recommend phases.
+3. Agent does NOT provide menus / "pick one" lists at the end of phase reports.
+4. Agent does NOT redesign strategy.
+5. Agent does NOT combine phases.
+6. Agent does NOT auto-run multiple phases.
+7. Agent completes ONE phase only.
+8. Agent stops.
+9. Agent reports.
+10. Agent waits.
+
+**Mandatory 6-phase model (no deviation, no Phase 7, no side loops, no Round 2 unless founder requests):**
+- P1 State Foundation
+- P2 Healthcare Foundation
+- P3 County / Benefits Backbone
+- P4 Major City Saturation
+- P5 Secondary Cities + Weak Category Lift
+- P6 Audit / Patch / Closeout
+
+**Veteran-First, Not Veteran-Only — both layers MANDATORY in every phase:**
+- LAYER 1: Veteran-specific resources (VSAs, Vet Centers, VFW/Legion/DAV posts, vet-only nonprofits, etc.)
+- LAYER 2: Mainstream resources veterans actually use (DSS, FQHCs, hospitals, food banks, transit, workforce centers, Salvation Army, Catholic Charities, United Way, Goodwill, Red Cross, AAAs, hospices, colleges, DV shelters, tax help / VITA, debt counseling, county/city/state agencies, etc.)
+
+**Mandatory mainstream ecosystem coverage per state (intentional depth in each):**
+HOUSING (shelters / rapid rehousing / rent help / housing authorities / utility help) · FOOD (food banks / pantries / meal programs) · JOBS (workforce centers / staffing / career centers / trade schools) · HEALTH (FQHCs / hospitals / county health / urgent care) · FAMILY (counseling / DV help / caregiver / youth/family) · MONEY (tax help / VITA / debt counseling / insurance counseling) · COMMUNITY (Salvation Army / Catholic Charities / United Way / Goodwill / Red Cross) · TRANSPORT (transit / paratransit / county ride systems) · EDUCATION (colleges / trade schools / GED / adult ed) · DISABILITY/SENIOR (disability advocacy / aging agencies / hospice) · GOVERNMENT (DSS / county / city/state agencies)
+
+**Mandatory phase-report format (return after every phase, no menu, no recommendations):**
+- Veteran-specific rows added:
+- Mainstream rows added:
+- Total rows added:
+- Weak categories improved:
+- Cities expanded:
+- Awaiting founder approval:
+
+**Benchmark:** Florida (867 rows / 168 cities / 17 of 17 cats ≥30 floor / all 67 counties covered).
+
+---
+
 ### National State Expansion Scoreboard (UPDATE AFTER EVERY WAVE)
 Canonical live tracker. Update the row for the affected state at the end of every state wave (after QA passes and code review approves). Date format YYYY-MM-DD.
 
