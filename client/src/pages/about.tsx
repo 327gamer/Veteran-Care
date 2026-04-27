@@ -26,7 +26,6 @@ import {
   UserCheck,
   Database,
   Building2,
-  Rocket,
   TrendingUp,
   Flag,
   PlusCircle,
@@ -36,7 +35,7 @@ import CampaignHeroVideo from "@/components/campaign-hero-video";
 import MenuPageHero from "@/components/menu-page-hero";
 import { platform } from "@shared/platform";
 import { LiveMetrics } from "@/components/live-metrics";
-import { usePublicStats } from "@/hooks/use-public-stats";
+import { CoverageGrowth } from "@/components/coverage-growth";
 
 const TRUST_TILES = [
   { icon: Layers, label: "17 Support Categories", sub: "Across veterans, families & caregivers" },
@@ -137,7 +136,6 @@ const PILLARS = [
 ];
 
 export default function About() {
-  const { stats } = usePublicStats();
   useEffect(() => {
     document.title = "About Veteran Care | America's Modern Veteran Support Platform";
   }, []);
@@ -179,53 +177,8 @@ export default function About() {
       {/* ── LIVE METRICS — auto-counted from the live database ── */}
       <LiveMetrics className="pt-12 sm:pt-16" />
 
-      {/* ── SOUTHEAST COVERAGE BLOCK ── */}
-      <section className="container mx-auto px-5 pt-12 sm:pt-16 max-w-3xl" data-testid="section-coverage">
-        <Card className="border-l-4 border-l-primary">
-          <CardContent className="pt-6 pb-6">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Current coverage growth</p>
-            <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mb-2" data-testid="text-coverage-region">
-              Current Coverage Growth
-            </h2>
-            <p className="text-sm text-foreground/80 mb-5 leading-relaxed">
-              Veteran Care is actively expanding state by state across America.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div data-testid="block-live-states">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                  Live states
-                </p>
-                <ul className="space-y-1.5">
-                  {stats.liveStateNames.map((s) => (
-                    <li
-                      key={s.code}
-                      className="flex items-center gap-2 text-sm text-foreground/85"
-                      data-testid={`text-live-state-${s.code.toLowerCase()}`}
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                      <span className="font-medium">{s.name}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div data-testid="block-next-state">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                  Launching next
-                </p>
-                <div className="flex items-center gap-2 text-sm text-foreground/85">
-                  <Rocket className="h-4 w-4 text-accent shrink-0" />
-                  <span className="font-medium" data-testid="text-next-state">{stats.nextStateLaunching}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                  National expansion roadmap underway with additional states launching regularly.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+      {/* ── COVERAGE GROWTH — shared with Homepage ── */}
+      <CoverageGrowth className="pt-12 sm:pt-16" />
 
       {/* ── VIDEO SHOWCASE ── */}
       <section className="relative bg-primary overflow-hidden mt-12 sm:mt-16">

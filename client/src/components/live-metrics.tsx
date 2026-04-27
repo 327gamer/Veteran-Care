@@ -96,7 +96,7 @@ export function LiveMetrics({
                 <Icon className="h-4 w-4" />
               </div>
               <p
-                className="font-heading text-xl sm:text-2xl font-extrabold text-primary leading-tight break-words"
+                className="font-heading text-base sm:text-xl md:text-2xl font-extrabold text-primary leading-tight tracking-tight [overflow-wrap:break-word] hyphens-none"
                 data-testid={`text-metric-value-${i}`}
               >
                 {m.value}

@@ -1,0 +1,114 @@
+--- COPY TO REPLIT ---
+
+FOUNDER UI FIX — HOMEPAGE + ABOUT PAGE METRICS
+
+Before starting the next state, please fix two small UI / layout issues on the About page and Homepage.
+
+==================================================
+FIX 1 — ABOUT PAGE “LAUNCHING NEXT” TEXT WRAP
+==================================================
+
+Problem:
+On the About page metrics section, “Pennsylvania” is wrapping awkwardly onto two lines:
+
+Pennsylvan
+ia
+
+On the Homepage metrics section it displays correctly on one line.
+
+Required fix:
+Make the About page metric card use the same responsive text sizing / width / layout behavior as the Homepage metric card so current and future “Launching Next” state names fit properly.
+
+Important:
+This must work for long future state names too, such as:
+
+- Pennsylvania
+- North Carolina
+- South Carolina
+- Massachusetts
+- West Virginia
+
+Do not hardcode only Pennsylvania.
+
+Use responsive styling so state names display cleanly across mobile.
+
+==================================================
+FIX 2 — ADD COVERAGE GROWTH SECTION TO HOMEPAGE
+==================================================
+
+Problem:
+The About page has a useful “Current Coverage Growth” section showing:
+
+- Live States
+- Launching Next
+
+This section should also appear on the Homepage below the existing live metrics section.
+
+Required fix:
+Add the same “Current Coverage Growth” section from the About page to the Homepage under the metrics block.
+
+Homepage order should be:
+
+1. Existing homepage content
+2. Live platform metrics section
+3. Current Coverage Growth section showing:
+   - Live States
+   - Launching Next
+
+Use the same dynamic data source already powering the About page.
+
+Do not duplicate hardcoded state lists.
+
+Do not create a new data source.
+
+Do not break the dynamic “Launching Next” logic.
+
+==================================================
+IMPORTANT DATA RULE
+==================================================
+
+The states list and Launching Next must stay dynamic.
+
+Current live states shown are:
+
+- Alabama
+- California
+- Florida
+- Georgia
+- North Carolina
+- Ohio
+- Pennsylvania
+- South Carolina
+- Texas
+
+Launching Next currently shows Pennsylvania, but this will change as future states are added.
+
+Make sure the UI can handle future state changes cleanly.
+
+==================================================
+SCOPE CONTROL
+==================================================
+
+Do NOT start the next state yet.
+
+Do NOT change backend state rollout logic unless required for this UI fix.
+
+Do NOT change resource data.
+
+Do NOT change metrics calculations.
+
+This is a UI/layout reuse fix only.
+
+==================================================
+DELIVERABLE
+==================================================
+
+After completion, report:
+
+- Files changed
+- What fixed the wrapping issue
+- Where the Coverage Growth section was added on Homepage
+- Confirmation dynamic data source is still used
+- Mobile screenshot / visual confirmation if available
+
+--- END ---

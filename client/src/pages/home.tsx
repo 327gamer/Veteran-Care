@@ -34,6 +34,7 @@ import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png"
 import { platform, t } from "@shared/platform";
 import { getCategoryConfig, type SupabaseCategory } from "@/lib/category-config";
 import { LiveMetrics } from "@/components/live-metrics";
+import { CoverageGrowth } from "@/components/coverage-growth";
 import {
   Select,
   SelectContent,
@@ -677,6 +678,9 @@ export default function Home() {
 
       {/* ── LIVE METRICS — same source of truth as About page ── */}
       <LiveMetrics className="!px-0 pt-2" />
+
+      {/* ── COVERAGE GROWTH — shared with About page ── */}
+      <CoverageGrowth className="pt-8 sm:pt-12 pb-4" />
 
       <AuthModal
         open={showAuthModal}

@@ -107,6 +107,24 @@ Founder approval required, AND:
     "Veteran-Owned Businesses" section.
 - Props (`eyebrow`, `headline`, `subheadline`, `footnote`, `className`)
   default to the founder-approved wording so both pages stay in lock-step.
+- **Responsive value text (LANDED 2026-04-27 UI fix):** metric tile value
+  uses `text-base sm:text-xl md:text-2xl tracking-tight hyphens-none
+  [overflow-wrap:break-word]` so multi-word state names ("Pennsylvania",
+  "North Carolina", "Massachusetts", "West Virginia") fit on one line in
+  the mobile 2-col tile without mid-word breaks.
+
+### Shared Coverage Growth block (LANDED 2026-04-27)
+- Component: `client/src/components/coverage-growth.tsx`
+- Single source for the "Current Coverage Growth" card showing live states
+  + launching-next state. Pulls dynamically from `usePublicStats` (same
+  `liveStateNames` / `nextStateLaunching` source as LiveMetrics — no
+  hardcoded state list anywhere).
+- Mounted on:
+  - `client/src/pages/about.tsx` directly under `<LiveMetrics />` (replaced
+    the previous inline section)
+  - `client/src/pages/home.tsx` directly under `<LiveMetrics />`
+- Both pages now render the identical block; future state additions
+  surface automatically on both surfaces with no code edit.
 
 ### Hidden traction-metrics system (Phase: PREP — DO NOT SHOW PUBLICLY)
 The second metrics block planned for the homepage *after* internal
