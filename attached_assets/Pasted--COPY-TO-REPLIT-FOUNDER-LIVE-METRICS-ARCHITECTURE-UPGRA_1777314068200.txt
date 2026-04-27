@@ -1,0 +1,140 @@
+--- COPY TO REPLIT ---
+
+FOUNDER LIVE METRICS ARCHITECTURE UPGRADE — PUBLIC VS PRIVATE SPLIT
+
+Important future planning instruction.
+
+The Live Metrics page will eventually power some public-facing metrics on:
+
+- Homepage
+- About Us page
+- Trust / credibility sections
+- Partner sales pages
+- Investor / sponsor decks
+
+Because of that, the metrics system must now be structured in TWO CLEAR LAYERS.
+
+==================================================
+LAYER 1 — PUBLIC SAFE METRICS
+==================================================
+
+These are metrics we may publicly display later.
+
+Examples:
+
+COVERAGE
+- States Live
+- Verified Resources
+- Cities Covered
+- Support Categories
+- Active States List
+- Launching Next
+
+TRACTION / TRUST
+- Monthly Visits
+- Returning Visitors
+- Page Views
+- Resource Clicks
+- Trusted Partner Clicks
+- AI Navigator Sessions
+- Leads Submitted (count only)
+- Businesses Listed
+- Accounts Created
+- Veterans Helped (future)
+- Searches Performed
+- Top States Using Platform
+- Growth Percentage
+
+These should be easy to export later to homepage/about pages.
+
+==================================================
+LAYER 2 — PRIVATE OWNER / ADMIN ONLY METRICS
+==================================================
+
+These must NEVER appear publicly unless founder specifically approves.
+
+Examples:
+
+REVENUE
+- MTD Revenue
+- Stripe Revenue
+- Subscription Revenue
+- Lead Revenue
+- Revenue by Category
+- Revenue by State
+- Revenue by Partner
+
+SALES / MONETIZATION
+- Leads Sold
+- Close Ratios
+- Partner Churn
+- CAC
+- LTV
+- Conversion %
+- Avg Revenue Per User
+- Avg Revenue Per Partner
+
+OPERATIONS
+- Unanswered Leads
+- Partner Response Times
+- Refunds
+- Failed Payments
+- Cancelled Subscriptions
+- Admin Notes
+- Internal Margin Data
+
+==================================================
+REQUIRED PAGE STRUCTURE
+==================================================
+
+Inside /admin/live-metrics use sections:
+
+1. Public Coverage Metrics
+2. Public Growth Metrics
+3. Private Revenue Metrics
+4. Private Partner Metrics
+5. Private Operations Metrics
+
+Make Public and Private visually separated.
+
+Example:
+
+GREEN = Public Safe
+LOCKED / DARK = Private Internal
+
+==================================================
+FUTURE PUBLIC PUSH MODE
+==================================================
+
+Down the road, founder may say:
+
+"Push public metrics live"
+
+When that happens Replit should be able to quickly feed ONLY Layer 1 metrics to:
+
+- Homepage
+- About page
+- Landing pages
+
+Without touching Layer 2 private data.
+
+==================================================
+IMPORTANT RULE
+==================================================
+
+Build this separation now so we avoid rework later.
+
+No homepage changes now.
+No public changes now.
+Admin structure only.
+
+==================================================
+REPORT BACK ONLY
+==================================================
+
+- Can current system support this split?
+- What should be restructured now?
+- Best way to tag public-safe vs private metrics?
+- Any future risk if not done now?
+
+--- END ---
