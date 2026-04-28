@@ -1,0 +1,159 @@
+🚨 CRITICAL SYSTEM ALIGNMENT — DO NOT BREAK EXISTING LEAD ENGINE
+
+Before proceeding further, I need full confirmation that the EXISTING system logic is preserved while upgrading ECSS + billing.
+
+There are key behaviors already live that MUST remain intact.
+
+---
+
+### 🔹 1. TWO LEAD TYPES — MUST REMAIN SEPARATE
+
+We have:
+
+A) PAID LEADS (Trusted Partners + ECSS)
+B) FREE RESOURCE LEADS (non-paid connections)
+
+👉 These MUST NOT be merged or simplified into one flow.
+
+---
+
+### 🔹 2. PAID LEAD FLOW (SIMPLIFY — NOT EXPAND)
+
+For PAID partners:
+
+👉 Email should have ONE action only:
+- ACCEPT LEAD
+
+When clicked:
+- Lead is assigned
+- $49.99 is charged automatically
+- Lead is removed from pool
+
+❌ REMOVE:
+- completed
+- contacted
+- multi-step actions
+
+👉 Accept = billing + ownership (single action)
+
+---
+
+### 🔹 3. LEAD PROTECTION SYSTEM (DO NOT BREAK)
+
+If partner does NOT accept:
+
+- Lead must return to pool
+- Lead must be reassigned to another partner
+
+This prevents abuse and is a CORE rule.
+
+👉 Confirm this remains unchanged
+
+---
+
+### 🔹 4. FREE RESOURCE LEAD FLOW (DO NOT TOUCH)
+
+For NON-PAID resource partners:
+
+- They can:
+  - add notes
+  - update status
+  - track outcomes
+
+👉 NO billing involved
+
+👉 These updates must still:
+- appear in admin panel
+- persist in database
+
+---
+
+### 🔹 5. EMAIL BEHAVIOR
+
+Confirm:
+
+PAID leads:
+- ONLY "ACCEPT LEAD" button
+- triggers billing
+
+FREE leads:
+- keep note/status system
+
+---
+
+### 🔹 6. LOGO / BRANDING SYSTEM (NEEDS FIX)
+
+Currently inconsistent.
+
+We need:
+
+Normal partners:
+- logo appears in profile page
+
+Elite partners:
+- logo appears:
+  1) TOP banner (category/state)
+  2) profile page
+
+👉 Confirm both placements are wired correctly
+
+---
+
+### 🔹 7. ELITE BANNER LOGIC
+
+- Must be state-specific
+- Must be category/subcategory-specific
+- Must display ONLY if slot is owned
+
+👉 Confirm banner is tied to:
+(category + state)
+
+---
+
+### 🔹 8. LOCATION / STATE DETECTION
+
+- Banner and lead routing must use user state
+- Must match onboarding + browsing context
+
+👉 Confirm no global/static behavior
+
+---
+
+### 🔹 9. ORIGINAL SIGNUP FLOW (KEEP)
+
+We already had:
+
+1. Partner submits form  
+2. Stripe checkout  
+3. Payment completed  
+4. Confirmation email  
+5. Partner activated  
+
+👉 Confirm this flow remains intact
+
+---
+
+### 🔹 10. FINAL GOAL
+
+We are NOT replacing the system.
+
+We are:
+- simplifying paid lead action (Accept only)
+- automating billing
+- adding ECSS
+
+WITHOUT breaking:
+- lead routing
+- reassignment logic
+- notes system
+- admin visibility
+
+---
+
+Reply with:
+
+CONFIRMED — existing system preserved + upgrades layered on top
+
+OR
+
+List anything that would change from the above.
