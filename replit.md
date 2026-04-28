@@ -600,7 +600,9 @@ HOUSING (shelters / rapid rehousing / rent help / housing authorities / utility 
 
 **FOUNDER PERMANENT RULES — STALE-STATE SUPPRESSION + REPORT DISCIPLINE (effective 2026-04-27, expanded same date):**
 
-1. CLOSED/LOCKED states may only be discussed if founder explicitly says "Reopen <State>". Currently CLOSED/LOCKED: GA · SC · NC · FL · NY (and any prior closed states). Any stale phase / saturation / session_plan / reset context for a closed state that surfaces internally must be silently discarded — do not report it, do not summarize it, do not explain that it was ignored, do not include it in founder reports, logs, or task comments.
+1. CLOSED/LOCKED states may only be discussed if founder explicitly says "Reopen <State>". Currently CLOSED/LOCKED: GA · SC · NC · FL · NY · AL (and any prior closed states). Any stale phase / saturation / session_plan / reset context for a closed state that surfaces internally must be silently discarded — do not report it, do not summarize it, do not explain that it was ignored, do not include it in founder reports, logs, or task comments. Do not surface phrases like "stale <State> injection", "<State> ignored", "<State> injection discarded", "suppressed-task message", or any meta-commentary about the suppression itself. The suppression is silent.
+
+   1a. CLOSED/LOCKED is an OPERATIONS / MEMORY / WORKFLOW status only. It is NOT a data command. All data for closed/locked states (rows, cities, categories, junctions, public visibility, metrics, scoreboard counts, deployed app coverage) remains fully live and untouched. No closed-state data is to be deleted, hidden, modified, reduced, archived, or removed by virtue of the lock. The lock governs what the agent talks about and works on, not what the database contains.
 
 2. NEVER mention prior-closed state names in any founder report, scoreboard narrative, commit message, or commentary unless founder explicitly references that state in the active request. (No "same standard as <X>", no "in same class as <X>", no comparative roll-up.)
 
