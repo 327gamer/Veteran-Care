@@ -1,0 +1,102 @@
+--- COPY TO REPLIT ---
+
+FOUNDER REQUEST — STEP-BY-STEP STRIPE + REPLIT SETUP GUIDE FOR ECSS
+
+I am not a developer or coder, so I need simple founder-level instructions.
+
+Before coding more, please give me a clear step-by-step setup guide for what I need to do manually in Stripe and Replit Secrets so ECSS works perfectly with the existing trusted partner billing flow.
+
+==================================================
+GOAL
+==================================================
+
+Make ECSS fully automated:
+
+1. Partner chooses base plan:
+   - $99 State Plan
+   OR
+   - $499 National Plan
+
+2. Partner adds ECSS:
+   - $499/month Elite Category Sponsor Slot
+
+3. Stripe checkout charges both:
+   - base plan
+   - ECSS monthly add-on
+
+4. Lead billing:
+   - partner accepts qualified lead
+   - Stripe automatically charges $49.99
+   - no invoice
+   - no manual payment link
+   - no extra checkout step
+
+==================================================
+WHAT I NEED FROM YOU FIRST
+==================================================
+
+Please tell me exactly:
+
+1. What Stripe product(s) I need to create
+2. What Stripe price(s) I need to create
+3. Whether ECSS needs a Stripe Price ID or can use dynamic pricing
+4. Whether $49.99 lead charge needs a Stripe product/price
+5. What Replit Secrets / environment variables need to be added
+6. Exact names of those secrets
+7. Where in Stripe I find the Price ID
+8. What to paste into Replit
+9. How to confirm webhook settings are correct
+10. What test checkout to run after setup
+
+==================================================
+FORMAT REQUIRED
+==================================================
+
+Use simple numbered steps.
+
+Example:
+
+STEP 1 — Open Stripe Dashboard  
+STEP 2 — Go to Products  
+STEP 3 — Create Product named _____  
+STEP 4 — Create recurring price _____  
+STEP 5 — Copy Price ID beginning with price_  
+STEP 6 — Open Replit Secrets  
+STEP 7 — Add secret named _____  
+STEP 8 — Paste Price ID  
+STEP 9 — Tell Replit: “Done”  
+STEP 10 — Replit verifies checkout and webhook
+
+==================================================
+AFTER I COMPLETE THE MANUAL STEPS
+==================================================
+
+Once I tell you “Done,” you must:
+
+1. Check Replit Secrets are available
+2. Verify Stripe checkout includes:
+   - base plan
+   - ECSS add-on
+3. Verify payment method is saved for future lead charges
+4. Verify accepted leads trigger automatic $49.99 charge
+5. Verify admin shows ECSS subscription active
+6. Verify no manual payment link is generated
+7. Verify existing $99 / $499 plans still work
+
+==================================================
+IMPORTANT
+==================================================
+
+Do not assume I know Stripe.
+
+Do not give developer shorthand.
+
+Do not say “configure Stripe” generally.
+
+Give exact founder instructions.
+
+No coding yet until I understand the setup.
+
+Report back with the setup guide only.
+
+--- END ---
