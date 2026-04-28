@@ -81,6 +81,7 @@ import {
   Zap,
   Eye,
   LogOut,
+  Crown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { type SupabaseCategory } from "@/lib/category-config";
@@ -1091,6 +1092,9 @@ function AdminResourcesInner() {
                 </DropdownMenuItem>
                 <DropdownMenuItem data-testid="nav-trusted-leads" onClick={() => setLocation("/admin/trusted-service-leads")}>
                   <Mail className="h-4 w-4 mr-2" /> Trusted Partner Leads
+                </DropdownMenuItem>
+                <DropdownMenuItem data-testid="nav-elite-sponsors" onClick={() => setLocation("/admin/elite-sponsors")}>
+                  <Crown className="h-4 w-4 mr-2" /> Elite Sponsor Slots
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="nav-vob" onClick={() => setLocation("/admin/vob")}>

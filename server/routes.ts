@@ -20,6 +20,7 @@ import { derivePublicSlug } from "./ambassador-slugs";
 import { registerSeededProviderRoutes } from "./seeded-providers-routes";
 import { registerContactRoute } from "./contact-route";
 import { registerUnsubscribeRoutes } from "./unsubscribe-route";
+import { registerEliteSponsorRoutes, ensureEliteSponsorTables } from "./elite-sponsor";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
@@ -2950,6 +2951,11 @@ export async function registerRoutes(
 
   // Stage C: seeded providers admin endpoints
   registerSeededProviderRoutes(app, requireAdmin);
+
+  // Elite Category Sponsor Slot (ECSS) — Phase A
+  // Additive Supabase tables only; never modifies existing rows.
+  await ensureEliteSponsorTables();
+  registerEliteSponsorRoutes(app, requireAdmin);
 
   // Phase 7: public contact form (Resend auto-reply + AI Navigator triage)
   registerContactRoute(app);

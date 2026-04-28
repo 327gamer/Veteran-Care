@@ -1,0 +1,143 @@
+--- COPY TO REPLIT ---
+
+FOUNDER RESPONSE — ECSS PLAN APPROVED WITH DECISIONS
+
+The Elite Category Sponsor Slot plan is approved conceptually.
+
+This is the correct interpretation:
+
+ECSS is a separate premium ad product.
+It is NOT:
+- $99 state listing
+- $499 national listing
+- featured placement
+- near-me boost
+- normal trusted service listing
+
+It is the top premium sponsor banner above listings.
+
+==================================================
+FOUNDER DECISIONS
+==================================================
+
+1. Real Estate Category
+
+YES — create Real Estate as a new top-level trusted service category / route.
+
+Do not bury it under housing or financial.
+
+Real estate, mortgage/lending, and legal are three separate premium sales lanes.
+
+2. Default Monthly Price
+
+Seed default monthly price at:
+
+$499/month
+
+This is the starter founder price.
+
+Admin must be able to edit per slot later.
+
+3. Default Lead Price
+
+Seed default lead price at:
+
+$49.99 per delivered lead
+
+Admin must be able to edit per slot later.
+
+4. Placeholder Click Destination
+
+Use existing partner application form:
+
+/partner-apply?product=elite&category=&state=
+
+Prefill product/category/state context.
+
+No new inquiry form for MVP.
+
+5. State Scope at Launch
+
+Launch Phase A inventory for all currently live states.
+
+Use the active live-state list from platform stats if possible.
+
+Current known live states include:
+
+AL
+CA
+FL
+GA
+NC
+OH
+PA
+SC
+TX
+NY
+
+Do not hardcode forever if live-state data is available.
+
+6. Placeholder Banner Copy
+
+Use premium scarcity language:
+
+YOUR BUSINESS HERE
+
+Become the exclusive Elite Category Sponsor for this state.
+
+Only one sponsor is available per category, per state.
+
+Get premium placement above all listings and receive direct inquiries from veterans and families.
+
+CTA:
+
+Claim This Slot
+
+==================================================
+PHASE A APPROVED
+==================================================
+
+Proceed with Phase A only:
+
+- Supabase tables
+- admin shell
+- vacant slot inventory
+- placeholder banner rendering
+- mount on:
+  - legal services
+  - financial / mortgage lending
+  - real estate
+- admin inventory grid
+- no Stripe yet
+- no sponsor lead form yet
+- no homepage/About changes
+
+STOP after Phase A and report.
+
+==================================================
+SCOPE RULES
+==================================================
+
+Do not touch existing trusted service products.
+Do not break $99 state plan.
+Do not break $499 national plan.
+Do not break featured placement.
+Do not break near-me boost.
+Do not touch existing resource data.
+Do not use db:push.
+Supabase additive SQL only.
+
+==================================================
+REPORT ONLY
+==================================================
+
+- Tables created:
+- Routes/pages added:
+- Admin page added:
+- Placeholder banners visible:
+- Inventory slots seeded:
+- States included:
+- Categories included:
+- Ready for Phase B:
+
+--- END ---

@@ -1720,3 +1720,40 @@ Aligned 5 cross-surface shared categories to canonical taxonomy across R-side (R
 - Step 3: Browse cross-pop URL verification matrix
 - Step 4: AI Guide 25-prompt verification
 - Insurance content gap (6 resources, 0 tagged with sub) — needs content seeding
+
+---
+
+## ECSS Phase A — Elite Category Sponsor Slots — COMPLETED 2026-04-28
+
+Founder-approved monetization rails: one exclusive sponsor slot per (state × category), $499/mo + $49.99/lead defaults, "YOUR BUSINESS HERE" placeholder visible on every live state until sold.
+
+**Categories (3)**: legal-services, mortgage-lending, real-estate (real-estate added as new top-level — supabase/create_elite_sponsor_slots.sql also INSERTs it into trusted_service_categories so taxonomy lock stays clean at 32 trusted cats).
+
+**Mount points**:
+- /legal-services — banner above CategoryDrilldown
+- /financial-services — banner above CategoryDrilldown (sponsor slug = mortgage-lending)
+- /real-estate — NEW page, sponsor-first (no directory yet, links to /housing + /financial-services for adjacent help)
+
+**Schema (Supabase additive, idempotent — never via db:push)**:
+- supabase/create_elite_sponsor_slots.sql
+- elite_sponsor_slots: UNIQUE(category_slug, state_code), Stripe-ready columns (customer/subscription IDs, period dates), RLS, updated_at trigger
+- elite_sponsor_leads: FK to slot, snapshots category/state, RLS
+- Bootstrap via ensureEliteSponsorTables() in server/elite-sponsor.ts; runs at boot, log line "[ECSS] Phase A schema applied (idempotent)."
+
+**Routes**:
+- Public: GET /api/elite-sponsor?categorySlug&state, GET /api/elite-sponsor/categories
+- Admin (requireAdmin): GET/POST/PATCH /api/admin/elite-sponsor-slots, POST /api/admin/elite-sponsor-slots/seed-vacant
+- PATCH validation: status enum [vacant|sold|paused], billing_status enum [unpaid|active|past_due|cancelled], cents fields require non-negative integer, string fields type-checked + 2000-char cap
+
+**Admin UI**: client/src/pages/admin-elite-sponsors.tsx — state×category inventory grid, summary cards (total/sold/vacant/paused), slot edit Sheet (status, billing, pricing, sponsor identity, internal notes), Seed Vacant Inventory button. Reachable via Admin → Crown "Elite Sponsor Slots" nav.
+
+**Phase A inventory seeded**: 30 vacant slots = 10 launched states (AL, CA, FL, GA, NC, NY, OH, PA, SC, TX) × 3 categories. Live sample lookups for SC/FL/TX/NY/AL all return placeholder=true.
+
+**CTA**: "Claim This Slot" → /partner-apply?product=elite&category={slug}&state={code} (receiver page handling of product=elite is Phase B).
+
+**What is NOT in Phase A** (Phase B/C scope, do not implement before founder approval):
+- Stripe wiring (billing_status is manual until Phase C)
+- /partner-apply receiver branch for product=elite
+- Sold-state full sponsor card rendering (currently a small "ELITE SPONSOR · {name}" tag — placeholder is the active surface)
+- Lead capture form on category pages (uses existing /partner-apply)
+

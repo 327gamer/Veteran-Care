@@ -36,6 +36,7 @@ import AdminCommissions from "@/pages/admin-commissions";
 import AdminPayouts from "@/pages/admin-payouts";
 import AdminSweepstakes from "@/pages/admin-sweepstakes";
 import AdminLiveMetrics from "@/pages/admin-live-metrics";
+import AdminEliteSponsors from "@/pages/admin-elite-sponsors";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
@@ -56,6 +57,7 @@ import EducationTraining from "@/pages/education-training";
 import FamilySupport from "@/pages/family-support";
 import CommunitySupport from "@/pages/community-support";
 import SubstanceRecovery from "@/pages/substance-recovery";
+import RealEstate from "@/pages/real-estate";
 import Referral from "@/pages/referral";
 import PartnerPortal from "@/pages/partner-portal";
 import VeteranDiscounts from "@/pages/veteran-discounts";
@@ -162,6 +164,11 @@ function Router() {
           <SubstanceRecovery />
         </Layout>
       </Route>
+      <Route path="/real-estate">
+        <Layout>
+          <RealEstate />
+        </Layout>
+      </Route>
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/enable-location" component={Onboarding} />
       
@@ -204,6 +211,7 @@ function Router() {
       <Route path="/admin/payouts" component={AdminPayouts} />
       <Route path="/admin/sweepstakes" component={AdminSweepstakes} />
       <Route path="/admin/live-metrics" component={AdminLiveMetrics} />
+      <Route path="/admin/elite-sponsors" component={AdminEliteSponsors} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">
