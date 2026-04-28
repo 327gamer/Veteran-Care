@@ -1,0 +1,293 @@
+--- COPY TO REPLIT ---
+
+FOUNDER DIRECTIVE — ELITE CATEGORY SPONSOR SYSTEM (ECSS) REBUILD / EXPANSION
+
+We are refining the Elite Category Sponsor System so it becomes a true monetization engine.
+
+This must follow the current Veteran Care billing logic, trusted partner flow, Stripe automation, ambassador attribution, and lead-routing systems already in place.
+
+DO NOT build a parallel system.
+DO NOT break existing trusted partner flows.
+EXTEND what already works.
+
+==================================================
+CORE VISION
+==================================================
+
+We are selling premium digital territory ownership.
+
+A sponsor can own the TOP visible ad/banner position for:
+
+STATE + CATEGORY
+and/or
+STATE + SUBCATEGORY
+
+Examples:
+
+South Carolina + Legal
+South Carolina + Mortgage
+South Carolina + Real Estate
+South Carolina + Insurance
+
+Only ONE sponsor per slot.
+
+Scarcity is critical.
+
+==================================================
+PRODUCT STRUCTURE
+==================================================
+
+Current products remain:
+
+1. $99 State Listing
+2. $499 National Listing
+3. Featured Placement
+4. Near-Me Boost
+5. Direct Lead Billing ($49.99 automated when accepted/completed)
+
+NEW PRODUCT:
+
+6. Elite Category Sponsor Slot (ECSS)
+
+This is ABOVE all listings.
+
+Premium banner placement.
+
+==================================================
+IMPORTANT BILLING RULE
+==================================================
+
+Use CURRENT automated billing model.
+
+No invoices.
+
+No monthly manual lead billing.
+
+If a lead is sent / accepted / completed using the existing workflow:
+
+AUTO CHARGE sponsor same as current system.
+
+Use existing Stripe automation logic already in platform.
+
+==================================================
+MONTHLY SLOT BILLING
+==================================================
+
+ECSS also has monthly recurring subscription.
+
+Examples:
+
+Regular States:
+$499/month
+
+Large States:
+CA / TX / FL / NY
+Higher pricing architecture supported.
+
+Need admin control for pricing by state.
+
+==================================================
+INVENTORY MODEL (CRITICAL)
+==================================================
+
+Build inventory as:
+
+STATE > CATEGORY > SLOT
+
+and
+
+STATE > CATEGORY > SUBCATEGORY > SLOT
+
+Examples:
+
+SC > Finance > Top Sponsor
+SC > Finance > Mortgage
+SC > Finance > Credit Repair
+SC > Finance > Insurance
+
+SC > Legal > Top Sponsor
+SC > Legal > Disability Claims
+SC > Legal > Probate
+SC > Legal > Family Law
+
+SC > Real Estate > Top Sponsor
+SC > Real Estate > First Time Homebuyer
+SC > Real Estate > Realtors
+SC > Real Estate > VA Home Buying
+
+This creates multiple monetization assets per state.
+
+==================================================
+PHASE 1 CATEGORIES TO PRIORITIZE
+==================================================
+
+Launch first with highest-value categories:
+
+1. Mortgage / Lending
+2. Real Estate
+3. Legal
+4. Insurance
+
+These close fastest.
+
+==================================================
+USER EXPERIENCE
+==================================================
+
+Veteran clicks:
+
+Resources > Finance > Mortgage
+
+Top of page:
+
+ELITE SPONSOR BANNER
+
+Logo
+Business Name
+Strong CTA
+Trusted branding
+
+Then normal listings below.
+
+Banner click MUST open current lead capture flow.
+
+NOT external website.
+
+Lead goes into sponsor inbox.
+
+Auto tracked.
+
+Auto billed.
+
+==================================================
+PLACEHOLDER SYSTEM
+==================================================
+
+Unsold slots must show premium placeholder:
+
+YOUR BUSINESS HERE
+
+Become Exclusive Sponsor for South Carolina Mortgage Leads
+
+Only 1 Slot Available
+
+Claim This Position
+
+This helps sales immediately.
+
+==================================================
+ONBOARDING FLOW
+==================================================
+
+Trusted Partner signup must include optional ECSS upgrade.
+
+Flow:
+
+Choose State Plan ($99)
+or National Plan ($499)
+
+Then upsell:
+
+Add Elite Sponsor Slot?
+
+If available:
+show state + category + subcategory options
+
+If sold:
+show SOLD OUT
+
+Need sponsor to upload:
+
+Logo
+Business name
+CTA text
+Email destination
+Phone
+Optional description
+
+Image/logo uploader must be improved for sizing consistency.
+
+==================================================
+ADMIN PANEL REQUIREMENTS
+==================================================
+
+Need new control center showing:
+
+Available Slots
+Sold Slots
+Monthly Revenue
+Lead Revenue
+Leads Sent
+Leads Accepted
+Top States
+Top Categories
+Renewals
+Cancellation Dates
+Stripe Status
+Ambassador Attribution
+Commission Owed
+Conversion Rates
+
+==================================================
+AMBASSADOR SYSTEM
+==================================================
+
+If ambassador sells sponsor slot:
+
+Track recurring ownership.
+
+Track commission.
+
+Track referrals.
+
+Must connect to current attribution system.
+
+==================================================
+REAL ESTATE CATEGORY
+==================================================
+
+Create separate top-level category.
+
+Do NOT bury under Finance.
+
+Real Estate should stand alone.
+
+This increases inventory and revenue.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+1. Reuse current lead automation.
+2. Reuse current Stripe systems.
+3. Reuse current partner routing where possible.
+4. No duplicate systems.
+5. No fake placeholder logic.
+6. Mobile-first UI.
+7. Premium visual style.
+8. Easy for founder to sell manually.
+9. Easy to scale nationally.
+
+==================================================
+DELIVERABLE REQUEST
+==================================================
+
+REPORT BACK ONLY FIRST.
+
+Need detailed architecture plan:
+
+1. What already exists and can be reused
+2. What must be added
+3. How signup flow changes
+4. How Stripe billing works automatically
+5. How lead billing stays automated
+6. How inventory works
+7. Best database structure
+8. Fastest MVP launch path
+9. Risks / mistakes to avoid
+
+NO BUILD YET.
+
+Report back first.
+
+--- END ---
