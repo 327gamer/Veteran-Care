@@ -3,6 +3,7 @@ import { trackEvent } from "@/lib/analytics";
 import { platform } from "@shared/platform";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
 import CampaignHeroVideo from "@/components/campaign-hero-video";
+import { LiveMetrics } from "@/components/live-metrics";
 import {
   Users,
   MapPin,
@@ -130,26 +131,13 @@ export default function PartnersLanding() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF + ROI ── */}
-      <section className="px-5 py-10 max-w-lg mx-auto" data-testid="section-social-proof">
-        <div className="grid grid-cols-3 gap-3 mb-7">
-          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
-            <p className="text-xl font-heading font-extrabold text-primary leading-none">2</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">States live</p>
-            <p className="text-[10px] text-muted-foreground/80">SC · NC</p>
-          </div>
-          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
-            <p className="text-xl font-heading font-extrabold text-primary leading-none">700+</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">Resources</p>
-            <p className="text-[10px] text-muted-foreground/80">Verified listings</p>
-          </div>
-          <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/15">
-            <p className="text-xl font-heading font-extrabold text-primary leading-none">120+</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">Cities</p>
-            <p className="text-[10px] text-muted-foreground/80">Geo-targeted</p>
-          </div>
-        </div>
+      {/* ── LIVE PLATFORM METRICS (shared component, single source of truth) ── */}
+      <section className="px-5 pt-10 pb-2" data-testid="section-partners-live-metrics">
+        <LiveMetrics className="!px-0 !max-w-lg" />
+      </section>
 
+      {/* ── SOCIAL PROOF + ROI ── */}
+      <section className="px-5 pt-6 pb-10 max-w-lg mx-auto" data-testid="section-social-proof">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-7" data-testid="card-scarcity">
           <p className="text-[11px] uppercase tracking-widest text-amber-700 font-semibold mb-1">Limited founding partner placements</p>
           <p className="text-sm text-amber-900 leading-snug">

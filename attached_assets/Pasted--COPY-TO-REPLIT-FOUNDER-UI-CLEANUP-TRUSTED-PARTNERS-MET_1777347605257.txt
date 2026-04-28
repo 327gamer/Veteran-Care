@@ -1,0 +1,84 @@
+--- COPY TO REPLIT ---
+
+FOUNDER UI CLEANUP — TRUSTED PARTNERS METRICS SECTION
+
+Before starting Virginia, complete this frontend cleanup first.
+
+==================================================
+ISSUE
+==================================================
+
+On the Trusted Partners page, the metrics section is stale / outdated and still showing old static values such as:
+
+- 2 States Live
+- 700+ Resources
+- 120+ Cities
+
+This is no longer acceptable because Homepage + About page now have the live dynamic metrics system.
+
+Trusted Partners page must match the same real-time metrics standard.
+
+==================================================
+REQUIRED FIX
+==================================================
+
+Replace the old static Trusted Partners metrics block with the SAME shared live metrics component used on:
+
+1. Homepage
+2. About page
+
+Use the same data source:
+
+/api/public-stats
+usePublicStats()
+
+Do NOT hardcode numbers.
+
+Do NOT maintain a separate metrics section.
+
+One source of truth only.
+
+==================================================
+GOAL
+==================================================
+
+Homepage
+About Page
+Trusted Partners Page
+
+...must all mirror each other automatically and update in real time whenever stats change.
+
+Examples:
+
+- States Live
+- Verified Resources
+- Cities Covered
+- Support Categories
+- Launching Next
+- Growth Status
+
+If homepage/about uses a newer shared component, Trusted Partners must use that exact component.
+
+==================================================
+DESIGN RULES
+==================================================
+
+- Mobile clean
+- Same styling family as current site
+- Same spacing rhythm
+- No regressions
+- No duplicate code
+- Reusable shared component only
+
+==================================================
+REPORT BACK ONLY
+==================================================
+
+- Root cause found:
+- File changed:
+- Static metrics removed:
+- Shared live metrics installed:
+- Trusted Partners now mirrors Home/About:
+- Ready for next cleanup:
+
+--- END ---
