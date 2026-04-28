@@ -1,0 +1,112 @@
+--- COPY TO REPLIT ---
+
+FOUNDER URGENT BUG — TRUSTED PARTNER SIGNUP PAGE BROKEN (BLANK SCREEN)
+
+We have a critical regression after the latest ECSS Phase B deployment.
+
+==================================================
+ISSUE
+==================================================
+
+When clicking:
+
+1. Homepage → Trusted Partners / Get Listed  
+2. Menu → Trusted Services / Partners  
+3. Any CTA leading to /partner-apply  
+
+The page loads a blank white screen.
+
+No UI.
+No form.
+No interaction.
+
+This blocks ALL onboarding and sales immediately.
+
+==================================================
+PRIORITY
+==================================================
+
+🚨 CRITICAL — FIX IMMEDIATELY  
+This is a revenue-blocking issue.
+
+==================================================
+WHAT TO CHECK FIRST
+==================================================
+
+Do NOT guess. Follow this exact debug order:
+
+1. Browser Console Errors
+   - Look for React crash / undefined variable / missing import
+   - Likely caused by new ECSS fields (ecss_data, addons, categorySlug, etc.)
+
+2. Route Registration
+   - Confirm /partner-apply is still properly registered in App.tsx
+   - Ensure no overwrite or conflict with ECSS routing
+
+3. Component Crash in partner-apply.tsx
+   - Recent additions:
+     - ECSS upsell section
+     - availability check
+     - logo uploader
+     - waitlist logic
+   - One of these is likely throwing and crashing render
+
+4. State Initialization Issues
+   - Check for undefined:
+     - selectedState
+     - selectedCategory
+     - ecss availability response
+   - Add safe defaults if needed
+
+5. API Call Failures
+   - If ECSS availability endpoint fails, UI must NOT crash
+   - Add fallback rendering if API returns null/500
+
+6. Conditional Rendering
+   - Ensure ECSS block is wrapped safely:
+     - Only render when data exists
+     - Otherwise show base trusted partner form
+
+7. Imports / Types
+   - Check new imports added for ECSS components
+   - Missing import = full page crash
+
+==================================================
+REQUIRED FIX
+==================================================
+
+1. Restore /partner-apply to FULL working state
+2. Ensure:
+   - Base signup form ALWAYS renders
+   - ECSS section is NON-BLOCKING (fails gracefully)
+3. If ECSS causes crash:
+   - TEMPORARILY disable ECSS block
+   - Restore working signup flow FIRST
+
+==================================================
+DO NOT
+==================================================
+
+- Do NOT break existing signup flow further
+- Do NOT remove base partner onboarding
+- Do NOT introduce new logic before stabilizing
+
+==================================================
+REPORT BACK
+==================================================
+
+Provide:
+
+1. Root cause of blank screen
+2. Exact file + line causing crash
+3. What was fixed
+4. Confirmation:
+   - /partner-apply loads correctly
+   - All CTAs working
+   - No console errors
+5. If ECSS was temporarily disabled, state it clearly
+
+==================================================
+THIS MUST BE FIXED BEFORE ANY OTHER WORK
+
+--- END ---

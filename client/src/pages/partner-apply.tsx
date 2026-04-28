@@ -109,6 +109,28 @@ export default function PartnerApply() {
   const [ecssWaitlistEmail, setEcssWaitlistEmail] = useState<string>("");
   const [ecssWaitlistJoined, setEcssWaitlistJoined] = useState<boolean>(false);
 
+  // Categories must be declared BEFORE selectedCategorySlug (which reads from it)
+  // to avoid a TDZ ReferenceError that blanks the whole page.
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/partner-categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/partner-categories");
+      if (!res.ok) throw new Error("Failed to load categories");
+      return res.json();
+    },
+  });
+
+  const { data: subcategories = [] } = useQuery<Subcategory[]>({
+    queryKey: ["/api/partner-subcategories", form.category_id],
+    queryFn: async () => {
+      if (!form.category_id) return [];
+      const res = await fetch(`/api/partner-subcategories?category_id=${form.category_id}`);
+      if (!res.ok) throw new Error("Failed to load subcategories");
+      return res.json();
+    },
+    enabled: !!form.category_id,
+  });
+
   const selectedCategorySlug = (() => {
     const c = (categories as Category[]).find((c) => c.id === form.category_id);
     return c?.slug || "";
@@ -220,26 +242,6 @@ export default function PartnerApply() {
   useEffect(() => {
     trackEvent("partner_apply_started");
   }, []);
-
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/partner-categories"],
-    queryFn: async () => {
-      const res = await fetch("/api/partner-categories");
-      if (!res.ok) throw new Error("Failed to load categories");
-      return res.json();
-    },
-  });
-
-  const { data: subcategories = [] } = useQuery<Subcategory[]>({
-    queryKey: ["/api/partner-subcategories", form.category_id],
-    queryFn: async () => {
-      if (!form.category_id) return [];
-      const res = await fetch(`/api/partner-subcategories?category_id=${form.category_id}`);
-      if (!res.ok) throw new Error("Failed to load subcategories");
-      return res.json();
-    },
-    enabled: !!form.category_id,
-  });
 
   const submitMutation = useMutation({
     mutationFn: async () => {
