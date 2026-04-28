@@ -1,0 +1,142 @@
+--- COPY TO REPLIT ---
+
+URGENT ECSS SIGNUP FLOW ISSUE — ELITE OPTION NOT VISIBLE
+
+I tested the Trusted Partner signup flow on mobile after republishing.
+
+The base partner form now loads correctly, but the new Elite Category Sponsor Slot option is NOT visible anywhere in the signup flow.
+
+I went through the full visible flow:
+
+- Select Plan
+- Boost Your Visibility
+- Partner Application
+- State
+- Service Category
+- Service Specialties
+- Direct Lead Delivery
+- Description
+- Submit
+
+There is no visible ECSS option.
+
+This is a problem because ECSS must be part of the automated trusted partner signup path.
+
+==================================================
+EXPECTED BEHAVIOR
+==================================================
+
+After the user selects:
+
+1. State Plan ($99) or National Plan ($499)
+2. State
+3. Service Category
+4. Service Specialty / subcategory if applicable
+
+The form should show a clearly visible premium upsell section:
+
+👑 Elite Category Sponsor Slot
+
+Limited availability.
+
+Only one business can own the top Elite Sponsor position for this state/category or state/subcategory.
+
+Pricing:
+
+$499/month starting price
++ $49.99 per accepted qualified lead
+
+This is separate from:
+
+- State Plan
+- National Plan
+- Featured Partner Placement
+- Near-Me Boost
+- Direct Lead Delivery
+
+==================================================
+IMPORTANT
+==================================================
+
+This must NOT be hidden.
+
+This must NOT only appear after obscure conditions.
+
+This must be obvious and sales-ready.
+
+If the selected state/category slot is available:
+
+Show:
+
+- Available
+- Add Elite Sponsor Slot
+- $499/month
+- $49.99 per accepted lead
+- Logo upload
+- Business display name
+- Banner headline / CTA
+- Lead destination email
+- Explanation that admin approval is required before public display
+
+If the slot is sold:
+
+Show:
+
+- Sold Out
+- Join Waitlist
+
+If state/category is not selected yet:
+
+Show a preview card explaining:
+
+“Select your state and category above to check Elite Sponsor availability.”
+
+==================================================
+BILLING RULE
+==================================================
+
+The base plan is still required:
+
+- $99 State Plan
+or
+- $499 National Plan
+
+ECSS is an upgrade on top of the base plan.
+
+Lead billing uses existing $49.99 accepted-lead automation.
+
+No invoices.
+
+No manual lead billing.
+
+==================================================
+REQUIRED FIX
+==================================================
+
+1. Make ECSS visible in /partner-apply on mobile and desktop.
+2. Place it after Service Category / Service Specialties and before Direct Lead Delivery OR directly under Boost Your Visibility.
+3. Make it visually premium and impossible to miss.
+4. Confirm it works for:
+   - Legal
+   - Mortgage / Lending
+   - Real Estate
+   - Insurance
+5. Confirm availability check works.
+6. Confirm sold-out waitlist appears.
+7. Confirm the monthly summary updates when ECSS is selected.
+8. Confirm logo/banner fields appear when selected.
+9. Confirm submit sends ECSS data into the application/admin workflow.
+
+==================================================
+REPORT BACK ONLY
+==================================================
+
+- Root cause why ECSS did not appear:
+- File changed:
+- Where ECSS now appears in signup flow:
+- Mobile verified:
+- Monthly summary verified:
+- ECSS application data verified:
+- Waitlist verified:
+
+--- END ---

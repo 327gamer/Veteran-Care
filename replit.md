@@ -1829,3 +1829,30 @@ Boot log: `[ECSS] Phase A+B schema applied (idempotent).` Architect-reviewed; 3 
 - Self-serve refund / cancellation portal
 - Promo code / temporary discount UI
 
+
+---
+
+## Post-Phase B Regression Fix — 2026-04-28
+
+**Founder-reported regressions** in `/partner-apply` discovered after deploy:
+
+### Bug 1 — Blank screen (TDZ ReferenceError)
+- `selectedCategorySlug` derivation referenced `categories` from a `useQuery` declared 100+ lines later, causing a Temporal Dead Zone crash on mount.
+- **Fix**: hoisted `categories` + `subcategories` `useQuery` calls above the `selectedCategorySlug` derivation. No duplicate declarations.
+
+### Bug 2 — ECSS upsell never visible during signup
+- Old ECSS section was rendered near the top of the form (before the user had even picked a Service Category), so its render condition `ecssEligible` was always false at first paint and most users scrolled past without ever triggering it.
+- **Fix**: deleted the old block entirely. Inserted a new always-visible adaptive section gated on `form.category_id`, positioned **after Service Specialties** and **before Direct Lead Delivery**. Uses a 5-state ternary chain:
+  1. Category not in `ECSS_CATEGORY_SLUGS` → "Available for: Legal / Mortgage / Real Estate / Insurance" teaser
+  2. ECSS category but no `$99/mo` State Plan or no state picked → "Pick the State Plan above…" teaser
+  3. Loading availability → spinner
+  4. `ecssAvail.soldOut` → waitlist capture (`POST /api/elite-sponsor/waitlist`)
+  5. Available → full premium upsell card (Switch + logo upload + short description + CTA text)
+
+**Files touched**:
+- `client/src/pages/partner-apply.tsx` — hoist hooks; remove old block (~167 lines deleted); add new adaptive section (~190 lines); drop unused `ShieldCheck` import.
+
+**Verification**:
+- `tsc` clean for `partner-apply.tsx` (pre-existing server-side TS errors out of scope)
+- Server boot log: `[ECSS] Phase A+B schema applied (idempotent).`
+- Architect review: **PASS** — TDZ fix correct, placement correct, ternary chain correct, ECSS_CATEGORY_SLUGS Set semantics correct, waitlist payload matches server contract, `ecss_data` still serialized in form submit, no duplicate test IDs.
