@@ -1856,3 +1856,41 @@ Boot log: `[ECSS] Phase A+B schema applied (idempotent).` Architect-reviewed; 3 
 - `tsc` clean for `partner-apply.tsx` (pre-existing server-side TS errors out of scope)
 - Server boot log: `[ECSS] Phase A+B schema applied (idempotent).`
 - Architect review: **PASS** — TDZ fix correct, placement correct, ternary chain correct, ECSS_CATEGORY_SLUGS Set semantics correct, waitlist payload matches server contract, `ecss_data` still serialized in form submit, no duplicate test IDs.
+
+---
+
+## Founder UX/Billing Fix — ECSS selectable + invariant (2026-04-28)
+
+Founder feedback after the placement fix: the ECSS card was visible but didn't behave like a paid upgrade — no clear toggle, no $499 line in Monthly Summary, no auto-enable of Direct Lead Delivery, $49.99/lead fee not surfaced, non-eligible state confusing.
+
+**Changes** in `client/src/pages/partner-apply.tsx`:
+
+1. **ECSS auto-enables Direct Lead Delivery** (3-layer invariant):
+   - `useEffect([addons.ecss, form.is_lead_enabled])` — re-flips leads ON whenever ECSS is on
+   - Category-change handler now preserves `is_lead_enabled: true` when ECSS is on instead of unconditionally resetting to false
+   - Submit handler forces `is_lead_enabled: addons.ecss ? true : form.is_lead_enabled` in the POST payload — server can never receive ECSS=true with leads=false
+
+2. **Direct Lead Delivery section locks ON when ECSS is on**:
+   - Switch `disabled={addons.ecss}`
+   - Label flips to "Direct Lead Delivery (required for Elite Sponsor)"
+   - Amber notice: "Locked ON because the Elite Sponsor Slot you selected delivers leads directly to you. Uncheck the Elite Sponsor Slot above to disable."
+
+3. **Monthly Summary** now shows italic note when `addons.ecss || form.is_lead_enabled`:
+   "+ Accepted qualified leads are billed separately at **$49.99 per lead**."
+   ($499 ECSS line was already wired via existing `ecssAddonPrice` row.)
+
+4. **ECSS "Available" upsell card visual upgrade**:
+   - Red "Limited Availability — 1 per state" badge
+   - Larger price typography
+   - Selected-state ring + shadow + amber-tinted footer
+   - Switch label flips: "Yes, claim the Elite Sponsor Slot (+$X/mo)" → "✓ Yes — Elite Sponsor Slot added (+$X/mo)"
+   - Auto-enable note when on: "Direct Lead Delivery has been turned on automatically — Elite Sponsors receive leads directly and are billed $49.99 per accepted lead."
+
+5. **Non-eligible-category state copy**:
+   "The Elite Sponsor Slot is currently only sold for these four categories: **Legal Services · Mortgage / Lending · Real Estate · Insurance**. Switch your Service Category above to one of those to claim the slot for your state."
+
+**Verification**:
+- TypeScript clean for `partner-apply.tsx`
+- Vite build succeeds
+- Architect review: **PASS** on the second pass (first pass caught the category-change reset bug → fixed → re-reviewed PASS)
+- Three-layer invariant ensures the ECSS+leads combination can never drift apart in state, category transitions, or the submit payload

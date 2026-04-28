@@ -1,0 +1,151 @@
+--- COPY TO REPLIT ---
+
+FOUNDER UX/BILLING FIX — ECSS MUST BE SELECTABLE + UPDATE SUMMARY
+
+Good progress: the Elite Category Sponsor Slot card now appears in the Trusted Partner signup flow.
+
+But it is still not working correctly as a selectable paid upgrade.
+
+==================================================
+CURRENT ISSUE
+==================================================
+
+The ECSS card is visible, but:
+
+1. There is no clear checkbox / toggle to select it.
+2. It does not add $499/month to the Monthly Summary.
+3. It does not automatically activate Direct Lead Delivery.
+4. It does not make clear that $49.99 per accepted lead is required.
+5. The card says “Choose one of those categories above,” but there is no action button/toggle for the user to confirm they want ECSS.
+
+This is confusing for trusted partners.
+
+==================================================
+REQUIRED USER FLOW
+==================================================
+
+A trusted partner should be able to:
+
+1. Choose base plan:
+   - State Plan $99/month
+   OR
+   - National Plan $499/month
+
+2. Choose state.
+
+3. Choose service category / specialty.
+
+4. See Elite Category Sponsor Slot section.
+
+5. If eligible and available, they must be able to select it clearly using a checkbox/toggle:
+
+   “Yes, I want to claim the Elite Category Sponsor Slot”
+
+6. When selected:
+
+   - Add $499/month to Monthly Summary
+   - Automatically turn ON Direct Lead Delivery
+   - Show that accepted leads are billed at $49.99 each
+   - Reveal required ECSS fields:
+     - logo upload
+     - business display name
+     - banner headline / CTA
+     - lead destination email
+
+7. If ECSS is deselected:
+   - remove $499/month from summary
+   - do NOT force Direct Lead Delivery unless user selected it separately
+
+==================================================
+BILLING RULE
+==================================================
+
+ECSS requires:
+
+Base Plan:
+- $99 State Plan
+OR
+- $499 National Plan
+
+PLUS:
+
+Elite Category Sponsor Slot:
+- $499/month
+
+PLUS:
+
+Direct Lead Delivery:
+- $49.99 per accepted qualified lead
+
+When ECSS is selected, Direct Lead Delivery must automatically activate because the whole point of ECSS is direct lead capture.
+
+==================================================
+MONTHLY SUMMARY MUST SHOW
+==================================================
+
+Example with State Plan + ECSS:
+
+State Plan (base)        $99.00/mo
+Elite Sponsor Slot       $499.00/mo
+Total                    $598.00/mo
+
+Below summary, show note:
+
+“Accepted qualified leads are billed separately at $49.99 per lead.”
+
+Do not hide this.
+
+==================================================
+DIRECT LEAD DELIVERY CARD
+==================================================
+
+If ECSS is selected:
+
+- Direct Lead Delivery toggle should turn ON automatically.
+- It can show as enabled because ECSS requires it.
+- The card should clearly state:
+  “Required for Elite Sponsor Slots.”
+
+Do not let ECSS be selected while direct leads are off.
+
+==================================================
+VISUAL / UX RULES
+==================================================
+
+Make ECSS look like a premium paid upgrade similar to Featured Partner Placement and Near Me Boost, but more important.
+
+Use:
+
+- checkbox or switch
+- strong “Limited Availability” language
+- clear price
+- clear lead-fee notice
+- visible selected state
+- monthly summary update
+
+It should be simple enough for a non-technical business owner to understand immediately.
+
+==================================================
+DO NOT
+==================================================
+
+- Do not make ECSS passive information only.
+- Do not require users to guess how to claim it.
+- Do not leave it out of Monthly Summary.
+- Do not allow ECSS without Direct Lead Delivery.
+- Do not break normal $99 / $499 signup path.
+
+==================================================
+REPORT BACK ONLY
+==================================================
+
+- Root cause:
+- File changed:
+- ECSS selectable:
+- Monthly Summary updated:
+- Direct Lead Delivery auto-enabled:
+- $49.99 lead fee notice visible:
+- ECSS fields appear when selected:
+- Mobile verified:
+
+--- END ---
