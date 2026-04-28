@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useGeolocation } from "@/lib/use-geolocation";
 import EliteSponsorPlaceholder from "@/components/elite-sponsor-placeholder";
+import EliteSponsorCard from "@/components/elite-sponsor-card";
 
 interface EliteSponsorBannerProps {
-  categorySlug: "legal-services" | "mortgage-lending" | "real-estate";
+  categorySlug:
+    | "legal-services"
+    | "mortgage-lending"
+    | "real-estate"
+    | "insurance";
   categoryLabel: string;
 }
 
@@ -60,8 +65,9 @@ export default function EliteSponsorBanner({
     );
   }
 
-  // Phase A: vacant or no slot data → render placeholder
-  if (!data || data.isPlaceholder) {
+  // Vacant, paused, no data, or unapproved (server returns slot=null when
+  // creative_approval_status != "approved") → render the placeholder.
+  if (!data || !data.slot || data.isPlaceholder || data.status !== "sold") {
     return (
       <EliteSponsorPlaceholder
         categorySlug={categorySlug}
@@ -72,11 +78,10 @@ export default function EliteSponsorBanner({
     );
   }
 
-  // Phase B will render the filled sponsor card here. For Phase A we
-  // still render the placeholder if the data path returns a slot, since
-  // no slots are sold yet. (Defensive — RLS policy already filters.)
+  // Phase B — sold + active + approved sponsor → render the premium card.
   return (
-    <EliteSponsorPlaceholder
+    <EliteSponsorCard
+      slot={data.slot}
       categorySlug={categorySlug}
       categoryLabel={categoryLabel}
       stateCode={stateCode || null}

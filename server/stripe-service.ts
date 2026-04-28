@@ -305,31 +305,81 @@ export async function createCustomerPortalSession(stripeCustomerId: string, retu
 }
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
+  // Lazy-import the ECSS handlers so this module doesn't form a hard
+  // import cycle with elite-sponsor.ts (which imports from here too).
+  const ecss = await import("./elite-sponsor");
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.metadata?.charge_type === "lead_billing") {
         await handleLeadBillingCompleted(session);
+      } else if (session.metadata?.kind === "ecss_slot") {
+        await ecss.handleEcssCheckoutCompleted(session);
       } else {
         await handleCheckoutCompleted(session);
       }
       break;
     }
     case "customer.subscription.created":
-      await handleSubscriptionSync(event.data.object as Stripe.Subscription);
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      if (sub.metadata?.kind === "ecss_slot") {
+        await ecss.handleEcssSubscriptionSync(sub);
+      } else {
+        await handleSubscriptionSync(sub);
+      }
       break;
-    case "customer.subscription.updated":
-      await handleSubscriptionSync(event.data.object as Stripe.Subscription);
+    }
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as Stripe.Subscription;
+      if (sub.metadata?.kind === "ecss_slot") {
+        await ecss.handleEcssSubscriptionCanceled(sub);
+      } else {
+        await handleSubscriptionCanceled(sub);
+      }
       break;
-    case "customer.subscription.deleted":
-      await handleSubscriptionCanceled(event.data.object as Stripe.Subscription);
+    }
+    case "invoice.paid": {
+      const inv = event.data.object as Stripe.Invoice;
+      // Resolve the parent subscription's metadata (invoices don't carry
+      // metadata themselves; the routing key is on the subscription).
+      const subId =
+        typeof (inv as any).subscription === "string"
+          ? (inv as any).subscription
+          : (inv as any).subscription?.id || null;
+      let routedToEcss = false;
+      if (subId && stripe) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          if (sub.metadata?.kind === "ecss_slot") {
+            await ecss.handleEcssInvoicePaid(inv);
+            routedToEcss = true;
+          }
+        } catch {}
+      }
+      if (!routedToEcss) await handleInvoicePaid(inv);
       break;
-    case "invoice.paid":
-      await handleInvoicePaid(event.data.object as Stripe.Invoice);
+    }
+    case "invoice.payment_failed": {
+      const inv = event.data.object as Stripe.Invoice;
+      const subId =
+        typeof (inv as any).subscription === "string"
+          ? (inv as any).subscription
+          : (inv as any).subscription?.id || null;
+      let routedToEcss = false;
+      if (subId && stripe) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          if (sub.metadata?.kind === "ecss_slot") {
+            await ecss.handleEcssPaymentFailed(inv);
+            routedToEcss = true;
+          }
+        } catch {}
+      }
+      if (!routedToEcss) await handlePaymentFailed(inv);
       break;
-    case "invoice.payment_failed":
-      await handlePaymentFailed(event.data.object as Stripe.Invoice);
-      break;
+    }
     default:
       console.log(`[stripe] Unhandled event type: ${event.type}`);
   }

@@ -173,3 +173,247 @@ ON CONFLICT (slug) DO NOTHING;
 -- ============================================================
 -- END ECSS PHASE A SCHEMA
 -- ============================================================
+
+
+-- ============================================================
+-- ECSS PHASE B SCHEMA — additive extensions to Phase A
+--
+-- Founder-approved extensions (BUILD ONLY, no parallel systems):
+--   - subcategory_slug architecture (no UI marketplace yet)
+--   - ambassador attribution inheritance from partner_application UTM
+--   - creative_approval_status gate (admin must approve before public render)
+--   - sponsor_partner_application_id / sponsor_partner_organization_id links
+--   - navigator_requests.elite_sponsor_slot_id (auto-bill targeting)
+--   - elite_sponsor_leads.navigator_request_id (lifecycle linkage)
+--   - partner_organizations.auto_bill_on_accept opt-in flag
+--   - elite_sponsor_waitlist for SOLD slots
+--   - Insurance category as 4th launch category
+--
+-- All ALTER + CREATE statements use IF NOT EXISTS or DROP-then-CREATE.
+-- Idempotent. Safe to re-run. No destructive ops.
+-- ============================================================
+
+-- ----------------------------------------------------------------
+-- B1) elite_sponsor_slots — additive columns
+-- ----------------------------------------------------------------
+ALTER TABLE elite_sponsor_slots
+  ADD COLUMN IF NOT EXISTS subcategory_slug TEXT NULL;
+
+ALTER TABLE elite_sponsor_slots
+  ADD COLUMN IF NOT EXISTS attributed_ambassador_id UUID NULL,
+  ADD COLUMN IF NOT EXISTS attributed_ambassador_code TEXT NULL,
+  ADD COLUMN IF NOT EXISTS attributed_session_id TEXT NULL,
+  ADD COLUMN IF NOT EXISTS attributed_utm_source TEXT NULL,
+  ADD COLUMN IF NOT EXISTS attributed_utm_medium TEXT NULL,
+  ADD COLUMN IF NOT EXISTS attributed_utm_campaign TEXT NULL;
+
+ALTER TABLE elite_sponsor_slots
+  ADD COLUMN IF NOT EXISTS sponsor_partner_application_id UUID NULL,
+  ADD COLUMN IF NOT EXISTS sponsor_partner_organization_id UUID NULL;
+
+-- Creative approval gate — admin must approve banner/logo before public render
+ALTER TABLE elite_sponsor_slots
+  ADD COLUMN IF NOT EXISTS creative_approval_status TEXT NOT NULL DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS creative_rejection_reason TEXT NULL,
+  ADD COLUMN IF NOT EXISTS creative_approved_at TIMESTAMPTZ NULL,
+  ADD COLUMN IF NOT EXISTS creative_approved_by TEXT NULL,
+  ADD COLUMN IF NOT EXISTS creative_submitted_at TIMESTAMPTZ NULL;
+
+-- Backfill any existing rows: leave 'pending' for vacant slots (no creative yet).
+-- Rows that already had data manually entered as 'sold' will need admin approval before public render.
+
+-- ----------------------------------------------------------------
+-- B2) Replace UNIQUE constraint with partial unique indexes
+--    (supports both top-sponsor and subcategory slots)
+-- ----------------------------------------------------------------
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'elite_sponsor_slots_unique_state_category'
+      AND conrelid = 'elite_sponsor_slots'::regclass
+  ) THEN
+    ALTER TABLE elite_sponsor_slots
+      DROP CONSTRAINT elite_sponsor_slots_unique_state_category;
+  END IF;
+END $$;
+
+-- Top Sponsor slot (no subcategory) — one per state×category
+CREATE UNIQUE INDEX IF NOT EXISTS elite_sponsor_slots_top_uq
+  ON elite_sponsor_slots(category_slug, state_code)
+  WHERE subcategory_slug IS NULL;
+
+-- Subcategory slot — one per state×category×subcategory
+CREATE UNIQUE INDEX IF NOT EXISTS elite_sponsor_slots_sub_uq
+  ON elite_sponsor_slots(category_slug, subcategory_slug, state_code)
+  WHERE subcategory_slug IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_elite_slots_creative_approval
+  ON elite_sponsor_slots(creative_approval_status);
+CREATE INDEX IF NOT EXISTS idx_elite_slots_partner_app
+  ON elite_sponsor_slots(sponsor_partner_application_id)
+  WHERE sponsor_partner_application_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_elite_slots_partner_org
+  ON elite_sponsor_slots(sponsor_partner_organization_id)
+  WHERE sponsor_partner_organization_id IS NOT NULL;
+
+-- ----------------------------------------------------------------
+-- B3) navigator_requests — tag ECSS-originated leads
+--    (auto-bill hook keys off this column)
+-- ----------------------------------------------------------------
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'navigator_requests'
+  ) THEN
+    BEGIN
+      ALTER TABLE navigator_requests
+        ADD COLUMN IF NOT EXISTS elite_sponsor_slot_id UUID NULL;
+      CREATE INDEX IF NOT EXISTS idx_navigator_requests_elite_slot
+        ON navigator_requests(elite_sponsor_slot_id)
+        WHERE elite_sponsor_slot_id IS NOT NULL;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE '[ECSS Phase B] navigator_requests extend skipped: %', SQLERRM;
+    END;
+  ELSE
+    RAISE NOTICE '[ECSS Phase B] navigator_requests not present — skipping link column';
+  END IF;
+END $$;
+
+-- ----------------------------------------------------------------
+-- B4) elite_sponsor_leads — link to navigator_requests lifecycle
+-- ----------------------------------------------------------------
+ALTER TABLE elite_sponsor_leads
+  ADD COLUMN IF NOT EXISTS navigator_request_id UUID NULL;
+
+CREATE INDEX IF NOT EXISTS idx_elite_leads_navigator_request
+  ON elite_sponsor_leads(navigator_request_id)
+  WHERE navigator_request_id IS NOT NULL;
+
+-- ----------------------------------------------------------------
+-- B5) partner_organizations — opt-in auto-bill flag (default FALSE)
+--    ECSS sponsors flipped TRUE on slot activation; legacy partners untouched.
+-- ----------------------------------------------------------------
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'partner_organizations'
+  ) THEN
+    BEGIN
+      ALTER TABLE partner_organizations
+        ADD COLUMN IF NOT EXISTS auto_bill_on_accept BOOLEAN NOT NULL DEFAULT FALSE;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE '[ECSS Phase B] partner_organizations extend skipped: %', SQLERRM;
+    END;
+  END IF;
+END $$;
+
+-- ----------------------------------------------------------------
+-- B6) elite_sponsor_waitlist — captured when veteran/sponsor lands on a SOLD slot
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS elite_sponsor_waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Slot location identity
+  category_slug TEXT NOT NULL,
+  state_code TEXT NOT NULL,
+  subcategory_slug TEXT NULL,
+
+  -- Contact
+  contact_name TEXT,
+  contact_email TEXT NOT NULL,
+  contact_phone TEXT,
+  contact_company TEXT,
+  notes TEXT,
+
+  -- Attribution (carried from session/UTM at capture time)
+  utm_source TEXT,
+  utm_medium TEXT,
+  utm_campaign TEXT,
+  utm_content TEXT,
+  attributed_session_id TEXT,
+
+  -- Notification tracking (admin marks when they reach out)
+  notified_at TIMESTAMPTZ,
+  notified_outcome TEXT,
+  internal_notes TEXT,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_elite_waitlist_target
+  ON elite_sponsor_waitlist(state_code, category_slug, subcategory_slug);
+CREATE INDEX IF NOT EXISTS idx_elite_waitlist_email
+  ON elite_sponsor_waitlist(contact_email);
+CREATE INDEX IF NOT EXISTS idx_elite_waitlist_created
+  ON elite_sponsor_waitlist(created_at DESC);
+
+ALTER TABLE elite_sponsor_waitlist ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public insert elite_sponsor_waitlist" ON elite_sponsor_waitlist;
+CREATE POLICY "Public insert elite_sponsor_waitlist"
+  ON elite_sponsor_waitlist
+  FOR INSERT
+  WITH CHECK (true);
+
+-- ----------------------------------------------------------------
+-- B7) Tighten public-read RLS — banner only renders APPROVED creatives
+-- ----------------------------------------------------------------
+DROP POLICY IF EXISTS "Public read active elite_sponsor_slots" ON elite_sponsor_slots;
+CREATE POLICY "Public read active elite_sponsor_slots"
+  ON elite_sponsor_slots
+  FOR SELECT
+  USING (
+    status = 'sold'
+    AND billing_status = 'active'
+    AND creative_approval_status = 'approved'
+  );
+
+-- ----------------------------------------------------------------
+-- B8) Insurance — 4th launch category (founder decision #6)
+-- ----------------------------------------------------------------
+INSERT INTO trusted_service_categories (name, slug, description, icon, display_order)
+VALUES (
+  'Insurance',
+  'insurance',
+  'Auto, home, life, and health insurance for veterans and military families.',
+  'shield',
+  10
+)
+ON CONFLICT (slug) DO NOTHING;
+
+-- ----------------------------------------------------------------
+-- B9) Trusted-services tile auto-link column (T008)
+-- When an ECSS slot activates, an idempotent trusted_services row is
+-- created/updated with elite_sponsor_slot_id set so the public list can
+-- ORDER BY (elite_sponsor_slot_id IS NOT NULL) DESC, is_featured DESC.
+-- ON DELETE SET NULL → if the slot is hard-deleted, the tile demotes
+-- gracefully rather than vanishing.
+-- ----------------------------------------------------------------
+ALTER TABLE trusted_services
+  ADD COLUMN IF NOT EXISTS elite_sponsor_slot_id UUID NULL
+  REFERENCES elite_sponsor_slots(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_trusted_services_ecss_slot
+  ON trusted_services(elite_sponsor_slot_id)
+  WHERE elite_sponsor_slot_id IS NOT NULL;
+
+-- ============================================================
+-- VERIFICATION (Phase B)
+-- ============================================================
+-- SELECT column_name FROM information_schema.columns
+--   WHERE table_name = 'elite_sponsor_slots' AND column_name IN
+--   ('subcategory_slug','creative_approval_status','attributed_ambassador_id',
+--    'sponsor_partner_application_id','sponsor_partner_organization_id');
+-- SELECT column_name FROM information_schema.columns
+--   WHERE table_name = 'navigator_requests' AND column_name = 'elite_sponsor_slot_id';
+-- SELECT column_name FROM information_schema.columns
+--   WHERE table_name = 'partner_organizations' AND column_name = 'auto_bill_on_accept';
+-- SELECT COUNT(*) FROM elite_sponsor_waitlist;
+-- SELECT slug FROM trusted_service_categories WHERE slug = 'insurance';
+-- ============================================================
+-- END ECSS PHASE B SCHEMA
+-- ============================================================

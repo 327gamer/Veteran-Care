@@ -22,6 +22,7 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Crown,
@@ -32,12 +33,17 @@ import {
   XCircle,
   PauseCircle,
   Loader2,
+  Clock,
+  AlertTriangle,
+  Mail,
+  ExternalLink,
 } from "lucide-react";
 
 const ECSS_CATEGORIES = [
   { slug: "legal-services", label: "Legal Services" },
   { slug: "mortgage-lending", label: "Mortgage / Lending" },
   { slug: "real-estate", label: "Real Estate" },
+  { slug: "insurance", label: "Insurance" },
 ] as const;
 
 type CategorySlug = (typeof ECSS_CATEGORIES)[number]["slug"];
@@ -46,6 +52,7 @@ interface EliteSlot {
   id: string;
   category_slug: string;
   state_code: string;
+  subcategory_slug: string | null;
   status: "vacant" | "sold" | "paused";
   monthly_price_cents: number;
   lead_price_cents: number;
@@ -56,9 +63,39 @@ interface EliteSlot {
   sponsor_lead_email: string | null;
   sponsor_phone: string | null;
   sponsor_website_url: string | null;
+  sponsor_partner_application_id: string | null;
+  creative_approval_status: "pending" | "approved" | "rejected";
+  creative_rejection_reason: string | null;
   billing_status: "unpaid" | "active" | "past_due" | "cancelled";
   current_period_end: string | null;
   notes_internal: string | null;
+}
+
+interface WaitlistEntry {
+  id: string;
+  state_code: string;
+  category_slug: string;
+  subcategory_slug: string | null;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string | null;
+  company_name: string | null;
+  notified_at: string | null;
+  created_at: string;
+}
+
+interface SponsorLead {
+  id: string;
+  slot_id: string;
+  veteran_name: string;
+  veteran_email: string;
+  veteran_phone: string | null;
+  message: string | null;
+  state_code: string;
+  category_slug: string;
+  delivered_to_email: string | null;
+  status: string;
+  created_at: string;
 }
 
 interface PublicStats {
@@ -118,6 +155,30 @@ function AdminEliteSponsorsInner() {
 
   const slots = slotsQuery.data?.slots || [];
   const liveStates = statsQuery.data?.liveStates || [];
+
+  const waitlistQuery = useQuery<{ waitlist: WaitlistEntry[] }>({
+    queryKey: ["/api/admin/elite-sponsor-waitlist"],
+    queryFn: async () => {
+      const r = await adminFetch("/api/admin/elite-sponsor-waitlist");
+      return r.json();
+    },
+  });
+
+  const leadsQuery = useQuery<{ leads: SponsorLead[] }>({
+    queryKey: ["/api/admin/elite-sponsor-leads"],
+    queryFn: async () => {
+      const r = await adminFetch("/api/admin/elite-sponsor-leads");
+      return r.json();
+    },
+  });
+
+  const waitlistEntries = waitlistQuery.data?.waitlist || [];
+  const sponsorLeads = leadsQuery.data?.leads || [];
+  const pendingCreativeCount = slots.filter(
+    (s) =>
+      s.creative_approval_status === "pending" &&
+      (s.sponsor_logo_url || s.sponsor_name)
+  ).length;
 
   // Build (state × category) grid
   const grid = useMemo(() => {
@@ -274,98 +335,278 @@ function AdminEliteSponsorsInner() {
           </Card>
         </div>
 
-        {/* Inventory grid */}
-        <Card className="mt-5">
-          <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr>
-                  <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">
-                    State
-                  </th>
-                  {ECSS_CATEGORIES.map((c) => (
-                    <th
-                      key={c.slug}
-                      className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3 text-amber-600" />
-                        {c.label}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {slotsQuery.isLoading && (
-                  <tr>
-                    <td
-                      colSpan={ECSS_CATEGORIES.length + 1}
-                      className="px-3 py-8 text-center text-muted-foreground"
-                    >
-                      <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
-                      Loading inventory…
-                    </td>
-                  </tr>
-                )}
-                {!slotsQuery.isLoading && grid.states.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={ECSS_CATEGORIES.length + 1}
-                      className="px-3 py-12 text-center text-muted-foreground"
-                    >
-                      <div className="text-sm">
-                        No slots yet. Click <strong>Seed Vacant Inventory</strong>{" "}
-                        above to populate the grid.
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {grid.states.map((state) => (
-                  <tr key={state} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="px-3 py-2.5 font-semibold">{state}</td>
-                    {ECSS_CATEGORIES.map((c) => {
-                      const slot = grid.byKey[`${state}::${c.slug}`];
-                      return (
-                        <td key={c.slug} className="px-3 py-2.5">
-                          {slot ? (
-                            <button
-                              onClick={() => setEditing(slot)}
-                              className="text-left w-full group"
-                              data-testid={`cell-${state}-${c.slug}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                {statusBadge(slot.status)}
-                                {slot.sponsor_name && (
-                                  <span className="text-xs font-medium truncate max-w-[160px]">
-                                    {slot.sponsor_name}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-foreground">
-                                {centsToDollars(slot.monthly_price_cents)}/mo · {centsToDollars(slot.lead_price_cents)}/lead · {slot.billing_status}
-                              </div>
-                            </button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">
-                              — no slot —
-                            </span>
-                          )}
+        {/* Tabs: Inventory · Waitlist · Leads */}
+        <Tabs defaultValue="inventory" className="mt-5">
+          <TabsList data-testid="tabs-elite">
+            <TabsTrigger value="inventory" data-testid="tab-inventory">
+              Inventory
+              {pendingCreativeCount > 0 && (
+                <Badge
+                  variant="outline"
+                  className="ml-2 border-amber-300 text-amber-800 bg-amber-50"
+                  data-testid="badge-pending-count"
+                >
+                  <Clock className="h-3 w-3 mr-1" />
+                  {pendingCreativeCount} pending
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="waitlist" data-testid="tab-waitlist">
+              Waitlist
+              {waitlistEntries.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  {waitlistEntries.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="leads" data-testid="tab-leads">
+              Leads
+              {sponsorLeads.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  {sponsorLeads.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Inventory tab */}
+          <TabsContent value="inventory" className="mt-3">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                        State
+                      </th>
+                      {ECSS_CATEGORIES.map((c) => (
+                        <th
+                          key={c.slug}
+                          className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="h-3 w-3 text-amber-600" />
+                            {c.label}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slotsQuery.isLoading && (
+                      <tr>
+                        <td
+                          colSpan={ECSS_CATEGORIES.length + 1}
+                          className="px-3 py-8 text-center text-muted-foreground"
+                        >
+                          <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
+                          Loading inventory…
                         </td>
+                      </tr>
+                    )}
+                    {!slotsQuery.isLoading && grid.states.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={ECSS_CATEGORIES.length + 1}
+                          className="px-3 py-12 text-center text-muted-foreground"
+                        >
+                          <div className="text-sm">
+                            No slots yet. Click <strong>Seed Vacant Inventory</strong>{" "}
+                            above to populate the grid.
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {grid.states.map((state) => (
+                      <tr key={state} className="border-b last:border-0 hover:bg-muted/30">
+                        <td className="px-3 py-2.5 font-semibold">{state}</td>
+                        {ECSS_CATEGORIES.map((c) => {
+                          const slot = grid.byKey[`${state}::${c.slug}`];
+                          const hasPendingCreative =
+                            slot &&
+                            slot.creative_approval_status === "pending" &&
+                            (slot.sponsor_logo_url || slot.sponsor_name);
+                          const hasRejectedCreative =
+                            slot && slot.creative_approval_status === "rejected";
+                          return (
+                            <td key={c.slug} className="px-3 py-2.5">
+                              {slot ? (
+                                <button
+                                  onClick={() => setEditing(slot)}
+                                  className="text-left w-full group"
+                                  data-testid={`cell-${state}-${c.slug}`}
+                                >
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    {statusBadge(slot.status)}
+                                    {hasPendingCreative && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-amber-300 text-amber-800 bg-amber-50 text-[10px] px-1.5 py-0"
+                                        data-testid={`badge-pending-${state}-${c.slug}`}
+                                      >
+                                        <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                        Review
+                                      </Badge>
+                                    )}
+                                    {hasRejectedCreative && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-red-300 text-red-800 bg-red-50 text-[10px] px-1.5 py-0"
+                                      >
+                                        <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                                        Rejected
+                                      </Badge>
+                                    )}
+                                    {slot.sponsor_name && (
+                                      <span className="text-xs font-medium truncate max-w-[140px]">
+                                        {slot.sponsor_name}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-foreground">
+                                    {centsToDollars(slot.monthly_price_cents)}/mo · {centsToDollars(slot.lead_price_cents)}/lead · {slot.billing_status}
+                                  </div>
+                                </button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">
+                                  — no slot —
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            <p className="text-xs text-muted-foreground mt-3">
+              One TOP slot per (state × category). Click any cell to edit
+              sponsor details, pricing, billing status, or approve/reject the
+              submitted creative. The premium sold-state banner card only
+              renders when status=Sold AND creative is Approved.
+            </p>
+          </TabsContent>
+
+          {/* Waitlist tab */}
+          <TabsContent value="waitlist" className="mt-3">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">When</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">State</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Category</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Contact</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Email</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Phone</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {waitlistQuery.isLoading && (
+                      <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin inline mr-2" />Loading waitlist…</td></tr>
+                    )}
+                    {!waitlistQuery.isLoading && waitlistEntries.length === 0 && (
+                      <tr><td colSpan={6} className="px-3 py-12 text-center text-muted-foreground">No waitlist entries yet.</td></tr>
+                    )}
+                    {waitlistEntries.map((w) => {
+                      const cat = ECSS_CATEGORIES.find((c) => c.slug === w.category_slug);
+                      return (
+                        <tr key={w.id} className="border-b last:border-0 hover:bg-muted/30" data-testid={`row-waitlist-${w.id}`}>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(w.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-3 py-2.5 font-semibold">{w.state_code}</td>
+                          <td className="px-3 py-2.5 text-xs">{cat?.label || w.category_slug}</td>
+                          <td className="px-3 py-2.5">
+                            {w.contact_name}
+                            {w.company_name && (
+                              <div className="text-[10px] text-muted-foreground">{w.company_name}</div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <a href={`mailto:${w.contact_email}`} className="text-primary hover:underline text-xs">
+                              <Mail className="h-3 w-3 inline mr-1" />
+                              {w.contact_email}
+                            </a>
+                          </td>
+                          <td className="px-3 py-2.5 text-xs">{w.contact_phone || "—"}</td>
+                        </tr>
                       );
                     })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+            <p className="text-xs text-muted-foreground mt-3">
+              Captured when /partner-apply detects the slot is sold for the
+              applicant's state + category. Notify them when the slot frees up.
+            </p>
+          </TabsContent>
 
-        <p className="text-xs text-muted-foreground mt-3">
-          One slot per (state × category). Click any cell to edit sponsor
-          details, pricing, or billing status. Stripe wiring is Phase C —
-          billing_status is manual until then.
-        </p>
+          {/* Leads tab */}
+          <TabsContent value="leads" className="mt-3">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">When</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">State / Cat</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Veteran</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Contact</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Routed To</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leadsQuery.isLoading && (
+                      <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin inline mr-2" />Loading leads…</td></tr>
+                    )}
+                    {!leadsQuery.isLoading && sponsorLeads.length === 0 && (
+                      <tr><td colSpan={6} className="px-3 py-12 text-center text-muted-foreground">No sponsor leads yet.</td></tr>
+                    )}
+                    {sponsorLeads.map((l) => {
+                      const cat = ECSS_CATEGORIES.find((c) => c.slug === l.category_slug);
+                      return (
+                        <tr key={l.id} className="border-b last:border-0 hover:bg-muted/30" data-testid={`row-lead-${l.id}`}>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(l.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs">
+                            <span className="font-semibold">{l.state_code}</span>{" "}
+                            <span className="text-muted-foreground">· {cat?.label || l.category_slug}</span>
+                          </td>
+                          <td className="px-3 py-2.5">{l.veteran_name}</td>
+                          <td className="px-3 py-2.5 text-xs">
+                            <div>
+                              <a href={`mailto:${l.veteran_email}`} className="text-primary hover:underline">{l.veteran_email}</a>
+                            </div>
+                            {l.veteran_phone && <div>{l.veteran_phone}</div>}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                            {l.delivered_to_email || "—"}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <Badge variant="outline" className="text-[10px]">{l.status}</Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+            <p className="text-xs text-muted-foreground mt-3">
+              Veteran leads captured from the sold-state premium banner card.
+              Each lead also creates a navigator_request tagged with the slot,
+              so the lead-router auto-bills $49.99 on accept.
+            </p>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Slot detail drawer */}
@@ -402,6 +643,8 @@ function SlotEditor({
   onSave: (patch: Partial<EliteSlot>) => void;
   isSaving: boolean;
 }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
   const [form, setForm] = useState({
     status: slot.status,
     billing_status: slot.billing_status,
@@ -416,9 +659,250 @@ function SlotEditor({
     sponsor_website_url: slot.sponsor_website_url || "",
     notes_internal: slot.notes_internal || "",
   });
+  const [rejectionReason, setRejectionReason] = useState(
+    slot.creative_rejection_reason || ""
+  );
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [creativeBusy, setCreativeBusy] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const hasSubmittedCreative =
+    !!slot.sponsor_logo_url ||
+    !!slot.sponsor_short_description ||
+    !!slot.sponsor_partner_application_id;
+
+  async function patchCreative(payload: Record<string, any>) {
+    setCreativeBusy(true);
+    try {
+      const r = await adminFetch(`/api/admin/elite-sponsor-slots/${slot.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e.error || "Update failed");
+      }
+      toast({ title: "Creative updated" });
+      qc.invalidateQueries({ queryKey: ["/api/admin/elite-sponsor-slots"] });
+    } catch (err: any) {
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCreativeBusy(false);
+    }
+  }
+
+  async function startCheckout() {
+    if (!form.sponsor_lead_email) {
+      toast({
+        title: "Missing email",
+        description: "Set the sponsor lead destination email first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCheckoutBusy(true);
+    try {
+      const r = await adminFetch("/api/admin/elite-sponsor/checkout", {
+        method: "POST",
+        body: JSON.stringify({
+          slotId: slot.id,
+          customerEmail: form.sponsor_lead_email,
+          sponsorLeadEmail: form.sponsor_lead_email,
+          sponsorName: form.sponsor_name || null,
+          sponsorLogoUrl: form.sponsor_logo_url || null,
+          sponsorShortDescription: form.sponsor_short_description || null,
+          sponsorCtaText: form.sponsor_cta_text || null,
+          sponsorPhone: form.sponsor_phone || null,
+          sponsorWebsiteUrl: form.sponsor_website_url || null,
+          partnerApplicationId: slot.sponsor_partner_application_id || null,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.url) throw new Error(data.error || "Checkout failed");
+      window.open(data.url, "_blank", "noopener");
+      toast({
+        title: "Checkout link generated",
+        description: "Stripe checkout opened in a new tab.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Checkout failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Creative approval banner */}
+      {hasSubmittedCreative && (
+        <div
+          className={
+            slot.creative_approval_status === "approved"
+              ? "border border-emerald-200 bg-emerald-50 rounded-md p-3"
+              : slot.creative_approval_status === "rejected"
+                ? "border border-red-200 bg-red-50 rounded-md p-3"
+                : "border border-amber-200 bg-amber-50 rounded-md p-3"
+          }
+          data-testid="panel-creative-approval"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {slot.creative_approval_status === "approved" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+              ) : slot.creative_approval_status === "rejected" ? (
+                <XCircle className="h-4 w-4 text-red-700" />
+              ) : (
+                <Clock className="h-4 w-4 text-amber-700" />
+              )}
+              <span className="text-sm font-semibold">
+                Creative:{" "}
+                {slot.creative_approval_status === "approved"
+                  ? "Approved"
+                  : slot.creative_approval_status === "rejected"
+                    ? "Rejected"
+                    : "Pending review"}
+              </span>
+            </div>
+          </div>
+
+          {slot.sponsor_logo_url && (
+            <div className="bg-white rounded border p-2 mb-2 flex items-center gap-3">
+              <img
+                src={slot.sponsor_logo_url}
+                alt="logo preview"
+                className="h-12 w-12 object-contain rounded"
+                data-testid="img-creative-logo"
+              />
+              <div className="text-xs">
+                <div className="font-semibold">{slot.sponsor_name || "—"}</div>
+                <div className="text-muted-foreground line-clamp-2">
+                  {slot.sponsor_short_description || "(no description)"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {slot.creative_approval_status === "rejected" &&
+            slot.creative_rejection_reason && (
+              <div className="text-xs text-red-800 mb-2">
+                <strong>Rejection reason:</strong> {slot.creative_rejection_reason}
+              </div>
+            )}
+
+          {!showRejectInput ? (
+            <div className="flex gap-2">
+              {slot.creative_approval_status !== "approved" && (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    patchCreative({
+                      creative_approval_status: "approved",
+                      creative_rejection_reason: null,
+                    })
+                  }
+                  disabled={creativeBusy}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  data-testid="button-approve-creative"
+                >
+                  {creativeBusy && (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  )}
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                  Approve
+                </Button>
+              )}
+              {slot.creative_approval_status !== "rejected" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowRejectInput(true)}
+                  disabled={creativeBusy}
+                  data-testid="button-reject-creative"
+                  className="border-red-300 text-red-800 hover:bg-red-100"
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1" />
+                  Reject
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Textarea
+                rows={2}
+                placeholder="Reason for rejection (shown to sponsor)…"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                data-testid="input-rejection-reason"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={creativeBusy || !rejectionReason.trim()}
+                  onClick={async () => {
+                    await patchCreative({
+                      creative_approval_status: "rejected",
+                      creative_rejection_reason: rejectionReason.trim(),
+                    });
+                    setShowRejectInput(false);
+                  }}
+                  data-testid="button-confirm-reject"
+                >
+                  {creativeBusy && (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  )}
+                  Confirm Reject
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowRejectInput(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stripe checkout link generator */}
+      {slot.status !== "sold" && hasSubmittedCreative && (
+        <div className="border border-blue-200 bg-blue-50 rounded-md p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold flex items-center gap-1.5">
+                <ExternalLink className="h-4 w-4 text-blue-700" />
+                Send Stripe checkout
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Generates a Stripe subscription checkout URL for this slot at{" "}
+                {centsToDollars(form.monthly_price_cents)}/mo. On success the
+                webhook flips status → Sold.
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={startCheckout}
+              disabled={checkoutBusy}
+              data-testid="button-stripe-checkout"
+            >
+              {checkoutBusy && (
+                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+              )}
+              Generate
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Status */}
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -92,7 +92,118 @@ export default function PartnerApply() {
   const [addons, setAddons] = useState({
     featured: false,
     near_me_boost: false,
+    ecss: false,
   });
+
+  // ─── ECSS Phase B onboarding upsell state ───
+  const ECSS_CATEGORY_SLUGS = new Set([
+    "legal-services",
+    "mortgage-lending",
+    "real-estate",
+    "insurance",
+  ]);
+  const [ecssLogoDataUrl, setEcssLogoDataUrl] = useState<string>("");
+  const [ecssShortDescription, setEcssShortDescription] = useState<string>("");
+  const [ecssCtaText, setEcssCtaText] = useState<string>("Get Help");
+  const [ecssLogoError, setEcssLogoError] = useState<string>("");
+  const [ecssWaitlistEmail, setEcssWaitlistEmail] = useState<string>("");
+  const [ecssWaitlistJoined, setEcssWaitlistJoined] = useState<boolean>(false);
+
+  const selectedCategorySlug = (() => {
+    const c = (categories as Category[]).find((c) => c.id === form.category_id);
+    return c?.slug || "";
+  })();
+  const ecssEligible =
+    form.plan_type === "state" &&
+    !!form.state &&
+    !!form.category_id &&
+    ECSS_CATEGORY_SLUGS.has(selectedCategorySlug);
+
+  const { data: ecssAvail } = useQuery<{
+    available: boolean;
+    soldOut: boolean;
+    slot?: {
+      slot_id?: string;
+      monthly_price_cents: number;
+      lead_price_cents: number;
+    };
+  }>({
+    queryKey: [
+      "/api/elite-sponsor/available",
+      selectedCategorySlug,
+      form.state,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        categorySlug: selectedCategorySlug,
+        state: form.state,
+      });
+      const r = await fetch(`/api/elite-sponsor/available?${params.toString()}`);
+      if (!r.ok) throw new Error("avail lookup failed");
+      return r.json();
+    },
+    enabled: ecssEligible,
+    staleTime: 60 * 1000,
+  });
+
+  const ecssMonthlyPrice = ecssAvail?.slot?.monthly_price_cents
+    ? ecssAvail.slot.monthly_price_cents / 100
+    : 499;
+
+  // If ECSS becomes ineligible (user changed plan/state/category), uncheck it.
+  useEffect(() => {
+    if (!ecssEligible && (addons.ecss || ecssLogoDataUrl)) {
+      setAddons((prev) => ({ ...prev, ecss: false }));
+    }
+  }, [ecssEligible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Compress an uploaded logo to ≤120KB JPEG, square 600×600.
+  async function handleLogoFile(file: File) {
+    setEcssLogoError("");
+    if (!file.type.startsWith("image/")) {
+      setEcssLogoError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setEcssLogoError("Image is too large. Max 8MB before compression.");
+      return;
+    }
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = 600;
+      canvas.height = 600;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no canvas ctx");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 600, 600);
+      // square crop, contain
+      const ratio = Math.max(600 / img.width, 600 / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      ctx.drawImage(img, (600 - w) / 2, (600 - h) / 2, w, h);
+      let q = 0.82;
+      let out = canvas.toDataURL("image/jpeg", q);
+      while (out.length > 120 * 1024 && q > 0.3) {
+        q -= 0.1;
+        out = canvas.toDataURL("image/jpeg", q);
+      }
+      setEcssLogoDataUrl(out);
+    } catch {
+      setEcssLogoError("Could not process that image. Try a different file.");
+    }
+  }
 
   const ADDON_INFO = [
     { key: "featured" as const, label: "Featured Partner Placement", icon: Sparkles, price: 49.99, desc: "Appear at the top of category results with a highlighted badge" },
@@ -103,7 +214,8 @@ export default function PartnerApply() {
   const selectedAddons = ADDON_INFO.filter(a => addons[a.key]);
   const addonTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
   const basePrice = form.plan_type ? basePrices[form.plan_type] : 0;
-  const monthlyTotal = basePrice + addonTotal;
+  const ecssAddonPrice = addons.ecss && ecssEligible && ecssAvail?.available ? ecssMonthlyPrice : 0;
+  const monthlyTotal = basePrice + addonTotal + ecssAddonPrice;
 
   useEffect(() => {
     trackEvent("partner_apply_started");
@@ -141,6 +253,16 @@ export default function PartnerApply() {
           category_id: form.category_id || null,
           state: form.plan_type === "national" ? null : (form.state || null),
           addons: Object.entries(addons).filter(([, v]) => v).map(([k]) => k),
+          ecss_data: addons.ecss && ecssEligible
+            ? {
+                category_slug: selectedCategorySlug,
+                state_code: form.state,
+                logo_data_url: ecssLogoDataUrl || null,
+                short_description: ecssShortDescription || null,
+                cta_text: ecssCtaText || "Get Help",
+                slot_id: ecssAvail?.slot?.slot_id || null,
+              }
+            : null,
           utm_source: utm.utm_source || null,
           utm_medium: utm.utm_medium || null,
           utm_campaign: utm.utm_campaign || null,
@@ -458,6 +580,173 @@ export default function PartnerApply() {
           </div>
         )}
 
+        {ecssEligible && ecssAvail && (
+          <div className="mb-5" data-testid="ecss-upsell-section">
+            <h2 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-amber-600" />
+              Elite Sponsor Slot
+              <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border-amber-200">Premium</Badge>
+            </h2>
+            <p className="text-xs text-muted-foreground mb-3">
+              Single-occupancy banner above the entire {selectedCategorySlug.replace("-", " ")} category in {form.state}. Only one sponsor per state per category.
+            </p>
+
+            {ecssAvail.soldOut ? (
+              <div
+                className="rounded-xl border-2 border-stone-300 bg-stone-50 p-4"
+                data-testid="ecss-soldout-card"
+              >
+                <p className="text-sm font-semibold text-stone-800 mb-1">
+                  Sold out for {form.state}
+                </p>
+                <p className="text-xs text-stone-600 mb-3">
+                  This slot is currently held by another sponsor. Join the waitlist and we'll notify you the moment it opens up.
+                </p>
+                {ecssWaitlistJoined ? (
+                  <p className="text-xs font-medium text-emerald-700" data-testid="text-ecss-waitlist-confirmed">
+                    You're on the waitlist. We'll be in touch.
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      data-testid="input-ecss-waitlist-email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={ecssWaitlistEmail}
+                      onChange={(e) => setEcssWaitlistEmail(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      data-testid="button-ecss-waitlist-join"
+                      onClick={async () => {
+                        const email = (ecssWaitlistEmail || form.email || "").trim();
+                        if (!email) {
+                          toast({ title: "Email required", description: "Please enter an email to join the waitlist.", variant: "destructive" });
+                          return;
+                        }
+                        try {
+                          const r = await fetch("/api/elite-sponsor/waitlist", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              categorySlug: selectedCategorySlug,
+                              state: form.state,
+                              contact_name: form.contact_name || "",
+                              contact_email: email,
+                              contact_phone: form.phone || "",
+                              contact_company: form.company_name || "",
+                              session_id: sessionStorage.getItem("vc_session_id") || null,
+                            }),
+                          });
+                          if (!r.ok) throw new Error("waitlist failed");
+                          setEcssWaitlistJoined(true);
+                          toast({ title: "You're on the list", description: "We'll let you know when this slot opens." });
+                        } catch (err: any) {
+                          toast({ title: "Could not save", description: err.message, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Join Waitlist
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                data-testid="ecss-upsell-card"
+                className={`rounded-xl border-2 p-4 transition-all ${
+                  addons.ecss ? "border-amber-500 bg-amber-50" : "border-amber-200 bg-amber-50/40"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      Become the Elite Sponsor for {selectedCategorySlug.replace("-", " ")} in {form.state}
+                    </p>
+                    <ul className="text-[11px] text-stone-600 list-disc ml-4 mt-1 space-y-0.5">
+                      <li>Premium card above all category listings</li>
+                      <li>Logo, description, CTA button, phone</li>
+                      <li>Direct lead capture (auto-billed at $49.99/lead on accept)</li>
+                      <li>Top placement in trusted-services tile grid</li>
+                    </ul>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-base font-bold text-amber-800">
+                      ${ecssMonthlyPrice.toFixed(0)}/mo
+                    </div>
+                    <Switch
+                      data-testid="switch-addon-ecss"
+                      checked={addons.ecss}
+                      onCheckedChange={(checked) =>
+                        setAddons((prev) => ({ ...prev, ecss: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {addons.ecss && (
+                  <div className="mt-4 pt-4 border-t border-amber-200 space-y-3" data-testid="ecss-creative-fields">
+                    <div>
+                      <Label className="text-xs">Logo (square, will display ~80×80) *</Label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        data-testid="input-ecss-logo"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleLogoFile(f);
+                        }}
+                        className="mt-1 block w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200"
+                      />
+                      {ecssLogoError && (
+                        <p className="text-[11px] text-red-700 mt-1">{ecssLogoError}</p>
+                      )}
+                      {ecssLogoDataUrl && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <img
+                            src={ecssLogoDataUrl}
+                            alt="Logo preview"
+                            className="w-14 h-14 rounded-md object-cover border border-stone-200 bg-white"
+                            data-testid="img-ecss-logo-preview"
+                          />
+                          <span className="text-[11px] text-stone-500">
+                            ~{Math.round(ecssLogoDataUrl.length / 1024)}KB
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs">Short description (max 200 chars)</Label>
+                      <Input
+                        data-testid="input-ecss-description"
+                        value={ecssShortDescription}
+                        onChange={(e) => setEcssShortDescription(e.target.value.slice(0, 200))}
+                        placeholder="One line about what you offer veterans"
+                        maxLength={200}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">CTA button text</Label>
+                      <Input
+                        data-testid="input-ecss-cta"
+                        value={ecssCtaText}
+                        onChange={(e) => setEcssCtaText(e.target.value.slice(0, 30))}
+                        placeholder="Get Help"
+                        maxLength={30}
+                      />
+                    </div>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      After we approve your application and creative, you'll receive a Stripe checkout link to activate billing. The slot goes live as soon as payment + creative approval clear.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {form.plan_type && (
           <div className="mb-5 rounded-xl border-2 border-primary/30 bg-green-50/50 p-4" data-testid="pricing-summary">
             <h3 className="text-sm font-semibold text-foreground mb-2">Monthly Summary</h3>
@@ -474,9 +763,15 @@ export default function PartnerApply() {
                   <span className="font-medium">+${a.price.toFixed(2)}/mo</span>
                 </div>
               ))}
+              {ecssAddonPrice > 0 && (
+                <div className="flex justify-between" data-testid="pricing-row-ecss">
+                  <span className="text-muted-foreground">Elite Sponsor Slot</span>
+                  <span className="font-medium">+${ecssAddonPrice.toFixed(2)}/mo</span>
+                </div>
+              )}
               <div className="border-t pt-1 mt-1 flex justify-between text-base font-bold text-foreground">
                 <span>Total</span>
-                <span>${monthlyTotal.toFixed(2)}/mo</span>
+                <span data-testid="text-pricing-total">${monthlyTotal.toFixed(2)}/mo</span>
               </div>
             </div>
           </div>

@@ -12378,7 +12378,7 @@ export async function registerRoutes(
 
       const { data: lead } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status, admin_notes, response_status")
+        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, category, user_state, veteran_name, email")
         .eq("id", leadId)
         .single();
 
@@ -12431,6 +12431,97 @@ export async function registerRoutes(
       }
 
       console.log(`[lead-action] Lead ${leadId} response_status → ${responseStatus} via email_link`);
+
+      // ─── ECSS Phase B: auto-bill on accept (best-effort, fire-and-forget) ───
+      // Triggers a Stripe Checkout for the standard $49.99 lead charge when:
+      //   • partner accepted the lead, AND
+      //   • the lead came in via an Elite Sponsor slot, OR
+      //   • the routed partner organization has auto_bill_on_accept=true
+      // The lead.billed guard makes this idempotent on retries. Failures here
+      // never block the partner's "Accept" UX — admin charge endpoint remains.
+      if (responseStatus === "accepted" && !lead.billed) {
+        try {
+          let shouldAutoBill = false;
+          let billingPartnerId: string | null = lead.routed_to_partner_id || null;
+
+          if (lead.elite_sponsor_slot_id) {
+            const { data: ecssSlot } = await supabaseAdmin
+              .from("elite_sponsor_slots")
+              .select("status, billing_status, sponsor_partner_organization_id")
+              .eq("id", lead.elite_sponsor_slot_id)
+              .maybeSingle();
+            if (
+              ecssSlot &&
+              ecssSlot.status === "sold" &&
+              ecssSlot.billing_status === "active"
+            ) {
+              shouldAutoBill = true;
+              if (!billingPartnerId && ecssSlot.sponsor_partner_organization_id) {
+                billingPartnerId = ecssSlot.sponsor_partner_organization_id;
+              }
+            }
+          }
+
+          if (!shouldAutoBill && billingPartnerId) {
+            const { data: org } = await supabaseAdmin
+              .from("partner_organizations")
+              .select("auto_bill_on_accept, name")
+              .eq("id", billingPartnerId)
+              .maybeSingle();
+            if (org && org.auto_bill_on_accept === true) shouldAutoBill = true;
+          }
+
+          if (shouldAutoBill) {
+            const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+            if (isStripeEnabled()) {
+              let partnerName = "Partner";
+              if (billingPartnerId) {
+                try {
+                  const { data: p } = await supabaseAdmin
+                    .from("partner_organizations")
+                    .select("name")
+                    .eq("id", billingPartnerId)
+                    .maybeSingle();
+                  if (p?.name) partnerName = p.name;
+                } catch {}
+              }
+              const amount = 49.99;
+              try {
+                const { sessionId } = await createLeadChargeCheckout(
+                  leadId,
+                  amount,
+                  partnerName,
+                  lead.veteran_name || "Unknown",
+                  lead.category || "General"
+                );
+                await supabaseAdmin
+                  .from("navigator_requests")
+                  .update({
+                    stripe_checkout_session_id: sessionId,
+                    stripe_payment_status: "pending",
+                    billing_workflow_status: "queued",
+                  })
+                  .eq("id", leadId);
+                console.log(
+                  `[lead-action] auto-bill triggered for lead ${leadId} (ecss=${!!lead.elite_sponsor_slot_id}, partner=${billingPartnerId || "none"}, session=${sessionId})`
+                );
+              } catch (billErr: any) {
+                console.warn(
+                  `[lead-action] auto-bill checkout creation failed for lead ${leadId}: ${billErr.message}`
+                );
+              }
+            } else {
+              console.log(
+                `[lead-action] auto-bill skipped for lead ${leadId} — Stripe not configured`
+              );
+            }
+          }
+        } catch (autoBillErr: any) {
+          console.warn(
+            `[lead-action] auto-bill hook exception for lead ${leadId}: ${autoBillErr.message}`
+          );
+        }
+      }
 
       const label = actionLabels[action] || action;
       const noteAck = partnerNotes ? " Your note has been saved." : "";
@@ -12676,13 +12767,13 @@ export async function registerRoutes(
   });
 
   app.post("/api/partner-applications", async (req, res) => {
-    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, referred_by_code, is_lead_enabled } = req.body;
+    const { company_name, contact_name, email, phone, website, city, state, category_id, subcategory_ids, service_description, pricing_interest, plan_type, addons, ecss_data, utm_source, utm_medium, utm_campaign, utm_content, utm_id, session_id, referred_by_code, is_lead_enabled } = req.body;
     if (!company_name || !contact_name || !email) {
       return res.status(400).json({ error: "company_name, contact_name, and email are required" });
     }
     const validPricing = ["monthly", "lead-based", "both"];
     const validPlanTypes = ["state", "national"];
-    const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+    const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline", "ecss"];
     const cleanAddons = Array.isArray(addons) ? [...new Set(addons.filter((a: string) => validAddons.includes(a)))] : [];
     try {
       const paAmbassadorId = (utm_content || utm_id) ? await resolveAmbassadorId(utm_content || null, utm_id || null) : null;
@@ -12727,6 +12818,96 @@ export async function registerRoutes(
           console.log(`[partner-referral] Auto-tracked referral: ${referredByPartnerId} → ${email}`);
         } catch (refErr: any) {
           console.log(`[partner-referral] Auto-track failed:`, refErr.message);
+        }
+      }
+
+      // ─── ECSS Phase B: stage the elite_sponsor_slot for admin approval ───
+      // If the applicant opted into Elite Sponsor, persist the captured logo
+      // + creative onto the corresponding (state × category) TOP slot. The
+      // slot remains status=vacant + creative_approval_status=pending until
+      // admin approves AND Stripe checkout completes. Best-effort, never
+      // blocks the application response.
+      if (
+        rows.length > 0 &&
+        cleanAddons.includes("ecss") &&
+        ecss_data &&
+        typeof ecss_data === "object" &&
+        ecss_data.category_slug &&
+        ecss_data.state_code
+      ) {
+        try {
+          const ecssCategorySlug = String(ecss_data.category_slug).slice(0, 80);
+          const ecssState = String(ecss_data.state_code).toUpperCase().slice(0, 2);
+
+          // Find or create the TOP slot for this (cat, state)
+          const { data: existingSlot } = await supabaseAdmin
+            .from("elite_sponsor_slots")
+            .select("id")
+            .eq("category_slug", ecssCategorySlug)
+            .eq("state_code", ecssState)
+            .is("subcategory_slug", null)
+            .maybeSingle();
+
+          let slotId: string | null = existingSlot?.id || null;
+          if (!slotId) {
+            // Race-safe: try insert; if a parallel request created the slot
+            // first (partial-unique-index conflict on cat+state where
+            // subcategory IS NULL), re-fetch instead of throwing.
+            const { data: created, error: createErr } = await supabaseAdmin
+              .from("elite_sponsor_slots")
+              .insert({
+                category_slug: ecssCategorySlug,
+                state_code: ecssState,
+                status: "vacant",
+                billing_status: "unpaid",
+                monthly_price_cents: 49900,
+                lead_price_cents: 4999,
+              })
+              .select("id")
+              .single();
+            if (createErr) {
+              // 23505 = Postgres unique_violation
+              const isConflict =
+                (createErr as any).code === "23505" ||
+                /duplicate key|unique/i.test(createErr.message || "");
+              if (!isConflict) throw createErr;
+              const { data: refetch } = await supabaseAdmin
+                .from("elite_sponsor_slots")
+                .select("id")
+                .eq("category_slug", ecssCategorySlug)
+                .eq("state_code", ecssState)
+                .is("subcategory_slug", null)
+                .maybeSingle();
+              slotId = refetch?.id || null;
+            } else {
+              slotId = created.id;
+            }
+          }
+
+          if (slotId) {
+            await supabaseAdmin
+              .from("elite_sponsor_slots")
+              .update({
+                sponsor_partner_application_id: rows[0].id,
+                sponsor_name: company_name,
+                sponsor_logo_url: ecss_data.logo_data_url || null,
+                sponsor_short_description: ecss_data.short_description || null,
+                sponsor_cta_text: ecss_data.cta_text || "Get Help",
+                sponsor_lead_email: email,
+                sponsor_phone: phone || null,
+                sponsor_website_url: website || null,
+                creative_approval_status: "pending",
+                creative_rejection_reason: null,
+                attributed_session_id: session_id || null,
+              })
+              .eq("id", slotId);
+
+            console.log(
+              `[ECSS] application ${rows[0].id} staged on slot ${slotId} (cat=${ecssCategorySlug}, state=${ecssState}, awaiting admin approval)`
+            );
+          }
+        } catch (ecssErr: any) {
+          console.warn(`[ECSS] application stage failed (non-fatal): ${ecssErr.message}`);
         }
       }
 

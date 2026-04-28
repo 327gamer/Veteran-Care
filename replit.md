@@ -1757,3 +1757,75 @@ Founder-approved monetization rails: one exclusive sponsor slot per (state × ca
 - Sold-state full sponsor card rendering (currently a small "ELITE SPONSOR · {name}" tag — placeholder is the active surface)
 - Lead capture form on category pages (uses existing /partner-apply)
 
+## ECSS Phase B — Sponsor Onboarding + Stripe + Lead Auto-Bill — COMPLETED 2026-04-28
+
+Boot log: `[ECSS] Phase A+B schema applied (idempotent).` Architect-reviewed; 3 critical findings fixed (checkout contract mismatch, missing insurance category on server, non-atomic staging insert). Founder report at `.local/ecss-phase-b-report.md`.
+
+**Schema (additive — applied via `ensureEliteSponsorTables()` at boot, NEVER via db:push)**:
+- `elite_sponsor_slots` extended with: `subcategory_slug`, `attributed_ambassador_id`, `attributed_session_id`, `creative_approval_status` (pending|approved|rejected), `creative_rejection_reason`, `sponsor_partner_application_id` FK, `sponsor_partner_organization_id` FK
+- `partner_organizations.auto_bill_on_accept` BOOLEAN DEFAULT FALSE
+- `navigator_requests.elite_sponsor_slot_id` UUID NULL
+- `elite_sponsor_leads.navigator_request_id` UUID NULL
+- New table `elite_sponsor_waitlist` (state + category + subcategory + contact_name + contact_email + contact_phone + company + notes + UTM + session)
+- Replaced single global UNIQUE(category,state) with two partial unique indexes: one for TOP slots (subcategory_slug IS NULL) and one per subcategory_slug
+
+**Categories (4 launch)**: legal-services, mortgage-lending, real-estate, **insurance** (added in Phase B). Server `ECSS_CATEGORIES` and client list MUST stay in parity — `isValidCategorySlug()` whitelists the server array.
+
+**Stripe wiring** (`server/stripe-service.ts` + `server/elite-sponsor.ts`):
+- `createEliteSponsorCheckoutSession()` builds inline `price_data` recurring monthly subscription (no Stripe Price needed → admin per-slot price overrides "just work"). Metadata: `kind="ecss_slot"`, `slot_id`, `partner_application_id`, `attributed_session_id`, `attributed_ambassador_code`.
+- `handleWebhookEvent` now branches on `metadata.kind === "ecss_slot"` for: `checkout.session.completed` → flip slot to sold + active + trigger trusted-tile auto-link + set partner org `auto_bill_on_accept=true`; `customer.subscription.updated/deleted` → sync billing_status; `invoice.paid` → idempotency only (existing ambassador commission calc fires automatically); `invoice.payment_failed` → past_due. Bad/unknown metadata falls through unhandled — does NOT touch any non-ECSS flow.
+- ECSS module is lazy-imported in stripe-service.ts so the existing partner-org + lead-billing flows are untouched.
+
+**Onboarding upsell** (`client/src/pages/partner-apply.tsx`):
+- ECSS card surfaces only when plan_type=state + state + ECSS-eligible category. Live availability via `GET /api/elite-sponsor/available?categorySlug=&state=&subcategory=`.
+- Logo uploader: 600×600 square, ≤120KB JPEG (canvas-compress to dataURL).
+- Sold-out → inline waitlist capture (POST `/api/elite-sponsor/waitlist`).
+- On submit, `partner_applications.requested_addons` includes `"ecss"` AND a row is staged in `elite_sponsor_slots` (race-safe: catches Postgres 23505 unique_violation and re-fetches) with `creative_approval_status="pending"` + sponsor identity + logo + creative.
+
+**Admin creative approval** (`client/src/pages/admin-elite-sponsors.tsx`):
+- Tabs: Inventory / Waitlist / Leads.
+- Inventory grid shows yellow "Review" badge on cells with pending creative.
+- Slot editor Sheet: logo preview + Approve / Reject (reason required) buttons → PATCH `/api/admin/elite-sponsor/slots/:id`. "Generate Stripe checkout" button → POST `/api/admin/elite-sponsor/checkout` (camelCase: `slotId`, `customerEmail`, `sponsorLeadEmail`, plus optional sponsor identity fields; opens checkout URL in new tab).
+- Banner card AND trusted-tile link both gate on `creative_approval_status === "approved"`.
+
+**Sold-state premium banner** (`client/src/components/elite-sponsor-banner.tsx` + new `elite-sponsor-card.tsx` + `elite-sponsor-lead-modal.tsx`):
+- Renders premium card (logo · name · short_description · CTA + phone) when slot is `status=sold` AND `creative_approval_status=approved`.
+- CTA opens inline lead modal → POST `/api/elite-sponsor/leads` writes both `elite_sponsor_leads` row AND a linked `navigator_requests` row tagged with `elite_sponsor_slot_id`. Sponsor receives email at `sponsor_lead_email`.
+
+**Auto-bill on lead accept** (`server/routes.ts` ~12438):
+- When navigator_request transitions to `responseStatus="accepted"` and `billed=false`, fires `createLeadChargeCheckout($49.99)` if either `navigator_requests.elite_sponsor_slot_id` is set OR `partner_organizations.auto_bill_on_accept=true`.
+- Idempotent (sets `billed=true` immediately). Fire-and-forget (lead acceptance never blocks on Stripe).
+
+**Trusted-services auto-link** (`server/elite-sponsor.ts:linkEliteSponsorTrustedTile`):
+- On checkout.session.completed: upserts a `trusted_services` row keyed (sponsor_partner_organization_id, category_slug, state_code) with `featured=true` + priority boost.
+- On subscription cancellation: demotes (`featured=false`, priority normalized).
+
+**New endpoints (Phase B)**:
+- `GET /api/elite-sponsor/categories` (public) — returns the 4 launch categories
+- `GET /api/elite-sponsor/available?categorySlug=&state=&subcategory=` (public)
+- `POST /api/elite-sponsor/waitlist` (public)
+- `POST /api/elite-sponsor/leads` (public)
+- `GET /api/admin/elite-sponsor-slots` (admin)
+- `GET /api/admin/elite-sponsor-leads` (admin)
+- `GET /api/admin/elite-sponsor-waitlist` (admin)
+- `PATCH /api/admin/elite-sponsor/slots/:id` (admin) — extended to accept `creative_approval_status` + `creative_rejection_reason` + `sponsor_partner_application_id` + `sponsor_partner_organization_id`
+- `POST /api/admin/elite-sponsor/checkout` (admin)
+
+**Files changed**:
+- `supabase/create_elite_sponsor_slots.sql` (extended)
+- `server/elite-sponsor.ts` (1,457 lines — Phase A foundation + Phase B helpers/routes/webhook handlers; ECSS_CATEGORIES = 4)
+- `server/stripe-service.ts` (kind=ecss_slot branch added to handleWebhookEvent)
+- `server/routes.ts` (auto-bill hook + partner-applications POST stages slot row, race-safe)
+- `client/src/pages/partner-apply.tsx` (ECSS upsell card + logo uploader + waitlist + ecss_data submit payload)
+- `client/src/pages/admin-elite-sponsors.tsx` (Tabs + creative approval panel + checkout button + insurance column)
+- `client/src/components/elite-sponsor-banner.tsx` (premium card render path)
+- `client/src/components/elite-sponsor-card.tsx` (new)
+- `client/src/components/elite-sponsor-lead-modal.tsx` (new)
+
+**NOT in Phase B** (Phase C scope, await founder approval):
+- Waitlist auto-notify when slot frees (currently manual via admin email)
+- Subcategory marketplace UI (column + index exist, no public surface)
+- Real-time creative preview for partners pre-approval
+- Self-serve refund / cancellation portal
+- Promo code / temporary discount UI
+

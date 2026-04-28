@@ -1,0 +1,127 @@
+--- COPY TO REPLIT ---
+
+FOUNDER ANSWERS — ECSS ARCHITECTURE DECISIONS
+
+Architecture plan approved with one important correction.
+
+This is an extension of existing Trusted Partner + Stripe + Lead + Ambassador systems.
+
+Do not build parallel systems.
+
+==================================================
+DECISION ANSWERS
+==================================================
+
+1. Auto-bill timing:
+Lead billing should fire on ACCEPT.
+
+When sponsor accepts/receives the lead in the current workflow, the $49.99 charge should trigger.
+
+2. Ambassador commission on lead fee:
+YES.
+
+Ambassadors should earn commission on:
+- monthly ECSS subscription
+- $49.99 lead charges
+
+Use existing attribution / commission logic.
+
+3. Subcategory slots:
+Defer full subcategory expansion for MVP, but architecture must support it.
+
+Launch first with:
+- Legal
+- Mortgage / Lending
+- Real Estate
+- Insurance
+
+4. State pricing:
+Use code defaults + admin per-slot override.
+
+Need ability to price large states higher later:
+CA / TX / FL / NY.
+
+5. ECSS sponsor trusted-services tile:
+CORRECTION — YES.
+
+An ECSS sponsor should automatically receive:
+- elite banner at very top
+- top trusted-services listing/tile directly below banner
+
+This is part of the premium value.
+
+They still must pay base listing plan:
+- $99 state plan
+or
+- $499 national plan
+
+ECSS is an upgrade on top.
+
+6. Insurance:
+YES — include Insurance as 4th launch category.
+
+7. Sold-out waitlist:
+YES.
+
+If slot sold, show:
+SOLD OUT
+Join Waitlist
+
+8. Creative approval:
+YES.
+
+Banner/logo must require admin approval before public display.
+
+==================================================
+PRICING MODEL
+==================================================
+
+Base plan required:
+- $99 state listing
+or
+- $499 national listing
+
+ECSS upgrade:
+- default $499/month
+- admin override by state/category
+
+Lead billing:
+- $49.99 per accepted lead
+- automated through existing Stripe lead billing
+
+==================================================
+PHASE B APPROVED — BUILD ONLY THIS
+==================================================
+
+Build ECSS into existing partner-apply / trusted partner signup flow.
+
+Include:
+- ECSS option in onboarding
+- state/category availability check
+- Stripe monthly subscription setup
+- base plan requirement
+- logo/banner upload fields
+- creative approval status
+- top trusted-services tile inclusion
+- waitlist if sold out
+- lead billing flag for $49.99 accepted leads
+- ambassador attribution inheritance
+
+No subcategory marketplace yet.
+No public homepage/About changes.
+No unrelated rebuild.
+
+==================================================
+REPORT BACK
+==================================================
+
+- Files changed
+- Signup flow changes
+- Stripe flow changes
+- Lead billing logic
+- Ambassador attribution logic
+- Admin approval flow
+- Waitlist behavior
+- Anything not yet automated
+
+--- END ---
