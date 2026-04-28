@@ -1,0 +1,165 @@
+🚨 ECSS + LEAD BILLING — FINAL CONFIRMATION & ALIGNMENT (REQUIRED)
+
+We need to confirm the exact billing logic and Stripe behavior before proceeding any further. Please read carefully and confirm each item explicitly.
+
+---
+
+### 🔹 1. CURRENT UNDERSTANDING (YOU CONFIRM IF CORRECT)
+
+We previously had lead billing working WITHOUT a Stripe product, using dynamic Stripe charges ($49.99 per accepted lead).
+
+Now we have created a Stripe product + price for Lead Delivery Fee ($49.99).
+
+👉 QUESTION:
+Are we now switching ALL lead billing (for ALL partners) to use:
+STRIPE_LEAD_CHARGE_PRICE_ID
+
+OR
+
+Is the system still using dynamic price_data for some flows?
+
+---
+
+### 🔹 2. REQUIRED FINAL STATE (NO DEVIATION)
+
+We need ONE unified system — not multiple billing paths.
+
+#### ✅ RULE:
+ALL lead charges ($49.99) must use:
+👉 STRIPE_LEAD_CHARGE_PRICE_ID
+
+Applies to:
+- State Plan partners
+- National Plan partners
+- ECSS partners
+
+There should NOT be:
+- dynamic price_data lead charges
+- mixed billing logic
+
+👉 Please confirm:
+"ALL lead charges now use STRIPE_LEAD_CHARGE_PRICE_ID only"
+
+---
+
+### 🔹 3. DIRECT LEAD DELIVERY LOGIC
+
+#### Normal Partner:
+- Can toggle ON/OFF
+- If ON → charged $49.99 per accepted lead
+
+#### ECSS Partner:
+- MUST be automatically forced ON
+- Cannot be turned OFF
+- ALWAYS billed $49.99 per accepted lead
+
+👉 Confirm:
+- ECSS = auto-enable leads
+- Non-ECSS = optional
+
+---
+
+### 🔹 4. BILLING METHOD (CRITICAL)
+
+We do NOT want manual checkout links.
+
+We want:
+
+👉 TRUE AUTOMATED BILLING
+
+When partner clicks:
+"ACCEPT LEAD"
+
+System must:
+- charge $49.99 automatically
+- use saved payment method
+- NO emails
+- NO Stripe checkout links
+- NO user interaction required
+
+👉 Confirm:
+
+Are we using:
+paymentIntents.create({ off_session: true })
+
+OR
+
+Is it still generating checkout links?
+
+---
+
+### 🔹 5. ECSS ($499) BILLING STRUCTURE
+
+We want:
+
+👉 ONE SINGLE CHECKOUT FLOW
+
+When a partner selects:
+- State or National plan
+- AND ECSS
+
+Stripe checkout must include:
+- Base plan ($99 or $499)
+- + ECSS ($499/month)
+
+👉 NOT:
+- separate checkout
+- separate subscription
+- separate emails
+
+👉 Confirm:
+ECSS is bundled into the same checkout session
+
+---
+
+### 🔹 6. STRIPE PRODUCTS (FINAL CHECK)
+
+We now have:
+
+- State Plan ✅
+- National Plan ✅
+- Featured Placement ✅
+- Near Me Boost ✅
+- Elite Category Sponsor Slot ✅
+- Lead Delivery Fee ✅
+
+👉 Confirm:
+All are:
+- LIVE mode
+- active
+- correctly mapped to Replit secrets
+
+---
+
+### 🔹 7. FINAL YES/NO CHECKLIST
+
+Please respond in this exact format:
+
+- Lead billing unified under STRIPE_LEAD_CHARGE_PRICE_ID → YES/NO
+- ECSS forces lead delivery ON → YES/NO
+- Lead billing is fully automatic (no checkout links) → YES/NO
+- ECSS bundled into main checkout → YES/NO
+- No duplicate billing paths exist → YES/NO
+
+---
+
+### ⚠️ IMPORTANT
+
+We are about to start selling ECSS.
+
+If any of the above is incorrect, we risk:
+- broken billing
+- lost revenue
+- double charging
+- bad partner experience
+
+So this needs to be 100% confirmed before we proceed.
+
+---
+
+Once confirmed, next step will be:
+👉 FINAL PRODUCTION TEST (full end-to-end flow)
+
+---
+
+Reply when ready.
