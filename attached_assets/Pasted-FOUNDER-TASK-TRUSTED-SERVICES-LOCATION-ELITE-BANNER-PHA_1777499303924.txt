@@ -1,0 +1,121 @@
+FOUNDER TASK — TRUSTED SERVICES LOCATION + ELITE BANNER (PHASE 1 TEST)
+
+We are NOT changing architecture.
+We are NOT touching databases.
+We are NOT adding new systems.
+
+We are ONLY fixing the Trusted Services (Discounts) page behavior.
+
+==================================================
+OBJECTIVE
+==================================================
+
+Make location REQUIRED so Elite ads can be targeted correctly.
+
+==================================================
+REQUIRED FIXES
+==================================================
+
+1. LOCATION BEHAVIOR
+
+Match EXACTLY how Resources works:
+
+- If user enables location:
+  → Automatically detect state
+  → Load results based on state
+
+- If user does NOT enable location:
+  → REQUIRE state selection before showing results
+  → City is optional
+
+- Do NOT show results until state is defined
+
+--------------------------------------------------
+
+2. UI — LOCATION PROMPT
+
+At the top of the Trusted Services page:
+
+Add:
+
+"Enable location for better results"
+
+OR allow manual state selection.
+
+This should match the existing Resources experience.
+
+--------------------------------------------------
+
+3. FILTER CONTROLS
+
+Replace current behavior:
+
+- "Near Me" alone is NOT enough
+
+Add:
+
+- State dropdown (REQUIRED if no location)
+- City dropdown (optional)
+
+--------------------------------------------------
+
+4. ELITE BANNER PLACEHOLDER (CRITICAL)
+
+On SUBCATEGORY pages (example: Mortgages):
+
+At the VERY TOP (above listings):
+
+IF no Elite partner exists:
+→ Show:
+
+"This Exclusive Spot is Available"
+
+IF Elite partner exists:
+→ Show Elite banner
+
+--------------------------------------------------
+
+5. DO NOT TOUCH
+
+- Stripe
+- Pricing
+- Database schema
+- Existing Resources logic
+- AI Guide
+- Any other system
+
+==================================================
+TEST REQUIREMENTS
+==================================================
+
+After implementation:
+
+Test BOTH flows:
+
+1. Location enabled → correct state auto loads
+2. Location OFF → user MUST pick state
+
+Then confirm:
+
+- Listings load correctly
+- Elite placeholder appears
+- No console errors
+- No broken UI
+
+==================================================
+REPORT BACK
+==================================================
+
+Before any further changes:
+
+Send:
+
+1. What changed (files)
+2. Screenshot of:
+   - Category page
+   - Subcategory page with placeholder
+3. Confirmation location gating works
+
+NO EXTRA FEATURES
+NO ARCHITECTURE CHANGES
+NO DATABASE ACTIONS

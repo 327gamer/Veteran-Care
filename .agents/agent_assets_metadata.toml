@@ -36,3 +36,15 @@ id = "E2v8y4SllRj08vSxpdb7n"
 uri = "file://.local/reports/TAXONOMY_AUDIT.md"
 type = "text"
 title = "Trusted Services Taxonomy Audit (read-only)"
+
+[[outputs]]
+id = "TWXplnbXyKAbQ-03T7JOG"
+uri = "file://screenshots/01-discounts-category-page-location-prompt.jpg"
+type = "image"
+title = "1. Trusted Services category page — location prompt + state dropdown visible"
+
+[[outputs]]
+id = "YumMvfM1jMzPO_DbuWpMy"
+uri = "file://screenshots/02-elite-placeholder-real-estate-page.jpg"
+type = "image"
+title = "2. Elite sponsor placeholder render (proxy for subcategory page — same component)"
