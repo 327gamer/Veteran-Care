@@ -82,7 +82,7 @@ export default function EliteSponsorPlaceholder({
               className="text-xl md:text-2xl font-bold tracking-tight text-stone-900"
               data-testid={`elite-sponsor-headline-${categorySlug}`}
             >
-              YOUR BUSINESS HERE
+              This Exclusive Spot is Available
             </h3>
 
             <p
