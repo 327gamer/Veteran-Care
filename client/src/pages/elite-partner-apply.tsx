@@ -36,7 +36,8 @@ interface Subcategory {
   display_order: number;
 }
 
-const ECSS_PRICE = 499;
+import { getDefaultEcssPriceCents } from "@shared/ecss-pricing";
+
 const LEAD_PRICE = 49.99;
 
 // Backend `/api/elite-sponsor/available` and `/waitlist` only accept these
@@ -228,8 +229,14 @@ export default function ElitePartnerApply() {
   }
 
   // ─── MONTHLY SUMMARY (live) ───────────────────────────────────────
+  // Drive the Elite price from the live availability response (which already
+  // honors per-slot admin overrides + state-tier defaults). Fall back to the
+  // selected state's tier default before the avail query resolves.
   const showElitePrice = slotPickerReady && avail?.available;
-  const monthlyTotal = basePrice + (showElitePrice ? ECSS_PRICE : 0);
+  const elitePriceCents =
+    avail?.slot?.monthly_price_cents ?? getDefaultEcssPriceCents(eliteState);
+  const elitePriceDollars = Math.round(elitePriceCents / 100);
+  const monthlyTotal = basePrice + (showElitePrice ? elitePriceDollars : 0);
 
   // ─── VALIDATION ────────────────────────────────────────────────────
   const slotIsAvailable = slotPickerReady && avail?.available === true;
@@ -375,7 +382,7 @@ export default function ElitePartnerApply() {
             <strong className="text-foreground">
               {planType === "state" ? "$99/mo State Plan" : "$499/mo National Plan"}
             </strong>{" "}
-            and the <strong className="text-foreground">$499/mo Elite Slot</strong> in one transaction.
+            and the <strong className="text-foreground">${elitePriceDollars}/mo Elite Slot</strong> in one transaction.
           </p>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-left mb-6">
             <p className="text-xs font-semibold text-amber-900 mb-1">What happens next</p>
@@ -790,7 +797,7 @@ export default function ElitePartnerApply() {
             <div className="flex justify-between" data-testid="summary-row-elite">
               <span className="text-amber-900/80">Elite Service Partner Slot</span>
               <span className="font-semibold text-amber-900">
-                {showElitePrice ? `$${ECSS_PRICE.toFixed(2)}/mo` : "—"}
+                {showElitePrice ? `$${elitePriceDollars.toFixed(2)}/mo` : "—"}
               </span>
             </div>
             <div className="border-t border-amber-300 pt-2 flex justify-between text-base font-bold text-amber-900" data-testid="summary-row-total">

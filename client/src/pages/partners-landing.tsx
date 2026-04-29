@@ -161,7 +161,7 @@ export default function PartnersLanding() {
             <ul className="space-y-1.5 text-xs text-foreground mb-4">
               <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Exclusive top banner — only one partner per slot</span></li>
               <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Direct leads included automatically</span></li>
-              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Base plan + $499/mo Elite slot</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Base plan + Elite slot (starts at $499/mo, varies by state)</span></li>
               <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>$49.99 per accepted qualified lead</span></li>
             </ul>
             <button

@@ -829,7 +829,7 @@ export default function PartnerApply() {
                       <Badge variant="secondary" className="text-[10px] bg-amber-200 text-amber-900 border-amber-300">Premium</Badge>
                     </div>
                     <p className="text-xs text-amber-800/80 mt-0.5">
-                      $499/mo + $49.99 per accepted lead. Single occupancy — only one business per state per category.
+                      Starts at $499/mo + $49.99 per accepted lead. Pricing varies by state, category, and availability. Single occupancy — only one business per state per category.
                     </p>
                   </div>
                 </div>

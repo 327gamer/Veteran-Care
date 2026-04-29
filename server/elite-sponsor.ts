@@ -1,6 +1,14 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import type Stripe from "stripe";
 import { supabaseAdmin } from "./supabase";
+import {
+  getDefaultEcssPriceCents,
+  ECSS_TIER_1_STATES,
+  ECSS_TIER_2_STATES,
+  ECSS_TIER_1_CENTS,
+  ECSS_TIER_2_CENTS,
+  ECSS_TIER_3_CENTS,
+} from "@shared/ecss-pricing";
 import { supabaseQuery, isSupabaseDbConfigured } from "./supabase-pg-client";
 import { query as pgQuery } from "./pg-client";
 import { platform } from "../shared/platform";
@@ -148,10 +156,54 @@ export async function ensureEliteSponsorTables(): Promise<{
     await supabaseQuery(sql);
     bootstrapSucceeded = true;
     console.log("[ECSS] Phase A+B schema applied (idempotent).");
+    // Idempotent state-tier backfill: only touches vacant slots still at
+    // the legacy $499 default in tier-1/tier-2 states. Admin overrides on
+    // any non-default-priced slot are preserved automatically because the
+    // WHERE clause requires monthly_price_cents=49900. Sold/active slots
+    // are skipped because we additionally require status='vacant'.
+    await backfillEcssTierPrices();
     return { ok: true };
   } catch (err: any) {
     console.error(`[ECSS] Schema apply failed: ${err.message}`);
     return { ok: false, reason: err.message };
+  }
+}
+
+async function backfillEcssTierPrices(): Promise<void> {
+  try {
+    // Tier 1 ($899): CA, TX, FL, NY
+    const { data: t1, error: e1 } = await supabaseAdmin
+      .from("elite_sponsor_slots")
+      .update({ monthly_price_cents: ECSS_TIER_1_CENTS })
+      .eq("status", "vacant")
+      .eq("billing_status", "unpaid")
+      .eq("monthly_price_cents", ECSS_TIER_3_CENTS)
+      .in("state_code", [...ECSS_TIER_1_STATES])
+      .select("id");
+    if (e1) throw e1;
+
+    // Tier 2 ($699): PA, OH, NC, GA
+    const { data: t2, error: e2 } = await supabaseAdmin
+      .from("elite_sponsor_slots")
+      .update({ monthly_price_cents: ECSS_TIER_2_CENTS })
+      .eq("status", "vacant")
+      .eq("billing_status", "unpaid")
+      .eq("monthly_price_cents", ECSS_TIER_3_CENTS)
+      .in("state_code", [...ECSS_TIER_2_STATES])
+      .select("id");
+    if (e2) throw e2;
+
+    const t1n = t1?.length || 0;
+    const t2n = t2?.length || 0;
+    if (t1n + t2n > 0) {
+      console.log(
+        `[ECSS] Tier price backfill: tier1(+$899)=${t1n} tier2(+$699)=${t2n} (sold/admin-overridden slots untouched)`
+      );
+    } else {
+      console.log("[ECSS] Tier price backfill: no rows needed updating (already at tier prices or admin-overridden).");
+    }
+  } catch (err: any) {
+    console.error(`[ECSS] Tier price backfill failed: ${err.message} (non-fatal)`);
   }
 }
 
@@ -311,7 +363,7 @@ export function registerEliteSponsorRoutes(
             monthly_price_cents:
               Number.isFinite(monthly_price_cents) && monthly_price_cents > 0
                 ? Math.round(monthly_price_cents)
-                : 49900,
+                : getDefaultEcssPriceCents(state_code),
             lead_price_cents:
               Number.isFinite(lead_price_cents) && lead_price_cents > 0
                 ? Math.round(lead_price_cents)
@@ -533,13 +585,14 @@ export function registerEliteSponsorRoutes(
 
         const rows: any[] = [];
         for (const state of validStates) {
+          const tierCents = getDefaultEcssPriceCents(state);
           for (const cat of ECSS_CATEGORIES) {
             rows.push({
               category_slug: cat.slug,
               state_code: state,
               status: "vacant",
               billing_status: "unpaid",
-              monthly_price_cents: 49900,
+              monthly_price_cents: tierCents,
               lead_price_cents: 4999,
             });
           }
@@ -1289,11 +1342,16 @@ function registerEliteSponsorPhaseBRoutes(
       const { data: slot } = await q.maybeSingle();
 
       if (!slot) {
-        // No slot row = vacancy is implicit (will be seeded on demand)
+        // No slot row = vacancy is implicit (will be seeded on demand).
+        // Use the state-tier default so the UI quotes the correct number
+        // before an admin pre-stages the row.
         return res.json({
           available: true,
           soldOut: false,
-          slot: { monthly_price_cents: 49900, lead_price_cents: 4999 },
+          slot: {
+            monthly_price_cents: getDefaultEcssPriceCents(stateCode),
+            lead_price_cents: 4999,
+          },
         });
       }
       const isSold =
