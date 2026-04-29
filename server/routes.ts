@@ -12825,31 +12825,39 @@ export async function registerRoutes(
         try {
           const ecssCategorySlug = String(ecss_data.category_slug).slice(0, 80);
           const ecssState = String(ecss_data.state_code).toUpperCase().slice(0, 2);
+          // Optional subcategory-level slot (Elite Service Partner page).
+          // When present, slot is keyed on (cat × state × subcat). When absent
+          // (legacy /partner-apply ECSS upsell), slot is category-level.
+          const ecssSubcat = ecss_data.subcategory_slug
+            ? String(ecss_data.subcategory_slug).toLowerCase().slice(0, 80)
+            : null;
 
-          // Find or create the TOP slot for this (cat, state)
-          const { data: existingSlot } = await supabaseAdmin
+          // Find existing slot for this (cat, state, [subcat?])
+          const findQ = supabaseAdmin
             .from("elite_sponsor_slots")
             .select("id")
             .eq("category_slug", ecssCategorySlug)
-            .eq("state_code", ecssState)
-            .is("subcategory_slug", null)
-            .maybeSingle();
+            .eq("state_code", ecssState);
+          const { data: existingSlot } = await (ecssSubcat
+            ? findQ.eq("subcategory_slug", ecssSubcat)
+            : findQ.is("subcategory_slug", null)
+          ).maybeSingle();
 
           let slotId: string | null = existingSlot?.id || null;
           if (!slotId) {
-            // Race-safe: try insert; if a parallel request created the slot
-            // first (partial-unique-index conflict on cat+state where
-            // subcategory IS NULL), re-fetch instead of throwing.
+            // Race-safe: try insert; on unique-violation re-fetch instead of throwing.
+            const insertPayload: Record<string, any> = {
+              category_slug: ecssCategorySlug,
+              state_code: ecssState,
+              status: "vacant",
+              billing_status: "unpaid",
+              monthly_price_cents: 49900,
+              lead_price_cents: 4999,
+            };
+            if (ecssSubcat) insertPayload.subcategory_slug = ecssSubcat;
             const { data: created, error: createErr } = await supabaseAdmin
               .from("elite_sponsor_slots")
-              .insert({
-                category_slug: ecssCategorySlug,
-                state_code: ecssState,
-                status: "vacant",
-                billing_status: "unpaid",
-                monthly_price_cents: 49900,
-                lead_price_cents: 4999,
-              })
+              .insert(insertPayload)
               .select("id")
               .single();
             if (createErr) {
@@ -12858,13 +12866,15 @@ export async function registerRoutes(
                 (createErr as any).code === "23505" ||
                 /duplicate key|unique/i.test(createErr.message || "");
               if (!isConflict) throw createErr;
-              const { data: refetch } = await supabaseAdmin
+              const refetchQ = supabaseAdmin
                 .from("elite_sponsor_slots")
                 .select("id")
                 .eq("category_slug", ecssCategorySlug)
-                .eq("state_code", ecssState)
-                .is("subcategory_slug", null)
-                .maybeSingle();
+                .eq("state_code", ecssState);
+              const { data: refetch } = await (ecssSubcat
+                ? refetchQ.eq("subcategory_slug", ecssSubcat)
+                : refetchQ.is("subcategory_slug", null)
+              ).maybeSingle();
               slotId = refetch?.id || null;
             } else {
               slotId = created.id;

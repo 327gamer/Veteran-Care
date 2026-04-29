@@ -24,6 +24,7 @@ import AdminTrustedServiceLeads from "@/pages/admin-trusted-service-leads";
 import AdminSeededProviders from "@/pages/admin-seeded-providers";
 import AdminPartnerProspects from "@/pages/admin-partner-prospects";
 import PartnerApply from "@/pages/partner-apply";
+import ElitePartnerApply from "@/pages/elite-partner-apply";
 import PartnerPaymentSuccess from "@/pages/partner-payment-success";
 import VobDirectory from "@/pages/vob-directory";
 import VobDirectoryApply from "@/pages/vob-directory-apply";
@@ -230,6 +231,12 @@ function Router() {
       <Route path="/partner-apply">
         <Layout>
           <PartnerApply />
+        </Layout>
+      </Route>
+
+      <Route path="/elite-partner-apply">
+        <Layout>
+          <ElitePartnerApply />
         </Layout>
       </Route>
 

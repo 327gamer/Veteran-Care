@@ -1,0 +1,256 @@
+Last message was incomplete:
+
+GO — BUILD ELITE SERVICE PARTNER SYSTEM
+
+This is final. Build exactly as specified below.
+
+━━━━━━━━━━━━━━━━━━━
+CORE STRUCTURE
+━━━━━━━━━━━━━━━━━━━
+
+We now have TWO separate onboarding paths:
+
+1. Trusted Services Partner (EXISTING — DO NOT MODIFY)
+2. Elite Service Partner (NEW — BUILD SEPARATELY)
+
+DO NOT merge these flows.
+DO NOT modify /partner-apply logic.
+
+━━━━━━━━━━━━━━━━━━━
+PART 1 — LANDING PAGE UPDATE
+━━━━━━━━━━━━━━━━━━━
+
+Update /partners page:
+
+Display TWO clearly separated boxes:
+
+BOX 1 — Trusted Services Partner
+- $99/mo state
+- $499/mo national
+- Multi-service listing
+- Optional lead generation
+- CTA → /partner-apply (UNCHANGED)
+
+BOX 2 — Elite Service Partner
+- Premium top placement
+- One exclusive slot per state/category/subcategory
+- Direct leads included
+- $499/mo + $49.99 per accepted lead
+- CTA → /elite-partner-apply
+
+━━━━━━━━━━━━━━━━━━━
+PART 2 — NEW PAGE
+━━━━━━━━━━━━━━━━━━━
+
+Create:
+
+/elite-partner-apply
+
+DO NOT reuse partner-apply UI.
+This must be a CLEAN, SEPARATE FLOW.
+
+━━━━━━━━━━━━━━━━━━━
+PART 3 — ELITE PAGE STRUCTURE
+━━━━━━━━━━━━━━━━━━━
+
+STEP 1 — SELECT PLAN (REQUIRED)
+
+○ State Plan — $99/mo  
+○ National Plan — $499/mo  
+
+(MUST be selected before continuing)
+
+━━━━━━━━━━━━━━━━━━━
+STEP 2 — CLAIM ELITE SLOT (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+This is the PREMIUM selection.
+
+User MUST select:
+
+- State (required)
+- Category (single select)
+- Subcategory (single select)
+
+SYSTEM MUST:
+
+- Call availability API
+- Show:
+  • Available → allow selection
+  • Sold Out → show waitlist
+  • Not provisioned → allow waitlist
+
+RULES:
+
+- ONLY ONE selection allowed
+- This MUST NOT be a checkbox group
+- Use dropdown / radio / locked selector
+- This is NOT multi-select
+
+━━━━━━━━━━━━━━━━━━━
+STEP 3 — SERVICES YOU OFFER (SEPARATE SYSTEM)
+━━━━━━━━━━━━━━━━━━━
+
+This MUST reuse Trusted Partner logic.
+
+- Multi-select checkboxes
+- Multiple categories allowed
+- Multiple subcategories allowed
+
+IMPORTANT:
+
+THIS IS NOT THE ELITE SLOT
+
+This is ONLY for:
+
+- Search visibility
+- Discovery
+- Listing placement
+
+These selections must populate:
+
+partner_subcategories (unchanged system)
+
+━━━━━━━━━━━━━━━━━━━
+STEP 4 — BRANDING & DETAILS
+━━━━━━━━━━━━━━━━━━━
+
+Fields:
+
+- Logo upload (REQUIRED)
+- Business name
+- Headline
+- CTA text
+- Email (lead destination)
+- Phone
+- Website
+
+━━━━━━━━━━━━━━━━━━━
+STEP 5 — MONTHLY SUMMARY (STICKY + LIVE)
+━━━━━━━━━━━━━━━━━━━
+
+Must always show:
+
+Base Plan:
+- $99 OR $499
+
+Elite Slot:
+- $499
+
+Total Monthly:
+- Combined total
+
+Display note:
+
+"Accepted qualified leads are billed separately at $49.99 per lead."
+
+━━━━━━━━━━━━━━━━━━━
+STEP 6 — SUBMIT → STRIPE
+━━━━━━━━━━━━━━━━━━━
+
+Must use EXISTING Stripe logic:
+
+createPartnerCheckoutSession()
+
+Include:
+
+- Base plan (price ID)
+- Elite slot (STRIPE_ECSS_PRICE_ID)
+
+REQUIREMENTS:
+
+- ONE checkout session
+- TWO line items
+- SAVE CARD for off-session billing
+- NO second checkout
+- NO duplicate subscriptions
+
+━━━━━━━━━━━━━━━━━━━
+POST-CHECKOUT AUTOMATION
+━━━━━━━━━━━━━━━━━━━
+
+Must already work:
+
+- Webhook activates subscription
+- claimEcssSlotForBundledPartner executes
+- Slot marked as SOLD
+- Partner linked to slot
+- Logo applied to system
+- Banner placement activated
+
+━━━━━━━━━━━━━━━━━━━
+LEAD SYSTEM (DO NOT MODIFY)
+━━━━━━━━━━━━━━━━━━━
+
+Must remain EXACTLY as-is:
+
+- Paid leads → navigator_requests
+- Free leads → trusted_service_leads
+- Reassignment cron → unchanged
+- Notes system → unchanged
+- Admin panel → unchanged
+
+━━━━━━━━━━━━━━━━━━━
+ELITE RULES (NON-NEGOTIABLE)
+━━━━━━━━━━━━━━━━━━━
+
+- Elite slot = SINGLE selection only
+- Services offered = MULTI selection
+- These MUST NOT share state or logic
+- UI must visually separate these sections
+
+━━━━━━━━━━━━━━━━━━━
+LOCATION LOGIC
+━━━━━━━━━━━━━━━━━━━
+
+System must:
+
+- Detect user state
+- Match banner to:
+  state + category + subcategory
+- Only show banner if:
+  slot = sold AND approved
+
+━━━━━━━━━━━━━━━━━━━
+DO NOT BREAK ANYTHING
+━━━━━━━━━━━━━━━━━━━
+
+Do NOT modify:
+
+- /partner-apply
+- Existing Stripe flows
+- Lead routing
+- Admin system
+- Ambassador tracking
+- Existing subscriptions
+
+━━━━━━━━━━━━━━━━━━━
+BUILD ORDER
+━━━━━━━━━━━━━━━━━━━
+
+1. Update /partners page (2-box UI)
+2. Build /elite-partner-apply
+3. Connect API + Stripe
+4. Run Stripe test mode
+5. Verify full flow
+
+━━━━━━━━━━━━━━━━━━━
+REPORT BACK WITH:
+━━━━━━━━━━━━━━━━━━━
+
+- Landing page updated:
+- Elite page created:
+- Plan selection working:
+- Elite slot selection working:
+- Availability logic working:
+- Services multi-select working:
+- Monthly summary updating correctly:
+- Stripe checkout includes BOTH items:
+- Card saved for billing:
+- Lead billing still working:
+- Trusted Partner flow untouched:
+- Mobile verified:
+
+━━━━━━━━━━━━━━━━━━━
+
+This is the final structure. No deviations.
