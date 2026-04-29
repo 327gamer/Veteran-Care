@@ -28,6 +28,7 @@ import {
   Gift,
   Percent,
   Handshake,
+  Crown,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoImg from "@assets/Veteran_Care_-_Shadow_(TM)_-_PNG_1775367756504.png";
@@ -572,6 +573,37 @@ export default function Home() {
           >
             <Handshake className="h-3.5 w-3.5 mr-1.5" />
             Apply Now
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card
+        data-testid="section-elite-partner-apply-cta"
+        className="cursor-pointer group shadow-sm hover:shadow-md hover:border-amber-600/60 transition-all border-amber-300/60 bg-gradient-to-br from-amber-50 to-yellow-50"
+        onClick={() => setLocation("/elite-partner-apply")}
+      >
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <Crown className="h-5 w-5 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <h3 className="text-sm font-heading font-bold text-foreground group-hover:text-amber-700 transition-colors">
+                Become an Elite Service Partner
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Own the top placement in your selected state, category, or subcategory. Only one Elite Service Partner slot is available per market. Receive direct, high-intent leads from veterans and families.
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-amber-600 shrink-0 mt-0.5 transition-colors" />
+          </div>
+          <Button
+            data-testid="button-elite-partner-apply-home"
+            className="w-full rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+            onClick={(e) => { e.stopPropagation(); setLocation("/elite-partner-apply"); }}
+          >
+            <Crown className="h-3.5 w-3.5 mr-1.5" />
+            Apply for Elite Placement
           </Button>
         </CardContent>
       </Card>

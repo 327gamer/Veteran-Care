@@ -1,0 +1,204 @@
+--- COPY TO REPLIT ---
+
+FOUNDER UI CLEANUP — TRUSTED VS ELITE PARTNER FLOW
+
+I republished and tested the live site on mobile. The new Elite flow is looking much better, but there are several cleanup items that must be fixed before I send the Stripe coupon / live-test-path message.
+
+==================================================
+1. REMOVE ELITE BOX FROM REGULAR TRUSTED PARTNER SIGNUP
+==================================================
+
+On the regular Trusted Services Partner application page:
+
+/partner-apply
+
+The Elite Service Partner box still appears after choosing categories / services, right before Direct Lead Delivery.
+
+This must be removed.
+
+Trusted Partner signup should ONLY include:
+
+- State Plan / National Plan
+- Featured Partner Placement
+- Near Me Boost
+- Partner application info
+- Service categories / subcategories
+- Optional Direct Lead Delivery
+- Monthly Summary
+- Submit
+
+Do NOT show Elite Service Partner / Elite Sponsor Slot inside /partner-apply anymore.
+
+Elite now has its own dedicated flow:
+
+/elite-partner-apply
+
+==================================================
+2. ELITE CATEGORY DROPDOWN ONLY SHOWS LEGAL + INSURANCE
+==================================================
+
+On /elite-partner-apply:
+
+State dropdown works.
+
+Category dropdown currently only shows:
+
+- Legal Services
+- Insurance Services
+
+This is incomplete.
+
+The Elite Service Partner flow needs to support the monetizable Trusted Services categories and subcategories correctly.
+
+At minimum, it should include:
+
+- Legal Services
+- Insurance Services
+- Financial & Credit Services
+- Housing / Home Services if needed for homeownership-related slots
+- Auto Services
+- Travel Services
+- End of Life Services
+- Education & Training
+- Employment Support
+
+But most importantly, the system needs to reflect the full approved Elite inventory/taxonomy plan, not just legal + insurance.
+
+Financial / mortgage / lending slots must be available where appropriate.
+
+Please investigate why Financial & Credit Services is missing from the Elite category dropdown.
+
+==================================================
+3. ELITE SUBCATEGORY DROPDOWN WORKS — KEEP IT
+==================================================
+
+The subcategory dropdown works once a category is selected.
+
+Do not break this.
+
+The single-slot logic is correct:
+
+- State = single select
+- Category = single select
+- Subcategory = single select
+
+This section is good structurally.
+
+==================================================
+4. SERVICES YOU OFFER SECTION LOOKS GOOD — KEEP IT
+==================================================
+
+The Step 3 “Services You Offer” section looks good.
+
+It correctly explains that this is separate from the Elite slot.
+
+Keep:
+
+- multi-select services
+- category picker
+- subcategory checkboxes
+- multiple selections allowed
+
+This is important so Elite partners still populate in search for everything they actually offer.
+
+Do not change this unless necessary.
+
+==================================================
+5. BRANDING & CONTACT SECTION LOOKS GOOD — VERIFY IT WORKS
+==================================================
+
+The Branding & Contact section looks good.
+
+Please verify:
+
+- logo upload works
+- business name saves
+- contact name saves
+- headline saves
+- CTA text saves
+- lead destination email saves
+- phone saves
+- website saves
+- city saves if entered
+
+This data must feed:
+
+- Elite banner
+- trusted-service card/listing
+- lead delivery
+- admin view
+
+==================================================
+6. MONTHLY SUMMARY LOOKS GOOD — KEEP IT
+==================================================
+
+The Monthly Summary looks good.
+
+It correctly shows:
+
+- base plan
+- Elite Service Partner Slot
+- total recurring amount
+- $49.99 per accepted lead notice
+
+Keep this structure.
+
+After category pricing is fixed, it must continue to show the correct tiered state pricing.
+
+==================================================
+7. DIRECT EMAIL CONTACT LINK WORKS — KEEP IT
+==================================================
+
+The Contact Us Directly email link works.
+
+Do not change it.
+
+==================================================
+8. MIRROR TRUSTED + ELITE BOXES ON HOMEPAGE
+==================================================
+
+The /partners page now has both boxes:
+
+- Become a Trusted Services Partner
+- Become an Elite Service Partner
+
+This same two-box structure needs to be mirrored on the homepage.
+
+On the homepage, underneath the existing Trusted Services Partner promo box, add a second matching box:
+
+Become an Elite Service Partner
+
+Suggested copy:
+
+“Own the top placement in your selected state, category, or subcategory. Only one Elite Service Partner slot is available per market. Receive direct, high-intent leads from veterans and families.”
+
+CTA:
+
+Apply for Elite Placement
+
+Link:
+
+/elite-partner-apply
+
+This should appear directly under the existing Trusted Partner box on the homepage.
+
+Do not remove the existing Trusted Partner box.
+
+==================================================
+9. REPORT BACK
+==================================================
+
+Please report back with:
+
+- Elite box removed from /partner-apply:
+- Elite category dropdown fixed:
+- Financial & Credit Services available in Elite flow:
+- Subcategory picker still works:
+- Services You Offer still multi-select:
+- Branding fields verified:
+- Monthly Summary still working:
+- Contact email link still working:
+- Homepage now has Trusted + Elite boxes:
+- Mobile verified:
+
+--- END ---

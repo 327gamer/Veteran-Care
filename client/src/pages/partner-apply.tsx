@@ -267,21 +267,8 @@ export default function PartnerApply() {
           subcategory_ids: form.subcategory_ids.length > 0 ? form.subcategory_ids : null,
           category_id: form.category_id || null,
           state: form.plan_type === "national" ? null : (form.state || null),
-          // Submit-time invariant: ECSS REQUIRES Direct Lead Delivery.
-          // Force the flag to true if ECSS is in the payload, regardless of
-          // whatever the form state happens to be at submit time.
-          is_lead_enabled: addons.ecss ? true : form.is_lead_enabled,
+          is_lead_enabled: form.is_lead_enabled,
           addons: Object.entries(addons).filter(([, v]) => v).map(([k]) => k),
-          ecss_data: addons.ecss && ecssEligible
-            ? {
-                category_slug: selectedCategorySlug,
-                state_code: form.state,
-                logo_data_url: ecssLogoDataUrl || null,
-                short_description: ecssShortDescription || null,
-                cta_text: ecssCtaText || "Get Help",
-                slot_id: ecssAvail?.slot?.slot_id || null,
-              }
-            : null,
           utm_source: utm.utm_source || null,
           utm_medium: utm.utm_medium || null,
           utm_campaign: utm.utm_campaign || null,
@@ -616,18 +603,12 @@ export default function PartnerApply() {
                   <span className="font-medium">+${a.price.toFixed(2)}/mo</span>
                 </div>
               ))}
-              {ecssAddonPrice > 0 && (
-                <div className="flex justify-between" data-testid="pricing-row-ecss">
-                  <span className="text-muted-foreground">Elite Sponsor Slot</span>
-                  <span className="font-medium">+${ecssAddonPrice.toFixed(2)}/mo</span>
-                </div>
-              )}
               <div className="border-t pt-1 mt-1 flex justify-between text-base font-bold text-foreground">
                 <span>Total</span>
                 <span data-testid="text-pricing-total">${monthlyTotal.toFixed(2)}/mo</span>
               </div>
             </div>
-            {(addons.ecss || form.is_lead_enabled) && (
+            {form.is_lead_enabled && (
               <p className="mt-2 text-[11px] text-stone-700 italic" data-testid="text-pricing-lead-fee-note">
                 + Accepted qualified leads are billed separately at <strong>$49.99 per lead</strong>.
               </p>
@@ -745,9 +726,7 @@ export default function PartnerApply() {
                   ...prev,
                   category_id: v,
                   subcategory_ids: [],
-                  // Preserve lead delivery if Elite Sponsor is on (ECSS requires it).
-                  // Otherwise reset to false so user opts in fresh per category.
-                  is_lead_enabled: addons.ecss ? true : false,
+                  is_lead_enabled: false,
                 }));
               }}>
                 <SelectTrigger data-testid="select-category">
@@ -817,213 +796,6 @@ export default function PartnerApply() {
             )}
 
             {/* ============================================================ */}
-            {/* Elite Category Sponsor Slot — always visible once a category */}
-            {/* is picked. Adapts based on plan/state/availability.          */}
-            {/* ============================================================ */}
-            {form.category_id && (
-              <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 p-4 space-y-3" data-testid="ecss-upsell-section">
-                <div className="flex items-start gap-3">
-                  <Crown className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-bold text-amber-900">Elite Category Sponsor Slot</h4>
-                      <Badge variant="secondary" className="text-[10px] bg-amber-200 text-amber-900 border-amber-300">Premium</Badge>
-                    </div>
-                    <p className="text-xs text-amber-800/80 mt-0.5">
-                      Starts at $499/mo + $49.99 per accepted lead. Pricing varies by state, category, and availability. Single occupancy — only one business per state per category.
-                    </p>
-                  </div>
-                </div>
-
-                {!ECSS_CATEGORY_SLUGS.has(selectedCategorySlug) ? (
-                  <div className="bg-white/60 rounded-lg p-3 border border-amber-200" data-testid="ecss-state-not-eligible-category">
-                    <p className="text-xs text-stone-700">
-                      The Elite Sponsor Slot is currently only sold for these four categories:
-                    </p>
-                    <p className="text-xs text-stone-700 mt-1">
-                      <strong>Legal Services · Mortgage / Lending · Real Estate · Insurance</strong>
-                    </p>
-                    <p className="text-[11px] text-stone-500 mt-2">
-                      Switch your Service Category above to one of those to claim the slot for your state.
-                    </p>
-                  </div>
-                ) : form.plan_type !== "state" || !form.state ? (
-                  <div className="bg-white/60 rounded-lg p-3 border border-amber-200" data-testid="ecss-state-needs-state-plan">
-                    <p className="text-xs text-stone-700">
-                      Pick the <strong>$99/mo State Plan</strong> above and select a state to check Elite Sponsor availability for {selectedCategorySlug.replace(/-/g, " ")}.
-                    </p>
-                  </div>
-                ) : !ecssAvail ? (
-                  <div className="bg-white/60 rounded-lg p-3 border border-amber-200 flex items-center gap-2" data-testid="ecss-state-loading">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
-                    <p className="text-xs text-stone-600">
-                      Checking availability for {selectedCategorySlug.replace(/-/g, " ")} in {form.state}…
-                    </p>
-                  </div>
-                ) : ecssAvail.soldOut ? (
-                  <div className="bg-white rounded-lg p-3 border-2 border-stone-300" data-testid="ecss-soldout-card">
-                    <p className="text-sm font-semibold text-stone-800 mb-1">
-                      Sold for {form.state} — Join Waitlist
-                    </p>
-                    <p className="text-xs text-stone-600 mb-3">
-                      We'll let you know the moment this slot opens up.
-                    </p>
-                    {ecssWaitlistJoined ? (
-                      <p className="text-xs font-medium text-emerald-700" data-testid="text-ecss-waitlist-confirmed">
-                        You're on the waitlist. We'll be in touch.
-                      </p>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Input
-                          data-testid="input-ecss-waitlist-email"
-                          type="email"
-                          placeholder="you@company.com"
-                          value={ecssWaitlistEmail}
-                          onChange={(e) => setEcssWaitlistEmail(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          data-testid="button-ecss-waitlist-join"
-                          onClick={async () => {
-                            const email = (ecssWaitlistEmail || form.email || "").trim();
-                            if (!email) {
-                              toast({ title: "Email required", description: "Please enter an email to join the waitlist.", variant: "destructive" });
-                              return;
-                            }
-                            try {
-                              const r = await fetch("/api/elite-sponsor/waitlist", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  categorySlug: selectedCategorySlug,
-                                  state: form.state,
-                                  contact_name: form.contact_name || "",
-                                  contact_email: email,
-                                  contact_phone: form.phone || "",
-                                  contact_company: form.company_name || "",
-                                  session_id: sessionStorage.getItem("vc_session_id") || null,
-                                }),
-                              });
-                              if (!r.ok) throw new Error("waitlist failed");
-                              setEcssWaitlistJoined(true);
-                              toast({ title: "You're on the list", description: "We'll let you know when this slot opens." });
-                            } catch (err: any) {
-                              toast({ title: "Could not save", description: err.message, variant: "destructive" });
-                            }
-                          }}
-                        >
-                          Join Waitlist
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div data-testid="ecss-upsell-card" className={`bg-white rounded-lg p-4 border-2 transition-all ${addons.ecss ? 'border-amber-500 ring-2 ring-amber-200 shadow-md' : 'border-amber-300'}`}>
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <Badge variant="secondary" className="text-[10px] bg-red-100 text-red-800 border-red-200 font-semibold">
-                            Limited Availability — 1 per state
-                          </Badge>
-                        </div>
-                        <p className="text-sm font-bold text-amber-900">
-                          ✓ Available — Claim the Elite Sponsor Slot for {selectedCategorySlug.replace(/-/g, " ")} in {form.state}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-lg font-bold text-amber-800">${ecssMonthlyPrice.toFixed(0)}/mo</div>
-                        <div className="text-[10px] text-amber-700 font-semibold">+ $49.99/lead</div>
-                      </div>
-                    </div>
-                    <ul className="text-[11px] text-stone-700 list-disc ml-4 space-y-0.5 mb-3">
-                      <li>Premium logo + business name + CTA above all category listings in {form.state}</li>
-                      <li>Direct lead capture — auto-billed at $49.99 per accepted lead</li>
-                      <li>Top placement in Trusted Services tile grid</li>
-                      <li>Pending admin creative approval before going live</li>
-                    </ul>
-                    <div className={`flex items-center justify-between gap-3 pt-3 border-t border-amber-200 ${addons.ecss ? 'bg-amber-100/60 -mx-4 px-4 -mb-4 pb-4 rounded-b-lg' : ''}`}>
-                      <Label htmlFor="ecss-toggle" className="text-sm font-bold cursor-pointer text-amber-900">
-                        {addons.ecss
-                          ? `✓ Yes — Elite Sponsor Slot added (+$${ecssMonthlyPrice.toFixed(0)}/mo)`
-                          : `Yes, claim the Elite Sponsor Slot (+$${ecssMonthlyPrice.toFixed(0)}/mo)`}
-                      </Label>
-                      <Switch
-                        id="ecss-toggle"
-                        data-testid="switch-addon-ecss"
-                        checked={addons.ecss}
-                        onCheckedChange={(checked) =>
-                          setAddons((prev) => ({ ...prev, ecss: checked }))
-                        }
-                      />
-                    </div>
-                    {addons.ecss && (
-                      <p className="mt-3 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1.5" data-testid="text-ecss-auto-enable-note">
-                        Direct Lead Delivery has been turned on automatically — Elite Sponsors receive leads directly and are billed $49.99 per accepted lead.
-                      </p>
-                    )}
-
-                    {addons.ecss && (
-                      <div className="mt-4 pt-4 border-t border-amber-200 space-y-3" data-testid="ecss-creative-fields">
-                        <div>
-                          <Label className="text-xs">Logo (square, will display ~80×80) *</Label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            data-testid="input-ecss-logo"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) handleLogoFile(f);
-                            }}
-                            className="mt-1 block w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200"
-                          />
-                          {ecssLogoError && (
-                            <p className="text-[11px] text-red-700 mt-1">{ecssLogoError}</p>
-                          )}
-                          {ecssLogoDataUrl && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <img
-                                src={ecssLogoDataUrl}
-                                alt="Logo preview"
-                                className="w-14 h-14 rounded-md object-cover border border-stone-200 bg-white"
-                                data-testid="img-ecss-logo-preview"
-                              />
-                              <span className="text-[11px] text-stone-500">
-                                ~{Math.round(ecssLogoDataUrl.length / 1024)}KB
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <Label className="text-xs">Banner headline / short description (max 200 chars)</Label>
-                          <Input
-                            data-testid="input-ecss-description"
-                            value={ecssShortDescription}
-                            onChange={(e) => setEcssShortDescription(e.target.value.slice(0, 200))}
-                            placeholder="One line about what you offer veterans"
-                            maxLength={200}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">CTA button text</Label>
-                          <Input
-                            data-testid="input-ecss-cta"
-                            value={ecssCtaText}
-                            onChange={(e) => setEcssCtaText(e.target.value.slice(0, 30))}
-                            placeholder="Get Help"
-                            maxLength={30}
-                          />
-                        </div>
-                        <p className="text-[11px] text-stone-500 leading-relaxed">
-                          <strong>Admin approval required:</strong> after we approve your application and creative, you'll receive a Stripe checkout link to activate billing. The slot goes live as soon as payment + creative approval clear.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
             {(() => {
               const selectedCat = categories.find(c => c.id === form.category_id);
               if (!selectedCat || !isLeadEligibleCategory(selectedCat.slug)) return null;
@@ -1040,21 +812,15 @@ export default function PartnerApply() {
                   </div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="lead-toggle" className="text-sm font-medium cursor-pointer">
-                      {addons.ecss ? "Direct Lead Delivery (required for Elite Sponsor)" : "Yes, I'd like to receive qualified leads"}
+                      Yes, I'd like to receive qualified leads
                     </Label>
                     <Switch
                       id="lead-toggle"
                       data-testid="toggle-lead-enabled"
                       checked={form.is_lead_enabled}
-                      disabled={addons.ecss}
                       onCheckedChange={(checked) => setForm(prev => ({ ...prev, is_lead_enabled: checked }))}
                     />
                   </div>
-                  {addons.ecss && (
-                    <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5" data-testid="text-lead-locked-by-ecss">
-                      Locked ON because the Elite Sponsor Slot you selected delivers leads directly to you. Uncheck the Elite Sponsor Slot above to disable.
-                    </p>
-                  )}
                   {form.is_lead_enabled && (
                     <div className="rounded-md bg-background border border-border p-3 space-y-1.5" data-testid="lead-pricing-info">
                       <p className="text-sm font-semibold text-foreground">$49.99 per qualified lead delivered</p>

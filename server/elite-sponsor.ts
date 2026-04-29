@@ -73,6 +73,48 @@ export const ECSS_CATEGORIES = [
     mount_path: "/insurance",
     description: "Auto, home, life, and disability insurance for veterans",
   },
+  {
+    slug: "financial-credit",
+    label: "Financial & Credit Services",
+    mount_path: "/financial-services",
+    description: "Credit repair, financial planning, banking, lending services for veterans",
+  },
+  {
+    slug: "housing-home",
+    label: "Housing & Home Services",
+    mount_path: "/housing-home",
+    description: "Home builders, contractors, moving, home repair for veterans",
+  },
+  {
+    slug: "auto-services",
+    label: "Auto Services",
+    mount_path: "/auto-services",
+    description: "Auto dealers, repair shops, and dealerships serving veterans",
+  },
+  {
+    slug: "travel-services",
+    label: "Travel Services",
+    mount_path: "/travel-services",
+    description: "Travel agents, tour operators, and travel discounts for veterans",
+  },
+  {
+    slug: "end-of-life-services",
+    label: "End of Life Services",
+    mount_path: "/end-of-life-services",
+    description: "Funeral planning, burial benefits, estate, and final-arrangements services",
+  },
+  {
+    slug: "education-training",
+    label: "Education & Training",
+    mount_path: "/education-training",
+    description: "Schools, certifications, GI Bill providers, and veteran-focused training",
+  },
+  {
+    slug: "employment-support",
+    label: "Employment Support",
+    mount_path: "/employment-support",
+    description: "Recruiting, career coaching, resume help, and veteran-friendly employers",
+  },
 ] as const;
 
 export type EcssCategorySlug = (typeof ECSS_CATEGORIES)[number]["slug"];

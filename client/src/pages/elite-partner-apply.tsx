@@ -41,15 +41,22 @@ import { getDefaultEcssPriceCents } from "@shared/ecss-pricing";
 
 const LEAD_PRICE = 49.99;
 
-// Backend `/api/elite-sponsor/available` and `/waitlist` only accept these
-// 4 monetized service categories. Other categories don't carry leads so they
-// can't have an Elite slot. The Elite slot dropdown is filtered to this set.
+// Backend `/api/elite-sponsor/available` and `/waitlist` accept these
+// monetized service categories. The Elite slot dropdown is filtered to this set.
+// Keep this list in sync with `ECSS_CATEGORIES` in `server/elite-sponsor.ts`.
 // Services-you-offer multi-select (Step 3) still uses the FULL category list.
 const ELITE_ALLOWED_CATEGORY_SLUGS = new Set([
   "legal-services",
   "mortgage-lending",
   "real-estate",
   "insurance",
+  "financial-credit",
+  "housing-home",
+  "auto-services",
+  "travel-services",
+  "end-of-life-services",
+  "education-training",
+  "employment-support",
 ]);
 
 export default function ElitePartnerApply() {
