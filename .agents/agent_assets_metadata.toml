@@ -30,3 +30,9 @@ id = "LYGGlPjFiZ7fxwXepdnP0"
 uri = "file://.local/ca-phase0-founder-report.md"
 type = "text"
 title = "California — Phase 0 Founder Report (Planning + Foundation Audit)"
+
+[[outputs]]
+id = "E2v8y4SllRj08vSxpdb7n"
+uri = "file://.local/reports/TAXONOMY_AUDIT.md"
+type = "text"
+title = "Trusted Services Taxonomy Audit (read-only)"
