@@ -94,19 +94,84 @@ export default function PartnersLanding() {
           <p className="text-white/80 text-sm leading-relaxed mb-8 md:mb-10 px-1">
             Join {platform.name} as a Trusted Partner and get connected with local veterans, families, and caregivers who are actively looking for the services and support you provide.
           </p>
-          <div className="w-full flex flex-col gap-3">
+          <div className="mt-1 flex items-center gap-2 text-white/60 text-xs">
+            <Lock className="h-3 w-3 shrink-0" />
+            <span>Two ways to join — pick the one that fits your business.</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CHOOSE YOUR PATH — TWO BOXES ── */}
+      <section className="px-5 pt-8 pb-4 max-w-lg mx-auto" data-testid="section-choose-path">
+        <h2 className="text-xl font-heading font-extrabold text-primary text-center mb-1.5">
+          Choose Your Path
+        </h2>
+        <p className="text-xs text-center text-muted-foreground mb-5">
+          Two separate programs — pick the one that fits your reach and budget.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4">
+          {/* BOX 1 — Trusted Services Partner */}
+          <div
+            data-testid="card-trusted-partner"
+            className="rounded-2xl border-2 border-primary/25 bg-gradient-to-b from-primary/5 to-background p-5 shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                <Building2 className="h-4 w-4 text-primary" />
+              </span>
+              <h3 className="font-heading font-extrabold text-primary text-base">Trusted Services Partner</h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+              List your business in the Trusted Partner directory. Choose state or national reach. Show all the services you offer.
+            </p>
+            <ul className="space-y-1.5 text-xs text-foreground mb-4">
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /><span>$99/mo state · $499/mo national</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /><span>List multiple services and subcategories</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /><span>Optional Direct Lead Delivery</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /><span>Featured & Near Me Boost add-ons</span></li>
+            </ul>
             <button
-              data-testid="cta-become-partner-hero"
-              onClick={() => { trackEvent("partners_cta_click", { location: "hero" }); setLocation("/partner-apply"); }}
-              className="w-full py-3.5 rounded-full bg-white text-primary font-bold text-base shadow-lg landing-cta-glow transition-transform active:scale-95 flex items-center justify-center gap-2"
+              data-testid="cta-trusted-partner"
+              onClick={() => { trackEvent("partners_cta_click", { location: "two_box_trusted" }); setLocation("/partner-apply"); }}
+              className="w-full py-3 rounded-full bg-primary text-white font-bold text-sm shadow transition-transform active:scale-95 flex items-center justify-center gap-1.5"
             >
-              Become a Trusted Partner
+              Apply as Trusted Partner
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <div className="mt-5 flex items-center gap-2 text-white/60 text-xs">
-            <Lock className="h-3 w-3 shrink-0" />
-            <span>Simple application. No long-term contract required to get started.</span>
+
+          {/* BOX 2 — Elite Service Partner (premium) */}
+          <div
+            data-testid="card-elite-partner"
+            className="rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-amber-50 to-background p-5 shadow-md relative"
+          >
+            <div className="absolute -top-2.5 left-4 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+              Premium · 1 per market
+            </div>
+            <div className="flex items-center gap-2 mb-2 mt-1">
+              <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <Star className="h-4 w-4 text-amber-600 fill-amber-500" />
+              </span>
+              <h3 className="font-heading font-extrabold text-amber-900 text-base">Elite Service Partner</h3>
+            </div>
+            <p className="text-xs text-amber-900/80 leading-relaxed mb-3">
+              Own the top placement in your selected state, category, and subcategory. Only one Elite slot per market. Direct, high-intent leads included.
+            </p>
+            <ul className="space-y-1.5 text-xs text-foreground mb-4">
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Exclusive top banner — only one partner per slot</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Direct leads included automatically</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>Base plan + $499/mo Elite slot</span></li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" /><span>$49.99 per accepted qualified lead</span></li>
+            </ul>
+            <button
+              data-testid="cta-elite-partner"
+              onClick={() => { trackEvent("partners_cta_click", { location: "two_box_elite" }); setLocation("/elite-partner-apply"); }}
+              className="w-full py-3 rounded-full bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold text-sm shadow transition-transform active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              Apply for Elite Placement
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </section>
