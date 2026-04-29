@@ -1,0 +1,103 @@
+COPY TO REPLIT
+
+FOUNDER PRIORITY FIX — TRUSTED SERVICES LOCATION + ELITE ADS
+
+We need to align Trusted Services with the Resources location system and enable monetization logic for Elite partners.
+
+==================================================
+PART 1 — LOCATION CONTROL (CRITICAL)
+==================================================
+
+Trusted Services must support BOTH:
+
+1. Enable Location (auto detect)
+2. Manual State selection (required fallback)
+
+Required behavior:
+
+IF location is enabled:
+- Auto-detect state
+- Load results for that state
+- Use state for Elite ad targeting
+
+IF location is NOT enabled:
+- User MUST select a State before results load
+- City is optional
+
+Add UI at top of Trusted Services:
+
+- “Enable Location for better results”
+- OR
+- State dropdown (REQUIRED)
+- City dropdown (optional)
+
+Use the SAME logic and components already used in:
+- Resources
+- AI navigation
+- Near Me flow
+
+DO NOT create a new system.
+
+==================================================
+PART 2 — ELITE SLOT AD PLACEMENT
+==================================================
+
+We need visible monetization placement.
+
+Add at TOP of subcategory pages:
+
+Example:
+Mortgages / Home Loans
+
+[ Elite Banner Area ]
+
+Logic:
+
+IF elite partner exists for:
+- state + category + subcategory
+
+THEN:
+- Show Elite banner
+
+ELSE:
+- Show placeholder:
+  “This Exclusive Spot is Available”
+
+This must render BEFORE any listings.
+
+==================================================
+PART 3 — STATE-BASED AD TARGETING
+==================================================
+
+Elite slots must be tied to:
+
+- State
+- Category
+- Subcategory
+
+Ad display logic must follow this exactly.
+
+==================================================
+PART 4 — DO NOT BREAK EXISTING SYSTEM
+==================================================
+
+- Do NOT change Resources logic
+- Do NOT change Trusted Services data structure
+- Do NOT affect existing listings
+
+This is UI + routing + display logic only.
+
+==================================================
+REPORT BACK FIRST
+==================================================
+
+Before building, confirm:
+
+1. How you will reuse existing location system
+2. Where Elite banner will be inserted in UI
+3. How state is passed into ad logic
+4. How placeholder will display when slot is empty
+
+No code until confirmed.
+
+--- END ---
