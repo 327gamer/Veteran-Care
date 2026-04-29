@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone, Globe, ShieldCheck } from "lucide-react";
+import { Phone, Globe, ShieldCheck, Crown, Sparkles } from "lucide-react";
 import EliteSponsorLeadModal from "@/components/elite-sponsor-lead-modal";
 
 interface EliteSponsorCardProps {
@@ -21,6 +21,10 @@ interface EliteSponsorCardProps {
   subcategoryLabel?: string | null;
   stateCode: string | null;
   stateName: string | null;
+  // Founder spec 2026-04-29: same card renders in two contexts.
+  //   "banner"  → standalone hero above subcategory listings (default)
+  //   "listing" → first item inside the listings stack (no extra outer margin)
+  variant?: "banner" | "listing";
 }
 
 export default function EliteSponsorCard({
@@ -29,20 +33,45 @@ export default function EliteSponsorCard({
   categoryLabel,
   stateCode,
   stateName,
+  variant = "banner",
 }: EliteSponsorCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const cta = slot.sponsor_cta_text || "Get Help";
+
+  // Founder spec 2026-04-29: CTA labels are mandated, NOT pulled from
+  // slot.sponsor_cta_text (which we keep in the data model for future
+  // sponsor-customizable copy but intentionally do not display here).
+  const primaryCtaLabel = "Get Exclusive Offer";
+  const secondaryCtaLabel = "Request Info (24hr response)";
+
+  // Outer wrapper: banner gets standalone margins; listing variant fits inside
+  // the parent .space-y-3 listings stack with zero extra spacing so it sits
+  // flush as the #1 result above the interleaved trusted-partner cards.
+  const outerClass =
+    variant === "banner"
+      ? "w-full max-w-6xl mx-auto px-4 mt-4 mb-2"
+      : "w-full";
 
   return (
     <section
-      className="w-full max-w-6xl mx-auto px-4 mt-4 mb-2"
+      className={outerClass}
       data-testid={`elite-sponsor-card-${categorySlug}`}
+      data-variant={variant}
     >
-      <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-50/40 shadow-sm overflow-hidden">
-        <div className="flex items-center gap-2 px-4 pt-3">
-          <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-          <span className="text-[10px] font-bold tracking-widest uppercase text-amber-700">
+      <div
+        className="relative rounded-xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-white to-amber-50/40 shadow-[0_0_24px_-4px_rgba(245,158,11,0.4)] ring-1 ring-amber-300/50 ring-offset-1 hover:shadow-[0_0_32px_-2px_rgba(245,158,11,0.55)] hover:-translate-y-0.5 transition-all duration-150 overflow-hidden"
+      >
+        {/* Header strip: Elite badge (left) + Exclusive Offer pill (center) + state context (right) */}
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/90 px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase text-amber-50">
+            <Crown className="w-3 h-3" aria-hidden="true" />
             Elite Sponsor
+          </span>
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800"
+            data-testid={`elite-exclusive-offer-${slot.id}`}
+          >
+            <Sparkles className="w-3 h-3" aria-hidden="true" />
+            Exclusive Offer
           </span>
           {stateName && (
             <span className="text-[10px] text-stone-500 ml-auto">
@@ -84,12 +113,16 @@ export default function EliteSponsorCard({
                 {slot.sponsor_short_description}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-stone-500">
+
+            {/* Demoted tel/website chips per founder spec 2026-04-29:
+                "Do NOT remove call/website — just deprioritize." */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-stone-500">
               {slot.sponsor_phone && (
                 <a
                   href={`tel:${slot.sponsor_phone}`}
                   className="inline-flex items-center gap-1 hover:text-amber-700"
                   data-testid={`link-sponsor-phone-${slot.id}`}
+                  aria-label={`Call ${slot.sponsor_name}`}
                 >
                   <Phone className="w-3 h-3" />
                   {slot.sponsor_phone}
@@ -102,6 +135,7 @@ export default function EliteSponsorCard({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 hover:text-amber-700"
                   data-testid={`link-sponsor-website-${slot.id}`}
+                  aria-label={`Visit ${slot.sponsor_name} website`}
                 >
                   <Globe className="w-3 h-3" />
                   Website
@@ -110,14 +144,25 @@ export default function EliteSponsorCard({
             </div>
           </div>
 
-          <div className="flex-shrink-0 w-full sm:w-auto">
+          {/* Dual CTAs — both open the same lead modal. Primary = strong amber
+              fill; secondary = white-on-amber outline. Both are visually more
+              prominent than the demoted tel/website chips above. */}
+          <div className="flex-shrink-0 w-full sm:w-auto flex flex-col gap-2">
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-amber-600 text-white font-semibold text-sm hover:bg-amber-700 shadow-sm"
-              data-testid={`button-sponsor-cta-${slot.id}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-amber-600 text-white font-semibold text-sm hover:bg-amber-700 shadow-sm transition-colors"
+              data-testid={`button-elite-cta-primary-${slot.id}`}
             >
-              {cta}
+              {primaryCtaLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2 rounded-md bg-white text-amber-700 font-semibold text-xs border-2 border-amber-500 hover:bg-amber-50 transition-colors"
+              data-testid={`button-elite-cta-secondary-${slot.id}`}
+            >
+              {secondaryCtaLabel}
             </button>
           </div>
         </div>

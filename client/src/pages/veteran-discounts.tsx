@@ -831,6 +831,31 @@ export default function VeteranDiscounts() {
                         <ShieldCheck className="h-4 w-4 text-emerald-600" />
                         <h3 className="text-sm font-bold text-foreground" data-testid="heading-verified-partners">Verified Partners</h3>
                       </div>
+
+                      {/* Founder spec 2026-04-29 — Elite Partner Priority:
+                          Elite #1 listing renders as sibling-above-listings,
+                          NOT injected into listings[] — preserves the
+                          paid-boost interleave logic below. The same
+                          /api/elite-sponsor query is already running for the
+                          banner above; tanstack-query dedupes via the keyed
+                          cache so this is free. hidePlaceholder=true so we
+                          don't repeat the vacant CTA inside the listings
+                          stack (the hero banner already shows it). */}
+                      {selectedCategory && selectedSubcategory && selectedSubcategory !== "__all__" && hasLocationContext && (
+                        <EliteSponsorBanner
+                          variant="listing"
+                          hidePlaceholder
+                          categorySlug={selectedCategory}
+                          categoryLabel={selectedCat?.name || selectedCategory}
+                          subcategorySlug={selectedSubcategory}
+                          subcategoryLabel={
+                            richSubs?.find(s => s.slug === selectedSubcategory)?.name
+                            || apiSubcategories.find(s => s.slug === selectedSubcategory)?.name
+                            || ""
+                          }
+                        />
+                      )}
+
                       {(() => {
                         const activeInlineAds = isNearMeQuery && localBoostAds.length > 0 ? localBoostAds : inlineAds;
                         const feed = interleaveAdsInListings(listings, activeInlineAds, { interval: 6, boostFirst: isNearMeQuery && localBoostAds.length > 0 });

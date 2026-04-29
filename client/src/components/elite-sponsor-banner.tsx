@@ -17,6 +17,15 @@ interface EliteSponsorBannerProps {
   // /real-estate keep working unchanged.
   subcategorySlug?: string;
   subcategoryLabel?: string;
+  // Founder spec 2026-04-29: same banner is rendered TWICE on subcategory
+  // pages — once as the hero banner above listings, and once as the #1
+  // listing inside the listings stack. The variant prop tunes the card
+  // wrapper margins so it fits either context cleanly.
+  variant?: "banner" | "listing";
+  // When true, suppress the vacant-slot placeholder. Used by the #1-listing
+  // render path so we don't double up on the "claim this slot" CTA when the
+  // hero banner above already shows it.
+  hidePlaceholder?: boolean;
 }
 
 interface EliteSlotResponse {
@@ -41,6 +50,8 @@ export default function EliteSponsorBanner({
   categoryLabel,
   subcategorySlug,
   subcategoryLabel,
+  variant = "banner",
+  hidePlaceholder = false,
 }: EliteSponsorBannerProps) {
   const geo = useGeolocation();
   const stateCode = geo.location?.stateCode || "";
@@ -67,21 +78,27 @@ export default function EliteSponsorBanner({
     retry: 1,
   });
 
-  // While loading, render a quiet skeleton (same height as placeholder/card)
+  // While loading, render a quiet skeleton (same height as placeholder/card).
+  // Listing-variant uses no outer margin so it slots into the listings stack.
   if (isLoading) {
+    const loadingOuter =
+      variant === "banner"
+        ? "w-full max-w-6xl mx-auto px-4 mt-4 mb-2"
+        : "w-full";
     return (
-      <section
-        className="w-full max-w-6xl mx-auto px-4 mt-4 mb-2"
-        data-testid="elite-sponsor-banner-loading"
-      >
+      <section className={loadingOuter} data-testid="elite-sponsor-banner-loading">
         <div className="rounded-xl border border-amber-200/40 bg-gradient-to-br from-amber-50/40 to-stone-50/40 h-32 animate-pulse" />
       </section>
     );
   }
 
   // Vacant, paused, no data, or unapproved (server returns slot=null when
-  // creative_approval_status != "approved") → render the placeholder.
+  // creative_approval_status != "approved") → render the placeholder, unless
+  // the caller has asked us to suppress it (hidePlaceholder=true). The
+  // listing-variant render path uses hidePlaceholder so the vacant CTA only
+  // shows once (in the hero banner above the listings), not twice.
   if (!data || !data.slot || data.isPlaceholder || data.status !== "sold") {
+    if (hidePlaceholder) return null;
     return (
       <EliteSponsorPlaceholder
         categorySlug={categorySlug}
@@ -104,6 +121,7 @@ export default function EliteSponsorBanner({
       subcategoryLabel={subcategoryLabel || null}
       stateCode={stateCode || null}
       stateName={stateName || null}
+      variant={variant}
     />
   );
 }

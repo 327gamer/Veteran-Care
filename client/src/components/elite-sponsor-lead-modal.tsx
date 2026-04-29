@@ -117,9 +117,15 @@ export default function EliteSponsorLeadModal({
         {done ? (
           <div className="flex flex-col items-center text-center py-6 gap-3">
             <CheckCircle2 className="w-12 h-12 text-emerald-600" />
-            <p className="text-sm text-stone-700">
-              Thank you. {sponsorName} has been notified and will reach out
-              shortly.
+            {/* Founder spec 2026-04-29: confirmation copy must match the
+                user-confirmation email body exactly so the in-app moment and
+                the email reinforce each other. */}
+            <p
+              className="text-sm text-stone-700"
+              data-testid="text-lead-success"
+            >
+              Thanks for your request — {sponsorName} will contact you within
+              24 hours.
             </p>
             <button
               type="button"

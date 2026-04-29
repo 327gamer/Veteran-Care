@@ -1545,30 +1545,44 @@ function registerEliteSponsorPhaseBRoutes(
         );
       }
 
-      // Best-effort sponsor email
+      // Founder spec 2026-04-29 (R2 + Option A): Elite leads now route through
+      // the SAME sendTrustedServiceLeadNotification pipeline as Trusted
+      // Services leads. Benefits inherited automatically:
+      //   • Sponsor partner notification (with proper HTML branding)
+      //   • USER CONFIRMATION email ("Thanks for your request — [Company]
+      //     will contact you within 24 hours.") — gated on email present
+      //   • Admin instant notify (Elite is always isBillable=true → instant)
+      //   • Unsubscribe footer + branding consistency
+      //   • Digest fallback for non-instant cases (defense in depth)
+      // The leadKind="elite_sponsor" discriminator suppresses the
+      // /api/leads/update-status action buttons (they target
+      // trusted_service_leads, not elite_sponsor_leads, so they would 404).
+      // Best-effort: never let an email failure 500 the lead capture API.
       try {
-        if (ecssSlot.sponsor_lead_email) {
-          const { Resend } = await import("resend");
-          if (process.env.RESEND_API_KEY) {
-            const resend = new Resend(process.env.RESEND_API_KEY);
-            await resend.emails.send({
-              from:
-                process.env.RESEND_FROM_EMAIL ||
-                `Veteran Care <noreply@veterancare.com>`,
-              to: [ecssSlot.sponsor_lead_email],
-              subject: `New lead via ${platform.name} Elite Sponsor`,
-              html: `
-                <div style="font-family:sans-serif;max-width:520px;padding:18px;">
-                  <h2 style="margin:0 0 10px;color:#166534;">New veteran lead</h2>
-                  <p style="margin:0 0 4px;"><strong>${name}</strong></p>
-                  ${email ? `<p style="margin:0 0 4px;">Email: ${email}</p>` : ""}
-                  ${phone ? `<p style="margin:0 0 4px;">Phone: ${phone}</p>` : ""}
-                  ${message ? `<p style="margin:8px 0 0;">${message.replace(/</g, "&lt;").slice(0, 1500)}</p>` : ""}
-                  <p style="margin:14px 0 0;font-size:12px;color:#6b7280;">Lead ID: ${navReq.id}</p>
-                </div>`,
-            });
-          }
-        }
+        const { sendTrustedServiceLeadNotification } = await import("./lead-email");
+        const result = await sendTrustedServiceLeadNotification(
+          navReq.id,
+          {
+            name: ecssSlot.sponsor_name,
+            email: ecssSlot.sponsor_lead_email || null,
+            category_name: ecssSlot.category_slug || null,
+          },
+          {
+            name,
+            email,
+            phone: phone || null,
+            city: null,
+            state: ecssSlot.state_code || null,
+            message: message || null,
+            role: null,
+            created_at: new Date().toISOString(),
+          },
+          { isBillable: true },
+          "elite_sponsor",
+        );
+        console.log(
+          `[ECSS] /leads email pipeline: partner=${result.partnerSent}, admin=${result.adminSent}, userConfirm=${result.userConfirmSent}, errors=${result.errors.length}`
+        );
       } catch (mailErr: any) {
         console.warn(`[ECSS] /leads sponsor email failed: ${mailErr.message}`);
       }

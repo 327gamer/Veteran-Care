@@ -463,19 +463,34 @@ interface TrustedServiceLeadData {
   createdAt: string;
 }
 
-function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: boolean, partnerEmail?: string): string {
+// Founder spec 2026-04-29: leadKind discriminates which lead-source table the
+// status-update buttons should target. The /api/leads/update-status handler
+// only knows how to UPDATE the trusted_service_leads table, so for Elite
+// sponsor leads (which live in elite_sponsor_leads + navigator_requests) we
+// MUST omit the buttons — otherwise partners would click "I Contacted This
+// Lead" and get a 404. Elite leads are tracked in the admin dashboard.
+type LeadKind = "trusted_service" | "elite_sponsor";
+
+function buildTrustedServiceLeadHtml(
+  lead: TrustedServiceLeadData,
+  isAdminCopy: boolean,
+  partnerEmail?: string,
+  leadKind: LeadKind = "trusted_service",
+): string {
   const timestamp = new Date(lead.createdAt).toLocaleString("en-US", {
     timeZone: "America/New_York",
     dateStyle: "medium",
     timeStyle: "short",
   });
 
+  const isElite = leadKind === "elite_sponsor";
+
   const headerText = isAdminCopy
-    ? `New Trusted Services Lead — ${escapeHtml(lead.providerName)}`
+    ? `New ${isElite ? "Elite Sponsor" : "Trusted Services"} Lead — ${escapeHtml(lead.providerName)}`
     : `New Connection Request via ${platform.name}`;
 
   const headerSubtext = isAdminCopy
-    ? `A user is requesting to connect with a Trusted Services partner.`
+    ? `A user is requesting to connect with ${isElite ? "an Elite Sponsor" : "a Trusted Services partner"}.`
     : `A user is requesting to connect with your services.`;
 
   const roleLabel = lead.leadRole || "Not specified";
@@ -486,7 +501,10 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
   const duplicateUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=duplicate`;
   const referredUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=referred_elsewhere`;
 
-  const actionButtons = isAdminCopy ? "" : `
+  // Elite sponsor leads live in elite_sponsor_leads (not trusted_service_leads),
+  // so the /api/leads/update-status buttons would 404. Omit them entirely for
+  // elite kind. Partner notification still includes full lead detail above.
+  const actionButtons = (isAdminCopy || isElite) ? "" : `
   <div style="margin-bottom: 20px;">
     <p style="margin: 0 0 10px 0; color: #374151; font-size: 13px; font-weight: 600;">Update Lead Status:</p>
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -557,12 +575,14 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
     <p style="margin: 0; font-size: 13px; color: #92400E;">
       <strong>Next Steps:</strong> ${isAdminCopy
         ? "This lead has also been sent to the partner. Monitor status in the admin dashboard."
+        : isElite
+        ? `Please reach out to this veteran within 24 hours using their preferred contact method. As an Elite Sponsor, you have priority placement and exclusive lead access. Thank you for your partnership with ${platform.name}.`
         : `Please reach out to this contact using their preferred contact method. After contacting them, click the "I Contacted This Lead" button above to update the status. Thank you for your partnership with ${platform.name}.`}
     </p>
   </div>
 
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; color: #9CA3AF; font-size: 11px;">
-    <p>This lead was submitted via ${platform.name} Trusted Services.</p>
+    <p>This lead was submitted via ${platform.name}${isElite ? " Elite Sponsor program" : " Trusted Services"}.</p>
     <p>Lead ID: ${lead.leadId}</p>
   </div>
 
@@ -572,15 +592,64 @@ function buildTrustedServiceLeadHtml(lead: TrustedServiceLeadData, isAdminCopy: 
 </html>`;
 }
 
+// Founder spec 2026-04-29 (Option A): user-facing confirmation email body.
+// Lives inside lead-email.ts so all lead notification HTML stays in one
+// place. Recipient sees the same exact wording as the in-app modal success
+// state, reinforcing trust + setting the 24h response expectation.
+function buildLeadUserConfirmationHtml(
+  recipientName: string,
+  providerName: string,
+): string {
+  const greetingName = recipientName.trim() || "there";
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">Request received</h2>
+    <p style="margin: 0; color: #15803D; font-size: 13px;">We've forwarded your request to ${escapeHtml(providerName)}.</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6; margin: 0 0 14px 0;">Hi ${escapeHtml(greetingName)},</p>
+
+  <p style="font-size: 15px; line-height: 1.6; margin: 0 0 18px 0;">
+    <strong>Thanks for your request — ${escapeHtml(providerName)} will contact you within 24 hours.</strong>
+  </p>
+
+  <p style="font-size: 14px; line-height: 1.55; color: #4B5563; margin: 0 0 14px 0;">
+    Your contact info has been shared only with ${escapeHtml(providerName)}. If you don't hear back within 24 hours, please reply to this email and we'll follow up on your behalf.
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 22px; color: #9CA3AF; font-size: 11px;">
+    <p style="margin: 0;">Sent on behalf of ${escapeHtml(providerName)} via ${platform.name}.</p>
+  </div>
+
+</body>
+</html>`;
+}
+
 export async function sendTrustedServiceLeadNotification(
   leadId: string,
   providerData: { name: string; email: string | null; category_name: string | null },
   leadData: { name: string; email: string; phone: string | null; city: string | null; state: string | null; message: string | null; role: string | null; created_at: string },
-  signals?: { isBillable?: boolean; isUrgent?: boolean }
-): Promise<{ partnerSent: boolean; adminSent: boolean; errors: string[] }> {
+  signals?: { isBillable?: boolean; isUrgent?: boolean },
+  // Founder spec 2026-04-29 (R2): Elite sponsor leads route through this same
+  // function so the partner notify + user confirm + admin copy logic is shared.
+  // Pass leadKind="elite_sponsor" to suppress the trusted_service_leads action
+  // buttons (they would 404 for Elite leads) and tweak the surrounding copy.
+  leadKind: LeadKind = "trusted_service",
+): Promise<{ partnerSent: boolean; adminSent: boolean; userConfirmSent: boolean; errors: string[] }> {
   const errors: string[] = [];
   let partnerSent = false;
   let adminSent = false;
+  let userConfirmSent = false;
+
+  const isElite = leadKind === "elite_sponsor";
+  const partnerSubject = isElite
+    ? `New Elite Sponsor Lead — ${platform.name}`
+    : `New Connection Request — ${platform.name}`;
 
   const data: TrustedServiceLeadData = {
     leadId,
@@ -598,19 +667,19 @@ export async function sendTrustedServiceLeadNotification(
 
   if (providerData.email) {
     try {
-      const partnerHtml = buildTrustedServiceLeadHtml(data, false, providerData.email || undefined);
+      const partnerHtml = buildTrustedServiceLeadHtml(data, false, providerData.email || undefined, leadKind);
       const { error: emailErr } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [providerData.email],
-        subject: `New Connection Request — ${platform.name}`,
+        subject: partnerSubject,
         html: partnerHtml,
       });
       if (emailErr) {
-        console.log(`[email] Trusted service partner notification failed:`, emailErr.message);
+        console.log(`[email] ${isElite ? "Elite sponsor" : "Trusted service"} partner notification failed:`, emailErr.message);
         errors.push(`Partner: ${emailErr.message}`);
       } else {
         partnerSent = true;
-        console.log(`[email] Trusted service partner notification sent to ${providerData.email}`);
+        console.log(`[email] ${isElite ? "Elite sponsor" : "Trusted service"} partner notification sent to ${providerData.email}`);
       }
     } catch (err: any) {
       errors.push(`Partner: ${err?.message}`);
@@ -618,6 +687,33 @@ export async function sendTrustedServiceLeadNotification(
   } else {
     console.log(`[email] No partner email for ${providerData.name} — skipping partner notification`);
     errors.push("Partner has no email on file");
+  }
+
+  // Founder spec 2026-04-29 (Option A): user confirmation email is sent
+  // INSIDE this same function — not a separate helper. Gated on the user
+  // having provided an email at form submit time. Best-effort: a failure
+  // here logs but does not block the partner/admin pipeline below.
+  if (leadData.email && leadData.email.trim()) {
+    try {
+      const userHtml = buildLeadUserConfirmationHtml(leadData.name, providerData.name);
+      const { error: userErr } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [leadData.email.trim()],
+        subject: `Thanks for your request — ${providerData.name}`,
+        html: userHtml,
+      });
+      if (userErr) {
+        console.log(`[email] User confirmation failed for ${leadData.email}:`, userErr.message);
+        errors.push(`UserConfirm: ${userErr.message}`);
+      } else {
+        userConfirmSent = true;
+        console.log(`[email] User confirmation sent to ${leadData.email} (provider=${providerData.name}, kind=${leadKind})`);
+      }
+    } catch (err: any) {
+      errors.push(`UserConfirm: ${err?.message}`);
+    }
+  } else {
+    console.log(`[email] No lead email for ${leadData.name} — skipping user confirmation`);
   }
 
   // A4 — Founder noise suppression: the admin copy used to fire on every
@@ -638,38 +734,39 @@ export async function sendTrustedServiceLeadNotification(
   if (!adminInstantNeeded) {
     const where = [leadData.city, leadData.state].filter(Boolean).join(", ") || "unknown location";
     await queueDigestEvent(
-      "trusted_services_lead",
+      isElite ? "elite_sponsor_lead" : "trusted_services_lead",
       `${providerData.name} · ${leadData.name} · ${where} · lead ${leadId}`,
       "info"
     );
-    console.log(`[email] [A4-suppressed→digest] Trusted Services lead ${leadId} queued for digest (partner notified ok, no admin instant)`);
-    return { partnerSent, adminSent: false, errors };
+    console.log(`[email] [A4-suppressed→digest] ${isElite ? "Elite sponsor" : "Trusted Services"} lead ${leadId} queued for digest (partner notified ok, no admin instant; userConfirm=${userConfirmSent})`);
+    return { partnerSent, adminSent: false, userConfirmSent, errors };
   }
 
   try {
-    const adminHtml = buildTrustedServiceLeadHtml(data, true);
+    const adminHtml = buildTrustedServiceLeadHtml(data, true, undefined, leadKind);
     const adminReason = partnerDeliveryFailed ? "partner_send_failed"
       : partnerMissingEmail ? "partner_no_email"
       : isPaidLead ? "billable_lead"
       : isUrgent ? "urgent_lead" : "unknown";
+    const subjectPrefix = isElite ? "Elite Sponsor Lead" : "Trusted Services Lead";
     const { error: emailErr } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [DEFAULT_NOTIFY_EMAIL],
-      subject: `[Trusted Services Lead — ${adminReason}] ${providerData.name} — ${leadData.name}`,
+      subject: `[${subjectPrefix} — ${adminReason}] ${providerData.name} — ${leadData.name}`,
       html: adminHtml,
     });
     if (emailErr) {
-      console.log(`[email] Admin trusted service notification failed:`, emailErr.message);
+      console.log(`[email] Admin ${isElite ? "elite sponsor" : "trusted service"} notification failed:`, emailErr.message);
       errors.push(`Admin: ${emailErr.message}`);
     } else {
       adminSent = true;
-      console.log(`[email] Admin trusted service notification sent to ${DEFAULT_NOTIFY_EMAIL} (reason=${adminReason})`);
+      console.log(`[email] Admin ${isElite ? "elite sponsor" : "trusted service"} notification sent to ${DEFAULT_NOTIFY_EMAIL} (reason=${adminReason}; userConfirm=${userConfirmSent})`);
     }
   } catch (err: any) {
     errors.push(`Admin: ${err?.message}`);
   }
 
-  return { partnerSent, adminSent, errors };
+  return { partnerSent, adminSent, userConfirmSent, errors };
 }
 
 export async function sendPartnerPaymentEmail(

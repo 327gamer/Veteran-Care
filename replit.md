@@ -2040,3 +2040,63 @@ Founder feedback after the placement fix: the ECSS card was visible but didn't b
 - Server boots clean on port 5000 (no compile errors).
 - All 6 admin `createLeadChargeCheckout` call sites in routes.ts continue to work via the retained admin-flow function.
 - Schema-touch surface = ZERO (no Supabase migrations, no `db:push`).
+
+---
+
+## 2026-04-29 — Elite Partner Priority + Lead Control (EL1-EL6)
+
+**Goal**: Per founder spec (2026-04-29 approved). Make Elite Partners visually unmissable + give them dual CTAs + render them as #1 listing in addition to existing hero banner. Reuse the trusted-service email pipeline for Elite leads (Option A: extend, not new system; R2: Elite leads stay in elite_sponsor_leads table — only the EMAIL pipeline is shared). Add a user-confirmation email so the veteran gets the same "24-hour response" promise in their inbox that they see in the modal.
+
+### Client changes (4 files)
+
+1. **`client/src/components/elite-sponsor-card.tsx`** (EL1)
+   - New `variant?: "banner" | "listing"` prop (default `"banner"`). Banner variant keeps prior wrapper (`mt-4 mb-2 max-w-6xl mx-auto px-4`); listing variant uses `w-full` so it slots into parent `.space-y-3` listings stack.
+   - Visual amplify: `border-2 border-amber-400` + amber glow shadow + ring offset + hover-lift translate + transitions. Crown icon on the Elite badge.
+   - **Exclusive Offer pill** (Sparkles icon, amber-100 bg, `data-testid="elite-exclusive-offer-${slot.id}"`) above the headline.
+   - **Dual CTAs**: primary "Get Exclusive Offer" (amber-600 fill, `data-testid="button-elite-cta-primary-${slot.id}"`) + secondary "Request Info (24hr response)" (white/amber outline, `data-testid="button-elite-cta-secondary-${slot.id}"`). Both call `setModalOpen(true)` — same modal, different framing.
+   - Tel/website chips demoted to muted text-[11px] icon row below CTAs (NOT removed — founder spec preserved them).
+
+2. **`client/src/components/elite-sponsor-banner.tsx`** (EL2)
+   - New `variant?: "banner" | "listing"` + `hidePlaceholder?: boolean` props, both passed through to the underlying card.
+   - When `hidePlaceholder=true` and the slot is vacant/null, the banner returns null — prevents the "Claim This Slot" CTA from appearing twice (once in hero, once in #1-listing position).
+   - Listing variant uses no outer margin so it fits the `.space-y-3` listings stack cleanly.
+
+3. **`client/src/components/elite-sponsor-lead-modal.tsx`** (EL4)
+   - Success copy now matches founder spec word-for-word: **"Thanks for your request — {sponsorName} will contact you within 24 hours."** (matches the user-confirmation email body so in-app and email reads identically).
+
+4. **`client/src/pages/veteran-discounts.tsx`** (EL3)
+   - Inside the `{listings.length > 0 && (...)}` block, after the "Verified Partners" header but BEFORE the `interleaveAdsInListings` IIFE, render `<EliteSponsorBanner variant="listing" hidePlaceholder ...>`.
+   - Same gate as the hero banner: `selectedCategory && selectedSubcategory && selectedSubcategory !== "__all__" && hasLocationContext`.
+   - Result order on a subcategory page: **Hero Elite banner → Verified Partners header → Elite #1 listing card → interleaved Trusted Partners + paid-boost ads → Other Resources fallback.**
+   - Both renders share an identical TanStack queryKey, so the `/api/elite-sponsor` request is dedupe'd via cache — no double network hit.
+
+### Server changes (2 files, R2 + Option A)
+
+5. **`server/lead-email.ts`** (EL5)
+   - New `LeadKind` type: `"trusted_service" | "elite_sponsor"`. New optional `leadKind` parameter on both `buildTrustedServiceLeadHtml` and `sendTrustedServiceLeadNotification`, default `"trusted_service"` so all existing callers keep working with zero behavior drift.
+   - `buildTrustedServiceLeadHtml` gates the `/api/leads/update-status` action buttons on `!isElite` (those buttons UPDATE `trusted_service_leads` only — they would 404 for Elite leads which live in `elite_sponsor_leads`). Header/footer/Next-Steps copy swaps to "Elite Sponsor" wording when isElite.
+   - **NEW `buildLeadUserConfirmationHtml(recipientName, providerName)` helper**: renders the user-facing confirmation email body. Subject = `"Thanks for your request — ${providerName}"`. Body lead with "Thanks for your request — {providerName} will contact you within 24 hours." matching modal copy.
+   - **NEW user-confirmation send block** lives INSIDE `sendTrustedServiceLeadNotification` (founder Option A — not a separate helper file). Gated on `leadData.email` present + non-whitespace. Best-effort: a failure logs but never blocks the partner notify or admin notify pipeline.
+   - Return type extended additively: `{ partnerSent, adminSent, userConfirmSent, errors }`. Existing caller in `server/routes.ts:12364` continues to work (just doesn't read the new field).
+
+6. **`server/elite-sponsor.ts`** (EL6)
+   - `/api/elite-sponsor/leads` handler (~L1551) replaces the old inline 26-line Resend send block with a single call to `sendTrustedServiceLeadNotification(navReq.id, providerData, leadData, { isBillable: true }, "elite_sponsor")`.
+   - Inherits automatically: branded HTML partner email, user confirmation email, A4 admin instant notify (Elite is always `isBillable=true` → instant), digest fallback, unsubscribe footer, all consistent branding.
+   - Best-effort: never lets an email failure 500 the lead capture API.
+
+### What was NOT touched (per founder DO NOT TOUCH)
+- Stripe / Pricing / Billing / DB schema / AI Guide / Resources section
+- `shared/schema.ts` (intentionally still only contains `users`)
+- Zero Supabase migrations, zero `db:push`, zero `db:push --force` (per MASTER LAW L41-95)
+
+### Architect review: **PASS** (all 7 targeted areas verified — see commit message for full list)
+
+### Verification
+- Workflow restarted clean, taxonomy LOCKED, ECSS Phase A+B applied, schema checks green
+- `/api/health` = HTTP 200
+- Zero TS compile errors at startup
+- `rg` confirms all new test IDs + function shape changes present in shipped files
+- Existing `/api/trusted-service-leads` caller in routes.ts unchanged (default leadKind preserves prior behavior)
+
+### Visual verification caveat (transparent)
+Screenshot of `/real-estate` shows the placeholder rendering correctly (no regression), NOT the new dual-CTA card — because no Supabase sponsor row exists in `sold + billing_active + creative_approved` state for any category+state at the time of shipment. The new card visual (amber border-2, glow, dual CTAs, Exclusive Offer pill) is verified via JSX + data-testid analysis rather than a live render. To visually validate later, founder can either (a) seed a test sponsor via SQL migration (NOT db:push), or (b) point at any category+state once a real sponsor goes live.
