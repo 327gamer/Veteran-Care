@@ -701,8 +701,29 @@ Preview passing is NOT sufficient. After every publish:
 - [ ] `GET /api/admin/analytics` returns click/engagement data
 - [ ] Admin pages load with real data (not empty states)
 - [ ] Ambassador tracking URLs (`/a/{utm_id}`) redirect correctly
-- [ ] Health endpoint responds (if configured)
-- [ ] Deployment logs show clean startup with no errors
+- [ ] `GET /healthz` returns 200 with `{"status":"ready"}` (NOT `"booting"`)
+
+## Deploy Boot Architecture (PERMANENT — added 2026-04-29)
+
+**Why**: Replit Autoscale gives the deployed container **60 seconds** to open port 5000 or it kills the process. Boot work (schema checks, ECSS Phase A+B, lead billing, attribution, monetization audit, taxonomy lock, partner_subcategories seed of 88, etc.) had grown past 60s, causing publish failures with `a port configuration was specified but the required port was never opened` even though the build itself succeeded.
+
+**Architecture** (server/index.ts L383+):
+1. Register `/healthz` endpoint that always returns 200 (status reflects `bootComplete` flag).
+2. Register a "boot in progress" middleware that returns 503 with `Retry-After: 5` for non-health requests until `bootComplete = true`.
+3. Call `httpServer.listen()` IMMEDIATELY (port opens within ~1s of process start).
+4. Run ALL boot work (cleanupTestRecords, ensureSubcategoryTags, ensureSubcategoryAliases, ensureSeededNationalProviders, registerRoutes, error handler, vite/serveStatic) in BACKGROUND inside an IIFE try/catch.
+5. On success: flip `bootComplete = true` so 503 short-circuit clears and real routes serve. On failure: log + `bootError` field surfaces in `/healthz` response; container stays alive for diagnosis instead of being killed by Replit.
+
+**Founder rules preserved**:
+- Zero schema changes — all boot-time `ensure*` / `migrate*` / seed code untouched, just deferred.
+- Zero db:push, zero data touches.
+- shared/schema.ts intentionally still only `users`.
+- Zero changes to registerRoutes contents.
+
+**Verification after every publish**:
+- `curl https://veterancare.com/healthz` returns 200 immediately after rollout, eventually `{"status":"ready"}`.
+- If `/healthz` returns `{"status":"booting","bootError":"<msg>"}` for >2 minutes, background init failed — investigate logs for the bootError message.
+- Deployment logs show clean startup with `[boot] ✅ background initialization complete — all routes ready`.
 
 ## Supabase RLS Security Rule (PERMANENT / STANDING)
 **Every table in the public schema MUST have Row Level Security enabled. No exceptions.**

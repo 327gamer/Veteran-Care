@@ -377,44 +377,92 @@ async function ensureSubcategoryAliases() {
   }
 }
 
-(async () => {
-  await cleanupTestRecords();
-  await ensureSubcategoryTags();
-  await ensureSubcategoryAliases();
-  await ensureSeededNationalProviders();
-  await registerRoutes(httpServer, app);
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT SEQUENCE — port opens IMMEDIATELY so Replit Autoscale's 60-second
+// port-open deadline is met. All schema checks / seeds / migrations / route
+// registration run in the BACKGROUND after listen(). Until they finish,
+// non-health requests get a 503 with Retry-After. Zero behavior change to
+// any existing schema / seed / migration work — only WHEN it runs.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+let bootComplete = false;
+let bootError: string | null = null;
 
-    res.status(status).json({ message });
-    throw err;
+// Health endpoint — always available, always responds (status reflects boot state).
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({
+    status: bootComplete ? "ready" : "booting",
+    bootError,
   });
+});
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+// Boot-status middleware — short-circuits non-health requests with 503
+// until background initialization completes. Once bootComplete=true this
+// is a single boolean check per request and falls through to the real routes.
+app.use((req, res, next) => {
+  if (bootComplete) return next();
+  if (req.path === "/healthz" || req.path === "/health") return next();
+  res
+    .status(503)
+    .set("Retry-After", "5")
+    .type("text/plain")
+    .send("App is initializing — please retry in a few seconds.");
+});
+
+// Open the port IMMEDIATELY (must happen within Replit's 60-second deadline).
+// ALWAYS serve the app on the port specified in the environment variable PORT.
+// Other ports are firewalled. Default to 5000 if not specified.
+// this serves both the API and the client.
+// It is the only port that is not firewalled.
+const port = parseInt(process.env.PORT || "5000", 10);
+httpServer.listen(
+  {
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  },
+  () => {
+    log(`serving on port ${port}`);
+  },
+);
+
+// Background initialization — runs after port is open.
+// Errors are logged but never crash the process; /healthz stays up so
+// Replit doesn't kill the container, and the failure surfaces in logs
+// + /healthz response for diagnosis.
+(async () => {
+  try {
+    log("[boot] starting background initialization (schema checks, seeds, routes)");
+
+    await cleanupTestRecords();
+    await ensureSubcategoryTags();
+    await ensureSubcategoryAliases();
+    await ensureSeededNationalProviders();
+    await registerRoutes(httpServer, app);
+
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+
+      res.status(status).json({ message });
+      throw err;
+    });
+
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (process.env.NODE_ENV === "production") {
+      serveStatic(app);
+    } else {
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+    }
+
+    bootComplete = true;
+    log("[boot] ✅ background initialization complete — all routes ready");
+  } catch (err: any) {
+    bootError = err?.message || String(err);
+    log(`[boot] ❌ background initialization failed: ${bootError}`);
+    log(`[boot] /healthz remains available; container stays alive for diagnosis`);
   }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
 })();
