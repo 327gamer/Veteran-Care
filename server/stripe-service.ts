@@ -28,6 +28,8 @@ const ADDON_PRICE_FEATURED      = process.env.STRIPE_ADDON_PRICE_FEATURED      |
 const ADDON_PRICE_NEAR_ME_BOOST = process.env.STRIPE_ADDON_PRICE_NEAR_ME_BOOST || null;
 const ADDON_PRICE_SPONSORED_TOP = process.env.STRIPE_ADDON_PRICE_SPONSORED_TOP || null;
 const ADDON_PRICE_SPONSORED_INLINE = process.env.STRIPE_ADDON_PRICE_SPONSORED_INLINE || null;
+const ECSS_PRICE_ID             = process.env.STRIPE_ECSS_PRICE_ID             || null;
+export const LEAD_CHARGE_PRICE_ID = process.env.STRIPE_LEAD_CHARGE_PRICE_ID    || null;
 
 const ADDON_PRICE_MAP: Record<string, string | null> = {
   featured: ADDON_PRICE_FEATURED,
@@ -135,7 +137,7 @@ export async function setPartnerOrgOnboardingStatus(
   }
 }
 
-export type AddonKey = "featured" | "near_me_boost" | "sponsored_top" | "sponsored_inline";
+export type AddonKey = "featured" | "near_me_boost" | "sponsored_top" | "sponsored_inline" | "ecss";
 
 export interface CheckoutOptions {
   applicationId: string;
@@ -146,6 +148,7 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
   if (!stripe) throw new Error("Stripe is not configured");
 
   const { applicationId, addons = [] } = options;
+  const includesEcss = addons.includes("ecss");
 
   const rows = await pgQuery(
     `SELECT pa.*, tsc.name AS category_name
@@ -206,6 +209,7 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
   const selectedAddons: string[] = [];
   const uniqueAddons = [...new Set(addons)];
   for (const addonKey of uniqueAddons) {
+    if (addonKey === "ecss") continue;
     const priceId = ADDON_PRICE_MAP[addonKey];
     if (priceId) {
       lineItems.push({ price: priceId, quantity: 1 });
@@ -213,7 +217,49 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
     }
   }
 
+  let ecssSlotMeta: { slotId: string; categorySlug: string; stateCode: string; subcategorySlug: string | null } | null = null;
+  if (includesEcss) {
+    if (!ECSS_PRICE_ID) {
+      throw new Error("ECSS add-on requested but STRIPE_ECSS_PRICE_ID is not configured");
+    }
+    try {
+      const slotRows = await pgQuery(
+        `SELECT id, category_slug, state_code, subcategory_slug
+         FROM elite_sponsor_slots
+         WHERE sponsor_partner_application_id = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [applicationId]
+      );
+      if (slotRows.length > 0) {
+        ecssSlotMeta = {
+          slotId: slotRows[0].id,
+          categorySlug: slotRows[0].category_slug,
+          stateCode: slotRows[0].state_code,
+          subcategorySlug: slotRows[0].subcategory_slug || null,
+        };
+      }
+    } catch (err: any) {
+      console.warn(`[stripe] ECSS slot lookup failed for application ${applicationId}:`, err.message);
+    }
+    lineItems.push({ price: ECSS_PRICE_ID, quantity: 1 });
+    selectedAddons.push("ecss");
+  }
+
   const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
+
+  const subMetadata: Record<string, string> = {
+    application_id: applicationId,
+    company_name: app.company_name,
+    plan_type: app.plan_type || "unknown",
+    addons: selectedAddons.join(","),
+  };
+  if (ecssSlotMeta) {
+    subMetadata.ecss_slot_id = ecssSlotMeta.slotId;
+    subMetadata.ecss_category_slug = ecssSlotMeta.categorySlug;
+    subMetadata.ecss_state_code = ecssSlotMeta.stateCode;
+    if (ecssSlotMeta.subcategorySlug) subMetadata.ecss_subcategory_slug = ecssSlotMeta.subcategorySlug;
+  }
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
@@ -234,14 +280,10 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
       utm_content: app.utm_content || "",
       utm_id: app.utm_id || "",
       session_id: app.session_id || "",
+      ecss_slot_id: ecssSlotMeta?.slotId || "",
     },
     subscription_data: {
-      metadata: {
-        application_id: applicationId,
-        company_name: app.company_name,
-        plan_type: app.plan_type || "unknown",
-        addons: selectedAddons.join(","),
-      },
+      metadata: subMetadata,
     },
   });
 
@@ -255,37 +297,167 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
   return { url: session.url!, sessionId: session.id };
 }
 
-export async function createLeadChargeCheckout(leadId: string, amountDollars: number, partnerName: string, veteranName: string, category: string): Promise<{ url: string; sessionId: string }> {
+/**
+ * Charge a partner $49.99 (or whatever STRIPE_LEAD_CHARGE_PRICE_ID resolves to)
+ * silently using their saved card-on-file. No Checkout link, no email receipts.
+ *
+ * Returns { ok:true, paymentIntentId, amountCents } on success.
+ * Returns { ok:false, code, message, ... } on failure (card declined, no card, etc).
+ *
+ * Single source of truth for amount: STRIPE_LEAD_CHARGE_PRICE_ID (looked up live
+ * so dashboard price changes propagate without code edits).
+ */
+export async function chargeLeadAutomatically(opts: {
+  leadId: string;
+  partnerOrgId: string | null;
+  stripeCustomerId: string;
+  veteranName: string;
+  category: string;
+  partnerName: string;
+}): Promise<
+  | { ok: true; paymentIntentId: string; amountCents: number; priceId: string | null }
+  | { ok: false; code: string; message: string; paymentIntentId?: string }
+> {
+  if (!stripe) return { ok: false, code: "stripe_disabled", message: "Stripe is not configured" };
+  if (!LEAD_CHARGE_PRICE_ID) {
+    return { ok: false, code: "missing_price_id", message: "STRIPE_LEAD_CHARGE_PRICE_ID is not configured" };
+  }
+  if (!opts.stripeCustomerId) {
+    return { ok: false, code: "no_customer", message: "Partner has no Stripe customer on file" };
+  }
+
+  // 1. Fetch canonical price (single source of truth for amount)
+  let amountCents: number;
+  let currency: string;
+  try {
+    const price = await stripe.prices.retrieve(LEAD_CHARGE_PRICE_ID);
+    if (!price.unit_amount || price.unit_amount <= 0) {
+      return { ok: false, code: "invalid_price", message: `Price ${LEAD_CHARGE_PRICE_ID} has no unit_amount` };
+    }
+    amountCents = price.unit_amount;
+    currency = price.currency || "usd";
+  } catch (err: any) {
+    return { ok: false, code: "price_lookup_failed", message: err.message };
+  }
+
+  // 2. Look up customer's default payment method
+  let paymentMethodId: string | null = null;
+  try {
+    const customer = await stripe.customers.retrieve(opts.stripeCustomerId);
+    if ((customer as any).deleted) {
+      return { ok: false, code: "customer_deleted", message: "Stripe customer has been deleted" };
+    }
+    const cust = customer as Stripe.Customer;
+    paymentMethodId =
+      (cust.invoice_settings?.default_payment_method as string | null) ||
+      (typeof cust.default_source === "string" ? cust.default_source : null);
+
+    if (!paymentMethodId) {
+      // Fallback: list cards and use the first one
+      const pms = await stripe.paymentMethods.list({ customer: opts.stripeCustomerId, type: "card", limit: 1 });
+      if (pms.data.length > 0) paymentMethodId = pms.data[0].id;
+    }
+  } catch (err: any) {
+    return { ok: false, code: "customer_lookup_failed", message: err.message };
+  }
+
+  if (!paymentMethodId) {
+    return { ok: false, code: "no_payment_method", message: "Partner has no saved payment method on file" };
+  }
+
+  // 3. Charge off-session — synchronous confirm:true returns success/failure now.
+  // Idempotency key `lead:<leadId>` ensures concurrent calls dedupe at Stripe API
+  // level (Stripe returns the SAME PaymentIntent for duplicate requests).
+  try {
+    const pi = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency,
+      customer: opts.stripeCustomerId,
+      payment_method: paymentMethodId,
+      off_session: true,
+      confirm: true,
+      description: `Lead Delivery Fee — ${opts.category || "General"}`,
+      receipt_email: undefined,
+      metadata: {
+        lead_id: opts.leadId,
+        partner_org_id: opts.partnerOrgId || "",
+        partner_name: opts.partnerName,
+        veteran_name: opts.veteranName,
+        product: "Lead Delivery Fee",
+        stripe_price_id: LEAD_CHARGE_PRICE_ID,
+        charge_type: "lead_billing",
+      },
+    }, {
+      idempotencyKey: `lead:${opts.leadId}`,
+    });
+
+    if (pi.status === "succeeded") {
+      return { ok: true, paymentIntentId: pi.id, amountCents, priceId: LEAD_CHARGE_PRICE_ID };
+    }
+    return {
+      ok: false,
+      code: `pi_status_${pi.status}`,
+      message: `PaymentIntent finished in unexpected status: ${pi.status}`,
+      paymentIntentId: pi.id,
+    };
+  } catch (err: any) {
+    const code = err?.code || err?.raw?.code || "stripe_error";
+    const piId = err?.raw?.payment_intent?.id || err?.payment_intent?.id;
+    return { ok: false, code, message: err?.message || "Stripe charge failed", paymentIntentId: piId };
+  }
+}
+
+/**
+ * Admin manual-charge UX: build a Stripe Checkout session that admin can
+ * email to a partner as a one-time payment link. Used by /api/admin/billing-charge.
+ * This is intentionally distinct from chargeLeadAutomatically (which silently
+ * charges card-on-file with no UI) — admin sometimes needs a copy-pasteable URL.
+ */
+export async function createLeadChargeCheckout(
+  leadId: string,
+  amount: number,
+  partnerName: string,
+  veteranName: string,
+  category: string
+): Promise<{ url: string; sessionId: string }> {
   if (!stripe) throw new Error("Stripe is not configured");
 
-  const amountCents = Math.round(amountDollars * 100);
-  if (amountCents <= 0) throw new Error("Invalid billing amount");
-
   const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
+  const amountCents = Math.round(amount * 100);
+
+  // Prefer canonical Price ID when amount matches, else dynamic price_data
+  const useCanonical = LEAD_CHARGE_PRICE_ID && amountCents === 4999;
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = useCanonical
+    ? [{ price: LEAD_CHARGE_PRICE_ID!, quantity: 1 }]
+    : [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: amountCents,
+            product_data: {
+              name: `Lead Delivery Fee — ${category}`,
+              description: `Veteran lead delivery for ${partnerName} (${veteranName})`,
+            },
+          },
+          quantity: 1,
+        },
+      ];
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          unit_amount: amountCents,
-          product_data: {
-            name: `Lead Delivery Fee — ${category || "General"}`,
-            description: `Veteran: ${veteranName} | Partner: ${partnerName} | Lead ID: ${leadId.substring(0, 8)}`,
-          },
-        },
-        quantity: 1,
-      },
-    ],
+    line_items: lineItems,
+    success_url: `${appUrl}/admin/leads?charge=success&lead=${leadId}`,
+    cancel_url: `${appUrl}/admin/leads?charge=cancelled&lead=${leadId}`,
     metadata: {
       lead_id: leadId,
       partner_name: partnerName,
+      veteran_name: veteranName,
+      product: "Lead Delivery Fee",
+      stripe_price_id: LEAD_CHARGE_PRICE_ID || "",
       charge_type: "lead_billing",
     },
-    success_url: `${appUrl}/admin?billing=success&lead=${leadId.substring(0, 8)}`,
-    cancel_url: `${appUrl}/admin?billing=cancelled&lead=${leadId.substring(0, 8)}`,
   });
 
   return { url: session.url!, sessionId: session.id };
@@ -391,12 +563,14 @@ function detectAddonsFromItems(subscription: Stripe.Subscription): {
   nearMeBoost: boolean;
   sponsoredTop: boolean;
   sponsoredInline: boolean;
+  ecss: boolean;
 } {
   let basePlan: string | null = null;
   let featured = false;
   let nearMeBoost = false;
   let sponsoredTop = false;
   let sponsoredInline = false;
+  let ecss = false;
 
   for (const item of subscription.items.data) {
     const priceId = item.price.id;
@@ -414,10 +588,12 @@ function detectAddonsFromItems(subscription: Stripe.Subscription): {
       sponsoredTop = true;
     } else if (priceId === ADDON_PRICE_SPONSORED_INLINE) {
       sponsoredInline = true;
+    } else if (priceId === ECSS_PRICE_ID) {
+      ecss = true;
     }
   }
 
-  return { basePlan, featured, nearMeBoost, sponsoredTop, sponsoredInline };
+  return { basePlan, featured, nearMeBoost, sponsoredTop, sponsoredInline, ecss };
 }
 
 async function syncAddonFlags(appId: string, providerId: string | null, subscription: Stripe.Subscription): Promise<void> {
@@ -790,6 +966,35 @@ async function handleSubscriptionSync(subscription: Stripe.Subscription): Promis
   const isActive = status === "active" || status === "trialing";
 
   await syncAddonFlags(app.id, app.converted_provider_id, subscription);
+
+  // ── ECSS bundling: if subscription contains the ECSS line item, claim the
+  // pre-staged slot for this partner. Idempotent — safe to call on every sync.
+  try {
+    const addonInfo = detectAddonsFromItems(subscription);
+    const slotIdFromMeta = subscription.metadata?.ecss_slot_id || "";
+    if (addonInfo.ecss && slotIdFromMeta && isActive) {
+      const ecss = await import("./elite-sponsor");
+      // Resolve partner_organization_id from app.email if available
+      let orgId: string | null = null;
+      try {
+        const orgRows = await pgQuery(
+          `SELECT id FROM partner_organizations WHERE LOWER(contact_email) = LOWER($1) LIMIT 1`,
+          [app.email]
+        );
+        if (orgRows.length > 0) orgId = orgRows[0].id;
+      } catch {}
+      await ecss.claimEcssSlotForBundledPartner({
+        slotId: slotIdFromMeta,
+        partnerApplicationId: app.id,
+        stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : (subscription.customer as any)?.id || null,
+        stripeSubscriptionId: subscription.id,
+        partnerOrganizationId: orgId,
+        convertedProviderId: app.converted_provider_id || null,
+      });
+    }
+  } catch (err: any) {
+    console.warn(`[stripe] ECSS bundle slot-claim error for app ${app.id}:`, err.message);
+  }
 
   if (isActive && app.status !== "active") {
     await pgQuery(

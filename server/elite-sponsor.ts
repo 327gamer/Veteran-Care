@@ -667,6 +667,8 @@ export async function linkEliteSponsorTrustedTile(
     phone: slot.sponsor_phone || null,
     email: slot.sponsor_lead_email || null,
     state: slot.state_code,
+    logo_url: slot.sponsor_logo_url || null,
+    cta_text: slot.sponsor_cta_text || null,
     is_active: true,
     is_featured: true,
     elite_sponsor_slot_id: slot.id,
@@ -708,6 +710,90 @@ export async function linkEliteSponsorTrustedTile(
     console.log(
       `[ECSS] linkTrustedTile: created trusted_services row ${inserted?.id} for slot ${slot.id}`
     );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// ECSS bundling — claim a pre-staged slot when a partner subscription
+// containing the ECSS line item activates. Idempotent.
+//
+// Called from stripe-service.ts handleCheckoutCompleted /
+// handleSubscriptionSync when the partner subscription's items contain
+// STRIPE_ECSS_PRICE_ID.
+// ────────────────────────────────────────────────────────────────────
+export async function claimEcssSlotForBundledPartner(opts: {
+  slotId: string;
+  partnerApplicationId: string;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string;
+  partnerOrganizationId: string | null;
+  convertedProviderId: string | null;
+}): Promise<void> {
+  try {
+    const slot = await refreshSlot(opts.slotId);
+    if (!slot) {
+      console.warn(`[ECSS-BUNDLE] slot ${opts.slotId} not found`);
+      return;
+    }
+
+    // Ownership integrity: if slot is already sold to a DIFFERENT partner
+    // application, refuse the update. Stale subscription replays must never
+    // overwrite an active sponsor's slot ownership.
+    if (
+      slot.status === "sold" &&
+      slot.sponsor_partner_application_id &&
+      slot.sponsor_partner_application_id !== opts.partnerApplicationId
+    ) {
+      console.warn(
+        `[ECSS-BUNDLE] slot ${opts.slotId} owned by partner_app=${slot.sponsor_partner_application_id}; refusing claim by ${opts.partnerApplicationId}`
+      );
+      return;
+    }
+    if (slot.status === "sold" && slot.billing_status === "active") {
+      console.log(`[ECSS-BUNDLE] slot ${opts.slotId} already sold to same partner — refresh only`);
+    }
+
+    const updates: Record<string, any> = {
+      status: "sold",
+      billing_status: "active",
+      stripe_customer_id: opts.stripeCustomerId,
+      stripe_subscription_id: opts.stripeSubscriptionId,
+      sold_at: slot.sold_at || new Date().toISOString(),
+      unsold_at: null,
+      sponsor_partner_application_id: opts.partnerApplicationId,
+    };
+    if (opts.partnerOrganizationId) {
+      updates.sponsor_partner_organization_id = opts.partnerOrganizationId;
+    }
+
+    const { error: upErr } = await supabaseAdmin
+      .from("elite_sponsor_slots")
+      .update(updates)
+      .eq("id", opts.slotId);
+    if (upErr) {
+      console.error(`[ECSS-BUNDLE] slot ${opts.slotId} sold-flip failed: ${upErr.message}`);
+      return;
+    }
+    console.log(
+      `[ECSS-BUNDLE] slot ${opts.slotId} flipped to SOLD (bundled partner=${opts.partnerApplicationId}, sub=${opts.stripeSubscriptionId})`
+    );
+
+    // Auto-approve creative for bundled partner — they captured logo +
+    // description at signup, no separate admin review needed (founder
+    // can still demote via admin UI if creative is off-brand).
+    await supabaseAdmin
+      .from("elite_sponsor_slots")
+      .update({ creative_approval_status: "approved" })
+      .eq("id", opts.slotId)
+      .eq("creative_approval_status", "pending");
+
+    // Propagate logo/description into trusted_services tile.
+    const refreshed = await refreshSlot(opts.slotId);
+    if (refreshed) {
+      await linkEliteSponsorTrustedTile(refreshed);
+    }
+  } catch (err: any) {
+    console.error(`[ECSS-BUNDLE] claim error for slot ${opts.slotId}:`, err.message);
   }
 }
 
@@ -837,24 +923,35 @@ export async function createEliteSponsorCheckoutSession(
     .update(stagedFields)
     .eq("id", slot.id);
 
+  // Use canonical STRIPE_ECSS_PRICE_ID when slot price matches the standard
+  // (so all ECSS revenue rolls up under one Price product in Stripe reports).
+  // For per-slot custom admin pricing, fall back to dynamic price_data.
+  const ECSS_PRICE_ID = process.env.STRIPE_ECSS_PRICE_ID || null;
+  const CANONICAL_ECSS_CENTS = 49900;
+  const useCanonicalPriceId = ECSS_PRICE_ID && slot.monthly_price_cents === CANONICAL_ECSS_CENTS;
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = useCanonicalPriceId
+    ? [{ price: ECSS_PRICE_ID, quantity: 1 }]
+    : [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: slot.monthly_price_cents,
+            recurring: { interval: "month" },
+            product_data: {
+              name: productName,
+              description: slot.sponsor_short_description || `Single-occupancy premium banner above ${cat?.label || slot.category_slug} listings in ${slot.state_code}.`,
+            },
+          },
+          quantity: 1,
+        },
+      ];
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     customer_email: opts.customerEmail,
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          unit_amount: slot.monthly_price_cents,
-          recurring: { interval: "month" },
-          product_data: {
-            name: productName,
-            description: slot.sponsor_short_description || `Single-occupancy premium banner above ${cat?.label || slot.category_slug} listings in ${slot.state_code}.`,
-          },
-        },
-        quantity: 1,
-      },
-    ],
+    line_items: lineItems,
     success_url: `${appOrigin()}/admin/elite-sponsors?ecss_checkout=success&slot=${slot.id}`,
     cancel_url: `${appOrigin()}/admin/elite-sponsors?ecss_checkout=cancelled&slot=${slot.id}`,
     metadata: {

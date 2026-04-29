@@ -34,7 +34,7 @@ export function verifyLeadActionToken(token: string): { leadId: string; action: 
     if (!match) return null;
     const tokenTime = parseInt(ts, 36);
     if (isNaN(tokenTime) || Date.now() - tokenTime > TOKEN_EXPIRY_MS) return null;
-    const validActions = ["accepted", "declined", "need_info", "completed", "connected", "no_response", "unable_to_contact"];
+    const validActions = ["accepted"];
     if (!validActions.includes(action)) return null;
     return { leadId, action };
   } catch { return null; }
@@ -104,24 +104,13 @@ function getBaseUrl(): string {
 
 function buildActionButtonsHtml(leadId: string): string {
   const baseUrl = getBaseUrl();
-  const actions = [
-    { key: "accepted", label: "Accept — I Will Assist This Veteran", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
-    { key: "need_info", label: "Need More Information", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
-    { key: "declined", label: "Decline — Unable to Assist", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
-    { key: "completed", label: "Service Completed", color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" },
-  ];
-
-  const buttons = actions.map(a => {
-    const token = generateLeadActionToken(leadId, a.key);
-    const url = `${baseUrl}/api/partner/lead-action?token=${token}`;
-    return `<a href="${url}" style="display:block;text-align:center;padding:10px 16px;margin:6px 0;background:${a.bg};border:1px solid ${a.border};border-radius:6px;color:${a.color};font-weight:600;font-size:14px;text-decoration:none;">${a.label}</a>`;
-  }).join("");
-
+  const token = generateLeadActionToken(leadId, "accepted");
+  const url = `${baseUrl}/api/partner/lead-action?token=${token}`;
   return `
-  <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:16px;margin-bottom:20px;">
-    <p style="margin:0 0 10px 0;font-size:14px;font-weight:600;color:#374151;">Update Lead Status</p>
-    <p style="margin:0 0 12px 0;font-size:12px;color:#6B7280;">Click to update the status of this lead. This helps us track outcomes and improve service.</p>
-    ${buttons}
+  <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:18px;margin-bottom:20px;text-align:center;">
+    <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#14532D;">Ready to assist this veteran?</p>
+    <p style="margin:0 0 14px 0;font-size:12px;color:#166534;">Tap below to claim this lead. $49.99 will be charged to your card on file and the lead will be assigned to you.</p>
+    <a href="${url}" style="display:inline-block;text-align:center;padding:14px 32px;background:#16A34A;border-radius:6px;color:#FFFFFF;font-weight:700;font-size:16px;text-decoration:none;">Accept Lead — $49.99</a>
   </div>`;
 }
 
@@ -262,18 +251,12 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
   </div>` : ""}
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
-    <p style="margin: 0 0 8px 0; font-size: 13px; color: #92400E;">
-      <strong>Next Steps:</strong> Please reach out to this ${platform.userNoun} using their preferred contact method. 
-      If you are unable to assist, the lead will be automatically rerouted to another partner.
-    </p>
-    <p style="margin: 0; font-size: 12px; color: #92400E; line-height: 1.5;">
-      After contacting the veteran, please update the lead status using the buttons below. If you successfully assist the veteran, select "Service Completed". If you are unable to connect or assist, please select the appropriate option so the lead can be reassigned if needed.
+    <p style="margin: 0; font-size: 13px; color: #92400E;">
+      <strong>Next Steps:</strong> Tap "Accept Lead" below to claim this veteran. Your card on file will be charged $49.99 and the lead will be exclusively assigned to you. If you do not accept within a short window, the lead will rotate to another partner automatically.
     </p>
   </div>
 
   ${buildActionButtonsHtml(lead.leadId)}
-
-  ${buildOutcomeButtonsHtml(lead.leadId)}
 
   <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; text-align: center;">
     <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #0C4A6E;">Want to help more veterans?</p>

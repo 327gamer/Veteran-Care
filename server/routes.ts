@@ -8973,10 +8973,10 @@ export async function registerRoutes(
       try {
         const amount = parseFloat(lead.billing_amount) || 49.99;
         const partnerName = lead.assigned_to || "Partner";
-        const session = await createLeadChargeCheckout(lead.id, amount, partnerName, lead.category || "general");
+        const session = await createLeadChargeCheckout(lead.id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "general");
         await supabaseAdmin.from("navigator_requests").update({
           billing_workflow_status: "queued",
-          stripe_checkout_session_id: session.id,
+          stripe_checkout_session_id: session.sessionId,
           stripe_payment_status: "pending",
         }).eq("id", lead.id);
         results.push({ id: lead.id, status: "checkout_created", url: session.url || undefined });
@@ -12299,34 +12299,21 @@ export async function registerRoutes(
 
   const actionLabels: Record<string, string> = {
     accepted: "Accepted",
-    declined: "Declined",
-    need_info: "Need More Information",
-    completed: "Service Completed",
-    connected: "Connected with Veteran",
-    no_response: "No Response",
-    unable_to_contact: "Unable to Contact",
   };
 
   function buildConfirmationPageHtml(token: string, action: string): string {
-    const label = actionLabels[action] || action;
-    const placeholders: Record<string, string> = {
-      accepted: "e.g., Will call this week, Appointment scheduled...",
-      declined: "e.g., Outside service area, Not taking new clients...",
-      need_info: "e.g., Need veteran's DD-214, Missing address...",
-      completed: "e.g., Completed intake, Benefits filed...",
-    };
-    const placeholder = placeholders[action] || "Add a note (optional)";
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm Update — ${platform.name}</title></head>
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm Lead Acceptance — ${platform.name}</title></head>
     <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F9FAFB;">
     <div style="max-width:440px;width:100%;padding:32px;text-align:center;">
-      <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 12px 0;">Confirm Status Update</h1>
-      <p style="font-size:15px;color:#6B7280;line-height:1.6;margin:0 0 20px 0;">You are about to update this lead to: <strong>${label}</strong></p>
+      <div style="width:60px;height:60px;border-radius:50%;background:#F0FDF4;border:2px solid #BBF7D0;display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:#16A34A;margin-bottom:16px;">✓</div>
+      <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 8px 0;">Confirm Lead Acceptance</h1>
+      <p style="font-size:14px;color:#6B7280;line-height:1.6;margin:0 0 6px 0;">You are about to accept this veteran lead.</p>
+      <p style="font-size:14px;color:#14532D;line-height:1.6;margin:0 0 20px 0;font-weight:600;">Your card on file will be charged <strong>$49.99</strong> and the lead will be exclusively assigned to you.</p>
       <form method="POST" action="/api/partner/lead-action">
         <input type="hidden" name="token" value="${token}" />
-        <textarea name="notes" rows="3" maxlength="500" placeholder="${placeholder}" style="width:100%;padding:10px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;margin-bottom:16px;box-sizing:border-box;"></textarea>
-        <p style="font-size:11px;color:#9CA3AF;margin:0 0 16px 0;">Optional — add a short note about this lead</p>
-        <button type="submit" style="background:#166534;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;width:100%;">Confirm Update</button>
+        <button type="submit" style="background:#16A34A;color:white;border:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;width:100%;">Accept Lead — Charge $49.99</button>
       </form>
+      <p style="font-size:11px;color:#9CA3AF;margin:14px 0 0 0;">By clicking Accept, you authorize ${platform.name} to charge your card on file the lead delivery fee.</p>
       <p style="font-size:12px;color:#9CA3AF;margin-top:20px;">${platform.name}</p>
     </div></body></html>`;
   }
@@ -12366,12 +12353,6 @@ export async function registerRoutes(
 
       const actionToResponseStatus: Record<string, string> = {
         accepted: "accepted",
-        declined: "declined",
-        need_info: "need_info",
-        completed: "completed",
-        connected: "accepted",
-        no_response: "need_info",
-        unable_to_contact: "declined",
       };
 
       const responseStatus = actionToResponseStatus[action] || action;
@@ -12432,107 +12413,113 @@ export async function registerRoutes(
 
       console.log(`[lead-action] Lead ${leadId} response_status → ${responseStatus} via email_link`);
 
-      // ─── ECSS Phase B: auto-bill on accept (best-effort, fire-and-forget) ───
-      // Triggers a Stripe Checkout for the standard $49.99 lead charge when:
-      //   • partner accepted the lead, AND
-      //   • the lead came in via an Elite Sponsor slot, OR
-      //   • the routed partner organization has auto_bill_on_accept=true
-      // The lead.billed guard makes this idempotent on retries. Failures here
-      // never block the partner's "Accept" UX — admin charge endpoint remains.
+      // ─── Silent off-session auto-charge $49.99 on Accept ───
+      // ALWAYS charge on Accept — single source of truth, no opt-out flag.
+      // Idempotent via lead.billed guard. Failure surfaces in chargeOk message
+      // but does NOT roll back the accept (founder reconciles via dashboard).
+      let chargeOk = true;
+      let chargeFailMessage = "";
       if (responseStatus === "accepted" && !lead.billed) {
         try {
-          let shouldAutoBill = false;
           let billingPartnerId: string | null = lead.routed_to_partner_id || null;
-
-          if (lead.elite_sponsor_slot_id) {
+          if (!billingPartnerId && lead.elite_sponsor_slot_id) {
             const { data: ecssSlot } = await supabaseAdmin
               .from("elite_sponsor_slots")
-              .select("status, billing_status, sponsor_partner_organization_id")
+              .select("sponsor_partner_organization_id")
               .eq("id", lead.elite_sponsor_slot_id)
               .maybeSingle();
-            if (
-              ecssSlot &&
-              ecssSlot.status === "sold" &&
-              ecssSlot.billing_status === "active"
-            ) {
-              shouldAutoBill = true;
-              if (!billingPartnerId && ecssSlot.sponsor_partner_organization_id) {
-                billingPartnerId = ecssSlot.sponsor_partner_organization_id;
-              }
+            if (ecssSlot?.sponsor_partner_organization_id) {
+              billingPartnerId = ecssSlot.sponsor_partner_organization_id;
             }
           }
 
-          if (!shouldAutoBill && billingPartnerId) {
-            const { data: org } = await supabaseAdmin
+          if (!billingPartnerId) {
+            chargeOk = false;
+            chargeFailMessage = "no partner mapped to lead";
+            console.warn(`[lead-action] charge skipped for lead ${leadId}: no billing partner`);
+          } else {
+            const { data: partnerOrg } = await supabaseAdmin
               .from("partner_organizations")
-              .select("auto_bill_on_accept, name")
+              .select("id, name, contact_email, stripe_customer_id")
               .eq("id", billingPartnerId)
               .maybeSingle();
-            if (org && org.auto_bill_on_accept === true) shouldAutoBill = true;
-          }
 
-          if (shouldAutoBill) {
-            const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
-            if (isStripeEnabled()) {
-              let partnerName = "Partner";
-              if (billingPartnerId) {
-                try {
-                  const { data: p } = await supabaseAdmin
-                    .from("partner_organizations")
-                    .select("name")
-                    .eq("id", billingPartnerId)
-                    .maybeSingle();
-                  if (p?.name) partnerName = p.name;
-                } catch {}
-              }
-              const amount = 49.99;
-              try {
-                const { sessionId } = await createLeadChargeCheckout(
-                  leadId,
-                  amount,
-                  partnerName,
-                  lead.veteran_name || "Unknown",
-                  lead.category || "General"
-                );
-                await supabaseAdmin
-                  .from("navigator_requests")
-                  .update({
-                    stripe_checkout_session_id: sessionId,
-                    stripe_payment_status: "pending",
-                    billing_workflow_status: "queued",
-                  })
-                  .eq("id", leadId);
-                console.log(
-                  `[lead-action] auto-bill triggered for lead ${leadId} (ecss=${!!lead.elite_sponsor_slot_id}, partner=${billingPartnerId || "none"}, session=${sessionId})`
-                );
-              } catch (billErr: any) {
-                console.warn(
-                  `[lead-action] auto-bill checkout creation failed for lead ${leadId}: ${billErr.message}`
-                );
-              }
+            if (!partnerOrg?.stripe_customer_id) {
+              chargeOk = false;
+              chargeFailMessage = "no Stripe customer on file";
+              console.warn(`[lead-action] charge skipped for lead ${leadId}: partner ${billingPartnerId} has no stripe_customer_id`);
             } else {
-              console.log(
-                `[lead-action] auto-bill skipped for lead ${leadId} — Stripe not configured`
-              );
+              const { isStripeEnabled, chargeLeadAutomatically } = await import("./stripe-service");
+              if (!isStripeEnabled()) {
+                chargeOk = false;
+                chargeFailMessage = "billing system not configured";
+                console.warn(`[lead-action] charge skipped for lead ${leadId}: Stripe not configured`);
+              } else {
+                const result = await chargeLeadAutomatically({
+                  leadId,
+                  partnerOrgId: billingPartnerId,
+                  stripeCustomerId: partnerOrg.stripe_customer_id,
+                  partnerName: partnerOrg.name || "Partner",
+                  veteranName: lead.veteran_name || "Unknown",
+                  category: lead.category || "General",
+                });
+                if (result.ok) {
+                  console.log(`[lead-action] silent charge succeeded for lead ${leadId} pi=${result.paymentIntentId} amount=$${(result.amountCents / 100).toFixed(2)}`);
+                  // best-effort updates — tolerate missing columns silently
+                  try {
+                    await supabaseAdmin
+                      .from("navigator_requests")
+                      .update({
+                        billed: true,
+                        stripe_payment_status: "paid",
+                        stripe_payment_intent_id: result.paymentIntentId,
+                        billing_workflow_status: "paid",
+                        billed_at: new Date().toISOString(),
+                      })
+                      .eq("id", leadId);
+                  } catch (colErr: any) {
+                    // Fall back to minimal columns if extended schema not present
+                    await supabaseAdmin
+                      .from("navigator_requests")
+                      .update({ billed: true, stripe_payment_status: "paid" })
+                      .eq("id", leadId);
+                  }
+                } else {
+                  chargeOk = false;
+                  const detail = result.message || result.code || "charge failed";
+                  chargeFailMessage = detail;
+                  console.warn(`[lead-action] silent charge FAILED for lead ${leadId}: code=${result.code} message=${result.message}`);
+                  try {
+                    await supabaseAdmin
+                      .from("navigator_requests")
+                      .update({
+                        stripe_payment_status: "failed",
+                        billing_workflow_status: "charge_failed",
+                        payment_failure_reason: detail,
+                      })
+                      .eq("id", leadId);
+                  } catch {
+                    await supabaseAdmin
+                      .from("navigator_requests")
+                      .update({ stripe_payment_status: "failed" })
+                      .eq("id", leadId);
+                  }
+                }
+              }
             }
           }
         } catch (autoBillErr: any) {
-          console.warn(
-            `[lead-action] auto-bill hook exception for lead ${leadId}: ${autoBillErr.message}`
-          );
+          chargeOk = false;
+          chargeFailMessage = autoBillErr.message || "internal error";
+          console.warn(`[lead-action] auto-bill hook exception for lead ${leadId}: ${autoBillErr.message}`);
         }
       }
 
-      const label = actionLabels[action] || action;
       const noteAck = partnerNotes ? " Your note has been saved." : "";
-      const friendlyMessages: Record<string, string> = {
-        accepted: `Thank you for accepting this support request! The veteran has been notified that you will be reaching out.${noteAck}`,
-        declined: `This support request has been marked as declined. Our team will reassign it to another provider.${noteAck}`,
-        need_info: `Thank you. We've noted that you need more information. Our team will follow up with additional details.${noteAck}`,
-        completed: `Thank you! This support request has been marked as completed.${noteAck} We appreciate your service to our veterans.`,
-      };
-      const message = friendlyMessages[responseStatus] || `Thank you! The status has been updated to "${label}".${noteAck}`;
-      return res.send(buildActionResponseHtml("Status Updated", message, "success"));
+      const message = chargeOk
+        ? `Lead accepted. $49.99 charged to your card on file. The veteran has been notified that you will be reaching out.${noteAck}`
+        : `Lead accepted. We were unable to process the $49.99 charge automatically (${chargeFailMessage}). Our team will follow up.${noteAck}`;
+      return res.send(buildActionResponseHtml("Lead Accepted", message, chargeOk ? "success" : "info"));
     } catch (err: any) {
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
@@ -13251,7 +13238,7 @@ export async function registerRoutes(
       if (addons.length === 0 && application.requested_addons) {
         try { addons = JSON.parse(application.requested_addons); } catch {}
       }
-      const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+      const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline", "ecss"];
       addons = [...new Set((addons as string[]).filter((a: string) => validAddons.includes(a)))];
       const { url, sessionId } = await createPartnerCheckoutSession({ applicationId: req.params.id, addons });
 
@@ -13305,7 +13292,7 @@ export async function registerRoutes(
         if (application.requested_addons) {
           try { addons = JSON.parse(application.requested_addons); } catch {}
         }
-        const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline"];
+        const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline", "ecss"];
         addons = addons.filter((a: string) => validAddons.includes(a));
         const result = await createPartnerCheckoutSession({ applicationId: req.params.id, addons });
         checkoutUrl = result.url;

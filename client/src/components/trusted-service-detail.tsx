@@ -58,6 +58,7 @@ export interface TrustedServiceItem {
   offer_description?: string;
   banner_image_url?: string;
   offer_expiry?: string;
+  logo_url?: string | null;
 }
 
 interface TrustedServiceDetailProps {
@@ -70,6 +71,11 @@ interface TrustedServiceDetailProps {
 export default function TrustedServiceDetail({ service, open, onOpenChange, onConnect }: TrustedServiceDetailProps) {
   const { toggleSaveTrustedService, isTrustedServiceSaved } = useSavedResources();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [service?.id]);
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -168,15 +174,34 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
             )}
           </div>
 
-          <h1 className="text-xl font-heading font-bold leading-tight" data-testid="text-trusted-service-title">
-            {service.name}
-          </h1>
-          {location && (
-            <p className="text-white/70 text-xs flex items-center gap-1 mt-1">
-              <MapPin className="h-3 w-3" />
-              {location}
-            </p>
-          )}
+          <div className="flex items-start gap-3">
+            {service.logo_url && !logoError ? (
+              <div className="h-16 w-16 rounded-lg bg-white border border-white/20 p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src={service.logo_url}
+                  alt={`${service.name} logo`}
+                  className="max-h-full max-w-full object-contain"
+                  data-testid="img-trusted-service-logo"
+                  onError={() => setLogoError(true)}
+                />
+              </div>
+            ) : (
+              <div className="h-16 w-16 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center shrink-0 text-white font-heading font-bold text-xl" data-testid="text-trusted-service-initials">
+                {service.name.split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("")}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-heading font-bold leading-tight" data-testid="text-trusted-service-title">
+                {service.name}
+              </h1>
+              {location && (
+                <p className="text-white/70 text-xs flex items-center gap-1 mt-1">
+                  <MapPin className="h-3 w-3" />
+                  {location}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="px-4 py-4 space-y-4">

@@ -1894,3 +1894,54 @@ Founder feedback after the placement fix: the ECSS card was visible but didn't b
 - Vite build succeeds
 - Architect review: **PASS** on the second pass (first pass caught the category-change reset bug → fixed → re-reviewed PASS)
 - Three-layer invariant ensures the ECSS+leads combination can never drift apart in state, category transitions, or the submit payload
+
+---
+
+## 2026-04-28 — ECSS Bundling + Silent Lead Auto-Charge + Logo Display (T001-T007)
+
+**Goal**: Ship 4 ECSS + lead billing changes and partner logo display.
+
+### Server changes
+
+1. **`server/stripe-service.ts`**
+   - `createPartnerCheckoutSession` accepts new `ecss` AddonKey; adds `STRIPE_ECSS_PRICE_ID` line item; carries `ecss_slot_id`/`ecss_category_slug`/`ecss_state_code`/`ecss_subcategory_slug` in subscription metadata.
+   - `chargeLeadAutomatically({leadId, partnerOrgId, stripeCustomerId, ...})` — silent off-session PaymentIntent: looks up amount from `STRIPE_LEAD_CHARGE_PRICE_ID`, finds default payment_method (with fallback to `paymentMethods.list`), uses `off_session:true, confirm:true`. Returns discriminated union `{ ok:true, paymentIntentId } | { ok:false, code, message }`.
+   - `createLeadChargeCheckout` retained for **admin manual-charge UX only** (`/api/admin/billing-charge/:id` etc) — distinct from the silent flow used on email accept.
+   - `detectAddonsFromItems` now detects `ECSS_PRICE_ID` and returns `{ ..., ecss }`.
+   - `handleSubscriptionSync` calls `claimEcssSlotForBundledPartner` when subscription contains the ECSS line and `metadata.ecss_slot_id` is present.
+
+2. **`server/elite-sponsor.ts`**
+   - `createEliteSponsorCheckoutSession` now uses `STRIPE_ECSS_PRICE_ID` when `slot.monthly_price_cents === 49900` (canonical $499). Falls back to dynamic `price_data` for admin per-slot custom pricing.
+   - `linkEliteSponsorTrustedTile` now propagates `slot.sponsor_logo_url → trusted_services.logo_url` and `slot.sponsor_cta_text → trusted_services.cta_text`.
+   - **NEW**: `claimEcssSlotForBundledPartner({slotId, partnerApplicationId, stripeCustomerId, stripeSubscriptionId, partnerOrganizationId, convertedProviderId})` — idempotent. Flips slot to `sold` + `billing_status:active` + `sold_at`, links `sponsor_partner_organization_id`, auto-approves creative (since logo+desc were captured at signup), then calls `linkEliteSponsorTrustedTile`.
+
+3. **`server/routes.ts`**
+   - L13257, L13311: `validAddons` now includes `"ecss"` so admin approve-and-checkout endpoints honor ECSS bundling.
+   - L12442+ (lead-action POST): replaced `createLeadChargeCheckout` Checkout-link flow with `chargeLeadAutomatically` silent off-session charge. Always charges on Accept (no opt-out flag). On success, marks `billed=true, stripe_payment_status=paid, billed_at=now`. On failure, marks `stripe_payment_status=failed, billing_workflow_status=charge_failed, payment_failure_reason=<reason>` but does **not** roll back the accept (founder reconciles via dashboard).
+   - L12300 `actionLabels`: narrowed to `{accepted}` only.
+   - L12367 `actionToResponseStatus`: narrowed to `{accepted: "accepted"}` only.
+   - L12310 `buildConfirmationPageHtml`: simplified to single green "Accept Lead — Charge $49.99" button with explicit charge disclosure. Notes textarea removed.
+   - Friendly success message: `"Lead accepted. $49.99 charged to your card on file. The veteran has been notified..."` (or fail variant with reason).
+
+4. **`server/lead-email.ts`**
+   - `verifyLeadActionToken` `validActions` narrowed to `["accepted"]` only.
+   - `buildActionButtonsHtml` rebuilt as **ONE green** "Accept Lead — $49.99" button with explicit charge disclosure copy in the surrounding card.
+   - Removed `buildOutcomeButtonsHtml` call from `buildLeadEmailHtml` (function retained but unused — kept for any in-flight outcome links from older emails).
+   - "Next Steps" copy rewritten: "Tap 'Accept Lead' below to claim this veteran. Your card on file will be charged $49.99..."
+
+### Client changes
+
+5. **`client/src/components/trusted-service-detail.tsx`** (T007)
+   - Added `logo_url?: string | null` to `TrustedServiceItem` interface.
+   - Header now renders 64x64 white-card logo (object-contain) above title; falls back to white-tinted square with first-2-word initials when no logo.
+   - All consuming pages (resources, trusted-services, saved-resources, veteran-discounts) pass full service objects through, so `logo_url` flows automatically (already in backend SELECT clauses).
+
+### Stripe LIVE config (verified):
+- ECSS price: `price_1TRG9OGdqk7jVmGZZF32eLfe` ($499/mo)
+- Lead price: `price_1TRGDkGdqk7jVmGZRQDS7YiG` ($49.99 one-time)
+- Webhook: `we_1TNNckGdqk7jVmGZpioAeZsR` (6 events including `payment_intent.succeeded`)
+
+### Verification
+- Server boots clean on port 5000 (no compile errors).
+- All 6 admin `createLeadChargeCheckout` call sites in routes.ts continue to work via the retained admin-flow function.
+- Schema-touch surface = ZERO (no Supabase migrations, no `db:push`).
