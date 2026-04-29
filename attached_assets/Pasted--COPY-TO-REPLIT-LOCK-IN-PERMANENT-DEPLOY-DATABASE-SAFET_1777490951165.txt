@@ -1,0 +1,98 @@
+--- COPY TO REPLIT ---
+
+LOCK IN PERMANENT DEPLOY + DATABASE SAFETY RULES
+
+We just resolved a critical deployment issue. I do not want this problem to ever happen again.
+
+Apply the following as PERMANENT system rules and document them clearly in replit.md:
+
+----------------------------------------
+1. DATABASE PROTECTION (CRITICAL RULE)
+----------------------------------------
+
+- NEVER run db:push or db:push --force
+- NEVER allow Replit deploy to manage schema migrations
+- NEVER attempt to sync schema from shared/schema.ts to production
+- NEVER copy development database to production
+
+All real data lives in:
+- Supabase
+- Helium
+
+These are the ONLY sources of truth.
+
+shared/schema.ts is NOT a full schema and must NEVER be used for production migrations.
+
+----------------------------------------
+2. DISABLE AUTO-MIGRATION TRIGGERS
+----------------------------------------
+
+Ensure ALL of the following remain permanently disabled:
+
+- drizzle.config.ts must remain renamed or removed
+- No deploy step should trigger drizzle-kit
+- Remove or disable any db:push script from package.json if still present
+- Replit deploy must remain CODE-ONLY deploy
+
+----------------------------------------
+3. DEPLOY ARCHITECTURE (DO NOT CHANGE)
+----------------------------------------
+
+- Port must open immediately on boot
+- All heavy boot logic runs AFTER listen()
+- Health endpoint must respond immediately
+- Background initialization must not block deploy
+
+This prevents the 60-second timeout issue permanently.
+
+----------------------------------------
+4. HEALTH CHECK STANDARD
+----------------------------------------
+
+Official production health endpoint:
+
+https://veterancare.com/api/health
+
+- Must return 200 at all times (even during boot)
+- Must NOT rely on /healthz (blocked by load balancer)
+- Update replit.md to reflect this as the ONLY health check
+
+----------------------------------------
+5. SAFETY CHECK BEFORE EVERY DEPLOY
+----------------------------------------
+
+Before any future deploy:
+
+Confirm:
+- No database migration will run
+- No schema sync is triggered
+- No new database is being provisioned
+- Deploy is code-only
+
+If any of the above appear → STOP and report.
+
+----------------------------------------
+6. FUTURE DEV RULE
+----------------------------------------
+
+If any future change touches:
+- database config
+- schema files
+- deploy scripts
+
+You must:
+- explain impact BEFORE applying changes
+- confirm it does NOT affect Supabase or Helium
+- confirm it does NOT trigger migrations
+
+----------------------------------------
+
+After applying these rules, confirm:
+
+- Rules documented in replit.md:
+- Auto-migration fully disabled:
+- Deploy confirmed code-only:
+- /api/health stable:
+- No database risk remaining:
+
+--- END ---

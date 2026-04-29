@@ -389,11 +389,24 @@ let bootComplete = false;
 let bootError: string | null = null;
 
 // Health endpoint — always available, always responds (status reflects boot state).
+// /healthz is kept for dev-only diagnostic use. On prod, Replit's upstream Google
+// Cloud Load Balancer intercepts /healthz and returns its own 404 before the
+// request reaches Express (Kubernetes-convention reserved path). Use /api/health
+// for prod monitoring — see FOUNDER LOCK IN rule #4 in replit.md.
 app.get("/healthz", (_req, res) => {
   res.status(200).json({
     status: bootComplete ? "ready" : "booting",
     bootError,
   });
+});
+
+// Official production health endpoint — registered EARLY so it stays 200 even
+// during the ~30s background boot window. Mirrors the response shape of the
+// /api/health route registered later in registerRoutes (Express uses
+// first-registered-wins, so this early handler short-circuits before the
+// boot-status middleware below). FOUNDER LOCK IN rule #4 — DO NOT change shape.
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Boot-status middleware — short-circuits non-health requests with 503
