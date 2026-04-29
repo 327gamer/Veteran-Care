@@ -272,11 +272,24 @@ export function registerEliteSponsorRoutes(
     res.json({ categories: ECSS_CATEGORIES });
   });
 
-  // -------- public: lookup slot for a (state × category) --------
+  // -------- public: lookup slot for a (state × category [× subcategory]) --------
+  // Phase B (2026-04-29): added optional ?subcategorySlug= for subcategory-
+  // targeted slots on /discounts. Existing top-of-category banners on
+  // /financial-services /legal-services /real-estate keep working unchanged
+  // — when subcategorySlug is omitted, query falls back to the historical
+  // `subcategory_slug IS NULL` lookup.
   app.get("/api/elite-sponsor", async (req, res) => {
     try {
       const categorySlug = String(req.query.categorySlug || "").trim();
       const stateCode = String(req.query.state || "").trim().toUpperCase();
+      const rawSubcategory = String(
+        req.query.subcategorySlug || req.query.subcategory || ""
+      ).trim();
+      // Treat the synthetic "__all__" sentinel and empty as "no subcategory".
+      const subcategorySlug =
+        rawSubcategory && rawSubcategory !== "__all__"
+          ? rawSubcategory.toLowerCase()
+          : "";
 
       if (!isValidCategorySlug(categorySlug)) {
         return res
@@ -286,6 +299,10 @@ export function registerEliteSponsorRoutes(
       if (stateCode && !isValidStateCode(stateCode)) {
         return res.status(400).json({ error: "Invalid state code" });
       }
+      // Lightweight slug-shape check (lowercase, alnum, hyphen only).
+      if (subcategorySlug && !/^[a-z0-9][a-z0-9-]{0,63}$/.test(subcategorySlug)) {
+        return res.status(400).json({ error: "Invalid subcategorySlug" });
+      }
 
       // No state context → render national placeholder
       if (!stateCode) {
@@ -294,22 +311,22 @@ export function registerEliteSponsorRoutes(
           status: "vacant",
           isPlaceholder: true,
           categorySlug,
+          subcategorySlug: subcategorySlug || null,
           stateCode: null,
         });
       }
 
-      // Phase B: only return TOP slot (subcategory_slug IS NULL) for the
-      // category banner. Subcategory slots are queried separately when/if
-      // the per-subcategory marketplace UI ships.
-      const { data, error } = await supabaseAdmin
+      let q = supabaseAdmin
         .from("elite_sponsor_slots")
         .select(
-          "id, category_slug, state_code, status, billing_status, creative_approval_status, sponsor_name, sponsor_logo_url, sponsor_short_description, sponsor_cta_text, sponsor_phone, sponsor_website_url"
+          "id, category_slug, state_code, subcategory_slug, status, billing_status, creative_approval_status, sponsor_name, sponsor_logo_url, sponsor_short_description, sponsor_cta_text, sponsor_phone, sponsor_website_url"
         )
         .eq("category_slug", categorySlug)
-        .eq("state_code", stateCode)
-        .is("subcategory_slug", null)
-        .maybeSingle();
+        .eq("state_code", stateCode);
+      q = subcategorySlug
+        ? q.eq("subcategory_slug", subcategorySlug)
+        : q.is("subcategory_slug", null);
+      const { data, error } = await q.maybeSingle();
 
       if (error) {
         // Likely table-not-yet-created. Fall back to vacant.
@@ -319,6 +336,7 @@ export function registerEliteSponsorRoutes(
           status: "vacant",
           isPlaceholder: true,
           categorySlug,
+          subcategorySlug: subcategorySlug || null,
           stateCode,
         });
       }
@@ -337,6 +355,7 @@ export function registerEliteSponsorRoutes(
         status: data?.status || "vacant",
         isPlaceholder: !isFilled,
         categorySlug,
+        subcategorySlug: subcategorySlug || null,
         stateCode,
       });
     } catch (err: any) {

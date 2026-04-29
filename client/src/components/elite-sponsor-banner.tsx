@@ -4,12 +4,19 @@ import EliteSponsorPlaceholder from "@/components/elite-sponsor-placeholder";
 import EliteSponsorCard from "@/components/elite-sponsor-card";
 
 interface EliteSponsorBannerProps {
-  categorySlug:
-    | "legal-services"
-    | "mortgage-lending"
-    | "real-estate"
-    | "insurance";
+  // Widened 2026-04-29 from a 4-literal union to `string` so the banner can be
+  // rendered on any approved Trusted Services category. The server-side
+  // /api/elite-sponsor validator (server/elite-sponsor.ts:isValidCategorySlug)
+  // remains the source of truth for which slugs ever return real slot data —
+  // anything not in the ECSS allowlist falls through to the vacant placeholder.
+  categorySlug: string;
   categoryLabel: string;
+  // Optional subcategory targeting. When set, queries for the (state, category,
+  // subcategory) slot. When omitted, falls back to the existing top-of-category
+  // (subcategory_slug IS NULL) lookup so /financial-services /legal-services
+  // /real-estate keep working unchanged.
+  subcategorySlug?: string;
+  subcategoryLabel?: string;
 }
 
 interface EliteSlotResponse {
@@ -25,26 +32,33 @@ interface EliteSlotResponse {
   status: "vacant" | "sold" | "paused";
   isPlaceholder: boolean;
   categorySlug: string;
+  subcategorySlug?: string | null;
   stateCode: string | null;
 }
 
 export default function EliteSponsorBanner({
   categorySlug,
   categoryLabel,
+  subcategorySlug,
+  subcategoryLabel,
 }: EliteSponsorBannerProps) {
   const geo = useGeolocation();
   const stateCode = geo.location?.stateCode || "";
   const stateName = geo.location?.state || "";
+
+  const subKey = subcategorySlug && subcategorySlug !== "__all__" ? subcategorySlug : "";
 
   const { data, isLoading } = useQuery<EliteSlotResponse>({
     queryKey: [
       "/api/elite-sponsor",
       categorySlug,
       stateCode || "national",
+      subKey || "top",
     ],
     queryFn: async () => {
       const params = new URLSearchParams({ categorySlug });
       if (stateCode) params.set("state", stateCode);
+      if (subKey) params.set("subcategorySlug", subKey);
       const r = await fetch(`/api/elite-sponsor?${params.toString()}`);
       if (!r.ok) throw new Error("lookup failed");
       return r.json();
@@ -72,18 +86,22 @@ export default function EliteSponsorBanner({
       <EliteSponsorPlaceholder
         categorySlug={categorySlug}
         categoryLabel={categoryLabel}
+        subcategorySlug={subKey || null}
+        subcategoryLabel={subcategoryLabel || null}
         stateCode={stateCode || null}
         stateName={stateName || null}
       />
     );
   }
 
-  // Phase B — sold + active + approved sponsor → render the premium card.
+  // Sold + active + approved sponsor → render the premium card.
   return (
     <EliteSponsorCard
       slot={data.slot}
       categorySlug={categorySlug}
       categoryLabel={categoryLabel}
+      subcategorySlug={subKey || null}
+      subcategoryLabel={subcategoryLabel || null}
       stateCode={stateCode || null}
       stateName={stateName || null}
     />

@@ -59,6 +59,7 @@ import { useLocation } from "wouter";
 import { useSavedResources } from "@/lib/store";
 import { useGeolocation } from "@/lib/use-geolocation";
 import { EnableLocationPrompt } from "@/components/enable-location-prompt";
+import EliteSponsorBanner from "@/components/elite-sponsor-banner";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
 import {
   AdSlot,
@@ -240,6 +241,11 @@ export default function VeteranDiscounts() {
   const nearMeLat = locationMode === "nearme" && geo.location?.lat ? geo.location.lat : undefined;
   const nearMeLng = locationMode === "nearme" && geo.location?.lng ? geo.location.lng : undefined;
   const isNearMeQuery = locationMode === "nearme" && nearMeLat !== undefined && nearMeLng !== undefined;
+  // Founder spec 2026-04-29: state context required before listings + Elite ads
+  // load. GPS via Near Me OR manual state dropdown both qualify. "All Locations"
+  // remains in the UI for backward compat but triggers the gate prompt.
+  const effectiveStateCode = filterState || geo.location?.stateCode || "";
+  const hasLocationContext = isNearMeQuery || (locationMode !== "all" && !!effectiveStateCode);
 
   const selectedCat = categories.find(c => c.slug === selectedCategory);
   const isServiceCategory = selectedCat?.group_type === "service";
@@ -274,7 +280,9 @@ export default function VeteranDiscounts() {
       if (Array.isArray(json)) return { partners: json, fallback: [] };
       return { partners: json.partners || [], fallback: json.fallback || [] };
     },
-    enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery),
+    // Founder spec 2026-04-29: hasLocationContext gate prevents misleading
+    // "Nothing nearby yet" when the real issue is missing state/GPS.
+    enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery) && hasLocationContext,
   });
   const listings = listingsData?.partners ?? [];
   const fallbackListings = listingsData?.fallback ?? [];
@@ -766,7 +774,33 @@ export default function VeteranDiscounts() {
                 </Button>
               </div>
 
-              {listingsLoading ? (
+              {/* Elite sponsor banner — TOP of subcategory pages, gated on
+                  state context. Server returns sold sponsor card OR vacant
+                  placeholder ("This Exclusive Spot is Available"). 2026-04-29 */}
+              {selectedCategory && selectedSubcategory && selectedSubcategory !== "__all__" && hasLocationContext && (
+                <EliteSponsorBanner
+                  categorySlug={selectedCategory}
+                  categoryLabel={selectedCat?.name || selectedCategory}
+                  subcategorySlug={selectedSubcategory}
+                  subcategoryLabel={
+                    richSubs?.find(s => s.slug === selectedSubcategory)?.name
+                    || apiSubcategories.find(s => s.slug === selectedSubcategory)?.name
+                    || ""
+                  }
+                />
+              )}
+
+              {!hasLocationContext ? (
+                <div className="text-center py-12 space-y-3" data-testid="gate-location-required">
+                  <MapPin className="h-10 w-10 text-primary/50 mx-auto" />
+                  <p className="text-sm font-semibold text-foreground" data-testid="text-gate-headline">
+                    Pick your state or enable location to see results
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Use the "Near Me" button above to auto-detect, or choose your state from the dropdown. City is optional.
+                  </p>
+                </div>
+              ) : listingsLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Card key={i} className="animate-pulse shadow-sm">

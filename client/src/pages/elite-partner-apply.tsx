@@ -100,6 +100,22 @@ export default function ElitePartnerApply() {
     trackEvent("elite_partner_apply_started");
   }, []);
 
+  // Founder spec 2026-04-29: pre-fill from URL params when arriving via the
+  // /discounts "This Exclusive Spot is Available" placeholder CTA. Plan +
+  // state are set immediately on mount; category and subcategory are matched
+  // by slug once the async category/subcategory queries resolve below.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get("plan");
+    const stateParam = params.get("state");
+    if (planParam === "state" || planParam === "national") {
+      setPlanType(planParam);
+    }
+    if (stateParam && /^[A-Za-z]{2}$/.test(stateParam)) {
+      setEliteState(stateParam.toUpperCase());
+    }
+  }, []);
+
   // ─── DATA: categories + subcategories ─────────────────────────────
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/partner-categories"],
@@ -166,6 +182,26 @@ export default function ElitePartnerApply() {
   useEffect(() => {
     setServicesSubcategoryIds([]);
   }, [servicesCategoryId]);
+
+  // Founder spec 2026-04-29: pre-fill category + subcategory from URL params
+  // when arriving via the /discounts placeholder. Placed AFTER the queries
+  // (TS hoisting safety) and AFTER the reset-on-category-change useEffect so
+  // the URL value re-applies AFTER the reset clears it.
+  useEffect(() => {
+    if (eliteCategoryId || (categories as Category[]).length === 0) return;
+    const slug = new URLSearchParams(window.location.search).get("category");
+    if (!slug) return;
+    const cat = (categories as Category[]).find((c) => c.slug === slug);
+    if (cat) setEliteCategoryId(cat.id);
+  }, [categories, eliteCategoryId]);
+
+  useEffect(() => {
+    if (eliteSubcategoryId || (eliteSubcategories as Subcategory[]).length === 0) return;
+    const slug = new URLSearchParams(window.location.search).get("subcategory");
+    if (!slug) return;
+    const sub = (eliteSubcategories as Subcategory[]).find((s) => s.slug === slug);
+    if (sub) setEliteSubcategoryId(sub.id);
+  }, [eliteSubcategories, eliteSubcategoryId]);
 
   // ─── AVAILABILITY: only when state + category + subcategory are all set
   const slotPickerReady = !!eliteState && !!eliteCategorySlug && !!eliteSubcategorySlug;

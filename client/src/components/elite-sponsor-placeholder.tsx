@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 
 interface EliteSponsorPlaceholderProps {
-  categorySlug: "legal-services" | "mortgage-lending" | "real-estate";
+  // Widened 2026-04-29 to accept any Trusted Services category slug.
+  categorySlug: string;
   categoryLabel: string;
+  // Optional subcategory targeting (Phase B for /discounts subcategory pages).
+  subcategorySlug?: string | null;
+  subcategoryLabel?: string | null;
   stateCode: string | null;
   stateName: string | null;
 }
@@ -12,6 +16,8 @@ interface EliteSponsorPlaceholderProps {
 export default function EliteSponsorPlaceholder({
   categorySlug,
   categoryLabel,
+  subcategorySlug,
+  subcategoryLabel,
   stateCode,
   stateName,
 }: EliteSponsorPlaceholderProps) {
@@ -24,11 +30,16 @@ export default function EliteSponsorPlaceholder({
   const handleClaim = () => {
     trackEvent("elite_sponsor_placeholder_click", {
       categorySlug,
+      subcategorySlug: subcategorySlug || "none",
       stateCode: stateCode || "no_state",
     });
-    const params = new URLSearchParams({ product: "elite", category: categorySlug });
+    // Founder spec 2026-04-29: placeholder must link to /elite-partner-apply
+    // with state + category + subcategory pre-filled where possible.
+    const params = new URLSearchParams({ category: categorySlug });
+    if (subcategorySlug) params.set("subcategory", subcategorySlug);
     if (stateCode) params.set("state", stateCode);
-    window.location.href = `/partner-apply?${params.toString()}`;
+    params.set("plan", "state");
+    window.location.href = `/elite-partner-apply?${params.toString()}`;
   };
 
   return (

@@ -14,6 +14,11 @@ interface EliteSponsorCardProps {
   };
   categorySlug: string;
   categoryLabel: string;
+  // Optional subcategory passthrough — accepted for API compatibility with the
+  // banner but not currently displayed on the card. Reserved for future per-
+  // subcategory styling/analytics.
+  subcategorySlug?: string | null;
+  subcategoryLabel?: string | null;
   stateCode: string | null;
   stateName: string | null;
 }

@@ -775,6 +775,30 @@ Preview passing is NOT sufficient. After every publish:
 - `/healthz` is dev-only — on prod it is swallowed by Replit's upstream Google Cloud Load Balancer (returns Google's own 404 page) before reaching the container. Do NOT use `/healthz` to validate prod.
 - Deployment logs show clean startup with `[boot] ✅ background initialization complete — all routes ready`.
 
+## Trusted Services Location Gate + Elite Sponsor Subcategory Targeting (LANDED 2026-04-29)
+
+**Why**: Founder spec 2026-04-29 BUILD ticket. Two paired UX fixes for /discounts: (a) listings were silently fetching with no state context and showing misleading "Nothing nearby yet" empty states when the real issue was missing GPS/state; (b) the Elite sponsor slot lookup only supported category-level targeting (e.g., "mortgage-lending in CA") even though the Elite Phase A+B schema supports subcategory targeting (e.g., "mortgage-lending → va-loans in CA"). Subcategory ad inventory was unsellable.
+
+**Architecture** (6 file edits, no DB changes):
+1. `server/elite-sponsor.ts` GET handler (L284-380): accepts optional `?subcategorySlug=`, validates against `/^[a-z0-9][a-z0-9-]{0,63}$/`, normalizes `__all__` → null (treated as top-of-category lookup), branches Supabase query between `.eq("subcategory_slug", val)` and `.is("subcategory_slug", null)`. Adds `subcategorySlug` to all response payloads. Existing top-slot lookups untouched.
+2. `client/src/components/elite-sponsor-banner.tsx`: widened `categorySlug` from 4-literal union to `string` (backward-compat for new categories); added optional `subcategorySlug` + `subcategoryLabel` props; threaded through URL params + queryKey.
+3. `client/src/components/elite-sponsor-placeholder.tsx`: same widening + new "Apply" CTA points to `/elite-partner-apply?plan=state&category=X&subcategory=Y&state=ZZ` (was `/partner-apply` with no prefill).
+4. `client/src/components/elite-sponsor-card.tsx`: optional subcategory props (passthrough only, not displayed yet — future-proofing).
+5. `client/src/pages/elite-partner-apply.tsx`: 3 URL-param prefill useEffects — plan/state on mount, category-slug→id once categories load, subcategory-slug→id once subcategories load. Hooks placed AFTER the queries (TS hoisting safety) and AFTER the reset-on-category-change useEffect so URL value re-applies after the reset clears it. Each guards with "if already set, return" to prevent stomping user changes.
+6. `client/src/pages/veteran-discounts.tsx`: imported EliteSponsorBanner; added `effectiveStateCode` + `hasLocationContext` helpers (true when nearme+lat/lng OR manual state pick); updated existing listings useQuery `enabled:` to AND `hasLocationContext`; added gate UI ("Pick your state or enable location to see results") between subcategory pick and empty state; inserted `<EliteSponsorBanner ...>` above listings when subcategory is selected (not __all__) AND hasLocationContext.
+
+**Founder rules preserved**:
+- Zero schema changes — Elite slots already had `subcategory_slug` column from Phase B.
+- Zero db:push, zero data touches.
+- shared/schema.ts intentionally still only `users`.
+- 4 existing banner call sites (real-estate / financial-services / legal-services pages) pass literal slugs and continue to work — widening to `string` is backward compatible.
+- Resources / AI Guide / leads / Stripe / Supabase / Helium untouched.
+
+**Verification**:
+- API: `curl /api/elite-sponsor?categorySlug=mortgage-lending&state=CA` → vacant placeholder (subcategorySlug=null); `&subcategorySlug=va-loans` → vacant placeholder (subcategorySlug=va-loans); `&subcategorySlug=__all__` → falls back to top; `&subcategorySlug=BAD%20SLUG` → 400; unknown category → 400.
+- TS: zero errors from these 6 edits (pre-existing Stripe Subscription type errors at server/elite-sponsor.ts L1225-1229 are NOT in this change set).
+- Code review architect: APPROVED production-ready. No blockers. 7 review questions all green (pre-fill order safe, listings gate doesn't break GPS auto-detect, XSS safe via URLSearchParams + server regex, mobile-responsive, backward compat preserved, no field stomping in apply page).
+
 ## Supabase RLS Security Rule (PERMANENT / STANDING)
 **Every table in the public schema MUST have Row Level Security enabled. No exceptions.**
 

@@ -1,0 +1,69 @@
+--- COPY TO REPLIT ---
+
+GO AHEAD WITH YOUR RECOMMENDATIONS
+
+Confirming the three questions:
+
+1. Page identity:
+YES — /discounts / veteran-discounts.tsx is the correct Trusted Services page to update.
+The user-facing page reads “Trusted Services – Veteran Discount Services & Products,” so that is the correct page.
+
+2. Banner category coverage:
+YES — widen EliteSponsorBanner to accept any approved Trusted Services category slug, not only the original four.
+Elite monetization should eventually support all approved Trusted Services categories and subcategories.
+
+3. Near Me wording:
+Use your recommendation:
+Keep the existing “Near Me” button, but add the Enable Location prompt above it with wording like:
+“Enable Location for better results.”
+
+==================================================
+BUILD REQUIREMENTS
+==================================================
+
+Please build the Trusted Services location + Elite placement fix exactly as planned:
+
+- Reuse the existing geolocation/location system
+- Add Enable Location prompt to /discounts
+- Require State selection if location is not enabled
+- City remains optional
+- Use selected state for Elite slot targeting
+- Add Elite banner / placeholder above subcategory results
+- Query by state + category + subcategory
+- If sold and approved, show Elite sponsor banner
+- If vacant, show placeholder:
+  “This Exclusive Spot is Available”
+- Placeholder must link to /elite-partner-apply with state/category/subcategory prefilled if possible
+
+==================================================
+IMPORTANT
+==================================================
+
+Do NOT touch:
+- Resources logic
+- AI Guide logic
+- Existing lead routing
+- Stripe
+- Database schema
+- Supabase or Helium data
+
+No db:push.
+No database changes.
+No deploy config changes.
+
+==================================================
+REPORT BACK
+==================================================
+
+- /discounts updated:
+- Enable Location prompt added:
+- Manual state fallback working:
+- City optional:
+- State passed into Elite ad logic:
+- Subcategory-level Elite banner working:
+- Placeholder showing when slot is vacant:
+- Sold/approved sponsor banner still works:
+- Existing listings unaffected:
+- Mobile verified:
+
+--- END ---
