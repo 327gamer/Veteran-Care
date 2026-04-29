@@ -181,12 +181,15 @@ async function ensureSeededNationalProviders() {
     subs: string[];
   };
   const seeds: Seed[] = [
-    // Housing & Home Services (5)
-    { name: "USAA Mortgage", categorySlug: "housing-home", shortDescription: "VA loans and mortgage products exclusively for military members, veterans, and their families.", websiteUrl: "https://www.usaa.com", phone: "800-531-0341", subs: ["va-home-loans", "home-ownership"] },
-    { name: "Veterans United Home Loans", categorySlug: "housing-home", shortDescription: "#1 VA mortgage lender. VA loans, refinancing, and home buying education for veterans nationwide.", websiteUrl: "https://www.veteransunited.com", phone: "800-884-5560", subs: ["va-home-loans", "home-ownership"] },
-    { name: "Navy Federal Credit Union — Mortgage", categorySlug: "housing-home", shortDescription: "VA loans, conventional mortgages, and HomeBuyers Choice loans for military and veterans.", websiteUrl: "https://www.navyfederal.org", phone: "888-842-6328", subs: ["va-home-loans", "home-ownership"] },
+    // Housing & Home Services (2 — VA mortgage lenders moved to financial-credit
+    // and cross-listed back to housing-home via crossListSpecs below)
     { name: "PCSgrades", categorySlug: "housing-home", shortDescription: "Trusted veteran/military-run review platform for movers, real estate agents, and PCS-related services nationwide.", websiteUrl: "https://www.pcsgrades.com", phone: null, subs: ["moving-relocation"] },
     { name: "Military OneSource — Moving / PCS", categorySlug: "housing-home", shortDescription: "DoD-backed PCS planning, moving entitlements, and housing resource hub for service members and families.", websiteUrl: "https://www.militaryonesource.mil/moving-housing/moving/", phone: "800-342-9647", subs: ["moving-relocation"] },
+    // VA Mortgage lenders — primary in Financial & Credit (canonical va-loans
+    // subcategory after taxonomy consolidation), cross-listed to housing-home.
+    { name: "USAA Mortgage", categorySlug: "financial-credit", shortDescription: "VA loans and mortgage products exclusively for military members, veterans, and their families.", websiteUrl: "https://www.usaa.com", phone: "800-531-0341", subs: ["va-loans"] },
+    { name: "Veterans United Home Loans", categorySlug: "financial-credit", shortDescription: "#1 VA mortgage lender. VA loans, refinancing, and home buying education for veterans nationwide.", websiteUrl: "https://www.veteransunited.com", phone: "800-884-5560", subs: ["va-loans"] },
+    { name: "Navy Federal Credit Union — Mortgage", categorySlug: "financial-credit", shortDescription: "VA loans, conventional mortgages, and HomeBuyers Choice loans for military and veterans.", websiteUrl: "https://www.navyfederal.org", phone: "888-842-6328", subs: ["va-loans"] },
     // Financial & Credit Services (4)
     { name: "National Foundation for Credit Counseling (NFCC)", categorySlug: "financial-credit", shortDescription: "Largest nonprofit credit counseling network in the U.S. with veteran-focused programs.", websiteUrl: "https://www.nfcc.org", phone: "800-388-2227", subs: ["credit-repair", "budgeting-financial-coaching"] },
     { name: "Operation Homefront — Financial Assistance", categorySlug: "financial-credit", shortDescription: "Long-standing emergency financial relief and assistance for military and veteran families.", websiteUrl: "https://www.operationhomefront.org", phone: "210-659-7756", subs: ["budgeting-financial-coaching"] },
@@ -269,6 +272,10 @@ async function ensureSeededNationalProviders() {
     let crossListed = 0;
     const crossListSpecs: Array<{ name: string; addCrossLists: string[]; addSubs: string[] }> = [
       { name: "Hire Heroes USA", addCrossLists: ["employment-support"], addSubs: ["job-placement-programs", "resume-career-coaching"] },
+      // VA mortgage lenders: primary in financial-credit, surfaced under housing-home too
+      { name: "USAA Mortgage", addCrossLists: ["housing-home"], addSubs: [] },
+      { name: "Veterans United Home Loans", addCrossLists: ["housing-home"], addSubs: [] },
+      { name: "Navy Federal Credit Union — Mortgage", addCrossLists: ["housing-home"], addSubs: [] },
     ];
     for (const c of crossListSpecs) {
       const updated = await pgQuery(

@@ -12759,73 +12759,20 @@ export async function registerRoutes(
     </body></html>`;
   }
 
-  app.get("/api/partner/lead-outcome", async (req, res) => {
-    try {
-      const { token } = req.query;
-      if (!token || typeof token !== "string") {
-        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This outcome link is invalid or expired.", "error"));
-      }
-      const { verifyOutcomeToken } = await import("./lead-email");
-      const result = verifyOutcomeToken(token);
-      if (!result) {
-        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This outcome link is invalid, expired, or has been tampered with.", "error"));
-      }
-      return res.send(buildOutcomePageHtml(token, result.outcome, result.leadId));
-    } catch (err: any) {
-      console.log("[lead-outcome] GET Error:", err?.message);
-      return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
-    }
-  });
-
-  app.post("/api/partner/lead-outcome", express.urlencoded({ extended: false }), async (req, res) => {
-    try {
-      const { token } = req.body;
-      if (!token || typeof token !== "string") {
-        return res.status(400).send(buildActionResponseHtml("Invalid Request", "Missing or invalid token.", "error"));
-      }
-      const { verifyOutcomeToken } = await import("./lead-email");
-      const result = verifyOutcomeToken(token);
-      if (!result) {
-        return res.status(400).send(buildActionResponseHtml("Invalid Link", "This outcome link is invalid, expired, or has been tampered with.", "error"));
-      }
-      const { leadId, outcome } = result;
-
-      const { data: lead, error: leadErr } = await supabaseAdmin
-        .from("navigator_requests")
-        .select("id, partner_outcome")
-        .eq("id", leadId)
-        .single();
-      if (leadErr || !lead) {
-        return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This support request could not be found in our system.", "error"));
-      }
-
-      const previous = lead.partner_outcome || null;
-      if (previous === outcome) {
-        return res.send(buildActionResponseHtml("Already Recorded", `This lead is already marked as "${outcome}". No change needed.`, "info"));
-      }
-
-      const { error: updateErr } = await supabaseAdmin
-        .from("navigator_requests")
-        .update({ partner_outcome: outcome })
-        .eq("id", leadId);
-      if (updateErr) {
-        console.log("[lead-outcome] DB update error:", updateErr.message);
-        return res.status(500).send(buildActionResponseHtml("Error", "Failed to record outcome. Please try again.", "error"));
-      }
-
-      console.log(`[lead-outcome] Lead ${leadId} partner_outcome → ${outcome} via email_link (was: ${previous || "unset"})`);
-
-      const friendlyMessages: Record<string, string> = {
-        won:        "Thank you! This lead has been recorded as Won. Conversion data helps us keep partner pricing fair and transparent.",
-        lost:       "Thank you for the update. This lead has been recorded as Lost. We track this to keep pricing accurate over time.",
-        no_contact: "Thank you. This lead has been recorded as No Contact. If you'd like the lead reassigned, please use the lead-action buttons in the original email.",
-      };
-      return res.send(buildActionResponseHtml("Outcome Recorded", friendlyMessages[outcome] || "Outcome recorded.", "success"));
-    } catch (err: any) {
-      console.log("[lead-outcome] POST Error:", err?.message);
-      return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));
-    }
-  });
+  // ── DEPRECATED: Partner Outcome Capture (Won / Lost / No Contact) ──
+  // Replaced by single "Accept Lead" action which silently charges $49.99
+  // off-session. Outcome buttons are no longer in the email. Kept as 410
+  // Gone so any in-flight email links from before the change render a
+  // graceful explanation instead of 404'ing or executing stale logic.
+  const outcomeGoneHandler = (_req: any, res: any) => {
+    return res.status(410).send(buildActionResponseHtml(
+      "Link No Longer Active",
+      "Outcome reporting has been retired. Veteran leads are now exclusively assigned the moment you click Accept Lead in the email; no further action is required.",
+      "info"
+    ));
+  };
+  app.get("/api/partner/lead-outcome", outcomeGoneHandler);
+  app.post("/api/partner/lead-outcome", express.urlencoded({ extended: false }), outcomeGoneHandler);
 
   // ── Partner Applications (public intake) ──
 

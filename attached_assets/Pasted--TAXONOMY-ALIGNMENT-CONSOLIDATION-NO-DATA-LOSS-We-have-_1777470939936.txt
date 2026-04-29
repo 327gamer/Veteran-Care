@@ -1,0 +1,105 @@
+}
+--- TAXONOMY ALIGNMENT + CONSOLIDATION (NO DATA LOSS) ---
+
+We have completed the audit.
+
+We now need to align and consolidate the taxonomy WITHOUT breaking data.
+
+DO NOT delete records.
+DO NOT lose partner relationships.
+
+This is a REMAPPING + STANDARDIZATION task.
+
+━━━━━━━━━━━━━━━━━━━
+CORE OBJECTIVE
+━━━━━━━━━━━━━━━━━━━
+
+- Create ONE canonical subcategory per concept
+- Remove cross-category duplication
+- Align Elite system with Trusted Services taxonomy
+
+━━━━━━━━━━━━━━━━━━━
+TASK 1 — MORTGAGE / FINANCIAL CONSOLIDATION
+━━━━━━━━━━━━━━━━━━━
+
+All of the following MUST map into ONE system under:
+
+Category: financial-credit
+
+Canonical subcategories:
+
+- mortgages
+- va-loans
+- refinancing
+- first-time-buyers
+
+Map ALL existing slugs into these canonical ones:
+
+- mortgage-home-loans → mortgages
+- mortgages-home-loans → mortgages
+- home-loans → mortgages
+- va-home-loans → va-loans (REMOVE from housing-home)
+
+━━━━━━━━━━━━━━━━━━━
+TASK 2 — REMOVE CROSS-CATEGORY DUPLICATES
+━━━━━━━━━━━━━━━━━━━
+
+Ensure each subcategory exists in ONLY ONE category.
+
+Fix:
+
+- auto-insurance → ONLY under insurance
+- estate-planning → ONLY under legal
+
+━━━━━━━━━━━━━━━━━━━
+TASK 3 — MERGE SIMILAR SUBCATEGORIES
+━━━━━━━━━━━━━━━━━━━
+
+Group:
+
+- refinance + refinancing → refinancing
+- debt variations → debt-management
+- estate variations → estate-planning
+
+━━━━━━━━━━━━━━━━━━━
+TASK 4 — FIX MISPLACEMENTS
+━━━━━━━━━━━━━━━━━━━
+
+Move:
+
+- housing-home:va-home-loans → financial-credit:va-loans
+
+━━━━━━━━━━━━━━━━━━━
+TASK 5 — ALIGN ELITE SYSTEM
+━━━━━━━━━━━━━━━━━━━
+
+Elite slots MUST reference the SAME slugs as trusted services.
+
+Fix mismatch:
+
+- mortgage-lending → mortgages
+- real-estate → (map correctly to existing slug)
+
+There must be ONE shared taxonomy.
+
+━━━━━━━━━━━━━━━━━━━
+TASK 6 — PRESERVE DATA
+━━━━━━━━━━━━━━━━━━━
+
+- Maintain all partner relationships
+- Update mappings ONLY
+- Do NOT delete records
+
+━━━━━━━━━━━━━━━━━━━
+VERIFY
+━━━━━━━━━━━━━━━━━━━
+
+Report back:
+
+- All mortgage-related items consolidated:
+- All duplicates removed:
+- Elite and Trusted taxonomy aligned:
+- No orphaned partners:
+- No broken references:
+
+--- END --
