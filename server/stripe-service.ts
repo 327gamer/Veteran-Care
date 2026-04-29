@@ -407,61 +407,14 @@ export async function chargeLeadAutomatically(opts: {
   }
 }
 
-/**
- * Admin manual-charge UX: build a Stripe Checkout session that admin can
- * email to a partner as a one-time payment link. Used by /api/admin/billing-charge.
- * This is intentionally distinct from chargeLeadAutomatically (which silently
- * charges card-on-file with no UI) — admin sometimes needs a copy-pasteable URL.
- */
-export async function createLeadChargeCheckout(
-  leadId: string,
-  amount: number,
-  partnerName: string,
-  veteranName: string,
-  category: string
-): Promise<{ url: string; sessionId: string }> {
-  if (!stripe) throw new Error("Stripe is not configured");
-
-  const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
-  const amountCents = Math.round(amount * 100);
-
-  // Prefer canonical Price ID when amount matches, else dynamic price_data
-  const useCanonical = LEAD_CHARGE_PRICE_ID && amountCents === 4999;
-
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = useCanonical
-    ? [{ price: LEAD_CHARGE_PRICE_ID!, quantity: 1 }]
-    : [
-        {
-          price_data: {
-            currency: "usd",
-            unit_amount: amountCents,
-            product_data: {
-              name: `Lead Delivery Fee — ${category}`,
-              description: `Veteran lead delivery for ${partnerName} (${veteranName})`,
-            },
-          },
-          quantity: 1,
-        },
-      ];
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: lineItems,
-    success_url: `${appUrl}/admin/leads?charge=success&lead=${leadId}`,
-    cancel_url: `${appUrl}/admin/leads?charge=cancelled&lead=${leadId}`,
-    metadata: {
-      lead_id: leadId,
-      partner_name: partnerName,
-      veteran_name: veteranName,
-      product: "Lead Delivery Fee",
-      stripe_price_id: LEAD_CHARGE_PRICE_ID || "",
-      charge_type: "lead_billing",
-    },
-  });
-
-  return { url: session.url!, sessionId: session.id };
-}
+// NOTE: createLeadChargeCheckout (the admin "email a one-time Checkout link"
+// flow) was removed. All lead charges now go through chargeLeadAutomatically
+// (silent off-session PaymentIntent against card on file). Admin endpoints in
+// routes.ts (/api/admin/billing-charge, /api/admin/billing-retry,
+// /api/admin/billing-batch-charge) were refactored to call chargeLeadAutomatically
+// directly. On auth_required / card_declined, the partner is emailed a
+// one-time customer-portal link to update their card (see
+// sendLeadChargeFailureEmail in lead-email.ts).
 
 export async function createCustomerPortalSession(stripeCustomerId: string, returnUrl?: string): Promise<{ url: string }> {
   if (!stripe) throw new Error("Stripe is not configured");

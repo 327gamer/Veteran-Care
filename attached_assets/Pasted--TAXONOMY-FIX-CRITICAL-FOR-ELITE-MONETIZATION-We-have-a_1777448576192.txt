@@ -1,0 +1,94 @@
+--- TAXONOMY FIX — CRITICAL FOR ELITE MONETIZATION ---
+
+We have a structural issue with category organization that must be corrected BEFORE scaling Elite Service Partner sales.
+
+DO NOT DELETE DATA.  
+DO NOT BREAK EXISTING RELATIONSHIPS.  
+This is a RE-MAPPING and STRUCTURE FIX.
+
+━━━━━━━━━━━━━━━━━━━
+PROBLEM
+━━━━━━━━━━━━━━━━━━━
+
+Currently:
+
+- VA Loans appears under BOTH:
+  • Financial Services (correct)
+  • Housing / Home Services (incorrect)
+
+- Mortgages / Home Loans is separated from VA Loans
+
+This fragments traffic and reduces Elite slot value.
+
+━━━━━━━━━━━━━━━━━━━
+REQUIRED FIX
+━━━━━━━━━━━━━━━━━━━
+
+Create a clean, unified lending structure.
+
+━━━━━━━━━━━━━━━━━━━
+1. FINANCIAL & CREDIT SERVICES (PRIMARY CATEGORY)
+━━━━━━━━━━━━━━━━━━━
+
+This becomes the main monetization category.
+
+Ensure ALL lending-related subcategories exist here:
+
+- Mortgages / Home Loans
+- VA Loans
+- Refinancing
+- First-Time Buyers
+- Personal Loans
+- Debt Management
+- Credit Repair
+
+If any of these exist elsewhere, DO NOT DELETE — reassign properly.
+
+━━━━━━━━━━━━━━━━━━━
+2. HOUSING & HOME SERVICES (CLEAN CATEGORY)
+━━━━━━━━━━━━━━━━━━━
+
+REMOVE financial/lending-related subcategories from this category.
+
+This category should ONLY contain:
+
+- Home repair
+- Housing assistance
+- Shelter / temporary housing
+- Non-financial services
+
+━━━━━━━━━━━━━━━━━━━
+3. DATA HANDLING RULES
+━━━━━━━━━━━━━━━━━━━
+
+- DO NOT delete VA Loans
+- DO NOT duplicate categories
+- Ensure each subcategory belongs to ONE logical parent
+- Update mapping tables if needed (resource_categories, partner_subcategories, etc.)
+- Preserve all existing relationships
+
+━━━━━━━━━━━━━━━━━━━
+4. ELITE SYSTEM ALIGNMENT
+━━━━━━━━━━━━━━━━━━━
+
+Elite slot inventory must now align to:
+
+Financial & Credit Services → Mortgages / Home Loans (primary revenue slot)
+
+VA Loans, Refinancing, etc. remain selectable for services,
+BUT the primary monetization focus is the mortgage-level entry point.
+
+━━━━━━━━━━━━━━━━━━━
+5. VERIFY
+━━━━━━━━━━━━━━━━━━━
+
+Report back:
+
+- VA Loans exists ONLY under Financial Services:
+- Mortgages / Home Loans grouped correctly:
+- No duplicate category conflicts:
+- Housing category cleaned:
+- Existing resources still visible:
+- Elite slot dropdown reflects correct structure:
+
+--- END ---

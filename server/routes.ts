@@ -8612,7 +8612,7 @@ export async function registerRoutes(
     if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
 
     const { id } = req.params;
-    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+    const { isStripeEnabled, chargeLeadAutomatically } = await import("./stripe-service");
 
     if (!isStripeEnabled()) {
       return res.status(503).json({ error: "Stripe is not configured. Add STRIPE_SECRET_KEY." });
@@ -8640,6 +8640,7 @@ export async function registerRoutes(
     }
 
     if (fetchErr || !lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.billed) return res.status(400).json({ error: "Lead is already billed" });
 
     const { getBillingConfig, runChargeChecklist, shouldAutoReview, verifyPartnerBillingEligibility } = await import("./billing-governance");
     const config = await getBillingConfig();
@@ -8648,11 +8649,13 @@ export async function registerRoutes(
       return res.status(400).json({ error: checklist.failures[0], checklist_failures: checklist.failures });
     }
 
-    if (lead.routed_to_partner_id) {
-      const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
-      if (!partnerCheck.eligible) {
-        return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
-      }
+    if (!lead.routed_to_partner_id) {
+      return res.status(400).json({ error: "Lead has no routed partner — cannot charge" });
+    }
+
+    const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+    if (!partnerCheck.eligible) {
+      return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
     }
 
     const review = shouldAutoReview(lead);
@@ -8663,51 +8666,77 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Lead auto-flagged for review", review_reasons: review.reasons });
     }
 
-    if (lead.stripe_checkout_session_id) {
-      try {
-        const { stripe } = await import("./stripe-service");
-        if (stripe) {
-          const existing = await stripe.checkout.sessions.retrieve(lead.stripe_checkout_session_id);
-          if (existing.status === "open") {
-            return res.json({ url: existing.url, sessionId: existing.id, reused: true });
-          }
-        }
-      } catch {}
+    const { data: partnerOrg } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("id, name, contact_email, stripe_customer_id")
+      .eq("id", lead.routed_to_partner_id)
+      .maybeSingle();
+    if (!partnerOrg?.stripe_customer_id) {
+      return res.status(400).json({ error: "Partner has no Stripe customer / saved payment method" });
     }
 
+    const partnerName = partnerOrg.name || "Partner";
     const amount = parseFloat(lead.billing_amount) || 49.99;
-    let partnerName = "Partner";
-    if (lead.routed_to_partner_id) {
+
+    const result = await chargeLeadAutomatically({
+      leadId: id,
+      partnerOrgId: partnerOrg.id,
+      stripeCustomerId: partnerOrg.stripe_customer_id,
+      partnerName,
+      veteranName: lead.veteran_name || "Unknown",
+      category: lead.category || "General",
+    });
+
+    if (result.ok) {
       try {
-        const { data: partner } = await supabaseAdmin.from("partner_organizations").select("name").eq("id", lead.routed_to_partner_id).single();
-        if (partner?.name) partnerName = partner.name;
-      } catch {}
-    }
-
-    try {
-      const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
-
-      const chargeUpdate: Record<string, any> = {
-        stripe_checkout_session_id: sessionId,
-        stripe_payment_status: "pending",
-        billing_workflow_status: "queued",
-      };
-      const { error: cu } = await supabaseAdmin.from("navigator_requests").update(chargeUpdate).eq("id", id);
-      if (cu) {
         await supabaseAdmin.from("navigator_requests").update({
-          stripe_checkout_session_id: sessionId,
-          stripe_payment_status: "pending",
+          billed: true,
+          billed_at: new Date().toISOString(),
+          billing_status: "billed",
+          billing_workflow_status: "paid",
+          stripe_payment_status: "paid",
+          stripe_payment_intent_id: result.paymentIntentId,
+        }).eq("id", id);
+      } catch {
+        await supabaseAdmin.from("navigator_requests").update({
+          billed: true, stripe_payment_status: "paid",
         }).eq("id", id);
       }
-
       const { logBillingRun } = await import("./billing-governance");
-      await logBillingRun("admin", 1, amount, config.billing_mode, [id]);
-
-      return res.json({ url, sessionId });
-    } catch (err: any) {
-      console.log(`[billing] Stripe charge creation failed for lead ${id}:`, err?.message);
-      return res.status(500).json({ error: err?.message || "Stripe charge creation failed" });
+      await logBillingRun("admin", 1, (result.amountCents || 4999) / 100, config.billing_mode, [id]);
+      return res.json({ ok: true, paymentIntentId: result.paymentIntentId, amountCents: result.amountCents });
     }
+
+    // Failure: persist + email partner with portal link if recoverable
+    const detail = result.message || result.code || "charge failed";
+    try {
+      await supabaseAdmin.from("navigator_requests").update({
+        stripe_payment_status: "failed",
+        billing_workflow_status: "charge_failed",
+        payment_failure_reason: detail,
+      }).eq("id", id);
+    } catch {
+      await supabaseAdmin.from("navigator_requests").update({ stripe_payment_status: "failed" }).eq("id", id);
+    }
+    if (partnerOrg.contact_email && (result.code === "authentication_required" || result.code === "card_declined" || result.code === "expired_card" || result.code === "insufficient_funds")) {
+      try {
+        const { createCustomerPortalSession } = await import("./stripe-service");
+        const { sendLeadChargeFailureEmail } = await import("./lead-email");
+        const { url: portalUrl } = await createCustomerPortalSession(partnerOrg.stripe_customer_id);
+        await sendLeadChargeFailureEmail({
+          partnerEmail: partnerOrg.contact_email,
+          partnerName,
+          leadId: id,
+          veteranName: lead.veteran_name || "Unknown",
+          failureCode: result.code,
+          failureMessage: detail,
+          portalUrl,
+        });
+      } catch (emailErr: any) {
+        console.warn(`[billing-charge] failed to send portal email for lead ${id}: ${emailErr.message}`);
+      }
+    }
+    return res.status(402).json({ ok: false, code: result.code, error: detail, paymentIntentId: result.paymentIntentId });
   });
 
   app.get("/api/admin/billing-check-payment/:id", requireAdmin, async (req, res) => {
@@ -8836,7 +8865,7 @@ export async function registerRoutes(
   app.post("/api/admin/billing-retry/:id", requireAdmin, async (req, res) => {
     if (!hasBillingColumns) return res.status(503).json({ error: "Billing columns not available" });
     const { id } = req.params;
-    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+    const { isStripeEnabled, chargeLeadAutomatically } = await import("./stripe-service");
     if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
 
     let lead: any = null;
@@ -8853,46 +8882,86 @@ export async function registerRoutes(
     if (lead.billed) return res.status(400).json({ error: "Lead is already billed" });
     if (lead.is_disputed) return res.status(400).json({ error: "Lead is disputed — cannot retry" });
     if (lead.billing_workflow_status === "hold") return res.status(400).json({ error: "Lead is on hold — remove hold first" });
-    if (lead.billing_workflow_status !== "failed") return res.status(400).json({ error: `Retry is only for failed leads. Current: ${lead.billing_workflow_status}` });
-
-    if (lead.routed_to_partner_id) {
-      const { verifyPartnerBillingEligibility } = await import("./billing-governance");
-      const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
-      if (!partnerCheck.eligible) return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
+    if (lead.billing_workflow_status !== "failed" && lead.billing_workflow_status !== "charge_failed") {
+      return res.status(400).json({ error: `Retry is only for failed leads. Current: ${lead.billing_workflow_status}` });
     }
+    if (!lead.routed_to_partner_id) return res.status(400).json({ error: "Lead has no routed partner — cannot retry" });
+
+    const { verifyPartnerBillingEligibility } = await import("./billing-governance");
+    const partnerCheck = await verifyPartnerBillingEligibility(lead.routed_to_partner_id);
+    if (!partnerCheck.eligible) return res.status(400).json({ error: `Partner ineligible for billing: ${partnerCheck.reason}` });
 
     const currentRetry = lead.retry_count || 0;
     if (currentRetry >= 3) return res.status(400).json({ error: `Retry cap reached (${currentRetry}/3). Manual review required.` });
 
-    const amount = parseFloat(lead.billing_amount) || 49.99;
-    let partnerName = "Partner";
-    if (lead.routed_to_partner_id) {
+    const { data: partnerOrg } = await supabaseAdmin
+      .from("partner_organizations")
+      .select("id, name, contact_email, stripe_customer_id")
+      .eq("id", lead.routed_to_partner_id)
+      .maybeSingle();
+    if (!partnerOrg?.stripe_customer_id) {
+      return res.status(400).json({ error: "Partner has no Stripe customer / saved payment method" });
+    }
+
+    const partnerName = partnerOrg.name || "Partner";
+    const result = await chargeLeadAutomatically({
+      leadId: id,
+      partnerOrgId: partnerOrg.id,
+      stripeCustomerId: partnerOrg.stripe_customer_id,
+      partnerName,
+      veteranName: lead.veteran_name || "Unknown",
+      category: lead.category || "General",
+    });
+
+    if (result.ok) {
       try {
-        const { data: partner } = await supabaseAdmin.from("partner_organizations").select("name").eq("id", lead.routed_to_partner_id).single();
-        if (partner?.name) partnerName = partner.name;
-      } catch {}
-    }
-
-    try {
-      const { url, sessionId } = await createLeadChargeCheckout(id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "General");
-      const retryUpdate: Record<string, any> = {
-        stripe_checkout_session_id: sessionId,
-        stripe_payment_status: "pending",
-        billing_workflow_status: "queued",
-        retry_count: currentRetry + 1,
-      };
-      const { error: ru } = await supabaseAdmin.from("navigator_requests").update(retryUpdate).eq("id", id);
-      if (ru) {
-        await supabaseAdmin.from("navigator_requests").update({ stripe_checkout_session_id: sessionId, stripe_payment_status: "pending" }).eq("id", id);
+        await supabaseAdmin.from("navigator_requests").update({
+          billed: true,
+          billed_at: new Date().toISOString(),
+          billing_status: "billed",
+          billing_workflow_status: "paid",
+          stripe_payment_status: "paid",
+          stripe_payment_intent_id: result.paymentIntentId,
+          retry_count: currentRetry + 1,
+        }).eq("id", id);
+      } catch {
+        await supabaseAdmin.from("navigator_requests").update({ billed: true, stripe_payment_status: "paid" }).eq("id", id);
       }
-
       const { logBillingRun } = await import("./billing-governance");
-      await logBillingRun("admin", 1, amount, "retry", [id]);
-
-      return res.json({ url, sessionId, retry_count: currentRetry + 1 });
-    } catch (err: any) {
-      return res.status(500).json({ error: err?.message || "Retry failed" });
+      await logBillingRun("admin", 1, (result.amountCents || 4999) / 100, "retry", [id]);
+      return res.json({ ok: true, paymentIntentId: result.paymentIntentId, amountCents: result.amountCents, retry_count: currentRetry + 1 });
     }
+
+    const detail = result.message || result.code || "charge failed";
+    try {
+      await supabaseAdmin.from("navigator_requests").update({
+        stripe_payment_status: "failed",
+        billing_workflow_status: "charge_failed",
+        payment_failure_reason: detail,
+        retry_count: currentRetry + 1,
+      }).eq("id", id);
+    } catch {
+      await supabaseAdmin.from("navigator_requests").update({ stripe_payment_status: "failed" }).eq("id", id);
+    }
+    if (partnerOrg.contact_email && (result.code === "authentication_required" || result.code === "card_declined" || result.code === "expired_card" || result.code === "insufficient_funds")) {
+      try {
+        const { createCustomerPortalSession } = await import("./stripe-service");
+        const { sendLeadChargeFailureEmail } = await import("./lead-email");
+        const { url: portalUrl } = await createCustomerPortalSession(partnerOrg.stripe_customer_id);
+        await sendLeadChargeFailureEmail({
+          partnerEmail: partnerOrg.contact_email,
+          partnerName,
+          leadId: id,
+          veteranName: lead.veteran_name || "Unknown",
+          failureCode: result.code,
+          failureMessage: detail,
+          portalUrl,
+        });
+      } catch (emailErr: any) {
+        console.warn(`[billing-retry] failed to send portal email for lead ${id}: ${emailErr.message}`);
+      }
+    }
+    return res.status(402).json({ ok: false, code: result.code, error: detail, paymentIntentId: result.paymentIntentId, retry_count: currentRetry + 1 });
   });
 
   app.post("/api/admin/billing-batch-charge", requireAdmin, async (req, res) => {
@@ -8902,10 +8971,11 @@ export async function registerRoutes(
     if (ids.length > 5) return res.status(400).json({ error: "Batch size exceeds safe limit (max 5)" });
     const execStart = Date.now();
 
-    const { isStripeEnabled, createLeadChargeCheckout } = await import("./stripe-service");
+    const { isStripeEnabled, chargeLeadAutomatically, createCustomerPortalSession } = await import("./stripe-service");
     if (!isStripeEnabled()) return res.status(503).json({ error: "Stripe is not configured" });
 
     const { getBillingConfig, runChargeChecklist, shouldAutoReview, logBillingRun, verifyPartnerBillingEligibility } = await import("./billing-governance");
+    const { sendLeadChargeFailureEmail } = await import("./lead-email");
     const config = await getBillingConfig();
     const chargeFields = "id, is_billable, billed, billing_status, billing_amount, billing_workflow_status, veteran_name, category, routed_to_partner_id, stripe_checkout_session_id, stripe_payment_status, assigned_to, email_sent, is_disputed, reassignment_count, response_status, delivery_status, user_state, retry_count";
 
@@ -8965,26 +9035,92 @@ export async function registerRoutes(
     }
 
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    const results: { id: string; status: string; url?: string; error?: string }[] = [];
+    const results: { id: string; status: string; url?: string; error?: string; paymentIntentId?: string; amountCents?: number; code?: string }[] = [];
     let succeeded = 0;
     let failed = 0;
 
     for (const lead of validLeads) {
       try {
-        const amount = parseFloat(lead.billing_amount) || 49.99;
-        const partnerName = lead.assigned_to || "Partner";
-        const session = await createLeadChargeCheckout(lead.id, amount, partnerName, lead.veteran_name || "Unknown", lead.category || "general");
-        await supabaseAdmin.from("navigator_requests").update({
-          billing_workflow_status: "queued",
-          stripe_checkout_session_id: session.sessionId,
-          stripe_payment_status: "pending",
-        }).eq("id", lead.id);
-        results.push({ id: lead.id, status: "checkout_created", url: session.url || undefined });
-        succeeded++;
+        if (!lead.routed_to_partner_id) {
+          results.push({ id: lead.id, status: "failed", error: "No routed partner" });
+          failed++;
+          continue;
+        }
+        const { data: partnerOrg } = await supabaseAdmin
+          .from("partner_organizations")
+          .select("id, name, contact_email, stripe_customer_id")
+          .eq("id", lead.routed_to_partner_id)
+          .maybeSingle();
+        if (!partnerOrg?.stripe_customer_id) {
+          await supabaseAdmin.from("navigator_requests").update({
+            billing_workflow_status: "charge_failed",
+            stripe_payment_status: "failed",
+            payment_failure_reason: "no_stripe_customer",
+          }).eq("id", lead.id);
+          results.push({ id: lead.id, status: "failed", error: "Partner has no Stripe customer" });
+          failed++;
+          continue;
+        }
+
+        const partnerName = partnerOrg.name || lead.assigned_to || "Partner";
+        const result = await chargeLeadAutomatically({
+          leadId: lead.id,
+          partnerOrgId: partnerOrg.id,
+          stripeCustomerId: partnerOrg.stripe_customer_id,
+          partnerName,
+          veteranName: lead.veteran_name || "Unknown",
+          category: lead.category || "general",
+        });
+
+        if (result.ok) {
+          try {
+            await supabaseAdmin.from("navigator_requests").update({
+              billed: true,
+              billed_at: new Date().toISOString(),
+              billing_status: "billed",
+              billing_workflow_status: "paid",
+              stripe_payment_status: "paid",
+              stripe_payment_intent_id: result.paymentIntentId,
+            }).eq("id", lead.id);
+          } catch {
+            await supabaseAdmin.from("navigator_requests").update({ billed: true, stripe_payment_status: "paid" }).eq("id", lead.id);
+          }
+          results.push({ id: lead.id, status: "paid", paymentIntentId: result.paymentIntentId, amountCents: result.amountCents });
+          succeeded++;
+        } else {
+          const detail = result.message || result.code || "charge failed";
+          try {
+            await supabaseAdmin.from("navigator_requests").update({
+              billing_workflow_status: "charge_failed",
+              stripe_payment_status: "failed",
+              payment_failure_reason: detail,
+            }).eq("id", lead.id);
+          } catch {
+            await supabaseAdmin.from("navigator_requests").update({ stripe_payment_status: "failed" }).eq("id", lead.id);
+          }
+          if (partnerOrg.contact_email && (result.code === "authentication_required" || result.code === "card_declined" || result.code === "expired_card" || result.code === "insufficient_funds")) {
+            try {
+              const { url: portalUrl } = await createCustomerPortalSession(partnerOrg.stripe_customer_id);
+              await sendLeadChargeFailureEmail({
+                partnerEmail: partnerOrg.contact_email,
+                partnerName,
+                leadId: lead.id,
+                veteranName: lead.veteran_name || "Unknown",
+                failureCode: result.code,
+                failureMessage: detail,
+                portalUrl,
+              });
+            } catch (emailErr: any) {
+              console.warn(`[billing-batch-charge] failed to send portal email for lead ${lead.id}: ${emailErr.message}`);
+            }
+          }
+          results.push({ id: lead.id, status: "failed", error: detail, code: result.code });
+          failed++;
+        }
       } catch (err: any) {
         try {
           await supabaseAdmin.from("navigator_requests").update({
-            billing_workflow_status: "failed",
+            billing_workflow_status: "charge_failed",
             stripe_payment_status: "failed",
           }).eq("id", lead.id);
         } catch {}
@@ -12503,6 +12639,32 @@ export async function registerRoutes(
                       .from("navigator_requests")
                       .update({ stripe_payment_status: "failed" })
                       .eq("id", leadId);
+                  }
+                  // On recoverable card failures, email the partner a one-time
+                  // customer-portal link so they can update their payment method.
+                  if (
+                    partnerOrg.contact_email &&
+                    (result.code === "authentication_required" ||
+                      result.code === "card_declined" ||
+                      result.code === "expired_card" ||
+                      result.code === "insufficient_funds")
+                  ) {
+                    try {
+                      const { createCustomerPortalSession } = await import("./stripe-service");
+                      const { sendLeadChargeFailureEmail } = await import("./lead-email");
+                      const { url: portalUrl } = await createCustomerPortalSession(partnerOrg.stripe_customer_id);
+                      await sendLeadChargeFailureEmail({
+                        partnerEmail: partnerOrg.contact_email,
+                        partnerName: partnerOrg.name || "Partner",
+                        leadId,
+                        veteranName: lead.veteran_name || "Unknown",
+                        failureCode: result.code,
+                        failureMessage: detail,
+                        portalUrl,
+                      });
+                    } catch (emailErr: any) {
+                      console.warn(`[lead-action] failed to send portal email for lead ${leadId}: ${emailErr.message}`);
+                    }
                   }
                 }
               }

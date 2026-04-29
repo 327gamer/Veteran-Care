@@ -174,7 +174,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
             )}
           </div>
 
-          <div className="flex items-start gap-3">
+          <div className="flex flex-col items-start gap-2">
             {service.logo_url && !logoError ? (
               <div className="h-16 w-16 rounded-lg bg-white border border-white/20 p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
                 <img
@@ -190,7 +190,7 @@ export default function TrustedServiceDetail({ service, open, onOpenChange, onCo
                 {service.name.split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("")}
               </div>
             )}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 w-full">
               <h1 className="text-xl font-heading font-bold leading-tight" data-testid="text-trusted-service-title">
                 {service.name}
               </h1>

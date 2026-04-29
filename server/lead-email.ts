@@ -73,26 +73,6 @@ export function verifyOutcomeToken(token: string): { leadId: string; outcome: Ou
   } catch { return null; }
 }
 
-function buildOutcomeButtonsHtml(leadId: string): string {
-  const baseUrl = getBaseUrl();
-  const outcomes: { key: OutcomeValue; label: string; color: string; bg: string; border: string }[] = [
-    { key: "won",        label: "Won — Veteran Became a Client",      color: "#15803D", bg: "#F0FDF4", border: "#BBF7D0" },
-    { key: "lost",       label: "Lost — Did Not Convert",              color: "#B91C1C", bg: "#FEF2F2", border: "#FECACA" },
-    { key: "no_contact", label: "No Contact — Could Not Reach Veteran", color: "#6B7280", bg: "#F9FAFB", border: "#E5E7EB" },
-  ];
-  const buttons = outcomes.map(o => {
-    const token = generateOutcomeToken(leadId, o.key);
-    const url = `${baseUrl}/api/partner/lead-outcome?token=${token}`;
-    return `<a href="${url}" style="display:block;text-align:center;padding:10px 16px;margin:6px 0;background:${o.bg};border:1px solid ${o.border};border-radius:6px;color:${o.color};font-weight:600;font-size:14px;text-decoration:none;">${o.label}</a>`;
-  }).join("");
-  return `
-  <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;padding:16px;margin-bottom:20px;">
-    <p style="margin:0 0 6px 0;font-size:14px;font-weight:600;color:#111827;">Final Outcome (after veteran contact)</p>
-    <p style="margin:0 0 12px 0;font-size:12px;color:#6B7280;">Once you've worked with this veteran, please record the final outcome. This helps us track conversion and keep pricing fair.</p>
-    ${buttons}
-  </div>`;
-}
-
 function getBaseUrl(): string {
   if (process.env.NODE_ENV === "production" && platform.domain) {
     return `https://${platform.domain}`;
@@ -1298,6 +1278,94 @@ export async function sendLeadNotification(
     return { sent: true };
   } catch (err: any) {
     console.log(`[email] Error sending notification for lead ${leadId}:`, err?.message);
+    return { sent: false, error: err?.message };
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Sent when chargeLeadAutomatically fails with authentication_required
+// or card_declined. Gives partner a one-time customer-portal link to
+// update their payment method. Lead remains accepted; admin can retry.
+// ────────────────────────────────────────────────────────────────────
+export async function sendLeadChargeFailureEmail(opts: {
+  partnerEmail: string;
+  partnerName: string;
+  contactName?: string | null;
+  leadId: string;
+  veteranName: string;
+  failureCode: string;
+  failureMessage: string;
+  portalUrl: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  try {
+    const greeting = opts.contactName ? escapeHtml(opts.contactName) : escapeHtml(opts.partnerName);
+    const reasonLabel =
+      opts.failureCode === "authentication_required" ? "Your bank requires additional verification (3D Secure)." :
+      opts.failureCode === "card_declined" ? "Your card on file was declined." :
+      opts.failureCode === "expired_card" ? "Your card on file has expired." :
+      opts.failureCode === "insufficient_funds" ? "Your card on file had insufficient funds." :
+      "We were unable to charge your card on file.";
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 4px 0; color: #991B1B; font-size: 18px;">Payment Issue — Lead Delivery Fee</h2>
+    <p style="margin: 0; color: #DC2626; font-size: 13px;">Lead accepted, but the $49.99 charge could not be processed.</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">Hi ${greeting},</p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    You accepted the lead for <strong>${escapeHtml(opts.veteranName)}</strong> on ${platform.name}, but we were unable to charge the $49.99 lead delivery fee to your card on file.
+  </p>
+
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
+    <p style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #92400E;">Reason:</p>
+    <p style="margin: 0; font-size: 13px; color: #92400E; line-height: 1.5;">${escapeHtml(reasonLabel)}</p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    The lead remains assigned to you — please contact the veteran as planned. To clear the outstanding fee and avoid pausing future routing, update your payment method:
+  </p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${opts.portalUrl}" style="display: inline-block; background: #166534; color: white; padding: 12px 28px; border-radius: 6px; font-size: 15px; font-weight: 600; text-decoration: none;">Update Payment Method</a>
+  </div>
+
+  <p style="font-size: 12px; color: #6B7280; line-height: 1.5;">
+    Once updated, our team can retry the charge. If you have questions, reply to this email and we will assist you.
+  </p>
+
+  <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 24px; color: #9CA3AF; font-size: 11px;">
+    <p>Lead ID: ${escapeHtml(opts.leadId)}</p>
+    <p>Failure code: ${escapeHtml(opts.failureCode)}</p>
+  </div>
+
+  ${buildUnsubscribeFooter(opts.partnerEmail)}
+
+</body>
+</html>`;
+
+    const { error: emailErr } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: opts.partnerEmail,
+      subject: `${platform.name} — Update Payment Method (Lead $49.99 Charge Failed)`,
+      html,
+    });
+
+    if (emailErr) {
+      console.log(`[email] Lead charge failure email failed for lead ${opts.leadId}:`, emailErr.message);
+      return { sent: false, error: emailErr.message };
+    }
+
+    console.log(`[email] Lead charge failure email sent to ${opts.partnerEmail} (lead ${opts.leadId}, code ${opts.failureCode})`);
+    return { sent: true };
+  } catch (err: any) {
+    console.log(`[email] Error sending lead charge failure email for lead ${opts.leadId}:`, err?.message);
     return { sent: false, error: err?.message };
   }
 }
