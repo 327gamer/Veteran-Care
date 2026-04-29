@@ -1622,21 +1622,20 @@ function AdminResourcesInner() {
                                   data-testid={`button-charge-now-${req.id}`}
                                   className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[9px] hover:bg-indigo-700"
                                   onClick={async () => {
-                                    if (!window.confirm(`Create Stripe payment for $${parseFloat(String(req.billing_amount || 49.99)).toFixed(2)}?`)) return;
+                                    if (!window.confirm(`Charge partner card for $${parseFloat(String(req.billing_amount || 49.99)).toFixed(2)}?`)) return;
                                     try {
                                       const resp = await fetch(`/api/admin/billing-charge/${req.id}`, {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
                                       });
-                                      if (resp.ok) {
-                                        const { url, reused } = await resp.json();
-                                        if (url) {
-                                          window.open(url, "_blank");
-                                          setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, stripe_payment_status: "pending" } : r));
-                                        }
+                                      const result = await resp.json();
+                                      if (resp.ok && result.ok) {
+                                        const dollars = ((result.amountCents || 4999) / 100).toFixed(2);
+                                        alert(`Charged $${dollars} (${result.paymentIntentId})`);
+                                        setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, billed: true, billing_status: "billed", stripe_payment_status: "paid", billed_at: new Date().toISOString() } : r));
                                       } else {
-                                        const err = await resp.json();
-                                        alert(err.error || "Failed to create charge");
+                                        alert(`Charge failed${result.code ? ` (${result.code})` : ""}: ${result.error || result.message || "unknown"}. Partner has been emailed a portal link.`);
+                                        setRequests((prev: NavigatorRequest[]) => prev.map((r: NavigatorRequest) => r.id === req.id ? { ...r, stripe_payment_status: "failed" } : r));
                                       }
                                     } catch { alert("Network error"); }
                                   }}
@@ -2690,13 +2689,10 @@ function AdminResourcesInner() {
                         });
                         const result = await resp.json();
                         if (resp.ok) {
-                          let msg = `Batch ${result.batch_id}: ${result.succeeded} checkout(s) created`;
-                          if (result.failed > 0) msg += `, ${result.failed} failed`;
+                          let msg = `Batch ${result.batch_id}: ${result.succeeded} charged`;
+                          if (result.failed > 0) msg += `, ${result.failed} failed (partners emailed portal link)`;
                           if (result.skipped > 0) msg += `, ${result.skipped} skipped`;
                           toast({ description: msg });
-                          if (result.results) {
-                            result.results.filter((r: any) => r.url).forEach((r: any) => window.open(r.url, "_blank"));
-                          }
                           setBillingSelectedIds(new Set());
                           queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
                         } else {
@@ -2776,13 +2772,13 @@ function AdminResourcesInner() {
                             const resp = await fetch(`/api/admin/billing-charge/${lead.id}`, {
                               method: "POST", headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
                             });
-                            if (resp.ok) {
-                              const { url } = await resp.json();
-                              if (url) window.open(url, "_blank");
+                            const result = await resp.json();
+                            if (resp.ok && result.ok) {
+                              const dollars = ((result.amountCents || 4999) / 100).toFixed(2);
+                              toast({ description: `Charged $${dollars}` });
                               queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
                             } else {
-                              const err = await resp.json();
-                              toast({ description: err.error, variant: "destructive" });
+                              toast({ description: `Charge failed${result.code ? ` (${result.code})` : ""}: ${result.error || "unknown"}`, variant: "destructive" });
                             }
                           }}
                         >Charge</button>
@@ -2796,13 +2792,13 @@ function AdminResourcesInner() {
                             const resp = await fetch(`/api/admin/billing-retry/${lead.id}`, {
                               method: "POST", headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
                             });
-                            if (resp.ok) {
-                              const { url } = await resp.json();
-                              if (url) window.open(url, "_blank");
+                            const result = await resp.json();
+                            if (resp.ok && result.ok) {
+                              const dollars = ((result.amountCents || 4999) / 100).toFixed(2);
+                              toast({ description: `Charged $${dollars} (retry)` });
                               queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.includes("billing") || (q.queryKey[0] as string)?.includes("navigator") });
                             } else {
-                              const err = await resp.json();
-                              toast({ description: err.error, variant: "destructive" });
+                              toast({ description: `Retry failed${result.code ? ` (${result.code})` : ""}: ${result.error || "unknown"}`, variant: "destructive" });
                             }
                           }}
                         >Retry</button>

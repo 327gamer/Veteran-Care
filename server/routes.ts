@@ -9130,8 +9130,10 @@ export async function registerRoutes(
     }
 
     const totalAmountAttempted = validLeads.reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
-    const successfulLeadIds = results.filter(r => r.status === "checkout_created").map(r => r.id);
-    const totalAmountSuccessful = validLeads.filter(l => successfulLeadIds.includes(l.id)).reduce((sum, l) => sum + (parseFloat(l.billing_amount) || 49.99), 0);
+    const successfulLeadIds = results.filter(r => r.status === "paid").map(r => r.id);
+    const totalAmountSuccessful = results
+      .filter(r => r.status === "paid")
+      .reduce((sum, r) => sum + ((r.amountCents || 0) / 100 || (parseFloat(validLeads.find(l => l.id === r.id)?.billing_amount || "0")) || 49.99), 0);
     const execEnd = Date.now();
 
     try {

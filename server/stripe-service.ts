@@ -222,8 +222,13 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
     if (!ECSS_PRICE_ID) {
       throw new Error("ECSS add-on requested but STRIPE_ECSS_PRICE_ID is not configured");
     }
+    // Hard-fail if we cannot resolve a pre-staged ECSS slot for this application.
+    // Without slot metadata in subscription.metadata, the webhook handler has no
+    // way to flip the slot to sold + propagate logo on activation, so the partner
+    // would pay $499 with no entitlement. Fail loudly at checkout creation instead.
+    let slotRows: any[] = [];
     try {
-      const slotRows = await pgQuery(
+      slotRows = await pgQuery(
         `SELECT id, category_slug, state_code, subcategory_slug
          FROM elite_sponsor_slots
          WHERE sponsor_partner_application_id = $1
@@ -231,17 +236,19 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
          LIMIT 1`,
         [applicationId]
       );
-      if (slotRows.length > 0) {
-        ecssSlotMeta = {
-          slotId: slotRows[0].id,
-          categorySlug: slotRows[0].category_slug,
-          stateCode: slotRows[0].state_code,
-          subcategorySlug: slotRows[0].subcategory_slug || null,
-        };
-      }
     } catch (err: any) {
-      console.warn(`[stripe] ECSS slot lookup failed for application ${applicationId}:`, err.message);
+      console.error(`[stripe] ECSS slot lookup FAILED for application ${applicationId}:`, err.message);
+      throw new Error(`Cannot start ECSS checkout: slot lookup failed (${err.message})`);
     }
+    if (slotRows.length === 0) {
+      throw new Error(`Cannot start ECSS checkout: no pre-staged elite_sponsor_slots row for application ${applicationId}. Admin must create the slot first.`);
+    }
+    ecssSlotMeta = {
+      slotId: slotRows[0].id,
+      categorySlug: slotRows[0].category_slug,
+      stateCode: slotRows[0].state_code,
+      subcategorySlug: slotRows[0].subcategory_slug || null,
+    };
     lineItems.push({ price: ECSS_PRICE_ID, quantity: 1 });
     selectedAddons.push("ecss");
   }
