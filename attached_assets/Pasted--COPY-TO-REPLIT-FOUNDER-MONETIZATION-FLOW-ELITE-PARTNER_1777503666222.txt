@@ -1,0 +1,129 @@
+--- COPY TO REPLIT ---
+
+FOUNDER MONETIZATION FLOW — ELITE PARTNER PRIORITY + LEAD CONTROL
+
+We are finalizing the Elite Partner monetization logic.
+
+This is NOT a UI tweak — this is core revenue behavior.
+
+==================================================
+1. ELITE PARTNER MUST ALWAYS BE #1 LISTING
+==================================================
+
+For any category + subcategory + state:
+
+- Elite Partner appears:
+  1) Banner at top
+  2) FIRST listing in results
+
+This overrides:
+- Near Me
+- Featured
+- Paid boosts
+
+Elite ALWAYS comes first.
+
+==================================================
+2. ELITE LISTING MUST BE VISUALLY DISTINCT
+==================================================
+
+The Elite listing card must stand out clearly.
+
+Add:
+
+- Elite badge (crown)
+- Glow / highlight / border
+- Slight elevation
+- Optional “Exclusive Offer” tag
+
+It should NOT look like a normal listing.
+
+==================================================
+3. ADD PRIMARY CTA FOR LEAD CAPTURE
+==================================================
+
+We must encourage users to click the banner / form, not bypass it.
+
+On BOTH:
+
+- Elite banner
+- Elite listing
+
+Add buttons:
+
+- “Get Exclusive Offer”
+- “Request Info (24hr response)”
+
+These must be more prominent than:
+- Call
+- Visit Website
+
+Do NOT remove call/website — just deprioritize.
+
+==================================================
+4. CONNECT TO EXISTING LEAD SYSTEM
+==================================================
+
+When user clicks:
+
+- Banner CTA OR
+- Elite listing CTA
+
+It must:
+
+1. Open existing lead form (same as Trusted Partners)
+2. Submit lead to Elite Partner
+3. Trigger confirmation email to user
+
+==================================================
+5. EMAIL CONFIRMATION MUST MATCH EXISTING FLOW
+==================================================
+
+User must receive email:
+
+“Thanks for your request — [Company Name] will contact you within 24 hours.”
+
+Reuse existing trusted partner email logic.
+
+Do NOT create a new system.
+
+==================================================
+6. LISTING ORDER BELOW ELITE
+==================================================
+
+After Elite listing:
+
+1. Paid featured / boosted Trusted Partners
+2. Near Me results
+3. Standard listings
+4. Other resources
+
+Do NOT break existing paid placement logic.
+
+==================================================
+DO NOT TOUCH
+==================================================
+
+- Stripe
+- Pricing
+- Database schema
+- Lead billing
+- Existing trusted partner flow
+- AI Guide
+- Resources section
+
+==================================================
+REPORT BACK FIRST
+==================================================
+
+Before building, explain:
+
+1. How Elite listing will always be forced to position #1
+2. How visual highlight will be implemented
+3. How CTA buttons connect to lead system
+4. How listing order will be preserved
+5. How email confirmation is reused
+
+No code until confirmed.
+
+--- END ---
