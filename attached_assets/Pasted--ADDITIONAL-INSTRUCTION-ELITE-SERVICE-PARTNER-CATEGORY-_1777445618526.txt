@@ -1,0 +1,135 @@
+--- ADDITIONAL INSTRUCTION — ELITE SERVICE PARTNER CATEGORY LOGIC ---
+
+This is a critical clarification. Do NOT miss this.
+
+Elite Service Partner has TWO DIFFERENT SELECTION LAYERS:
+
+----------------------------------------
+LAYER 1 — ELITE SLOT (REVENUE DRIVER)
+----------------------------------------
+
+This is the PREMIUM placement.
+
+User selects:
+
+- State
+- Category
+- Subcategory
+
+They can select ONLY ONE Elite slot per application.
+
+This controls:
+
+- Top banner placement
+- Exclusive visibility
+- Lead priority
+- Monetization ($499/mo + $49.99 per lead)
+
+----------------------------------------
+LAYER 2 — BUSINESS SERVICES (DISCOVERY)
+----------------------------------------
+
+This works EXACTLY like the Trusted Partner system.
+
+Elite partners MUST still be able to:
+
+- Select MULTIPLE categories
+- Select MULTIPLE subcategories
+- Represent ALL services they offer
+
+Example:
+
+A mortgage company could:
+
+Elite Slot:
+South Carolina → Financial & Credit Services → Mortgages
+
+BUT ALSO offer:
+
+- VA Loans
+- Refinancing
+- First-Time Buyers
+- Debt Consolidation
+
+So they must be able to check multiple boxes for discovery.
+
+----------------------------------------
+UI / UX REQUIREMENT
+----------------------------------------
+
+These TWO layers must be clearly separated in the UI.
+
+DO NOT mix them together.
+
+Structure the page like this:
+
+1. Elite Slot Selection (Top Priority Section)
+   - Single select (radio or dropdown)
+   - State → Category → Subcategory
+   - Availability check
+   - Only ONE selection allowed
+
+2. Services You Offer (Below)
+   - Multi-checkbox system (existing Trusted Partner logic)
+   - Same categories and subcategories
+   - Allows multiple selections
+   - Used for search + discovery across platform
+
+----------------------------------------
+IMPORTANT RULES
+----------------------------------------
+
+- Elite slot = ONE ONLY
+- Services offered = MULTIPLE allowed
+- These are NOT the same thing
+- They must NOT share the same state variable or checkbox logic
+
+----------------------------------------
+SYSTEM BEHAVIOR
+----------------------------------------
+
+When displaying to users:
+
+Elite Partner will:
+
+1. Appear at the TOP (banner) for their Elite slot
+2. ALSO appear in standard listings across ALL selected services
+
+----------------------------------------
+WHY THIS MATTERS
+----------------------------------------
+
+We are NOT limiting businesses.
+
+We are monetizing premium placement while still allowing full platform visibility.
+
+This increases:
+
+- Conversion
+- Lead volume
+- Revenue potential
+
+----------------------------------------
+DO NOT BREAK EXISTING CATEGORY SYSTEM
+----------------------------------------
+
+Reuse the existing category + subcategory system for:
+
+- Trusted Partners
+- Elite Service Partners
+
+Only the Elite SLOT selection is exclusive.
+
+Everything else remains flexible.
+
+----------------------------------------
+REPORT BACK CONFIRMING:
+----------------------------------------
+
+1. Elite slot selection is single-select only
+2. Services selection remains multi-select
+3. UI clearly separates both sections
+4. Both sets of data are stored correctly
+5. Both sets are used correctly in frontend display + routing
+
+--- END ---

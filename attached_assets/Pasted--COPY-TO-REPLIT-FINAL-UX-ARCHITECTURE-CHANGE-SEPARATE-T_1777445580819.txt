@@ -1,0 +1,376 @@
+--- COPY TO REPLIT ---
+
+🚨 FINAL UX + ARCHITECTURE CHANGE — SEPARATE TRUSTED PARTNER AND ELITE SERVICE PARTNER FLOWS
+
+We are NOT continuing with the current approach of burying Elite inside the existing Trusted Partner signup form.
+
+We are separating the products clearly.
+
+This is the final direction.
+
+==================================================
+CORE DECISION
+==================================================
+
+We now have TWO clear signup paths:
+
+1. Trusted Services Partner  
+2. Elite Service Partner
+
+Use the name:
+
+👑 Elite Service Partner
+
+NOT “Elite Sponsor.”
+
+==================================================
+HOMEPAGE / TRUSTED SERVICES ENTRY UPDATE
+==================================================
+
+Add TWO separate boxes:
+
+----------------------------------------
+BOX 1 — Become a Trusted Services Partner
+----------------------------------------
+
+Existing flow.
+
+Keep current system:
+
+- $99 State Plan
+- $499 National Plan
+- Featured Partner Placement
+- Near Me Boost
+- Optional Direct Lead Delivery
+- Multi-category / multi-subcategory services
+
+CTA:
+Apply as Trusted Partner
+
+----------------------------------------
+BOX 2 — Become an Elite Service Partner
+----------------------------------------
+
+New premium flow.
+
+Messaging:
+
+“Own the top placement in your selected state, category, or subcategory. Only one Elite Service Partner slot is available per market. Receive direct, high-intent leads from veterans and families.”
+
+CTA:
+Apply for Elite Placement
+
+Route:
+/elite-partner-apply
+
+==================================================
+NEW PAGE: /elite-partner-apply
+==================================================
+
+Create a separate Elite Service Partner application page.
+
+Do NOT keep patching the old /partner-apply form.
+
+Use similar styling and structure, but this must be its own clean premium flow.
+
+==================================================
+ELITE SERVICE PARTNER FLOW
+==================================================
+
+Order MUST be:
+
+1. Select Base Plan
+   - State Plan $99/month
+   OR
+   - National Plan $499/month
+
+2. Select State
+   - Required if State Plan
+   - If National Plan, still allow state selection for the Elite slot because Elite slots are state/category/subcategory specific
+
+3. Select Category
+
+4. Select Subcategory
+
+5. System checks availability
+
+6. User selects ONE Elite slot
+
+7. Monthly Summary updates
+
+8. Business info / branding fields
+
+9. Submit application / Stripe checkout
+
+==================================================
+BASE PLAN REQUIRED
+==================================================
+
+Elite Service Partner is NOT free-standing.
+
+They must still choose a base plan:
+
+- $99/month State Plan
+OR
+- $499/month National Plan
+
+Then Elite is added on top:
+
+- + $499/month Elite Service Partner Slot
+- + $49.99 per accepted qualified lead
+
+==================================================
+MONTHLY SUMMARY REQUIRED
+==================================================
+
+The Elite page must include a Monthly Summary before checkout.
+
+Example:
+
+State Plan                    $99.00/mo  
+Elite Service Partner Slot    $499.00/mo  
+-----------------------------------------  
+Total                         $598.00/mo  
+
+Also show:
+
+“Accepted qualified leads are billed separately at $49.99 per accepted lead.”
+
+If National Plan selected:
+
+National Plan                 $499.00/mo  
+Elite Service Partner Slot    $499.00/mo  
+-----------------------------------------  
+Total                         $998.00/mo  
+
+==================================================
+CATEGORY + SUBCATEGORY SLOT SYSTEM
+==================================================
+
+Do NOT limit Elite to only 4 categories.
+
+Use the full existing category / subcategory system.
+
+Businesses should choose:
+
+- State
+- Category
+- Subcategory
+
+Then the system checks what Elite slots are available.
+
+Example:
+
+State: South Carolina  
+Category: Financial & Credit Services  
+Subcategory: Mortgages  
+
+Available slot:
+
+South Carolina > Financial & Credit Services > Mortgages
+
+==================================================
+SINGLE SLOT SELECTION
+==================================================
+
+This is NOT the same as service specialties.
+
+Trusted Partners can select multiple services.
+
+Elite Service Partners must select ONLY ONE Elite slot per application.
+
+Use:
+
+- radio button
+OR
+- single-select dropdown
+
+Do NOT use multi-checkbox behavior for Elite slots.
+
+==================================================
+AVAILABILITY LOGIC
+==================================================
+
+After state + category + subcategory are selected:
+
+Show:
+
+Available Elite Service Partner Slots
+
+Examples:
+
+- Mortgages — Available
+- VA Loans — Sold Out
+- Refinancing — Available
+
+If available:
+Allow selection.
+
+If sold:
+Show SOLD OUT + Join Waitlist.
+
+==================================================
+LEAD DELIVERY RULE
+==================================================
+
+Elite Service Partner automatically includes Direct Lead Delivery.
+
+No separate lead toggle.
+
+No confusion.
+
+If Elite selected:
+
+- Direct Lead Delivery = ON
+- $49.99 per accepted lead applies
+- Leads go directly to partner inbox
+- Partner clicks Accept Lead
+- Stripe auto-charges saved card
+
+==================================================
+BRANDING / CREATIVE FIELDS
+==================================================
+
+Elite Service Partner must upload:
+
+- Logo
+- Business display name
+- Banner headline
+- CTA text
+- Lead destination email
+- Phone
+- Website
+
+This feeds:
+
+- Elite banner
+- Trusted Service card/listing
+- Lead form routing
+
+Logo must be properly sized/cropped and not stretched.
+
+==================================================
+PUBLIC DISPLAY LOGIC
+==================================================
+
+If slot is vacant:
+
+Show placeholder:
+
+YOUR BUSINESS HERE  
+Become the Elite Service Partner for this category in this state.  
+Only one slot available.
+
+If sold and approved:
+
+Show business logo/banner at top of the selected category/subcategory page.
+
+Then normal listings below.
+
+Elite partner should also appear as the top trusted listing/card below the banner.
+
+==================================================
+RELATION TO TRUSTED PARTNER SYSTEM
+==================================================
+
+Elite Service Partner must still connect internally to the Trusted Partner system for:
+
+- routing
+- billing
+- admin tracking
+- leads
+- Stripe
+- ambassador attribution
+
+But the public signup UX must be separate and simpler.
+
+Do not make users go through the confusing Trusted Partner multi-service form to claim Elite.
+
+==================================================
+STRIPE FLOW
+==================================================
+
+Single Stripe checkout must include:
+
+- Base plan
+- Elite Service Partner Slot
+
+Card saved for off-session charges.
+
+Lead billing:
+
+- $49.99 per accepted lead
+- automatic
+- no checkout link
+- no manual invoice
+
+==================================================
+ADMIN REQUIREMENTS
+==================================================
+
+Admin must see:
+
+- Available slots
+- Sold slots
+- State
+- Category
+- Subcategory
+- Business name
+- Billing status
+- Creative approval status
+- Leads sent
+- Leads accepted
+- Revenue
+- Ambassador attribution
+
+==================================================
+DO NOT BREAK EXISTING SYSTEM
+==================================================
+
+Do NOT break:
+
+- existing Trusted Partner signup
+- $99 State Plan
+- $499 National Plan
+- Featured Placement
+- Near Me Boost
+- regular Direct Lead Delivery
+- free resource leads
+- notes/status system
+- reassignment logic
+- admin panel tracking
+
+This is a separate premium onboarding path using the existing backend rails.
+
+==================================================
+WHY WE ARE DOING THIS
+==================================================
+
+Current problem:
+
+Elite is buried inside Trusted Partner signup and confused with service checkboxes.
+
+New solution:
+
+Elite Service Partner has its own premium page and clear state/category/subcategory slot-selection flow.
+
+This makes it easier to sell and easier for businesses to understand.
+
+==================================================
+REPORT BACK FIRST
+==================================================
+
+Before building, report back with:
+
+1. Current system pieces that can be reused
+2. What pages/routes must be added
+3. What UI changes are needed
+4. How category/subcategory availability will work
+5. How Monthly Summary will work
+6. How Stripe checkout will work
+7. How this avoids breaking existing Trusted Partner signup
+8. Fastest safe build plan
+
+NO BUILD YET.
+
+--- END ---
