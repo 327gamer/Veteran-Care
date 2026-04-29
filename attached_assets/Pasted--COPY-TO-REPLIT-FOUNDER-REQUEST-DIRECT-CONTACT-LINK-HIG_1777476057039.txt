@@ -1,0 +1,91 @@
+--- COPY TO REPLIT ---
+
+FOUNDER REQUEST — DIRECT CONTACT LINK (HIGH PRIORITY CONVERSION FEATURE)
+
+We need to add a direct contact option on BOTH onboarding pages:
+
+1. /partner-apply (Trusted Services Partner)
+2. /elite-partner-apply (Elite Service Partner)
+
+==================================================
+GOAL
+==================================================
+
+Allow high-intent businesses to contact the founder directly
+for urgent questions before submitting.
+
+This MUST bypass AI and go directly to:
+
+info@veterancare.com
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+Add a section at the bottom of BOTH pages (above or below submit button):
+
+--------------------------------------------------
+
+TRUSTED PARTNER PAGE COPY:
+
+"Have a question before signing up?
+Speak directly with our team — we’re here to help."
+
+Link text:
+"Contact us directly"
+
+--------------------------------------------------
+
+ELITE PARTNER PAGE COPY:
+
+"Questions about securing your exclusive Elite placement?
+Speak directly with our team before this spot is taken."
+
+Link text:
+"Contact us directly"
+
+--------------------------------------------------
+
+==================================================
+FUNCTIONALITY (CRITICAL)
+==================================================
+
+Use a mailto link that opens the user's email client.
+
+--------------------------------------------------
+
+TRUSTED MAILTO:
+
+mailto:info@veterancare.com
+?subject=URGENT:%20Trusted%20Partner%20Application%20Question
+&body=Company%20Name:%0AContact%20Name:%0APhone%20Number:%0AState:%0ACategory%20/%20Service:%0A%0AQuestion:
+
+--------------------------------------------------
+
+ELITE MAILTO:
+
+mailto:info@veterancare.com
+?subject=URGENT:%20Elite%20Service%20Partner%20Application%20Question
+&body=Company%20Name:%0AContact%20Name:%0APhone%20Number:%0AState:%0ACategory%20/%20Subcategory:%0A%0AQuestion:
+
+--------------------------------------------------
+
+==================================================
+RULES
+==================================================
+
+- Do NOT route through AI or chatbot
+- Do NOT store in database
+- This must go directly to founder inbox
+- Must work on mobile (tap opens email app)
+- Keep styling clean and consistent with page
+
+==================================================
+REPORT BACK
+==================================================
+
+- Trusted page updated:
+- Elite page updated:
+- Mailto working (desktop + mobile):
+
+--- END ---

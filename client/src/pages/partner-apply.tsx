@@ -32,6 +32,7 @@ import {
   Gift,
   Crown,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { platform } from "@shared/platform";
@@ -1096,6 +1097,25 @@ export default function PartnerApply() {
             <p className="text-[10px] text-center text-muted-foreground">
               By submitting, you agree to be contacted by the {platform.name} team regarding partnership opportunities.
             </p>
+
+            <div
+              className="border-t border-border pt-4 mt-2 text-center"
+              data-testid="section-contact-direct"
+            >
+              <p className="text-xs text-muted-foreground mb-2 leading-snug">
+                Have a question before signing up?
+                <br />
+                Speak directly with our team — we're here to help.
+              </p>
+              <a
+                href="mailto:info@veterancare.com?subject=URGENT:%20Trusted%20Partner%20Application%20Question&body=Company%20Name:%0AContact%20Name:%0APhone%20Number:%0AState:%0ACategory%20/%20Service:%0A%0AQuestion:"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                data-testid="link-contact-direct"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Contact us directly
+              </a>
+            </div>
           </CardContent>
         </Card>
 

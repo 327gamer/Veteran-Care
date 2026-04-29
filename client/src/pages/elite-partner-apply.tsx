@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Loader2,
   Info,
+  Mail,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent, getUTMParams } from "@/lib/analytics";
@@ -845,6 +846,25 @@ export default function ElitePartnerApply() {
           <Lock className="h-3 w-3" />
           One Stripe checkout includes both your base plan and the Elite slot. Card saved for accepted-lead billing.
         </p>
+
+        <div
+          className="border-t border-amber-200 pt-4 mt-2 text-center"
+          data-testid="section-contact-direct"
+        >
+          <p className="text-xs text-amber-900/80 mb-2 leading-snug">
+            Questions about securing your exclusive Elite placement?
+            <br />
+            Speak directly with our team before this spot is taken.
+          </p>
+          <a
+            href="mailto:info@veterancare.com?subject=URGENT:%20Elite%20Service%20Partner%20Application%20Question&body=Company%20Name:%0AContact%20Name:%0APhone%20Number:%0AState:%0ACategory%20/%20Subcategory:%0A%0AQuestion:"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline hover:text-amber-900"
+            data-testid="link-contact-direct"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Contact us directly
+          </a>
+        </div>
       </div>
     </div>
   );
