@@ -1,0 +1,100 @@
+--- COPY TO REPLIT ---
+
+FOUNDER QA — FIXES STILL NOT LIVE / NOT COMPLETE
+
+I republished and tested again on mobile.
+
+The previous issues are still present.
+
+==================================================
+1. ELITE SPONSOR BADGE STILL OVERLAPS TEXT
+==================================================
+
+The crown “Elite Sponsor” badge is still covering the category/state lettering at the top of the banner.
+
+Fix required:
+
+- Badge must sit cleanly at the very top of the banner
+- Badge must NOT overlap category/state text
+- On mobile, stack the badge above or below the category/state line
+- Category/state text must remain fully readable
+- Keep the premium look
+
+This is still broken.
+
+==================================================
+2. VA HOME LOANS STILL SHOWS UNDER HOUSING
+==================================================
+
+Under Housing & Home Services, VA Home Loans still appears as a subcategory.
+
+It should NOT display under Housing.
+
+Do NOT delete the underlying subcategory from the system.
+
+Mortgage / VA loan / refinance / home loan services should be grouped under Financial & Credit Services, not Housing.
+
+Fix the display/mapping safely.
+
+==================================================
+3. MANUAL LOCATION STILL ONLY HAS STATE, NOT CITY
+==================================================
+
+When users do NOT enable location, they can manually select a state.
+
+But Trusted Services also needs a City dropdown/filter.
+
+Required behavior:
+
+- If location is enabled: use GPS / Near Me
+- If location is not enabled: user can select State AND optional City
+- State controls Elite banner targeting
+- City helps filter normal Trusted Service partners underneath
+- Elite banner remains state/category/subcategory based
+- Regular Trusted Partner listings should still sort/filter locally where possible
+
+==================================================
+4. ELITE CTA BUTTONS
+==================================================
+
+The “Claim This Slot” button works correctly for empty placeholder ads and takes the business to Elite signup.
+
+For empty placeholder ads, this is fine.
+
+For real sold Elite ads later, the banner/card must show user-facing CTAs such as:
+
+- Get Exclusive Offer
+- Request Info (24hr response)
+
+Those CTAs should open the lead form.
+
+Please confirm whether the real sold Elite banner/card already has those CTAs implemented.
+
+==================================================
+DO NOT TOUCH
+==================================================
+
+Do NOT touch:
+
+- Stripe
+- Pricing
+- Billing
+- Database schema
+- AI Guide
+- Resources section
+
+==================================================
+REPORT BACK FIRST
+==================================================
+
+Before coding, please explain:
+
+1. Why the badge overlap fix did not appear after publish
+2. How you will fix the mobile banner layout
+3. Why VA Home Loans is still under Housing and how you will safely remove it from that display
+4. How the manual City dropdown/filter will be added
+5. Whether real sold Elite ads already show Get Exclusive Offer / Request Info buttons
+
+No code until confirmed.
+
+--- END ---
