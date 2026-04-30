@@ -233,16 +233,17 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
     // Without slot metadata in subscription.metadata, the webhook handler has no
     // way to flip the slot to sold + propagate logo on activation, so the partner
     // would pay $499 with no entitlement. Fail loudly at checkout creation instead.
+    // elite_sponsor_slots lives in Supabase (not Helium), so use supabaseAdmin.
     let slotRows: any[] = [];
     try {
-      slotRows = await pgQuery(
-        `SELECT id, category_slug, state_code, subcategory_slug
-         FROM elite_sponsor_slots
-         WHERE sponsor_partner_application_id = $1
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [applicationId]
-      );
+      const { data, error } = await supabaseAdmin
+        .from("elite_sponsor_slots")
+        .select("id, category_slug, state_code, subcategory_slug")
+        .eq("sponsor_partner_application_id", applicationId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      slotRows = data || [];
     } catch (err: any) {
       console.error(`[stripe] ECSS slot lookup FAILED for application ${applicationId}:`, err.message);
       throw new Error(`Cannot start ECSS checkout: slot lookup failed (${err.message})`);
