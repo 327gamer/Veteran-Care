@@ -1,0 +1,117 @@
+--- COPY TO REPLIT ---
+
+FOUNDER REQUEST — ELITE PARTNER PRICING AUTOMATION (FINAL IMPLEMENTATION)
+
+==================================================
+1. CORE OBJECTIVE
+==================================================
+
+Implement a fully automated, state-based pricing system for Elite Service Partners.
+
+Pricing must update dynamically based on selected state.
+
+==================================================
+2. PRICING MODEL
+==================================================
+
+Tier 1 — $899/month
+CA, TX, FL, NY, PA, IL, OH, GA, NC, MI
+
+Tier 2 — $699/month
+NJ, VA, WA, AZ, MA, TN, IN, MO, MD, WI, CO, MN
+
+Tier 3 — $499/month
+SC, AL, MS, AR, LA, KY, OK, NV, NM, ID, MT, WY, AK, HI, DE, ME, VT, NH, RI, WV, ND, SD, NE, KS, IA, UT, OR
+
+AND all remaining states not listed above
+
+ALL tiers include:
+→ $49.99 per accepted lead
+
+==================================================
+3. IMPLEMENTATION (CRITICAL)
+==================================================
+
+Create ONE centralized pricing map (single source of truth):
+
+const ELITE_PRICING = {
+  CA: 899, TX: 899, FL: 899, NY: 899, PA: 899,
+  IL: 899, OH: 899, GA: 899, NC: 899, MI: 899,
+
+  NJ: 699, VA: 699, WA: 699, AZ: 699, MA: 699,
+  TN: 699, IN: 699, MO: 699, MD: 699, WI: 699,
+  CO: 699, MN: 699,
+
+  DEFAULT: 499
+};
+
+Logic:
+- If state exists → use mapped value
+- If not → use DEFAULT
+
+DO NOT duplicate this logic anywhere else.
+
+==================================================
+4. UI BEHAVIOR
+==================================================
+
+On:
+
+/elite-partner-apply (Step 2)
+
+When user selects:
+State → Category → Subcategory
+
+Display dynamically:
+
+[STATE] → [CATEGORY] → [SUBCATEGORY]
+
+$XXX/month + $49.99 per accepted lead
+
+==================================================
+5. VALUE DISPLAY (IMPORTANT)
+==================================================
+
+For Tier 1 and Tier 2 ONLY show:
+
+- Exclusive State Placement  
+- High-Visibility Category Position  
+- Direct Veteran Inquiries  
+
+Do NOT show this for Tier 3.
+
+==================================================
+6. DO NOT TOUCH
+==================================================
+
+- Stripe billing logic
+- Lead pricing
+- Category/subcategory structure
+
+==================================================
+7. VALIDATION (REQUIRED)
+==================================================
+
+Test:
+
+CA → $899  
+TX → $899  
+VA → $699  
+CO → $699  
+SC → $499  
+Random unlisted state → $499  
+
+==================================================
+8. REPORT BACK BEFORE BUILD
+==================================================
+
+Confirm:
+
+1. Where pricing currently lives
+2. How centralized mapping will be implemented
+3. How UI updates dynamically
+4. That ALL 50 states resolve correctly
+
+NO BUILD until confirmed.
+
+--- END ---
