@@ -44,7 +44,7 @@ const LEAD_PRICE = 49.99;
 // Backend `/api/elite-sponsor/available` and `/waitlist` accept these
 // monetized service categories. The Elite slot dropdown is filtered to this set.
 // Keep this list in sync with `ECSS_CATEGORIES` in `server/elite-sponsor.ts`.
-// Services-you-offer multi-select (Step 2) still uses the FULL category list.
+// Services-you-offer multi-select (Step 3) still uses the FULL category list.
 const ELITE_ALLOWED_CATEGORY_SLUGS = new Set([
   "legal-services",
   "mortgage-lending",
@@ -64,14 +64,14 @@ export default function ElitePartnerApply() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
 
-  // ─── ELITE-ONLY PRICING (founder spec 2026-04-30, Q1=A) ───────────
-  // No separate State/National base plan. The state-tier price IS the
-  // partner's full monthly subscription. Trusted Partner pricing remains
-  // separate and is unaffected by this page.
-  const planType = "elite" as const;
-  const basePrice = 0;
+  // ─── STEP 1: BASE PLAN (founder correction 2026-04-30 — RESTORED) ──
+  // Two-layer pricing model: Step 1 base plan ($99 State / $499 National)
+  // is REQUIRED. Elite slot in Step 2 is layered ON TOP at tier-based
+  // pricing ($899/$699/$499). Total = base + Elite. + $49.99 per lead.
+  const [planType, setPlanType] = useState<"" | "state" | "national">("");
+  const basePrice = planType === "state" ? 99 : planType === "national" ? 499 : 0;
 
-  // ─── STEP 1: ELITE SLOT (single-select scalar fields) ─────────────
+  // ─── STEP 2: ELITE SLOT (single-select scalar fields) ─────────────
   // CRITICAL: This state is ISOLATED from the multi-select services state
   // below. They never share variables. They are different concepts.
   const [eliteState, setEliteState] = useState<string>("");
@@ -112,6 +112,10 @@ export default function ElitePartnerApply() {
     const stateParam = params.get("state");
     if (stateParam && /^[A-Za-z]{2}$/.test(stateParam)) {
       setEliteState(stateParam.toUpperCase());
+    }
+    const planParam = params.get("plan");
+    if (planParam === "state" || planParam === "national") {
+      setPlanType(planParam);
     }
   }, []);
 
@@ -285,6 +289,7 @@ export default function ElitePartnerApply() {
   const slotIsAvailable = slotPickerReady && avail?.available === true;
   const slotIsSoldOut = slotPickerReady && avail?.soldOut === true;
   const canSubmit =
+    !!planType &&
     !!eliteState &&
     !!eliteCategoryId &&
     !!eliteSubcategoryId &&
@@ -421,7 +426,9 @@ export default function ElitePartnerApply() {
               {eliteState} → {eliteCategoryName} → {eliteSubcategoryName}
             </strong>
             . Our team will review and approve your application within 1 business day, then email you a secure Stripe checkout link for your{" "}
-            <strong className="text-foreground">${elitePriceDollars}/mo Elite Service Partner subscription</strong>.
+            <strong className="text-foreground">
+              ${basePrice}/mo {planType === "state" ? "State" : "National"} Plan + ${elitePriceDollars}/mo Elite Slot = ${monthlyTotal}/mo total
+            </strong>.
           </p>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-left mb-6">
             <p className="text-xs font-semibold text-amber-900 mb-1">What happens next</p>
@@ -472,10 +479,78 @@ export default function ElitePartnerApply() {
       </div>
 
       <div className="max-w-lg mx-auto px-5 py-6 space-y-6">
-        {/* STEP 1 — ELITE SLOT (single-select) */}
-        <section className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-background p-5 shadow-sm">
+        {/* STEP 1 — CHOOSE BASE PLAN (founder correction 2026-04-30 — REQUIRED) */}
+        <section
+          data-testid="section-step-base-plan"
+          className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-background p-5 shadow-sm"
+        >
           <div className="flex items-baseline gap-2 mb-1">
             <span className="text-xs font-bold text-amber-600">STEP 1</span>
+            <h2 className="text-base font-heading font-extrabold text-primary">Choose Your Base Plan</h2>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
+            Required. Your Elite slot in Step 2 is layered on top of this plan.
+          </p>
+          <div className="space-y-2">
+            <label
+              data-testid="radio-plan-state"
+              className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition ${
+                planType === "state"
+                  ? "border-amber-500 bg-amber-50"
+                  : "border-border hover:border-amber-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="plan-type"
+                value="state"
+                checked={planType === "state"}
+                onChange={() => setPlanType("state")}
+                className="mt-1 accent-amber-600"
+              />
+              <div className="flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-bold text-sm text-foreground">State Plan</span>
+                  <span className="font-bold text-sm text-amber-700">$99/mo</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                  Listed in a single state of your choosing.
+                </p>
+              </div>
+            </label>
+            <label
+              data-testid="radio-plan-national"
+              className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition ${
+                planType === "national"
+                  ? "border-amber-500 bg-amber-50"
+                  : "border-border hover:border-amber-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="plan-type"
+                value="national"
+                checked={planType === "national"}
+                onChange={() => setPlanType("national")}
+                className="mt-1 accent-amber-600"
+              />
+              <div className="flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-bold text-sm text-foreground">National Plan</span>
+                  <span className="font-bold text-sm text-amber-700">$499/mo</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                  Listed across all 50 states.
+                </p>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        {/* STEP 2 — ELITE SLOT (single-select) */}
+        <section className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-background p-5 shadow-sm">
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-xs font-bold text-amber-600">STEP 2</span>
             <h2 className="text-base font-heading font-extrabold text-primary">Claim Your Elite Slot</h2>
           </div>
           <div className="rounded-md bg-amber-100 border border-amber-200 px-3 py-2 mb-4 flex items-start gap-2">
@@ -518,7 +593,7 @@ export default function ElitePartnerApply() {
                 ))}
               </select>
               <p className="text-[10px] text-muted-foreground mt-1">
-                Elite slots are available in our 4 monetized service categories. List additional services in Step 2.
+                Elite slots are available in our 4 monetized service categories. List additional services in Step 3.
               </p>
             </div>
 
@@ -631,10 +706,10 @@ export default function ElitePartnerApply() {
           )}
         </section>
 
-        {/* STEP 2 — SERVICES YOU OFFER (multi-select, separate) */}
+        {/* STEP 3 — SERVICES YOU OFFER (multi-select, separate) */}
         <section className="rounded-2xl border-2 border-border bg-card p-5">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-xs font-bold text-amber-600">STEP 2</span>
+            <span className="text-xs font-bold text-amber-600">STEP 3</span>
             <h2 className="text-base font-heading font-extrabold text-primary">Services You Offer</h2>
           </div>
           <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 mb-4 flex items-start gap-2">
@@ -697,10 +772,10 @@ export default function ElitePartnerApply() {
           </div>
         </section>
 
-        {/* STEP 3 — BRANDING & DETAILS */}
+        {/* STEP 4 — BRANDING & DETAILS */}
         <section className="rounded-2xl border-2 border-border bg-card p-5">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-xs font-bold text-amber-600">STEP 3</span>
+            <span className="text-xs font-bold text-amber-600">STEP 4</span>
             <h2 className="text-base font-heading font-extrabold text-primary">Branding & Contact</h2>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
@@ -783,7 +858,7 @@ export default function ElitePartnerApply() {
           </div>
         </section>
 
-        {/* STEP 4 — MONTHLY SUMMARY (sticky on desktop, inline on mobile) */}
+        {/* STEP 5 — MONTHLY SUMMARY (sticky on desktop, inline on mobile) */}
         <section
           data-testid="section-monthly-summary"
           className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 shadow-md"
@@ -794,9 +869,21 @@ export default function ElitePartnerApply() {
           </div>
 
           <div className="space-y-2 text-sm">
+            <div className="flex justify-between" data-testid="summary-row-base-plan">
+              <span className="text-amber-900/80">
+                {planType === "state"
+                  ? "State Plan"
+                  : planType === "national"
+                    ? "National Plan"
+                    : "Base Plan (select in Step 1)"}
+              </span>
+              <span className="font-semibold text-amber-900">
+                {basePrice > 0 ? `$${basePrice.toFixed(2)}/mo` : "—"}
+              </span>
+            </div>
             <div className="flex justify-between" data-testid="summary-row-elite">
               <span className="text-amber-900/80">
-                Elite Service Partner Subscription
+                Elite Slot
                 {eliteState && (
                   <span className="block text-[11px] text-amber-900/60 mt-0.5">
                     {eliteState}
@@ -820,7 +907,7 @@ export default function ElitePartnerApply() {
           </p>
         </section>
 
-        {/* STEP 5 — SUBMIT */}
+        {/* STEP 6 — SUBMIT */}
         <button
           data-testid="button-elite-submit"
           onClick={() => submitMutation.mutate()}
@@ -846,13 +933,13 @@ export default function ElitePartnerApply() {
 
         {!canSubmit && (
           <p className="text-[11px] text-muted-foreground text-center -mt-3">
-            Complete all required fields, claim an available slot, and upload your logo to continue.
+            Choose a base plan, claim an available Elite slot, complete all required fields, and upload your logo to continue.
           </p>
         )}
 
         <p className="text-[11px] text-center text-muted-foreground flex items-center justify-center gap-1">
           <Lock className="h-3 w-3" />
-          Secure Stripe checkout for your Elite Service Partner subscription. Card saved for accepted-lead billing.
+          One Stripe checkout for your base plan + Elite slot. Card saved for $49.99 per accepted lead.
         </p>
 
         <div
