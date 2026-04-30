@@ -2,6 +2,34 @@ import { useState } from "react";
 import { Phone, Globe, ShieldCheck, Crown, Sparkles } from "lucide-react";
 import EliteSponsorLeadModal from "@/components/elite-sponsor-lead-modal";
 
+// Founder QA item #7 (2026-04-30): outbound-click tracking for ROI reporting
+// to paying Elite partners. Fire-and-forget — never blocks the user's
+// navigation to the sponsor's website. Uses navigator.sendBeacon when
+// available (browser keeps the request alive past page unload); falls back
+// to a non-awaited fetch with keepalive otherwise. Errors are swallowed —
+// the link must work even if tracking fails.
+function trackEliteClick(
+  slotId: string,
+  clickType: "website" | "phone" | "cta_primary" | "cta_secondary",
+): void {
+  try {
+    const payload = JSON.stringify({ slotId, clickType });
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon("/api/elite-sponsor/track-click", blob);
+      return;
+    }
+    void fetch("/api/elite-sponsor/track-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* never break the link */
+  }
+}
+
 interface EliteSponsorCardProps {
   slot: {
     id: string;
@@ -123,6 +151,7 @@ export default function EliteSponsorCard({
                   className="inline-flex items-center gap-1 hover:text-amber-700"
                   data-testid={`link-sponsor-phone-${slot.id}`}
                   aria-label={`Call ${slot.sponsor_name}`}
+                  onClick={() => trackEliteClick(slot.id, "phone")}
                 >
                   <Phone className="w-3 h-3" />
                   {slot.sponsor_phone}
@@ -136,6 +165,7 @@ export default function EliteSponsorCard({
                   className="inline-flex items-center gap-1 hover:text-amber-700"
                   data-testid={`link-sponsor-website-${slot.id}`}
                   aria-label={`Visit ${slot.sponsor_name} website`}
+                  onClick={() => trackEliteClick(slot.id, "website")}
                 >
                   <Globe className="w-3 h-3" />
                   Website

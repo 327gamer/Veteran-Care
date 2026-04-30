@@ -138,7 +138,7 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
       "Mortgages, personal loans, credit repair, debt relief, financial coaching, and banking support for veterans and their families.",
     subcategories: FIN_SUBCATEGORIES,
     introLinks: [
-      { slug: "va-loans", label: "VA Loans", testidKey: "va-loans" },
+      { slug: "va-loans", label: "VA Loans / Mortgages", testidKey: "va-loans" },
       { slug: "credit-repair", label: "Credit Repair", testidKey: "credit" },
     ],
   },

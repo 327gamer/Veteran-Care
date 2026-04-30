@@ -501,10 +501,20 @@ function buildTrustedServiceLeadHtml(
   const duplicateUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=duplicate`;
   const referredUrl = `${baseUrl}/api/leads/update-status?leadId=${lead.leadId}&status=referred_elsewhere`;
 
-  // Elite sponsor leads live in elite_sponsor_leads (not trusted_service_leads),
-  // so the /api/leads/update-status buttons would 404. Omit them entirely for
-  // elite kind. Partner notification still includes full lead detail above.
-  const actionButtons = (isAdminCopy || isElite) ? "" : `
+  // Founder spec 2026-04-30 (QA item #3 — Option B): Elite sponsor leads
+  // now show the SAME token-based "Accept Lead — $49.99" button used by
+  // navigator_requests (signed via generateLeadActionToken → verified by
+  // /api/partner/lead-action POST → silent off-session $49.99 charge).
+  // Elite leads now write to navigator_requests (after the 2026-04-30
+  // veteran_email/veteran_phone/message column-name fix), so the existing
+  // /api/partner/lead-action handler operates on them without any further
+  // wiring change. NO automatic charge on lead capture — partner must
+  // explicitly click Accept to be charged. Trusted Services leads keep
+  // their existing /api/leads/update-status URL-based button row.
+  const eliteAcceptButton = isElite && !isAdminCopy
+    ? buildActionButtonsHtml(lead.leadId)
+    : "";
+  const trustedActionButtons = (isAdminCopy || isElite) ? "" : `
   <div style="margin-bottom: 20px;">
     <p style="margin: 0 0 10px 0; color: #374151; font-size: 13px; font-weight: 600;">Update Lead Status:</p>
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -517,6 +527,7 @@ function buildTrustedServiceLeadHtml(
       <a href="${referredUrl}" style="display: inline-block; background: #6B7280; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">Referred Elsewhere</a>
     </div>
   </div>`;
+  const actionButtons = eliteAcceptButton + trustedActionButtons;
 
   return `
 <!DOCTYPE html>

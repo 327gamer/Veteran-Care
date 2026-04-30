@@ -38,6 +38,7 @@ interface Subcategory {
 }
 
 import { getDefaultEcssPriceCents, getEcssTier } from "@shared/ecss-pricing";
+import PartnerSignupModal from "@/components/partner-signup-modal";
 
 const LEAD_PRICE = 49.99;
 
@@ -63,6 +64,11 @@ export default function ElitePartnerApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  // Founder spec 2026-04-30 (QA item #2): Mirror Trusted Partner UX —
+  // existing Elite Partners need a one-click way back into the same
+  // /partner-portal login from this application page. Same modal, same
+  // backend, same login outcome as partner-apply.tsx.
+  const [showPartnerLogin, setShowPartnerLogin] = useState(false);
 
   // ─── STEP 1: BASE PLAN (founder correction 2026-04-30 — RESTORED) ──
   // Two-layer pricing model: Step 1 base plan ($99 State / $499 National)
@@ -474,6 +480,18 @@ export default function ElitePartnerApply() {
           </h1>
           <p className="text-white/90 text-sm leading-relaxed">
             Own the top placement for your state, category, and subcategory. Only one Elite slot is available per market — and it includes direct, high-intent leads from veterans and families.
+          </p>
+          {/* Founder spec 2026-04-30 (QA item #2): mirror Trusted Partner UX. */}
+          <p className="text-white/90 text-xs mt-3">
+            Already an Elite Service Partner?{" "}
+            <button
+              data-testid="link-elite-partner-login"
+              type="button"
+              className="font-semibold underline hover:text-white transition-colors"
+              onClick={() => setShowPartnerLogin(true)}
+            >
+              Log in here
+            </button>
           </p>
         </div>
       </div>
@@ -961,6 +979,15 @@ export default function ElitePartnerApply() {
           </a>
         </div>
       </div>
+
+      {/* Founder spec 2026-04-30 (QA item #2): same modal & login backend
+          as partner-apply.tsx — keeps Trusted/Elite UX in lockstep. */}
+      <PartnerSignupModal
+        open={showPartnerLogin}
+        onOpenChange={setShowPartnerLogin}
+        defaultMode="login"
+        onSuccess={() => setLocation("/partner-portal")}
+      />
     </div>
   );
 }

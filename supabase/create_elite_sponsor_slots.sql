@@ -417,3 +417,54 @@ CREATE INDEX IF NOT EXISTS idx_trusted_services_ecss_slot
 -- ============================================================
 -- END ECSS PHASE B SCHEMA
 -- ============================================================
+
+-- ============================================================
+-- ECSS PHASE C — Click tracking (founder QA item #7, 2026-04-30)
+-- ============================================================
+-- Captures every outbound click on an Elite sponsor's website / phone /
+-- CTA button so the founder can prove ROI to paying Elite partners.
+-- Insert-only ledger: NEVER updated, NEVER deleted by app code (only by
+-- admin retention policy if added later).
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS elite_sponsor_clicks (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slot_id       UUID NOT NULL REFERENCES elite_sponsor_slots(id) ON DELETE CASCADE,
+  click_type    TEXT NOT NULL CHECK (click_type IN ('website','phone','cta_primary','cta_secondary')),
+  user_state    TEXT NULL,
+  user_session  TEXT NULL,
+  user_agent    TEXT NULL,
+  referrer      TEXT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_elite_clicks_slot
+  ON elite_sponsor_clicks(slot_id);
+CREATE INDEX IF NOT EXISTS idx_elite_clicks_type
+  ON elite_sponsor_clicks(click_type);
+CREATE INDEX IF NOT EXISTS idx_elite_clicks_created
+  ON elite_sponsor_clicks(created_at);
+
+-- RLS: write-only for service role (tracked via the server endpoint).
+-- Public reads disallowed; admin reads happen via service-role bypass.
+ALTER TABLE elite_sponsor_clicks ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'elite_sponsor_clicks'
+      AND policyname = 'elite_clicks_no_public_access'
+  ) THEN
+    CREATE POLICY elite_clicks_no_public_access
+      ON elite_sponsor_clicks
+      FOR ALL
+      TO PUBLIC
+      USING (false)
+      WITH CHECK (false);
+  END IF;
+END $$;
+
+-- ============================================================
+-- END ECSS PHASE C SCHEMA
+-- ============================================================

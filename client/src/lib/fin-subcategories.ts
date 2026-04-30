@@ -29,11 +29,13 @@ export const FIN_SUBCATEGORIES: FinSubcategory[] = [
   // United) live under va-loans, (b) showing an empty general entry alongside
   // a populated VA Loans entry was a duplicate UI path that confused users.
   {
-    name: "VA Loans",
+    // Founder QA item #6 (2026-04-30): rename to "VA Loans / Mortgages" so
+    // veterans AND non-veteran spouses/family searching for "mortgage" find it.
+    name: "VA Loans / Mortgages",
     slug: "va-loans",
     icon: Award,
-    description: "VA-guaranteed mortgages, certificates of eligibility, and VA loan support — also the canonical home for all mortgage / home loan partners.",
-    keywords: ["VA loan", "VA mortgage", "COE", "certificate of eligibility", "mortgage", "home loan", "down payment", "home buying", "FHA"],
+    description: "VA-guaranteed mortgages, certificates of eligibility, conventional mortgages, and home-loan support — the canonical home for all mortgage / home loan partners.",
+    keywords: ["VA loan", "VA mortgage", "COE", "certificate of eligibility", "mortgage", "home loan", "down payment", "home buying", "FHA", "conventional mortgage", "home buyer"],
   },
   {
     name: "Refinancing",

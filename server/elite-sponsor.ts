@@ -620,6 +620,52 @@ export function registerEliteSponsorRoutes(
   );
 
   // ---------------------------------------------------------------
+  // POST /api/elite-sponsor/track-click — founder QA item #7 (2026-04-30)
+  // Public, no-auth endpoint. Inserts a single row into elite_sponsor_clicks
+  // for ROI reporting. Server-side fire-and-forget (returns 204 even on
+  // best-effort write failure so the redirect to the sponsor's site is
+  // never delayed). Validates click_type against the table's CHECK constraint.
+  // ---------------------------------------------------------------
+  app.post("/api/elite-sponsor/track-click", async (req, res) => {
+    try {
+      const { slotId, clickType } = req.body || {};
+      const allowedTypes = new Set([
+        "website",
+        "phone",
+        "cta_primary",
+        "cta_secondary",
+      ]);
+      if (
+        !slotId ||
+        typeof slotId !== "string" ||
+        !clickType ||
+        !allowedTypes.has(clickType)
+      ) {
+        return res.status(400).json({ error: "invalid_payload" });
+      }
+      // Best-effort insert via service role (RLS denies public access).
+      const { error } = await supabaseAdmin
+        .from("elite_sponsor_clicks")
+        .insert({
+          slot_id: slotId,
+          click_type: clickType,
+          user_agent: req.headers["user-agent"]?.toString().slice(0, 500) || null,
+          referrer: req.headers["referer"]?.toString().slice(0, 500) || null,
+        });
+      if (error) {
+        // Don't surface error to client — UX continues regardless.
+        console.warn(
+          `[ECSS-CLICK] insert failed slot=${slotId} type=${clickType}: ${error.message}`
+        );
+      }
+      return res.status(204).end();
+    } catch (err: any) {
+      console.warn(`[ECSS-CLICK] exception: ${err.message}`);
+      return res.status(204).end();
+    }
+  });
+
+  // ---------------------------------------------------------------
   // Phase B routes — availability, public lead capture, waitlist,
   // admin checkout, admin lead/waitlist lists.
   // ---------------------------------------------------------------
