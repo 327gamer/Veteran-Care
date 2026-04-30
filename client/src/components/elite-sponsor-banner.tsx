@@ -26,6 +26,15 @@ interface EliteSponsorBannerProps {
   // render path so we don't double up on the "claim this slot" CTA when the
   // hero banner above already shows it.
   hidePlaceholder?: boolean;
+  // Founder QA fix 2026-04-30 (architect catch): optional manual state
+  // override for the no-GPS path. When the user picks a state via the manual
+  // State dropdown, pass that here so the Elite banner targets the user's
+  // chosen state instead of falling back to the national placeholder. Manual
+  // choice wins over GPS — matches the page's effectiveStateCode pattern at
+  // veteran-discounts.tsx where filterState || geo.location?.stateCode is
+  // the source of truth for state context.
+  manualStateOverride?: string | null;
+  manualStateName?: string | null;
 }
 
 interface EliteSlotResponse {
@@ -52,10 +61,15 @@ export default function EliteSponsorBanner({
   subcategoryLabel,
   variant = "banner",
   hidePlaceholder = false,
+  manualStateOverride = null,
+  manualStateName = null,
 }: EliteSponsorBannerProps) {
   const geo = useGeolocation();
-  const stateCode = geo.location?.stateCode || "";
-  const stateName = geo.location?.state || "";
+  // Founder QA fix 2026-04-30: manual state choice wins over GPS, matching
+  // the page's effectiveStateCode pattern (filterState || geo.location?.stateCode).
+  // Falls back to "" which routes to the national/no-state lookup on the server.
+  const stateCode = manualStateOverride || geo.location?.stateCode || "";
+  const stateName = manualStateName || geo.location?.state || "";
 
   const subKey = subcategorySlug && subcategorySlug !== "__all__" ? subcategorySlug : "";
 

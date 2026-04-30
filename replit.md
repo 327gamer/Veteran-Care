@@ -2100,3 +2100,101 @@ Founder feedback after the placement fix: the ECSS card was visible but didn't b
 
 ### Visual verification caveat (transparent)
 Screenshot of `/real-estate` shows the placeholder rendering correctly (no regression), NOT the new dual-CTA card — because no Supabase sponsor row exists in `sold + billing_active + creative_approved` state for any category+state at the time of shipment. The new card visual (amber border-2, glow, dual CTAs, Exclusive Offer pill) is verified via JSX + data-testid analysis rather than a live render. To visually validate later, founder can either (a) seed a test sponsor via SQL migration (NOT db:push), or (b) point at any category+state once a real sponsor goes live.
+
+---
+
+## 2026-04-30 — Founder QA Bundle (Mobile re-test fixes)
+
+**Trigger**: Founder QA on published mobile build surfaced 3 actionable issues + 1 confirmation request after the Elite Partner Priority shipment. All four addressed below; no DB changes, no schema changes, no migrations, no `db:push`.
+
+### Fix 1 — Elite placeholder badge overlap on mobile
+- **File**: `client/src/components/elite-sponsor-placeholder.tsx`
+- **Root cause**: The "Elite Sponsor" crown badge was `absolute top-3 right-3`, meaning it sat OVER the inner card content. On mobile (narrow), the long category+state line ("Housing & Home Services · Texas") wrapped UNDER the absolute badge causing the visual overlap the founder saw.
+- **Why it slipped through EL1**: The EL1 fix targeted `elite-sponsor-card.tsx` (the SOLD card). The PLACEHOLDER (vacant slot) is a different component using the older absolute-badge layout. Founder's environment shows the placeholder because no Elite slot is sold yet — so he never saw the EL1 sold-card layout.
+- **Fix**: Removed `absolute top-3 right-3`. Badge moved INTO the flex flow as a header strip (`flex flex-wrap items-center gap-2 px-6 pt-4 md:px-7`). Body container's top padding reduced (`pt-3 md:pt-4`) to keep the visual tight. On mobile, `flex-wrap` guarantees badge sits on its own line ABOVE the category/state text — overlap is now structurally impossible.
+- **Verified**: Desktop screenshot at `/real-estate` confirms badge at top, "REAL ESTATE · YOUR STATE" cleanly below, headline + claim CTA below that.
+
+### Fix 2 — Remove "VA Home Loans" from Housing display list
+- **File**: `client/src/lib/housing-subcategories.ts`
+- **Root cause**: The 7-line VA Home Loans entry (L43-49 pre-fix) appeared in the client-side display list consumed by `veteran-discounts.tsx`, `trusted-services.tsx`, and `category-drilldown-registry.ts` — all three pull from the same source array, so a single deletion fixes all three views.
+- **Founder requirement**: "Do NOT delete the underlying subcategory" — i.e., display only, preserve data.
+- **Fix**: Deleted the 7-line entry, replaced with a clear block comment documenting:
+  1. **WHY** removed (mortgage/VA loan/refinance belong under Financial & Credit)
+  2. **WHERE** the canonical home is now (`fin-subcategories.ts` + `server/index.ts:188-192` + `server/routes.ts:1610`)
+  3. **PRESERVATION GUARANTEE** that `partner_subcategories` row remains via idempotent boot insert at `server/routes.ts:1564` so deep-link URLs (`?cat=housing-home&sub=va-home-loans`) and cross-listings still resolve
+- **Verified**: `rg "VA Home Loans|va-home-loans" client/src/lib/housing-subcategories.ts` returns only comment lines (no live entry); `rg "VA Home Loans|va-home-loans" server/routes.ts` confirms the boot seed at L1564 still exists and runs.
+
+### Fix 3 — Manual City filter for Trusted Services
+- **File**: `client/src/pages/veteran-discounts.tsx`
+- **Founder requirement**: When GPS is off, manual State picker exists but no City picker — user wants optional City filter that scopes Trusted Partner listings underneath the Elite banner. **Critical constraint: Elite banner must remain state + category + subcategory only — city must NOT change which Elite slot shows.**
+- **Implementation** (~50 lines net add):
+  1. New state: `const [filterCity, setFilterCity] = useState<string>("")` alongside `filterState`
+  2. Listings derivation refactored: `rawListings`/`rawFallbackListings` from API, then `cityFilter` substring-matched against `listing.city` to produce filtered `listings`/`fallbackListings`. Existing render code below uses the filtered arrays unchanged.
+  3. New UI row below the existing State select, gated on `locationMode === "state" && filterState` — free-text input with HTML5 `datalist` autocomplete sourced from the cities of partners already loaded for the current state. No new API calls. No new DB table. Clear button included.
+  4. Mode-switch handlers (`onValueChange` for the Select + Near Me button) clear `filterCity` when the user changes location mode — prevents stale city filter persisting across state changes.
+- **Elite banner safety verified**: `elite-sponsor-banner.tsx` reads `geo.location.stateCode` directly from `useGeolocation()` — does NOT reference `filterState` or `filterCity`. `rg "filterCity|filterState" client/src/components/elite-sponsor-banner.tsx` returns zero matches, confirming Elite banner is structurally immune to the city filter. State + category + subcategory targeting preserved exactly as founder spec mandates.
+
+### Fix 4 — Confirm sold Elite ad CTAs (no code, confirmation only)
+- **Files**: `client/src/components/elite-sponsor-card.tsx` (already shipped EL1)
+- **Founder question**: "Confirm whether the real sold Elite banner/card already has Get Exclusive Offer / Request Info (24hr response) CTAs."
+- **Confirmed**: YES — `elite-sponsor-card.tsx:43-44` defines both CTA labels exactly as founder spec; `:150-167` renders them as primary (amber-600 fill) + secondary (white/amber outline) buttons; both call `setModalOpen(true)` which opens `EliteSponsorLeadModal`; modal submission triggers the shared `sendTrustedServiceLeadNotification` pipeline (partner email + user confirmation + admin notify per EL5/EL6).
+- **Why not visible yet**: The placeholder ("Claim This Slot") shows because no Elite slot is `sold + billing_active + creative_approved` in production. The moment the first sponsor goes live, the banner switches automatically (logic in `elite-sponsor-banner.tsx:100-126`).
+
+### What was NOT touched
+- Stripe / Pricing / Billing / DB schema / AI Guide / Resources section
+- `shared/schema.ts` (intentionally still only contains `users`)
+- Zero Supabase migrations, zero `db:push`, zero `db:push --force` — all 3 fixes were client-side or display-layer only
+- Server-side data: `partner_subcategories` rows, trusted_services cross-listings, Elite slot logic, lead-email pipeline — all unchanged
+
+### Deploy state
+- Workflow restarted clean — taxonomy LOCKED, ECSS Phase A+B applied, schema checks green
+- `/api/health` = HTTP 200, zero TS compile errors
+- Platform auto-published these edits as commit `c428b16d` immediately after the edit batch
+
+---
+
+## 2026-04-30 — Architect Re-Review FAIL → 7 follow-up fixes
+
+The first QA bundle (badge / VA loans / city filter) was code-reviewed and the architect FAILED it with 3 distinct defects. All three caught real issues that mobile QA would have surfaced. All 7 follow-up edits applied; re-verified clean.
+
+### Architect Finding 1 — Fix 1 PASS (no action)
+Badge layout fix was structurally sound. Mobile overlap eliminated.
+
+### Architect Finding 2 — Fix 2 INCOMPLETE (FIXED)
+- **File**: `client/src/lib/category-drilldown-registry.ts`
+- **Defect**: After deleting `va-home-loans` from `HOUSING_SUBCATEGORIES`, the Housing entry in the drilldown registry STILL had:
+  1. `description: "...VA home loans..."` text mentioning the removed subcategory
+  2. `introLinks: [..., { slug: "va-home-loans", label: "VA Home Loans", testidKey: "va" }]` — `CategoryDrilldown` resolves intro link clicks via `subcategories.find(s => s.slug === ...)` → after the removal that returns `undefined` → **dead no-op user-facing link**
+- **Fix**: Replaced description ("VA home loans" → "foreclosure prevention"), replaced introLink (va-home-loans → rental-assistance, an existing live HOUSING_SUBCATEGORIES entry). Added comment block explaining the dependency between the two files so future edits stay consistent.
+- **Verified**: `rg "va-home-loans|rental-assistance" client/src/lib/category-drilldown-registry.ts` confirms only comment mentions of va-home-loans remain; live introLinks slot now points at rental-assistance.
+
+### Architect Finding 3A — filterCity persistence bugs (FIXED)
+- **File**: `client/src/pages/veteran-discounts.tsx`
+- **Defect**: The new filterCity state had 3 independent leak paths:
+  1. `cityFilter` was applied unconditionally to listings/fallbackListings, even when the city UI was hidden (locationMode !== "state"). A stale "Houston" could silently filter Near Me / All Locations results.
+  2. Standalone Near Me **button** handler did not call `setFilterCity("")` — only the State Select onValueChange did.
+  3. State→state transitions (e.g., Texas → Florida) did not clear filterCity — a "Houston" filter would silently kill all Florida listings.
+- **Fix**:
+  1. `cityFilter = locationMode === "state" ? filterCity.trim().toLowerCase() : ""` — primary safety net. Even if filterCity has stale value, it has zero effect outside manual-state mode.
+  2. Added `setFilterCity("")` to the Near Me button onClick — both branches (toggle off → all, toggle on → nearme).
+  3. Added `if (filterState !== v) setFilterCity("")` to the Select handler's state→state branch — a different state always clears any prior city.
+- **Verified**: 6 `setFilterCity("")` invocations across all mode-switch paths; `cityFilter` derivation now guarded by `locationMode === "state"`.
+
+### Architect Finding 3B — Elite manual-state targeting defect (FIXED)
+- **Files**: `client/src/components/elite-sponsor-banner.tsx`, `client/src/pages/veteran-discounts.tsx`
+- **Defect**: `EliteSponsorBanner` read state from `useGeolocation().location.stateCode` ONLY. With GPS off but a manual state picked, the page had `hasLocationContext === true` (so the banner mounted) but the banner's stateCode was `""` — it queried the national/no-state slot and showed "your state" placeholder copy instead of the user's chosen state. This violates the founder spec "State controls Elite banner targeting."
+- **Fix**: Added optional `manualStateOverride?: string | null` and `manualStateName?: string | null` props to `EliteSponsorBanner`. Banner now resolves `stateCode = manualStateOverride || geo.location?.stateCode || ""` — manual choice wins over GPS, matching the page's existing `effectiveStateCode = filterState || geo.location?.stateCode` pattern. Both EliteSponsorBanner mount sites in `veteran-discounts.tsx` (hero L861, listing L933) now pass `manualStateOverride={filterState || null}` and `manualStateName={US_STATES.find(...).label || filterState}`.
+- **Why this is correct**: matches founder spec verbatim ("State controls Elite banner targeting"), and aligns the banner's state resolution with the listings query's state resolution — they now agree on which state context to use, so a sold Elite slot in the user's manually-chosen state will reliably display.
+- **Did NOT add city signal**: filterCity is still NOT passed to the banner. Elite targeting remains state + category + subcategory only per founder spec.
+
+### What was NOT touched (re-confirmed)
+- Stripe / Pricing / Billing / DB schema / AI Guide / Resources section
+- `shared/schema.ts` (still only contains `users`)
+- Zero Supabase migrations, zero `db:push`, zero `db:push --force` — all 7 follow-up edits were client-side only
+- Server-side code (`server/elite-sponsor.ts`, `server/lead-email.ts`, `server/routes.ts`) — unchanged
+
+### Verification after re-fix
+- `/api/health` = HTTP 200 (3ms)
+- Workflow boot clean: taxonomy LOCKED, ECSS Phase A+B applied, RLS green on both DBs
+- All grep sanity passes
+- Visual screenshot of /real-estate placeholder confirmed in earlier turn (badge fix working)

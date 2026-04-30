@@ -111,12 +111,18 @@ export const CATEGORY_DRILLDOWNS: Record<string, CategoryDrilldownConfig> = {
     icon: HomeIcon,
     iconBgClass: "bg-orange-50",
     iconTextClass: "text-orange-700",
+    // Founder QA fix 2026-04-30 (architect catch): removed "VA home loans"
+    // from the description and replaced the va-home-loans introLink with
+    // rental-assistance. Mortgage / VA loan / refinance services live under
+    // Financial & Credit (see financial-services entry below). Keeping the
+    // va-home-loans link here would render a dead no-op since
+    // HOUSING_SUBCATEGORIES no longer contains the va-home-loans entry.
     description:
-      "Emergency shelter, rental help, VA home loans, accessibility modifications, and housing programs for veterans and their families.",
+      "Emergency shelter, rental help, accessibility modifications, foreclosure prevention, and housing programs for veterans and their families.",
     subcategories: HOUSING_SUBCATEGORIES,
     introLinks: [
       { slug: "emergency-housing", label: "Emergency Housing", testidKey: "emergency" },
-      { slug: "va-home-loans", label: "VA Home Loans", testidKey: "va" },
+      { slug: "rental-assistance", label: "Rental Assistance", testidKey: "rental" },
     ],
   },
   "financial-services": {

@@ -289,14 +289,20 @@ export default function VeteranDiscounts() {
     // "Nothing nearby yet" when the real issue is missing state/GPS.
     enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery) && hasLocationContext,
   });
-  // Founder QA fix 2026-04-30: optional client-side city filter applied to
-  // both partner listings and the fallback resource pool. Elite banner is
-  // unaffected — `elite-sponsor-banner.tsx` reads stateCode directly from
-  // useGeolocation and ignores both filterState and filterCity by design,
-  // so Elite targeting stays state + category + subcategory only.
+  // Founder QA fix 2026-04-30 (updated after architect Fix 3B): optional
+  // client-side city filter applied to both partner listings and the fallback
+  // resource pool. Elite banner uses filterState via the manualStateOverride
+  // prop (added Fix 3B) so manual-state-no-GPS users get their chosen state's
+  // Elite slot — but Elite banner does NOT consume filterCity. Elite targeting
+  // therefore remains exactly: state + category + subcategory per founder spec.
   const rawListings = listingsData?.partners ?? [];
   const rawFallbackListings = listingsData?.fallback ?? [];
-  const cityFilter = filterCity.trim().toLowerCase();
+  // Founder QA fix 2026-04-30 (architect catch): gate cityFilter on the
+  // manual-state mode where the city UI is actually visible. This prevents
+  // a stale filterCity from silently filtering Near Me / All Locations
+  // results if the user toggles modes without clearing the input first.
+  const cityFilter =
+    locationMode === "state" ? filterCity.trim().toLowerCase() : "";
   const cityMatches = (l: DiscountListing) =>
     !cityFilter || (l.city ? l.city.toLowerCase().includes(cityFilter) : false);
   const listings = rawListings.filter(cityMatches);
@@ -561,10 +567,12 @@ export default function VeteranDiscounts() {
             if (locationMode === "nearme") {
               setLocationMode("all");
               setFilterState("");
+              setFilterCity("");
             } else {
               geo.requestLocation();
               setLocationMode("nearme");
               if (geo.location?.stateCode) setFilterState(geo.location.stateCode);
+              setFilterCity("");
             }
           }}
           data-testid="button-nearme"
@@ -582,6 +590,10 @@ export default function VeteranDiscounts() {
               if (geo.location?.stateCode) setFilterState(geo.location.stateCode);
               setFilterCity("");
             } else {
+              // Founder QA fix 2026-04-30: clear filterCity on state→state
+              // transitions so a stale "Houston" doesn't survive switching
+              // from Texas to Florida.
+              if (filterState !== v) setFilterCity("");
               setLocationMode("state");
               setFilterState(v);
             }
@@ -847,6 +859,12 @@ export default function VeteranDiscounts() {
                     || apiSubcategories.find(s => s.slug === selectedSubcategory)?.name
                     || ""
                   }
+                  manualStateOverride={filterState || null}
+                  manualStateName={
+                    filterState
+                      ? US_STATES.find(s => s.value === filterState)?.label || filterState
+                      : null
+                  }
                 />
               )}
 
@@ -912,6 +930,12 @@ export default function VeteranDiscounts() {
                             richSubs?.find(s => s.slug === selectedSubcategory)?.name
                             || apiSubcategories.find(s => s.slug === selectedSubcategory)?.name
                             || ""
+                          }
+                          manualStateOverride={filterState || null}
+                          manualStateName={
+                            filterState
+                              ? US_STATES.find(s => s.value === filterState)?.label || filterState
+                              : null
                           }
                         />
                       )}
