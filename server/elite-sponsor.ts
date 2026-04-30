@@ -996,6 +996,12 @@ export interface CreateEliteSponsorCheckoutOpts {
   attributedSessionId?: string | null;
   attributedAmbassadorCode?: string | null;
   attributedUtmId?: string | null;
+  /**
+   * Founder $1 test override — admin-only, gated upstream by valid
+   * x-admin-key header + ?test=true query. Forces the price_data
+   * path with unit_amount=100. Real customer pricing is unaffected.
+   */
+  testMode?: boolean;
 }
 
 export async function createEliteSponsorCheckoutSession(
@@ -1040,9 +1046,14 @@ export async function createEliteSponsorCheckoutSession(
   // Use canonical STRIPE_ECSS_PRICE_ID when slot price matches the standard
   // (so all ECSS revenue rolls up under one Price product in Stripe reports).
   // For per-slot custom admin pricing, fall back to dynamic price_data.
+  // Founder $1 test override forces the price_data path at unit_amount=100.
   const ECSS_PRICE_ID = process.env.STRIPE_ECSS_PRICE_ID || null;
   const CANONICAL_ECSS_CENTS = 49900;
-  const useCanonicalPriceId = ECSS_PRICE_ID && slot.monthly_price_cents === CANONICAL_ECSS_CENTS;
+  const useCanonicalPriceId = !opts.testMode && ECSS_PRICE_ID && slot.monthly_price_cents === CANONICAL_ECSS_CENTS;
+  const effectiveUnitAmount = opts.testMode ? 100 : slot.monthly_price_cents;
+  if (opts.testMode) {
+    console.log(`[FOUNDER-TEST] override applied: createEliteSponsorCheckoutSession slot=${slot.id} amount=$1.00`);
+  }
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = useCanonicalPriceId
     ? [{ price: ECSS_PRICE_ID, quantity: 1 }]
@@ -1050,11 +1061,13 @@ export async function createEliteSponsorCheckoutSession(
         {
           price_data: {
             currency: "usd",
-            unit_amount: slot.monthly_price_cents,
+            unit_amount: effectiveUnitAmount,
             recurring: { interval: "month" },
             product_data: {
-              name: productName,
-              description: slot.sponsor_short_description || `Single-occupancy premium banner above ${cat?.label || slot.category_slug} listings in ${slot.state_code}.`,
+              name: opts.testMode ? `TEST — ${productName}` : productName,
+              description: opts.testMode
+                ? "Founder $1 test charge — not a real elite sponsor subscription"
+                : (slot.sponsor_short_description || `Single-occupancy premium banner above ${cat?.label || slot.category_slug} listings in ${slot.state_code}.`),
             },
           },
           quantity: 1,
@@ -1064,6 +1077,7 @@ export async function createEliteSponsorCheckoutSession(
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
+    allow_promotion_codes: true,
     customer_email: opts.customerEmail,
     line_items: lineItems,
     success_url: `${appOrigin()}/admin/elite-sponsors?ecss_checkout=success&slot=${slot.id}`,

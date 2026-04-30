@@ -3075,6 +3075,13 @@ export async function registerRoutes(
   await ensureEliteSponsorTables();
   registerEliteSponsorRoutes(app, requireAdmin);
 
+  // Founder $1 test path 2026-04-30 — admin-only, ?test=true gated.
+  // Provides /api/admin/test-checkout/{standalone-start,bundled-start}
+  // and /api/admin/test-leads/:id/charge-test for the founder test page
+  // at /admin/test-checkout. Public users CANNOT reach these routes.
+  const { registerAdminTestCheckoutRoutes } = await import("./admin-test-checkout");
+  registerAdminTestCheckoutRoutes(app, requireAdmin);
+
   // Phase 7: public contact form (Resend auto-reply + AI Navigator triage)
   registerContactRoute(app);
   await registerUnsubscribeRoutes(app);

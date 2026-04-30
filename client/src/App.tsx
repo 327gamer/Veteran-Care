@@ -38,6 +38,7 @@ import AdminPayouts from "@/pages/admin-payouts";
 import AdminSweepstakes from "@/pages/admin-sweepstakes";
 import AdminLiveMetrics from "@/pages/admin-live-metrics";
 import AdminEliteSponsors from "@/pages/admin-elite-sponsors";
+import AdminTestCheckout from "@/pages/admin-test-checkout";
 import Layout from "@/components/layout";
 import Landing from "@/pages/landing";
 import LandingPage from "@/pages/landing-page";
@@ -213,6 +214,7 @@ function Router() {
       <Route path="/admin/sweepstakes" component={AdminSweepstakes} />
       <Route path="/admin/live-metrics" component={AdminLiveMetrics} />
       <Route path="/admin/elite-sponsors" component={AdminEliteSponsors} />
+      <Route path="/admin/test-checkout" component={AdminTestCheckout} />
       <Route path="/admin" component={AdminResources} />
 
       <Route path="/community">

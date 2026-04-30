@@ -2245,3 +2245,54 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 ### NEXT PHASE — pending founder release
 - T002: Legal cleanup
 - T003: Employment cleanup
+
+---
+
+## Phase 5 — Stripe Promotion Codes + Admin-Only $1 Test Path (2026-04-30)
+
+### Founder spec
+1. **Promotion codes** seeded as live Stripe `promotionCodes` (idempotent):
+   - **VC10** — 10% off forever
+   - **VC20** — 20% off forever
+   - **VC50** — 50% off for 3 months (repeating)
+   - **VC100** — 100% off first month only (once)
+   - Apply ONLY to subscription charges (partner subscriptions + ECSS slots). Lead charges use `paymentIntents.create()` which has no promo-code parameter, so this is enforced at the API surface itself plus the duration scope on the coupons.
+2. **$1 admin-only live test path** — Interpretation A (manual trigger only) + Option 3 (dedicated admin page).
+
+### Implementation
+
+**NEW files:**
+- `server/scripts/seed-coupons.ts` — idempotent Stripe coupon seed. Run via `npx tsx server/scripts/seed-coupons.ts`. Safe to re-run; checks `stripe.promotionCodes.list({code})` first, only creates if missing. ✅ Already executed — all 4 promo codes live in Stripe.
+- `server/admin-test-checkout.ts` — `registerAdminTestCheckoutRoutes(app, requireAdmin)` exposes 3 endpoints:
+  - `POST /api/admin/test-checkout/standalone-start` — opens $1/mo standalone Elite Slot checkout for an existing vacant slot
+  - `POST /api/admin/test-checkout/bundled-start` — creates a `[TEST]`-prefixed `partner_application` + ECSS slot, then opens $1+$1 bundled checkout (mimics real `/elite-partner-apply` flow)
+  - `POST /api/admin/test-leads/:leadId/charge-test` — charges $1 against the partner that owns this lead instead of $49.99
+  - **Each endpoint gated by BOTH** `requireAdmin` middleware (existing `x-admin-key` header) **AND** `?test=true` query parameter (explicit tripwire — accidents prevented). No DB flag, no email check.
+- `client/src/pages/admin-test-checkout.tsx` — VC-green-themed admin console at `/admin/test-checkout`. Uses `localStorage.adminKey` + `x-admin-key` header (canonical pattern from `admin-resources.tsx`). Three forms (standalone / bundled / lead-charge). All buttons + inputs have `data-testid` attributes.
+
+**EDITED files:**
+- `server/stripe-service.ts`:
+  - `CheckoutOptions` interface — added optional `testMode?: boolean`.
+  - `createPartnerCheckoutSession` — if `testMode`, REPLACES every line item (base + addons) with `$1/mo` `price_data` items prefixed `TEST —`. Logs `[FOUNDER-TEST] override applied`. Real customer flows untouched.
+  - `chargeLeadAutomatically` — added optional `testMode?: boolean`. If true: short-circuits `prices.retrieve`, sets `amountCents=100`, `currency="usd"`, metadata `stripe_price_id` falls back to `"test_override"`, `charge_type` becomes `"lead_billing_test"`, idempotency key becomes `lead-test:<leadId>:<Date.now()>` (test-mode allows re-runs without Stripe dedup). Real path uses deterministic `lead:<leadId>`.
+  - Added `allow_promotion_codes: true` to `stripe.checkout.sessions.create` call (so VC promo codes work on real partner subscriptions).
+- `server/elite-sponsor.ts`:
+  - `CreateEliteSponsorCheckoutOpts` interface — added optional `testMode?: boolean`.
+  - `createEliteSponsorCheckoutSession` — `useCanonicalPriceId` now also requires `!opts.testMode`. Forces `price_data` path with `unit_amount=100` when `testMode`. Product name prefixed `TEST —`. Added `allow_promotion_codes: true` to `stripe.checkout.sessions.create` call.
+- `server/routes.ts` L3081-3086 — `await import("./admin-test-checkout")` + `registerAdminTestCheckoutRoutes(app, requireAdmin)` inserted right after `registerEliteSponsorRoutes(app, requireAdmin)`.
+- `client/src/App.tsx` — `import AdminTestCheckout from "@/pages/admin-test-checkout";` + `<Route path="/admin/test-checkout" component={AdminTestCheckout} />` registered BEFORE the `/admin` catch-all.
+
+### Architect review (2026-04-30)
+**No SEVERE/HIGH issues found.** Security clean (requireAdmin + ?test=true tripwire), correctness clean (real flows untouched, no regression in `chargeLeadAutomatically` real path, idempotency keys correct), blast radius clean (`allow_promotion_codes:true` is intentional per founder spec), MASTER LAW clean (no DDL, no `shared/schema.ts` changes, no `db:push`, only INSERT/UPDATE on existing `partner_applications` + `elite_sponsor_slots` tables in the bundled flow).
+
+### Verification (post-restart, all green)
+- Workflow restarted clean — log line `[admin-test-checkout] routes registered` present
+- `/admin/test-checkout` page renders correctly (VC-green theme, login form)
+- All 4 Stripe coupons created and live; idempotency confirmed via re-run (all 4 logged "already exists")
+- TypeScript compiles cleanly w.r.t. these edits
+
+### MASTER LAW compliance — re-confirmed
+- No `shared/schema.ts` change (still only `users`)
+- Zero Supabase migrations, zero `db:push`, zero `db:push --force`
+- No DDL of any kind (only INSERT/UPDATE on existing tables in the bundled test flow)
+- Stripe pricing for non-test paths untouched

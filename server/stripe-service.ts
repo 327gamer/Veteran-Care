@@ -142,12 +142,19 @@ export type AddonKey = "featured" | "near_me_boost" | "sponsored_top" | "sponsor
 export interface CheckoutOptions {
   applicationId: string;
   addons?: AddonKey[];
+  /**
+   * Founder $1 test override — admin-only, gated upstream by valid
+   * x-admin-key header + ?test=true query. When true, all line items
+   * are replaced with $1/mo price_data so the bundled total is just
+   * a few dollars. Real customer pricing is never affected.
+   */
+  testMode?: boolean;
 }
 
 export async function createPartnerCheckoutSession(options: CheckoutOptions): Promise<{ url: string; sessionId: string }> {
   if (!stripe) throw new Error("Stripe is not configured");
 
-  const { applicationId, addons = [] } = options;
+  const { applicationId, addons = [], testMode = false } = options;
   const includesEcss = addons.includes("ecss");
 
   const rows = await pgQuery(
@@ -253,6 +260,43 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
     selectedAddons.push("ecss");
   }
 
+  // Founder $1 test override — replace EVERY line item with $1/mo price_data
+  // so the bundled total stays under $5. Each item gets a clear "TEST" prefix
+  // in the Stripe dashboard. Gated upstream by admin key + ?test=true.
+  if (testMode) {
+    console.log(`[FOUNDER-TEST] override applied: createPartnerCheckoutSession application=${applicationId} addons=${selectedAddons.join(",")}`);
+    const testItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      {
+        price_data: {
+          currency: "usd",
+          unit_amount: 100,
+          recurring: { interval: "month" },
+          product_data: {
+            name: `TEST — Base Plan (${app.plan_type || "unknown"})`,
+            description: "Founder $1 test charge — not a real partner subscription",
+          },
+        },
+        quantity: 1,
+      },
+    ];
+    for (const addonKey of selectedAddons) {
+      testItems.push({
+        price_data: {
+          currency: "usd",
+          unit_amount: 100,
+          recurring: { interval: "month" },
+          product_data: {
+            name: `TEST — Addon: ${addonKey}`,
+            description: "Founder $1 test charge",
+          },
+        },
+        quantity: 1,
+      });
+    }
+    lineItems.length = 0;
+    for (const it of testItems) lineItems.push(it);
+  }
+
   const appUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "veterancare.com"}`;
 
   const subMetadata: Record<string, string> = {
@@ -272,6 +316,7 @@ export async function createPartnerCheckoutSession(options: CheckoutOptions): Pr
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
+    allow_promotion_codes: true,
     line_items: lineItems,
     success_url: `${appUrl}/partner-payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/partner-apply`,
@@ -321,30 +366,39 @@ export async function chargeLeadAutomatically(opts: {
   veteranName: string;
   category: string;
   partnerName: string;
+  /** Founder $1 test override — admin-only, gated upstream by ?test=true. */
+  testMode?: boolean;
 }): Promise<
   | { ok: true; paymentIntentId: string; amountCents: number; priceId: string | null }
   | { ok: false; code: string; message: string; paymentIntentId?: string }
 > {
   if (!stripe) return { ok: false, code: "stripe_disabled", message: "Stripe is not configured" };
-  if (!LEAD_CHARGE_PRICE_ID) {
+  if (!opts.testMode && !LEAD_CHARGE_PRICE_ID) {
     return { ok: false, code: "missing_price_id", message: "STRIPE_LEAD_CHARGE_PRICE_ID is not configured" };
   }
   if (!opts.stripeCustomerId) {
     return { ok: false, code: "no_customer", message: "Partner has no Stripe customer on file" };
   }
 
-  // 1. Fetch canonical price (single source of truth for amount)
+  // 1. Fetch canonical price (single source of truth for amount).
+  // Founder $1 test override short-circuits the price lookup entirely.
   let amountCents: number;
   let currency: string;
-  try {
-    const price = await stripe.prices.retrieve(LEAD_CHARGE_PRICE_ID);
-    if (!price.unit_amount || price.unit_amount <= 0) {
-      return { ok: false, code: "invalid_price", message: `Price ${LEAD_CHARGE_PRICE_ID} has no unit_amount` };
+  if (opts.testMode) {
+    console.log(`[FOUNDER-TEST] override applied: chargeLeadAutomatically lead=${opts.leadId} amount=$1.00`);
+    amountCents = 100;
+    currency = "usd";
+  } else {
+    try {
+      const price = await stripe.prices.retrieve(LEAD_CHARGE_PRICE_ID!);
+      if (!price.unit_amount || price.unit_amount <= 0) {
+        return { ok: false, code: "invalid_price", message: `Price ${LEAD_CHARGE_PRICE_ID} has no unit_amount` };
+      }
+      amountCents = price.unit_amount;
+      currency = price.currency || "usd";
+    } catch (err: any) {
+      return { ok: false, code: "price_lookup_failed", message: err.message };
     }
-    amountCents = price.unit_amount;
-    currency = price.currency || "usd";
-  } catch (err: any) {
-    return { ok: false, code: "price_lookup_failed", message: err.message };
   }
 
   // 2. Look up customer's default payment method
@@ -391,11 +445,11 @@ export async function chargeLeadAutomatically(opts: {
         partner_name: opts.partnerName,
         veteran_name: opts.veteranName,
         product: "Lead Delivery Fee",
-        stripe_price_id: LEAD_CHARGE_PRICE_ID,
-        charge_type: "lead_billing",
+        stripe_price_id: LEAD_CHARGE_PRICE_ID || "test_override",
+        charge_type: opts.testMode ? "lead_billing_test" : "lead_billing",
       },
     }, {
-      idempotencyKey: `lead:${opts.leadId}`,
+      idempotencyKey: opts.testMode ? `lead-test:${opts.leadId}:${Date.now()}` : `lead:${opts.leadId}`,
     });
 
     if (pi.status === "succeeded") {
