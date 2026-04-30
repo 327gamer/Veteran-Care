@@ -1,0 +1,125 @@
+--- COPY TO REPLIT ---
+
+NEXT TASK — CATEGORY CLEANUP PHASE 2  
+LEGAL + EMPLOYMENT / TRAINING STANDARDIZATION
+
+Phase 1 is complete:
+
+- Mortgage / VA Loans cleaned up
+- Insurance seeded and standardized
+- No Stripe / pricing / billing / schema changes
+
+Now proceed with Phase 2.
+
+==================================================
+T002 — LEGAL SERVICES CLEANUP
+==================================================
+
+Objective:
+
+Standardize Legal Services into clean, user-friendly, monetizable subcategories.
+
+Please audit current Legal Services categories/subcategories and seeded providers.
+
+Focus on:
+
+- VA disability / benefits attorneys
+- Estate planning
+- Wills / trusts
+- Family law
+- Criminal defense
+- General legal aid
+- Housing / eviction legal help if applicable
+- End-of-life legal overlap if applicable
+
+Required:
+
+1. Identify duplicate legal subcategories
+2. Identify misplaced legal providers
+3. Standardize canonical slugs
+4. Preserve existing data
+5. Cross-list only where appropriate
+6. Do NOT delete underlying data
+7. Deactivate duplicate display slugs only if safe
+8. Ensure Legal is clean for future Elite Partner slots
+
+==================================================
+T003 — EMPLOYMENT / TRAINING CLEANUP
+==================================================
+
+Objective:
+
+Standardize Employment / Training so it supports Veteran Care and future Second Chance Jobs integration.
+
+Please audit current Employment / Training categories/subcategories and seeded providers.
+
+Focus on:
+
+- Job placement
+- Resume help
+- Interview preparation
+- Apprenticeships
+- Skilled trades training
+- Certification programs
+- Career coaching
+- Employer partners
+- Education / training overlap if applicable
+
+Required:
+
+1. Identify duplicate employment/training subcategories
+2. Identify misplaced providers
+3. Standardize canonical slugs
+4. Preserve existing data
+5. Cross-list only where appropriate
+6. Do NOT delete underlying data
+7. Deactivate duplicate display slugs only if safe
+8. Ensure Employment / Training is clean for future Elite Partner slots and lead routing
+
+==================================================
+IMPORTANT RULES
+==================================================
+
+This is DISPLAY + MAPPING cleanup only.
+
+Do NOT touch:
+
+- Stripe
+- Pricing
+- Billing
+- Database schema
+- AI Guide
+- Resources section
+- shared/schema.ts
+
+No db:push.
+No schema changes.
+No destructive migrations.
+
+==================================================
+REPORT BACK FIRST
+==================================================
+
+Before building, provide a read-only audit:
+
+For Legal:
+
+1. Existing categories/subcategories
+2. Current providers
+3. Duplicate or overlapping slugs
+4. Misplaced providers
+5. Recommended canonical structure
+6. Exact safe cleanup plan
+
+For Employment / Training:
+
+1. Existing categories/subcategories
+2. Current providers
+3. Duplicate or overlapping slugs
+4. Misplaced providers
+5. Recommended canonical structure
+6. Exact safe cleanup plan
+
+No code until plan is confirmed.
+
+--- END ---
