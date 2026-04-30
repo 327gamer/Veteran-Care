@@ -13205,7 +13205,80 @@ export async function registerRoutes(
         }
       }
 
-      return res.json(rows[0]);
+      // ── AUTO-APPROVE: send Stripe payment link via email immediately on submit ──
+      // Mirrors POST /api/admin/partner-applications/:id/approve so applicants
+      // do NOT have to wait for an admin to click "Approve & Send Payment".
+      // Best-effort: failures here never block the application submit. Founder
+      // can still manually click Approve in the admin panel as a fallback.
+      let autoCheckoutUrl: string | null = null;
+      let autoEmailSent = false;
+      let autoApproveError: string | null = null;
+      try {
+        const newApp = rows[0];
+        if (!isStripeEnabled()) {
+          autoApproveError = "stripe_not_configured";
+        } else if (!newApp.category_id) {
+          autoApproveError = "no_category_id";
+        } else if (newApp.is_lead_enabled === true) {
+          // Lead-only applicants bill per-lead ($49.99/lead), not subscription.
+          // Skip auto-checkout; admin can still manually invite if needed.
+          autoApproveError = "lead_only_skip_subscription_checkout";
+        } else {
+          let autoAddons: string[] = [];
+          if (Array.isArray(cleanAddons) && cleanAddons.length > 0) {
+            autoAddons = cleanAddons;
+          } else if (newApp.requested_addons) {
+            try { autoAddons = JSON.parse(newApp.requested_addons); } catch {}
+          }
+          const validAddons = ["featured", "near_me_boost", "sponsored_top", "sponsored_inline", "ecss"];
+          autoAddons = [...new Set(autoAddons.filter((a: string) => validAddons.includes(a)))];
+
+          const { url } = await createPartnerCheckoutSession({
+            applicationId: newApp.id,
+            addons: autoAddons,
+          });
+          autoCheckoutUrl = url;
+
+          if (newApp.email && url) {
+            try {
+              const emailResult = await sendPartnerPaymentEmail(
+                newApp.email,
+                newApp.company_name || "Partner",
+                newApp.contact_name || newApp.company_name || "Partner",
+                url
+              );
+              autoEmailSent = !!emailResult.sent;
+              if (!emailResult.sent && emailResult.error) {
+                autoApproveError = `email_failed: ${emailResult.error}`;
+              }
+              try {
+                const { setPartnerOrgOnboardingStatus } = await import("./stripe-service");
+                await setPartnerOrgOnboardingStatus(newApp.email, "invited");
+              } catch (orgErr: any) {
+                console.warn(`[auto-approve] partner_org status update failed (non-fatal): ${orgErr?.message}`);
+              }
+            } catch (emailErr: any) {
+              autoApproveError = `email_threw: ${emailErr?.message || String(emailErr)}`;
+              console.warn(`[auto-approve] sendPartnerPaymentEmail threw (non-fatal): ${emailErr?.message}`);
+            }
+          }
+          console.log(
+            `[auto-approve] application=${newApp.id} email=${newApp.email} addons=${autoAddons.join(",") || "none"} ` +
+            `checkoutCreated=${!!url} emailSent=${autoEmailSent}` +
+            (autoApproveError ? ` error=${autoApproveError}` : "")
+          );
+        }
+      } catch (autoErr: any) {
+        autoApproveError = `auto_approve_threw: ${autoErr?.message || String(autoErr)}`;
+        console.warn(`[auto-approve] non-fatal failure for application ${rows[0]?.id}: ${autoErr?.message}`);
+      }
+
+      return res.json({
+        ...rows[0],
+        auto_checkout_url: autoCheckoutUrl,
+        auto_email_sent: autoEmailSent,
+        auto_approve_error: autoApproveError,
+      });
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }

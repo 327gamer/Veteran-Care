@@ -425,18 +425,18 @@ export default function ElitePartnerApply() {
             <strong className="text-foreground">
               {eliteState} → {eliteCategoryName} → {eliteSubcategoryName}
             </strong>
-            . Our team will review and approve your application within 1 business day, then email you a secure Stripe checkout link for your{" "}
+            . We just emailed you a secure Stripe checkout link for your{" "}
             <strong className="text-foreground">
               ${basePrice}/mo {planType === "state" ? "State" : "National"} Plan + ${elitePriceDollars}/mo Elite Slot = ${monthlyTotal}/mo total
-            </strong>.
+            </strong>. Check your inbox (including spam) within the next minute or two.
           </p>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-left mb-6">
-            <p className="text-xs font-semibold text-amber-900 mb-1">What happens next</p>
-            <ul className="text-xs text-amber-900/80 space-y-1.5 list-disc pl-4">
-              <li>Admin reviews your branding and confirms availability.</li>
-              <li>You receive a Stripe checkout link by email.</li>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-left mb-6">
+            <p className="text-xs font-semibold text-emerald-900 mb-1">What happens next</p>
+            <ul className="text-xs text-emerald-900/80 space-y-1.5 list-disc pl-4">
+              <li>Open the Stripe payment link from your email and complete checkout.</li>
+              <li>Your Elite banner activates automatically on the matching category page.</li>
+              <li>You'll receive a welcome email with a link to your Partner Portal.</li>
               <li>Card on file is saved for $49.99 per accepted lead.</li>
-              <li>Your Elite banner goes live on the matching category page.</li>
             </ul>
           </div>
           <button

@@ -1,0 +1,121 @@
+--- COPY TO REPLIT ---
+
+We are now aligned on what’s happening — thank you for the breakdown.
+
+The payment system is working correctly (Stripe + webhook + slot activation confirmed).
+
+However, the Elite Partner flow is NOT aligned with our Trusted Partner system, and that is the issue we need to fix immediately.
+
+IMPORTANT — SYSTEM ALIGNMENT REQUIRED
+
+We already have a fully working automated flow in Trusted Partners:
+
+Trusted Partner Flow (Current Working Model):
+1. User submits application
+2. System automatically sends Stripe payment link via Resend
+3. User completes payment
+4. Webhook:
+   - activates partner
+   - updates status
+   - sends confirmation email
+   - provides login access
+5. No manual admin involvement required
+
+This is the EXACT behavior we want.
+
+-------------------------------------
+
+Elite Partner Flow must now match this EXACT automation.
+
+Right now Elite flow is:
+- partially manual
+- no email
+- no auto activation
+- status stuck in "Review"
+- requires admin intervention
+
+This is NOT acceptable for scaling.
+
+-------------------------------------
+
+REQUIRED FIXES (HIGH PRIORITY)
+
+1. AUTOMATED PAYMENT EMAIL
+- When Elite Partner application is submitted:
+  → Automatically send Stripe checkout link via Resend
+  → SAME as Trusted Partner flow
+
+2. WEBHOOK → FULL ACTIVATION
+After successful payment:
+- Update partner_application:
+  → awaiting_payment → active
+- Update Elite slot:
+  → sold (already working)
+- Remove "Review" status automatically
+- Link application to Stripe subscription correctly
+
+3. CONFIRMATION EMAIL
+After payment success:
+- Send email:
+  → “You are now an Elite Partner”
+  → Include login link
+  → Match Trusted Partner email format
+
+4. LOGIN ACCESS
+- Elite Partners must be able to log in immediately after payment
+- Same behavior as Trusted Partners (“Already a partner? Login here”)
+
+5. REMOVE MANUAL STEP
+- Admin should NOT need to click “Approve & Send Payment”
+- This must be automatic
+
+-------------------------------------
+
+ADMIN PANEL CLARITY (CRITICAL FOR ME)
+
+I need a simple explanation of what I am seeing:
+
+In /admin/partner-prospects:
+- What triggers:
+  → Prospect
+  → Awaiting Payment
+  → Active
+  → Review
+
+Right now:
+- I paid
+- Slot shows ACTIVE
+- But application shows "Awaiting Payment" or "Review"
+
+That is confusing and must be synced.
+
+-------------------------------------
+
+STEP-BY-STEP TEST INSTRUCTIONS (NON-TECHNICAL)
+
+I need a simple checklist:
+
+1. What URL do I go to?
+2. What do I fill out?
+3. What email should I expect?
+4. What should happen after payment?
+5. Where do I verify success in admin?
+6. What should Stripe show?
+
+Explain this like I am NOT a developer.
+
+-------------------------------------
+
+GOAL (NEXT 60 MINUTES)
+
+We need:
+
+- One clean automated Elite Partner flow
+- Matching Trusted Partner behavior
+- No manual admin steps
+- Clear admin status updates
+- Email confirmations working
+
+Once that is done, I will immediately run a full live test and begin selling.
+
+--- END ---
