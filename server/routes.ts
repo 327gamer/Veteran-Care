@@ -21,6 +21,7 @@ import { registerSeededProviderRoutes } from "./seeded-providers-routes";
 import { registerContactRoute } from "./contact-route";
 import { registerUnsubscribeRoutes } from "./unsubscribe-route";
 import { registerEliteSponsorRoutes, ensureEliteSponsorTables } from "./elite-sponsor";
+import { getDefaultEcssPriceCents } from "../shared/ecss-pricing";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { stripe, isStripeEnabled, createPartnerCheckoutSession, createCustomerPortalSession, handleWebhookEvent, verifyAndActivateCheckoutSession } from "./stripe-service";
@@ -13074,12 +13075,16 @@ export async function registerRoutes(
           let slotId: string | null = existingSlot?.id || null;
           if (!slotId) {
             // Race-safe: try insert; on unique-violation re-fetch instead of throwing.
+            // Founder spec 2026-04-30: NEW vacant slots get state-tier price
+            // ($899 / $699 / $499) from the centralized ecss-pricing.ts map.
+            // Existing sold slots are grandfathered (the boot-time backfill
+            // in elite-sponsor.ts only updates status='vacant' rows).
             const insertPayload: Record<string, any> = {
               category_slug: ecssCategorySlug,
               state_code: ecssState,
               status: "vacant",
               billing_status: "unpaid",
-              monthly_price_cents: 49900,
+              monthly_price_cents: getDefaultEcssPriceCents(ecssState),
               lead_price_cents: 4999,
             };
             if (ecssSubcat) insertPayload.subcategory_slug = ecssSubcat;
