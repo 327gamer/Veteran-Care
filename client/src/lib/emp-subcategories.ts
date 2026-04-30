@@ -6,8 +6,8 @@ import {
   Building2,
   Rocket,
   Briefcase,
+  Landmark,
   type LucideIcon,
-  Users,
 } from "lucide-react";
 
 export interface EmpSubcategory {
@@ -18,6 +18,19 @@ export interface EmpSubcategory {
   keywords: string[];
 }
 
+// Founder spec T003 2026-04-30: canonical 8-subcategory Employment /
+// Training taxonomy. Trimmed from 18 → 8 entries (display-only). Removed:
+// resume-assistance + career-counseling (duplicates of resume-career-coaching),
+// entrepreneurship-support (duplicate of entrepreneurship-small-business-support),
+// apprenticeships + skilled-trades-training (duplicates of apprenticeships-
+// skilled-trades), certification-programs (belongs under education-training/
+// certifications-licensing), state-employment (South Carolina-specific local
+// data leak — does not belong in the national UI list), career-pathways (too
+// vague), and building-construction + manufacturing (industry verticals, not
+// service types). Server-side partner_subcategories slugs are kept in 1:1
+// alignment with this list via server/routes.ts ensureAllPartnerSubcategories
+// + idempotent DEACTIVATE migration for the 4 old DB slugs (job-search-
+// placement, resume-interview-prep, career-training, entrepreneurship-business).
 export const EMP_SUBCATEGORIES: EmpSubcategory[] = [
   {
     name: "Job Placement Programs & Partners",
@@ -68,82 +81,11 @@ export const EMP_SUBCATEGORIES: EmpSubcategory[] = [
     description: "Disabled veteran outreach, workforce centers, and government programs",
     keywords: ["DVOP", "workforce", "LVER", "Department of Labor", "employment services", "job center"],
   },
-
-  {
-    name: "Resume Assistance",
-    slug: "resume-assistance",
-    icon: Users,
-    description: "Help building and tailoring your resume for civilian roles.",
-    keywords: [],
-  },
-  {
-    name: "Career Counseling",
-    slug: "career-counseling",
-    icon: Users,
-    description: "Guidance choosing a career path that fits your skills, experience, and goals.",
-    keywords: [],
-  },
   {
     name: "Federal Employment",
     slug: "federal-employment",
-    icon: Users,
-    description: "Federal hiring pathways including USAJOBS, VRA, and veteran preference.",
-    keywords: [],
-  },
-  {
-    name: "State Employment",
-    slug: "state-employment",
-    icon: Users,
-    description: "State of South Carolina jobs with veteran hiring preference.",
-    keywords: [],
-  },
-  {
-    name: "Entrepreneurship Support",
-    slug: "entrepreneurship-support",
-    icon: Users,
-    description: "Small business coaching, VBOC, and resources for veteran entrepreneurs.",
-    keywords: [],
-  },
-  {
-    name: "Apprenticeships",
-    slug: "apprenticeships",
-    icon: Users,
-    description: "Registered apprenticeships that combine paid work with training.",
-    keywords: [],
-  },
-  {
-    name: "Skilled Trades Training",
-    slug: "skilled-trades-training",
-    icon: Users,
-    description: "Training paths into skilled trades like welding, electrical, HVAC, and plumbing.",
-    keywords: [],
-  },
-  {
-    name: "Certification Programs",
-    slug: "certification-programs",
-    icon: Users,
-    description: "Industry certifications that translate military experience into civilian credentials.",
-    keywords: [],
-  },
-  {
-    name: "Career Pathways",
-    slug: "career-pathways",
-    icon: Users,
-    description: "Structured career pathway programs that ladder you from training to placement.",
-    keywords: [],
-  },
-  {
-    name: "Building & Construction",
-    slug: "building-construction",
-    icon: Users,
-    description: "Construction-industry employment and training pipelines.",
-    keywords: [],
-  },
-  {
-    name: "Manufacturing",
-    slug: "manufacturing",
-    icon: Users,
-    description: "Manufacturing employers and training pipelines.",
-    keywords: [],
+    icon: Landmark,
+    description: "Federal hiring pathways including USAJOBS, VRA, and veteran preference",
+    keywords: ["federal", "USAJOBS", "VRA", "veteran preference", "government jobs", "civil service"],
   },
 ];

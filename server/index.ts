@@ -147,6 +147,21 @@ async function ensureSubcategoryTags() {
     { namePattern: "USAA Insurance", subs: ["auto-insurance", "home-insurance", "life-insurance"] },
     { namePattern: "GEICO Military", subs: ["auto-insurance"] },
     { namePattern: "TRICARE", subs: ["health-insurance"] },
+    // Founder spec T002 2026-04-30: explicit Legal Services backfill so
+    // each Legal subcategory drilldown has provider coverage. `va-claims`
+    // intentionally NOT listed here — it stays as a backwards-compat
+    // alias slug on the rows (set in the Seed.subs array below) for any
+    // pre-existing deep-link URLs but is no longer used in new taxonomy.
+    { namePattern: "ABA Veterans Claims Assistance Network", subs: ["disability-claims-assistance", "pro-bono-legal-services", "va-benefits-appeals"] },
+    { namePattern: "Stateside Legal", subs: ["legal-aid-services", "disability-claims-assistance", "va-benefits-appeals"] },
+    { namePattern: "Veterans Consortium Pro Bono", subs: ["pro-bono-legal-services", "disability-claims-assistance", "va-benefits-appeals"] },
+    // Founder spec T003 2026-04-30: explicit Employment / Training
+    // backfill for canonical 8-subcategory taxonomy (matches new
+    // emp-subcategories.ts UI list). Three new providers seeded below
+    // also carry these via their own Seed.subs arrays.
+    { namePattern: "VA VR&E", subs: ["vocational-rehabilitation"] },
+    { namePattern: "Helmets to Hardhats", subs: ["apprenticeships-skilled-trades"] },
+    { namePattern: "SBA Office of Veterans Business Development", subs: ["entrepreneurship-small-business-support"] },
   ];
   try {
     const { query: pgQuery } = await import("./pg-client");
@@ -210,10 +225,14 @@ async function ensureSeededNationalProviders() {
     { name: "GEICO Military Discount", categorySlug: "insurance", shortDescription: "Auto insurance with a long-standing military discount program for active duty, retired, and National Guard / Reserve members.", websiteUrl: "https://www.geico.com/military/", phone: "800-861-8380", subs: ["auto-insurance"] },
     { name: "TRICARE", categorySlug: "insurance", shortDescription: "DoD-managed health care program for uniformed service members, retirees, and their families across all 50 states and overseas.", websiteUrl: "https://www.tricare.mil", phone: "877-874-2273", subs: ["health-insurance"] },
     { name: "VA Life Insurance (VALife)", categorySlug: "insurance", shortDescription: "Official VA life insurance program for service-connected veterans.", websiteUrl: "https://www.va.gov/life-insurance", phone: "800-669-8477", subs: ["life-insurance"] },
-    // Legal Services (3)
-    { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: ["va-claims", "disability-claims-assistance"] },
-    { name: "Stateside Legal", categorySlug: "legal-services", shortDescription: "Free legal information hub for veterans/military, run in partnership with Legal Services Corporation.", websiteUrl: "https://www.statesidelegal.org", phone: null, subs: ["va-claims"] },
-    { name: "Veterans Consortium Pro Bono Program", categorySlug: "legal-services", shortDescription: "Court-affiliated pro bono representation at the U.S. Court of Appeals for Veterans Claims.", websiteUrl: "https://www.vetsprobono.org", phone: "202-628-8164", subs: ["va-claims", "disability-claims-assistance"] },
+    // Legal Services (3) — founder spec T002 2026-04-30: subs expanded so
+    // each provider surfaces under its correct canonical legal subcategory
+    // (Pro Bono / Legal Aid / VA Benefits Appeals / Disability Claims).
+    // `va-claims` kept as backwards-compat alias slug for any deep-link
+    // URLs but is no longer part of the canonical 12-subcategory taxonomy.
+    { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: ["va-claims", "disability-claims-assistance", "pro-bono-legal-services", "va-benefits-appeals"] },
+    { name: "Stateside Legal", categorySlug: "legal-services", shortDescription: "Free legal information hub for veterans/military, run in partnership with Legal Services Corporation.", websiteUrl: "https://www.statesidelegal.org", phone: null, subs: ["va-claims", "legal-aid-services", "disability-claims-assistance", "va-benefits-appeals"] },
+    { name: "Veterans Consortium Pro Bono Program", categorySlug: "legal-services", shortDescription: "Court-affiliated pro bono representation at the U.S. Court of Appeals for Veterans Claims.", websiteUrl: "https://www.vetsprobono.org", phone: "202-628-8164", subs: ["va-claims", "disability-claims-assistance", "pro-bono-legal-services", "va-benefits-appeals"] },
     // Education & Training (3)
     { name: "Hire Heroes USA", categorySlug: "education-training", shortDescription: "Free career coaching, job-search assistance, and training for veterans, transitioning service members, and military spouses.", websiteUrl: "https://www.hireheroes.org", phone: "844-634-1520", subs: ["certifications-licensing"] },
     { name: "Onward to Opportunity (IVMF Syracuse)", categorySlug: "education-training", shortDescription: "No-cost career training and certifications for transitioning service members, veterans, and military spouses, by the Institute for Veterans and Military Families.", websiteUrl: "https://ivmf.syracuse.edu/programs/career-training/onward-to-opportunity/", phone: "315-443-0141", subs: ["certifications-licensing"] },
@@ -221,6 +240,12 @@ async function ensureSeededNationalProviders() {
     // Employment Support (2 net-new; Hire Heroes USA stays primary in Education and is cross-listed below)
     { name: "RecruitMilitary (Bradley-Morris)", categorySlug: "employment-support", shortDescription: "National veteran job board with monthly virtual and in-person hiring fairs connecting veterans to employers nationwide.", websiteUrl: "https://recruitmilitary.com", phone: "513-683-5020", subs: ["job-placement-programs", "veteran-friendly-employers"] },
     { name: "DOL VETS / American Job Centers (CareerOneStop)", categorySlug: "employment-support", shortDescription: "U.S. Department of Labor Veterans' Employment & Training Service. Locate American Job Centers and access DVOP/LVER priority-of-service nationwide.", websiteUrl: "https://www.careeronestop.org/Veterans/default.aspx", phone: "877-872-5627", subs: ["dvop-workforce-programs", "federal-employment"] },
+    // Employment Support (3 NEW — founder spec T003 2026-04-30: fill
+    // currently-empty Vocational Rehab / Apprenticeships / Entrepreneurship
+    // subcategories per canonical 8-subcategory taxonomy).
+    { name: "VA VR&E (Veteran Readiness and Employment)", categorySlug: "employment-support", shortDescription: "Official VA Vocational Rehabilitation & Employment program (Chapter 31). Career counseling, training, and employment services for service-disabled veterans nationwide.", websiteUrl: "https://www.va.gov/careers-employment/vocational-rehabilitation/", phone: "800-827-1000", subs: ["vocational-rehabilitation"] },
+    { name: "Helmets to Hardhats", categorySlug: "employment-support", shortDescription: "National non-profit pipeline connecting transitioning service members and veterans to federally-approved apprenticeship and skilled-trades careers in the building and construction industry.", websiteUrl: "https://helmetstohardhats.org", phone: "866-741-6210", subs: ["apprenticeships-skilled-trades"] },
+    { name: "SBA Office of Veterans Business Development (OVBD)", categorySlug: "employment-support", shortDescription: "Small Business Administration Veterans Business Outreach Centers (VBOCs) — free counseling, training, and capital-access guidance for veteran-owned and aspiring veteran-entrepreneur businesses nationwide.", websiteUrl: "https://www.sba.gov/business-guide/grow-your-business/veteran-owned-businesses", phone: "202-205-6773", subs: ["entrepreneurship-small-business-support"] },
   ];
 
   try {

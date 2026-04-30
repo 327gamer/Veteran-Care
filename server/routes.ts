@@ -1565,11 +1565,18 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'housing-home', name: 'Accessibility Modifications', slug: 'accessibility-modifications', order: 5 },
       { catSlug: 'housing-home', name: 'Moving & Relocation', slug: 'moving-relocation', order: 6 },
 
-      { catSlug: 'employment-support', name: 'Job Search & Placement', slug: 'job-search-placement', order: 1 },
-      { catSlug: 'employment-support', name: 'Resume & Interview Prep', slug: 'resume-interview-prep', order: 2 },
-      { catSlug: 'employment-support', name: 'Career Training & Certifications', slug: 'career-training', order: 3 },
-      { catSlug: 'employment-support', name: 'Entrepreneurship & Business', slug: 'entrepreneurship-business', order: 4 },
-      { catSlug: 'employment-support', name: 'Federal Employment (USAJOBS)', slug: 'federal-employment', order: 5 },
+      // Founder spec T003 2026-04-30: canonical 8-subcategory Employment
+      // taxonomy. UI=DB 1:1 (matches emp-subcategories.ts). Old generation
+      // slugs (job-search-placement, resume-interview-prep, career-training,
+      // entrepreneurship-business) are deactivated in the tail block below.
+      { catSlug: 'employment-support', name: 'Job Placement Programs & Partners', slug: 'job-placement-programs', order: 1 },
+      { catSlug: 'employment-support', name: 'Resume & Career Coaching', slug: 'resume-career-coaching', order: 2 },
+      { catSlug: 'employment-support', name: 'Vocational Rehabilitation', slug: 'vocational-rehabilitation', order: 3 },
+      { catSlug: 'employment-support', name: 'Apprenticeships & Skilled Trades', slug: 'apprenticeships-skilled-trades', order: 4 },
+      { catSlug: 'employment-support', name: 'Veteran-Friendly Employers', slug: 'veteran-friendly-employers', order: 5 },
+      { catSlug: 'employment-support', name: 'Entrepreneurship & Small Business Support', slug: 'entrepreneurship-small-business-support', order: 6 },
+      { catSlug: 'employment-support', name: 'DVOP / Workforce Programs', slug: 'dvop-workforce-programs', order: 7 },
+      { catSlug: 'employment-support', name: 'Federal Employment', slug: 'federal-employment', order: 8 },
 
       { catSlug: 'education-training', name: 'GI Bill Assistance', slug: 'gi-bill-assistance', order: 1 },
       { catSlug: 'education-training', name: 'Trade Schools & Vocational', slug: 'trade-schools', order: 2 },
@@ -1596,11 +1603,22 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'wellness-recovery', name: 'Fitness & Physical Wellness', slug: 'fitness-physical', order: 4 },
       { catSlug: 'wellness-recovery', name: 'Peer Support Groups', slug: 'peer-support', order: 5 },
 
-      { catSlug: 'legal-services', name: 'Family Law', slug: 'family-law', order: 1 },
-      { catSlug: 'legal-services', name: 'Disability Claims Assistance', slug: 'disability-claims-assistance', order: 2 },
-      { catSlug: 'legal-services', name: 'Criminal Defense', slug: 'criminal-defense', order: 3 },
-      { catSlug: 'legal-services', name: 'Estate Planning & Wills', slug: 'estate-planning-legal', order: 4 },
-      { catSlug: 'legal-services', name: 'Employment Law', slug: 'employment-law', order: 5 },
+      // Founder spec T002 2026-04-30: canonical 12-subcategory Legal
+      // taxonomy. UI=DB 1:1 (matches legal-subcategories.ts). Old slug
+      // `estate-planning-legal` deactivated in tail block below — replaced
+      // by canonical `wills-estate-planning` to match the UI label.
+      { catSlug: 'legal-services', name: 'Disability Claims Assistance', slug: 'disability-claims-assistance', order: 1 },
+      { catSlug: 'legal-services', name: 'VA Benefits Appeals', slug: 'va-benefits-appeals', order: 2 },
+      { catSlug: 'legal-services', name: 'Discharge Upgrade Assistance', slug: 'discharge-upgrade-assistance', order: 3 },
+      { catSlug: 'legal-services', name: 'Family Law', slug: 'family-law', order: 4 },
+      { catSlug: 'legal-services', name: 'Wills, Estate Planning & Probate', slug: 'wills-estate-planning', order: 5 },
+      { catSlug: 'legal-services', name: 'Criminal Defense', slug: 'criminal-defense', order: 6 },
+      { catSlug: 'legal-services', name: 'Employment Law', slug: 'employment-law', order: 7 },
+      { catSlug: 'legal-services', name: 'Landlord / Tenant Issues', slug: 'landlord-tenant-issues', order: 8 },
+      { catSlug: 'legal-services', name: 'Military Records Assistance', slug: 'military-records-assistance', order: 9 },
+      { catSlug: 'legal-services', name: 'Pro Bono Legal Services', slug: 'pro-bono-legal-services', order: 10 },
+      { catSlug: 'legal-services', name: 'Legal Aid Services', slug: 'legal-aid-services', order: 11 },
+      { catSlug: 'legal-services', name: 'Veterans Legal Clinics', slug: 'veterans-legal-clinics', order: 12 },
 
       { catSlug: 'financial-credit', name: 'Credit Repair & Counseling', slug: 'credit-repair', order: 1 },
       { catSlug: 'financial-credit', name: 'Debt Management', slug: 'debt-management', order: 2 },
@@ -1722,6 +1740,66 @@ async function ensureAllPartnerSubcategories() {
       }
     } catch (err: any) {
       console.warn(`[seed] housing-home va-home-loans deactivation failed: ${err?.message || err}`);
+    }
+    // Founder spec T002 2026-04-30: deactivate orphan legal-services
+    // partner_subcategories not in the canonical 12-slug taxonomy. The
+    // frontend renders from legal-subcategories.ts; this only cleans up
+    // the partner_subcategories admin surface so it stays in sync.
+    // `va-claims` is intentionally preserved as a backwards-compat alias
+    // slug on trusted_services rows (NOT in partner_subcategories), so
+    // pre-existing deep-link URLs still resolve to the same provider list.
+    try {
+      const legalKeep = [
+        'disability-claims-assistance', 'va-benefits-appeals',
+        'discharge-upgrade-assistance', 'family-law', 'wills-estate-planning',
+        'criminal-defense', 'employment-law', 'landlord-tenant-issues',
+        'military-records-assistance', 'pro-bono-legal-services',
+        'legal-aid-services', 'veterans-legal-clinics',
+      ];
+      const legalOrphans = await pgQuery(
+        `UPDATE partner_subcategories
+            SET is_active = false
+          WHERE category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'legal-services' LIMIT 1)
+            AND is_active = true
+            AND slug <> ALL($1::text[])
+          RETURNING slug`,
+        [legalKeep],
+      );
+      if (legalOrphans.length > 0) {
+        console.log(`[seed] Deactivated ${legalOrphans.length} orphan legal-services subcategories: ${legalOrphans.map((r: any) => r.slug).join(', ')}`);
+      }
+    } catch (err: any) {
+      console.warn(`[seed] legal-services orphan deactivation failed: ${err?.message || err}`);
+    }
+    // Founder spec T003 2026-04-30: deactivate orphan employment-support
+    // partner_subcategories not in the canonical 8-slug taxonomy. Old
+    // generation slugs (job-search-placement, resume-interview-prep,
+    // career-training, entrepreneurship-business) and any other drift get
+    // is_active=false. The 10 bolted-on UI duplicates that lived only in
+    // emp-subcategories.ts (state-employment, certification-programs,
+    // resume-assistance, etc.) are removed via the UI file trim and were
+    // never in partner_subcategories to begin with.
+    try {
+      const empKeep = [
+        'job-placement-programs', 'resume-career-coaching',
+        'vocational-rehabilitation', 'apprenticeships-skilled-trades',
+        'veteran-friendly-employers', 'entrepreneurship-small-business-support',
+        'dvop-workforce-programs', 'federal-employment',
+      ];
+      const empOrphans = await pgQuery(
+        `UPDATE partner_subcategories
+            SET is_active = false
+          WHERE category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'employment-support' LIMIT 1)
+            AND is_active = true
+            AND slug <> ALL($1::text[])
+          RETURNING slug`,
+        [empKeep],
+      );
+      if (empOrphans.length > 0) {
+        console.log(`[seed] Deactivated ${empOrphans.length} orphan employment-support subcategories: ${empOrphans.map((r: any) => r.slug).join(', ')}`);
+      }
+    } catch (err: any) {
+      console.warn(`[seed] employment-support orphan deactivation failed: ${err?.message || err}`);
     }
   } catch (err: any) {
     console.log("[seed] ensureAllPartnerSubcategories error:", err.message);

@@ -1,0 +1,109 @@
+--- COPY TO REPLIT ---
+
+APPROVED — proceed with Phase 2 using the plan, with the following FINAL decisions locked:
+
+==================================================
+LEGAL (T002) — FINAL DECISIONS
+==================================================
+
+1. Estate Planning Slug  
+→ Rename DB slug to match UI  
+✅ USE: wills-estate-planning  
+❌ Do NOT change UI wording
+
+2. va-claims slug  
+→ Keep as BACKWARDS-COMPAT alias ONLY  
+✅ Keep on providers (do not remove)  
+❌ Do NOT use in UI or new taxonomy
+
+3. employment-law  
+→ KEEP ONLY under Legal  
+❌ Do NOT treat as Employment category
+
+4. Subcategory alignment  
+→ Execute FULL 1:1 alignment (UI = DB)  
+→ All 12 legal subcategories must exist in partner_subcategories
+
+5. Provider tagging (important)  
+→ Fix existing 3 legal providers so they appear correctly:
+- Pro Bono
+- Legal Aid
+- Appeals
+- Disability
+
+==================================================
+EMPLOYMENT / TRAINING (T003) — FINAL DECISIONS
+==================================================
+
+1. Trim subcategories  
+→ FULL CLEANUP (18 → 8)  
+✅ REMOVE all duplicates + SC-specific + industry verticals  
+❌ Do NOT keep temporary duplicates
+
+2. Canonical structure (LOCK THIS)
+Use ONLY these 8:
+
+- job-placement-programs  
+- resume-career-coaching  
+- vocational-rehabilitation  
+- apprenticeships-skilled-trades  
+- veteran-friendly-employers  
+- entrepreneurship-small-business-support  
+- dvop-workforce-programs  
+- federal-employment  
+
+3. DB alignment  
+→ Rename ALL partner_subcategories to match UI EXACTLY  
+→ No mismatched slugs allowed
+
+4. New provider seeds (APPROVED)
+Add these:
+
+- VA VR&E (vocational-rehabilitation)  
+- Helmets to Hardhats (apprenticeships-skilled-trades)  
+- Bunker Labs OR SBA OVBD (entrepreneurship)  
+
+(Use same pattern as Insurance — national-provider, idempotent)
+
+5. Certification Programs  
+❌ REMOVE from Employment  
+✅ Already belongs under education-training
+
+==================================================
+GLOBAL RULES (NO CHANGES)
+==================================================
+
+- DO NOT touch Stripe  
+- DO NOT touch pricing  
+- DO NOT touch billing  
+- DO NOT change DB schema  
+- DO NOT touch AI Guide  
+- DO NOT touch Resources section  
+- DO NOT touch shared/schema.ts  
+
+DISPLAY + MAPPING ONLY
+
+==================================================
+EXECUTION INSTRUCTIONS
+==================================================
+
+Proceed in this order:
+
+1. Legal cleanup (T002)
+2. Employment cleanup (T003)
+3. Run idempotent rename + deactivate logic
+4. Backfill providers to correct subcategories
+5. Add new provider seeds
+
+==================================================
+REPORT BACK AFTER BUILD
+==================================================
+
+After completion, provide:
+
+1. Final list of Legal subcategories + counts  
+2. Final list of Employment subcategories + counts  
+3. Confirmation no orphan slugs remain  
+4. Confirmation all subcategories have ≥1 provider (or intentionally empty for future monetization)
+
+--- END ---
