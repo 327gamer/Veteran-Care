@@ -193,6 +193,11 @@ export default function VeteranDiscounts() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<string>("");
+  // Founder QA fix 2026-04-30: optional manual City filter for the no-GPS
+  // path. Filters Trusted Service partner listings client-side; does NOT
+  // affect Elite banner targeting — Elite remains strictly
+  // state + category + subcategory per founder spec.
+  const [filterCity, setFilterCity] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [connectService, setConnectService] = useState<DiscountListing | null>(null);
   const [leadForm, setLeadForm] = useState<LeadForm>({ ...emptyLeadForm });
@@ -284,8 +289,27 @@ export default function VeteranDiscounts() {
     // "Nothing nearby yet" when the real issue is missing state/GPS.
     enabled: ((!!selectedCategory && !showSubcategoryPicker) || !!searchQuery.trim()) && (locationMode !== "nearme" || isNearMeQuery) && hasLocationContext,
   });
-  const listings = listingsData?.partners ?? [];
-  const fallbackListings = listingsData?.fallback ?? [];
+  // Founder QA fix 2026-04-30: optional client-side city filter applied to
+  // both partner listings and the fallback resource pool. Elite banner is
+  // unaffected — `elite-sponsor-banner.tsx` reads stateCode directly from
+  // useGeolocation and ignores both filterState and filterCity by design,
+  // so Elite targeting stays state + category + subcategory only.
+  const rawListings = listingsData?.partners ?? [];
+  const rawFallbackListings = listingsData?.fallback ?? [];
+  const cityFilter = filterCity.trim().toLowerCase();
+  const cityMatches = (l: DiscountListing) =>
+    !cityFilter || (l.city ? l.city.toLowerCase().includes(cityFilter) : false);
+  const listings = rawListings.filter(cityMatches);
+  const fallbackListings = rawFallbackListings.filter(cityMatches);
+  // City suggestions sourced from the cities of partners/resources already
+  // loaded for the current state. Zero new API calls, zero schema change.
+  const availableCities = Array.from(
+    new Set(
+      [...rawListings, ...rawFallbackListings]
+        .map((l) => l.city)
+        .filter((c): c is string => !!c && c.trim().length > 0)
+    )
+  ).sort();
 
   const sponsoredAds: SponsoredAd[] = [];
   const geoContext = {
@@ -551,11 +575,12 @@ export default function VeteranDiscounts() {
         <Select
           value={locationMode === "state" ? filterState : locationMode === "nearme" ? "nearme" : "all"}
           onValueChange={(v) => {
-            if (v === "all") { setLocationMode("all"); setFilterState(""); }
+            if (v === "all") { setLocationMode("all"); setFilterState(""); setFilterCity(""); }
             else if (v === "nearme") {
               geo.requestLocation();
               setLocationMode("nearme");
               if (geo.location?.stateCode) setFilterState(geo.location.stateCode);
+              setFilterCity("");
             } else {
               setLocationMode("state");
               setFilterState(v);
@@ -574,6 +599,41 @@ export default function VeteranDiscounts() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Founder QA fix 2026-04-30: optional City filter for the manual-state
+          (no GPS) path. Shown only when the user has chosen a state manually.
+          Free-text input + datalist autocomplete sourced from the cities of
+          partners/resources already loaded for the current state. Zero new
+          API calls, zero schema change. Elite banner stays state-based. */}
+      {locationMode === "state" && filterState && (
+        <div className="flex items-center gap-2" data-testid="row-city-filter">
+          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <Input
+            placeholder="City (optional — narrows partners; Elite banner stays state-based)"
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            list="trusted-services-city-suggestions"
+            className="h-8 text-xs flex-1"
+            data-testid="input-filter-city"
+          />
+          <datalist id="trusted-services-city-suggestions">
+            {availableCities.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+          {filterCity && (
+            <button
+              type="button"
+              onClick={() => setFilterCity("")}
+              className="text-muted-foreground hover:text-foreground p-1"
+              aria-label="Clear city filter"
+              data-testid="button-clear-city-filter"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
 
       {locationMode === "nearme" && geo.location && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">

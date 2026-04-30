@@ -54,15 +54,20 @@ export default function EliteSponsorPlaceholder({
             "linear-gradient(135deg, rgba(254, 243, 199, 0.6) 0%, rgba(250, 245, 235, 0.4) 50%, rgba(254, 243, 199, 0.5) 100%)",
         }}
       >
-        {/* Elite badge — top right */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-amber-900/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-50">
-          <Crown className="h-3 w-3" aria-hidden="true" />
-          <span data-testid={`elite-sponsor-badge-${categorySlug}`}>
-            Elite Sponsor
+        {/* Founder QA fix 2026-04-30: badge moved OUT of absolute positioning
+            INTO the flex flow as a top header strip. On mobile, flex-wrap
+            ensures the badge sits on its own line above the category/state
+            line — the long category text can never overlap the badge anymore. */}
+        <div className="flex flex-wrap items-center gap-2 px-6 pt-4 md:px-7">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-900/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-50">
+            <Crown className="h-3 w-3" aria-hidden="true" />
+            <span data-testid={`elite-sponsor-badge-${categorySlug}`}>
+              Elite Sponsor
+            </span>
           </span>
         </div>
 
-        <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between md:gap-6 md:p-7">
+        <div className="flex flex-col gap-4 px-6 pt-3 pb-6 md:flex-row md:items-center md:justify-between md:gap-6 md:px-7 md:pt-4 md:pb-7">
           {/* Left — copy */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
