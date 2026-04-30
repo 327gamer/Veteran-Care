@@ -1,0 +1,122 @@
+--- COPY TO REPLIT ---
+
+LIVE PAYMENT TEST — NEED FULL TRACE + FIX
+
+I completed a LIVE test using a real card.
+
+Confirmed:
+- Stripe LIVE dashboard shows $1 gross volume (1 successful payment)
+
+However:
+
+- Admin panel still shows “Awaiting Payment”
+- No confirmation email was received
+- System did NOT auto-activate the partner
+
+So we have a disconnect between Stripe and the platform.
+
+-----------------------------------
+SECTION 1 — TRACE THIS EXACT PAYMENT
+-----------------------------------
+
+Find the $1 payment in Stripe LIVE mode and report:
+
+1. Checkout Session ID
+2. Customer ID
+3. Subscription ID (if created)
+4. Payment Intent ID
+5. Which endpoint created it (standalone vs bundled)
+
+-----------------------------------
+SECTION 2 — WEBHOOK STATUS (CRITICAL)
+-----------------------------------
+
+For that SAME payment:
+
+1. Did the webhook fire?
+2. Which event triggered?
+   (checkout.session.completed or invoice.payment_succeeded)
+3. Did our backend RECEIVE the webhook?
+4. If yes:
+   - what logic ran?
+   - why did it NOT update the application status?
+5. If no:
+   - webhook endpoint misconfigured?
+   - wrong environment (test vs live)?
+   - failing response?
+
+-----------------------------------
+SECTION 3 — ADMIN PANEL LOGIC
+-----------------------------------
+
+Explain clearly:
+
+1. What event is SUPPOSED to move:
+   → Awaiting Payment → Active Partner
+2. Why did that not happen in this test?
+3. Is there a missing link between:
+   Stripe session → partner_application record?
+
+-----------------------------------
+SECTION 4 — EMAIL FLOW
+-----------------------------------
+
+1. Is a payment confirmation email implemented?
+2. If yes:
+   - what triggers it?
+   - why didn’t it send?
+3. If not:
+   - confirm it needs to be built
+
+-----------------------------------
+SECTION 5 — WHICH TESTS ACTUALLY RAN LIVE
+-----------------------------------
+
+Clarify:
+
+- Did Section A (standalone $1) hit live?
+- Did Section B ($1 + $1 bundled) hit live?
+- Which one created the $1 payment I see?
+
+-----------------------------------
+SECTION 6 — CLEANUP REQUIRED
+-----------------------------------
+
+We now have test data in LIVE:
+
+- test partner applications
+- test Stripe customer/subscription
+
+Provide:
+
+1. Exact steps to safely delete:
+   - test subscriptions in Stripe
+   - test partner records in DB
+2. Confirm no real data will be affected
+
+-----------------------------------
+SECTION 7 — REQUIRED FIXES BEFORE GO-LIVE
+-----------------------------------
+
+Confirm what needs to be fixed so this flow becomes automatic:
+
+Required final behavior:
+
+1. User submits application
+2. Payment link is sent automatically
+3. User pays
+4. System automatically:
+   - activates partner
+   - marks slot sold
+   - updates admin panel
+   - sends confirmation email
+
+No manual steps.
+
+-----------------------------------
+
+This is a LIVE system now, so we need full clarity and correct automation before we start selling.
+
+Report back clearly.
+
+--- END ---
