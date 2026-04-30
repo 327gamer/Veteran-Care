@@ -1,0 +1,141 @@
+--- COPY TO REPLIT ---
+
+FOUNDER REQUEST — STRIPE COUPONS + SAFE LIVE TEST PATH
+
+We are preparing to begin live sales and need two controlled additions:
+
+1) Coupon / promo code support  
+2) Founder-only low-cost live test path  
+
+==================================================
+PART 1 — STRIPE COUPONS / PROMO CODES
+==================================================
+
+Enable Stripe Promotion Codes for checkout.
+
+Create the following codes:
+
+- VC10 → 10% off
+- VC20 → 20% off
+- VC50 → 50% off
+- VC100 → 100% off
+
+These must work on:
+
+- Base plan subscription ($99 / $499)
+- Elite slot subscription ($499 / $699 / $899)
+
+IMPORTANT:
+- Coupons apply ONLY to subscription charges
+- DO NOT apply coupons to lead charges ($49.99)
+- Lead charges must always bill at full price
+
+Implementation requirements:
+
+- Use Stripe Promotion Codes (not hardcoded discounts)
+- Codes should be enterable in Stripe Checkout
+- Must work with subscription mode checkout (not one-time only)
+
+==================================================
+PART 2 — FOUNDER-ONLY LIVE TEST PATH ($1 TEST)
+==================================================
+
+We need a SAFE way to test the FULL live flow using a real card.
+
+DO NOT change global pricing.
+
+DO NOT switch to Stripe test mode.
+
+DO NOT modify existing plans.
+
+--------------------------------------------------
+APPROACH (RECOMMENDED)
+--------------------------------------------------
+
+Use a hidden "test mode trigger" instead of changing pricing globally.
+
+Example options (choose safest):
+
+OPTION A (Preferred):
+- If email = founder email → apply internal override pricing
+
+OPTION B:
+- If URL contains ?test=true AND user is admin → apply override
+
+--------------------------------------------------
+TEST PRICING (FOUNDER ONLY)
+--------------------------------------------------
+
+Override ONLY for founder test:
+
+- Base Plan → $1.00
+- Elite Slot → $1.00
+- Lead Charge → $1.00
+
+All other users must see real pricing.
+
+==================================================
+TEST FLOW MUST VALIDATE
+==================================================
+
+End-to-end validation:
+
+1. Application submission works  
+2. Stripe checkout opens  
+3. Shows BOTH:
+   - Base plan
+   - Elite slot  
+4. Payment succeeds  
+5. Card is saved for future use  
+6. Webhook fires successfully  
+7. Partner is activated  
+8. Slot becomes "sold"  
+9. Elite placement displays correctly  
+10. Test lead can be created  
+11. "Accept Lead" triggers charge  
+12. Saved card is charged $1  
+13. Charge appears in Stripe  
+14. Admin panel reflects:
+   - Subscription
+   - Lead charge  
+15. Founder can cancel subscription  
+
+==================================================
+SECURITY REQUIREMENTS
+==================================================
+
+- Test pricing MUST NOT be publicly accessible  
+- MUST require either:
+  - Founder email OR
+  - Admin role OR
+  - Secure flag (not guessable)
+
+- No exposure via frontend pricing
+- No way for public users to trigger $1 pricing
+
+==================================================
+POST-TEST CLEANUP
+==================================================
+
+Founder will:
+
+- Cancel subscription in Stripe dashboard  
+- Confirm no lingering test subscriptions  
+- Resume normal pricing  
+
+==================================================
+REPORT BACK BEFORE BUILD
+==================================================
+
+Explain:
+
+1. How coupons will be implemented in Stripe  
+2. Where promo codes are entered in checkout  
+3. How founder-only pricing override will work  
+4. How public access is prevented  
+5. Exact step-by-step test instructions  
+6. How to cancel subscription after test  
+
+NO CODE UNTIL CONFIRMED
+
+--- END ---
