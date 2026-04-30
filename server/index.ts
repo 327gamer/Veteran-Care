@@ -142,6 +142,11 @@ async function ensureSubcategoryTags() {
     { namePattern: "AAFMAA", subs: ["life-insurance"] },
     { namePattern: "VA Life Insurance (VALife)", subs: ["life-insurance"] },
     { namePattern: "VALife", subs: ["life-insurance"] },
+    // Founder spec T001 2026-04-30: explicit auto/home/health insurance
+    // backfill so subcategory_slugs are present even on legacy seeded rows.
+    { namePattern: "USAA Insurance", subs: ["auto-insurance", "home-insurance", "life-insurance"] },
+    { namePattern: "GEICO Military", subs: ["auto-insurance"] },
+    { namePattern: "TRICARE", subs: ["health-insurance"] },
   ];
   try {
     const { query: pgQuery } = await import("./pg-client");
@@ -152,7 +157,7 @@ async function ensureSubcategoryTags() {
               SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(subcategory_slugs, '{}'::text[]) || $2::text[]))
             )
           WHERE name ILIKE $1
-            AND NOT (subcategory_slugs @> $2::text[])
+            AND NOT (COALESCE(subcategory_slugs, '{}'::text[]) @> $2::text[])
           RETURNING id, name, subcategory_slugs`,
         [`%${t.namePattern}%`, t.subs],
       );
@@ -198,6 +203,12 @@ async function ensureSeededNationalProviders() {
     // Insurance Services (3) — subcategory_slugs backfilled
     { name: "AAFMAA (American Armed Forces Mutual Aid Association)", categorySlug: "insurance", shortDescription: "Oldest nonprofit financial-services and insurance org for the U.S. military community.", websiteUrl: "https://www.aafmaa.com", phone: "877-398-2263", subs: ["life-insurance"] },
     { name: "Navy Mutual Aid Association", categorySlug: "insurance", shortDescription: "Trusted nonprofit life insurance provider for sea-service members, veterans, and families since 1879.", websiteUrl: "https://www.navymutual.org", phone: "800-628-6011", subs: ["life-insurance"] },
+    // Insurance Services (3 NEW — founder spec T001 2026-04-30: explicit
+    // auto / home / health insurance providers per category cleanup so each
+    // insurance subcategory has at least one canonical national listing).
+    { name: "USAA Insurance", categorySlug: "insurance", shortDescription: "Auto, home, and life insurance with deep military and veteran roots — bundles, military discounts, and PCS-friendly coverage nationwide.", websiteUrl: "https://www.usaa.com/insurance", phone: "800-531-8722", subs: ["auto-insurance", "home-insurance", "life-insurance"] },
+    { name: "GEICO Military Discount", categorySlug: "insurance", shortDescription: "Auto insurance with a long-standing military discount program for active duty, retired, and National Guard / Reserve members.", websiteUrl: "https://www.geico.com/military/", phone: "800-861-8380", subs: ["auto-insurance"] },
+    { name: "TRICARE", categorySlug: "insurance", shortDescription: "DoD-managed health care program for uniformed service members, retirees, and their families across all 50 states and overseas.", websiteUrl: "https://www.tricare.mil", phone: "877-874-2273", subs: ["health-insurance"] },
     { name: "VA Life Insurance (VALife)", categorySlug: "insurance", shortDescription: "Official VA life insurance program for service-connected veterans.", websiteUrl: "https://www.va.gov/life-insurance", phone: "800-669-8477", subs: ["life-insurance"] },
     // Legal Services (3)
     { name: "ABA Veterans Claims Assistance Network (VCAN)", categorySlug: "legal-services", shortDescription: "American Bar Association program offering pro bono claims assistance to veterans nationwide.", websiteUrl: "https://www.americanbar.org/groups/legal_services/milvets/", phone: null, subs: ["va-claims", "disability-claims-assistance"] },
@@ -254,7 +265,7 @@ async function ensureSeededNationalProviders() {
               SELECT ARRAY(SELECT DISTINCT unnest(COALESCE(subcategory_slugs, '{}'::text[]) || $2::text[]))
             )
           WHERE name ILIKE $1
-            AND NOT (subcategory_slugs @> $2::text[])
+            AND NOT (COALESCE(subcategory_slugs, '{}'::text[]) @> $2::text[])
           RETURNING id`,
         [s.name, s.subs],
       );

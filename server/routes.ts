@@ -1561,7 +1561,6 @@ async function ensureAllPartnerSubcategories() {
     const subcats: { catSlug: string; name: string; slug: string; order: number }[] = [
       { catSlug: 'housing-home', name: 'Emergency Housing & Shelters', slug: 'emergency-housing', order: 1 },
       { catSlug: 'housing-home', name: 'Rental Assistance', slug: 'rental-assistance', order: 2 },
-      { catSlug: 'housing-home', name: 'VA Home Loans', slug: 'va-home-loans', order: 3 },
       { catSlug: 'housing-home', name: 'Home Ownership', slug: 'home-ownership', order: 4 },
       { catSlug: 'housing-home', name: 'Accessibility Modifications', slug: 'accessibility-modifications', order: 5 },
       { catSlug: 'housing-home', name: 'Moving & Relocation', slug: 'moving-relocation', order: 6 },
@@ -1607,7 +1606,7 @@ async function ensureAllPartnerSubcategories() {
       { catSlug: 'financial-credit', name: 'Debt Management', slug: 'debt-management', order: 2 },
       { catSlug: 'financial-credit', name: 'Financial Planning & Investing', slug: 'financial-planning', order: 3 },
       { catSlug: 'financial-credit', name: 'Tax Preparation', slug: 'tax-preparation', order: 4 },
-      { catSlug: 'financial-credit', name: 'Mortgage & Home Loans', slug: 'mortgage-home-loans', order: 5 },
+      { catSlug: 'financial-credit', name: 'VA Loans', slug: 'va-loans', order: 5 },
       { catSlug: 'financial-credit', name: 'Personal & Auto Loans', slug: 'personal-auto-loans', order: 6 },
 
       { catSlug: 'insurance', name: 'Health Insurance', slug: 'health-insurance', order: 1 },
@@ -1684,6 +1683,46 @@ async function ensureAllPartnerSubcategories() {
     await pgQuery(
       `UPDATE partner_subcategories SET is_active = false WHERE slug = 'home-renters-insurance'`
     ).catch(() => {});
+    // Founder spec T000 2026-04-30: deactivate orphan mortgage subcategories.
+    // All VA mortgage providers now live under canonical 'va-loans' subcategory
+    // (see fin-subcategories.ts). Old slugs created by legacy migrations
+    // ('mortgages', 'home-loans', 'mortgage-home-loans', and 'mortgages-home-loans'
+    // under financial-credit) and the forbidden housing-home 'va-home-loans'
+    // (founder explicitly forbids a VA Home Loans subcategory in Housing —
+    // cross-listing surfaces those providers under Housing without a duplicate
+    // UI subcategory) are deactivated here. Idempotent — the `is_active = true`
+    // guard makes subsequent boots a no-op. RETURNING gives accurate counts.
+    // Errors are logged as warnings (not silently swallowed).
+    try {
+      const finOrphans = await pgQuery(
+        `UPDATE partner_subcategories
+            SET is_active = false
+          WHERE slug IN ('mortgages', 'home-loans', 'mortgage-home-loans', 'mortgages-home-loans')
+            AND is_active = true
+            AND category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'financial-credit' LIMIT 1)
+          RETURNING slug`,
+      );
+      if (finOrphans.length > 0) {
+        console.log(`[seed] Deactivated ${finOrphans.length} orphan financial-credit mortgage subcategories: ${finOrphans.map((r: any) => r.slug).join(', ')}`);
+      }
+    } catch (err: any) {
+      console.warn(`[seed] financial-credit mortgage deactivation failed: ${err?.message || err}`);
+    }
+    try {
+      const housingOrphans = await pgQuery(
+        `UPDATE partner_subcategories
+            SET is_active = false
+          WHERE slug = 'va-home-loans'
+            AND is_active = true
+            AND category_id = (SELECT id FROM trusted_service_categories WHERE slug = 'housing-home' LIMIT 1)
+          RETURNING slug`,
+      );
+      if (housingOrphans.length > 0) {
+        console.log("[seed] Deactivated orphan housing-home va-home-loans subcategory (founder spec T000)");
+      }
+    } catch (err: any) {
+      console.warn(`[seed] housing-home va-home-loans deactivation failed: ${err?.message || err}`);
+    }
   } catch (err: any) {
     console.log("[seed] ensureAllPartnerSubcategories error:", err.message);
   }

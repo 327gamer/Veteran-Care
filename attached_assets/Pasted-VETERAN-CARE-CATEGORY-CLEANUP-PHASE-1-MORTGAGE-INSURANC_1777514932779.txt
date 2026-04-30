@@ -1,0 +1,203 @@
+VETERAN CARE — CATEGORY CLEANUP PHASE 1  
+(MORTGAGE + INSURANCE STANDARDIZATION)  
+DATE: 04/29/2026  
+
+---
+
+## 🎯 OBJECTIVE
+
+Standardize and correct all seeded companies within:
+
+1. Financial & Credit Services (Mortgage / VA Loans)
+2. Insurance Services
+
+This ensures:
+- Clean user experience
+- Correct category logic
+- Strong Elite Partner monetization structure
+- Accurate lead routing
+
+NO database schema changes.  
+NO Stripe or billing changes.  
+DISPLAY + MAPPING ONLY.
+
+---
+
+# 🔧 T000 — MORTGAGE / VA LOANS CLEANUP
+
+## CURRENT ISSUE
+
+Mortgage-related companies are:
+- Misplaced
+- Not fully mapped to correct subcategories
+- Inconsistent across Financial vs Housing
+
+---
+
+## ✅ REQUIRED FIXES
+
+### 1. PRIMARY CATEGORY CORRECTION
+
+Ensure ALL mortgage-related companies are assigned to:
+
+Category:
+- financial-credit
+
+Subcategory:
+- va-loans
+
+---
+
+### 2. CROSS-LISTING (IMPORTANT)
+
+Also ensure these companies are visible under:
+
+Category:
+- housing-home
+
+BUT:
+
+❌ DO NOT create VA Home Loans subcategory in Housing  
+❌ DO NOT re-add it to UI  
+
+This is DISPLAY ONLY via cross-listing — NOT a primary category.
+
+---
+
+### 3. TARGET COMPANIES
+
+Ensure correct mapping for:
+
+- Navy Federal Credit Union
+- USAA
+- Veterans United Home Loans
+
+---
+
+### 4. EXPECTED RESULT
+
+When user selects:
+
+Financial & Credit → VA Loans  
+→ All mortgage providers show correctly  
+
+When user selects:
+
+Housing & Home  
+→ Providers still appear (via cross-listing)  
+→ BUT NO “VA Home Loans” subcategory shown  
+
+---
+
+# 🛡️ T001 — INSURANCE CLEANUP
+
+## CURRENT ISSUE
+
+Insurance providers are:
+- Too broadly categorized
+- Not aligned with real-world user intent
+- Not optimized for Elite placement
+
+---
+
+## ✅ REQUIRED FIXES
+
+### 1. STANDARDIZE INSURANCE STRUCTURE
+
+Ensure subcategories exist and are used:
+
+- health-insurance
+- auto-insurance
+- life-insurance
+- home-insurance
+
+---
+
+### 2. ASSIGN SEEDED COMPANIES CORRECTLY
+
+Example mappings:
+
+USAA Insurance:
+- auto-insurance
+- home-insurance
+- life-insurance
+
+GEICO:
+- auto-insurance
+
+Any health providers:
+- health-insurance
+
+---
+
+### 3. REMOVE GENERIC MISPLACEMENT
+
+❌ Remove companies from generic:
+- “insurance” (no subcategory)
+
+Everything must live inside a defined subcategory.
+
+---
+
+### 4. LOCATION BEHAVIOR (IMPORTANT)
+
+Insurance providers MUST:
+
+- Respect:
+  - Near Me (GPS)
+  - State selection
+  - City filtering
+
+- Appear in:
+  - Elite slot (state-based)
+  - Regular listings (city-based)
+
+---
+
+# 🧠 MONETIZATION ALIGNMENT
+
+This cleanup ensures:
+
+Each category becomes a SELLABLE unit:
+
+Example:
+
+Texas → Financial → VA Loans → $899 Elite Slot  
+California → Insurance → Auto → $899 Elite Slot  
+South Carolina → Insurance → Home → $499 Elite Slot  
+
+---
+
+# 🚫 DO NOT TOUCH
+
+- Stripe
+- Pricing tiers
+- Billing logic
+- Database schema
+- AI Guide
+- Resources section
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+- No duplicate or misplaced mortgage entries
+- No VA Loans under Housing subcategories
+- Insurance fully structured into subcategories
+- All seeded companies mapped correctly
+- Listings appear correctly for:
+  - State
+  - City
+  - Near Me
+- Elite placement remains top priority
+
+---
+
+# 🚀 NEXT PHASE (DO NOT START YET)
+
+- T002 — Legal Services Cleanup
+- T003 — Employment / Training Cleanup
+
+---
+
+END OF TASK

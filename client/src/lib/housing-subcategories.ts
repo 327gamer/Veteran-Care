@@ -40,13 +40,16 @@ export const HOUSING_SUBCATEGORIES: HousingSubcategory[] = [
     description: "Down payment help, first-time buyer programs, and home buying support",
     keywords: ["home ownership", "down payment", "home buying", "first time buyer"],
   },
-  // Founder QA fix 2026-04-30: "VA Home Loans" subcategory REMOVED from the
-  // Housing display list. Mortgage / VA loan / refinance / home loan services
-  // belong under Financial & Credit Services (already wired via
-  // fin-subcategories.ts + server/index.ts:188-192 + server/routes.ts:1610).
-  // Underlying partner_subcategories DB row is preserved — server/routes.ts:1564
-  // still inserts it idempotently so deep-link URLs (?sub=va-home-loans) and
-  // existing partner cross-listings keep resolving.
+  // Founder spec T000 2026-04-30: "VA Home Loans" subcategory REMOVED from the
+  // Housing display list AND fully retired from the DB. Mortgage / VA loan /
+  // refinance / home loan services live under Financial & Credit Services
+  // (canonical slug "va-loans" — see fin-subcategories.ts + server/index.ts
+  // mortgage seeds + crossListSpecs to housing-home). The previous housing-home
+  // 'va-home-loans' partner_subcategories seed was REMOVED from server/routes.ts
+  // and an idempotent DEACTIVATE migration in ensureAllPartnerSubcategories sets
+  // any pre-existing row's is_active=false on every boot. Mortgage providers
+  // still appear under Housing via the cross-listing tags (subcategory_slugs
+  // containing both 'va-loans' and 'home-renters-insurance'-class housing tags).
   {
     name: "Accessibility Modifications",
     slug: "accessibility-modifications",

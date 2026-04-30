@@ -23,19 +23,17 @@ export interface FinSubcategory {
 }
 
 export const FIN_SUBCATEGORIES: FinSubcategory[] = [
-  {
-    name: "Mortgages / Home Loans",
-    slug: "mortgages-home-loans",
-    icon: Home,
-    description: "Mortgage assistance, down payment programs, and home buying support",
-    keywords: ["mortgage", "home loan", "down payment", "home buying", "FHA"],
-  },
+  // Founder spec T000 2026-04-30: canonical mortgage entry is "VA Loans" only.
+  // The previous generic "Mortgages / Home Loans" entry was removed because
+  // (a) all seeded mortgage providers (USAA Mortgage, Navy Federal, Veterans
+  // United) live under va-loans, (b) showing an empty general entry alongside
+  // a populated VA Loans entry was a duplicate UI path that confused users.
   {
     name: "VA Loans",
     slug: "va-loans",
     icon: Award,
-    description: "VA-guaranteed mortgages, certificates of eligibility, and VA loan support",
-    keywords: ["VA loan", "VA mortgage", "COE", "certificate of eligibility"],
+    description: "VA-guaranteed mortgages, certificates of eligibility, and VA loan support — also the canonical home for all mortgage / home loan partners.",
+    keywords: ["VA loan", "VA mortgage", "COE", "certificate of eligibility", "mortgage", "home loan", "down payment", "home buying", "FHA"],
   },
   {
     name: "Refinancing",

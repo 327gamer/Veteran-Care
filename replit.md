@@ -2198,3 +2198,50 @@ Badge layout fix was structurally sound. Mobile overlap eliminated.
 - Workflow boot clean: taxonomy LOCKED, ECSS Phase A+B applied, RLS green on both DBs
 - All grep sanity passes
 - Visual screenshot of /real-estate placeholder confirmed in earlier turn (badge fix working)
+
+## Category Cleanup Phase 1 — T000 Mortgage / VA Loans + T001 Insurance (LANDED 2026-04-30)
+
+Founder spec received 2026-04-30. Display + mapping only — zero schema changes, zero Stripe/billing/AI Guide impact. Honors MASTER LAW (no db:push, no Drizzle additions in shared/schema.ts).
+
+### T000 — Mortgage / VA Loans cleanup
+- **Problem**: Three mortgage seeds (USAA Mortgage, Navy Federal, Veterans United) lived under `financial-credit/va-loans` AND were cross-listed to `housing-home`, but the partner_subcategories table had a non-canonical slug `mortgage-home-loans` under financial-credit, plus orphan slugs (`mortgages`, `home-loans`, `mortgages-home-loans` plural) and a forbidden `va-home-loans` subcategory under housing-home.
+- **Files**: server/index.ts, server/routes.ts, client/src/lib/fin-subcategories.ts, client/src/lib/category-drilldown-registry.ts
+- **Fixes**:
+  1. server/routes.ts L1613: Renamed partner_subcategories slug `mortgage-home-loans` → canonical `va-loans`
+  2. server/routes.ts L1564: REMOVED `va-home-loans` seed under housing-home (founder forbids "VA Home Loans" subcategory in Housing UI — cross-listing surfaces those providers under Housing without a duplicate UI subcategory)
+  3. server/routes.ts L1689-1728: ADDED idempotent DEACTIVATE migration for 5 orphan slugs (`mortgages`, `home-loans`, `mortgage-home-loans`, `mortgages-home-loans` plural under financial-credit + `va-home-loans` under housing-home). Hardened: `RETURNING slug` for accurate row counts, try/catch wrappers that warn instead of swallow errors, `is_active = true` guard makes re-runs no-ops.
+  4. client/src/lib/fin-subcategories.ts L25-40: REMOVED the generic "Mortgages / Home Loans" UI entry. Canonical entry is now "VA Loans" alone with merged keywords (`mortgage`, `home loan`, `down payment`, `home buying`, `FHA` added to the existing VA-specific keywords).
+  5. client/src/lib/category-drilldown-registry.ts L144: Updated financial-credit intro link from `mortgages-home-loans` → `va-loans`.
+
+### T001 — Insurance subcategory coverage
+- **Problem**: insurance category had only 3 providers (VA Life Insurance, AAFMAA, Navy Mutual) — all life-insurance only. The auto / home / health subcategories had ZERO providers, so `?subcategory=auto-insurance` etc. returned empty lists.
+- **Files**: server/index.ts
+- **Fixes**:
+  1. server/index.ts L148-152: Added 3 backfill patterns to `ensureSubcategoryTags` for USAA Insurance / GEICO Military / TRICARE
+  2. server/index.ts L209-214: Added 3 idempotent national-provider seeds via the existing INSERT-only NOT EXISTS pattern:
+     - **USAA Insurance** — auto-insurance + home-insurance + life-insurance (3-way tag)
+     - **GEICO Military Discount** — auto-insurance
+     - **TRICARE** — health-insurance
+
+### Hardening (architect-review followups)
+- server/index.ts L160-163 + L266-271: Both backfill predicates now use `COALESCE(subcategory_slugs, '{}'::text[]) @> $2::text[]` instead of `subcategory_slugs @> $2::text[]`. The original predicate was not NULL-safe — a row with `subcategory_slugs IS NULL` would have evaluated `NOT NULL` as NULL (skipped). With COALESCE, NULL rows are now repaired correctly.
+- server/routes.ts L1699-1728: Replaced silent `.then(..., () => {})` error swallowing with try/catch + `console.warn` + `RETURNING slug` for accurate logging.
+
+### Verification (post-restart, all green)
+- /api/health = 200 OK; RLS-RECHECK passed (HELIUM 33 + SUPABASE 25, all RLS-enabled)
+- /api/trusted-services?category=financial-credit&subcategory=va-loans → **3 mortgage providers**
+- /api/trusted-services?category=housing-home → **5** (3 mortgage cross-listed + PCSgrades + Military OneSource)
+- /api/trusted-services?category=insurance → **6** (was 3, +3 new)
+- Insurance subcategories: auto=2, home=1, health=1, life=4 ✅
+- All 5 deactivated slugs return 0 companies (financial-credit/{mortgages, home-loans, mortgage-home-loans, mortgages-home-loans} + housing-home/va-home-loans)
+- TypeScript compiles cleanly w.r.t. these edits (only pre-existing Stripe SDK + supabase env-var typing errors remain — both billing-protected, NOT touched)
+
+### What was NOT touched (re-confirmed)
+- Stripe / Pricing / Billing / DB schema / AI Guide / Resources section
+- `shared/schema.ts` (still only `users`)
+- `shared/lead-eligibility.ts` — billing-adjacent (defines billable lead paths). Architect suggested updating legacy mortgage slugs there, but founder MASTER LAW protects all billing logic. Treat the legacy slug entries as harmless backwards-compatible aliases (no companies live under those slugs → effectively no-op).
+- Zero Supabase migrations, zero `db:push`, zero `db:push --force`
+
+### NEXT PHASE — pending founder release
+- T002: Legal cleanup
+- T003: Employment cleanup
