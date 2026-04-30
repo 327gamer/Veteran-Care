@@ -1519,15 +1519,21 @@ function registerEliteSponsorPhaseBRoutes(
       // Insert linked navigator_request first so we can FK from
       // elite_sponsor_leads.navigator_request_id. The lead-router /
       // notification pipeline already handles navigator_requests.
+      // Founder bug-fix 2026-04-30: navigator_requests columns are
+      // veteran_email / veteran_phone / message — NOT email / phone / notes.
+      // Previous insert was failing with "Could not find the 'email' column
+      // of 'navigator_requests' in the schema cache" → 500 lead_save_failed
+      // for every Elite lead form submission. Verified against live Supabase
+      // schema introspection.
       const { data: navReq, error: navErr } = await supabaseAdmin
         .from("navigator_requests")
         .insert({
           veteran_name: name,
-          email: email || null,
-          phone: phone || null,
+          veteran_email: email || null,
+          veteran_phone: phone || null,
           category: ecssSlot.category_slug,
           user_state: ecssSlot.state_code,
-          notes: message || null,
+          message: message || null,
           status: "new",
           response_status: "pending",
           source: "elite_sponsor",

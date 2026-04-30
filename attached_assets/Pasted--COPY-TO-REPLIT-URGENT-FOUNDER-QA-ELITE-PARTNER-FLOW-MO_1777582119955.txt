@@ -1,0 +1,245 @@
+--- COPY TO REPLIT ---
+
+URGENT FOUNDER QA — ELITE PARTNER FLOW MOSTLY WORKING, BUT LEAD FORM + PORTAL LOGIN + ADMIN CLARITY NEED FIXING
+
+I completed the live Elite Partner test.
+
+IMPORTANT CONTEXT:
+This was a LIVE Stripe flow using a real card and VC100 promo code, not Stripe test mode.
+
+WHAT WORKED:
+1. Elite Partner application submitted successfully.
+2. Admin application appeared.
+3. Payment link email was received.
+4. Stripe checkout opened correctly.
+5. VC100 promo code reduced first month to $0.
+6. Stripe customer/subscription was created.
+7. Welcome email was received.
+8. Partner account setup worked.
+9. Partner Portal login worked using the same application email.
+10. Elite banner/card appeared live under Trusted Services → Wyoming → Financial & Credit Services → VA Loans.
+11. Banner shows company name, logo, offer, phone, website, and CTA buttons.
+
+ISSUES TO FIX NOW:
+
+==================================================
+1. ELITE LEAD FORM IS FAILING
+==================================================
+
+On the live Elite banner/card, I clicked:
+
+“Get Exclusive Offer”
+
+The modal opened correctly.
+
+I entered:
+- Name
+- Email
+- Phone
+- Message
+
+When submitting, it failed with:
+
+lead_save_failed
+
+This is critical.
+
+Expected behavior:
+When a veteran/user submits the Elite lead form:
+
+1. Lead must save successfully.
+2. Lead must be routed to the Elite Partner/sponsor.
+3. Elite Partner must receive the lead by email.
+4. User should receive confirmation email:
+   “Thanks — [Business Name] will contact you within 24 hours.”
+5. Lead should appear in admin under the correct lead area.
+6. Do NOT automatically charge $49.99 until the business accepts/qualifies the lead, unless current accepted-lead workflow already handles that safely.
+7. If lead acceptance triggers billing, make sure test/founder flow can verify this without accidentally charging the real card $49.99 unless explicitly confirmed.
+
+Please diagnose why lead_save_failed is happening and report the exact cause before fixing.
+
+==================================================
+2. ELITE PARTNER LOGIN LINK MISSING
+==================================================
+
+Trusted Partner section already has wording like:
+
+“Already a Trusted Partner? Login here”
+
+Elite Partner section needs the same thing:
+
+“Already an Elite Service Partner? Login here”
+
+This should route to the same Partner Portal/login flow if Elite Partners use the same portal.
+
+Important:
+Elite Partners must understand how to log back in and manage:
+- Business profile
+- Banner / offer
+- Leads
+- Billing
+- Referral business link
+- Partner portal account
+
+==================================================
+3. ELITE PARTNER FLOW MUST MIRROR TRUSTED PARTNER FLOW
+==================================================
+
+Trusted Partner flow is now the model.
+
+Elite Partner flow should match the same automation:
+
+1. Business submits application.
+2. Admin approves / sends payment link if approval is required.
+3. Business receives payment email.
+4. Business pays in Stripe.
+5. Webhook activates account.
+6. Welcome email is sent.
+7. Business creates Partner Portal account.
+8. Business must use the SAME EMAIL used on the application.
+9. Partner can log in and manage account.
+
+Please confirm whether Elite Partner and Trusted Partner now share the same Partner Portal flow and referral system.
+
+==================================================
+4. BUSINESS REFERRAL PROGRAM CONFIRMATION
+==================================================
+
+Trusted Partner portal includes “Refer a Business.”
+
+We need to confirm:
+
+- If a Trusted Partner refers another business, and that business signs up and pays for one month, the referring partner gets one free month.
+- This should apply to the base subscription only, not the Elite slot fee unless founder approves later.
+- Elite Partners should have access to the same referral feature if they are also subscribed partners.
+- Referral credit should apply only to the State/National subscription portion unless explicitly changed later.
+
+Please confirm how this is currently wired.
+
+==================================================
+5. ADMIN PANEL IS TOO HARD TO UNDERSTAND — NEED PRACTICAL EXPLANATION
+==================================================
+
+Founder needs a plain-English admin manual/workflow.
+
+Please explain the admin menu sections:
+
+- Partner Prospects
+- Trusted Services
+- Trusted Partner Leads
+- Elite Sponsor Slots
+- Veteran-Owned Business
+- Sweepstakes
+- Resources / Approved Resources
+- Billing / Stripe-related areas if applicable
+
+For each section, explain:
+
+1. What it is for.
+2. What founder should look at daily.
+3. What statuses mean.
+4. What requires manual action.
+5. What happens automatically.
+6. What should happen after payment.
+7. What should happen after cancellation.
+8. Where leads appear.
+9. Where subscription/payment status appears.
+10. Where Stripe customer/subscription IDs are visible.
+
+==================================================
+6. CLEANUP NEEDED AFTER TESTING
+==================================================
+
+We now have test data in the system.
+
+Need cleanup plan for:
+- Test partner applications
+- Test Stripe customers
+- Test Stripe subscriptions
+- Test Elite sponsor slots
+- Test partner organizations
+- Test trusted_services rows
+- Any test leads
+
+Do NOT delete real data.
+
+Create a safe cleanup plan with preview SELECT statements first.
+
+Test data includes company names like:
+- ABC Test
+- [TEST] Test
+- TEST Founder
+- Live Test Provider 1, if present
+
+Founder needs to know exactly what to cancel/delete in Stripe and what should be cleaned in DB/admin.
+
+==================================================
+7. ELITE SPONSOR SLOT MATRIX ISSUE
+==================================================
+
+In /admin/elite-sponsors, I see some states showing “no slot” under categories like:
+
+- Mortgage / Lending
+- Real Estate
+- Insurance
+- Legal Services
+
+But these are the main Elite categories we are selling.
+
+We need all appropriate state/category/subcategory Elite slots created and visible as vacant where available.
+
+Please audit:
+1. Which states/categories/subcategories have slots.
+2. Which show “no slot” and why.
+3. Whether all monetized Elite categories are fully seeded.
+4. Whether slots exist for all states we are selling.
+
+==================================================
+8. NAMING CLARITY — VA LOANS / MORTGAGE
+==================================================
+
+The user-facing category/subcategory says VA Loans.
+
+Admin uses labels like Mortgage / Lending.
+
+This is confusing.
+
+Please recommend consistent naming so founder/admin understands:
+
+Suggested:
+- User-facing: VA Loans / Mortgages
+- Admin: VA Loans / Mortgage Lending
+
+Do NOT change slugs yet unless needed. First report where labels are controlled and what can be safely renamed without breaking routing.
+
+==================================================
+9. WEBSITE LINK VS LEAD FUNNEL
+==================================================
+
+The Elite banner/card includes a website link.
+
+That is okay, but the main goal is lead capture through:
+- Get Exclusive Offer
+- Request Info
+
+Please confirm whether website clicks are tracked separately and whether lead buttons are visually prioritized.
+
+Do not remove the website link yet. Just confirm tracking and UX.
+
+==================================================
+REPORT BACK BEFORE BUILD
+
+Please report back with:
+
+1. Why lead_save_failed happened.
+2. Whether the Elite lead form can be fixed without breaking billing.
+3. Whether lead submission charges immediately or only after accepted lead.
+4. Whether Elite Partner login/portal flow exactly matches Trusted Partner flow.
+5. What admin sections mean and what founder should check after each sale.
+6. Which test records need cleanup.
+7. Why some Elite sponsor matrix cells show “no slot.”
+8. Recommended naming update for VA Loans / Mortgage Lending.
+
+No major new build until confirmed, except if lead_save_failed is a small obvious bug that can be fixed safely.
+
+--- END ---
