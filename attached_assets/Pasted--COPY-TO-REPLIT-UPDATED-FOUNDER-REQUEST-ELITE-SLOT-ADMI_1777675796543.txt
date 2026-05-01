@@ -1,0 +1,188 @@
+--- COPY TO REPLIT ---
+
+UPDATED FOUNDER REQUEST — ELITE SLOT ADMIN STRUCTURE + CATEGORY ALIGNMENT AUDIT
+
+Before we continue selling nationally and before we expand resources into more states, we need the Elite Sponsor admin system and category structure cleaned up and made easy to understand.
+
+This is a planning / audit / controlled fix request.
+
+Do NOT change billing logic.
+Do NOT change lead routing logic.
+Do NOT change Stripe logic.
+Do NOT change Trusted Partner round-robin.
+Do NOT change AI Guide.
+Do NOT scrape or build new state resources yet.
+
+==================================================
+1. ADMIN PANEL VISIBILITY ISSUE
+==================================================
+
+Right now the Elite Sponsor admin panel only shows a small number of categories across the top.
+
+We need the admin panel to clearly show and manage ALL sellable Elite slot categories.
+
+However, we do NOT want a massive table that scrolls endlessly sideways.
+
+Please recommend the best admin UI structure.
+
+Preferred idea:
+
+- States listed down the side
+- Main Elite categories visible clearly
+- Click/expand a category to view subcategory-level slots
+- Filters for:
+  - State
+  - Category
+  - Subcategory
+  - Tier price
+  - Vacant / sold / paused
+  - Billing status
+
+Goal:
+Founder needs to quickly answer:
+- What slots exist?
+- What slots are sold?
+- What slots are vacant?
+- What partner owns the slot?
+- What Stripe subscription is connected?
+- What category/subcategory is this slot tied to?
+
+==================================================
+2. CATEGORY / SUBCATEGORY ALIGNMENT
+==================================================
+
+We need one clear source of truth across:
+
+- Frontend Trusted Services
+- Elite Partner application form
+- Admin Elite Sponsor Slots
+- Database slot inventory
+- Public banner placement
+
+The current mismatch is confusing.
+
+Examples:
+- VA Loans / Mortgages should be named clearly and consistently.
+- Mortgage / Lending, VA Loans, Financial Credit, and Real Estate must not confuse admin or applicants.
+- Real Estate should only exist if it is actually a sellable Elite category with public placement.
+- Any category shown in admin or application must actually have slots and render publicly.
+
+Please audit and report:
+1. Current categories in frontend
+2. Current categories in backend
+3. Current categories in Elite slot DB
+4. Current categories in admin UI
+5. Which categories mismatch
+6. Recommended final unified list
+
+==================================================
+3. CROSS-LISTED SUBCATEGORIES
+==================================================
+
+Some subcategories belong in more than one place.
+
+Example:
+End of Life Services includes:
+- Legal help
+- Insurance help
+- Estate planning
+- Funeral / burial help
+- Survivor benefits
+
+These may also belong under:
+- Legal Services
+- Insurance
+- Financial / Benefits categories
+
+This is OK and should be preserved.
+
+Important:
+Do NOT remove useful cross-listed subcategories just because they appear in more than one category.
+
+We need mirrored/cross-listed subcategories where it makes sense.
+
+Please audit:
+- End of Life Services
+- Legal Services
+- Insurance
+- Financial / VA Loans / Mortgages
+- Housing / Home
+- Employment / Training
+- Education
+- Auto
+- Travel
+
+For each, report:
+- Which subcategories are unique
+- Which are cross-listed
+- Which should remain mirrored
+- Which are confusing duplicates
+- Which need clearer naming
+
+==================================================
+4. ELITE SLOT INVENTORY STRUCTURE
+==================================================
+
+We need to confirm every sellable Elite slot exists and is manageable.
+
+For each state/category/subcategory, confirm:
+
+- Slot exists
+- Correct tier price applies ($499 / $699 / $899)
+- Slot shows as vacant or sold correctly
+- Sold slots show partner name
+- Stripe customer/subscription IDs are visible
+- Billing status is visible
+- Banner placement is connected
+
+Do NOT create duplicate Elite slots for the same state/category/subcategory.
+
+There should only be ONE Elite Partner per state/category/subcategory.
+
+==================================================
+5. ADMIN PANEL USABILITY
+==================================================
+
+The founder is not a developer.
+
+The admin panel must be understandable for sales and operations.
+
+Please recommend the cleanest admin layout.
+
+Founder needs to manage:
+- Elite Sponsor Slots
+- Trusted Partners
+- Partner Prospects
+- Leads
+- Billing status
+- Stripe subscriptions
+- Test cleanup
+- Vacant/sold slot visibility
+
+Please explain:
+1. What the current Elite admin panel can do
+2. What is missing
+3. What needs to be redesigned
+4. What should stay as-is
+5. How founder should use it daily
+
+==================================================
+6. DO NOT OVERBUILD YET
+==================================================
+
+Before building anything major, please report back with:
+
+1. Current category mismatch report
+2. Current slot inventory report
+3. Cross-listed subcategory recommendations
+4. Admin panel layout recommendation
+5. Exact small fixes needed
+6. Any risks before we start selling nationally
+
+Do not start scraping new states yet.
+Do not build Virginia resources yet.
+Do not change routing or billing logic.
+
+We need to clean up the Elite slot/admin/category structure first so national sales are manageable.
+
+--- END ---
