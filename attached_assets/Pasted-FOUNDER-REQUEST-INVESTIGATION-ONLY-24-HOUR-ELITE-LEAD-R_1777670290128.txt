@@ -1,0 +1,65 @@
+FOUNDER REQUEST — INVESTIGATION ONLY — 24-HOUR ELITE LEAD REROUTING LOGIC
+
+Do not build or change code yet.
+
+We need to discuss and map the correct business logic for Elite Partner leads that are not accepted within 24 hours.
+
+Current rule:
+
+Elite Partners get first priority because they own the exclusive top banner slot for that state/category/subcategory.
+
+However, there is only ONE Elite Partner slot per state/category/subcategory, so if the Elite Partner does not accept the lead within 24 hours, the lead should NOT reroute to another Elite Partner in the same market.
+
+Instead, after 24 hours, the lead should move into the existing Trusted Partner lead pool.
+
+Important:
+
+Do NOT change the current Trusted Partner lead generation system.
+
+We already have a working Trusted Partner lead system where partners who opt into $49.99 accepted-lead billing receive leads fairly using round-robin logic.
+
+Example:
+
+If we have 4 Trusted Partners in the same state/category/subcategory, leads should rotate:
+
+Trusted Partner 1
+Trusted Partner 2
+Trusted Partner 3
+Trusted Partner 4
+Then back to Trusted Partner 1
+
+We want to preserve this existing Trusted Partner round-robin logic exactly as-is.
+
+The only new question is:
+
+When an Elite Partner lead expires after 24 hours, can that lead be inserted/released into the SAME existing Trusted Partner round-robin pool, using the existing Trusted Partner routing rules?
+
+Desired logic:
+
+1. User clicks Elite Partner banner.
+2. User submits lead.
+3. Elite Partner receives first right of refusal.
+4. Elite Partner has 24 hours to click Accept Lead.
+5. If Elite Partner accepts:
+   - Stripe charges $49.99
+   - Contact details unlock
+   - Lead is assigned to Elite Partner
+   - Flow ends
+6. If Elite Partner does NOT accept within 24 hours:
+   - Lead expires for that Elite Partner
+   - Lead should move into the existing Trusted Partner lead routing pool
+   - Existing Trusted Partner round-robin logic should decide which Trusted Partner receives it next
+7. If that Trusted Partner does not accept, it should continue through the existing Trusted Partner routing/lead logic if that already exists.
+8. If no matching Trusted Partner exists:
+   - Keep lead visible in admin for manual follow-up
+
+Please report back before building:
+
+1. Does the current Trusted Partner round-robin lead routing already support this?
+2. Where is the current Trusted Partner round-robin logic located?
+3. Can expired Elite leads safely enter that existing pool without changing the Trusted Partner system?
+4. What fields/status changes would be needed on the Elite lead after 24 hours?
+5. How do we avoid duplicate billing or duplicate routing?
+6. What is the safest minimal implementation plan?
+
+Again: DO NOT build yet. Investigation and plan only.
