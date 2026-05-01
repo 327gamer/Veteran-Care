@@ -1571,6 +1571,12 @@ function registerEliteSponsorPhaseBRoutes(
       // of 'navigator_requests' in the schema cache" → 500 lead_save_failed
       // for every Elite lead form submission. Verified against live Supabase
       // schema introspection.
+      // Founder QA 2026-05-01 (item #2): Elite leads MUST be billable so the
+      // Accept-Lead button can trigger the $49.99 charge. Critical: this
+      // marks the lead as ELIGIBLE for billing — the actual Stripe charge
+      // ONLY fires when the partner clicks Accept (POST /api/partner/lead-action
+      // → chargeLeadAutomatically, which gates on is_billable=true).
+      // No charge on email send. No charge on email open. Verified end-to-end.
       const { data: navReq, error: navErr } = await supabaseAdmin
         .from("navigator_requests")
         .insert({
@@ -1585,6 +1591,10 @@ function registerEliteSponsorPhaseBRoutes(
           source: "elite_sponsor",
           elite_sponsor_slot_id: ecssSlot.id,
           routed_to_partner_id: null,
+          is_billable: true,
+          billing_amount: 49.99,
+          billing_status: "billable",
+          billing_workflow_status: "ready",
         })
         .select("id")
         .single();
@@ -1595,19 +1605,25 @@ function registerEliteSponsorPhaseBRoutes(
         return res.status(500).json({ error: "lead_save_failed" });
       }
 
+      // Founder QA 2026-05-01 (item #5): elite_sponsor_leads actual columns
+      // are lead_name / lead_email / lead_phone (NOT contact_*). The previous
+      // insert failed silently on every Elite lead with "Could not find the
+      // 'contact_email' column". Verified against live Supabase introspection.
+      // The lead message has no column on elite_sponsor_leads — preserved on
+      // navigator_requests.message (canonical source). No longer silent: any
+      // failure logs as ERROR with full context so we never hide breakage.
       const { error: leadErr } = await supabaseAdmin
         .from("elite_sponsor_leads")
         .insert({
           slot_id: ecssSlot.id,
-          contact_name: name,
-          contact_email: email || null,
-          contact_phone: phone || null,
-          notes: message || null,
+          lead_name: name,
+          lead_email: email,
+          lead_phone: phone || null,
           navigator_request_id: navReq.id,
         });
       if (leadErr) {
-        console.warn(
-          `[ECSS] /leads elite_sponsor_leads insert failed: ${leadErr.message}`
+        console.error(
+          `[ECSS] /leads elite_sponsor_leads mirror insert FAILED for nav_req=${navReq.id} slot=${ecssSlot.id}: ${leadErr.message}. Lead is preserved on navigator_requests; mirror row missing.`
         );
       }
 

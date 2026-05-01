@@ -86,11 +86,14 @@ function buildActionButtonsHtml(leadId: string): string {
   const baseUrl = getBaseUrl();
   const token = generateLeadActionToken(leadId, "accepted");
   const url = `${baseUrl}/api/partner/lead-action?token=${token}`;
+  // Founder QA 2026-05-01 (item #1): full-width prominent CTA at TOP of email.
+  // Wording per spec: "Accept Lead — Charge $49.99". Disclaimer line directly
+  // beneath confirms NO charge happens until this button is clicked.
   return `
-  <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:18px;margin-bottom:20px;text-align:center;">
-    <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#14532D;">Ready to assist this veteran?</p>
-    <p style="margin:0 0 14px 0;font-size:12px;color:#166534;">Tap below to claim this lead. $49.99 will be charged to your card on file and the lead will be assigned to you.</p>
-    <a href="${url}" style="display:inline-block;text-align:center;padding:14px 32px;background:#16A34A;border-radius:6px;color:#FFFFFF;font-weight:700;font-size:16px;text-decoration:none;">Accept Lead — $49.99</a>
+  <div style="background:#F0FDF4;border:2px solid #16A34A;border-radius:10px;padding:24px 20px;margin-bottom:24px;text-align:center;">
+    <p style="margin:0 0 8px 0;font-size:17px;font-weight:700;color:#14532D;">Ready to assist this veteran?</p>
+    <p style="margin:0 0 18px 0;font-size:13px;color:#166534;line-height:1.5;">Tap below to claim this lead. Your card on file will be charged $49.99 and the lead will be assigned to you immediately. <strong>No charge happens until you click.</strong></p>
+    <a href="${url}" style="display:block;width:100%;box-sizing:border-box;text-align:center;padding:18px 24px;background:#16A34A;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:20px;text-decoration:none;line-height:1.2;">Accept Lead — Charge $49.99</a>
   </div>`;
 }
 
@@ -527,13 +530,25 @@ function buildTrustedServiceLeadHtml(
       <a href="${referredUrl}" style="display: inline-block; background: #6B7280; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px;">Referred Elsewhere</a>
     </div>
   </div>`;
-  const actionButtons = eliteAcceptButton + trustedActionButtons;
+
+  // Founder QA 2026-05-01 (item #4): branded Veteran Care header on every
+  // lead notification (parity with buildLeadEmailHtml). Same logo URL pattern.
+  // Founder QA item #1: Elite Accept-Lead button renders at the TOP of the
+  // email (above the header card); Trusted Services status buttons stay near
+  // the bottom (post-details), preserving existing UX for non-Elite leads.
+  const logoUrl = platform.domain ? `https://${platform.domain}/logo.png` : `${baseUrl}/logo.png`;
 
   return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="text-align: center; padding: 24px 0; border-bottom: 2px solid #166534; margin-bottom: 24px;">
+    <img src="${logoUrl}" alt="${platform.name}" style="display:block;width:200px;height:auto;margin:0 auto;border:0;" />
+  </div>
+
+  ${eliteAcceptButton}
 
   <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
     <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">${headerText}</h2>
@@ -580,7 +595,7 @@ function buildTrustedServiceLeadHtml(
     <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
   </div>` : ""}
 
-  ${actionButtons}
+  ${trustedActionButtons}
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
@@ -612,11 +627,19 @@ function buildLeadUserConfirmationHtml(
   providerName: string,
 ): string {
   const greetingName = recipientName.trim() || "there";
+  // Founder QA 2026-05-01 (item #4): branded Veteran Care header on the user
+  // confirmation email, matching the partner notification.
+  const baseUrl = getBaseUrl();
+  const logoUrl = platform.domain ? `https://${platform.domain}/logo.png` : `${baseUrl}/logo.png`;
   return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a1a;">
+
+  <div style="text-align: center; padding: 24px 0; border-bottom: 2px solid #166534; margin-bottom: 24px;">
+    <img src="${logoUrl}" alt="${platform.name}" style="display:block;width:200px;height:auto;margin:0 auto;border:0;" />
+  </div>
 
   <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
     <h2 style="margin: 0 0 4px 0; color: #166534; font-size: 18px;">Request received</h2>
