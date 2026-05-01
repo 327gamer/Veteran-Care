@@ -39,11 +39,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-// Founder QA 2026-05-01 (Fix 4): hardcoded ECSS_CATEGORIES list removed
-// — admin now fetches the canonical list from `/api/elite-sponsor/categories`
-// (server/elite-sponsor.ts ECSS_CATEGORIES) so backend/frontend never drift.
-// Returned items have `{slug, label, mount_path, description}`; only
-// `slug` + `label` are used in this page.
+// Categories fetched from /api/elite-sponsor/categories at runtime (single
+// source of truth in server/elite-sponsor.ts).
 type EcssCategory = {
   slug: string;
   label: string;
@@ -142,7 +139,6 @@ function AdminEliteSponsorsInner() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<EliteSlot | null>(null);
 
-  // Categories (Fix 4 — fetched from canonical backend list, no hardcode)
   const categoriesQuery = useQuery<{ categories: EcssCategory[] }>({
     queryKey: ["/api/elite-sponsor/categories"],
     queryFn: async () => {
@@ -258,8 +254,6 @@ function AdminEliteSponsorsInner() {
   const vacantCount = slots.filter((s) => s.status === "vacant").length;
   const pausedCount = slots.filter((s) => s.status === "paused").length;
 
-  // Fix 4 — wait for categories before rendering the slot grid (otherwise
-  // table headers/rows would briefly render empty until the fetch lands).
   if (categoriesQuery.isLoading) {
     return (
       <div

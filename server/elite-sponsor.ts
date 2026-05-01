@@ -49,11 +49,7 @@ import path from "node:path";
 // ---------------------------------------------------------------
 
 export const ECSS_CATEGORIES = [
-  // Founder QA 2026-05-01 (Fix 3): removed `mortgage-lending` and
-  // `real-estate` — neither has any slots in elite_sponsor_slots and they
-  // were causing taxonomy confusion. VA Loans / Mortgages canonical home is
-  // `financial-credit/va-loans` (founder T000). Re-add `real-estate` later
-  // if/when that category is seeded as a standalone Elite category.
+  // 2026-05-01: dropped mortgage-lending + real-estate (0 slots each).
   {
     slug: "legal-services",
     label: "Legal Services",

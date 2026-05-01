@@ -97,10 +97,7 @@ export default function PartnerApply() {
     ecss: false,
   });
 
-  // ─── ECSS Phase B onboarding upsell state ───
-  // Founder QA 2026-05-01 (Fix 3): removed `mortgage-lending` and `real-estate`
-  // — neither has any slots in elite_sponsor_slots so offering the upsell would
-  // be misleading. VA Loans / Mortgages canonical home is `financial-credit`.
+  // ECSS Phase B onboarding upsell state
   const ECSS_CATEGORY_SLUGS = new Set([
     "legal-services",
     "insurance",

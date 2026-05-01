@@ -3,11 +3,6 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-// Founder QA 2026-05-01 (Fix 3): real-estate was removed from the Elite
-// Sponsor monetized set (server/elite-sponsor.ts ECSS_CATEGORIES). The page
-// remains as a Trusted Services taxonomy placeholder, but the Elite banner +
-// "become an Elite Sponsor" CTA are intentionally removed below.
-
 export default function RealEstate() {
   const [, setLocation] = useLocation();
 
@@ -40,8 +35,6 @@ export default function RealEstate() {
         </div>
       </section>
 
-      {/* Body — Phase A directory expansion in progress.
-          Elite Sponsor banner intentionally omitted (see file header). */}
       <section className="max-w-6xl mx-auto px-4 py-8 md:py-10">
         <Card className="border-dashed">
           <CardContent className="p-6 md:p-8">

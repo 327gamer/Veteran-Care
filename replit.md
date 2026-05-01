@@ -2334,65 +2334,12 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 
 ---
 
-## 2026-05-01 — Founder QA v2: Fixes 1–4 (Elite Taxonomy Alignment)
+## 2026-05-01 — Founder QA v2: Elite Taxonomy Alignment (Fixes 1–4)
 
-After audit v2, founder approved 4 follow-up fixes. All shipped this turn.
-
-### Fix 1 — Cleared stale `sponsor_name` on SC × legal-services TEST slot
-- Slot id `ca6ca3ee-8253-4500-9f4b-4e9c01616667` was `vacant` /
-  `billing_status='cancelled'` from a prior test sale but still carried
-  `sponsor_name = 'TEST — Founder'` (admin/cache leak risk).
-- SQL: `UPDATE elite_sponsor_slots SET sponsor_name = NULL WHERE id = '...' AND sponsor_name = 'TEST — Founder'` — applied live, idempotent.
-- Stripe IDs (`cus_…`, `sub_…`), `sold_at`, `unsold_at` intentionally left intact for audit trail.
-
-### Fix 2 — Added 3 missing rows to `trusted_service_categories`
-- Added `auto-services` (10), `end-of-life-services` (11), `travel-services` (12).
-- Backend ECSS_CATEGORIES + multiple frontend pages already reference these slugs but the canonical taxonomy table was missing the rows.
-- Idempotent via `ON CONFLICT (slug) DO NOTHING` (verified `trusted_service_categories_slug_key` unique constraint exists).
-- Mirrored in `supabase/20260501_elite_taxonomy_alignment.sql` for the migration trail.
-
-### Fix 3 — Removed `mortgage-lending` and `real-estate` from Elite Sponsor selectable list
-- Both had **0 slots ever** in `elite_sponsor_slots` — verified before removal.
-- VA Loans / Mortgages canonical home is `financial-credit/va-loans` (founder T000 from prior session).
-- Real-estate stays in `trusted_service_categories` (display_order 9) but is no longer in the Elite Sponsor monetized set.
-- Files updated:
-  - `server/elite-sponsor.ts` — dropped 2 entries from `ECSS_CATEGORIES` (now 9 entries).
-  - `client/src/pages/elite-partner-apply.tsx` — dropped 2 from `ELITE_ALLOWED_CATEGORY_SLUGS`.
-  - `client/src/pages/partner-apply.tsx` — dropped 2 from `ECSS_CATEGORY_SLUGS` (added `financial-credit` since it's the canonical mortgage home).
-  - `client/src/pages/financial-services.tsx` — `EliteSponsorBanner` switched from removed `mortgage-lending` → canonical `financial-credit`.
-- Backend `isValidCategorySlug` now rejects both removed slugs (verified via `/api/elite-sponsor/available?categorySlug=mortgage-lending` → `400 "Invalid categorySlug"`).
-
-### Fix 4 — Admin page now fetches Elite categories from API instead of hardcoding
-- `client/src/pages/admin-elite-sponsors.tsx`: removed module-scope hardcoded `ECSS_CATEGORIES` list + unused `CategorySlug` type alias.
-- Added `useQuery` against `/api/elite-sponsor/categories` (existing endpoint, server is single source of truth).
-- Backend/frontend will never drift again.
-- Loading state shows centered "Loading Elite categories…" shimmer; error state shows "Failed to load Elite categories. Please refresh."
-
-### Verification (live, post-deploy)
-- `/api/elite-sponsor/categories` → returns 9 categories: legal-services, insurance, financial-credit, housing-home, auto-services, travel-services, end-of-life-services, education-training, employment-support.
-- `trusted_service_categories` → 12 rows total (9 existing + 3 new).
-- Currently-sold slots: still exactly 1 (`WY × financial-credit × ABC Test`, `sub_1TS0hQGdqk7jVmGZgUcTbFMk`, $499/mo, billing_status=active) — unchanged.
-- 0 slots existed for `mortgage-lending` or `real-estate` before or after Fix 3 — no real sales affected.
-
-### MASTER LAW compliance
-- No `shared/schema.ts` change (still only `users`).
-- No `db:push`. SQL applied via `server/supabase-pg-client.ts`; mirror saved to `supabase/20260501_elite_taxonomy_alignment.sql`.
-- No Stripe / billing / pricing / AI Guide / Trusted round-robin / routing code touched.
-- No new tables, no column adds, no schema changes — pure data alignment + frontend cleanup.
-
-### Republish required
-**YES** — Fixes 3 & 4 are server + client code changes (`server/elite-sponsor.ts`, 4 client files). Fixes 1 & 2 are SQL applied live to the shared Supabase instance and are already in effect for production reads.
-
-### Architect review addendum (post-review fixes)
-
-Architect code review caught 1 missed reference + suggested 1 hardening:
-
-**Architect-finding 1 (FIXED):** `client/src/pages/real-estate.tsx` still rendered `<EliteSponsorBanner categorySlug="real-estate">` and the body copy invited Elite sponsorship. Since Fix 3 dropped real-estate from ECSS_CATEGORIES, the banner would have called the now-rejecting `/api/elite-sponsor/available?categorySlug=real-estate` (HTTP 400) and rendered a misleading "become Elite sponsor" placeholder.
-- Removed `EliteSponsorBanner` import + JSX from the page.
-- Updated body copy to remove the "inquire about becoming the Elite Category Sponsor for your state" line.
-- Page itself remains (real-estate is still in trusted_service_categories taxonomy).
-- Live verified: `/real-estate` returns HTTP 200; `/api/elite-sponsor/available?categorySlug=real-estate` returns HTTP 400.
-
-**Architect-finding 2 (FIXED in migration file):** Fix 1 SQL hardened with extra WHERE predicates (`status='vacant' AND billing_status='cancelled' AND unsold_at IS NOT NULL`) so a hypothetical re-run on a future-reused id can never wipe sponsor_name from a freshly-sold slot. The live data has already been UPDATEd; this is defense in depth for the migration file only.
-
-**Architect-finding 3 (FLAGGED to founder, no action):** Switching the `/financial-services` Elite banner from `mortgage-lending` (0 slots) → `financial-credit` (1 sold slot: WY × ABC Test) means WY visitors landing on `/financial-services` may now see the ABC Test sponsor banner. This is the expected/correct behavior of canonical taxonomy alignment, but flagging in case founder wants the WY ABC Test slot paused/hidden separately.
+- **Fix 1 (SQL, live + supabase/20260501_elite_taxonomy_alignment.sql):** cleared stale `sponsor_name='TEST — Founder'` on slot `ca6ca3ee-…` (vacant/cancelled). Stripe IDs + sold/unsold timestamps preserved.
+- **Fix 2 (SQL):** added 3 missing taxonomy rows to `trusted_service_categories` — `auto-services`, `end-of-life-services`, `travel-services` (display_order 10/11/12). Idempotent via `ON CONFLICT (slug) DO NOTHING`.
+- **Fix 3 (Code):** dropped `mortgage-lending` and `real-estate` from `ECSS_CATEGORIES` (server) and the matching frontend allow-lists (4 client files). Verified 0 existing slots → no real sales affected. `/financial-services` banner now uses canonical `financial-credit`. `/real-estate` page no longer renders the Elite banner.
+- **Fix 4 (Code):** `client/src/pages/admin-elite-sponsors.tsx` now fetches the canonical category list via `useQuery('/api/elite-sponsor/categories')` instead of a hardcoded const. Loading + error guards added.
+- **Live verified:** `/api/elite-sponsor/categories` → 9 categories; removed slugs return HTTP 400; `/real-estate` and `/financial-services` both HTTP 200; only sold slot remains `WY × financial-credit × ABC Test`.
+- **MASTER LAW:** no `shared/schema.ts` change, no `db:push`, no Stripe / billing / pricing / AI Guide / routing touched.
+- **Republish:** YES (server + 5 client files changed).

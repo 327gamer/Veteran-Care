@@ -42,14 +42,7 @@ import PartnerSignupModal from "@/components/partner-signup-modal";
 
 const LEAD_PRICE = 49.99;
 
-// Backend `/api/elite-sponsor/available` and `/waitlist` accept these
-// monetized service categories. The Elite slot dropdown is filtered to this set.
-// Keep this list in sync with `ECSS_CATEGORIES` in `server/elite-sponsor.ts`.
-// Services-you-offer multi-select (Step 3) still uses the FULL category list.
-//
-// Founder QA 2026-05-01 (Fix 3): removed `mortgage-lending` and `real-estate`
-// — neither has any slots in elite_sponsor_slots. VA Loans / Mortgages
-// canonical home is `financial-credit/va-loans` (founder T000).
+// Keep in sync with ECSS_CATEGORIES in server/elite-sponsor.ts.
 const ELITE_ALLOWED_CATEGORY_SLUGS = new Set([
   "legal-services",
   "insurance",
