@@ -42,6 +42,16 @@ export async function ensureLeadExpirationColumns(): Promise<void> {
       label: "add expired_at",
     },
     {
+      // Founder QA 2026-05-01 (visibility patch — see
+      // supabase/20260501_payment_failure_reason_column.sql).
+      // Five charge-failure sites in server/routes.ts already attempt to
+      // write this field with a try/catch fallback; adding the column lights
+      // them up automatically. No code change needed beyond ensuring the
+      // column exists.
+      sql: `ALTER TABLE navigator_requests ADD COLUMN IF NOT EXISTS payment_failure_reason TEXT`,
+      label: "add payment_failure_reason",
+    },
+    {
       sql: `CREATE INDEX IF NOT EXISTS idx_navigator_requests_pending_expiration
             ON navigator_requests (lead_expires_at)
             WHERE expired_at IS NULL AND response_status = 'pending'`,
