@@ -12652,6 +12652,33 @@ export async function registerRoutes(
     </div></body></html>`;
   }
 
+  // Founder QA 2026-05-01 (Item B): a lead-action token is "stale" if it was
+  // issued from an email that is no longer the active one for this lead. Two
+  // independent triggers — both must veto the click:
+  //   (1) Lead has been rerouted: token.issuedAtMs < lead.routed_at
+  //       → e.g. Elite partner clicking after the lead moved to a Trusted Partner
+  //   (2) Lead has been expired by the sweep but reroute hasn't completed yet:
+  //       token.issuedAtMs < lead.expired_at
+  //       → closes the race window between expired_at UPDATE and routeLead UPDATE
+  // 2-second jitter band absorbs clock drift between routeLead's UPDATE and
+  // the immediately-following sendLeadNotification call.
+  function isStaleLeadActionToken(
+    tokenIssuedAtMs: number,
+    routedAtIso: string | null | undefined,
+    expiredAtIso: string | null | undefined,
+  ): boolean {
+    const JITTER_MS = 2000;
+    if (routedAtIso) {
+      const routedAtMs = new Date(routedAtIso).getTime();
+      if (Number.isFinite(routedAtMs) && tokenIssuedAtMs < routedAtMs - JITTER_MS) return true;
+    }
+    if (expiredAtIso) {
+      const expiredAtMs = new Date(expiredAtIso).getTime();
+      if (Number.isFinite(expiredAtMs) && tokenIssuedAtMs < expiredAtMs - JITTER_MS) return true;
+    }
+    return false;
+  }
+
   app.get("/api/partner/lead-action", async (req, res) => {
     try {
       const { token } = req.query;
@@ -12662,6 +12689,24 @@ export async function registerRoutes(
       const result = verifyLeadActionToken(token);
       if (!result) {
         return res.status(400).send(buildActionResponseHtml("Invalid Link", "This action link is invalid, expired, or has been tampered with.", "error"));
+      }
+      // Founder QA 2026-05-01 (Item B — Elite expired-link protection, GET):
+      // surface the "Lead Expired" page on the initial click so the partner
+      // never sees the misleading "Confirm Acceptance — Charge $49.99" form.
+      // The POST handler enforces the same guard as a defense-in-depth check
+      // before any state writes / charge calls.
+      const { data: leadGate } = await supabaseAdmin
+        .from("navigator_requests")
+        .select("id, routed_at, expired_at")
+        .eq("id", result.leadId)
+        .maybeSingle();
+      if (leadGate && isStaleLeadActionToken(result.issuedAtMs, (leadGate as any).routed_at, (leadGate as any).expired_at)) {
+        console.log(`[lead-action] GET stale-token blocked: lead ${result.leadId} tokenTs=${result.issuedAtMs} routed_at=${(leadGate as any).routed_at} expired_at=${(leadGate as any).expired_at}`);
+        return res.send(buildActionResponseHtml(
+          "Lead Expired",
+          "This lead expired after 24 hours and has been reassigned.",
+          "info",
+        ));
       }
       return res.send(buildConfirmationPageHtml(token, result.action));
     } catch (err: any) {
@@ -12702,7 +12747,7 @@ export async function registerRoutes(
         return res.status(400).send(buildActionResponseHtml("Invalid Link", "This action link is invalid, expired, or has been tampered with.", "error"));
       }
 
-      const { leadId, action } = result;
+      const { leadId, action, issuedAtMs: tokenIssuedAtMs } = result;
       const partnerNotes = typeof req.body.notes === "string" ? req.body.notes.trim().slice(0, 500) : "";
 
       const actionToResponseStatus: Record<string, string> = {
@@ -12724,7 +12769,7 @@ export async function registerRoutes(
       // emails show only first+last-initial / category / location summary.
       const { data: lead, error: leadFetchErr } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, is_billable, billing_status, category, subcategory, user_state, user_city, veteran_name, veteran_email, veteran_phone, preferred_contact, message")
+        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, is_billable, billing_status, category, subcategory, user_state, user_city, veteran_name, veteran_email, veteran_phone, preferred_contact, message, expired_at, routed_at")
         .eq("id", leadId)
         .single();
       if (leadFetchErr) {
@@ -12733,6 +12778,22 @@ export async function registerRoutes(
 
       if (!lead) {
         return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This support request could not be found in our system.", "error"));
+      }
+
+      // Founder QA 2026-05-01 (Item B — Elite expired-link protection, POST):
+      // defense-in-depth check. The GET handler already blocks the initial
+      // click, but a partner could craft a direct POST or have a buffered
+      // form submission. This guard runs BEFORE any state writes or
+      // chargeLeadAutomatically() call, so a stale token can never trigger
+      // a $49.99 charge or overwrite the new partner's assignment.
+      // See isStaleLeadActionToken() above for the full discriminator logic.
+      if (isStaleLeadActionToken(tokenIssuedAtMs, (lead as any).routed_at, (lead as any).expired_at)) {
+        console.log(`[lead-action] POST stale-token blocked: lead ${leadId} tokenTs=${tokenIssuedAtMs} routed_at=${(lead as any).routed_at} expired_at=${(lead as any).expired_at}`);
+        return res.send(buildActionResponseHtml(
+          "Lead Expired",
+          "This lead expired after 24 hours and has been reassigned.",
+          "info",
+        ));
       }
 
       const currentResponse = lead.response_status || "pending";

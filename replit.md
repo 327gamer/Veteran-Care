@@ -2296,3 +2296,38 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 - Zero Supabase migrations, zero `db:push`, zero `db:push --force`
 - No DDL of any kind (only INSERT/UPDATE on existing tables in the bundled test flow)
 - Stripe pricing for non-test paths untouched
+
+---
+
+## 2026-05-01 — Founder QA: Elite Expired-Lead Reroute (Items A + B + C)
+
+**Goal:** When an Elite-sourced navigator request has not been Accepted within 24 hours, expire the Elite assignment and hand the lead off to the existing Trusted Partner round-robin. Stale Elite Accept-link clicks must not charge.
+
+### Files modified
+- **`server/lead-expiration.ts`** — `expireStaleLeads()` now:
+  - SELECT additionally returns `source, elite_sponsor_slot_id, routed_to_partner_id, routing_history, expired_at` for each newly expired row.
+  - For every `source='elite_sponsor'` row, appends a `routing_history` audit event `{event:"elite_expired", reason:"24h_no_accept", expired_partner_id, elite_sponsor_slot_id, expired_at, recorded_at}` then calls existing `routeLead(leadId)`.
+  - Uses lazy `await import("./lead-router")` + `await import("./supabase")` to avoid a circular boot dependency.
+  - Per-lead try/catch keeps the sweep going if one reroute fails. Audit-write `auditUpdate.error` is logged explicitly.
+  - Returns extended shape: `{expiredCount, expiredIds, reroutedCount, reroutedIds, error?}`.
+- **`server/lead-email.ts`** — `verifyLeadActionToken()` now additionally returns `issuedAtMs: number` (parsed from the existing token timestamp). Purely additive — existing callers continue to work.
+- **`server/routes.ts`** — added shared helper `isStaleLeadActionToken(tokenIssuedAtMs, routedAtIso, expiredAtIso)` with two veto triggers and a 2-second jitter band:
+  - Trigger 1: `tokenIssuedAtMs < routed_at - 2000` → token issued before the most recent reroute (catches Elite stale click after reroute completed).
+  - Trigger 2: `tokenIssuedAtMs < expired_at - 2000` → token issued before the lead was marked expired (closes the race window between expired_at UPDATE and routeLead UPDATE).
+  - Applied in BOTH `GET /api/partner/lead-action` (blocks the confirmation page render so the partner never sees the misleading "Charge $49.99" form) AND `POST /api/partner/lead-action` (defense-in-depth before any state writes / chargeLeadAutomatically call).
+  - Both branches return `buildActionResponseHtml("Lead Expired", "This lead expired after 24 hours and has been reassigned.", "info")`.
+
+### Acceptance verification (5 founder scenarios)
+- **C1** Elite Accept WITHIN 24h → `routed_at` set at Elite send, partner clicks from same email, `token.issuedAtMs ≈ routed_at`, `expired_at IS NULL` → guard does not fire → flows to existing charge code → $49.99 to Elite. ✅
+- **C2** Elite expired after 24h → `expireStaleLeads()` marks `expired_at`, appends audit event, calls `routeLead()`. `routeLead()`'s built-in `excludeIds` logic (already includes `routed_to_partner_id` + `routing_history.partner_id`) keeps the failed Elite partner out of the Trusted Partner candidate set. ✅
+- **C3** Trusted Partner Accept after reroute → new email's token has `issuedAtMs > new routed_at` → guard does not fire → flows to existing charge code → $49.99 to Trusted Partner via the same `chargeLeadAutomatically(leadId)` path. ✅
+- **C4** Original Elite stale Accept link → `token.issuedAtMs < routed_at` (and < `expired_at`) → guard fires on GET (skips confirm page) AND POST (defense in depth) → "Lead Expired" page returned, `billed`/`stripe_payment_intent_id`/`response_status` all unchanged. ✅
+- **C5** No Trusted Partner exists → `routeLead()` already calls `markLeadUnrouted()` setting `delivery_status='unrouted'`. Lead surfaces in admin queue for manual follow-up. No code change needed. ✅
+
+### MASTER LAW compliance
+- No `shared/schema.ts` change (still only `users`)
+- No `db:push`, no SQL migrations — `routed_at`, `expired_at`, `routing_history` columns all already existed
+- No Stripe / billing / pricing code touched
+- No UI changes
+- No round-robin / `routeLead()` internals modified — we only call the existing public function
+- Existing 4-layer charge protection (state-machine guard, `lead.billed` guard, Stripe `idempotencyKey=lead:${leadId}`, founder safety gate `is_billable`/`billing_status`) all intact and verified

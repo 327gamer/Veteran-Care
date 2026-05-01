@@ -105,13 +105,22 @@ export async function setLeadExpiration(
 export async function expireStaleLeads(): Promise<{
   expiredCount: number;
   expiredIds: string[];
+  reroutedCount: number;
+  reroutedIds: string[];
   error?: string;
 }> {
   if (!hasSupabaseDirectAccess()) {
-    return { expiredCount: 0, expiredIds: [], error: "supabase direct access not configured" };
+    return { expiredCount: 0, expiredIds: [], reroutedCount: 0, reroutedIds: [], error: "supabase direct access not configured" };
   }
   try {
-    const rows = await supabaseQuery<{ id: string }>(
+    const rows = await supabaseQuery<{
+      id: string;
+      source: string | null;
+      elite_sponsor_slot_id: string | null;
+      routed_to_partner_id: string | null;
+      routing_history: any;
+      expired_at: string;
+    }>(
       `UPDATE navigator_requests
          SET expired_at = NOW()
        WHERE expired_at IS NULL
@@ -121,15 +130,87 @@ export async function expireStaleLeads(): Promise<{
            OR
            (lead_expires_at IS NULL AND email_sent_at IS NOT NULL AND email_sent_at < NOW() - INTERVAL '24 hours')
          )
-       RETURNING id`,
+       RETURNING id, source, elite_sponsor_slot_id, routed_to_partner_id, routing_history, expired_at`,
     );
     const expiredIds = rows.map((r) => r.id);
     if (expiredIds.length > 0) {
       console.log(`[lead-expiration] Expired ${expiredIds.length} stale lead(s): ${expiredIds.join(", ")}`);
     }
-    return { expiredCount: expiredIds.length, expiredIds };
+
+    // Founder QA 2026-05-01 (Item A — Elite expired-lead reroute): for any
+    // expired Elite-sourced lead, append a `routing_history` event capturing
+    // the expiry, then hand the lead to the EXISTING Trusted Partner round-
+    // robin via `routeLead()`. routeLead's built-in excludeIds logic adds the
+    // failed Elite partner to the exclusion set so they cannot be re-selected.
+    // We do NOT change the round-robin, billing, or Stripe paths.
+    //
+    // Best-effort per lead: any failure (rare race, missing deps) logs but
+    // never aborts the sweep — other Elite leads still get rerouted, and the
+    // expired_at timestamp is already committed so the Accept-link guard in
+    // /api/partner/lead-action protects revenue regardless.
+    const reroutedIds: string[] = [];
+    // Founder spec: "for any source='elite_sponsor' expired lead". We do NOT
+    // gate on elite_sponsor_slot_id — if a legacy Elite row lacks the slot id
+    // we still want it rerouted (the slot_id is just a nice-to-have audit field).
+    const eliteRows = rows.filter((r) => r.source === "elite_sponsor");
+    if (eliteRows.length > 0) {
+      // Lazy-import routeLead to avoid a circular boot dependency between
+      // lead-expiration.ts (used at boot) and lead-router.ts (which pulls in
+      // lead-email.ts which pulls back in scheduling helpers).
+      const { routeLead } = await import("./lead-router");
+      const { supabaseAdmin } = await import("./supabase");
+      for (const r of eliteRows) {
+        try {
+          const existing = Array.isArray(r.routing_history) ? r.routing_history : [];
+          existing.push({
+            event: "elite_expired",
+            reason: "24h_no_accept",
+            expired_partner_id: r.routed_to_partner_id || null,
+            elite_sponsor_slot_id: r.elite_sponsor_slot_id || null,
+            expired_at: r.expired_at,
+            recorded_at: new Date().toISOString(),
+          });
+          // Persist the audit entry BEFORE rerouting so routeLead picks it up
+          // when it reads routing_history to build excludeIds. We check the
+          // update result and log audit-write failures explicitly so silent
+          // audit drift (audit missing but reroute completes) is observable.
+          const auditUpdate = await supabaseAdmin
+            .from("navigator_requests")
+            .update({ routing_history: existing })
+            .eq("id", r.id);
+          if (auditUpdate.error) {
+            console.log(
+              `[lead-expiration] WARN: routing_history audit-write failed for ${r.id} — proceeding with reroute anyway: ${auditUpdate.error.message}`,
+            );
+          }
+
+          const result = await routeLead(r.id);
+          if (result.routed) {
+            reroutedIds.push(r.id);
+            console.log(
+              `[lead-expiration] Elite lead ${r.id} rerouted to Trusted Partner pool → ${result.partnerName}`,
+            );
+          } else {
+            console.log(
+              `[lead-expiration] Elite lead ${r.id} expired but no Trusted Partner match — left unrouted for admin follow-up`,
+            );
+          }
+        } catch (rerouteErr: any) {
+          console.log(
+            `[lead-expiration] Reroute failed for Elite lead ${r.id}: ${rerouteErr?.message}`,
+          );
+        }
+      }
+    }
+
+    return {
+      expiredCount: expiredIds.length,
+      expiredIds,
+      reroutedCount: reroutedIds.length,
+      reroutedIds,
+    };
   } catch (err: any) {
     console.log(`[lead-expiration] expireStaleLeads failed: ${err?.message}`);
-    return { expiredCount: 0, expiredIds: [], error: err?.message };
+    return { expiredCount: 0, expiredIds: [], reroutedCount: 0, reroutedIds: [], error: err?.message };
   }
 }

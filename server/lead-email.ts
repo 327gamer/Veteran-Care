@@ -19,7 +19,7 @@ export function generateLeadActionToken(leadId: string, action: string): string 
   return Buffer.from(`${payload}:${hmac}`).toString("base64url");
 }
 
-export function verifyLeadActionToken(token: string): { leadId: string; action: string } | null {
+export function verifyLeadActionToken(token: string): { leadId: string; action: string; issuedAtMs: number } | null {
   try {
     const decoded = Buffer.from(token, "base64url").toString();
     const parts = decoded.split(":");
@@ -36,7 +36,11 @@ export function verifyLeadActionToken(token: string): { leadId: string; action: 
     if (isNaN(tokenTime) || Date.now() - tokenTime > TOKEN_EXPIRY_MS) return null;
     const validActions = ["accepted"];
     if (!validActions.includes(action)) return null;
-    return { leadId, action };
+    // issuedAtMs is exposed so the Accept handler can compare it against
+    // lead.routed_at — tokens issued BEFORE the most recent reroute are
+    // stale (e.g. Elite partner clicking after their lead was rerouted to
+    // a Trusted Partner).
+    return { leadId, action, issuedAtMs: tokenTime };
   } catch { return null; }
 }
 
