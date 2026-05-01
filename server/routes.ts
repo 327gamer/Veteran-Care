@@ -12727,6 +12727,11 @@ export async function registerRoutes(
         ok: !result.error,
         expiredCount: result.expiredCount,
         expiredIds: result.expiredIds,
+        // Founder QA 2026-05-01: surface reroute counts so admin can confirm
+        // Elite-expired-lead reroute happened without grepping server logs.
+        // expireStaleLeads() already computes these (see server/lead-expiration.ts).
+        reroutedCount: result.reroutedCount,
+        reroutedIds: result.reroutedIds,
         ...(result.error ? { error: result.error } : {}),
       });
     } catch (err: any) {
