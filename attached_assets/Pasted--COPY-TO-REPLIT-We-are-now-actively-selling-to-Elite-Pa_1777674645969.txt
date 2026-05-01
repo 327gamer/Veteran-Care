@@ -1,0 +1,103 @@
+--- COPY TO REPLIT ---
+
+We are now actively selling to Elite Partners and Trusted Partners, so I need a FULL backend status report before we continue expanding to more states.
+
+This is NOT a build request — this is a visibility and audit request.
+
+Please provide a clear report on the current Elite Sponsor Slot system and admin panel readiness:
+
+--------------------------------------------------
+
+SECTION 1 — ELITE SLOT INVENTORY
+
+1. Total number of Elite Sponsor slots currently in the database
+
+Break it down by:
+- State
+- Category (Mortgage / VA Loans, Insurance, Legal, Real Estate, etc.)
+- Tier (Tier 1 / Tier 2 / Tier 3 pricing: $499 / $699 / $899)
+
+For each:
+- How many slots exist
+- How many are vacant
+- How many are sold
+
+--------------------------------------------------
+
+SECTION 2 — COVERAGE STATUS
+
+1. How many states are currently fully built out with Elite slots?
+
+2. Of the 10 states we started with:
+- Are ALL intended categories created?
+- Are ALL subcategories mapped correctly?
+- Are ALL price tiers assigned correctly?
+
+3. Identify ANY gaps such as:
+- Missing categories (e.g. mortgage-lending vs VA Loans mismatch)
+- Missing subcategories
+- Missing tier pricing
+- States partially built
+
+--------------------------------------------------
+
+SECTION 3 — ADMIN PANEL READINESS
+
+Confirm the Elite Sponsor section is fully operational:
+
+- Can we clearly see:
+  - Slot status (vacant / sold)
+  - Assigned partner
+  - Stripe subscription ID
+  - Billing status
+
+- Can we:
+  - Manually reset a slot to vacant
+  - View by state + category cleanly
+  - Trust this for real sales tracking
+
+If anything is incomplete or confusing in admin, list it clearly.
+
+--------------------------------------------------
+
+SECTION 4 — DATA INTEGRITY CHECK
+
+Confirm:
+
+- No orphan slots (slots not tied to valid categories)
+- No duplicate slots per category/state
+- No mismatch between:
+  - Frontend categories
+  - Admin categories
+  - Database categories
+
+--------------------------------------------------
+
+SECTION 5 — EXPANSION READINESS
+
+Before we move to Virginia and the remaining 40 states, confirm:
+
+- Is the Elite slot system now fully scalable for all 50 states?
+- Or are there structural issues we must fix BEFORE expanding?
+
+--------------------------------------------------
+
+SECTION 6 — RECOMMENDATION
+
+Based on everything above:
+
+Should we:
+A) Continue building states immediately
+B) Fix backend slot structure first
+C) Clean up categories/subcategories before expansion
+
+Give a clear recommendation with reasoning.
+
+--------------------------------------------------
+
+Important:
+Do NOT build anything yet.
+Do NOT scrape anything yet.
+Just provide a clean, structured report so we can make the next decision.
+
+--- END ---
