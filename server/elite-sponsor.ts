@@ -361,19 +361,32 @@ export function registerEliteSponsorRoutes(
   });
 
   // -------- admin: list all slots (full inventory grid) --------
+  // Paginated via .range() in 1000-row batches — supabase-js caps a single
+  // .select() at 1000 rows by default, which truncated the admin grid (DB
+  // currently holds ~3,886 slots across 51 states × 9 categories).
   app.get(
     "/api/admin/elite-sponsor-slots",
     requireAdmin,
     async (_req, res) => {
       try {
-        const { data, error } = await supabaseAdmin
-          .from("elite_sponsor_slots")
-          .select("*")
-          .order("state_code", { ascending: true })
-          .order("category_slug", { ascending: true });
-
-        if (error) throw error;
-        res.json({ slots: data || [] });
+        const PAGE_SIZE = 1000;
+        const HARD_CAP = 50000;
+        const all: any[] = [];
+        let from = 0;
+        while (from < HARD_CAP) {
+          const { data, error } = await supabaseAdmin
+            .from("elite_sponsor_slots")
+            .select("*")
+            .order("state_code", { ascending: true })
+            .order("category_slug", { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          all.push(...data);
+          if (data.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        res.json({ slots: all });
       } catch (err: any) {
         console.error(`[ECSS] admin list error: ${err.message}`);
         res

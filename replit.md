@@ -2343,3 +2343,17 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 - **Live verified:** `/api/elite-sponsor/categories` → 9 categories; removed slugs return HTTP 400; `/real-estate` and `/financial-services` both HTTP 200; only sold slot remains `WY × financial-credit × ABC Test`.
 - **MASTER LAW:** no `shared/schema.ts` change, no `db:push`, no Stripe / billing / pricing / AI Guide / routing touched.
 - **Republish:** YES (server + 5 client files changed).
+
+## 2026-05-01 — Admin Elite Sponsor inventory cap fix
+
+**Symptom:** Admin Elite Sponsor page showed only 1,000 of 3,886 slots; states alphabetically after ~GA (NC, NY, OH, PA, SC, …) appeared as "— no slot —".
+
+**Root cause:** `/api/admin/elite-sponsor-slots` used `supabaseAdmin.from(...).select("*")` with no `.range()` / `.limit()`. The supabase-js client caps a single `.select()` at 1000 rows by default, truncating the response in `state_code` ASC order.
+
+**Fix (server/elite-sponsor.ts):** loop `.range(from, from+999)` in 1000-row batches until exhausted, with a 50,000-row hard cap for safety. Single endpoint changed; no schema, no Stripe, no billing, no routing touched.
+
+**Verified:** `GET /api/admin/elite-sponsor-slots` → 3,886 slots, 51 distinct states, NC/NY/OH/PA/SC = 77 each, status counts {sold:1, vacant:3885}, all 9 categories present.
+
+**DB inventory:** intact — no missing rows. This was a display/loading issue only.
+
+**Republish required:** YES (single server file changed).
