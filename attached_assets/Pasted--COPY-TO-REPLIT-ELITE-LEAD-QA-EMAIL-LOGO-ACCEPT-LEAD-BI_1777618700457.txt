@@ -1,0 +1,82 @@
+--- COPY TO REPLIT ---
+
+ELITE LEAD QA — EMAIL LOGO + ACCEPT-LEAD BILLING FLOW
+
+I tested the live Elite Sponsor lead flow.
+
+Flow tested:
+1. Went to Trusted Services
+2. Selected WY → Financial & Credit Services → VA Loans / Mortgages
+3. Clicked “Get Exclusive Offer”
+4. Submitted lead form
+5. User received confirmation email
+6. Elite Partner/business received lead email
+
+Good news:
+- Lead form now submits successfully.
+- User confirmation email was received.
+- Elite Partner lead email was received.
+- Lead ID shown in the email:
+f4d67e5e-534a-4bc8-982e-520638587bbf
+
+Issues/questions:
+
+1. EMAIL BRANDING
+Both emails need the Veteran Care logo at the top.
+
+Please use the same email branding/template strategy already used for:
+- Trusted Partner emails
+- Support/request inquiry emails
+- Other Veteran Care branded system emails
+
+Every outgoing Veteran Care email should have the Veteran Care logo/header so it looks professional and consistent.
+
+2. ELITE PARTNER ACCEPT-LEAD BILLING FLOW MISSING
+The Elite Partner lead email did NOT show an “Accept Lead” / “Accept & Charge $49.99” button, checkbox, or action banner.
+
+This is required.
+
+Expected flow:
+- Lead is sent to Elite Partner
+- Partner reviews lead
+- Partner clicks “Accept Lead” or similar
+- Stripe automatically bills saved payment method $49.99
+- Admin reflects lead accepted/billed
+- Lead status updates accordingly
+
+Please confirm:
+A. Was the partner charged $49.99 automatically just because the lead email was opened or sent?
+B. If yes, that is wrong and must be fixed immediately.
+C. If no, confirm the lead is currently saved as unaccepted/unbilled.
+D. Add the same accept/charge workflow used for Trusted Partner leads to Elite Partner leads.
+
+Important:
+Opening the email must NOT charge the partner.
+Receiving the email must NOT charge the partner.
+Only clicking the explicit accept-lead action should trigger Stripe billing.
+
+3. ADMIN TRACE
+Please trace this exact lead:
+f4d67e5e-534a-4bc8-982e-520638587bbf
+
+Report back:
+- Where is it stored?
+- What table?
+- What status?
+- Is it marked billable?
+- Is it marked accepted?
+- Was Stripe charged?
+- Which partner/company received it?
+- Is there an admin view where I can see it?
+
+4. REQUIRED FIX
+Elite Partner lead emails should include:
+- Veteran Care logo/header
+- Lead details
+- Clear “Accept Lead — Charge $49.99” button
+- Optional “Not a Fit” button if available
+- Clear note that the partner is only charged after accepting the lead
+
+Please report back before building if this requires anything more than wiring Elite leads into the existing Trusted Partner lead-action flow.
+
+--- END ---
