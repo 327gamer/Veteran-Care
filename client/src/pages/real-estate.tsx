@@ -2,7 +2,11 @@ import { Home, ArrowRight, Building2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import EliteSponsorBanner from "@/components/elite-sponsor-banner";
+
+// Founder QA 2026-05-01 (Fix 3): real-estate was removed from the Elite
+// Sponsor monetized set (server/elite-sponsor.ts ECSS_CATEGORIES). The page
+// remains as a Trusted Services taxonomy placeholder, but the Elite banner +
+// "become an Elite Sponsor" CTA are intentionally removed below.
 
 export default function RealEstate() {
   const [, setLocation] = useLocation();
@@ -36,13 +40,8 @@ export default function RealEstate() {
         </div>
       </section>
 
-      {/* Elite Category Sponsor Slot — Phase A: placeholder banner */}
-      <EliteSponsorBanner
-        categorySlug="real-estate"
-        categoryLabel="Real Estate"
-      />
-
-      {/* Body — Phase A is sponsor-first; directory expansion comes later */}
+      {/* Body — Phase A directory expansion in progress.
+          Elite Sponsor banner intentionally omitted (see file header). */}
       <section className="max-w-6xl mx-auto px-4 py-8 md:py-10">
         <Card className="border-dashed">
           <CardContent className="p-6 md:p-8">
@@ -58,11 +57,9 @@ export default function RealEstate() {
                   Veteran-friendly real estate directory expanding soon
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                  Real estate is one of our newest premium categories. While we
-                  build out the full directory of veteran-friendly agents and
-                  brokerages, you can explore related housing resources or
-                  inquire about becoming the Elite Category Sponsor for your
-                  state.
+                  We're building out our full directory of veteran-friendly
+                  real estate agents and brokerages. In the meantime, explore
+                  related housing or financial resources below.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button

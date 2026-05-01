@@ -46,10 +46,12 @@ const LEAD_PRICE = 49.99;
 // monetized service categories. The Elite slot dropdown is filtered to this set.
 // Keep this list in sync with `ECSS_CATEGORIES` in `server/elite-sponsor.ts`.
 // Services-you-offer multi-select (Step 3) still uses the FULL category list.
+//
+// Founder QA 2026-05-01 (Fix 3): removed `mortgage-lending` and `real-estate`
+// — neither has any slots in elite_sponsor_slots. VA Loans / Mortgages
+// canonical home is `financial-credit/va-loans` (founder T000).
 const ELITE_ALLOWED_CATEGORY_SLUGS = new Set([
   "legal-services",
-  "mortgage-lending",
-  "real-estate",
   "insurance",
   "financial-credit",
   "housing-home",

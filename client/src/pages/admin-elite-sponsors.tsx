@@ -39,14 +39,17 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const ECSS_CATEGORIES = [
-  { slug: "legal-services", label: "Legal Services" },
-  { slug: "mortgage-lending", label: "Mortgage / Lending" },
-  { slug: "real-estate", label: "Real Estate" },
-  { slug: "insurance", label: "Insurance" },
-] as const;
-
-type CategorySlug = (typeof ECSS_CATEGORIES)[number]["slug"];
+// Founder QA 2026-05-01 (Fix 4): hardcoded ECSS_CATEGORIES list removed
+// — admin now fetches the canonical list from `/api/elite-sponsor/categories`
+// (server/elite-sponsor.ts ECSS_CATEGORIES) so backend/frontend never drift.
+// Returned items have `{slug, label, mount_path, description}`; only
+// `slug` + `label` are used in this page.
+type EcssCategory = {
+  slug: string;
+  label: string;
+  mount_path?: string;
+  description?: string;
+};
 
 interface EliteSlot {
   id: string;
@@ -138,6 +141,17 @@ function AdminEliteSponsorsInner() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<EliteSlot | null>(null);
+
+  // Categories (Fix 4 — fetched from canonical backend list, no hardcode)
+  const categoriesQuery = useQuery<{ categories: EcssCategory[] }>({
+    queryKey: ["/api/elite-sponsor/categories"],
+    queryFn: async () => {
+      const r = await fetch("/api/elite-sponsor/categories");
+      if (!r.ok) throw new Error("Failed to load Elite categories");
+      return r.json();
+    },
+  });
+  const ECSS_CATEGORIES: EcssCategory[] = categoriesQuery.data?.categories || [];
 
   // Slots
   const slotsQuery = useQuery<{ slots: EliteSlot[] }>({
@@ -243,6 +257,33 @@ function AdminEliteSponsorsInner() {
   const soldCount = slots.filter((s) => s.status === "sold").length;
   const vacantCount = slots.filter((s) => s.status === "vacant").length;
   const pausedCount = slots.filter((s) => s.status === "paused").length;
+
+  // Fix 4 — wait for categories before rendering the slot grid (otherwise
+  // table headers/rows would briefly render empty until the fetch lands).
+  if (categoriesQuery.isLoading) {
+    return (
+      <div
+        className="min-h-screen bg-muted/30 flex items-center justify-center"
+        data-testid="loading-elite-categories"
+      >
+        <div className="text-sm text-muted-foreground animate-pulse">
+          Loading Elite categories…
+        </div>
+      </div>
+    );
+  }
+  if (categoriesQuery.isError) {
+    return (
+      <div
+        className="min-h-screen bg-muted/30 flex items-center justify-center"
+        data-testid="error-elite-categories"
+      >
+        <div className="text-sm text-destructive">
+          Failed to load Elite categories. Please refresh.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
