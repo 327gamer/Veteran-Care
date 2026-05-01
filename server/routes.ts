@@ -12620,11 +12620,21 @@ export async function registerRoutes(
 
       const responseStatus = actionToResponseStatus[action] || action;
 
-      const { data: lead } = await supabaseAdmin
+      // Founder QA 2026-05-01: removed non-existent `email` column from this
+      // SELECT (column on navigator_requests is `veteran_email`, not `email`).
+      // Pre-existing bug since commit 8454af68 (2026-04-28) caused this query
+      // to silently fail with "column navigator_requests.email does not exist"
+      // → handler returned 404 "Lead Not Found" on every Accept click → no
+      // Accept ever succeeded → no charges ever fired. lead.email is unused
+      // downstream in this handler.
+      const { data: lead, error: leadFetchErr } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, category, user_state, veteran_name, email")
+        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, is_billable, billing_status, category, user_state, veteran_name")
         .eq("id", leadId)
         .single();
+      if (leadFetchErr) {
+        console.error(`[lead-action] lead fetch error for ${leadId}: ${leadFetchErr.message}`);
+      }
 
       if (!lead) {
         return res.status(404).send(buildActionResponseHtml("Lead Not Found", "This support request could not be found in our system.", "error"));
@@ -12683,6 +12693,18 @@ export async function registerRoutes(
       let chargeOk = true;
       let chargeFailMessage = "";
       if (responseStatus === "accepted" && !lead.billed) {
+        // Founder QA 2026-05-01 (safety gate): no Stripe charge unless the lead
+        // is explicitly marked billable. Belt-and-suspenders against any future
+        // code path that creates leads without setting is_billable=true.
+        // billing_status="not_billable" is a hard veto. Other states (billable,
+        // ready, pending, null) are allowed through.
+        const billingStatus = (lead as any).billing_status as string | null | undefined;
+        const isBillable = (lead as any).is_billable as boolean | null | undefined;
+        if (isBillable !== true || billingStatus === "not_billable") {
+          chargeOk = false;
+          chargeFailMessage = "lead is not billable";
+          console.warn(`[lead-action] charge skipped for lead ${leadId}: not billable (is_billable=${isBillable}, billing_status=${billingStatus ?? "null"})`);
+        } else {
         try {
           let billingPartnerId: string | null = lead.routed_to_partner_id || null;
           if (!billingPartnerId && lead.elite_sponsor_slot_id) {
@@ -12802,11 +12824,15 @@ export async function registerRoutes(
           chargeFailMessage = autoBillErr.message || "internal error";
           console.warn(`[lead-action] auto-bill hook exception for lead ${leadId}: ${autoBillErr.message}`);
         }
+        }
       }
 
       const noteAck = partnerNotes ? " Your note has been saved." : "";
+      const notBillable = chargeFailMessage === "lead is not billable";
       const message = chargeOk
         ? `Lead accepted. $49.99 charged to your card on file. The veteran has been notified that you will be reaching out.${noteAck}`
+        : notBillable
+        ? `Lead accepted. This lead is not billable, so no charge was made. The veteran has been notified that you will be reaching out.${noteAck}`
         : `Lead accepted. We were unable to process the $49.99 charge automatically (${chargeFailMessage}). Our team will follow up.${noteAck}`;
       return res.send(buildActionResponseHtml("Lead Accepted", message, chargeOk ? "success" : "info"));
     } catch (err: any) {
