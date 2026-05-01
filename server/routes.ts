@@ -12540,6 +12540,77 @@ export async function registerRoutes(
     }
   });
 
+  // Founder QA 2026-05-01 (Item #1): post-Accept success page that REVEALS
+  // the full veteran contact info — this is the *only* place the partner
+  // ever sees the full name, email, phone, preferred contact, and complete
+  // message. The pre-Accept partner email shows only first+last-initial /
+  // category / location / message summary. Accepting commits the partner to
+  // the $49.99 charge and unlocks the contact details simultaneously.
+  function buildAcceptSuccessHtml(opts: {
+    veteranName: string | null;
+    veteranEmail: string | null;
+    veteranPhone: string | null;
+    preferredContact: string | null;
+    userCity: string | null;
+    userState: string | null;
+    category: string | null;
+    subcategory: string | null;
+    message: string | null;
+    chargeStatusLine: string;
+    noteAck: string;
+  }): string {
+    const escape = (s: string | null | undefined) =>
+      (s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    const row = (label: string, value: string) =>
+      value
+        ? `<tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #E5E7EB;color:#6B7280;font-size:13px;width:140px;">${label}</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #E5E7EB;font-weight:600;">${value}</td>
+          </tr>`
+        : "";
+    const location = [opts.userCity, opts.userState].filter(Boolean).map((s) => escape(s)).join(", ");
+    const categoryLine = opts.category
+      ? `${escape(opts.category)}${opts.subcategory ? ` — ${escape(opts.subcategory)}` : ""}`
+      : "";
+    const messageBlock = opts.message
+      ? `<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin:16px 0 8px 0;text-align:left;">
+          <p style="margin:0 0 6px 0;color:#6B7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Veteran's Full Message</p>
+          <p style="margin:0;font-size:14px;line-height:1.5;">${escape(opts.message).replace(/\n/g, "<br>")}</p>
+        </div>`
+      : "";
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lead Accepted — ${platform.name}</title></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;background:#F9FAFB;padding:24px 12px;">
+    <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="width:60px;height:60px;border-radius:50%;background:#F0FDF4;border:2px solid #BBF7D0;display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:#166534;margin-bottom:10px;">&#10003;</div>
+        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 6px 0;">Lead Accepted</h1>
+        <p style="font-size:14px;color:#6B7280;line-height:1.5;margin:0;">${escape(opts.chargeStatusLine)}${escape(opts.noteAck)}</p>
+      </div>
+
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px 16px;margin-bottom:14px;">
+        <p style="margin:0;font-size:13px;color:#166534;font-weight:600;">&#128274; Contact details are now unlocked. Reach out to the veteran promptly.</p>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+        ${row("Veteran Name", escape(opts.veteranName) || "—")}
+        ${row("Email", opts.veteranEmail ? `<a href="mailto:${escape(opts.veteranEmail)}" style="color:#2563EB;text-decoration:none;">${escape(opts.veteranEmail)}</a>` : "")}
+        ${row("Phone", opts.veteranPhone ? `<a href="tel:${escape(opts.veteranPhone)}" style="color:#2563EB;text-decoration:none;">${escape(opts.veteranPhone)}</a>` : "")}
+        ${row("Preferred Contact", escape(opts.preferredContact))}
+        ${row("Location", location)}
+        ${row("Category", categoryLine)}
+      </table>
+
+      ${messageBlock}
+
+      <p style="font-size:11px;color:#9CA3AF;text-align:center;margin:16px 0 0 0;">${platform.name}</p>
+    </div></body></html>`;
+  }
+
   function buildActionResponseHtml(title: string, message: string, type: "success" | "error" | "info"): string {
     const colors = {
       success: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", icon: "&#10003;" },
@@ -12599,6 +12670,26 @@ export async function registerRoutes(
     }
   });
 
+  // Founder QA 2026-05-01 (Item #2): admin-gated endpoint to manually trigger
+  // the lead-expiration sweep. No UI for this in this round (backend flag
+  // only). Returns the count + ids of leads marked expired so the founder can
+  // verify the foundation works end-to-end. Future rounds will add a cron.
+  app.post("/api/admin/leads/expire-stale", requireAdmin, async (_req, res) => {
+    try {
+      const { expireStaleLeads } = await import("./lead-expiration");
+      const result = await expireStaleLeads();
+      return res.json({
+        ok: !result.error,
+        expiredCount: result.expiredCount,
+        expiredIds: result.expiredIds,
+        ...(result.error ? { error: result.error } : {}),
+      });
+    } catch (err: any) {
+      console.log("[admin/expire-stale] Error:", err?.message);
+      return res.status(500).json({ ok: false, error: err?.message || "internal error" });
+    }
+  });
+
   app.post("/api/partner/lead-action", express.urlencoded({ extended: false }), async (req, res) => {
     try {
       const { token } = req.body;
@@ -12627,9 +12718,13 @@ export async function registerRoutes(
       // → handler returned 404 "Lead Not Found" on every Accept click → no
       // Accept ever succeeded → no charges ever fired. lead.email is unused
       // downstream in this handler.
+      // Founder QA 2026-05-01 (Item #1): expanded SELECT to include the
+      // PII columns we need to render on the post-Accept success page so the
+      // partner sees the full contact info the moment they commit. Pre-Accept
+      // emails show only first+last-initial / category / location summary.
       const { data: lead, error: leadFetchErr } = await supabaseAdmin
         .from("navigator_requests")
-        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, is_billable, billing_status, category, user_state, veteran_name")
+        .select("id, status, admin_notes, response_status, elite_sponsor_slot_id, routed_to_partner_id, billed, is_billable, billing_status, category, subcategory, user_state, user_city, veteran_name, veteran_email, veteran_phone, preferred_contact, message")
         .eq("id", leadId)
         .single();
       if (leadFetchErr) {
@@ -12829,12 +12924,31 @@ export async function registerRoutes(
 
       const noteAck = partnerNotes ? " Your note has been saved." : "";
       const notBillable = chargeFailMessage === "lead is not billable";
-      const message = chargeOk
-        ? `Lead accepted. $49.99 charged to your card on file. The veteran has been notified that you will be reaching out.${noteAck}`
+      const chargeStatusLine = chargeOk
+        ? `$49.99 charged to your card on file. The veteran has been notified that you will be reaching out.`
         : notBillable
-        ? `Lead accepted. This lead is not billable, so no charge was made. The veteran has been notified that you will be reaching out.${noteAck}`
-        : `Lead accepted. We were unable to process the $49.99 charge automatically (${chargeFailMessage}). Our team will follow up.${noteAck}`;
-      return res.send(buildActionResponseHtml("Lead Accepted", message, chargeOk ? "success" : "info"));
+        ? `This lead is not billable, so no charge was made. The veteran has been notified that you will be reaching out.`
+        : `We were unable to process the $49.99 charge automatically (${chargeFailMessage}). Our team will follow up.`;
+      // Founder QA 2026-05-01 (Item #1): on successful Accept, render the
+      // contact-reveal page so the partner sees full PII for the lead they
+      // just committed to. Non-accept paths (declined etc) still use the
+      // generic response page.
+      if (responseStatus === "accepted") {
+        return res.send(buildAcceptSuccessHtml({
+          veteranName: lead.veteran_name,
+          veteranEmail: (lead as any).veteran_email ?? null,
+          veteranPhone: (lead as any).veteran_phone ?? null,
+          preferredContact: (lead as any).preferred_contact ?? null,
+          userCity: (lead as any).user_city ?? null,
+          userState: lead.user_state,
+          category: lead.category,
+          subcategory: (lead as any).subcategory ?? null,
+          message: (lead as any).message ?? null,
+          chargeStatusLine,
+          noteAck,
+        }));
+      }
+      return res.send(buildActionResponseHtml("Lead Accepted", `${chargeStatusLine}${noteAck}`, chargeOk ? "success" : "info"));
     } catch (err: any) {
       console.log("[lead-action] POST Error:", err?.message);
       return res.status(500).send(buildActionResponseHtml("Error", "Something went wrong. Please try again later.", "error"));

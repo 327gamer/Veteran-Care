@@ -487,6 +487,15 @@ httpServer.listen(
     await ensureSubcategoryTags();
     await ensureSubcategoryAliases();
     await ensureSeededNationalProviders();
+    // Founder QA 2026-05-01 (Item #2): idempotent ALTER on navigator_requests
+    // to add lead_expires_at + expired_at columns. Runs via direct supabase
+    // pg connection (SUPABASE_DB_PASSWORD). Safe no-op if columns exist.
+    try {
+      const { ensureLeadExpirationColumns } = await import("./lead-expiration");
+      await ensureLeadExpirationColumns();
+    } catch (err: any) {
+      log(`[boot] ensureLeadExpirationColumns skipped: ${err?.message}`);
+    }
     await registerRoutes(httpServer, app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -116,6 +116,37 @@ function buildUnsubscribeFooter(recipientEmail: string): string {
   </div>`;
 }
 
+// Founder QA 2026-05-01 (Item #3): user-facing confirmation emails MUST
+// include an unsubscribe link AND a clear reason-for-receiving line. Distinct
+// from buildUnsubscribeFooter (which targets partner-business inboxes). The
+// reason line is wired to the actual submission context the user just took.
+function buildUserUnsubscribeFooter(recipientEmail: string, providerName: string): string {
+  const unsubMailto = `mailto:${platform.email.defaultNotifyEmail}?subject=Unsubscribe&body=Please%20unsubscribe%20${encodeURIComponent(recipientEmail)}%20from%20${encodeURIComponent(platform.name)}%20notifications.`;
+  return `
+  <div style="text-align: center; padding: 16px 0 4px 0; color: #9CA3AF; font-size: 11px; border-top: 1px solid #E5E7EB; margin-top: 18px;">
+    <p style="margin: 0;">You are receiving this email because you submitted a request for help with <strong>${escapeHtml(providerName)}</strong> on ${platform.name}.</p>
+    <p style="margin: 6px 0 0 0;"><a href="${unsubMailto}" style="color: #6B7280; text-decoration: underline;">Unsubscribe</a> from ${platform.name} notifications.</p>
+  </div>`;
+}
+
+// Founder QA 2026-05-01 (Item #1): mask veteran identity before partner clicks
+// Accept. Rules:
+//   - "Colin Test" → "Colin T."
+//   - "Madonna"    → "Madonna"
+//   - ""           → "Veteran"
+// First name is preserved in full (helps partners triage); only the last name
+// is reduced to a single initial. Once partner clicks Accept, the post-Accept
+// landing page reveals the full name + email + phone (see routes.ts).
+function maskVeteranName(fullName: string | null | undefined): string {
+  const trimmed = (fullName || "").trim();
+  if (!trimmed) return "Veteran";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first} ${lastInitial}.`;
+}
+
 interface LeadEmailData {
   leadId: string;
   veteranName: string;
@@ -191,22 +222,17 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
     <p style="margin: 0; color: #15803D; font-size: 13px;">via ${platform.name} ${platform.navigatorTitle}</p>
   </div>
 
+  <!-- Founder QA 2026-05-01 (Item #1): partner email shows MASKED contact info
+       only — first name + last initial, no email, no phone, no preferred-
+       contact (which would leak email-vs-phone preference). The partner sees
+       a category/location/message-summary preview, then must click Accept to
+       reveal the full identity + contact details on the landing page. The
+       summary keeps message text trimmed to ~280 chars so partners can still
+       triage but cannot scrape full PII. -->
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
     <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px; width: 140px;">Veteran Name</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.veteranName)}</td>
-    </tr>
-    ${lead.veteranPhone ? `<tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Phone</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="tel:${escapeHtml(lead.veteranPhone)}" style="color: #2563EB;">${escapeHtml(lead.veteranPhone)}</a></td>
-    </tr>` : ""}
-    ${lead.veteranEmail ? `<tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Email</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="mailto:${escapeHtml(lead.veteranEmail)}" style="color: #2563EB;">${escapeHtml(lead.veteranEmail)}</a></td>
-    </tr>` : ""}
-    <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Preferred Contact</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(lead.preferredContact) || "Not specified"}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px; width: 140px;">Veteran</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(maskVeteranName(lead.veteranName))}</td>
     </tr>
     ${lead.userCity || lead.userState ? `<tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Location</td>
@@ -228,14 +254,25 @@ function buildLeadEmailHtml(lead: LeadEmailData, partner: PartnerEmailData): str
     </tr>
   </table>
 
-  ${lead.message ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
-    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Veteran's Message</p>
-    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
-  </div>` : ""}
+  ${lead.message ? (() => {
+    const trimmed = (lead.message || "").trim();
+    const summary = trimmed.length > 280 ? trimmed.slice(0, 280).trim() + "…" : trimmed;
+    return `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Message Summary</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(summary).replace(/\n/g, "<br>")}</p>
+    ${trimmed.length > 280 ? `<p style="margin: 6px 0 0 0; font-size: 12px; color: #6B7280; font-style: italic;">Full message will be revealed after you Accept.</p>` : ""}
+  </div>`;
+  })() : ""}
+
+  <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0; font-size: 13px; color: #1E40AF;">
+      <strong>🔒 Contact Locked:</strong> The veteran's full name, email, phone number, and complete message will be revealed once you click <strong>Accept Lead</strong> below. This protects veteran privacy until a partner commits to following up.
+    </p>
+  </div>
 
   <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
     <p style="margin: 0; font-size: 13px; color: #92400E;">
-      <strong>Next Steps:</strong> Tap "Accept Lead" below to claim this veteran. Your card on file will be charged $49.99 and the lead will be exclusively assigned to you. If you do not accept within a short window, the lead will rotate to another partner automatically.
+      <strong>Next Steps:</strong> Tap "Accept Lead" below to claim this veteran. Your card on file will be charged $49.99 and the lead will be exclusively assigned to you. If you do not accept within 24 hours, the lead will rotate to another partner automatically.
     </p>
   </div>
 
@@ -538,6 +575,19 @@ function buildTrustedServiceLeadHtml(
   // the bottom (post-details), preserving existing UX for non-Elite leads.
   const logoUrl = platform.domain ? `https://${platform.domain}/logo.png` : `${baseUrl}/logo.png`;
 
+  // Founder QA 2026-05-01 (Item #1): on Elite-sponsor partner emails (the
+  // ones where the partner will be charged on Accept), mask contact info the
+  // same way as the navigator partner email. Admin copies (isAdminCopy) and
+  // Trusted Services partner emails (charged via separate flow, no Accept
+  // gate) keep full info.
+  const maskContact = isElite && !isAdminCopy;
+  const displayContactName = maskContact ? maskVeteranName(lead.leadName) : lead.leadName;
+  const messageTrimmed = (lead.message || "").trim();
+  const messageDisplay = maskContact && messageTrimmed.length > 280
+    ? messageTrimmed.slice(0, 280).trim() + "…"
+    : messageTrimmed;
+  const messageWasTruncated = maskContact && messageTrimmed.length > 280;
+
   return `
 <!DOCTYPE html>
 <html>
@@ -566,9 +616,9 @@ function buildTrustedServiceLeadHtml(
     </tr>` : ""}
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Contact Name</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(lead.leadName)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${escapeHtml(displayContactName)}</td>
     </tr>
-    <tr>
+    ${maskContact ? "" : `<tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Role</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(roleLabel)}</td>
     </tr>
@@ -579,7 +629,7 @@ function buildTrustedServiceLeadHtml(
     ${lead.leadPhone ? `<tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Phone</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;"><a href="tel:${escapeHtml(lead.leadPhone)}" style="color: #2563EB;">${escapeHtml(lead.leadPhone)}</a></td>
-    </tr>` : ""}
+    </tr>` : ""}`}
     ${lead.leadCity || lead.leadState ? `<tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280; font-size: 13px;">Location</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #E5E7EB;">${[escapeHtml(lead.leadCity), escapeHtml(lead.leadState)].filter(Boolean).join(", ")}</td>
@@ -590,9 +640,16 @@ function buildTrustedServiceLeadHtml(
     </tr>
   </table>
 
-  ${lead.message ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
-    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Message</p>
-    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
+  ${messageDisplay ? `<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0 0 6px 0; color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${maskContact ? "Message Summary" : "Message"}</p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5;">${escapeHtml(messageDisplay).replace(/\n/g, "<br>")}</p>
+    ${messageWasTruncated ? `<p style="margin: 6px 0 0 0; font-size: 12px; color: #6B7280; font-style: italic;">Full message will be revealed after you Accept.</p>` : ""}
+  </div>` : ""}
+
+  ${maskContact ? `<div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+    <p style="margin: 0; font-size: 13px; color: #1E40AF;">
+      <strong>🔒 Contact Locked:</strong> The veteran's full name, email, phone number, and complete message will be revealed once you click <strong>Accept Lead</strong> above. This protects veteran privacy until a partner commits to following up.
+    </p>
   </div>` : ""}
 
   ${trustedActionButtons}
@@ -625,12 +682,20 @@ function buildTrustedServiceLeadHtml(
 function buildLeadUserConfirmationHtml(
   recipientName: string,
   providerName: string,
+  // Founder QA 2026-05-01 (Item #3): recipient email is now passed in so we
+  // can include a per-user unsubscribe footer + reason-for-receiving line.
+  // Optional for backward-compat; if omitted, the footer is omitted (we will
+  // never construct a mailto with an empty address).
+  recipientEmail?: string | null,
 ): string {
   const greetingName = recipientName.trim() || "there";
   // Founder QA 2026-05-01 (item #4): branded Veteran Care header on the user
   // confirmation email, matching the partner notification.
   const baseUrl = getBaseUrl();
   const logoUrl = platform.domain ? `https://${platform.domain}/logo.png` : `${baseUrl}/logo.png`;
+  const unsubFooter = recipientEmail && recipientEmail.trim()
+    ? buildUserUnsubscribeFooter(recipientEmail.trim(), providerName)
+    : "";
   return `
 <!DOCTYPE html>
 <html>
@@ -659,6 +724,8 @@ function buildLeadUserConfirmationHtml(
   <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 22px; color: #9CA3AF; font-size: 11px;">
     <p style="margin: 0;">Sent on behalf of ${escapeHtml(providerName)} via ${platform.name}.</p>
   </div>
+
+  ${unsubFooter}
 
 </body>
 </html>`;
@@ -714,6 +781,21 @@ export async function sendTrustedServiceLeadNotification(
       } else {
         partnerSent = true;
         console.log(`[email] ${isElite ? "Elite sponsor" : "Trusted service"} partner notification sent to ${providerData.email}`);
+        // Founder QA 2026-05-01 (Item #2): Elite-sponsor leads live in
+        // navigator_requests, so the 24h expiration clock applies. Trusted-
+        // services leads use a separate table without these columns —
+        // skip them. Best-effort: do not block the email pipeline.
+        if (isElite) {
+          try {
+            const { setLeadExpiration } = await import("./lead-expiration");
+            const result = await setLeadExpiration(leadId, 24);
+            if (result.ok) {
+              console.log(`[email] Elite lead ${leadId} expiration set → ${result.expiresAt}`);
+            }
+          } catch (expErr: any) {
+            console.log(`[email] setLeadExpiration(${leadId}) threw: ${expErr?.message}`);
+          }
+        }
       }
     } catch (err: any) {
       errors.push(`Partner: ${err?.message}`);
@@ -729,7 +811,7 @@ export async function sendTrustedServiceLeadNotification(
   // here logs but does not block the partner/admin pipeline below.
   if (leadData.email && leadData.email.trim()) {
     try {
-      const userHtml = buildLeadUserConfirmationHtml(leadData.name, providerData.name);
+      const userHtml = buildLeadUserConfirmationHtml(leadData.name, providerData.name, leadData.email);
       const { error: userErr } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [leadData.email.trim()],
@@ -1384,6 +1466,21 @@ export async function sendLeadNotification(
     }
 
     console.log(`[email] Lead ${leadId} notification sent to ${partner.contact_email} (${emailResult?.id})`);
+
+    // Founder QA 2026-05-01 (Item #2): start the 24h expiration clock the
+    // moment the partner notification email is delivered. Best-effort —
+    // failure to set the timestamp must NOT block the email pipeline (the
+    // routing system continues to work without expiration tracking; the
+    // expiration sweep simply won't pick this lead up).
+    try {
+      const { setLeadExpiration } = await import("./lead-expiration");
+      const result = await setLeadExpiration(leadId, 24);
+      if (result.ok) {
+        console.log(`[email] Lead ${leadId} expiration set → ${result.expiresAt}`);
+      }
+    } catch (expErr: any) {
+      console.log(`[email] setLeadExpiration(${leadId}) threw: ${expErr?.message}`);
+    }
 
     try {
       const { data: current } = await supabaseAdmin
