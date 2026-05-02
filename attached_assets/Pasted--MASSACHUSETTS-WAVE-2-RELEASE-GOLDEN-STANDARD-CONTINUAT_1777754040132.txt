@@ -1,0 +1,121 @@
+}
+🚀 MASSACHUSETTS — WAVE 2 RELEASE (GOLDEN STANDARD CONTINUATION)
+
+We are now releasing Massachusetts Wave 2 using the Virginia Golden Standard State Expansion Formula (v5.2.2026).
+
+---
+
+## 🔒 CORE RULE
+
+This must follow the exact same structure and logic as Virginia Wave 2:
+
+👉 NO deviations  
+👉 NO new systems  
+👉 NO shortcuts  
+
+---
+
+## 🎯 OBJECTIVE — WAVE 2
+
+Build the STATE + COUNTY + REGIONAL BACKBONE (~110–140 resources)
+
+This is NOT random scraping.
+
+This is targeted infrastructure expansion.
+
+---
+
+## 📦 REQUIRED DATA TYPES (MANDATORY)
+
+You MUST prioritize:
+
+### 🏛️ Government / Backbone
+- County Veterans Service Offices (ALL counties)
+- Local Departments of Social Services (DSS equivalents)
+- Regional/state veteran agencies
+
+### 🧠 Mental Health (HIGH PRIORITY)
+- Community Service Boards / Behavioral Health Centers
+- PTSD programs
+- Counseling centers
+
+### 🏥 Healthcare Expansion
+- Additional clinics
+- Regional hospitals not included in Wave 1
+- Free clinics / FQHCs
+
+### 🏠 Housing (CRITICAL GAP)
+- HUD-VASH programs
+- SSVF providers
+- Transitional housing
+- Homeless shelters
+
+### 💼 Employment (NEW CATEGORY)
+- MassHire Career Centers (ALL regions)
+- Veteran employment programs
+- Workforce boards
+
+---
+
+## ⚙️ EXECUTION RULES
+
+- Use rollout-engine.ts ONLY
+- Append-only (NO deletes, NO overwrites)
+- Idempotent logic required
+
+### Data Quality:
+- 0 bad_sub
+- 0 duplicates (rename or skip)
+- Canonical taxonomy ONLY
+
+### URL Handling:
+- Use --allow-broken-urls where needed
+
+---
+
+## 🚫 FOUNDER LAW
+
+DO NOT:
+- Modify schema
+- Run db:push
+- Touch Stripe / billing / AI Guide
+- Touch Trusted Services
+- Create new categories
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+Wave 2 complete when:
+
+- +110–140 resources added
+- Total MA reaches ~250–300+
+- Mental health, housing, employment categories significantly increased
+- Clean validation (0 errors)
+
+---
+
+## 🛑 STOP RULE
+
+After Wave 2:
+
+👉 STOP  
+👉 WAIT for founder approval  
+
+---
+
+## 📊 REQUIRED OUTPUT
+
+Full Founder Report (same 9-item format as Wave 1)
+
+---
+
+## ⚡ EXECUTE
+
+Proceed immediately with:
+
+👉 Massachusetts Wave 2 (Golden Standard)
+
+Maintain Virginia-level quality.
+
+No shortcu
