@@ -95,33 +95,36 @@ app.use((req, res, next) => {
 });
 
 async function cleanupTestRecords() {
-  // Idempotent boot-time cleanup of obvious QA / smoke-test data so it
-  // never appears in public directory or admin Trusted Partner Applications
-  // / Partner Prospects views.
+  // Idempotent boot-time HARD DELETE of obvious QA / smoke-test data so it
+  // never appears in public directory, admin Trusted Partner Applications,
+  // Partner Prospects, routing logic, or via stale joins.
   //
-  // Founder spec 2026-05-02: full pattern set covers all named test rows
-  // (ABC Test, ACB - 7, ABC - 6/5/4/3/2, Test Company ABC, ABC Company,
+  // Founder spec 2026-05-02 (revised): "We are NOT looking to archive test
+  // records anymore. These test companies must be completely removed from
+  // ALL admin and public views." Patterns cover the named offenders:
+  // ABC Test, ACB / ABC variants 2-7, Test Company ABC, ABC Company,
   // Second Chance Job Center, [TEST], VC - Test, Smoke / Regression Test,
-  // LIVE PAYMENT TEST). Runs on every boot; cheap when nothing matches.
+  // LIVE PAYMENT TEST.
   //
-  // SAFETY:
-  //   - trusted_services       → set is_active=false + name='[ARCHIVED] …'
-  //                              (hides from public; reversible by hand).
-  //   - partner_applications   → set status='archived' + admin_notes flag
-  //                              ONLY a column update — Stripe / billing
-  //                              are NEVER touched. If a row has a live
-  //                              Stripe subscription (e.g. founder's $1
-  //                              live test), the sub keeps running until
-  //                              founder cancels it manually in the Stripe
-  //                              dashboard. We just hide the row from the
-  //                              admin tabs.
-  //   - navigator_requests     → set status='resolved' + admin_notes flag
-  //                              (preserved for forensic audit, not deleted).
+  // STRIPE PROTECTION (founder MASTER LAW — do not touch billing):
+  //   - partner_applications rows that have an active Stripe subscription
+  //     (stripe_subscription_id IS NOT NULL AND subscription_status IN
+  //     ('active','trialing','past_due')) are SKIPPED entirely. They are
+  //     reported via console + a stripe_protected counter but the row,
+  //     its FKs, and Stripe IDs are left 100% untouched.
+  //   - elite_sponsor_slots with a live stripe_subscription_id are also
+  //     skipped (same rule).
+  //   - trusted_services has no Stripe column, but if it's referenced
+  //     (converted_provider_id) by a Stripe-protected partner_application,
+  //     we NULL the FK on that protected row before deleting the
+  //     trusted_services row. NULLing a stale link to a deleted test
+  //     record is not a billing/Stripe operation.
   //
-  // No pricing, no routing, no schema, no AI Guide changes.
+  // No pricing, no routing-rule, no schema, no AI Guide changes.
   const TS_TEST_FILTER = `(
     name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
     OR name ~* '^\\s*A[BC]C[ -]*Test\\s*$'
+    OR name ILIKE '%[ARCHIVED]%'
     OR name ILIKE '%[TEST]%'
     OR name ILIKE 'ABC Test%'
     OR name ILIKE '%ABC Company%'
@@ -136,8 +139,6 @@ async function cleanupTestRecords() {
     OR name ILIKE '%VC - Test%'
     OR name ILIKE '%VC-Test%'
     OR name ILIKE '%Second Chance Job Center%'
-    OR name ILIKE 'Veteran Care'
-    OR name ILIKE 'Veteran Care %'
   )`;
   const PA_TEST_FILTER = `(
     company_name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
@@ -158,92 +159,211 @@ async function cleanupTestRecords() {
     OR company_name ILIKE '%Second Chance Job Center%'
     OR email ILIKE '%@test.%'
     OR email ILIKE '%@example.%'
-    OR email ILIKE '%@example.com'
     OR email ILIKE 'founder-test%'
     OR email ILIKE '%@d1regression-test%'
     OR email ILIKE '%@regressiontest-stage%'
   )`;
+  const STRIPE_PROTECTED = `(
+    stripe_subscription_id IS NOT NULL
+    AND stripe_subscription_id <> ''
+    AND COALESCE(subscription_status, '') IN ('active','trialing','past_due')
+  )`;
   try {
     const { query: pgQuery } = await import("./pg-client");
 
-    // (a) trusted_services — hide from public directory.
-    const archivedTs = await pgQuery(
-      `UPDATE trusted_services
-         SET is_active = false,
-             verification_status = 'rejected',
-             name = '[ARCHIVED] ' || name
-       WHERE name NOT ILIKE '[ARCHIVED]%'
-         AND ${TS_TEST_FILTER}
-       RETURNING id, name`,
+    // (a) Report any Stripe-protected test rows so founder sees them in boot logs.
+    const stripeProtected = await pgQuery<{ id: string; company_name: string; stripe_subscription_id: string }>(
+      `SELECT id, company_name, stripe_subscription_id
+         FROM partner_applications
+        WHERE ${STRIPE_PROTECTED}
+          AND ${PA_TEST_FILTER}`,
     );
-    if (archivedTs.length > 0) {
+    if (stripeProtected.length > 0) {
+      console.warn(
+        `[boot-cleanup] STRIPE-PROTECTED test partner_applications NOT deleted (${stripeProtected.length}). ` +
+          `Cancel manually in Stripe dashboard, then re-run cleanup:`,
+      );
+      for (const r of stripeProtected) {
+        console.warn(`  - id=${r.id} sub=${r.stripe_subscription_id} | ${r.company_name}`);
+      }
+    }
+
+    // (b) NULL converted_provider_id on Stripe-protected partner_applications
+    // that still point at a test trusted_services row, so we can hard-delete
+    // the trusted_services row without losing or touching the protected
+    // partner_application or its Stripe IDs.
+    const fkNulled = await pgQuery<{ id: string }>(
+      `UPDATE partner_applications pa
+         SET converted_provider_id = NULL
+        FROM trusted_services ts
+        WHERE pa.converted_provider_id = ts.id
+          AND ${STRIPE_PROTECTED.replace(/stripe_subscription_id/g, "pa.stripe_subscription_id").replace(/subscription_status/g, "pa.subscription_status")}
+          AND ${TS_TEST_FILTER.replace(/\bname\b/g, "ts.name")}
+        RETURNING pa.id`,
+    );
+    if (fkNulled.length > 0) {
       console.log(
-        `[boot-cleanup] archived ${archivedTs.length} trusted_services test row(s):`,
-        archivedTs.map((r: any) => r.name).join(", "),
+        `[boot-cleanup] NULLed converted_provider_id on ${fkNulled.length} Stripe-protected partner_application(s) (Stripe IDs untouched)`,
       );
     }
 
-    // (b) partner_applications — hide from admin Trusted Partner Applications
-    // / Partner Prospects tabs. Only updates `status` + `admin_notes`.
-    // Stripe subscription_id / customer_id columns are intentionally untouched;
-    // we never cancel or refund a live subscription from boot code.
-    const archivedPa = await pgQuery(
-      `UPDATE partner_applications
-         SET status = 'archived',
-             admin_notes = COALESCE(admin_notes, '') ||
-               E'\\n[2026-05-02 boot-cleanup] Auto-archived as test record. ' ||
-               'Stripe subscription (if any) is intentionally NOT cancelled — ' ||
-               'cancel manually in Stripe dashboard if desired.',
-             updated_at = NOW()
-       WHERE status != 'archived'
-         AND ${PA_TEST_FILTER}
-       RETURNING id, company_name, status`,
+    // (c) HARD DELETE trusted_services test rows. partner_attribution rows
+    // (which FK to partner_applications, not trusted_services) are unaffected.
+    const tsDel = await pgQuery<{ id: string; name: string }>(
+      `DELETE FROM trusted_services
+        WHERE ${TS_TEST_FILTER}
+        RETURNING id, name`,
     );
-    if (archivedPa.length > 0) {
+    if (tsDel.length > 0) {
       console.log(
-        `[boot-cleanup] archived ${archivedPa.length} partner_applications test row(s):`,
-        archivedPa.map((r: any) => r.company_name).join(", "),
+        `[boot-cleanup] DELETED ${tsDel.length} trusted_services test row(s):`,
+        tsDel.map((r) => r.name).join(", "),
+      );
+    }
+
+    // (d) HARD DELETE partner_applications test rows that are NOT Stripe-protected.
+    // partner_attribution.application_id is on this table — Postgres will block
+    // delete if any attribution row references it (no ON DELETE CASCADE), so
+    // pre-clean attribution rows first (they're attribution for test apps,
+    // safe to remove with the parent).
+    const attrDel = await pgQuery<{ id: string }>(
+      `DELETE FROM partner_attribution
+        WHERE application_id IN (
+          SELECT id FROM partner_applications
+           WHERE NOT ${STRIPE_PROTECTED} AND ${PA_TEST_FILTER}
+        )
+        RETURNING id`,
+    );
+    if (attrDel.length > 0) {
+      console.log(`[boot-cleanup] DELETED ${attrDel.length} partner_attribution row(s) for test apps`);
+    }
+    const paDel = await pgQuery<{ id: string; company_name: string }>(
+      `DELETE FROM partner_applications
+        WHERE NOT ${STRIPE_PROTECTED}
+          AND ${PA_TEST_FILTER}
+        RETURNING id, company_name`,
+    );
+    if (paDel.length > 0) {
+      console.log(
+        `[boot-cleanup] DELETED ${paDel.length} partner_applications test row(s):`,
+        paDel.map((r) => r.company_name).join(", "),
       );
     }
   } catch (err: any) {
-    console.warn(`[boot-cleanup] skipped (${err?.message || err})`);
+    console.warn(`[boot-cleanup] helium skipped (${err?.message || err})`);
   }
 
-  // (c) navigator_requests (Supabase) — resolve obvious test leads so they
-  // disappear from the active inbox. Audit row preserved.
+  // (e) Supabase-side HARD DELETE: navigator_requests, partner_organizations,
+  // elite_sponsor_slots (Stripe-guarded), elite_sponsor_leads.
   try {
     const { supabaseQuery } = await import("./supabase-pg-client");
-    const resolved = await supabaseQuery<{ id: string; veteran_name: string }>(
-      `UPDATE navigator_requests
-         SET status = 'resolved',
-             admin_notes = COALESCE(admin_notes, '') ||
-               E'\\n[2026-05-02 boot-cleanup] Auto-resolved as test lead. ' ||
-               'Preserved for forensic audit; not deleted.',
-             resolved_at = COALESCE(resolved_at, NOW())
-       WHERE status != 'resolved'
-         AND (
-           veteran_name ILIKE '%test%'
-           OR veteran_name ILIKE 'gate test%'
-           OR veteran_name ILIKE 'smoke test%'
-           OR veteran_name ILIKE '%regression%'
-           OR veteran_name ILIKE 'Colin'
-           OR veteran_name ILIKE 'Colin %'
-           OR veteran_email ILIKE '%@test.%'
-           OR veteran_email ILIKE '%@example.%'
-           OR veteran_email ILIKE 'founder-test%'
-           OR veteran_email ILIKE 'gate-test%'
-           OR veteran_email ILIKE 'colinmslaven@%'
-           OR veteran_email ILIKE 'colin@veterancare.com'
-         )
-       RETURNING id, veteran_name`,
+
+    const NAV_F = `(
+      veteran_name ILIKE '%test%'
+      OR veteran_name ILIKE 'gate test%'
+      OR veteran_name ILIKE 'smoke test%'
+      OR veteran_name ILIKE '%regression%'
+      OR veteran_name = 'Colin'
+      OR veteran_name ILIKE 'Colin %'
+      OR veteran_name ILIKE 'Colin -%'
+      OR veteran_email ILIKE '%@test.%'
+      OR veteran_email ILIKE '%@example.%'
+      OR veteran_email ILIKE 'founder-test%'
+      OR veteran_email ILIKE 'gate-test%'
+      OR veteran_email ILIKE 'colinmslaven@%'
+      OR veteran_email ILIKE 'colin@veterancare.com'
+      OR veteran_email ILIKE '%@d1regression%'
+      OR veteran_email ILIKE '%regressiontest-stage%'
+    )`;
+
+    // Pre-clean elite_sponsor_leads referencing test navigator_requests
+    // (FK has no ON DELETE CASCADE).
+    await supabaseQuery(
+      `DELETE FROM elite_sponsor_leads
+        WHERE navigator_request_id IN (
+          SELECT id FROM navigator_requests WHERE ${NAV_F}
+        )`,
     );
-    if (resolved.length > 0) {
-      console.log(
-        `[boot-cleanup] resolved ${resolved.length} navigator_requests test lead(s)`,
-      );
+
+    const navDel = await supabaseQuery<{ id: string; veteran_name: string }>(
+      `DELETE FROM navigator_requests WHERE ${NAV_F} RETURNING id, veteran_name`,
+    );
+    if (navDel.length > 0) {
+      console.log(`[boot-cleanup] DELETED ${navDel.length} navigator_requests test row(s)`);
+    }
+
+    const ORG_F = `(
+      name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
+      OR name ILIKE '%[TEST]%'
+      OR name ILIKE 'ABC Test%'
+      OR name ILIKE '%ABC Company%'
+      OR name ILIKE 'Test Company ABC%'
+      OR name ILIKE 'TEST %'
+      OR name ILIKE '%LIVE PAYMENT TEST%'
+      OR name ILIKE '%Smoke Test%'
+      OR name ILIKE '%Regression Test%'
+      OR name ILIKE '%VC - Test%'
+      OR name ILIKE '%VC-Test%'
+      OR name ILIKE '%Second Chance Job Center%'
+      OR contact_email ILIKE '%@test.%'
+      OR contact_email ILIKE '%@example.%'
+      OR contact_email ILIKE 'founder-test%'
+      OR contact_email ILIKE '%d1regression%'
+      OR contact_email ILIKE '%regressiontest-stage%'
+    )`;
+    // partner_routing_rules.partner_id and trusted_services.partner_organization_id
+    // FK back to partner_organizations — pre-clean those for test orgs.
+    await supabaseQuery(`DELETE FROM partner_routing_rules WHERE partner_id IN (SELECT id FROM partner_organizations WHERE ${ORG_F})`);
+    await supabaseQuery(`UPDATE trusted_services SET partner_organization_id = NULL WHERE partner_organization_id IN (SELECT id FROM partner_organizations WHERE ${ORG_F})`).catch(() => {});
+    const orgDel = await supabaseQuery<{ id: string; name: string }>(
+      `DELETE FROM partner_organizations WHERE ${ORG_F} RETURNING id, name`,
+    );
+    if (orgDel.length > 0) {
+      console.log(`[boot-cleanup] DELETED ${orgDel.length} partner_organizations test row(s)`);
+    }
+
+    const SLOT_F = `(
+      sponsor_name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
+      OR sponsor_name ILIKE '%[TEST]%'
+      OR sponsor_name ILIKE 'ABC Test%'
+      OR sponsor_name ILIKE 'TEST %'
+      OR sponsor_name ILIKE '%LIVE PAYMENT%'
+      OR sponsor_name ILIKE '%Smoke Test%'
+      OR sponsor_name ILIKE '%Regression Test%'
+      OR sponsor_name ILIKE '%VC - Test%'
+      OR sponsor_name ILIKE '%Second Chance Job Center%'
+      OR sponsor_lead_email ILIKE '%@test.%'
+      OR sponsor_lead_email ILIKE '%@example.%'
+    )`;
+    const SLOT_PROTECT = `(stripe_subscription_id IS NOT NULL AND stripe_subscription_id <> '')`;
+    // Pre-clean leads + clicks for test slots that we'll delete
+    await supabaseQuery(`DELETE FROM elite_sponsor_leads WHERE slot_id IN (SELECT id FROM elite_sponsor_slots WHERE NOT ${SLOT_PROTECT} AND ${SLOT_F})`);
+    await supabaseQuery(`DELETE FROM elite_sponsor_clicks WHERE slot_id IN (SELECT id FROM elite_sponsor_slots WHERE NOT ${SLOT_PROTECT} AND ${SLOT_F})`).catch(() => {});
+    await supabaseQuery(`UPDATE trusted_services SET elite_sponsor_slot_id = NULL WHERE elite_sponsor_slot_id IN (SELECT id FROM elite_sponsor_slots WHERE NOT ${SLOT_PROTECT} AND ${SLOT_F})`).catch(() => {});
+    const slotDel = await supabaseQuery<{ id: string; sponsor_name: string }>(
+      `DELETE FROM elite_sponsor_slots WHERE NOT ${SLOT_PROTECT} AND ${SLOT_F} RETURNING id, sponsor_name`,
+    );
+    if (slotDel.length > 0) {
+      console.log(`[boot-cleanup] DELETED ${slotDel.length} elite_sponsor_slots test row(s)`);
+    }
+
+    const leadDel = await supabaseQuery<{ id: string }>(
+      `DELETE FROM elite_sponsor_leads
+        WHERE lead_email ILIKE '%@test.%'
+           OR lead_email ILIKE '%@example.%'
+           OR lead_email ILIKE 'colinmslaven@%'
+           OR lead_email ILIKE 'colin@veterancare.com'
+           OR sponsor_name_snapshot ILIKE '%[TEST]%'
+           OR sponsor_name_snapshot ILIKE '%LIVE PAYMENT%'
+           OR sponsor_name_snapshot ILIKE '%Smoke Test%'
+           OR sponsor_name_snapshot ILIKE '%Regression Test%'
+        RETURNING id`,
+    );
+    if (leadDel.length > 0) {
+      console.log(`[boot-cleanup] DELETED ${leadDel.length} elite_sponsor_leads test row(s)`);
     }
   } catch (err: any) {
-    console.warn(`[boot-cleanup] navigator_requests skipped (${err?.message || err})`);
+    console.warn(`[boot-cleanup] supabase skipped (${err?.message || err})`);
   }
 }
 

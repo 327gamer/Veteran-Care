@@ -2527,3 +2527,44 @@ Applications panel, and potentially the public directory: `ABC Test`,
 Architect review: APPROVED — patterns escaped correctly, idempotent
 guards verified, no SQL-injection risk, no Stripe side-effects, archived
 rows correctly hidden from public + admin default views.
+
+## 2026-05-02 (revised) — HARD DELETE test records (founder revised spec)
+
+Founder revised the prior archive approach: test records must be
+completely **removed**, not archived. Executed live HARD DELETE in
+transactions on both DBs and rewrote the boot cleanup to match.
+
+**Live deletions:**
+- Helium `partner_applications`: 2 deleted (Regression Test Partner,
+  D1 Regression Test — no Stripe ties).
+- Helium `trusted_services`: 1 deleted ([ARCHIVED] LIVE PAYMENT TEST -
+  Veteran Care). NULLed `converted_provider_id` on the Stripe-protected
+  partner_app row first; Stripe IDs untouched.
+- Supabase `navigator_requests`: 25 deleted (Smoke Test User, Colin
+  Test x N, GATE TEST, etc.).
+- Supabase `partner_organizations` / `elite_sponsor_slots` /
+  `elite_sponsor_leads` / `partner_routing_rules`: 0 (already empty).
+
+**STRIPE-PROTECTED (reported, NOT touched):**
+- `partner_applications` id=`28d08b47-dd3a-4a1a-9dd0-257066258fbb`
+  LIVE PAYMENT TEST - Veteran Care, `sub_1TNOXFGdqk7jVmGZ23Bc3kOa`
+  status=active. Founder must cancel manually in Stripe; the row will
+  be auto-deleted on the next boot after cancellation.
+
+**Code changes (server/index.ts cleanupTestRecords):**
+- Replaced archive UPDATEs with idempotent HARD DELETEs.
+- Added `STRIPE_PROTECTED` guard for partner_applications +
+  elite_sponsor_slots — protected rows are skipped & reported via
+  `console.warn` on every boot.
+- Pre-cleans all FK-dependent rows before parent deletes
+  (partner_attribution, elite_sponsor_leads, elite_sponsor_clicks,
+  partner_routing_rules, trusted_services.partner_organization_id,
+  trusted_services.elite_sponsor_slot_id, converted_provider_id).
+- Removed the over-broad bare "Veteran Care" pattern.
+
+**Final verified state:**
+- public `/api/trusted-services` → 28 entries, 0 test suspects
+- All 7 named tables cleaned of test contamination
+- 1 boot-time warning about the Stripe-protected row (intentional)
+
+Architect review: APPROVED.
