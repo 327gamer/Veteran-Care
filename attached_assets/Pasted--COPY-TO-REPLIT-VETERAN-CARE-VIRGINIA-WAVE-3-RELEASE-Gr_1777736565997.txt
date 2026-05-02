@@ -1,0 +1,101 @@
+--- COPY TO REPLIT ---
+
+VETERAN CARE — VIRGINIA WAVE 3 RELEASE
+
+Great work on Wave 2. This is exactly the Florida pattern we wanted.
+
+We are now moving to Wave 3.
+
+IMPORTANT:
+Continue using the Florida wave system exactly as you are now.
+Do NOT revert to PA pattern.
+Do NOT change taxonomy.
+Do NOT create new slugs.
+
+==================================================
+WAVE 3 OBJECTIVE — MAJOR CITY SATURATION
+==================================================
+
+This is the expansion wave.
+
+Goal:
+Deeply build out major Virginia cities with strong coverage across ALL categories and subcategories.
+
+Focus cities:
+
+- Richmond
+- Virginia Beach
+- Norfolk
+- Chesapeake
+- Arlington
+- Alexandria
+- Fairfax
+- Newport News
+- Hampton
+- Roanoke
+- Fredericksburg
+
+==================================================
+WHAT TO ADD
+==================================================
+
+For EACH major city, add:
+
+- Healthcare providers (VA + civilian)
+- Mental health + PTSD support
+- Substance recovery programs
+- Financial counseling + credit support
+- Insurance-related services
+- Housing + rental assistance
+- Food banks + meal programs
+- Employment + workforce programs
+- Education + training providers
+- Legal aid + clinics
+- Family + community support services
+- Transportation services
+
+Include BOTH:
+- veteran-specific organizations
+- mainstream services veterans would realistically use
+
+==================================================
+QUALITY RULES (CRITICAL)
+==================================================
+
+- Use only real, active, useful resources
+- Skip broken or unclear listings quickly
+- Do NOT get stuck fixing URLs
+- Do NOT deep-research one organization
+
+Speed + coverage > perfection
+
+==================================================
+ANTI-LOOP RULE
+==================================================
+
+If anything causes delay:
+- Skip it
+- Log it
+- Move on
+
+==================================================
+STOP RULE
+==================================================
+
+After Wave 3:
+
+STOP and report:
+
+1. Resources added
+2. Total VA resource count
+3. Categories covered
+4. Subcategories covered
+5. Cities covered
+6. Any skipped sources
+7. Any issues
+8. Data quality assessment
+9. Recommendation for Wave 4
+
+Do NOT proceed to Wave 4 without approval.
+
+--- END ---
