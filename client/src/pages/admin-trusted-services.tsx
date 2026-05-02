@@ -33,7 +33,10 @@ import {
   X,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/use-auth";
+// Auth handled by outer <AdminAuthGuard> wrapper (line ~902).
+// Removed inner useAuth role check 2026-05-02 — duplicate gate caused
+// "Admin access required" with no input box. All other admin pages rely
+// solely on AdminAuthGuard + x-admin-key, so we match that pattern.
 
 interface TrustedCategory {
   id: string;
@@ -143,7 +146,6 @@ const emptyForm: PartnerForm = {
 
 function AdminTrustedServicesInner() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -153,15 +155,8 @@ function AdminTrustedServicesInner() {
   const [form, setForm] = useState<PartnerForm>({ ...emptyForm });
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  if (!isAdmin) {
-    return (
-      <div className="p-4 text-center py-20">
-        <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="text-sm text-muted-foreground">Admin access required.</p>
-      </div>
-    );
-  }
+  // Admin auth: handled by outer <AdminAuthGuard> at the bottom of this file.
+  // Reaching this component means the admin key was already verified.
 
   const { data: categories = [] } = useQuery<TrustedCategory[]>({
     queryKey: ["/api/admin/trusted-services/categories"],

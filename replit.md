@@ -2357,3 +2357,29 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 **DB inventory:** intact — no missing rows. This was a display/loading issue only.
 
 **Republish required:** YES (single server file changed).
+
+## 2026-05-02 — Approved 4-step QA actions
+
+1. **Trusted Services admin auth fix** (`client/src/pages/admin-trusted-services.tsx`)
+   - Removed duplicate inner `useAuth() user?.role === 'admin'` gate that was rejecting the founder with no input box, while the outer `<AdminAuthGuard>` had already verified the admin key.
+   - Removed unused `useAuth` import; kept `ShieldCheck` import (still used at line ~774).
+   - All 17 admin pages now use the same auth pattern: `AdminAuthGuard` + `x-admin-key` only.
+   - No DB / Stripe / billing / routing / category change.
+
+2. **`supabase/20260502_test_slot_reset.sql`** (REVIEW-ONLY, not executed)
+   - Resets WY × financial-credit × va-loans ABC Test slot to vacant.
+   - Archives the test lead (status='archived', delivery_status='cancelled').
+   - Clears stale Stripe IDs on the SC × legal-services slot too (already cancelled, just metadata).
+   - Preserves audit trail in `notes_internal` on both slots.
+   - Manual Stripe-side step required FIRST: cancel `sub_1TS0hQGdqk7jVmGZgUcTbFMk`.
+
+3. **`supabase/20260502_test_data_archive.sql`** (REVIEW-ONLY, not executed)
+   - Archives ~25 obvious test `navigator_requests` (status='resolved' + admin_notes flag).
+   - Deletes the 1 smoke-test `elite_sponsor_waitlist` row (smoke+ecss@test.local).
+   - All other tables left alone (zero test rows or empty).
+
+4. **Routing-rules slug audit (read-only)**
+   - 113 `partner_routing_rules` total. 33 use canonical slugs, 77 use legacy slugs (auto-normalized through `toCanonical()` at route time — categories DO match), 3 effectively dead.
+   - **Risk found**: subcategory matching has NO canonical normalization — uses raw `lowercase + dash`. So `va-home-loans` (rule) ≠ `va-loans` (post-T000 lead) ≠ `va-home-loan` (real recent lead). This causes subcategory-specific rules to silently miss matching leads, falling back to category-only rules.
+   - **Risk found**: 25 routing rules cover dead categories (`crisis-help`, `family-support`, `food-assistance`, `healthcare`, `mental-health`, `va-benefits`) that no longer match any current lead category.
+   - Documented but NOT changed. Awaiting founder direction.
