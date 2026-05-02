@@ -1,0 +1,154 @@
+--- COPY TO REPLIT ---
+
+We need an admin-panel explanation and safe test-data cleanup plan.
+
+The Elite Sponsor Slots now appear to show all states/categories correctly. Thank you.
+
+Before we continue selling, I need to fully understand the admin panel and clean up test data.
+
+DO NOT change billing, Stripe, routing, lead logic, or categories yet.
+This is an audit/report request first.
+
+==================================================
+1. TEST DATA CLEANUP REPORT
+==================================================
+
+Please identify all obvious test records in production, including:
+
+- ABC Test
+- VC - Test
+- [TEST] Test
+- Test Company ABC
+- Any ABC numbered test companies
+- Any test Elite Sponsor slots
+- Any test Trusted Partner applications
+- Any test partner organizations
+- Any test trusted service listings
+- Any test Stripe-linked rows
+
+For each record, report:
+
+- Table name
+- Record ID
+- Company name
+- Status
+- Whether it is public-facing
+- Whether it holds an Elite slot
+- Whether it has Stripe customer/subscription IDs
+- Recommended action:
+  - archive only
+  - delete
+  - reset slot to vacant
+  - pause
+  - leave for audit
+
+Do NOT delete anything yet.
+
+==================================================
+2. ABC TEST / WY FINANCIAL-CREDIT SLOT
+==================================================
+
+The ABC Test Wyoming financial-credit / VA Loans test appears to be the one real sold/active test slot.
+
+Please confirm:
+
+- Exact slot ID
+- Current status
+- Billing status
+- Stripe customer ID
+- Stripe subscription ID
+- Whether it is publicly visible
+- Whether it is holding the WY Elite slot
+
+Recommend the safest cleanup:
+
+- Cancel Stripe subscription if still active
+- Reset slot to vacant
+- Clear sponsor name/logo/CTA/contact fields
+- Preserve audit history if appropriate
+- Archive related partner application
+
+Do NOT run cleanup until confirmed.
+
+==================================================
+3. ADMIN PANEL MANUAL REQUEST
+==================================================
+
+Please create a plain-English admin panel manual explaining every major admin section:
+
+A. Resources
+B. Support Requests
+C. Routing Partners
+D. Trusted Partner Applications
+E. Trusted Services
+F. Trusted Partner Leads
+G. Elite Sponsor Slots
+H. Veteran-Owned Business
+I. Sweepstakes
+J. Analytics dropdown
+K. Ambassadors dropdown
+L. Partners dropdown
+M. Billing
+
+For each section explain:
+
+- What it is
+- What data lives there
+- What founder/admin should use it for
+- What actions are safe
+- What actions are dangerous
+- What happens automatically
+- What requires manual review
+- What connects to Stripe
+- What connects to leads
+- What becomes public-facing
+
+==================================================
+4. TRUSTED SERVICES PAGE ISSUE
+==================================================
+
+When I click Trusted Services in admin, it says "Admin access required" but does not show a place to enter the admin code.
+
+Please investigate:
+
+- Is this an authentication/session issue?
+- Is the route protected differently than the other admin pages?
+- Should it use the same admin access method as the rest of the admin panel?
+- Is this page supposed to show active public Trusted Service listings?
+
+Report the root cause and recommended fix.
+
+Do NOT fix yet unless it is a very small UI/auth consistency issue.
+
+==================================================
+5. ROUTING PARTNERS EXPLANATION
+==================================================
+
+Please explain Routing Partners clearly.
+
+I need to understand:
+
+- Are these Trusted Partners?
+- Are these lead-routing partners?
+- Are these free resources?
+- Are these businesses that get round-robin leads?
+- How do they connect to partner_routing_rules?
+- How does this connect to $49.99 accepted lead billing?
+- How does this relate to Elite Partner fallback after 24 hours?
+
+==================================================
+6. FINAL OUTPUT
+==================================================
+
+Please report back with:
+
+1. Test data cleanup plan
+2. Admin panel manual
+3. Trusted Services page issue diagnosis
+4. Routing Partners explanation
+5. Any risks before we start selling partners aggressively
+
+Do not delete anything yet.
+Do not change any billing/routing/Stripe logic.
+
+--- END ---
