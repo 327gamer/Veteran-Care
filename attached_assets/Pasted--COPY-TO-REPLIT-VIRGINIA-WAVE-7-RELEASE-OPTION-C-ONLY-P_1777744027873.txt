@@ -1,0 +1,96 @@
+--- COPY TO REPLIT ---
+
+VIRGINIA WAVE 7 RELEASE — OPTION C ONLY
+
+Proceed with Wave 7 using the Florida-style Wave system.
+
+Objective:
+Southside + Mountain Empire rural completion.
+
+Do NOT restart Virginia.
+Do NOT rerun Waves 1–6.
+Do NOT modify taxonomy, slugs, schema, Trusted Services, Stripe, billing, routing, or AI Guide.
+
+==================================================
+FOCUS REGIONS
+==================================================
+
+Southside Virginia:
+- Danville
+- South Boston
+- Halifax County
+- Mecklenburg County
+- Brunswick County
+- Greensville County
+- Lunenburg County
+- Charlotte County
+- Martinsville
+
+Mountain Empire / Coalfields:
+- Lee County
+- Scott County
+- Wise County
+- Norton
+- Buchanan County
+- Dickenson County
+- Russell County
+
+==================================================
+RESOURCE TYPES TO PRIORITIZE
+==================================================
+
+- Hospitals and clinics (Sentara, SOVAH, Norton Community, etc.)
+- CSBs / mental health services
+- Food banks and pantries
+- Housing assistance
+- Workforce centers
+- County DSS
+- Veteran service offices
+- Transportation (rural transit)
+- Community nonprofits
+- Legal aid where available
+
+==================================================
+TARGET
+==================================================
+
+Add approximately 60–80 high-quality resources.
+
+==================================================
+RULES
+==================================================
+
+- Only real, active, useful resources
+- Use canonical categories and subcategories ONLY
+- Skip anything that causes delay or errors
+- Do NOT get stuck in loops
+- Speed + coverage > perfection
+
+==================================================
+PROCESS
+==================================================
+
+1. Run dry-run
+2. Fix bad subcategory matches
+3. Resolve duplicates
+4. Commit clean run
+
+==================================================
+STOP + REPORT AFTER WAVE 7
+==================================================
+
+Provide:
+
+1. Resources added
+2. Total VA resource count
+3. Categories touched
+4. Subcategories touched
+5. Regions covered
+6. Skipped sources
+7. Duplicate issues
+8. Broken URLs
+9. Recommendation for Wave 8
+
+Do NOT proceed further without approval.
+
+--- END ---
