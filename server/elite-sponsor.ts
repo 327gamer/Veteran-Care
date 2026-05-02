@@ -622,6 +622,103 @@ export function registerEliteSponsorRoutes(
   );
 
   // ---------------------------------------------------------------
+  // POST /api/admin/elite-sponsor-slots/:id/reset — founder QA 2026-05-02
+  // SAFE reset of an Elite Sponsor slot. Clears all sponsor identity
+  // fields, billing status, and Stripe ID references on the slot row,
+  // and appends an audit line to notes_internal.
+  //
+  // What this DOES:
+  //   - status = 'vacant', billing_status = NULL, unsold_at = NOW()
+  //   - all sponsor_* identity fields → NULL
+  //   - sponsor_partner_organization_id, sponsor_partner_application_id → NULL
+  //   - stripe_customer_id, stripe_subscription_id → NULL (cleared from slot only)
+  //   - notes_internal gets an appended audit line with timestamp
+  //
+  // What this DOES NOT do (by design — founder explicit):
+  //   - Does NOT call Stripe API. Does NOT cancel the subscription.
+  //     Does NOT delete the customer. Founder must do those manually
+  //     in the Stripe dashboard if desired.
+  //   - Does NOT delete the slot row. Does NOT touch routing rules.
+  //     Does NOT touch billing logic. Does NOT touch schema.
+  //
+  // Side-effect reconciliation runs after the reset (idempotent) so the
+  // public-facing trusted-services tile link drops back to vacant state.
+  // ---------------------------------------------------------------
+  app.post(
+    "/api/admin/elite-sponsor-slots/:id/reset",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const id = String(req.params.id || "").trim();
+        if (!id) return res.status(400).json({ error: "Missing id" });
+
+        // Fetch existing slot so we can preserve + append to notes_internal
+        const { data: existing, error: fetchErr } = await supabaseAdmin
+          .from("elite_sponsor_slots")
+          .select("notes_internal")
+          .eq("id", id)
+          .single();
+        if (fetchErr || !existing) {
+          return res.status(404).json({ error: "Slot not found" });
+        }
+
+        const timestamp = new Date().toISOString();
+        const auditLine = `Slot reset via admin on ${timestamp}`;
+        const newNotes = existing.notes_internal
+          ? `${existing.notes_internal}\n${auditLine}`
+          : auditLine;
+
+        const patch: Record<string, any> = {
+          status: "vacant",
+          billing_status: null,
+          unsold_at: timestamp,
+          sponsor_name: null,
+          sponsor_logo_url: null,
+          sponsor_short_description: null,
+          sponsor_cta_text: null,
+          sponsor_phone: null,
+          sponsor_website_url: null,
+          sponsor_lead_email: null,
+          sponsor_partner_organization_id: null,
+          sponsor_partner_application_id: null,
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+          notes_internal: newNotes,
+        };
+
+        const { data, error } = await supabaseAdmin
+          .from("elite_sponsor_slots")
+          .update(patch)
+          .eq("id", id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Reconcile public-facing tile link + auto_bill flag (idempotent)
+        try {
+          await reconcileEliteSponsorSideEffects(data as EliteSponsorSlot);
+        } catch (sideErr: any) {
+          console.error(
+            `[ECSS] reset reconcile side-effects failed for slot ${id}: ${sideErr.message}`
+          );
+        }
+
+        console.log(
+          `[ECSS] admin reset slot ${id} → vacant (Stripe IDs cleared from slot only, no Stripe API call)`
+        );
+
+        res.json({ slot: data });
+      } catch (err: any) {
+        console.error(`[ECSS] admin reset error: ${err.message}`);
+        res
+          .status(500)
+          .json({ error: "Failed to reset slot", detail: err.message });
+      }
+    }
+  );
+
+  // ---------------------------------------------------------------
   // POST /api/elite-sponsor/track-click — founder QA item #7 (2026-04-30)
   // Public, no-auth endpoint. Inserts a single row into elite_sponsor_clicks
   // for ROI reporting. Server-side fire-and-forget (returns 204 even on

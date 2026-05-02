@@ -23,6 +23,16 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Crown,
@@ -37,6 +47,7 @@ import {
   AlertTriangle,
   Mail,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
 
 // Categories fetched from /api/elite-sponsor/categories at runtime (single
@@ -700,6 +711,37 @@ function SlotEditor({
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [creativeBusy, setCreativeBusy] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  async function handleResetSlot() {
+    setResetBusy(true);
+    try {
+      const r = await adminFetch(
+        `/api/admin/elite-sponsor-slots/${slot.id}/reset`,
+        { method: "POST" }
+      );
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        throw new Error(e.error || "Reset failed");
+      }
+      toast({
+        title: "Slot reset",
+        description:
+          "Sponsor + billing fields cleared. Stripe IDs cleared from slot (subscription NOT cancelled — do that manually in Stripe if needed).",
+      });
+      qc.invalidateQueries({ queryKey: ["/api/admin/elite-sponsor-slots"] });
+      setShowResetConfirm(false);
+    } catch (err: any) {
+      toast({
+        title: "Reset failed",
+        description: err.message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setResetBusy(false);
+    }
+  }
   const hasSubmittedCreative =
     !!slot.sponsor_logo_url ||
     !!slot.sponsor_short_description ||
@@ -1114,16 +1156,76 @@ function SlotEditor({
         />
       </div>
 
-      <SheetFooter>
+      <SheetFooter className="gap-2 sm:gap-2 flex-col-reverse sm:flex-row sm:justify-between">
+        <Button
+          variant="destructive"
+          onClick={() => setShowResetConfirm(true)}
+          disabled={isSaving || resetBusy}
+          data-testid="button-reset-slot"
+        >
+          {resetBusy ? (
+            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+          ) : (
+            <RotateCcw className="h-4 w-4 mr-1.5" />
+          )}
+          Reset Slot Fully
+        </Button>
         <Button
           onClick={() => onSave(form)}
-          disabled={isSaving}
+          disabled={isSaving || resetBusy}
           data-testid="button-save-slot"
         >
           {isSaving && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
           Save Changes
         </Button>
       </SheetFooter>
+
+      <AlertDialog
+        open={showResetConfirm}
+        onOpenChange={(open) => !resetBusy && setShowResetConfirm(open)}
+      >
+        <AlertDialogContent data-testid="dialog-reset-confirm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset slot fully?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Are you sure? This will remove sponsor + billing + reset slot
+                  to vacant.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Stripe IDs will be cleared from this slot, but the Stripe
+                  subscription and customer will <strong>NOT</strong> be
+                  cancelled or deleted automatically. Cancel the subscription
+                  in the Stripe dashboard manually if you want billing to stop.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={resetBusy}
+              data-testid="button-reset-cancel"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleResetSlot();
+              }}
+              disabled={resetBusy}
+              data-testid="button-reset-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {resetBusy && (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              )}
+              Yes, reset slot
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

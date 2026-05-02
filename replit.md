@@ -2383,3 +2383,24 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
    - **Risk found**: subcategory matching has NO canonical normalization — uses raw `lowercase + dash`. So `va-home-loans` (rule) ≠ `va-loans` (post-T000 lead) ≠ `va-home-loan` (real recent lead). This causes subcategory-specific rules to silently miss matching leads, falling back to category-only rules.
    - **Risk found**: 25 routing rules cover dead categories (`crisis-help`, `family-support`, `food-assistance`, `healthcare`, `mental-health`, `va-benefits`) that no longer match any current lead category.
    - Documented but NOT changed. Awaiting founder direction.
+
+## 2026-05-02 — Reset Slot Fully button (Elite Sponsor admin)
+
+**Files changed:**
+- `server/elite-sponsor.ts` — added `POST /api/admin/elite-sponsor-slots/:id/reset` endpoint (admin-auth gated via `requireAdmin`)
+- `client/src/pages/admin-elite-sponsors.tsx` — added "Reset Slot Fully" destructive button in slot edit drawer footer (left side, alongside Save Changes on the right) + AlertDialog confirmation popup
+
+**What it does (server-side):**
+- Sets `status='vacant'`, `billing_status=NULL`, `unsold_at=NOW()`
+- Nulls all sponsor identity fields: `sponsor_name`, `sponsor_logo_url`, `sponsor_short_description`, `sponsor_cta_text`, `sponsor_lead_email`, `sponsor_phone`, `sponsor_website_url`
+- Nulls `sponsor_partner_organization_id` and `sponsor_partner_application_id`
+- Nulls `stripe_customer_id` and `stripe_subscription_id` (slot row only — no Stripe API call)
+- Appends `Slot reset via admin on <ISO timestamp>` to existing `notes_internal` (preserves prior notes)
+- Runs `reconcileEliteSponsorSideEffects` (idempotent best-effort) so the public-facing trusted-services tile reverts to vacant
+
+**Explicitly does NOT:**
+- Call Stripe API. Does NOT cancel subscription. Does NOT delete customer.
+- Delete the slot row.
+- Touch routing rules, billing logic, or schema.
+
+**Note**: the founder spec listed `sponsor_description`, which is mapped to the actual schema column `sponsor_short_description`. Fields NOT touched by reset (intentionally — not in founder's list): `creative_approval_status`, `creative_rejection_reason`, `attributed_ambassador_id`, `attributed_session_id`, `sold_at`, `monthly_price_cents`, `lead_price_cents`, `subcategory_slug`, `category_slug`, `state_code`. Pricing and inventory geometry stay intact across resets.
