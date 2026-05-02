@@ -1,0 +1,97 @@
+--- COPY TO REPLIT ---
+
+VIRGINIA WAVE 8 RELEASE — CATEGORY DEPTH (OPTION D)
+
+Proceed with Wave 8 using the Florida-style Wave system.
+
+Objective:
+Deepen the three weakest categories statewide:
+- Disabled Veterans
+- Crisis Help
+- End-of-Life Services
+
+Do NOT restart Virginia.
+Do NOT rerun Waves 1–7.
+Do NOT modify taxonomy, slugs, schema, Trusted Services, Stripe, billing, routing, or AI Guide.
+
+==================================================
+TARGET CATEGORIES
+==================================================
+
+1. DISABLED VETERANS
+2. CRISIS HELP
+3. END-OF-LIFE SERVICES
+
+==================================================
+RESOURCE TYPES TO PRIORITIZE
+==================================================
+
+Disabled Veterans:
+- Wounded Warrior Project
+- Semper Fi & America’s Fund
+- DAV chapters (local level)
+- Paralyzed Veterans of America
+- Adaptive sports programs
+- VA disability support orgs
+- Veteran rehab programs
+
+Crisis Help:
+- Veterans Crisis Line (state/regional)
+- Suicide prevention programs
+- Vet Centers (ALL locations)
+- PTSD / trauma programs
+- Emergency intervention services
+- Mobile crisis units
+
+End-of-Life Services:
+- Hospice providers
+- Palliative care programs
+- Veteran funeral services
+- Burial benefits assistance
+- Survivor support (Gold Star families)
+- Estate / final planning support
+
+==================================================
+TARGET
+==================================================
+
+Add approximately 50–70 high-quality resources.
+
+==================================================
+RULES
+==================================================
+
+- Only real, active, high-quality organizations
+- Use canonical categories/subcategories ONLY
+- Skip anything that causes delay
+- Do NOT get stuck in loops
+- Speed + accuracy balance
+
+==================================================
+PROCESS
+==================================================
+
+1. Dry-run
+2. Fix subcategory mismatches
+3. Resolve duplicates
+4. Commit clean run
+
+==================================================
+STOP + REPORT AFTER WAVE 8
+==================================================
+
+Provide:
+
+1. Resources added
+2. Total VA resource count
+3. Categories touched
+4. Subcategories touched
+5. Regions covered
+6. Skipped sources
+7. Duplicate issues
+8. Broken URLs
+9. Final Virginia readiness assessment
+
+Do NOT proceed further without approval.
+
+--- END ---
