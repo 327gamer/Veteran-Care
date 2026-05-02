@@ -1,0 +1,102 @@
+--- COPY TO REPLIT ---
+
+VETERAN CARE — VIRGINIA WAVE 4 RELEASE
+
+Excellent work on Wave 3. This is exactly the Florida wave system execution we want.
+
+Proceed with WAVE 4 ONLY.
+
+IMPORTANT:
+Continue using the Florida wave system exactly.
+Do NOT revert to any phase-based system.
+Do NOT modify taxonomy.
+Do NOT create new slugs.
+Do NOT touch Trusted Services, Elite Sponsor Slots, Stripe, billing, routing, or AI Guide.
+
+==================================================
+WAVE 4 OBJECTIVE — MID-TIER CITY EXPANSION
+==================================================
+
+Goal:
+Expand and strengthen coverage in mid-size and underdeveloped Virginia cities and surrounding regions.
+
+Priority cities:
+
+- Lynchburg
+- Charlottesville
+- Williamsburg
+- Staunton
+- Winchester
+- Petersburg
+- Manassas
+- Additional regional towns and counties as needed
+
+==================================================
+WHAT TO ADD
+==================================================
+
+For each city/region, add:
+
+- Healthcare providers
+- Mental health and PTSD support
+- Substance recovery programs
+- Housing and rental assistance
+- Food banks and meal programs
+- Employment and workforce programs
+- Education and training providers
+- Legal aid services
+- Community and family support
+- Transportation services
+
+Include BOTH:
+- veteran-specific organizations
+- mainstream services veterans realistically use
+
+==================================================
+CATEGORY RULES
+==================================================
+
+- Continue filling ALL regular resource categories
+- Do NOT touch insurance category (leave as-is)
+- Continue gradual build of financial-credit where appropriate
+- Continue building substance-recovery naturally (do not force)
+
+==================================================
+QUALITY + SPEED RULES
+==================================================
+
+- Only real, active, useful resources
+- Skip broken or questionable sources quickly
+- Do NOT get stuck fixing URLs
+- Do NOT deep-research one organization
+
+==================================================
+ANTI-LOOP RULE
+==================================================
+
+If anything causes delay:
+- Skip it
+- Log it
+- Move on
+
+==================================================
+STOP RULE
+==================================================
+
+After Wave 4:
+
+STOP and report:
+
+1. Resources added
+2. Total VA resource count
+3. Categories covered
+4. Subcategories covered
+5. Cities/regions covered
+6. Any skipped sources
+7. Any duplicate issues
+8. Any broken/bot-blocked URLs
+9. Recommendation for Wave 5
+
+Do NOT proceed to Wave 5 without approval.
+
+--- END ---
