@@ -3265,6 +3265,220 @@ export async function registerRoutes(
   });
 
   // ----------------------------------------------------------------------
+  // STATE INTELLIGENCE DASHBOARD — admin-only, read-only analytics.
+  //
+  // Aggregates resources by (state, category) so the founder can instantly
+  // identify weak categories per state and decide where to run Wave 8.
+  // Builds on the same canonical data already shipped: resources +
+  // resource_categories + categories. NO schema, ingestion, Stripe, AI
+  // Guide, or Trusted Services touches.
+  //
+  // Response cached 60s in-process (matches the page's refetchInterval).
+  // ----------------------------------------------------------------------
+  let stateIntelCache: { data: any; expiresAt: number } | null = null;
+  app.get("/api/admin/state-intelligence", requireAdmin, async (_req, res) => {
+    try {
+      const now = Date.now();
+      if (stateIntelCache && stateIntelCache.expiresAt > now) {
+        return res.json(stateIntelCache.data);
+      }
+
+      const STATE_NAMES: Record<string, string> = {
+        AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",
+        CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware",
+        FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho",
+        IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas",
+        KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+        MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+        MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+        NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+        NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma",
+        OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+        SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah",
+        VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia",
+        WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+      };
+
+      // Canonical category list — render every active category per state
+      // even when the count is zero (founder spec: "Display ALL 17
+      // categories even if zero").
+      const { data: catRows, error: catErr } = await supabaseAdmin
+        .from("categories")
+        .select("id, slug, name")
+        .order("name", { ascending: true });
+      if (catErr) {
+        console.error("[state-intelligence] categories error:", catErr.message);
+        return res.status(503).json({ error: "categories unavailable" });
+      }
+      const allCats = (catRows || []) as { id: string; slug: string; name: string }[];
+      const catBySlug = new Map(allCats.map(c => [c.slug, c]));
+
+      // Pull every approved resource's (id, state, city, created_at) with
+      // its category links via resource_categories → categories(slug).
+      // Page through to avoid Supabase's default 1000-row cap.
+      const PAGE = 1000;
+      type ResRow = {
+        id: string;
+        state: string | null;
+        city: string | null;
+        created_at: string | null;
+        resource_categories: { categories: { slug: string } | null }[] | null;
+      };
+      const allResources: ResRow[] = [];
+      let pageStart = 0;
+      let pageErr: any = null;
+      while (pageStart < 100000) {
+        const { data, error } = await supabaseAdmin
+          .from("resources")
+          .select("id, state, city, created_at, resource_categories(categories(slug))")
+          .eq("status", "approved")
+          .range(pageStart, pageStart + PAGE - 1);
+        if (error) { pageErr = error; break; }
+        if (!data || data.length === 0) break;
+        allResources.push(...(data as any[]));
+        if (data.length < PAGE) break;
+        pageStart += PAGE;
+      }
+      if (pageErr) {
+        console.error("[state-intelligence] resources error:", pageErr.message);
+        return res.status(503).json({ error: "resources unavailable" });
+      }
+
+      // Aggregate per state.
+      type StateAgg = {
+        code: string;
+        name: string;
+        totalResources: number;
+        cities: Set<string>;
+        lastUpdated: string | null;
+        catCounts: Map<string, number>;
+      };
+      const byState = new Map<string, StateAgg>();
+
+      for (const r of allResources) {
+        const code = (r.state || "").toString().trim().toUpperCase();
+        if (!code) continue;
+        let agg = byState.get(code);
+        if (!agg) {
+          agg = {
+            code,
+            name: STATE_NAMES[code] || code,
+            totalResources: 0,
+            cities: new Set<string>(),
+            lastUpdated: null,
+            catCounts: new Map<string, number>(),
+          };
+          byState.set(code, agg);
+        }
+        agg.totalResources += 1;
+        const city = (r.city || "").toString().trim();
+        if (city) agg.cities.add(city.toLowerCase());
+        if (r.created_at && (!agg.lastUpdated || r.created_at > agg.lastUpdated)) {
+          agg.lastUpdated = r.created_at;
+        }
+        const links = Array.isArray(r.resource_categories) ? r.resource_categories : [];
+        const seenSlugs = new Set<string>();
+        for (const link of links) {
+          const slug = link?.categories?.slug;
+          if (!slug || seenSlugs.has(slug)) continue;
+          seenSlugs.add(slug);
+          agg.catCounts.set(slug, (agg.catCounts.get(slug) || 0) + 1);
+        }
+      }
+
+      // Health rule (founder spec):
+      //   STRONG    >= 40
+      //   MODERATE  20-39
+      //   WEAK      < 20
+      const healthFor = (n: number): "STRONG" | "MODERATE" | "WEAK" =>
+        n >= 40 ? "STRONG" : n >= 20 ? "MODERATE" : "WEAK";
+
+      // Wave recommendation rule (founder spec):
+      //   total < 300                   → "Run Full Expansion (Waves 1–7)"
+      //   else any category < 20        → "Run Wave 8 (Categorical Depth Fill)"
+      //   else                          → "State Complete (Monitor Only)"
+      const recommendFor = (total: number, categoriesArr: { count: number }[]): string => {
+        if (total < 300) return "Run Full Expansion (Waves 1–7)";
+        if (categoriesArr.some(c => c.count < 20)) return "Run Wave 8 (Categorical Depth Fill)";
+        return "State Complete (Monitor Only)";
+      };
+
+      // Build per-state payloads with all canonical categories included.
+      const states = Array.from(byState.values()).map(s => {
+        const categories = allCats.map(c => {
+          const count = s.catCounts.get(c.slug) || 0;
+          const pct = s.totalResources > 0
+            ? Math.round((count / s.totalResources) * 1000) / 10
+            : 0;
+          return {
+            slug: c.slug,
+            name: c.name,
+            count,
+            pct,
+            health: healthFor(count),
+          };
+        });
+        const weakCount = categories.filter(c => c.health === "WEAK").length;
+        const moderateCount = categories.filter(c => c.health === "MODERATE").length;
+        const strongCount = categories.filter(c => c.health === "STRONG").length;
+        const weakestCount = categories.reduce(
+          (min, c) => (c.count < min ? c.count : min),
+          Number.POSITIVE_INFINITY,
+        );
+        return {
+          code: s.code,
+          name: s.name,
+          totalResources: s.totalResources,
+          totalCities: s.cities.size,
+          lastUpdated: s.lastUpdated,
+          categories,
+          weakCount,
+          moderateCount,
+          strongCount,
+          weakestCategoryCount: Number.isFinite(weakestCount) ? weakestCount : 0,
+          recommendation: recommendFor(s.totalResources, categories),
+        };
+      });
+
+      // Default sort: total resources desc.
+      states.sort((a, b) => b.totalResources - a.totalResources);
+
+      // Global summary strip.
+      const totalStates = states.length;
+      const avgResourcesPerState = totalStates > 0
+        ? Math.round(states.reduce((s, x) => s + x.totalResources, 0) / totalStates)
+        : 0;
+      const totalWeakCategoriesPlatform = states.reduce((s, x) => s + x.weakCount, 0);
+      const strongestState = states[0]
+        ? { code: states[0].code, name: states[0].name, total: states[0].totalResources }
+        : null;
+      const weakestState = states.length > 0
+        ? (() => {
+            const w = states.reduce((min, x) => (x.totalResources < min.totalResources ? x : min), states[0]);
+            return { code: w.code, name: w.name, total: w.totalResources };
+          })()
+        : null;
+
+      const payload = {
+        totalStates,
+        avgResourcesPerState,
+        totalWeakCategoriesPlatform,
+        strongestState,
+        weakestState,
+        totalCategoriesTracked: allCats.length,
+        states,
+        generatedAt: new Date().toISOString(),
+      };
+
+      stateIntelCache = { data: payload, expiresAt: now + 60 * 1000 };
+      return res.json(payload);
+    } catch (err: any) {
+      console.error("[state-intelligence] unexpected error:", err?.message || err);
+      return res.status(500).json({ error: "state intelligence temporarily unavailable" });
+    }
+  });
+
+  // ----------------------------------------------------------------------
   // Internal cron driver for the founder digest.
   //
   // Why this exists: Autoscale deployments suspend the Node process between

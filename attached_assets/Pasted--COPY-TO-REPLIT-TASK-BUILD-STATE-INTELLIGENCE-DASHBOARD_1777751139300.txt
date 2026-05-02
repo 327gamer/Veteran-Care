@@ -1,0 +1,187 @@
+--- COPY TO REPLIT ---
+
+TASK: BUILD "STATE INTELLIGENCE DASHBOARD" INSIDE ADMIN → LIVE METRICS
+
+CONTEXT:
+We have successfully completed Virginia using the GOLD STANDARD state expansion system (746 resources, full geographic + category coverage).
+
+We now need a **State Intelligence Dashboard** to:
+1. See coverage quality per state
+2. Identify weak categories instantly
+3. Guide future Wave 8 (categorical depth) runs
+4. Compare old states vs new GOLD STANDARD states
+
+This is a READ-ONLY ANALYTICS FEATURE.
+DO NOT modify any existing data, schema, routing, or ingestion logic.
+
+---
+
+SECTION: ADD NEW MODULE UNDER
+
+Admin → Live Metrics → NEW SECTION:
+
+"State Intelligence Dashboard"
+
+Place it BELOW:
+- Active State List
+- Public Coverage Metrics
+
+---
+
+CORE FEATURE 1: STATE LIST WITH EXPANDABLE DROPDOWN
+
+Display all active states (same as current list), but each state must be:
+
+▶ Clickable / Expandable
+
+ON CLICK → Expand into:
+
+STATE SUMMARY PANEL:
+
+- Total Resources
+- Total Cities Covered
+- Last Updated Timestamp (latest resource created_at)
+
+---
+
+CORE FEATURE 2: CATEGORY BREAKDOWN PER STATE
+
+Inside each expanded state:
+
+Display ALL 17 categories (even if zero)
+
+For each category show:
+
+- Category Name
+- Resource Count
+- % of Total State Resources
+
+Example:
+
+Healthcare — 86 (11.5%)
+Mental Health — 50 (6.7%)
+Crisis Help — 8 (⚠️ LOW)
+Disabled Veterans — 7 (⚠️ LOW)
+
+---
+
+CORE FEATURE 3: CATEGORY HEALTH STATUS (CRITICAL)
+
+Each category must be auto-labeled:
+
+- 🟢 STRONG → 40+ resources
+- 🟡 MODERATE → 20–39
+- 🔴 WEAK → <20
+
+This is essential for identifying where Wave 8 needs to run.
+
+---
+
+CORE FEATURE 4: SORTING + QUICK FLAGS
+
+At top of dashboard:
+
+Add filters:
+
+- Sort by:
+  - Total Resources
+  - Weakest Category
+  - Last Updated
+
+- Toggle:
+  - Show ONLY weak categories
+  - Show ONLY states with weak categories
+
+---
+
+CORE FEATURE 5: "WAVE RECOMMENDATION ENGINE" (LIGHT LOGIC)
+
+For each state, automatically display:
+
+"Recommended Next Action:"
+
+Rules:
+
+IF any category <20 →
+→ Show: "Run Wave 8 (Categorical Depth Fill)"
+
+IF most categories >40 →
+→ Show: "State Complete (Monitor Only)"
+
+IF total resources <300 →
+→ Show: "Run Full Expansion (Waves 1–7)"
+
+---
+
+CORE FEATURE 6: GLOBAL SUMMARY STRIP (TOP)
+
+Add a top bar:
+
+- Total States
+- Avg Resources per State
+- Total Weak Categories Across Platform
+- Strongest State (Virginia)
+- Weakest State (auto-detect)
+
+---
+
+CORE FEATURE 7: PERFORMANCE SAFETY
+
+- Query must be aggregated (GROUP BY state, category)
+- DO NOT loop through rows inefficiently
+- Cache results for 30–60 seconds (same as live metrics)
+
+---
+
+CORE FEATURE 8: UI/UX RULES
+
+- Match existing Live Metrics styling
+- Clean cards layout
+- Mobile responsive
+- Fast expand/collapse (no lag)
+
+---
+
+STRICT RULES (DO NOT BREAK)
+
+- DO NOT modify:
+  - shared/schema.ts
+  - ingestion scripts
+  - rollout-engine.ts
+  - Stripe / billing
+  - AI Guide
+  - Trusted Services
+
+- This is READ-ONLY analytics
+
+---
+
+GOAL:
+
+This dashboard must allow us to instantly answer:
+
+1. Which states are weak?
+2. Which categories are weak per state?
+3. Where do we run Wave 8 next?
+4. Which states meet GOLD STANDARD (like Virginia)?
+
+---
+
+SUCCESS CRITERIA:
+
+- Click any state → see full category breakdown
+- Weak categories clearly visible
+- Wave recommendation visible per state
+- No performance lag
+
+---
+
+AFTER BUILD:
+
+Reply with:
+1. Endpoint(s) used
+2. Query logic
+3. Screenshot or preview link
+4. Any performance considerations
+
+--- END ---

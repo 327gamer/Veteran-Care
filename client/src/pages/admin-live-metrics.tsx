@@ -39,7 +39,12 @@ import {
   UserMinus,
   Target,
   ShieldCheck,
+  ChevronDown,
+  ChevronRight,
+  BarChart3,
+  Filter as FilterIcon,
 } from "lucide-react";
+import { useState as useReactState, useMemo } from "react";
 import {
   METRIC_REGISTRY,
   SECTION_META,
@@ -61,6 +66,37 @@ interface PublicStatsResponse {
   growthStatus: string;
   isEstimated?: boolean;
   lastUpdated: string;
+}
+
+interface StateIntelCategory {
+  slug: string;
+  name: string;
+  count: number;
+  pct: number;
+  health: "STRONG" | "MODERATE" | "WEAK";
+}
+interface StateIntelState {
+  code: string;
+  name: string;
+  totalResources: number;
+  totalCities: number;
+  lastUpdated: string | null;
+  categories: StateIntelCategory[];
+  weakCount: number;
+  moderateCount: number;
+  strongCount: number;
+  weakestCategoryCount: number;
+  recommendation: string;
+}
+interface StateIntelResponse {
+  totalStates: number;
+  avgResourcesPerState: number;
+  totalWeakCategoriesPlatform: number;
+  strongestState: { code: string; name: string; total: number } | null;
+  weakestState: { code: string; name: string; total: number } | null;
+  totalCategoriesTracked: number;
+  states: StateIntelState[];
+  generatedAt: string;
 }
 
 interface TractionStatsResponse {
@@ -282,6 +318,367 @@ function MetricTile({ m, pub, tr }: { m: MetricDef; pub?: PublicStatsResponse; t
   );
 }
 
+// ─── State Intelligence Dashboard ──────────────────────────────────────
+//
+// Read-only analytics block that reveals per-state coverage quality and
+// per-category health (STRONG / MODERATE / WEAK) so the founder can
+// instantly see where to run Wave 8 next. Powered by
+// /api/admin/state-intelligence (cached 60s, requires admin headers).
+// No DB writes, no schema or ingestion changes.
+//
+// Health rule:    STRONG ≥ 40, MODERATE 20–39, WEAK < 20
+// Recommendation: total < 300       → "Run Full Expansion (Waves 1–7)"
+//                 any cat < 20      → "Run Wave 8 (Categorical Depth Fill)"
+//                 otherwise         → "State Complete (Monitor Only)"
+
+type StateSortKey = "total" | "weakest" | "updated";
+
+function HealthChip({ health }: { health: "STRONG" | "MODERATE" | "WEAK" }) {
+  if (health === "STRONG")
+    return (
+      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]" data-testid="chip-health-strong">
+        STRONG
+      </Badge>
+    );
+  if (health === "MODERATE")
+    return (
+      <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]" data-testid="chip-health-moderate">
+        MODERATE
+      </Badge>
+    );
+  return (
+    <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px]" data-testid="chip-health-weak">
+      WEAK
+    </Badge>
+  );
+}
+
+function RecommendationBanner({ rec }: { rec: string }) {
+  let cls = "bg-emerald-50 text-emerald-900 border-emerald-200";
+  let Icon = CheckCircle2;
+  if (rec.startsWith("Run Wave 8")) {
+    cls = "bg-amber-50 text-amber-900 border-amber-200";
+    Icon = AlertTriangle;
+  } else if (rec.startsWith("Run Full Expansion")) {
+    cls = "bg-red-50 text-red-900 border-red-200";
+    Icon = AlertCircle;
+  }
+  return (
+    <div
+      className={`mt-3 rounded-md border px-3 py-2 text-xs font-medium flex items-center gap-2 ${cls}`}
+      data-testid="banner-recommendation"
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span className="uppercase tracking-wide text-[10px] opacity-80">Recommended Next Action:</span>
+      <span>{rec}</span>
+    </div>
+  );
+}
+
+function StateRow({
+  s,
+  onlyWeakCats,
+}: {
+  s: StateIntelState;
+  onlyWeakCats: boolean;
+}) {
+  const [open, setOpen] = useReactState(false);
+  const cats = onlyWeakCats ? s.categories.filter(c => c.health === "WEAK") : s.categories;
+  const lastUp = s.lastUpdated ? new Date(s.lastUpdated).toLocaleString() : "—";
+  return (
+    <div
+      className="rounded-lg border border-border bg-white"
+      data-testid={`state-row-${s.code.toLowerCase()}`}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls={`panel-state-${s.code.toLowerCase()}`}
+        className="w-full flex items-center justify-between gap-2 px-3 sm:px-4 py-3 text-left hover:bg-muted/30 transition-colors rounded-lg"
+        data-testid={`button-toggle-state-${s.code.toLowerCase()}`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {open ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+          <span className="font-semibold text-sm sm:text-base truncate">
+            {s.name} <span className="text-muted-foreground">({s.code})</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant="outline" className="text-[11px]" data-testid={`badge-total-${s.code.toLowerCase()}`}>
+            {fmt(s.totalResources)} resources
+          </Badge>
+          <Badge variant="outline" className="text-[11px] hidden sm:inline-flex">
+            {fmt(s.totalCities)} cities
+          </Badge>
+          {s.weakCount > 0 ? (
+            <Badge className="bg-red-100 text-red-800 border-red-200 text-[11px]" data-testid={`badge-weakcount-${s.code.toLowerCase()}`}>
+              {s.weakCount} weak
+            </Badge>
+          ) : (
+            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[11px]">
+              <CheckCircle2 className="h-3 w-3 mr-1" /> Healthy
+            </Badge>
+          )}
+        </div>
+      </button>
+      {open ? (
+        <div className="px-3 sm:px-4 pb-4 border-t border-border" data-testid={`panel-state-${s.code.toLowerCase()}`}>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="rounded-md bg-muted/40 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Resources</p>
+              <p className="font-bold text-base text-primary" data-testid={`stat-total-${s.code.toLowerCase()}`}>
+                {fmt(s.totalResources)}
+              </p>
+            </div>
+            <div className="rounded-md bg-muted/40 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cities Covered</p>
+              <p className="font-bold text-base text-primary" data-testid={`stat-cities-${s.code.toLowerCase()}`}>
+                {fmt(s.totalCities)}
+              </p>
+            </div>
+            <div className="rounded-md bg-muted/40 px-3 py-2 col-span-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Last Updated</p>
+              <p className="font-medium text-xs text-foreground" data-testid={`stat-lastupdated-${s.code.toLowerCase()}`}>
+                {lastUp}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+                Category breakdown ({cats.length} of {s.categories.length})
+              </p>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> {s.strongCount} strong
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" /> {s.moderateCount} moderate
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> {s.weakCount} weak
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {cats.map(c => (
+                <div
+                  key={c.slug}
+                  className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded border border-border bg-white text-xs"
+                  data-testid={`row-category-${s.code.toLowerCase()}-${c.slug}`}
+                >
+                  <span className="truncate" title={c.name}>
+                    {c.name}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {fmt(c.count)} ({c.pct}%)
+                    </span>
+                    <HealthChip health={c.health} />
+                  </div>
+                </div>
+              ))}
+              {cats.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic col-span-2">
+                  No weak categories — this state is healthy.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <RecommendationBanner rec={s.recommendation} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function StateIntelligenceDashboard({
+  data,
+  isLoading,
+  isError,
+}: {
+  data: StateIntelResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  const [sortKey, setSortKey] = useReactState<StateSortKey>("total");
+  const [onlyWeakCats, setOnlyWeakCats] = useReactState(false);
+  const [onlyWeakStates, setOnlyWeakStates] = useReactState(false);
+
+  const visibleStates = useMemo(() => {
+    if (!data) return [];
+    let s = [...data.states];
+    if (onlyWeakStates) s = s.filter(x => x.weakCount > 0);
+    if (sortKey === "total") {
+      s.sort((a, b) => b.totalResources - a.totalResources);
+    } else if (sortKey === "weakest") {
+      s.sort((a, b) => a.weakestCategoryCount - b.weakestCategoryCount);
+    } else if (sortKey === "updated") {
+      s.sort((a, b) => {
+        const at = a.lastUpdated || "";
+        const bt = b.lastUpdated || "";
+        return bt.localeCompare(at);
+      });
+    }
+    return s;
+  }, [data, sortKey, onlyWeakStates]);
+
+  return (
+    <Card
+      className="mb-6 border-l-4 border-l-emerald-500"
+      data-testid="card-section-state-intelligence"
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg flex items-center justify-center font-bold text-sm bg-emerald-100 text-emerald-700">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg sm:text-xl flex items-center gap-2 text-primary" data-testid="heading-state-intelligence">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                State Intelligence Dashboard
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Read-only coverage quality per state. Identifies weak categories and recommends the next wave to run.
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[11px]">
+            <Lock className="h-3 w-3 mr-1" /> Admin-only analytics
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isError ? (
+          <p className="text-sm text-red-700" data-testid="text-state-intel-error">
+            State intelligence temporarily unavailable.
+          </p>
+        ) : null}
+        {isLoading && !data ? (
+          <p className="text-sm text-muted-foreground" data-testid="text-state-intel-loading">
+            Loading state intelligence…
+          </p>
+        ) : null}
+
+        {data ? (
+          <>
+            {/* ── Global Summary Strip ── */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4"
+              data-testid="block-state-intel-summary"
+            >
+              <div className="rounded-lg border border-border bg-white px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total States</p>
+                <p className="font-bold text-lg text-primary" data-testid="stat-summary-totalstates">
+                  {fmt(data.totalStates)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-white px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Avg Resources / State</p>
+                <p className="font-bold text-lg text-primary" data-testid="stat-summary-avgresources">
+                  {fmt(data.avgResourcesPerState)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-white px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Weak Categories (Platform)</p>
+                <p className="font-bold text-lg text-red-700" data-testid="stat-summary-weakplatform">
+                  {fmt(data.totalWeakCategoriesPlatform)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-emerald-700">Strongest State</p>
+                <p className="font-bold text-sm text-emerald-900 leading-tight" data-testid="stat-summary-strongest">
+                  {data.strongestState
+                    ? `${data.strongestState.name} (${fmt(data.strongestState.total)})`
+                    : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-wide text-amber-800">Weakest State</p>
+                <p className="font-bold text-sm text-amber-900 leading-tight" data-testid="stat-summary-weakest">
+                  {data.weakestState
+                    ? `${data.weakestState.name} (${fmt(data.weakestState.total)})`
+                    : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* ── Sort + Filter controls ── */}
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-border" data-testid="block-state-intel-filters">
+              <div className="flex items-center gap-1.5">
+                <FilterIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Sort:</span>
+              </div>
+              {([
+                { key: "total" as StateSortKey, label: "Total Resources" },
+                { key: "weakest" as StateSortKey, label: "Weakest Category" },
+                { key: "updated" as StateSortKey, label: "Last Updated" },
+              ]).map(opt => (
+                <Button
+                  key={opt.key}
+                  variant={sortKey === opt.key ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => setSortKey(opt.key)}
+                  data-testid={`button-sort-${opt.key}`}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant={onlyWeakCats ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => setOnlyWeakCats(v => !v)}
+                  data-testid="button-toggle-onlyweakcats"
+                >
+                  {onlyWeakCats ? "✓ " : ""}Only weak categories
+                </Button>
+                <Button
+                  variant={onlyWeakStates ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => setOnlyWeakStates(v => !v)}
+                  data-testid="button-toggle-onlyweakstates"
+                >
+                  {onlyWeakStates ? "✓ " : ""}Only states with weak categories
+                </Button>
+              </div>
+            </div>
+
+            {/* ── State list ── */}
+            <div className="space-y-2" data-testid="block-state-intel-list">
+              {visibleStates.map(s => (
+                <StateRow key={s.code} s={s} onlyWeakCats={onlyWeakCats} />
+              ))}
+              {visibleStates.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic" data-testid="text-no-states-match">
+                  No states match the current filters.
+                </p>
+              ) : null}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground mt-3" data-testid="text-state-intel-meta">
+              Powered by <code className="bg-muted px-1 rounded">GET /api/admin/state-intelligence</code> •{" "}
+              Cached 60s • {data.totalCategoriesTracked} categories tracked •{" "}
+              Last refreshed: {new Date(data.generatedAt).toLocaleString()}
+            </p>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function SectionCard({
   section,
   pub,
@@ -390,12 +787,25 @@ function AdminLiveMetricsInner() {
     retry: false,
   });
 
+  const stateIntelQ = useQuery<StateIntelResponse>({
+    queryKey: ["/api/admin/state-intelligence", adminKey],
+    queryFn: () =>
+      fetch("/api/admin/state-intelligence", { headers }).then((r) => {
+        if (!r.ok) throw new Error("state-intelligence failed");
+        return r.json();
+      }),
+    enabled: !!adminKey,
+    refetchInterval: 60_000,
+    retry: false,
+  });
+
   const pub = publicQ.data;
   const tr = tractionQ.data;
 
   const refreshAll = () => {
     publicQ.refetch();
     tractionQ.refetch();
+    stateIntelQ.refetch();
   };
 
   const publicCount = METRIC_REGISTRY.filter((m) => m.tier === "public").length;
@@ -504,6 +914,13 @@ function AdminLiveMetricsInner() {
             </div>
           ) : null}
         </SectionCard>
+
+        {/* ─── State Intelligence Dashboard (read-only analytics) ─── */}
+        <StateIntelligenceDashboard
+          data={stateIntelQ.data}
+          isLoading={stateIntelQ.isLoading}
+          isError={stateIntelQ.isError}
+        />
 
         {/* ─── 2. Public Growth ─── */}
         <SectionCard section="growth" pub={pub} tr={tr}>
