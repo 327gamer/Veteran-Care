@@ -1,0 +1,157 @@
+🚀 MASSACHUSETTS BUILD — WAVE 1 RELEASE (GOLDEN STANDARD ENFORCEMENT)
+
+We are now starting Massachusetts (MA) using the Virginia Golden Standard State Expansion Formula (v5.2.2026).
+
+This is a STRICT replication build. No deviations.
+
+---
+
+## 🔒 CORE RULE (NON-NEGOTIABLE)
+
+You MUST follow the exact same system used for Virginia (VA):
+
+- Same Wave structure (Wave 1 → Wave 8)
+- Same rollout-engine.ts
+- Same 13-section Wave 1 format (A–M)
+- Same regional cluster logic
+- Same category + subcategory mapping rules
+- Same data validation + duplicate handling
+- Same founder master law compliance
+
+👉 This is NOT a new build.  
+👉 This is a direct clone of the VA system applied to MA
+
+---
+
+## 🎯 OBJECTIVE — WAVE 1 (MASSACHUSETTS)
+
+Build the foundation layer (~120–150 resources) using:
+
+### ✅ 13 Sections (A–M)
+### ✅ Regional Cluster Coverage (REQUIRED)
+
+Massachusetts MUST be broken into major regional clusters, similar to VA:
+
+Suggested clusters (adapt appropriately):
+- Boston Metro
+- Worcester
+- Springfield / Western MA
+- Cambridge / Somerville
+- Lowell / Lawrence
+- New Bedford / Fall River
+- Cape Cod
+- North Shore
+- South Shore
+- Berkshires / Pittsfield
+- Military/Veteran hubs
+
+---
+
+## 📦 REQUIRED COVERAGE IN WAVE 1
+
+Each region must include:
+
+- VA Medical Centers (VAMC)
+- Community-Based Outpatient Clinics (CBOCs)
+- Vet Centers
+- State Department of Veterans Services
+- Major statewide veteran organizations
+- Foundational healthcare systems
+- Core benefit navigation services
+
+---
+
+## ⚙️ EXECUTION RULES
+
+### Data Quality
+- 0 bad_sub errors
+- 0 duplicates (handle via rename or skip)
+- Canonical category/subcategory mapping ONLY
+- Use existing taxonomy — DO NOT invent new categories
+
+### URL Handling
+- Use --allow-broken-urls if needed
+- Prioritize real organizations over perfect URLs
+
+### Geography
+- MUST cover all major MA regions
+- Avoid over-concentration in Boston only
+
+### Engine Rules
+- Use rollout-engine.ts ONLY
+- APPEND-ONLY (NO wipes, NO deletes)
+- Idempotent logic required
+
+---
+
+## 🚫 HARD RESTRICTIONS (FOUNDER LAW)
+
+DO NOT:
+- Modify schema
+- Run db:push
+- Touch Stripe / billing
+- Touch AI Guide
+- Touch Trusted Services
+- Change category structure
+- Rebuild existing states
+- Introduce new systems
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+Wave 1 is COMPLETE when:
+
+- ~120–150 resources created
+- All 13 sections (A–M) populated
+- All major MA regions covered
+- Clean dry-run:
+  - 0 errors
+  - 0 bad_sub
+  - duplicates resolved
+- Code review passes
+- Final founder report delivered
+
+---
+
+## 🛑 STOP RULE
+
+After Wave 1:
+
+- STOP immediately
+- DO NOT start Wave 2
+- WAIT for founder approval
+
+---
+
+## 📊 OUTPUT REQUIRED
+
+Provide full Founder Report (9-item format) including:
+
+1. Resources added  
+2. Total MA count  
+3. Categories touched  
+4. Subcategories touched  
+5. Regions covered  
+6. Skipped sources  
+7. Duplicate handling  
+8. URL issues  
+9. Recommendation for Wave 2  
+
+---
+
+## ⚡ FINAL INSTRUCTION
+
+Proceed immediately with:
+
+👉 Massachusetts Wave 1 (Golden Standard)
+
+This must mirror Virginia Wave 1 in:
+- Structure
+- Depth
+- Coverage
+- Quality
+
+No shortcuts. No deviations.
+
+Execute.
