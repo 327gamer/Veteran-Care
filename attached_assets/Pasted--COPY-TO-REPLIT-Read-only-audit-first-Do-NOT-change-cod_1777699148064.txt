@@ -1,0 +1,110 @@
+--- COPY TO REPLIT ---
+
+Read-only audit first. Do NOT change code, database, routing, Stripe, or banners yet.
+
+We need to confirm that the regular Resources section uses category/subcategory slugs that correctly mirror the Trusted Services / Elite Sponsor monetized categories where appropriate.
+
+Objective:
+Make sure regular Resources, Trusted Services, and Elite Sponsor banners are aligned so the same monetized subcategory can show the correct Elite Sponsor banner wherever that subcategory appears.
+
+Please audit:
+
+1. Regular Resources category/subcategory structure
+Identify every category and subcategory used in:
+- /resources
+- category pages such as /housing, /financial-services, /legal-services, /insurance, /education-training, /employment-support, /end-of-life, /healthcare, /mental-health, /benefits-assistance, /disabled-veterans, /family-support, /community-support, /substance-recovery, transportation, food, etc.
+
+For each, report:
+- display name
+- category slug
+- subcategory slug
+- source file/component/table
+- whether it connects to the resources filtering system
+
+2. Trusted Services / Elite Sponsor mirrored categories
+Compare the regular Resources taxonomy against these monetized Elite/Trusted categories:
+
+- housing-home
+- legal-services
+- financial-credit
+- insurance
+- education-training
+- employment-support
+- end-of-life-services
+- auto-services
+- travel-services
+
+For each mirrored category, list:
+- matching Resources category/subcategory slugs
+- matching Trusted Services subcategory slugs
+- matching Elite Sponsor slot subcategory slugs
+- any mismatch that would prevent an Elite banner from showing
+
+3. Cross-listing / mirrored subcategories
+Some subcategories SHOULD appear in more than one place because users search differently.
+
+Examples:
+- VA Loans / Mortgages may appear under Financial & Credit Services and Housing/Home Ownership.
+- Wills, Estate Planning & Probate may appear under Legal Services and End of Life Services.
+- Burial / Final Expense may appear under Insurance and End of Life Services.
+- Employment Law may appear under Legal Services and Employment Support.
+- Home Insurance / Renters Insurance may connect to Insurance and Housing.
+- Pension Assistance / Survivor Benefits may connect to Financial, Benefits, and End of Life.
+
+Do NOT treat these as duplicates automatically.
+
+Instead, classify each duplicate as:
+- intentional mirror / cross-list
+- confusing duplicate needing cleanup
+- broken mismatch
+- orphaned slug
+- missing Elite banner mapping
+
+4. Elite banner coverage check
+Confirm whether the EliteSponsorBanner now appears correctly on regular Resources subcategory pages for all monetized categories.
+
+Test examples:
+- /resources?category=financial-credit&sub=va-loans
+- /resources?category=housing-home&sub=home-ownership
+- /resources?category=legal-services&sub=wills-estate-planning
+- /resources?category=insurance&sub=burial-final-expense
+- /resources?category=end-of-life-services&sub=funeral-burial or equivalent
+- /resources?category=education-training
+- /resources?category=employment-support
+- /resources?category=auto-services
+- /resources?category=travel-services
+
+Report:
+- where banners appear correctly
+- where they do not appear
+- why they do not appear
+- exact slug mismatch if applicable
+
+5. Resource scraping/import readiness
+We are preparing to build Virginia next and then the remaining states. Before scraping/importing resources, we need the taxonomy source of truth clear.
+
+Report whether regular resources should be imported using:
+- existing Resources category slugs
+- Trusted Services category slugs
+- Elite Sponsor category slugs
+- or a mapping table between them
+
+6. Deliverable
+Return a clean audit report with:
+
+A. Current regular Resources taxonomy  
+B. Current Trusted Services / Elite taxonomy  
+C. Mismatches  
+D. Intentional mirrors  
+E. Broken duplicates  
+F. Missing banner mappings  
+G. Recommended minimal fix plan  
+H. What should NOT be changed  
+
+Important:
+Do NOT modify anything yet.
+Do NOT remove cross-listed categories just because they appear in more than one place.
+Do NOT touch Stripe, billing, lead routing, admin panel, or resource records.
+This is only a taxonomy and banner-mapping audit so we can safely continue the state buildout.
+
+--- END ---
