@@ -1,0 +1,217 @@
+--- COPY TO REPLIT ---
+
+VETERAN CARE — VIRGINIA STATE BUILD MASTER BRIEF
+
+We are starting the Virginia resource build.
+
+IMPORTANT:
+Do NOT run the whole state at once.
+Do NOT continue automatically through all phases.
+Do NOT scrape endlessly.
+Do NOT get stuck in loops.
+
+You must follow the established 6-phase Florida-style SOP, one phase at a time.
+
+After each phase:
+1. Stop immediately
+2. Report results
+3. Wait for founder approval before continuing
+
+==================================================
+OVERALL OBJECTIVE
+==================================================
+
+Build out Virginia as a full Veteran Care resource state.
+
+We need both:
+
+1. Veteran-specific resources
+2. Mainstream resources veterans use in daily life
+
+This platform is not only a VA directory. It is a complete veteran support ecosystem.
+
+Use the existing regular Resources taxonomy.
+
+Do NOT:
+- change categories
+- rename slugs
+- create new taxonomy
+- modify Trusted Services
+- modify Elite Sponsor Slots
+- modify Stripe or billing
+- modify routing
+- modify AI Guide
+
+==================================================
+CURRENT COMPLETED STATES
+==================================================
+
+Completed states:
+AL, CA, FL, GA, NC, NY, OH, PA, SC, TX
+
+Do NOT rebuild or revisit these states.
+
+Next state:
+VIRGINIA
+
+==================================================
+RESOURCE TAXONOMY TO USE
+==================================================
+
+Use the 17 regular Resources categories:
+
+- crisis-help
+- mental-health
+- disabled-veterans
+- housing-home
+- food-assistance
+- benefits-assistance
+- family-support
+- community-support
+- employment-support
+- education-training
+- transportation
+- financial-credit
+- legal-services
+- wellness-recovery
+- end-of-life-services
+- healthcare
+- insurance
+
+CRITICAL:
+- Use ONLY existing category_slug and subcategory_slug values
+- Do NOT invent new slugs
+- If unsure, SKIP and move on
+
+==================================================
+TYPE OF RESOURCES TO FIND
+==================================================
+
+Find real, verified, useful resources including:
+
+- VA facilities
+- Veteran service offices
+- State veteran agencies
+- County veteran offices
+- Legal aid
+- Housing assistance
+- Food banks
+- Workforce/job programs
+- Education/training providers
+- Crisis services
+- Mental health support
+- Healthcare clinics
+- Disability support
+- Transportation help
+- Family support
+- Community nonprofits
+- Financial counseling
+- Benefits assistance
+- End-of-life support
+- Insurance-related services where relevant
+
+Include BOTH:
+- veteran-specific organizations
+- mainstream organizations veterans would realistically use
+
+==================================================
+QUALITY RULES
+==================================================
+
+Only add resources that are:
+
+- real
+- active
+- relevant
+- verifiable (website, phone, or official listing)
+- useful to veterans or their families
+
+Do NOT add:
+
+- spam
+- “we buy houses” type businesses
+- broken or dead links
+- irrelevant companies
+- generic directories
+
+If unsure → SKIP
+
+==================================================
+ANTI-LOOP RULE (CRITICAL)
+==================================================
+
+If ANY issue occurs:
+
+- Skip immediately
+- Log it
+- Move forward
+
+Do NOT:
+- retry repeatedly
+- deep research one item
+- get stuck on one city/source
+
+Maximum time per issue: 2–3 minutes
+
+==================================================
+6-PHASE SOP
+==================================================
+
+PHASE 1 — STATE FOUNDATION
+Goal:
+Establish the Virginia foundation.
+
+Tasks:
+- Confirm Virginia state record exists
+- Confirm all 17 categories are available
+- Confirm subcategory structure is usable
+- Identify major cities/regions
+- Add top statewide veteran resources ONLY
+
+STOP after Phase 1.
+
+--------------------------------------------------
+
+PHASE 2 — HEALTHCARE FOUNDATION
+VA, healthcare, mental health, crisis, disabled veteran, recovery
+
+--------------------------------------------------
+
+PHASE 3 — COUNTY / BENEFITS BACKBONE
+County offices, benefits, VSOs, legal aid, claims
+
+--------------------------------------------------
+
+PHASE 4 — MAJOR CITY SATURATION
+Focus cities:
+Richmond, Virginia Beach, Norfolk, Chesapeake, Arlington, Alexandria, Newport News, Hampton, Roanoke, Fairfax, Fredericksburg
+
+--------------------------------------------------
+
+PHASE 5 — SECONDARY EXPANSION
+Fill remaining cities + expand all categories
+
+--------------------------------------------------
+
+PHASE 6 — AUDIT / CLEANUP
+Gap check, duplicates, category coverage
+
+==================================================
+START NOW WITH PHASE 1 ONLY
+==================================================
+
+Begin Phase 1 ONLY.
+
+After completion, STOP and report:
+
+1. Total resources added
+2. Categories touched
+3. Subcategories touched
+4. Cities/regions covered
+5. Skipped sources/issues
+6. Any problems encountered
+7. Recommendation before Phase 2
+
+DO NOT proceed to Phase 2 without approval.
+
+--- END ---
