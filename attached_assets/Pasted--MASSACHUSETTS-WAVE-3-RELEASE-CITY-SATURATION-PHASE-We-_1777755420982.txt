@@ -1,0 +1,149 @@
+🚀 MASSACHUSETTS — WAVE 3 RELEASE (CITY SATURATION PHASE)
+
+We are now releasing Massachusetts Wave 3 using the Virginia Golden Standard State Expansion Formula (v5.2.2026).
+
+---
+
+## 🔒 CORE RULE
+
+This must follow Virginia Wave 3 EXACTLY:
+
+- Same structure
+- Same density logic
+- Same rollout-engine.ts
+- Same validation rules
+
+NO deviations.
+
+---
+
+## 🎯 OBJECTIVE — WAVE 3
+
+Major City Saturation (~120–150 resources)
+
+This is a targeted density build, NOT general scraping.
+
+---
+
+## 📍 TARGET CITIES (PRIORITY ORDER)
+
+You MUST heavily expand:
+
+- Boston (primary)
+- Worcester
+- Springfield
+- Cambridge / Somerville
+- Lowell / Lawrence
+- Brockton
+- New Bedford
+- Fall River
+- Quincy
+- Lynn
+- Cape Cod towns (Barnstable, Hyannis, etc.)
+
+---
+
+## 📦 REQUIRED RESOURCE TYPES
+
+Each city must include a balanced mix:
+
+### 🏥 Healthcare
+- Hospitals
+- Clinics
+- Specialty care
+
+### 🧠 Mental Health
+- Counseling centers
+- PTSD programs
+- Behavioral health providers
+
+### 🏠 Housing
+- Shelters
+- Transitional housing
+- Assistance programs
+
+### 🍽️ Food Support
+- Food banks
+- Pantries
+
+### ⚖️ Legal
+- Legal aid
+- Veteran clinics
+
+### 💼 Employment
+- Workforce centers
+- Job programs
+
+### 🎓 Education
+- Colleges
+- Training programs
+
+### 🚌 Transportation
+- Transit systems
+- Assistance programs
+
+---
+
+## ⚙️ EXECUTION RULES
+
+- Use rollout-engine.ts ONLY
+- Append-only (NO deletes)
+- Idempotent logic
+
+### Data Quality:
+- 0 bad_sub
+- 0 duplicates (rename or skip)
+- Canonical taxonomy ONLY
+
+### URL Handling:
+- Use --allow-broken-urls
+
+---
+
+## 🚫 FOUNDER LAW
+
+DO NOT:
+- Modify schema
+- Run db:push
+- Touch Stripe / billing / AI Guide
+- Touch Trusted Services
+- Create new categories
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+Wave 3 complete when:
+
+- +120–150 resources added
+- MA total reaches ~375–420+
+- Major cities saturated
+- Categories become balanced
+- Clean validation (0 errors)
+
+---
+
+## 🛑 STOP RULE
+
+After Wave 3:
+
+👉 STOP  
+👉 WAIT for founder approval  
+
+---
+
+## 📊 OUTPUT REQUIRED
+
+Full Founder Report (same 9-item format)
+
+---
+
+## ⚡ EXECUTE
+
+Proceed immediately with:
+
+👉 Massachusetts Wave 3 (Golden Standard — City Saturation)
+
+Maintain Virginia-level quality.
+
+No shortcut
