@@ -1,0 +1,66 @@
+--- COPY TO REPLIT ---
+
+We need to clean up the visible test companies in Trusted Partner Applications / Partner Prospects.
+
+These are showing in the admin panel and some appear active/converted, which looks unprofessional and could confuse the live platform.
+
+Please identify and remove/archive the following obvious test companies:
+
+VISIBLE TEST RECORDS FROM ADMIN SCREENSHOTS:
+- ABC Test
+- VC - Test
+- [TEST] Test
+- [TEST] Test
+- ACB - 7
+- ABC - 6
+- ABC - 5
+- ABC 4
+- ABC 3
+- ABC - 2
+- Test Company ABC
+- ABC Company
+- Any other obvious ABC / TEST / Smoke / placeholder partner records
+
+Important:
+I will personally handle the Wyoming financial-credit / VA Loans Stripe cancellation and slot reset separately if needed.
+
+For these Trusted Partner Application / Partner Prospect records, please:
+
+1. Find every matching record in:
+- partner_applications
+- partner_organizations
+- trusted_services
+- partner_routing_rules
+- any related partner/referral/billing tables
+
+2. For each record, report:
+- ID
+- company name
+- status
+- whether it is public-facing
+- whether it has Stripe live-mode IDs
+- whether it has Stripe test-mode-only IDs
+- whether it has routing rules
+- whether it has any real lead history
+
+3. Then safely clean them up:
+- Remove/archive the test applications from the admin list
+- Remove/deactivate any public trusted_services listings tied to them
+- Remove/deactivate routing rules tied only to these test companies
+- Preserve audit history where needed
+- Do NOT delete real production partners
+- Do NOT touch real Stripe live subscriptions except the Wyoming ABC Test if I specifically confirm
+- Do NOT touch resources, AI Guide, real partners, or real leads
+
+4. After cleanup, confirm:
+- Trusted Partner Applications no longer shows these test companies
+- Public Trusted Services does not show them
+- Routing Partners does not include junk/test businesses
+- No real partner data was removed
+- No live billing was accidentally changed
+
+This should be done carefully but we need these test businesses gone before we start selling and showing the platform to partners.
+
+Report back with exactly what was removed, archived, or left alone and why.
+
+--- END ---

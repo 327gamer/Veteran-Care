@@ -2404,3 +2404,38 @@ Founder spec received 2026-04-30. Display + mapping only — zero schema changes
 - Touch routing rules, billing logic, or schema.
 
 **Note**: the founder spec listed `sponsor_description`, which is mapped to the actual schema column `sponsor_short_description`. Fields NOT touched by reset (intentionally — not in founder's list): `creative_approval_status`, `creative_rejection_reason`, `attributed_ambassador_id`, `attributed_session_id`, `sold_at`, `monthly_price_cents`, `lead_price_cents`, `subcategory_slug`, `category_slug`, `state_code`. Pricing and inventory geometry stay intact across resets.
+
+## 2026-05-02 — Test partner-record cleanup (founder QA)
+
+Inventory of test/junk records across both DBs (Helium + Supabase):
+
+**Found and ARCHIVED (status='archived', reversible):**
+- `partner_applications.8d481563-7359-4962-b9e4-42b4be8e21fb` "Regression Test Partner" (no Stripe IDs, no converted provider)
+- `partner_applications.53d846ac-a96c-45be-aec1-4d6a573427e4` "D1 Regression Test" (no Stripe IDs, no converted provider)
+- Audit line appended to admin_notes on both: `Test record archived via founder QA cleanup <ISO timestamp>`
+- Pre-conditions enforced in the UPDATE (defense-in-depth): `stripe_subscription_id IS NULL AND stripe_customer_id IS NULL AND converted_provider_id IS NULL`
+
+**Found and DELETED:**
+- `elite_sponsor_waitlist.928d43b3-05f0-4516-a252-2f89b30cf0ed` "Smoke Test" smoke+ecss@test.local (test placeholder, no value to preserve)
+
+**Found but LEFT UNTOUCHED (per founder rule):**
+- `partner_applications.28d08b47-dd3a-4a1a-9dd0-257066258fbb` "LIVE PAYMENT TEST - Veteran Care" — active row with LIVE Stripe `sub_1TNOXFGdqk7jVmGZ23Bc3kOa` + `cus_UM6bW6P9mJ3tZn`. Founder rule: never touch live Stripe subs. If founder wants this archived too, they must cancel the Stripe sub first then ask explicitly.
+- `elite_sponsor_slots.6260df2b-ce7d-4cd4-af92-cc51bab6bb0a` WY × financial-credit × va-loans `sponsor="ABC Test"` status=sold — has live `sub_1TS0hQGdqk7jVmGZgUcTbFMk`. Founder said "I will personally handle the Wyoming financial-credit / VA Loans Stripe cancellation and slot reset separately."
+- `elite_sponsor_leads.0e346236-fb17-4989-adb5-29a94620d429` "Colin Test" lead — tied to the WY ABC Test slot above; same founder rule.
+- `elite_sponsor_slots.ca6ca3ee-...` SC × legal-services — vacant, billing=cancelled, has stale Stripe IDs. Not on founder's named test list.
+- `helium.trusted_services.693538fe-...` "[ARCHIVED] LIVE PAYMENT TEST - Veteran Care" — already `is_active=false`, not public-facing.
+- 3 prospect rows that look real: "Brand New Veteran Services LLC", "SC Upstate Legal Network, Inc.", "Upstate Vets New Branch".
+
+**Names from founder's screenshots that were NOT FOUND:**
+- "ABC Test" (only the WY slot which is being handled separately)
+- "VC - Test", "[TEST] Test", "ACB - 7", "ABC - 6", "ABC - 5", "ABC 4", "ABC 3", "ABC - 2", "Test Company ABC", "ABC Company"
+- These appear to have been hard-deleted in earlier cleanup sessions. Confirmed by orphan reference: WY slot's `sponsor_partner_application_id=a6a482bb-...` does not exist in `partner_applications` (already deleted).
+
+**No changes to:**
+- `partner_organizations` (64 real seeded rows, none match test patterns)
+- `partner_routing_rules` (no rules tied to test orgs)
+- `supabase.trusted_services` (no rows matched test patterns)
+- Stripe API (no live subscription cancelled or modified)
+- Routing logic, billing logic, schema, AI Guide, Resources
+
+**Republish required**: NO — pure data cleanup, no code changes.
