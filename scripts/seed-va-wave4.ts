@@ -100,7 +100,7 @@ const ROWS: SeedRow[] = [
     address: "800 Kemper St", city: "Lynchburg", zip: "24501",
     source_name: "GLTC" },
 
-  { section: "A", title: "Legal Aid Society of Roanoke Valley — Lynchburg Branch",
+  { section: "A", title: "Lynchburg Civil Legal Aid Office (LASRV)",
     cat: "legal", sub: "Legal Aid Services",
     desc: "Roanoke Valley civil legal aid serving Lynchburg + Amherst + Appomattox + Bedford + Campbell + Nelson on family law, housing, public benefits; serves Lynchburg-area veterans without VA enrollment.",
     website_url: "https://www.lasrv.org/", phone: "434-528-4722",
@@ -180,7 +180,7 @@ const ROWS: SeedRow[] = [
     address: "615 E Water St", city: "Charlottesville", zip: "22902",
     source_name: "Charlottesville Area Transit" },
 
-  { section: "B", title: "Legal Aid Justice Center — Charlottesville",
+  { section: "B", title: "Charlottesville Civil Justice Office (LAJC HQ)",
     cat: "legal", sub: "Legal Aid Services",
     desc: "Charlottesville-based statewide civil legal aid — represents low-income clients on housing, immigration, education, public benefits; serves Charlottesville veterans without VA enrollment.",
     website_url: "https://www.justice4all.org/", phone: "434-977-0553",
@@ -246,7 +246,7 @@ const ROWS: SeedRow[] = [
     address: "5249 Olde Towne Rd, Bldg A", city: "Williamsburg", zip: "23188",
     source_name: "James City County DSS" },
 
-  { section: "C", title: "Hampton Roads Workforce Council — Williamsburg",
+  { section: "C", title: "Williamsburg Greater Peninsula Workforce Office",
     cat: "employment", sub: "DVOP / Workforce Programs",
     desc: "Hampton Roads Workforce Council Williamsburg/Greater Peninsula center — DVOP/LVER veteran specialists offer priority of service for Williamsburg-area veterans; co-located with Virginia Employment Commission.",
     website_url: "https://www.hamptonroadsworkforce.org/", phone: "757-253-4738",
@@ -601,7 +601,7 @@ const ROWS: SeedRow[] = [
     address: "13909 Smoketown Rd", city: "Woodbridge", zip: "22192",
     source_name: "Virginia Career Works Northern Region" },
 
-  { section: "G", title: "Northern Virginia Community College — Manassas Campus",
+  { section: "G", title: "NOVA Manassas Veterans Resource Center",
     cat: "education", sub: "College & University Programs",
     desc: "NOVA Manassas Campus — Yellow Ribbon, VA School Certifying Officials, Veterans Resource Center; affordable transfer pathways for Manassas-area veterans using GI Bill.",
     website_url: "https://www.nvcc.edu/military/", phone: "703-257-6600",
@@ -622,7 +622,7 @@ const ROWS: SeedRow[] = [
     address: "14945 Jefferson Davis Hwy", city: "Woodbridge", zip: "22191",
     source_name: "Volunteers of America Chesapeake" },
 
-  { section: "G", title: "Legal Services of Northern Virginia — Manassas",
+  { section: "G", title: "Manassas/PWC Civil Legal Aid Office (LSNV)",
     cat: "legal", sub: "Legal Aid Services",
     desc: "LSNV Manassas/Prince William office — free civil legal aid for low-income residents on housing, family law, public benefits, consumer matters; serves Manassas-area veterans without VA enrollment.",
     website_url: "https://www.lsnv.org/", phone: "703-368-3232",
