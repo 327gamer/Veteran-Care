@@ -1,0 +1,124 @@
+Founder RELEASE — Massachusetts Wave 7 (FINAL CATEGORY DEPTH)
+
+Proceed using Golden Standard system.
+Mirror Virginia Wave 8 EXACTLY.
+
+----------------------------------------
+
+OBJECTIVE:
+Final Category Depth Fill for underdeveloped high-impact categories:
+
+- end-of-life-services
+- crisis-help
+- disabled-veterans
+- caregiver / family-support depth
+
+----------------------------------------
+
+TARGET:
+~60–80 net new rows
+
+----------------------------------------
+
+STRICT RULES:
+- APPEND ONLY
+- rollout-engine.ts only
+- NO schema changes
+- NO taxonomy changes
+- NO overwrites
+- Use canonical categories/subcategories ONLY
+
+Use:
+--commit
+--allow-broken-urls
+--allow-zip-bleed (for national orgs serving MA)
+
+----------------------------------------
+
+BUILD STRATEGY
+
+1. END-OF-LIFE SERVICES (HIGH PRIORITY)
+Target: 15–20 rows
+
+Include:
+- Hospice providers (regional + statewide)
+- Palliative care programs
+- Assisted living / veteran-specific housing
+- Funeral / burial assistance services
+- Veteran cemetery support programs
+- End-of-life counseling
+
+----------------------------------------
+
+2. CRISIS HELP (HIGH PRIORITY)
+Target: 15–20 rows
+
+Include:
+- Suicide prevention programs
+- Domestic violence shelters / hotlines
+- Emergency crisis centers
+- Mobile crisis teams
+- Mental health emergency services
+
+----------------------------------------
+
+3. DISABLED VETERANS (HIGH PRIORITY)
+Target: 15–20 rows
+
+Include:
+- VA VR&E (Voc Rehab)
+- Independent Living Programs
+- Adaptive sports programs
+- Assistive technology programs
+- Disability-specific nonprofits
+- Service dog organizations
+
+----------------------------------------
+
+4. CAREGIVER / FAMILY SUPPORT (MODERATE PRIORITY)
+Target: 10–20 rows
+
+Include:
+- Caregiver support programs
+- Childcare assistance for veterans
+- Family counseling
+- Veteran family nonprofits
+
+----------------------------------------
+
+EXECUTION STEPS
+
+1. Load MA W1–W6 dataset
+2. Probe taxonomy
+3. Build seed-ma-wave7.ts
+4. DRY RUN:
+   - 0 errors
+   - 0 bad_sub
+   - fix duplicates via rename or skip
+5. Commit
+6. Verify
+7. Deliver Founder Report
+
+----------------------------------------
+
+EXPECTED RESULT
+
+- MA total ~720–750 resources
+- ALL categories balanced
+- NO category under 20 rows
+- State fully complete (geographic + categorical)
+
+----------------------------------------
+
+STOP RULE
+
+STOP after Wave 7.
+DO NOT proceed further without founder release.
+
+----------------------------------------
+
+REFERENCE
+
+Match Virginia Wave 8 EXACTLY in structure, density, and validation.
+
+Proceed.
