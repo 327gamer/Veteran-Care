@@ -2439,3 +2439,32 @@ Inventory of test/junk records across both DBs (Helium + Supabase):
 - Routing logic, billing logic, schema, AI Guide, Resources
 
 **Republish required**: NO — pure data cleanup, no code changes.
+
+## 2026-05-02 (later) — 6-issue founder QA round
+
+**Issue #1 — ABC Test still public-facing (root cause + fix):**
+- Public banner endpoint `GET /api/elite-sponsor` reads directly from `elite_sponsor_slots` and renders if `status='sold' AND billing_status='active' AND creative_approval_status='approved'`. Cancelling the Stripe sub on Stripe side does NOT auto-update the DB row.
+- Reset slot `6260df2b-…` (WY/financial-credit/va-loans) via direct DB update (founder confirmed Stripe sub already cancelled): status='vacant', billing_status='cancelled', creative_approval_status='pending', sponsor_name=NULL, sponsor_logo_url=NULL, sponsor_lead_email=NULL, sponsor_partner_application_id=NULL, stripe_customer_id=NULL, stripe_subscription_id=NULL. Audit line appended to notes_internal.
+- Verified `/api/elite-sponsor?categorySlug=financial-credit&state=WY&subcategorySlug=va-loans` now returns `{slot:null, status:"vacant", isPlaceholder:true}`.
+
+**Issue #1b — `Reset Slot Fully` admin button latent bug fixed:**
+- The button I shipped last turn would have crashed because `billing_status` has a NOT NULL constraint and the patch sent `null`. Updated `server/elite-sponsor.ts` reset endpoint to use `billing_status='cancelled'` and also reset `creative_approval_status='pending'` so a stale "approved" can never re-render the banner.
+
+**Issue #3 — Partner Prospects "All" tab including archived (fix):**
+- `client/src/pages/admin-partner-prospects.tsx`: when `filterStatus==='all'`, archived rows are filtered out client-side. Added `nonArchivedCount` for the "All" badge count and the header "X applications" count. Archived rows still show only when the user explicitly clicks the **Archived** tab.
+
+**Issue #5 — Admin back-button 404 (root cause + fix):**
+- `client/src/pages/admin-trusted-services.tsx` L652 had Back button navigating to `/admin-resources` (with hyphen) but the route in `client/src/App.tsx` is `/admin` mapped to `AdminResources`. Fixed Back to `setLocation("/admin")`.
+- Verified no other `/admin-resources` typo exists in client/src.
+
+**Issue #6 — Trusted Services Partners page showing 0/0 (verified NOT a bug):**
+- Helium `trusted_services` has 40 rows: 28 active, 12 inactive. `/api/admin/trusted-services` returns these correctly.
+- The 0/0 the founder saw was likely because the page was filtered to a category with no rows, or the API returned an error mid-load (admin auth, etc.). The endpoint and counts are correct.
+
+**Issue #4 — Bulk-cleanup path (no founder one-click required):**
+- This turn's cleanup was performed in one DB pass, no founder clicks needed. The `Reset Slot Fully` button (now bug-fixed) handles future single-slot resets safely.
+
+**What was NOT touched (per founder rules):**
+- Stripe API: zero calls. Founder cancelled `sub_1TS0hQ…` manually on Stripe; we only cleared the DB references.
+- LIVE PAYMENT TEST partner_application `28d08b47-…` still has live `sub_1TNOXFG…` — left untouched.
+- Schema, AI Guide, routing logic, Resources, billing logic — none touched.

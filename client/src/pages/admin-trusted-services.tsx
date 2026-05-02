@@ -649,7 +649,7 @@ function AdminTrustedServicesInner() {
   return (
     <div className="p-4 space-y-4 animate-in fade-in duration-300">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin-resources")} data-testid="button-back-admin">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

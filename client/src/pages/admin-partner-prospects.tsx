@@ -304,6 +304,10 @@ function AdminPartnerProspectsInner() {
 
   const filteredApplications = useMemo(() => {
     return applications.filter(a => {
+      // "All" tab means all CURRENT applications, not archived junk.
+      // Archived rows only render when the user explicitly clicks the
+      // Archived tab. (Founder QA 2026-05-02.)
+      if (filterStatus === "all" && a.status === "archived") return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (![a.company_name, a.contact_name, a.email].some(v => v?.toLowerCase().includes(q))) return false;
@@ -313,12 +317,14 @@ function AdminPartnerProspectsInner() {
       if (categoryFilter && a.trusted_service_categories?.name !== categoryFilter) return false;
       return true;
     });
-  }, [applications, searchQuery, planTypeFilter, stateFilter, categoryFilter]);
+  }, [applications, filterStatus, searchQuery, planTypeFilter, stateFilter, categoryFilter]);
 
   const statusCounts = applications.reduce((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+  // "All" badge count = everything except archived (matches the filter above)
+  const nonArchivedCount = applications.filter(a => a.status !== "archived").length;
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
@@ -339,7 +345,7 @@ function AdminPartnerProspectsInner() {
                 Trusted Partner Applications
               </h1>
               <p className="text-xs text-muted-foreground">
-                {filteredApplications.length}{filteredApplications.length !== applications.length ? ` of ${applications.length}` : ""} applications
+                {filteredApplications.length}{filteredApplications.length !== nonArchivedCount ? ` of ${nonArchivedCount}` : ""} applications
               </p>
             </div>
           </div>
@@ -415,7 +421,7 @@ function AdminPartnerProspectsInner() {
               </button>
             )}
             <p className="text-xs text-muted-foreground ml-auto">
-              {filteredApplications.length}{filteredApplications.length !== applications.length ? ` of ${applications.length}` : ""} application{applications.length !== 1 ? "s" : ""}
+              {filteredApplications.length}{filteredApplications.length !== nonArchivedCount ? ` of ${nonArchivedCount}` : ""} application{nonArchivedCount !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -442,7 +448,7 @@ function AdminPartnerProspectsInner() {
             >
               {f.label}
               {f.key !== "all" && statusCounts[f.key] ? ` (${statusCounts[f.key]})` : ""}
-              {f.key === "all" ? ` (${applications.length})` : ""}
+              {f.key === "all" ? ` (${nonArchivedCount})` : ""}
             </button>
           ))}
         </div>

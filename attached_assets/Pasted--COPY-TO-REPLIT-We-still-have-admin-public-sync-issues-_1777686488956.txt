@@ -1,0 +1,93 @@
+--- COPY TO REPLIT ---
+
+We still have admin/public sync issues after republish.
+
+I cancelled the ABC Test Stripe subscription manually. In /admin/elite-sponsors, Wyoming × Financial & Credit Services now appears Vacant, which is good.
+
+However, on the public Trusted Services page under Wyoming → Financial Services / VA Loans-Mortgages, the ABC Test Elite Sponsor banner is STILL showing. That means the public banner query is still finding ABC Test somewhere even though the slot looks vacant in admin.
+
+Please investigate and fix:
+
+1. ABC Test still public-facing
+Check every table/source that could render the public Elite banner:
+- elite_sponsor_slots
+- elite_sponsor_leads
+- partner_applications
+- partner_organizations
+- trusted_services
+- any cached/public API endpoint used by /discounts or Trusted Services
+
+For Wyoming + financial-credit + va-loans, confirm:
+- status must be vacant
+- billing_status must not be active
+- sponsor_name must be NULL
+- sponsor_logo_url must be NULL
+- sponsor_lead_email must be NULL
+- stripe_customer_id/subscription_id must be NULL on the public-facing slot record
+- creative_approval_status should not allow banner rendering
+
+If any old ABC Test sponsor data remains, clear it safely.
+
+2. Public page cache/API issue
+If the DB is clean but the banner still appears, check:
+- public API cache
+- React Query cache
+- endpoint powering the Trusted Services/discounts page
+- any fallback query that renders “sold” sponsor cards from stale partner application data
+
+The public page must only render Elite Sponsor banners where:
+status = sold
+AND billing_status = active
+AND sponsor fields exist
+AND creative approved
+
+3. Partner Prospects still showing test companies
+The admin Partner Prospects page still shows:
+- ABC Test
+- VC - Test
+- [TEST] Test
+- ACB / ABC test entries
+even after prior cleanup.
+
+Please verify whether these are:
+- real DB records still present
+- archived records being included under All
+- cached frontend state
+- orphaned records from partner_applications
+- records coming from Helium database, not Supabase
+
+If they are archived, they should NOT show under the default All tab unless I explicitly click Archived. The normal All tab should mean all active/current records, not archived junk.
+
+Please fix the admin display so:
+- archived test records do not clutter the main All view
+- deleted/orphaned records cannot render
+- test records are removed or archived safely
+- public-facing trusted_services tied to test records are inactive
+
+4. Do NOT rely on me manually clicking Delete on each record
+I do not want to manually delete one by one unless you confirm it is safe. Please provide the proper cleanup path.
+
+5. Admin navigation bug
+When I hit Back from Trusted Services Partners, then back again toward the main admin panel, I get:
+404 Page Not Found — “Did you forget to add the page to the router?”
+
+Please identify the missing/broken admin route. The admin back navigation should never land on a 404.
+
+6. Trusted Services Partners page shows 0 active / 0 inactive / no partners
+Please verify if this is correct. If trusted_services table has real active partners, the page should show them. If it is empty because partners are stored elsewhere, explain the difference between:
+- Trusted Partner Applications
+- Trusted Services Partners
+- Routing Partners
+- Elite Sponsor Slots
+
+Report back with:
+A. Root cause of ABC Test still showing publicly
+B. Whether the partner prospects test records are real DB rows, archived rows, cached rows, or orphaned rows
+C. What cleanup was performed
+D. Whether any live Stripe/customer/billing records were touched
+E. How to verify the public page is clean
+F. Why the admin back button causes 404 and what route was fixed
+
+Do not touch real partners, real resources, AI Guide, pricing, lead routing, or live billing except clearing already-cancelled test artifacts.
+
+--- END ---

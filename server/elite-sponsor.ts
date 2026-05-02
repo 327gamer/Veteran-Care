@@ -670,7 +670,13 @@ export function registerEliteSponsorRoutes(
 
         const patch: Record<string, any> = {
           status: "vacant",
-          billing_status: null,
+          // billing_status has NOT NULL constraint — use 'cancelled' to mark
+          // the slot as no longer actively billed (founder QA fix 2026-05-02)
+          billing_status: "cancelled",
+          // Reset creative_approval_status so the public banner check
+          // (status='sold' AND billing='active' AND approval='approved')
+          // cannot accidentally render this slot from a stale "approved" state.
+          creative_approval_status: "pending",
           unsold_at: timestamp,
           sponsor_name: null,
           sponsor_logo_url: null,
