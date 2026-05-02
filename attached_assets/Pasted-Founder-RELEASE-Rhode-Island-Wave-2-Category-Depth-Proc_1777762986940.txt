@@ -1,0 +1,152 @@
+Founder RELEASE — Rhode Island Wave 2 (Category Depth)
+
+Proceed using Golden Standard system.
+Mirror Massachusetts Wave 2 / Virginia Wave 2 EXACTLY.
+
+----------------------------------------
+
+OBJECTIVE:
+Category Depth Fill to strengthen weak categories from Wave 1.
+
+----------------------------------------
+
+TARGET:
+~50–70 net new rows
+
+----------------------------------------
+
+PRIORITY CATEGORIES (FROM W1 GAPS)
+
+HIGH PRIORITY:
+- financial
+- disabled-veterans
+- substance-recovery
+
+MEDIUM PRIORITY:
+- family-support
+- education
+- legal
+
+----------------------------------------
+
+STRICT RULES:
+- APPEND ONLY
+- rollout-engine.ts only
+- NO schema changes
+- NO taxonomy changes
+- NO overwrites
+
+Use:
+--commit
+--allow-broken-urls
+--allow-zip-bleed (for MA/CT/Boston-based orgs serving RI)
+
+----------------------------------------
+
+BUILD STRATEGY
+
+1. FINANCIAL (HIGH PRIORITY)
+Target: 10–15 rows
+
+Include:
+- VITA tax sites
+- Emergency financial assistance
+- Veteran relief funds
+- Utility assistance programs
+- Financial coaching / budgeting nonprofits
+
+----------------------------------------
+
+2. DISABLED VETERANS (HIGH PRIORITY)
+Target: 10–15 rows
+
+Include:
+- VA VR&E / Voc Rehab
+- Independent living programs
+- Adaptive sports programs
+- Service dog organizations
+- Disability support nonprofits
+
+----------------------------------------
+
+3. SUBSTANCE RECOVERY (HIGH PRIORITY)
+Target: 10–15 rows
+
+Include:
+- AA / NA / SMART Recovery groups
+- Detox centers
+- Outpatient programs
+- MAT providers
+- Peer recovery organizations
+
+----------------------------------------
+
+4. FAMILY SUPPORT (MEDIUM)
+Target: 8–12 rows
+
+Include:
+- Caregiver support programs
+- Family counseling
+- Childcare support
+- Veteran family nonprofits
+
+----------------------------------------
+
+5. EDUCATION (MEDIUM)
+Target: 5–10 rows
+
+Include:
+- Veteran education programs
+- Colleges with veteran services
+- Training programs
+- Certification programs
+
+----------------------------------------
+
+6. LEGAL (MEDIUM)
+Target: 5–10 rows
+
+Include:
+- Legal aid organizations
+- Veterans legal clinics
+- Pro bono networks
+- VA benefits appeals assistance
+
+----------------------------------------
+
+EXECUTION
+
+1. Load RI W1 dataset
+2. Probe taxonomy
+3. Build seed-ri-wave2.ts
+4. DRY RUN:
+   - 0 errors
+   - 0 bad_sub
+   - resolve duplicates
+5. Commit
+6. Verify
+7. Deliver Founder Report
+
+----------------------------------------
+
+EXPECTED RESULT
+
+- RI total ~180–200 resources
+- All categories strengthened
+- No category under 8–10 rows
+- State nearly complete
+
+----------------------------------------
+
+STOP RULE
+
+STOP after Wave 2
+Await founder release
+
+----------------------------------------
+
+REFERENCE
+
+Follow MA Wave 2 / VA Wave 2 structure exactly
+
+Proceed.
