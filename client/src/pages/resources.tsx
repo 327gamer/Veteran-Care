@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { ResourceItem } from "@/lib/resources-data";
 import AiGuideBanner from "@/components/ai-guide-banner";
+import EliteSponsorBanner from "@/components/elite-sponsor-banner";
 import { Button } from "@/components/ui/button";
 import ResourceDetail from "@/components/resource-detail";
 import TrustedServiceDetail from "@/components/trusted-service-detail";
@@ -49,6 +50,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { useGeolocation } from "@/lib/use-geolocation";
 import { EnableLocationPrompt } from "@/components/enable-location-prompt";
+
+// Founder spec 2026-05-02: 9 categories where /resources should mirror
+// /trusted-services for Elite Sponsor monetization. Slugs MUST match the
+// canonical category slugs accepted by /api/elite-sponsor; anything else
+// returns a vacant placeholder (server is the source of truth via
+// server/elite-sponsor.ts:isValidCategorySlug). Keeping this list small
+// avoids diluting "Claim this slot" CTAs on unrelated subcategories.
+const ELITE_BANNER_CATEGORIES = new Set<string>([
+  "financial-credit",
+  "housing-home",
+  "legal-services",
+  "insurance",
+  "education-training",
+  "employment-support",
+  "end-of-life-services",
+  "auto-services",
+  "travel-services",
+]);
 
 const US_STATES = [
   { label: "Alabama", value: "AL" }, { label: "Alaska", value: "AK" }, { label: "Arizona", value: "AZ" },
@@ -822,6 +841,34 @@ export default function Resources() {
 
       {selectedSlug && !Object.keys(CATEGORY_DEDICATED_ROUTES).includes(selectedSlug) && (
         <AiGuideBanner categoryContext={selectedSlug} />
+      )}
+
+      {/* Elite Sponsor monetization parity (2026-05-02 founder spec): mirror
+          Trusted Services category pages so /resources?category=X(&sub=Y)
+          becomes a monetized entry point too. Reuses the existing
+          EliteSponsorBanner — server /api/elite-sponsor decides sold-vs-
+          vacant rendering, so no duplicated fetch logic. Gated to the 9
+          founder-named mirrored categories so we don't dilute the
+          "Claim this slot" CTA on unrelated subcategories. Manual state
+          choice (filter dropdown) wins over GPS, matching financial-services
+          / legal-services placement above all listings. */}
+      {selectedSlug && ELITE_BANNER_CATEGORIES.has(selectedSlug) && (
+        <EliteSponsorBanner
+          categorySlug={selectedSlug}
+          categoryLabel={selectedName || selectedSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          subcategorySlug={subFilter || undefined}
+          subcategoryLabel={
+            subFilter
+              ? subFilter.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+              : undefined
+          }
+          manualStateOverride={locationMode === "state" && selectedState ? selectedState : null}
+          manualStateName={
+            locationMode === "state" && selectedState
+              ? US_STATES.find((s) => s.value === selectedState)?.label || null
+              : null
+          }
+        />
       )}
 
       {/* Search Bar - Always visible */}

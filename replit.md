@@ -2568,3 +2568,46 @@ transactions on both DBs and rewrote the boot cleanup to match.
 - 1 boot-time warning about the Stripe-protected row (intentional)
 
 Architect review: APPROVED.
+
+## 2026-05-02 — Elite Sponsor Banner on Resources subcategory pages
+
+**Founder spec:** mirror the Trusted Services Elite Sponsor banner onto
+the `/resources?category=X(&sub=Y)` URL pattern so the same monetized
+"Claim This Slot" / sold-sponsor card renders above listings on the 9
+mirrored Resources subcategories.
+
+**Mirrored category slugs (allowlist):**
+financial-credit, housing-home, legal-services, insurance,
+education-training, employment-support, end-of-life-services,
+auto-services, travel-services.
+
+**Implementation (client-only, reuses existing component):**
+- `client/src/pages/resources.tsx`
+  - Imported `EliteSponsorBanner` (`@/components/elite-sponsor-banner`)
+  - Added module-scope `ELITE_BANNER_CATEGORIES` Set<string> as the
+    9-slug gating allowlist. Server `/api/elite-sponsor` remains the
+    source of truth for sold-vs-vacant via
+    `server/elite-sponsor.ts:isValidCategorySlug`.
+  - Render block placed immediately after the existing AiGuideBanner,
+    above search / chips / filter UI / Verified Partners / listings.
+  - Props: `categorySlug=selectedSlug`, `categoryLabel=selectedName`
+    (with Title-Case slug fallback), `subcategorySlug=subFilter`,
+    `subcategoryLabel` derived via the page's existing
+    slug→Title-Case helper, `manualStateOverride=selectedState` and
+    `manualStateName=US_STATES.find(...).label` only when
+    `locationMode === "state"` (manual filter wins over GPS, matching
+    the existing `effectiveStateCode` pattern on Trusted Services).
+
+**Verified rendering:**
+- `/resources?category=housing-home&sub=home-ownership` → vacant
+  "This Exclusive Spot is Available · HOUSING & HOME SERVICES · YOUR
+  STATE" placeholder above listings.
+- `/resources?category=insurance&sub=auto-insurance` → vacant
+  placeholder above listings.
+
+**Out of scope / untouched:** schema, db:push, Stripe, billing, AI
+Guide, Resources data, server, routing. Pre-existing TS errors in
+`admin-resources.tsx` and `resources.tsx:1587` (short_description)
+are unrelated and left as-is per founder lock-in.
+
+Architect review: APPROVED.
