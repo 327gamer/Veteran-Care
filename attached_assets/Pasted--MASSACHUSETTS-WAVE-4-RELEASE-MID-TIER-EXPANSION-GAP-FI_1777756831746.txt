@@ -1,0 +1,127 @@
+🚀 MASSACHUSETTS — WAVE 4 RELEASE (MID-TIER EXPANSION + GAP FILL)
+
+We are now releasing Massachusetts Wave 4 using the Virginia Golden Standard State Expansion Formula (v5.2.2026).
+
+---
+
+## 🔒 CORE RULE
+
+This must follow Virginia Wave 4 EXACTLY:
+
+- Mid-tier city expansion
+- Regional balancing
+- Gap filling (NOT duplication of major cities)
+
+---
+
+## 🎯 OBJECTIVE — WAVE 4
+
+Mid-Tier City Expansion + Regional Gap Fill (~80–110 resources)
+
+This wave focuses on:
+👉 Underserved cities  
+👉 Regional balance  
+👉 Filling category gaps  
+
+---
+
+## 📍 TARGET AREAS (PRIORITY)
+
+You MUST expand:
+
+### Mid-Tier Cities
+- Pittsfield (Berkshires)
+- North Adams
+- Greenfield
+- Fitchburg / Leominster
+- Attleboro
+- Franklin
+- Marlborough
+- Waltham
+- Framingham
+- Everett / Malden / Medford
+
+### Regional / Rural Coverage
+- Western MA towns
+- Inland Worcester County towns
+- South Coast smaller towns
+- Cape Cod deeper towns
+- Border regions (NH / VT adjacency zones)
+
+---
+
+## 📦 PRIORITY CATEGORY GAPS
+
+Focus on increasing:
+
+- Mental Health (regional providers)
+- Housing (non-Boston programs)
+- Transportation (regional transit + access)
+- Legal (regional legal aid)
+- Food Assistance (local pantries)
+- Community Support (local nonprofits)
+
+---
+
+## ⚙️ EXECUTION RULES
+
+- Use rollout-engine.ts ONLY
+- Append-only (NO deletes)
+- Idempotent logic
+
+### Data Quality:
+- 0 bad_sub
+- 0 duplicates
+- Canonical taxonomy ONLY
+
+### URL Handling:
+- Use --allow-broken-urls
+
+---
+
+## 🚫 FOUNDER LAW
+
+DO NOT:
+- Modify schema
+- Run db:push
+- Touch Stripe / billing / AI Guide
+- Touch Trusted Services
+- Create new categories
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+Wave 4 complete when:
+
+- +80–110 resources added
+- MA total reaches ~475–500+
+- Mid-tier cities filled
+- Regional balance achieved
+- Clean validation (0 errors)
+
+---
+
+## 🛑 STOP RULE
+
+After Wave 4:
+
+👉 STOP  
+👉 DO NOT proceed to Wave 5  
+👉 Await founder instruction  
+
+---
+
+## 📊 OUTPUT REQUIRED
+
+Full Founder Report (same 9-item format)
+
+---
+
+## ⚡ EXECUTE
+
+Proceed immediately with:
+
+👉 Massachusetts Wave 4 (Golden Standard — Mid-Tier Expansion)
+
+No shortcuts. Maintain Virginia-level quality.
