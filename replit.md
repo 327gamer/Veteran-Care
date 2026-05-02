@@ -2468,3 +2468,17 @@ Inventory of test/junk records across both DBs (Helium + Supabase):
 - Stripe API: zero calls. Founder cancelled `sub_1TS0hQ…` manually on Stripe; we only cleared the DB references.
 - LIVE PAYMENT TEST partner_application `28d08b47-…` still has live `sub_1TNOXFG…` — left untouched.
 - Schema, AI Guide, routing logic, Resources, billing logic — none touched.
+
+## 2026-05-02 (later) — Elite Sponsor admin: subcategory drill-down
+
+**Issue:** Admin panel showed 3,886 total slots in the header, but the grid only rendered 51 states × 9 categories ≈ 459 cells. The other ~3,400 slots existed at the **subcategory** level and were invisible. Founder couldn't see or manage true sellable inventory.
+
+**Fix (UI-only, no backend changes):**
+- `client/src/pages/admin-elite-sponsors.tsx`:
+  - `grid` memo refactored from `byKey: Record<string, EliteSlot>` to `byCell: Record<string, EliteSlot[]>` so every subcategory slot under a state×category is preserved.
+  - Each cell now shows roll-up counts: `N sold / M vacant / P paused / Q review / R rejected` plus the first sponsor name (`+ N more` if multiple), plus `T slots · click to view`.
+  - Click any cell → opens a new `<Dialog>` (`data-testid=dialog-cell-drilldown`) listing every subcategory slot with its: subcategory label (humanized from slug), status badge, billing_status badge, sponsor_name + email, monthly_price, lead_price, Stripe customer ID, Stripe subscription ID, plus a **Manage** button per row that opens the existing `SlotEditor` Sheet (which already contains the **Reset Slot Fully** button).
+  - Added `humanizeSlug()` helper that turns kebab-case slugs into title-case labels (with VA/IRS/SBA/USAA/etc. preserved as all-caps).
+  - Added `stripe_customer_id` and `stripe_subscription_id` to the `EliteSlot` interface (the API already returns them via `select("*")`; the interface was just missing the declaration).
+- Footer text updated to: "True inventory is **State × Category × Subcategory**…"
+- **No backend, billing, routing, pricing, schema, or AI Guide changes.**

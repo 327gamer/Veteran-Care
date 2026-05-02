@@ -22,6 +22,14 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -80,6 +88,8 @@ interface EliteSlot {
   billing_status: "unpaid" | "active" | "past_due" | "cancelled";
   current_period_end: string | null;
   notes_internal: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
 }
 
 interface WaitlistEntry {
@@ -119,6 +129,22 @@ function centsToDollars(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+// Humanize a kebab-case subcategory slug for admin display.
+// e.g. "va-loans" → "VA Loans", "credit-repair" → "Credit Repair".
+// Special-case 2-3 letter all-caps tokens (VA, IRS, SBA, etc.).
+function humanizeSlug(slug: string | null): string {
+  if (!slug) return "Top-level (no subcategory)";
+  return slug
+    .split("-")
+    .map((part) => {
+      if (/^(va|irs|sba|usaa|geico|tsp|pcs|gi|ssvf|hud|vash|ccrc|tap|us)$/i.test(part)) {
+        return part.toUpperCase();
+      }
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(" ");
+}
+
 function statusBadge(status: EliteSlot["status"]) {
   if (status === "sold") {
     return (
@@ -149,6 +175,15 @@ function AdminEliteSponsorsInner() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<EliteSlot | null>(null);
+  // Founder QA 2026-05-02: drill-down state for State × Category cell.
+  // Inventory is actually State × Category × Subcategory — clicking a cell
+  // opens a dialog showing every subcategory slot underneath, so total
+  // sellable inventory matches the number shown in the header summary.
+  const [drillDown, setDrillDown] = useState<{
+    state: string;
+    categorySlug: string;
+    categoryLabel: string;
+  } | null>(null);
 
   const categoriesQuery = useQuery<{ categories: EcssCategory[] }>({
     queryKey: ["/api/elite-sponsor/categories"],
@@ -201,17 +236,39 @@ function AdminEliteSponsorsInner() {
       (s.sponsor_logo_url || s.sponsor_name)
   ).length;
 
-  // Build (state × category) grid
+  // Build (state × category) grid.
+  // Founder QA 2026-05-02: each cell now holds the FULL list of subcategory
+  // slots (plus any top-level slot with subcategory_slug=null), not just one.
+  // The summary chip in the cell shows roll-up counts (sold / vacant / paused)
+  // and clicking it opens a dialog listing every subcategory underneath with
+  // its full status, billing, sponsor, pricing and Stripe IDs.
   const grid = useMemo(() => {
-    const byKey: Record<string, EliteSlot> = {};
+    const byCell: Record<string, EliteSlot[]> = {};
     for (const s of slots) {
-      byKey[`${s.state_code}::${s.category_slug}`] = s;
+      const k = `${s.state_code}::${s.category_slug}`;
+      (byCell[k] = byCell[k] || []).push(s);
+    }
+    // Sort subcategory slots within each cell: top-level (null) first,
+    // then subcategory slugs alphabetically for predictable ordering.
+    for (const k of Object.keys(byCell)) {
+      byCell[k].sort((a, b) => {
+        if (a.subcategory_slug === null && b.subcategory_slug !== null) return -1;
+        if (a.subcategory_slug !== null && b.subcategory_slug === null) return 1;
+        return (a.subcategory_slug || "").localeCompare(b.subcategory_slug || "");
+      });
     }
     const states = Array.from(
       new Set([...slots.map((s) => s.state_code), ...liveStates])
     ).sort();
-    return { byKey, states };
+    return { byCell, states };
   }, [slots, liveStates]);
+
+  // Slots for the currently open drill-down dialog (memoized separately so
+  // editing/closing a single sub-slot doesn't tear down the dialog).
+  const drillDownSlots = useMemo(() => {
+    if (!drillDown) return [];
+    return grid.byCell[`${drillDown.state}::${drillDown.categorySlug}`] || [];
+  }, [drillDown, grid]);
 
   const seedMutation = useMutation({
     mutationFn: async () => {
@@ -467,56 +524,102 @@ function AdminEliteSponsorsInner() {
                       <tr key={state} className="border-b last:border-0 hover:bg-muted/30">
                         <td className="px-3 py-2.5 font-semibold">{state}</td>
                         {ECSS_CATEGORIES.map((c) => {
-                          const slot = grid.byKey[`${state}::${c.slug}`];
-                          const hasPendingCreative =
-                            slot &&
-                            slot.creative_approval_status === "pending" &&
-                            (slot.sponsor_logo_url || slot.sponsor_name);
-                          const hasRejectedCreative =
-                            slot && slot.creative_approval_status === "rejected";
+                          const cellSlots = grid.byCell[`${state}::${c.slug}`] || [];
+                          const total = cellSlots.length;
+                          const sold = cellSlots.filter((s) => s.status === "sold").length;
+                          const vacant = cellSlots.filter((s) => s.status === "vacant").length;
+                          const paused = cellSlots.filter((s) => s.status === "paused").length;
+                          const pendingReview = cellSlots.filter(
+                            (s) =>
+                              s.creative_approval_status === "pending" &&
+                              (s.sponsor_logo_url || s.sponsor_name)
+                          ).length;
+                          const rejected = cellSlots.filter(
+                            (s) => s.creative_approval_status === "rejected"
+                          ).length;
+                          // First sponsor name for at-a-glance label (if any sold slot has one)
+                          const firstSponsorName =
+                            cellSlots.find((s) => s.status === "sold" && s.sponsor_name)
+                              ?.sponsor_name || null;
                           return (
-                            <td key={c.slug} className="px-3 py-2.5">
-                              {slot ? (
+                            <td key={c.slug} className="px-3 py-2.5 align-top">
+                              {total === 0 ? (
+                                <span className="text-xs text-muted-foreground italic">
+                                  — no slots —
+                                </span>
+                              ) : (
                                 <button
-                                  onClick={() => setEditing(slot)}
+                                  onClick={() =>
+                                    setDrillDown({
+                                      state,
+                                      categorySlug: c.slug,
+                                      categoryLabel: c.label,
+                                    })
+                                  }
                                   className="text-left w-full group"
                                   data-testid={`cell-${state}-${c.slug}`}
+                                  aria-label={`Open ${state} ${c.label} subcategory inventory (${total} slots)`}
                                 >
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    {statusBadge(slot.status)}
-                                    {hasPendingCreative && (
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    {sold > 0 && (
+                                      <Badge
+                                        className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200 text-[10px] px-1.5 py-0 h-4"
+                                        data-testid={`badge-sold-${state}-${c.slug}`}
+                                      >
+                                        <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
+                                        {sold} sold
+                                      </Badge>
+                                    )}
+                                    {vacant > 0 && (
                                       <Badge
                                         variant="outline"
-                                        className="border-amber-300 text-amber-800 bg-amber-50 text-[10px] px-1.5 py-0"
+                                        className="border-stone-300 text-stone-700 text-[10px] px-1.5 py-0 h-4"
+                                      >
+                                        {vacant} vacant
+                                      </Badge>
+                                    )}
+                                    {paused > 0 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-amber-300 text-amber-800 text-[10px] px-1.5 py-0 h-4"
+                                      >
+                                        {paused} paused
+                                      </Badge>
+                                    )}
+                                    {pendingReview > 0 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-amber-300 text-amber-800 bg-amber-50 text-[10px] px-1.5 py-0 h-4"
                                         data-testid={`badge-pending-${state}-${c.slug}`}
                                       >
                                         <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                        Review
+                                        {pendingReview}
                                       </Badge>
                                     )}
-                                    {hasRejectedCreative && (
+                                    {rejected > 0 && (
                                       <Badge
                                         variant="outline"
-                                        className="border-red-300 text-red-800 bg-red-50 text-[10px] px-1.5 py-0"
+                                        className="border-red-300 text-red-800 bg-red-50 text-[10px] px-1.5 py-0 h-4"
                                       >
                                         <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-                                        Rejected
+                                        {rejected}
                                       </Badge>
                                     )}
-                                    {slot.sponsor_name && (
-                                      <span className="text-xs font-medium truncate max-w-[140px]">
-                                        {slot.sponsor_name}
-                                      </span>
-                                    )}
                                   </div>
+                                  {firstSponsorName && (
+                                    <div className="text-[11px] font-medium truncate max-w-[160px] mt-0.5">
+                                      {firstSponsorName}
+                                      {sold > 1 && (
+                                        <span className="text-muted-foreground font-normal">
+                                          {" "}+{sold - 1} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                   <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-foreground">
-                                    {centsToDollars(slot.monthly_price_cents)}/mo · {centsToDollars(slot.lead_price_cents)}/lead · {slot.billing_status}
+                                    {total} slot{total === 1 ? "" : "s"} · click to view
                                   </div>
                                 </button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground italic">
-                                  — no slot —
-                                </span>
                               )}
                             </td>
                           );
@@ -529,10 +632,13 @@ function AdminEliteSponsorsInner() {
             </Card>
 
             <p className="text-xs text-muted-foreground mt-3">
-              One TOP slot per (state × category). Click any cell to edit
-              sponsor details, pricing, billing status, or approve/reject the
-              submitted creative. The premium sold-state banner card only
-              renders when status=Sold AND creative is Approved.
+              True inventory is <strong>State × Category × Subcategory</strong>.
+              Each cell summarises the subcategory slots underneath it
+              (e.g. VA Loans, Credit Repair, Debt Management). Click any cell
+              to drill into its subcategory inventory, manage individual
+              sponsors, edit pricing/billing, or approve/reject creatives.
+              The public sold-state banner only renders when status=Sold AND
+              billing=Active AND creative=Approved.
             </p>
           </TabsContent>
 
@@ -676,6 +782,184 @@ function AdminEliteSponsorsInner() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Subcategory drill-down dialog (founder QA 2026-05-02) */}
+      <Dialog
+        open={!!drillDown}
+        onOpenChange={(open) => !open && setDrillDown(null)}
+      >
+        <DialogContent
+          className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          data-testid="dialog-cell-drilldown"
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {drillDown?.state} · {drillDown?.categoryLabel}
+            </DialogTitle>
+            <DialogDescription>
+              {drillDownSlots.length} subcategory slot
+              {drillDownSlots.length === 1 ? "" : "s"} — click{" "}
+              <strong>Manage</strong> on any row to edit pricing, billing,
+              sponsor details, approve a creative, or reset the slot.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="overflow-x-auto -mx-6 px-6">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50 border-b">
+                <tr className="text-left">
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
+                    Subcategory
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
+                    Billing
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
+                    Sponsor
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground text-right">
+                    Monthly
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground text-right">
+                    Lead
+                  </th>
+                  <th className="px-2 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
+                    Stripe IDs
+                  </th>
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {drillDownSlots.map((s) => (
+                  <tr
+                    key={s.id}
+                    className="border-b last:border-0 hover:bg-muted/30 align-top"
+                    data-testid={`row-subslot-${s.id}`}
+                  >
+                    <td className="px-2 py-2 font-medium">
+                      {humanizeSlug(s.subcategory_slug)}
+                    </td>
+                    <td className="px-2 py-2">{statusBadge(s.status)}</td>
+                    <td className="px-2 py-2">
+                      <Badge
+                        variant="outline"
+                        className={
+                          s.billing_status === "active"
+                            ? "border-emerald-300 text-emerald-800"
+                            : s.billing_status === "past_due"
+                            ? "border-red-300 text-red-800"
+                            : s.billing_status === "cancelled"
+                            ? "border-slate-300 text-slate-700"
+                            : "border-stone-300 text-stone-700"
+                        }
+                      >
+                        {s.billing_status}
+                      </Badge>
+                    </td>
+                    <td className="px-2 py-2">
+                      {s.sponsor_name ? (
+                        <div>
+                          <div className="font-medium">{s.sponsor_name}</div>
+                          {s.sponsor_lead_email && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">
+                              {s.sponsor_lead_email}
+                            </div>
+                          )}
+                          {s.creative_approval_status === "pending" &&
+                            (s.sponsor_logo_url || s.sponsor_name) && (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-300 text-amber-800 bg-amber-50 text-[10px] px-1.5 py-0 h-4 mt-0.5"
+                              >
+                                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                Review
+                              </Badge>
+                            )}
+                          {s.creative_approval_status === "rejected" && (
+                            <Badge
+                              variant="outline"
+                              className="border-red-300 text-red-800 bg-red-50 text-[10px] px-1.5 py-0 h-4 mt-0.5"
+                            >
+                              <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                              Rejected
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap">
+                      {centsToDollars(s.monthly_price_cents)}
+                    </td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap">
+                      {centsToDollars(s.lead_price_cents)}
+                    </td>
+                    <td className="px-2 py-2 font-mono text-[10px]">
+                      {s.stripe_customer_id || s.stripe_subscription_id ? (
+                        <div className="space-y-0.5">
+                          {s.stripe_customer_id && (
+                            <div
+                              className="truncate max-w-[140px]"
+                              title={s.stripe_customer_id}
+                              data-testid={`text-cus-${s.id}`}
+                            >
+                              cus: {s.stripe_customer_id}
+                            </div>
+                          )}
+                          {s.stripe_subscription_id && (
+                            <div
+                              className="truncate max-w-[140px]"
+                              title={s.stripe_subscription_id}
+                              data-testid={`text-sub-${s.id}`}
+                            >
+                              sub: {s.stripe_subscription_id}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px]"
+                        onClick={() => {
+                          setEditing(s);
+                          setDrillDown(null);
+                        }}
+                        data-testid={`button-manage-${s.id}`}
+                      >
+                        Manage
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {drillDownSlots.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-3 py-8 text-center text-muted-foreground italic"
+                    >
+                      No subcategory slots in this cell.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <DialogFooter className="text-[11px] text-muted-foreground sm:justify-start">
+            View-only summary. All changes (pricing, billing, sponsor, reset)
+            still happen inside the per-slot Manage drawer.
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
