@@ -1,0 +1,127 @@
+Founder RELEASE — Massachusetts Wave 5 (Golden Standard continuation)
+
+Proceed exactly per Virginia Wave 5 pattern — DO NOT redesign logic.
+
+OBJECTIVE:
+Statewide Category Depth Fill across the 4 underdeveloped categories:
+- substance-recovery
+- transportation
+- financial
+- legal
+
+TARGET:
+~80–100 net new rows
+Follow VA Wave 5 density and structure exactly
+
+CRITICAL RULES:
+- APPEND ONLY (no overwrites, no edits to existing rows)
+- Use rollout-engine.ts only
+- Use canonical categories/subcategories ONLY (no new names)
+- Maintain idempotent NOT EXISTS logic
+- Use:
+  --commit
+  --allow-broken-urls
+  --allow-zip-bleed (for national orgs serving MA)
+
+--------------------------------------------------
+
+BUILD STRATEGY (MATCH VIRGINIA W5 EXACTLY)
+
+1. SUBSTANCE-RECOVERY (HIGH PRIORITY)
+Target: 20–30 rows
+
+Include:
+- AA / NA / SMART Recovery chapters across multiple regions
+- Detox centers
+- Outpatient treatment programs
+- Medication-assisted treatment (MAT)
+- Peer recovery organizations
+- Recovery support services
+
+Focus:
+Boston, Worcester, Springfield, Lowell, Brockton, Fall River, New Bedford, plus mid-tier regions
+
+--------------------------------------------------
+
+2. TRANSPORTATION (HIGH PRIORITY)
+Target: 20–25 rows
+
+Include:
+- Regional transit authorities (fill any remaining gaps)
+- Non-emergency medical transport (NEMT)
+- VA transport services
+- Volunteer driver programs
+- Veteran ride assistance programs
+
+Ensure full statewide transit coverage consistency
+
+--------------------------------------------------
+
+3. FINANCIAL (MODERATE PRIORITY)
+Target: 15–25 rows
+
+Include:
+- VITA tax sites
+- Emergency financial assistance programs
+- Veteran relief funds
+- Utility assistance programs
+- Financial coaching / budgeting services
+- Nonprofit grant/aid programs
+
+--------------------------------------------------
+
+4. LEGAL (MODERATE PRIORITY)
+Target: 15–25 rows
+
+Include:
+- Legal aid organizations (regional + statewide)
+- Veterans legal clinics
+- VA benefits appeal services
+- Pro bono legal networks
+- Military legal assistance programs
+
+--------------------------------------------------
+
+EXECUTION STEPS
+
+1. Load MA W1–W4 dataset
+2. Probe canonical taxonomy (categories + subcategories)
+3. Build seed-ma-wave5.ts
+4. Run DRY-RUN
+   REQUIRE:
+   - 0 errors
+   - 0 bad_sub
+   - 0 ZIP violations
+   - near-dups resolved via rename
+5. Commit using rollout-engine
+6. Run verify-ma.ts
+7. Deliver Founder Report EXACT format as previous waves
+
+--------------------------------------------------
+
+EXPECTED OUTPUT
+
+- ~80–100 new rows
+- All 4 categories lifted to 25+ rows minimum
+- No regression in existing categories
+- Clean logs (0 errors)
+
+--------------------------------------------------
+
+STOP RULE
+
+STOP after Wave 5 completes.
+DO NOT proceed to Wave 6 without explicit founder release.
+
+--------------------------------------------------
+
+REFERENCE
+
+Follow Virginia Wave 5 EXACTLY:
+- Same category targeting
+- Same density approach
+- Same validation discipline
+
+Massachusetts must reach the same “balanced coverage” state Virginia achieved post-Wave 5.
+
+Proceed.
