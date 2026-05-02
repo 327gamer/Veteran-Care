@@ -1418,36 +1418,13 @@ async function seedDiscountCategories() {
 }
 
 async function ensureDefaultServices() {
-  try {
-    const existing = await pgQuery(`SELECT id FROM trusted_services LIMIT 1`);
-    if (existing.length > 0) return;
-
-    const cats = await pgQuery(`SELECT id, slug FROM trusted_service_categories`);
-    const catBySlug: Record<string, string> = {};
-    cats.forEach((c: any) => { catBySlug[c.slug] = c.id; });
-
-    const eduCatId = catBySlug["education-training"];
-    if (!eduCatId) return;
-
-    console.log("[seed] trusted_services is empty — seeding default provider...");
-    await pgQuery(`
-      INSERT INTO trusted_services (name, short_description, email, phone, website_url, city, state, category_id, is_active, is_featured, verification_status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, false, 'verified')
-      ON CONFLICT DO NOTHING
-    `, [
-      "Second Chance Job Center (4)",
-      "Comprehensive employment services including job placement, resume building, interview prep, and career counseling for veterans and transitioning service members.",
-      "info@secondchancejobcenter.com",
-      "(843) 469-7000",
-      "https://secondchancejobcenter.com",
-      "Mount Pleasant",
-      "SC",
-      eduCatId
-    ]);
-    console.log("[seed] Default provider seeded successfully");
-  } catch (err: any) {
-    console.log("[seed] Failed to seed default services:", err.message);
-  }
+  // DEPRECATED 2026-05-02 — founder removed the placeholder
+  // "Second Chance Job Center (4)" seed. Real national providers are
+  // seeded via ensureSeededNationalProviders() in server/index.ts.
+  // Intentionally a no-op so an empty trusted_services table stays empty
+  // until real providers seed in (preventing test-looking placeholder
+  // rows from appearing in the public directory).
+  return;
 }
 
 async function repairOrphanedServices() {
@@ -3017,38 +2994,12 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 async function cleanupTestRecords() {
-  try {
-    const exactTestNames = [
-      "Test Company ABC",
-      "ABC 3",
-      "ABC-5",
-      "ABC-6",
-      "ABC-6 Second Chance Job Center",
-      "Second Chance Job Center (4)",
-    ];
-    const placeholders = exactTestNames.map((_, i) => `$${i + 1}`).join(",");
-    const found = await pgQuery(
-      `SELECT id, name FROM trusted_services WHERE TRIM(name) IN (${placeholders})`,
-      exactTestNames
-    );
-    if (found.length > 0) {
-      let removed = 0;
-      for (const rec of found) {
-        try {
-          await pgQuery(`UPDATE partner_applications SET converted_provider_id = NULL WHERE converted_provider_id = $1`, [rec.id]);
-          await pgQuery(`DELETE FROM trusted_services WHERE id = $1`, [rec.id]);
-          removed++;
-        } catch (delErr: any) {
-          console.log(`[cleanup] Could not remove "${rec.name}":`, delErr.message);
-        }
-      }
-      if (removed > 0) {
-        console.log(`[cleanup] Removed ${removed} test records from trusted_services:`, found.filter((_:any, i:number) => i < removed).map((r: any) => r.name).join(", "));
-      }
-    }
-  } catch (err: any) {
-    console.log("[cleanup] cleanupTestRecords error:", err.message);
-  }
+  // DEPRECATED 2026-05-02 — comprehensive boot-time cleanup now lives in
+  // server/index.ts cleanupTestRecords(), which covers the full founder
+  // pattern set across trusted_services + partner_applications +
+  // navigator_requests in one place. This shim stays as a no-op so the
+  // existing call site in registerRoutes() continues to compile.
+  return;
 }
 
 export async function registerRoutes(

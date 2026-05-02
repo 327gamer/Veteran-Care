@@ -2482,3 +2482,48 @@ Inventory of test/junk records across both DBs (Helium + Supabase):
   - Added `stripe_customer_id` and `stripe_subscription_id` to the `EliteSlot` interface (the API already returns them via `select("*")`; the interface was just missing the declaration).
 - Footer text updated to: "True inventory is **State × Category × Subcategory**…"
 - **No backend, billing, routing, pricing, schema, or AI Guide changes.**
+
+## 2026-05-02 (later) — Test data visibility cleanup
+
+**Issue:** Founder QA round flagged test partner records still visible in
+`/admin/partner-prospects`, the `/admin/resources` Trusted Partner
+Applications panel, and potentially the public directory: `ABC Test`,
+`ACB - 7`, `ABC - 6/5/4/3/2`, `Test Company ABC`, `ABC Company`,
+`Second Chance Job Center`, `[TEST]`, `VC - Test`, `Smoke Test`,
+`Regression Test`, `LIVE PAYMENT TEST`.
+
+**Fix (UI/data-only — no schema/billing/Stripe/routing/AI Guide):**
+
+- `server/index.ts cleanupTestRecords()` rewritten:
+  - **trusted_services** — broadened pattern set; sets `is_active=false` +
+    `verification_status='rejected'` + prepends `[ARCHIVED] ` to name.
+    Idempotent via `NOT ILIKE '[ARCHIVED]%'`.
+  - **partner_applications** — NEW branch; sets `status='archived'` and
+    appends an `admin_notes` flag. **Stripe `subscription_id`/`customer_id`
+    columns are intentionally untouched** so live subscriptions keep
+    running until founder cancels them in the Stripe dashboard.
+    Idempotent via `status != 'archived'`.
+  - **navigator_requests** (Supabase) — NEW branch; sets `status='resolved'`
+    + `admin_notes` flag. Preserves audit trail; idempotent.
+
+- `server/routes.ts ensureDefaultServices()` → no-op. Removed the seed
+  that was inserting placeholder `Second Chance Job Center (4)` into
+  trusted_services on empty boot — this was itself the source of one
+  of the test names the founder asked to remove. Real national providers
+  seed via `ensureSeededNationalProviders()` in server/index.ts.
+
+- `server/routes.ts cleanupTestRecords()` (the duplicate hardcoded-name
+  DELETE list) → no-op. server/index.ts is now the authoritative cleanup.
+
+**One-shot live cleanup also run via tsx:**
+- 1 partner_application archived: `LIVE PAYMENT TEST - Veteran Care`
+  (Stripe sub `sub_1TNOXFGdqk7jVmGZ23Bc3kOa` left intact — founder
+  must cancel manually in Stripe).
+- 24 navigator_requests resolved (Smoke Test User, Colin Test×N,
+  GATE TEST, Delivery Fail Test, 72H Test Lead, etc.).
+- 0 trusted_services touched (only one `[ARCHIVED] LIVE PAYMENT TEST`
+  row remains, already hidden from public).
+
+Architect review: APPROVED — patterns escaped correctly, idempotent
+guards verified, no SQL-injection risk, no Stripe side-effects, archived
+rows correctly hidden from public + admin default views.

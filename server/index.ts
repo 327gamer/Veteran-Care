@@ -95,37 +95,155 @@ app.use((req, res, next) => {
 });
 
 async function cleanupTestRecords() {
-  // Idempotent boot-time cleanup. Production has historical seed/test
-  // records (ABC - 2, ABC 4, ABC - 6, LIVE PAYMENT TEST, etc.) that the
-  // founder needs archived from public-facing surfaces. Runs every boot;
-  // cheap when nothing matches. Uses pg pool already wired in pg-client.
+  // Idempotent boot-time cleanup of obvious QA / smoke-test data so it
+  // never appears in public directory or admin Trusted Partner Applications
+  // / Partner Prospects views.
+  //
+  // Founder spec 2026-05-02: full pattern set covers all named test rows
+  // (ABC Test, ACB - 7, ABC - 6/5/4/3/2, Test Company ABC, ABC Company,
+  // Second Chance Job Center, [TEST], VC - Test, Smoke / Regression Test,
+  // LIVE PAYMENT TEST). Runs on every boot; cheap when nothing matches.
+  //
+  // SAFETY:
+  //   - trusted_services       → set is_active=false + name='[ARCHIVED] …'
+  //                              (hides from public; reversible by hand).
+  //   - partner_applications   → set status='archived' + admin_notes flag
+  //                              ONLY a column update — Stripe / billing
+  //                              are NEVER touched. If a row has a live
+  //                              Stripe subscription (e.g. founder's $1
+  //                              live test), the sub keeps running until
+  //                              founder cancels it manually in the Stripe
+  //                              dashboard. We just hide the row from the
+  //                              admin tabs.
+  //   - navigator_requests     → set status='resolved' + admin_notes flag
+  //                              (preserved for forensic audit, not deleted).
+  //
+  // No pricing, no routing, no schema, no AI Guide changes.
+  const TS_TEST_FILTER = `(
+    name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
+    OR name ~* '^\\s*A[BC]C[ -]*Test\\s*$'
+    OR name ILIKE '%[TEST]%'
+    OR name ILIKE 'ABC Test%'
+    OR name ILIKE '%ABC Company%'
+    OR name ILIKE 'Test Company ABC%'
+    OR name ILIKE 'TEST %'
+    OR name ILIKE '%test partner%'
+    OR name ILIKE '%test record%'
+    OR name ILIKE '%placeholder%'
+    OR name ILIKE '%LIVE PAYMENT TEST%'
+    OR name ILIKE '%Smoke Test%'
+    OR name ILIKE '%Regression Test%'
+    OR name ILIKE '%VC - Test%'
+    OR name ILIKE '%VC-Test%'
+    OR name ILIKE '%Second Chance Job Center%'
+    OR name ILIKE 'Veteran Care'
+    OR name ILIKE 'Veteran Care %'
+  )`;
+  const PA_TEST_FILTER = `(
+    company_name ~* '^\\s*A[BC]C[ -]+\\d+\\s*$'
+    OR company_name ~* '^\\s*A[BC]C[ -]*Test\\s*$'
+    OR company_name ILIKE '%[TEST]%'
+    OR company_name ILIKE 'ABC Test%'
+    OR company_name ILIKE '%ABC Company%'
+    OR company_name ILIKE 'Test Company ABC%'
+    OR company_name ILIKE 'TEST %'
+    OR company_name ILIKE '%test partner%'
+    OR company_name ILIKE '%test record%'
+    OR company_name ILIKE '%placeholder%'
+    OR company_name ILIKE '%LIVE PAYMENT TEST%'
+    OR company_name ILIKE '%Smoke Test%'
+    OR company_name ILIKE '%Regression Test%'
+    OR company_name ILIKE '%VC - Test%'
+    OR company_name ILIKE '%VC-Test%'
+    OR company_name ILIKE '%Second Chance Job Center%'
+    OR email ILIKE '%@test.%'
+    OR email ILIKE '%@example.%'
+    OR email ILIKE '%@example.com'
+    OR email ILIKE 'founder-test%'
+    OR email ILIKE '%@d1regression-test%'
+    OR email ILIKE '%@regressiontest-stage%'
+  )`;
   try {
     const { query: pgQuery } = await import("./pg-client");
-    const archived = await pgQuery(
+
+    // (a) trusted_services — hide from public directory.
+    const archivedTs = await pgQuery(
       `UPDATE trusted_services
          SET is_active = false,
              verification_status = 'rejected',
              name = '[ARCHIVED] ' || name
        WHERE name NOT ILIKE '[ARCHIVED]%'
-         AND (
-           name ~* '^\\s*A[BC]C[ -]*\\d+\\s*$'
-           OR name ~* '^\\s*ACB[ -]*\\d+\\s*$'
-           OR name ILIKE '%LIVE PAYMENT TEST%'
-           OR name ILIKE '%test record%'
-           OR name ILIKE '%test partner%'
-           OR name ILIKE '%placeholder%'
-           OR name ILIKE 'TEST %'
-           OR name ILIKE 'Veteran Care'
-           OR name ILIKE 'Veteran Care %'
-         )
+         AND ${TS_TEST_FILTER}
        RETURNING id, name`,
     );
-    if (archived.length > 0) {
-      console.log(`[boot-cleanup] archived ${archived.length} test records:`,
-        archived.map((r: any) => r.name).join(", "));
+    if (archivedTs.length > 0) {
+      console.log(
+        `[boot-cleanup] archived ${archivedTs.length} trusted_services test row(s):`,
+        archivedTs.map((r: any) => r.name).join(", "),
+      );
+    }
+
+    // (b) partner_applications — hide from admin Trusted Partner Applications
+    // / Partner Prospects tabs. Only updates `status` + `admin_notes`.
+    // Stripe subscription_id / customer_id columns are intentionally untouched;
+    // we never cancel or refund a live subscription from boot code.
+    const archivedPa = await pgQuery(
+      `UPDATE partner_applications
+         SET status = 'archived',
+             admin_notes = COALESCE(admin_notes, '') ||
+               E'\\n[2026-05-02 boot-cleanup] Auto-archived as test record. ' ||
+               'Stripe subscription (if any) is intentionally NOT cancelled — ' ||
+               'cancel manually in Stripe dashboard if desired.',
+             updated_at = NOW()
+       WHERE status != 'archived'
+         AND ${PA_TEST_FILTER}
+       RETURNING id, company_name, status`,
+    );
+    if (archivedPa.length > 0) {
+      console.log(
+        `[boot-cleanup] archived ${archivedPa.length} partner_applications test row(s):`,
+        archivedPa.map((r: any) => r.company_name).join(", "),
+      );
     }
   } catch (err: any) {
     console.warn(`[boot-cleanup] skipped (${err?.message || err})`);
+  }
+
+  // (c) navigator_requests (Supabase) — resolve obvious test leads so they
+  // disappear from the active inbox. Audit row preserved.
+  try {
+    const { supabaseQuery } = await import("./supabase-pg-client");
+    const resolved = await supabaseQuery<{ id: string; veteran_name: string }>(
+      `UPDATE navigator_requests
+         SET status = 'resolved',
+             admin_notes = COALESCE(admin_notes, '') ||
+               E'\\n[2026-05-02 boot-cleanup] Auto-resolved as test lead. ' ||
+               'Preserved for forensic audit; not deleted.',
+             resolved_at = COALESCE(resolved_at, NOW())
+       WHERE status != 'resolved'
+         AND (
+           veteran_name ILIKE '%test%'
+           OR veteran_name ILIKE 'gate test%'
+           OR veteran_name ILIKE 'smoke test%'
+           OR veteran_name ILIKE '%regression%'
+           OR veteran_name ILIKE 'Colin'
+           OR veteran_name ILIKE 'Colin %'
+           OR veteran_email ILIKE '%@test.%'
+           OR veteran_email ILIKE '%@example.%'
+           OR veteran_email ILIKE 'founder-test%'
+           OR veteran_email ILIKE 'gate-test%'
+           OR veteran_email ILIKE 'colinmslaven@%'
+           OR veteran_email ILIKE 'colin@veterancare.com'
+         )
+       RETURNING id, veteran_name`,
+    );
+    if (resolved.length > 0) {
+      console.log(
+        `[boot-cleanup] resolved ${resolved.length} navigator_requests test lead(s)`,
+      );
+    }
+  } catch (err: any) {
+    console.warn(`[boot-cleanup] navigator_requests skipped (${err?.message || err})`);
   }
 }
 
